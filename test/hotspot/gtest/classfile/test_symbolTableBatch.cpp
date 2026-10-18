@@ -123,7 +123,7 @@ TEST_OTHER_VM(SymbolTable, batch_reference_ownership_alt_hash) {
     VM_RehashSymbolTable op;
     VMThread::execute(&op);
   }
-  const int counts[] = {1, 17, 257};
+  const int counts[] = {1, 16, 17, 257};
   for (int count : counts) {
     for (int layout = 0; layout < 4; layout++) {
       SymbolTableTest::check(count, layout);

@@ -557,7 +557,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
       names[count] = names[i];
       lengths[count] = lengths[i];
       cp_indices[count] = cp_indices[i];
-      hashes[count] = rehash_misses ? hash_symbol(names[i], lengths[i], shared_first) : hashes[i];
+      hashes[count] = shared_first && rehash_misses ? hash_symbol(names[i], lengths[i], true) : hashes[i];
       syms[count] = nullptr;
       count++;
     }
@@ -569,15 +569,21 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   if (shared_first) {
     _lookup_shared_first = false;
     lookup_dynamic_batch(count);
+  } else if (rehash_misses) {
+    const int stack_count = 16;
+    unsigned int stack_hashes[stack_count];
+    unsigned int* shared_hashes = count <= stack_count ? stack_hashes :
+      NEW_RESOURCE_ARRAY_IN_THREAD(current, unsigned int, count);
+    for (int i = 0; i < count; i++) {
+      shared_hashes[i] = hash_symbol(names[i], lengths[i], false);
+    }
+    lookup_shared(count, names, lengths, shared_hashes, syms);
   } else {
     lookup_shared(count, names, lengths, hashes, syms);
   }
   for (int i = 0; i < count; i++) {
     Symbol* sym = syms[i];
     if (sym == nullptr) {
-      if (!shared_first && rehash_misses) {
-        hashes[i] = hash_symbol(names[i], lengths[i], true);
-      }
       assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
       sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
     } else if (!shared_first) {
