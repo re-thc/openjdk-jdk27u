@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +30,7 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/constantThreshold.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates_enums.hpp"
@@ -1943,6 +1945,56 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool prev_dom_not
   return new ConINode(TypeInt::ZERO);
 }
 
+// Recognize equivalent integer thresholds only in the bounded dominator
+// search below. Other clients of same_condition require shared Cmp/Bool nodes.
+static bool equivalent_integer_tests(const Node* iff, const Node* dom) {
+  if (iff->Opcode() != Op_If || dom->Opcode() != Op_If) {
+    return false;
+  }
+  Node* dom_bool = dom->in(1);
+  Node* this_bool = iff->in(1);
+  if (dom_bool == nullptr || !dom_bool->is_Bool() ||
+      this_bool == nullptr || !this_bool->is_Bool()) {
+    return false;
+  }
+  Node* dom_cmp = dom_bool->in(1);
+  Node* this_cmp = this_bool->in(1);
+  // Equivalent adjacent integer thresholds need not have the same Cmp/Bool
+  // nodes: x <= c is x < c+1, provided c is not the maximum of the comparison's
+  // signed or unsigned domain. Recognize this locally instead of changing the
+  // comparison shape (in particular, counted-loop and opaque guard shapes).
+  BoolTest::mask dom_test = dom_bool->as_Bool()->_test._test;
+  BoolTest::mask this_test = this_bool->as_Bool()->_test._test;
+  if (((dom_test == BoolTest::le && this_test == BoolTest::lt) ||
+       (dom_test == BoolTest::lt && this_test == BoolTest::le)) &&
+      dom_cmp != nullptr && this_cmp != nullptr &&
+      dom_cmp->Opcode() == this_cmp->Opcode() &&
+      (dom_cmp->Opcode() == Op_CmpI || dom_cmp->Opcode() == Op_CmpU ||
+       dom_cmp->Opcode() == Op_CmpL || dom_cmp->Opcode() == Op_CmpUL) &&
+      dom_cmp->in(1) == this_cmp->in(1) &&
+      dom_cmp->in(1) != nullptr && !dom_cmp->in(1)->is_Opaque1()) {
+    Node* le_bound = (dom_test == BoolTest::le ? dom_cmp : this_cmp)->in(2);
+    Node* lt_bound = (dom_test == BoolTest::lt ? dom_cmp : this_cmp)->in(2);
+    int cmp_op = dom_cmp->Opcode();
+    if (le_bound == nullptr || lt_bound == nullptr) {
+      return false;
+    }
+    if ((cmp_op == Op_CmpI || cmp_op == Op_CmpU) &&
+        le_bound->Opcode() == Op_ConI && lt_bound->Opcode() == Op_ConI) {
+      if (is_adjacent_constant_threshold(le_bound->get_int(), lt_bound->get_int(), cmp_op == Op_CmpU)) {
+        return true;
+      }
+    } else if ((cmp_op == Op_CmpL || cmp_op == Op_CmpUL) &&
+               le_bound->Opcode() == Op_ConL && lt_bound->Opcode() == Op_ConL) {
+      if (is_adjacent_constant_threshold(le_bound->get_long(), lt_bound->get_long(), cmp_op == Op_CmpUL)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
   // Setup to scan up the CFG looking for a dominating test
   Node* dom = in(0);
@@ -1950,7 +2002,7 @@ Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
   int op = Opcode();
   // Search up the dominator tree for an If with an identical test
   while (dom->Opcode() != op ||  // Not same opcode?
-         !same_condition(dom, igvn) ||  // Not same input 1?
+         (!same_condition(dom, igvn) && !equivalent_integer_tests(this, dom)) ||
          prev_dom->in(0) != dom) {  // One path of test does not dominate?
     if (dist < 0) return nullptr;
 
