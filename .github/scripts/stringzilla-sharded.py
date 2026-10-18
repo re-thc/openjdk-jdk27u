@@ -347,7 +347,7 @@ def character_diagnostics(args):
     folder = OUT / "character-diagnostics"
     folder.mkdir()
     source = DRIVER / ".github/scripts/StringZillaCharInlining.java"
-    assert sha(source) == "3e1081b38acd21ca07fab03dbed9b980b5c760b1c4f352f57e8ccc8dacd221fb"
+    assert sha(source) == "add8823a1e3d31406cc200c22d935989041ab726ed02018c34456b8d4d172563"
     copied = folder / source.name
     shutil.copy2(source, copied)
     classes = folder / "classes"
@@ -359,7 +359,8 @@ def character_diagnostics(args):
     assert len(fingerprints) > 1
     receipt = {"source": args.source, "baseline": BASE, "backend": args.backend,
                "timing_evidence": False, "affinity": helper().pin_cpu(),
-               "compiled_once_with": "original", "application_sha256": fingerprints, "javap": {}, "runs": []}
+               "compiled_once_with": "original", "application_sha256": fingerprints, "javap": {}, "runs": [],
+               "reverse_runs": []}
     for name in ("original", "fork"):
         for klass in ("StringLatin1", "StringUTF16"):
             log = folder / (name + "-" + klass + ".javap.log")
@@ -368,6 +369,9 @@ def character_diagnostics(args):
             text = log.read_text(errors="replace")
             match = re.search(r"(?ms)^  (?:private|static|public|protected)[^\n]*\bindexOfChar0\([^\n]*\n.*?(?=^  (?:private|static|public|protected)|\Z)", text)
             record["indexOfChar0_bytecode"] = match[0] if match else ""
+            match = re.search(r"(?ms)^  (?:private|static|public|protected)[^\n]*\blastIndexOf\(byte\[\], int, int\);[^\n]*\n.*?(?=^  (?:private|static|public|protected)|\Z)", text)
+            assert match, name + "/" + klass + " reverse character bytecode missing"
+            record["lastIndexOfChar_bytecode"] = match[0]
             receipt["javap"][name + "/" + klass] = record
             print("STRINGZILLA_AUX_CHAR_JAVAP " + json.dumps({"image": name, "class": klass, **record}, separators=(",", ":")), flush=True)
     for control in ("original", "enabled", "disabled"):
@@ -391,6 +395,34 @@ def character_diagnostics(args):
                                    r"String(?:UTF16|Latin1)::(?:indexOfChar0|indexOf)|StringZilla::indexOfChar|StringZillaCharInlining::search", line)][-100:]})
                 receipt["runs"].append(record)
                 print("STRINGZILLA_AUX_CHAR_COMPILATION " + json.dumps(record, separators=(",", ":")), flush=True)
+    for control in ("original", "enabled", "disabled"):
+        java = (IMAGES / (("original" if control == "original" else "fork") + "/bin/java" + exe)).resolve()
+        flags = [*diagnostic_flags(args.backend, control, "c1"), "-Xbatch",
+                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCompilation", "-XX:+PrintInlining",
+                 "-XX:CompileCommand=dontinline,StringZillaCharInlining::searchReverse",
+                 "-XX:CompileCommand=print,java.lang.StringLatin1::lastIndexOf",
+                 "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOf",
+                 "-XX:CompileCommand=print,StringZillaCharInlining::searchReverse"]
+        for coder, lengths in (("UTF16", (127, 128, 129, 255, 256, 257, 4096)),
+                               ("LATIN1", (255, 256, 257, 4096))):
+            for length in lengths:
+                from_index = length - 1
+                expected = length - 4
+                log = folder / (control + "-reverse-" + coder + "-" + str(length) + ".log")
+                record = diagnostic_log([java, *flags, "-cp", classes, "StringZillaCharInlining",
+                                         str(length), str(from_index), coder, "reverse"], log)
+                text = log.read_text(errors="replace")
+                assert ("Reverse character-search compilation check passed: length=" + str(length)
+                        + " from=" + str(from_index) + " coder=" + coder + " expected=" + str(expected)) in text
+                assert "StringZillaCharInlining::searchReverse" in text
+                record.update({"control": control, "tier": "c1", "direction": "reverse", "coder": coder,
+                               "length": length, "fromIndex": from_index, "expected": expected, "jvmArgs": flags,
+                               "source": BASE if control == "original" else args.source, "timing_evidence": False,
+                               "selected_lines": [line for line in text.splitlines() if re.search(
+                                   r"String(?:UTF16|Latin1)::lastIndexOf|StringZilla::(?:rfindChar|searchCharLarge|useCharUTF16)|StringZillaCharInlining::searchReverse", line)][-100:]})
+                receipt["reverse_runs"].append(record)
+                print("STRINGZILLA_AUX_CHAR_REVERSE_COMPILATION " + json.dumps(record, separators=(",", ":")), flush=True)
+    assert len(receipt["runs"]) == 18 and len(receipt["reverse_runs"]) == 33
     assert fingerprints == {path.relative_to(folder).as_posix(): sha(path)
                             for path in [copied, *sorted(classes.rglob("*.class"))]}
     write("character-diagnostics.json", receipt)

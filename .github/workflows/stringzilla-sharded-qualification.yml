@@ -32,7 +32,7 @@ jobs:
         shell: python
         run: |
           import os, re, subprocess
-          source = "b2585a2293b681b891720af21bfffba03844b4e8"
+          source = "4592230b14fc2f4b537b162fd7f6b791e882b615"
           assert re.fullmatch(r"[0-9a-f]{40}", source) and source != "0" * 40
           status = subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/39073742791",
                                            "--jq", ".status"], text=True).strip()
