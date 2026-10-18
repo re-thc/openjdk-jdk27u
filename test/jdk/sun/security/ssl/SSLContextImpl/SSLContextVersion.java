@@ -27,8 +27,8 @@
 /*
  * @test
  * @bug 6976117 8234725
- * @summary SSLContext.getInstance("TLSv1.1") returns SSLEngines/SSLSockets
- *          without TLSv1.1 enabled
+ * @summary SSLContext aliases expose the expected default and supported
+ *          protocols through SSLEngines and SSLSockets
  * @library /test/lib
  * @run main/othervm SSLContextVersion
  */

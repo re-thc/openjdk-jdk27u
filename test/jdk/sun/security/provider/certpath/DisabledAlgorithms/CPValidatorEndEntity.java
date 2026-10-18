@@ -28,16 +28,13 @@
  * @test
  *
  * @bug 6861062 7011497
- * @summary Disable MD2 support.
- *          New CertPathValidatorException.BasicReason enum constant for
- *     constrained algorithm.
+ * @summary Disabled end-entity algorithms report ALGORITHM_CONSTRAINED
  * @enablePreview
  * @run main/othervm CPValidatorEndEntity
  * @author Xuelei Fan
  */
 
 import java.io.*;
-import java.net.SocketException;
 import java.security.PEMDecoder;
 import java.util.*;
 import java.security.Security;

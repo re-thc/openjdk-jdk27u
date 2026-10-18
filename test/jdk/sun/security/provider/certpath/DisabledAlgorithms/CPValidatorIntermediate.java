@@ -28,9 +28,7 @@
  * @test
  *
  * @bug 6861062 7011497
- * @summary Disable MD2 support
- *          new CertPathValidatorException.BasicReason enum constant for
- *     constrained algorithm
+ * @summary Disabled intermediate-certificate algorithms report ALGORITHM_CONSTRAINED
  * @enablePreview
  * @run main/othervm CPValidatorIntermediate
  * @author Xuelei Fan

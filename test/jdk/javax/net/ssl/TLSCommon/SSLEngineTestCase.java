@@ -131,7 +131,7 @@ abstract public class SSLEngineTestCase {
     }
     /**
      * Security protocol to be tested: "TLS" or "DTLS" or their versions,
-     * e.g. "TLSv1", "TLSv1.1", "TLSv1.2", "DTLSv1.0", "DTLSv1.2".
+     * e.g. "TLSv1.2", "TLSv1.3", "DTLSv1.2".
      */
     public static final String TESTED_SECURITY_PROTOCOL
             = System.getProperty("test.security.protocol");

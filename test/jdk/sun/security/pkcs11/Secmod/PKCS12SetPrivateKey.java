@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 6269847
- * @summary store a NSS PKCS11 PrivateKeyEntry to JKS KeyStore throws confusing NPE
+ * @summary PKCS12 rejects non-extractable and non-PKCS#8 private keys cleanly
  * @author Wang Weijun
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main/othervm JksSetPrivateKey
+ * @run main/othervm PKCS12SetPrivateKey
  */
 
 import java.security.KeyStore;
@@ -41,7 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.TreeSet;
 
-public class JksSetPrivateKey extends SecmodTest {
+public class PKCS12SetPrivateKey extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
         initSecmod();
@@ -63,18 +63,18 @@ public class JksSetPrivateKey extends SecmodTest {
 
         X509Certificate[] chain = (X509Certificate[])ks.getCertificateChain(keyAlias);
 
-        KeyStore jks = KeyStore.getInstance("PKCS12");
-        jks.load(null, null);
+        KeyStore pkcs12 = KeyStore.getInstance("PKCS12");
+        pkcs12.load(null, null);
 
         try {
-            jks.setKeyEntry("k1", privateKey, "changeit".toCharArray(), chain);
-            throw new Exception("No, an NSS PrivateKey shouldn't be extractable and put inside a JKS keystore");
+            pkcs12.setKeyEntry("k1", privateKey, "changeit".toCharArray(), chain);
+            throw new Exception("An NSS private key should not be extractable into a PKCS12 keystore");
         } catch (KeyStoreException e) {
             System.err.println(e); // This is OK
         }
 
         try {
-            jks.setKeyEntry("k2", new DummyPrivateKey(), "changeit".toCharArray(), chain);
+            pkcs12.setKeyEntry("k2", new DummyPrivateKey(), "changeit".toCharArray(), chain);
             throw new Exception("No, non-PKCS#8 key shouldn't be put inside a KeyStore");
         } catch (KeyStoreException e) {
             System.err.println(e); // This is OK
@@ -82,8 +82,8 @@ public class JksSetPrivateKey extends SecmodTest {
         System.out.println("OK");
 
         try {
-            jks.setKeyEntry("k3", new DummyPrivateKey2(), "changeit".toCharArray(), chain);
-            throw new Exception("No, not-extractble key shouldn't be put inside a KeyStore");
+            pkcs12.setKeyEntry("k3", new DummyPrivateKey2(), "changeit".toCharArray(), chain);
+            throw new Exception("A non-extractable key should not be put inside a KeyStore");
         } catch (KeyStoreException e) {
             System.err.println(e); // This is OK
         }

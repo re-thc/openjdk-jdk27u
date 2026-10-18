@@ -27,12 +27,8 @@
 /*
  * @test
  * @bug 4416068 4478803 4479736
- * @summary 4273544 JSSE request for function forceV3ClientHello()
- *          4479736 setEnabledProtocols API does not work correctly
- *          4478803 Need APIs to determine the protocol versions used in an SSL
- *                  session
- *          4701722 protocol mismatch exceptions should be consistent between
- *                  SSLv3 and TLSv1
+ * @summary Enabled protocol sets determine the negotiated session version
+ *          and reject connections with no common protocol
  * @library /javax/net/ssl/templates
  * @run main/othervm TestEnabledProtocols
  * @author Ram Marti

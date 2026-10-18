@@ -33,7 +33,6 @@ import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
-import java.util.Objects;
 
 import javax.crypto.*;
 import javax.crypto.spec.PSource;
@@ -41,7 +40,6 @@ import javax.crypto.spec.OAEPParameterSpec;
 
 import sun.security.rsa.*;
 import sun.security.jca.Providers;
-import sun.security.util.KeyUtil;
 
 /**
  * RSA cipher implementation. Supports RSA en/decryption and signing/verifying

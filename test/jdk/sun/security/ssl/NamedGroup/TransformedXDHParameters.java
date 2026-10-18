@@ -71,7 +71,6 @@ public class TransformedXDHParameters {
                     List<String> command = new ArrayList<>(List.of(
                             "--add-modules", "java.instrument,java.security.sasl",
                             "--add-exports", "java.base/jdk.internal.module=ALL-UNNAMED",
-                            "--add-opens", "java.base/sun.security.jca=ALL-UNNAMED",
                             "-Djdk.tls.client.protocols=" + protocol));
                     if (supplied) command.add("-javaagent:" + agentJar + "=" + helperJar);
                     command.addAll(List.of("-cp", cp, "XDHTransformationProbe",

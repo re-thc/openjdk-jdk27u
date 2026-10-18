@@ -26,7 +26,6 @@
 package sun.security.ssl;
 
 import sun.security.ssl.Authenticator.MAC;
-import sun.security.util.Debug;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;

@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.XECPublicKey;
 import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;

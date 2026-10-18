@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Field;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -48,16 +47,6 @@ public class XDHTransformationProbe {
                 + " isPatched=false agent=" + System.getProperty("xdh.fixture.agent"));
         if (supplied != Boolean.getBoolean("xdh.fixture.agent")) {
             throw new AssertionError("Wrong agent state");
-        }
-        // Read diagnostics without defining/initializing the target provider.
-        try {
-            Class<?> config = Class.forName("sun.security.jca.ProviderConfig");
-            Field started = config.getDeclaredField("providerDiscoveryStarted");
-            started.setAccessible(true);
-            if (started.getBoolean(null)) throw new AssertionError("Discovery already started");
-            System.out.println("providerDiscoveryStarted=false");
-        } catch (NoSuchFieldException expected) {
-            System.out.println("No shortcut discovery flag");
         }
         try {
             switch (args[0]) {

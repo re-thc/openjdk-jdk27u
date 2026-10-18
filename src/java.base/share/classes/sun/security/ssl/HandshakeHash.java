@@ -32,8 +32,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.LinkedList;
-import javax.crypto.SecretKey;
-import sun.security.util.MessageDigestSpi2;
 
 final class HandshakeHash {
     private TranscriptHash transcriptHash;

@@ -27,7 +27,6 @@ package sun.security.ec;
 
 import sun.security.ec.point.*;
 import sun.security.util.CurveDB;
-import sun.security.util.KnownOIDs;
 import sun.security.util.ArrayUtil;
 import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;

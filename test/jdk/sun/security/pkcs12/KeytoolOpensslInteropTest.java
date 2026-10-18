@@ -152,10 +152,10 @@ public class KeytoolOpensslInteropTest {
         // You can even load it with a wrong storepass, controversial
         check("os2", "a", "wrongpass", "changeit", true, true, true);
 
-        // os3. no cert pbe, has mac. just like JKS
+        // os3. no certificate encryption, with integrity protection
         check("os3", "a", null, "changeit", true, true, true);
         check("os3", "a", "changeit", "changeit", true, true, true);
-        // Cannot load with a wrong storepass, same as JKS
+        // The integrity check rejects a wrong store password
         check("os3", "a", "wrongpass", "-", IOException.class, "-", "-");
 
         // os4. non default algs

@@ -28,15 +28,13 @@
  * @test
  *
  * @bug 6861062 7011497
- * @summary Disable MD2 support
- *          new CertPathValidatorException.BasicReason enum constant for
- *     constrained algorithm
+ * @summary Disabled algorithms in a self-signed certificate path report
+ *          ALGORITHM_CONSTRAINED even when the certificate is a trust anchor
  * @enablePreview
  * @run main/othervm CPValidatorTrustAnchor
  * @author Xuelei Fan
  */
 
-import java.io.ByteArrayInputStream;
 import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.cert.CertPath;
@@ -49,10 +47,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 

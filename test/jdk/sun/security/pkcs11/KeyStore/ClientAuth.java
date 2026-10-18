@@ -54,7 +54,7 @@ public class ClientAuth extends PKCS11Test {
 
     private static Provider provider;
     private static final String NSS_PWD = "test12";
-    private static final String JKS_PWD = "passphrase";
+    private static final String STORE_PASSWORD = "passphrase";
     private static final String SERVER_KS = "server.keystore";
     private static final String TS = "truststore";
     private static String p11config;
@@ -131,9 +131,9 @@ public class ClientAuth extends PKCS11Test {
     void doServerSide() throws Exception {
 
         SSLContext ctx = SSLContext.getInstance("TLS");
-        char[] passphrase = JKS_PWD.toCharArray();
+        char[] passphrase = STORE_PASSWORD.toCharArray();
 
-        // server gets KeyStore from JKS keystore
+        // server gets KeyStore from PKCS12 keystore
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new FileInputStream(new File(DIR, SERVER_KS)), passphrase);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -192,7 +192,7 @@ public class ClientAuth extends PKCS11Test {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 
         // client gets KeyStore from PKCS#11 token,
-        // and gets TrustStore from JKS KeyStore (using system properties)
+        // and gets TrustStore from PKCS12 KeyStore (using system properties)
         char[] passphrase = NSS_PWD.toCharArray();
         KeyStore ks = KeyStore.getInstance("PKCS11", "SunPKCS11-nss");
         ks.load(null, passphrase);
@@ -263,7 +263,7 @@ public class ClientAuth extends PKCS11Test {
                                         new File(DIR, TS).toString());
         System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
         System.setProperty("javax.net.ssl.trustStoreProvider", "SUN");
-        System.setProperty("javax.net.ssl.trustStorePassword", JKS_PWD);
+        System.setProperty("javax.net.ssl.trustStorePassword", STORE_PASSWORD);
 
         // perform Security.addProvider of P11 provider
         Security.addProvider(getSunPKCS11(System.getProperty("CUSTOM_P11_CONFIG")));
