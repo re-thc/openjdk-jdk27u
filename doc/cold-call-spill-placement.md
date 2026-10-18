@@ -1,9 +1,10 @@
 # Experimental C2 cold-call spill deferral
 
 `UseColdCallSpillDeferral` is a diagnostic, disabled-by-default prototype for
-deferring eager pressure spills across rare returning calls. It changes the
-first Split allocation attempt only; ordinary splitting and allocator retry
-remain the fallback. Actual decoder spill/transport reduction and performance
+deferring eager pressure spills across rare returning calls. Pressure deferral
+changes the first Split allocation attempt only. The separate cold debug-home
+reuse described below can apply during later Split attempts. Ordinary splitting
+and allocator retry remain the fallback. Actual decoder spill/transport reduction and performance
 qualification are incomplete. There is no speedup or release-readiness claim.
 
 ## Placement contract
@@ -41,7 +42,7 @@ CFG edge is split and no copy is moved by this policy.
 
 ## Preserved safety constraints
 
-Whole-range inspection excludes pointer, oop, floating, vector and predicate
+Whole-range pressure-deferral inspection excludes pointer, oop, floating, vector and predicate
 definitions, including derived pointers represented with pointer register
 classes. Bound/misaligned definitions, operand constraints, call clobbers,
 debug-state materialization, OopMaps and base/derived pairs keep their ordinary
@@ -54,6 +55,28 @@ The separate scoped nonnull diagnostic in `javaThread.inline.hpp` is the common
 GCC16 build prerequisite; it preserves the unsafe-access handler and assertion
 without a global warning suppression.
 
+## Cold debug-home reuse
+
+When a spilled input already has a cached DOWN definition, an eligible cold
+`DebugUse` copy can forward its single call-debug edge to that definition before
+liveness, masks and interference are rebuilt. Extending the home's lifetime at
+this point lets interference protect it against other values live at the call.
+Deleting a stack copy after coloring would not provide that protection.
+
+This reuse requires exact value type and register class, one definition of the
+copy's live range, and a unique Java-state use in the same cold block after the
+copy. Only integer, long, base-oop and zero-offset narrow-oop values qualify.
+Arguments, monitor objects and boxes, derived/oop-map edges, bound call operands
+and locally bound homes retain ordinary handling. The home output, call input
+and every existing home use must retain an unbounded stack domain. No input or
+output mask is widened or narrowed, and no coloring priority is changed.
+
+The cached definition is the allocator's existing same-value debug home, not a
+slot inferred from a previous coloring. Later Phi and two-address constraints
+still use the ordinary allocation, materialization and retry paths; local mask
+eligibility alone does not prove that the final allocation removes transport.
+Base-oop homes remain normal live debug inputs for GC and deoptimization.
+
 ## Normal regression coverage
 
 - `TestColdCallSpillPolicy` and its native helper cover production policy costs,
@@ -64,6 +87,12 @@ without a global warning suppression.
   activation; incidental Phis or counts alone cannot satisfy the oracle.
 - `TestColdCallDerivedPointers` exercises oop/base/derived constraints and
   returning-call correctness with GC and deoptimization.
+- `TestColdCallDebugHome` checks default/off/on behavior, Java scalar and oop
+  state through GC and deoptimization, compressed/uncompressed oops and frame
+  pointers. In fastdebug its positive case requires a base-oop forwarding trace
+  in the second C2 compilation at the unique inventoried `unstable_if` call for
+  the exercised BCI, with a corresponding WhiteBox trap-count increment. A
+  nonactivating or ambiguous fixture fails.
 
 Trace activation alone does not establish removal of physical stores, reloads,
 register transport or implicit frame work. That requires a matched final-code
@@ -77,7 +106,9 @@ their protocols are retained at immutable Git commit
 They are deliberately outside the product change. Use that source snapshot for
 reproduction; no binary or patch handoff is required.
 
-The latest approved mechanism attempt stopped at host-health admission before
-any build, safety selector or capture. It is closed and cannot be relaunched.
-A new attempt requires a healthy admitted executor and a new explicit approval
-under the archived protocol. The historical performance NO-GO remains unchanged.
+The previous cloud attempts are closed and cannot be relaunched. The reported
+native decoder evidence motivates the debug-home change, but does not validate
+this new source or establish the original activation and no-replacement-traffic
+gates. A new sealed attempt requires a healthy admitted executor and a new
+explicit approval under the archived protocol. Ordinary development checks do
+not change the historical performance NO-GO.

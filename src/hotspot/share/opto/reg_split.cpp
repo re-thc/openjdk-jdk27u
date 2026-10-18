@@ -33,6 +33,7 @@
 #include "opto/coldCallSpill.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
+#include "runtime/deoptimization.hpp"
 
 //------------------------------Split--------------------------------------
 // Walk the graph in RPO and for each lrg which spills, propagate reaching
@@ -285,6 +286,77 @@ int PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, 
   use->set_req(useidx,spill);
 
   return 1;
+}
+
+// Reuse an existing DOWN value at a cold call instead of allocating another
+// short debug range. Do this before rebuilding liveness and interference: the
+// home must remain live at the call, including against its other debug values.
+bool PhaseChaitin::forward_debug_use_home(Node* copy, Node* home, Block* block, uint copy_index) {
+  if (!UseColdCallSpillDeferral || home == nullptr || home == copy || !home->is_Mach() ||
+      !copy->is_SpillCopy() || !copy->as_MachSpillCopy()->is_debug_use() || copy->outcnt() != 1 ||
+      !ColdCallSpillPolicy::valid_frequency(block->_freq) ||
+      !(block->_freq < OPTO_DEBUG_SPLIT_FREQ || _cfg.is_uncommon(block))) {
+    return false;
+  }
+  const Type* type = home->bottom_type();
+  if (type != copy->bottom_type() || home->ideal_reg() != copy->ideal_reg() ||
+      !(type->isa_int() || type->isa_long() ||
+        (type->isa_narrowoop() && type->make_ptr()->_offset == 0) ||
+        (type->isa_oop_ptr() && type->is_ptr()->_offset == 0))) {
+    return false;
+  }
+  Node* use = copy->unique_out();
+  if (!use->is_MachCall() || _cfg.get_block_for_node(use) != block ||
+      block->find_node(use) <= copy_index ||
+      (_cfg.get_block_for_node(home) == block && block->find_node(home) >= copy_index)) {
+    return false;
+  }
+  MachCallNode* call = use->as_MachCall();
+  JVMState* jvms = call->jvms();
+  if (jvms == nullptr) {
+    return false;
+  }
+  uint input = jvms->debug_start();
+  for (; input < jvms->debug_end(); input++) {
+    if (call->in(input) == copy) {
+      break;
+    }
+  }
+  if (input >= jvms->debug_end() || input < call->tf()->domain()->cnt() ||
+      input == call->mach_constant_base_node_input() ||
+      !home->out_RegMask().is_infinite_stack() || !call->in_RegMask(input).is_infinite_stack()) {
+    return false;
+  }
+  for (JVMState* state = jvms; state != nullptr; state = state->caller()) {
+    if (state->is_mon(input)) {
+      return false;
+    }
+  }
+  // DOWN is a placement decision, not a stack-only node mask. Preserve the
+  // actual call mask and let gather_lrg_masks intersect it with every home use.
+  // Reject locally bound homes; later Phi/coalescing constraints still go
+  // through the normal allocation and spill/retry machinery.
+  for (DUIterator_Fast imax, i = home->fast_outs(imax); i < imax; i++) {
+    Node* user = home->fast_out(i);
+    for (uint k = 1; k < user->req(); k++) {
+      if (user->in(k) == home && !user->in_RegMask(k).is_infinite_stack()) {
+        return false;
+      }
+    }
+  }
+  call->set_req(input, home);
+#ifndef PRODUCT
+  if (trace_spilling()) {
+    int request = call->is_MachCallStaticJava() ? call->as_MachCallStaticJava()->uncommon_trap_request() : 0;
+    const char* reason = request == 0 ? "none" :
+        Deoptimization::trap_reason_name(Deoptimization::trap_request_reason(request));
+    tty->print_cr("CCDEBUG_HOME copy=N%d home=N%d call=N%d B%u input=%u bci=%d trap=%s oop=%d narrow=%d",
+                  copy->_idx, home->_idx, call->_idx, block->_pre_order, input,
+                  jvms->bci(), reason,
+                  type->isa_oop_ptr(), type->isa_narrowoop() != nullptr);
+  }
+#endif
+  return true;
 }
 
 //------------------------------clone_node----------------------------
@@ -1074,6 +1146,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         JVMState* jvms = n->jvms();
         uint oopoff = jvms ? jvms->oopoff() : cnt;
         uint old_last = cnt - 1;
+        bool removed_debug_copy = false;
         for( inpidx = 1; inpidx < cnt; inpidx++ ) {
           // Derived/base pairs may be added to our inputs during this loop.
           // If inpidx > old_last, then one of these new inputs is being
@@ -1090,6 +1163,20 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             slidx = lrg2reach[useidx];
             Node *def = Reachblock[slidx];
             assert( def != nullptr, "Using Undefined Value in Split()\n");
+
+            if (UseColdCallSpillDeferral && n->is_SpillCopy() &&
+                deflrg.is_singledef() && deflrg._def == n &&
+                forward_debug_use_home(n, debug_defs[slidx], b, insidx)) {
+              // Only the unique Java-state edge was changed. Unlike deleting a
+              // copy after coloring, rebuilding the graph now prevents reuse
+              // of the home's slot by another value live at this call.
+              n->disconnect_inputs(C);
+              b->remove_node(insidx--);
+              b->_ihrp_index--;
+              b->_fhrp_index--;
+              removed_debug_copy = true;
+              break;
+            }
 
             // (+++) %%%% remove this in favor of pre-pass in matcher.cpp
             // monitor references do not care where they live, so just hook
@@ -1344,6 +1431,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             }  // End dup != uup
           }  // End if Spill USE
         }  // End For All Inputs
+        if (removed_debug_copy) {
+          continue; // Skip DEF and mem-mem processing for the deleted copy.
+        }
       }  // End If not nullcheck
 
       // ********** Handle DEFS **********
@@ -1632,6 +1722,27 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   if(!noprogress) {
     tty->print_cr("Failed to make progress in Split");
     //BREAKPOINT;
+  }
+#endif
+  // Inventory the scheduled trap sites as well as successful forwardings, so a
+  // test cannot borrow a same-BCI witness from a different loop clone. Split
+  // changes value edges and copies, not the identity of these call nodes.
+#ifndef PRODUCT
+  if (UseColdCallSpillDeferral && trace_spilling()) {
+    for (uint block_index = 0; block_index < _cfg.number_of_blocks(); block_index++) {
+      Block* block = _cfg.get_block(block_index);
+      for (uint index = 0; index <= block->end_idx(); index++) {
+        Node* node = block->get_node(index);
+        if (node->is_MachCallStaticJava() && node->as_MachCallStaticJava()->jvms() != nullptr) {
+          MachCallStaticJavaNode* call = node->as_MachCallStaticJava();
+          int request = call->uncommon_trap_request();
+          if (request != 0) {
+            tty->print_cr("CCDEBUG_SITE call=N%d bci=%d trap=%s", call->_idx, call->jvms()->bci(),
+                          Deoptimization::trap_reason_name(Deoptimization::trap_request_reason(request)));
+          }
+        }
+      }
+    }
   }
 #endif
   // Return updated count of live ranges

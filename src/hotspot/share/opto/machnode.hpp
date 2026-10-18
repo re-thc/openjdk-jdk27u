@@ -626,6 +626,7 @@ public:
   virtual const class Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const { return _type->ideal_reg(); }
   virtual uint oper_input_base() const { return 1; }
+  bool is_debug_use() const { return _spill_type == DebugUse; }
   uint implementation( C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
 
   virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
