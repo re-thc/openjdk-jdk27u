@@ -60,11 +60,15 @@ public:
     const char** original = NEW_RESOURCE_ARRAY(const char*, count);
     char duplicate[80];
     os::snprintf_checked(duplicate, sizeof(duplicate), "test_symbol_batch_duplicate_%d", count);
+    char cold_duplicate[80];
+    os::snprintf_checked(cold_duplicate, sizeof(cold_duplicate), "test_symbol_batch_cold_duplicate_%d", count);
     TempNewSymbol anchor = SymbolTable::new_symbol(duplicate);
     const int initial_refcount = anchor->refcount();
     int duplicates = 0;
     for (int i = 0; i < count; i++) {
-      if (layout == 1 || (layout == 0 && i % 3 == 1)) {
+      if (layout == 4) {
+        original[i] = cold_duplicate;
+      } else if (layout == 1 || (layout == 0 && i % 3 == 1)) {
         original[i] = "java/lang/Object";
       } else if (layout != 3 && i % 3 == 0) {
         original[i] = duplicate;
@@ -94,6 +98,9 @@ public:
         EXPECT_TRUE(cp->symbol_at(i + 1)->equals(original[i], (int)strlen(original[i])));
         if (layout == 3) {
           EXPECT_EQ(cp->symbol_at(i + 1)->refcount(), pass + 1);
+        } else if (layout == 4) {
+          EXPECT_EQ(cp->symbol_at(i + 1), cp->symbol_at(1));
+          EXPECT_EQ(cp->symbol_at(i + 1)->refcount(), (pass + 1) * count);
         }
         if (pass != 0) {
           EXPECT_EQ(cp->symbol_at(i + 1), pools[0]->symbol_at(i + 1));
@@ -101,9 +108,16 @@ public:
       }
       EXPECT_EQ(anchor->refcount(), initial_refcount + (pass + 1) * duplicates);
     }
+    TempNewSymbol cold_anchor = layout == 4 && count > 0 ? SymbolTable::new_symbol(cold_duplicate) : nullptr;
     MetadataFactory::free_metadata(cld, pools[1]);
+    if (layout == 4 && count > 0) {
+      EXPECT_EQ(cold_anchor->refcount(), count + 1);
+    }
     EXPECT_EQ(anchor->refcount(), initial_refcount + duplicates);
     MetadataFactory::free_metadata(cld, pools[0]);
+    if (layout == 4 && count > 0) {
+      EXPECT_EQ(cold_anchor->refcount(), 1);
+    }
     EXPECT_EQ(anchor->refcount(), initial_refcount);
   }
 };
@@ -111,7 +125,7 @@ public:
 TEST_VM(SymbolTable, batch_reference_ownership) {
   const int counts[] = {0, 1, 15, 16, 17, 257};
   for (int count : counts) {
-    for (int layout = 0; layout < 4; layout++) {
+    for (int layout = 0; layout < 5; layout++) {
       SymbolTableTest::check(count, layout);
     }
   }
@@ -125,7 +139,7 @@ TEST_OTHER_VM(SymbolTable, batch_reference_ownership_alt_hash) {
   }
   const int counts[] = {1, 16, 17, 257};
   for (int count : counts) {
-    for (int layout = 0; layout < 4; layout++) {
+    for (int layout = 0; layout < 5; layout++) {
       SymbolTableTest::check(count, layout);
     }
   }

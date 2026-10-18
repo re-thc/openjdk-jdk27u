@@ -149,8 +149,9 @@ public class BatchedInterning {
         out.writeInt(0xCAFEBABE);
         out.writeShort(0);
         out.writeShort(52);
-        String[] utf8 = { "DuplicateNames", "java/lang/Object", "batchedInterningDuplicate",
-                          "batchedInterningDuplicate", "I", "J" };
+        String duplicate = "batchedInterningDuplicate" + System.nanoTime();
+        String[] utf8 = { "DuplicateNames", "java/lang/Object", duplicate,
+                          duplicate, "I", "J" };
         out.writeShort(1 + utf8.length + 2);
         for (String s : utf8) {
             out.writeByte(1);  // CONSTANT_Utf8, at 1 to 6
@@ -176,10 +177,12 @@ public class BatchedInterning {
         out.flush();
 
         Class<?> c = new Loader().define("DuplicateNames", bytes.toByteArray());
+        // getSymbolRefcount holds one temporary reference in addition to the two CP entries.
+        Asserts.assertEquals(WhiteBox.getWhiteBox().getSymbolRefcount(duplicate), 3);
         Field[] fields = c.getDeclaredFields();
         Asserts.assertEquals(fields.length, 2);
         for (Field f : fields) {
-            Asserts.assertEquals(f.getName(), "batchedInterningDuplicate");
+            Asserts.assertEquals(f.getName(), duplicate);
         }
         Asserts.assertNotEquals(fields[0].getType(), fields[1].getType());
     }
