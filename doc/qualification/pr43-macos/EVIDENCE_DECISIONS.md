@@ -4,8 +4,9 @@ Product head: `3afce4988dc00fba614929d5f6f10c873afde87e`, branch
 `codex/aarch64-consolidated-compiler-fixes`, draft PR43. These decisions close
 the requested read-only reviews for the existing record set. **UNAVAILABLE**
 means the specified evidence cannot be reviewed; it is neither a correctness
-failure nor a review queued for later. No Mac check,
-timing, build, diagnostic dispatch or manual CI rerun was started.
+failure nor a review queued for later. This read-only review started no new
+manual Mac check, build, timing, diagnostic dispatch or CI rerun. The existing
+ordinary CI run continued normally and is now terminal.
 
 | Gate | Outcome | Evidence boundary |
 | --- | --- | --- |
@@ -14,6 +15,7 @@ timing, build, diagnostic dispatch or manual CI rerun was started.
 | Older firstTrue byte64 temporary/register pressure | **UNAVAILABLE** | Same old image pair; neither side's firstTrue allocated-code capture is accessible. The new toLong byte64 semantic/IR control is a different operator and cannot substitute. |
 | Linux CI execution of the SVE launcher | **ACCEPTED** | Job `117574251027` explicitly records `TestByteMaskToLongSVE.java` driver execution and `Passed. Execution successful`. The image/source/artifact identities are below. This is an execution result, not proof of its effective SVE mode or applicable rules. |
 | Detailed Linux SVE exclusion/applicability/phase gate | **UNAVAILABLE** | The retained JTR archive could not be delivered to the executor. Successful `hotspot_pid*.log` phase files are also omitted by the workflow's archive filter. Effective SVE flags, the two applicable SVE rules and their matching phases therefore cannot be inspected. |
+| Current-head ordinary build/tier1 CI | **ACCEPTED** | Run `39079268554`, attempt 1, completed successfully: 57/57 jobs, comprising prepare, eight release/fastdebug builds and all 48 tier1 jobs. Its exact synthetic-merge source, job results and eight build archive identities are retained in [CI_TERMINAL.json](CI_TERMINAL.json). This accepts ordinary execution only. |
 
 No source/test correctness rejection is indicated by these records. Substituting
 the new mask report for the old paired captures, or treating a green aggregate
@@ -118,6 +120,29 @@ A scoped local review record and excerpt are retained under
 `/workspace/pr43-evidence-review-39079268554`; the excerpt SHA256 is
 `1092f1ffd1d64892786545c7e9ace6fe84f22e23a924a8229625b5cd410712bf`.
 
+## Terminal ordinary CI
+
+[Run `39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554),
+attempt 1, was observed completed/success at `2026-10-18 18:28:03 UTC`.
+All 57 jobs passed: prepare, release and fastdebug builds for Linux x64,
+Linux AArch64, macOS AArch64 and Windows x64, and 12 tier1 jobs per platform.
+No job was failed, cancelled or skipped. This was the existing `pull_request`
+run; it was neither dispatched nor rerun by this review.
+
+Its PR head is `3afce4988dc00fba614929d5f6f10c873afde87e`. The actual CI
+synthetic merge is `40ed69081e6968ce4d0cbdd2b20a31c2e2191315`, tree
+`f8aa899a45aed99d4d76116bda4c3e00e5c2cecf`, with parents
+`416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda` and that PR head. The live master
+and product branch were rechecked at reconciliation and still match those
+parents. [CI_TERMINAL.json](CI_TERMINAL.json) records all 57 job IDs/results
+and all eight build artifact IDs, sizes and GitHub-reported archive SHA256s.
+These image/archive identities are separate from the detached-source Mac
+report; no CI image is substituted for an unavailable paired Mac image.
+
+The terminal green result does not supply the missing allocated-code captures,
+effective SVE/applicability records or successful phase logs. Their
+**UNAVAILABLE** outcomes remain unchanged.
+
 ## Acceptance limits
 
 The new mask Mac pass remains exactly scoped to the reported NEON fastdebug
@@ -129,4 +154,5 @@ counts are not a speedup or controlled JDK-version regression result.
 The unavailable reviews are closed for this existing record set. They also do
 not become accepted cost/SVE evidence by default. PR43 remains draft/unmerged;
 any decision to accept those limits is separate from this completed read-only
-review. Ordinary CI is reconciled against its terminal status separately.
+review. Ordinary CI is now reconciled to its terminal success above. No
+requested evidence review or CI reconciliation remains waiting.

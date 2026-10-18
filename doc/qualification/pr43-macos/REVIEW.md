@@ -22,7 +22,7 @@ This branch also contains the separate, cherry-pickable test-only repair
 `d46869ad8a53cd815ba18eedc06900e1be9451be`, applied to PR43 as `456afea88231bc9ebf17dfa48811db90a8bae8b8` and described in
 [UBFX_ASSERTIONS.md](UBFX_ASSERTIONS.md). It changes no compiler/runtime source.
 
-## Historical evidence and remaining review
+## Historical evidence and availability decisions
 
 The user-supplied report `Sentinel_eac712c3944c8191b3618e75bef79647` identifies
 the exact candidate and baseline above. It reports Apple M6 arm64/NEON,
@@ -80,12 +80,15 @@ for this scalar/NEON review.
 
 For the current head, ordinary run
 [`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
-has passed all four Linux builds and all 12 AArch64 tier1 jobs; the overall run
-is not yet complete. It builds merge `40ed69081e6968ce4d0cbdd2b20a31c2e2191315`
+completed successfully with all 57 jobs passed: prepare, all eight
+release/fastdebug builds and all 48 tier1 jobs. Its [terminal receipt](CI_TERMINAL.json)
+retains every job and all eight build archive identities. It builds merge
+`40ed69081e6968ce4d0cbdd2b20a31c2e2191315`
 with master `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`, not the detached Mac
 source tree. Both identities are retained. PR43 remains draft/unmerged, and
 the supplied native result is not a performance go/no-go or an instruction
-count-based speedup claim.
+count-based speedup claim. The requested evidence reviews and terminal CI
+reconciliation are complete; unavailable evidence remains an acceptance limit.
 
 ## Harness minimum
 

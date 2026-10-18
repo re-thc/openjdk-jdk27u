@@ -131,17 +131,19 @@ remain on the Mac and were not independently reprocessed in this checkout.
 The native correctness, matcher and two-method code-generation gates are met
 **as reported**. No remaining ordinary source/test correction is indicated.
 
-## Remaining decision limits
+## CI and evidence limits
 
 Ordinary run
 [`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
 belongs to this source head and tests synthetic merge
 `40ed69081e6968ce4d0cbdd2b20a31c2e2191315` with master
-`416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`. At the 2026-10-18 inspection,
-all four Linux builds and all 12 AArch64 tier1 jobs passed. Ten x64 tier1 jobs
-passed; langtools was running and JDK part 2 was queued. The overall run had
-not completed. Green CI is supporting context, not a substitute for the native
-IR/capture evidence above. No manual workflow or timing was started.
+`416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`. It is now completed/success,
+observed at `2026-10-18 18:28:03 UTC`: all 57 jobs passed, comprising prepare,
+eight release/fastdebug builds and all 48 tier1 jobs across Linux x64,
+Linux AArch64, macOS AArch64 and Windows x64. The [terminal receipt](CI_TERMINAL.json)
+records every job and all eight build archive identities. Green CI is
+supporting execution coverage, not a substitute for the native IR/capture
+evidence above or the detailed SVE gate. No manual workflow or timing was started.
 
 The existing AArch64 fastdebug
 [compiler-part-1 job](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554/job/117574251027)

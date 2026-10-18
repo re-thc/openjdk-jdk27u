@@ -7,7 +7,7 @@ required. This is documentation/test tooling only; it does not change PR43's
 product source or merge it.
 
 The [source and qualification review](REVIEW.md) reconciles the reported native
-Mac result and remaining review scope. [PR_DESCRIPTION.md](PR_DESCRIPTION.md)
+Mac result and evidence availability decisions. [PR_DESCRIPTION.md](PR_DESCRIPTION.md)
 contains the concise body now published to PR43.
 The [UBFX assertion repair](UBFX_ASSERTIONS.md) documents the focused portable
 fixture and its separate test-source identity.
@@ -16,8 +16,10 @@ PR43 now also contains the [byte128 mask-packing prototype](MASK_TO_LONG.md),
 with its final test correction at `3afce4988dc00fba614929d5f6f10c873afde87e`.
 The [focused Mac recipe](MASK_TO_LONG_MAC.md) covers only that new rule.
 The user completed that exact-source check once per stage using recipe commit
-`10bb6e3b487f66c638b8b762e2da9b515b8e57da`; its reported NEON pass and remaining
-CI/SVE/profitability limits are reconciled in [MASK_TO_LONG.md](MASK_TO_LONG.md).
+`10bb6e3b487f66c638b8b762e2da9b515b8e57da`; its reported NEON pass, terminal
+57/57 ordinary CI success and SVE/profitability limits are reconciled in
+[MASK_TO_LONG.md](MASK_TO_LONG.md). [CI_TERMINAL.json](CI_TERMINAL.json) records
+the CI source, every job result and eight build archive identities.
 No repeat of the completed Mac check is requested.
 The [retained-evidence decisions](EVIDENCE_DECISIONS.md) close the older paired
 capture and detailed SVE reviews with explicit availability verdicts and exact
