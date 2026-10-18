@@ -42,12 +42,14 @@ class VectorizedMismatchEventsTarg {
     static int result;
 
     static void compare() {
-        byte[] a = new byte[256];
-        byte[] b = new byte[256];
-        b[200] = 1;
-        result = Arrays.mismatch(a, b);
-        if (result != 200) {
-            throw new AssertionError("mismatch " + result);
+        for (int length : new int[] {256, 1024}) {
+            byte[] a = new byte[length];
+            byte[] b = new byte[length];
+            b[length - 56] = 1;
+            result = Arrays.mismatch(a, b);
+            if (result != length - 56) {
+                throw new AssertionError("mismatch " + result);
+            }
         }
     }
 

@@ -426,6 +426,9 @@ public class ArraysSupport {
         return result;
     }
 
+    private static final int MISMATCH_INLINE_BYTES = 512;
+    private static final int MISMATCH_ADMISSION_BYTES = 128;
+
     // The caller has at least one word; compare at most the first two words.
     private static int mismatchPrefix(Object a, long aOffset, Object b, long bOffset,
                                       int length, int log2ArrayIndexScale) {
@@ -721,7 +724,8 @@ public class ArraysSupport {
                     length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
             if (i >= 0) return i;
             if (i < 0 && length <= (16 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)) return -1;
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_BOOLEAN_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
@@ -833,7 +837,8 @@ public class ArraysSupport {
                     length, LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0) return i;
             if (i < 0 && length <= (16 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) return -1;
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_BYTE_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
@@ -913,7 +918,8 @@ public class ArraysSupport {
                     length, LOG2_ARRAY_CHAR_INDEX_SCALE);
             if (i >= 0) return i;
             if (i < 0 && length <= (16 >> LOG2_ARRAY_CHAR_INDEX_SCALE)) return -1;
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_CHAR_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_CHAR_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_CHAR_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_CHAR_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
@@ -987,7 +993,8 @@ public class ArraysSupport {
                     length, LOG2_ARRAY_SHORT_INDEX_SCALE);
             if (i >= 0) return i;
             if (i < 0 && length <= (16 >> LOG2_ARRAY_SHORT_INDEX_SCALE)) return -1;
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_SHORT_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_SHORT_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_SHORT_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_SHORT_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
@@ -1061,7 +1068,8 @@ public class ArraysSupport {
                     length, LOG2_ARRAY_INT_INDEX_SCALE);
             if (i >= 0) return i;
             if (i < 0 && length <= (16 >> LOG2_ARRAY_INT_INDEX_SCALE)) return -1;
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_INT_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_INT_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_INT_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_INT_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
@@ -1128,12 +1136,13 @@ public class ArraysSupport {
             if (!matched) return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
             long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_FLOAT_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_FLOAT_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_FLOAT_INDEX_SCALE, 8);
             if (prefixMismatch >= 0) {
-                if (Float.floatToIntBits(a[aFromIndex + prefixMismatch]) !=
-                        Float.floatToIntBits(b[bFromIndex + prefixMismatch])) return prefixMismatch;
+                if (!Float.isNaN(a[aFromIndex + prefixMismatch]) ||
+                        !Float.isNaN(b[bFromIndex + prefixMismatch])) return prefixMismatch;
                 return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
             }
             if (length == prefixLength) return -1;
@@ -1209,7 +1218,8 @@ public class ArraysSupport {
             if (length == 2) return -1;
             aOffset -= Long.BYTES;
             bOffset -= Long.BYTES;
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_LONG_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_LONG_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_LONG_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_LONG_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
@@ -1269,12 +1279,13 @@ public class ArraysSupport {
             if (!matched) return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
             long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
-            int prefixLength = Math.min(length, 128 >> LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_DOUBLE_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_DOUBLE_INDEX_SCALE;
             int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
                     prefixLength, LOG2_ARRAY_DOUBLE_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) {
-                if (Double.doubleToLongBits(a[aFromIndex + prefixMismatch]) !=
-                        Double.doubleToLongBits(b[bFromIndex + prefixMismatch])) return prefixMismatch;
+                if (!Double.isNaN(a[aFromIndex + prefixMismatch]) ||
+                        !Double.isNaN(b[bFromIndex + prefixMismatch])) return prefixMismatch;
                 return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
             }
             if (length == prefixLength) return -1;

@@ -72,7 +72,8 @@ public class AArch64ArrayMismatchCallBoundaryTest {
     private static final int[] SCALES = {0, 0, 1, 1, 2, 3, 2, 3};
     private static final int[] BYTES = {
         0, 1, 7, 8, 9, 15, 16, 17, 25, 63, 64, 65, 82,
-        127, 128, 129, 255, 256, 257, 2047, 2048, 2049,
+        127, 128, 129, 255, 256, 257, 511, 512, 513, 514, 516, 520,
+        2047, 2048, 2049,
         4096, 65535, 65536, 65537, 131072
     };
     private static final String MARKER = "ARRAY-CALL-BOUNDARY ";
@@ -322,15 +323,24 @@ public class AArch64ArrayMismatchCallBoundaryTest {
     }
 
     private static void floatingPoint() {
-        for (int position : new int[] {0, 1, 3, 4, 7, 8, 15, 16, 25, 31, 32, 82, 127, 128, 1267}) {
-            float[] fa = new float[2049], fb = new float[2049];
-            double[] da = new double[2049], db = new double[2049];
+        for (int length : new int[] {3, 4, 8, 16, 31, 32, 33, 63, 64, 65, 127, 128, 129, 2049}) {
+            floatingPoint(length);
+        }
+    }
+
+    private static void floatingPoint(int length) {
+        for (int position : new int[] {0, 1, 3, 4, 7, 8, 15, 16, 25, 31, 32, 82, 127, 128, 1267, length - 1}) {
+            if (position >= length) continue;
+            float[] fa = new float[length], fb = new float[length];
+            double[] da = new double[length], db = new double[length];
             fa[position] = Float.intBitsToFloat(position % 2 == 0 ? 0xff800001 : 0x7fc00001);
             fb[position] = Float.intBitsToFloat(position % 3 == 0 ? 0xffc00002 : 0x7f800002);
             da[position] = Double.longBitsToDouble(position % 2 == 0 ? 0xfff0000000000001L : 0x7ff8000000000001L);
             db[position] = Double.longBitsToDouble(position % 3 == 0 ? 0xfff8000000000002L : 0x7ff0000000000002L);
             check(floatRange(fa, 0, fa.length, fb, 0, fb.length), -1, "float NaNs");
             check(doubleRange(da, 0, da.length, db, 0, db.length), -1, "double NaNs");
+            check(Arrays.mismatch(fa, fb), -1, "float whole NaNs");
+            check(Arrays.mismatch(da, db), -1, "double whole NaNs");
             fb[position] = 1;
             db[position] = 1;
             check(floatRange(fa, 0, fa.length, fb, 0, fb.length), position, "float only a NaN");
@@ -345,12 +355,14 @@ public class AArch64ArrayMismatchCallBoundaryTest {
             fb[position] = Float.intBitsToFloat(0x7fc00001);
             da[position] = Double.longBitsToDouble(0xfff0000000000001L);
             db[position] = Double.longBitsToDouble(0x7ff8000000000001L);
-            fb[position + 1] = 1;
-            db[position + 1] = 1;
-            fb[2000] = 1;
-            db[2000] = 1;
-            check(floatRange(fa, 0, fa.length, fb, 0, fb.length), position + 1, "float after NaNs");
-            check(doubleRange(da, 0, da.length, db, 0, db.length), position + 1, "double after NaNs");
+            if (position + 1 < length) {
+                fb[position + 1] = 1;
+                db[position + 1] = 1;
+                fb[length - 1] = 1;
+                db[length - 1] = 1;
+                check(floatRange(fa, 0, fa.length, fb, 0, fb.length), position + 1, "float after NaNs");
+                check(doubleRange(da, 0, da.length, db, 0, db.length), position + 1, "double after NaNs");
+            }
             fb[position] = -0.0f;
             fa[position] = 0.0f;
             db[position] = -0.0;
