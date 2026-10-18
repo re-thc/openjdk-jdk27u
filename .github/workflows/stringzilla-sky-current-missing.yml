@@ -1,0 +1,328 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+# No JVM build: only the 77 previously unmeasured current-source SKY triplets.
+name: StringZilla current source missing AVX-512 controls
+on:
+  push:
+    branches: [codex/stringzilla-sky-current-missing]
+    paths: [.github/workflows/stringzilla-sky-current-missing.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-current-e036-sky-missing-v1
+  cancel-in-progress: false
+env:
+  SOURCE: e036e637a5aff1e2506ff82953a3fbd9fdba6a9d
+  GH_TOKEN: ${{ github.token }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+jobs:
+  measure:
+    name: Missing SKY slot ${{ matrix.slot }} on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {slot: '0', runner: ubuntu-22.04}
+          - {slot: '1', runner: ubuntu-24.04}
+          - {slot: '2', runner: ubuntu-26.04}
+          - {slot: '3', runner: ubuntu-26.04}
+    env:
+      EXPECTED_CONTAINER_IMAGE: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+      SKY_WORKER_NAME: Missing SKY slot ${{ matrix.slot }} on ${{ matrix.runner }}
+      SKY_HOST_LABEL: ${{ matrix.runner }}
+      SKY_SLOT: ${{ matrix.slot }}
+    timeout-minutes: 360
+    steps:
+      - name: Install only eligibility and artifact API dependencies
+        shell: bash
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python-is-python3 gh ca-certificates libstdc++6 libc6
+      - name: Record native CPU and source eligibility without compiler images or timings
+        id: eligibility
+        shell: python
+        run: |
+          import base64, hashlib, json, os, subprocess, sys
+          from pathlib import Path
+          ref = os.environ["GITHUB_SHA"]
+          path = ".github/scripts/stringzilla-sky-current-election.py"
+          payload = json.loads(subprocess.check_output(["gh", "api",
+              "repos/re-thc/openjdk-jdk27u/contents/" + path + "?ref=" + ref], text=True))
+          assert payload["type"] == "file" and payload["path"] == path and payload["encoding"] == "base64"
+          data = base64.b64decode(payload["content"])
+          assert hashlib.sha1(("blob " + str(len(data)) + "\0").encode() + data).hexdigest() == payload["sha"]
+          target = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-current-election.py"
+          target.write_bytes(data)
+          print("STRINGZILLA_SKY_ALGORITHM " + json.dumps({"head": ref, "git_blob": payload["sha"],
+              "sha256": hashlib.sha256(data).hexdigest()}), flush=True)
+          subprocess.run([sys.executable, str(target), "probe"], check=True)
+      - name: Publish this slot's immutable eligibility fact
+        id: fact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-sky-fact-${{ github.run_id }}-${{ matrix.slot }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.eligibility.outputs.folder }}/eligibility.json
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Verify ALLFOUR facts then choose MIN eligible slot on ${{ steps.eligibility.outputs.cpu_model }}
+        id: elected
+        env:
+          FACT_ARTIFACT_ID: ${{ steps.fact.outputs.artifact-id }}
+          FACT_ARTIFACT_DIGEST: ${{ steps.fact.outputs.artifact-digest }}
+        shell: python
+        run: |
+          import subprocess, sys, os
+          from pathlib import Path
+          path = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-current-election.py"
+          subprocess.run([sys.executable, str(path), "select"], check=True)
+      - name: Selected slot ${{ steps.elected.outputs.selected_slot }} CPU ${{ steps.elected.outputs.selected_cpu }} installs native dependencies
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: bash
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git gcc-16 libc6-dev tar unzip binutils
+          test "$(gcc-16 -dumpversion)" = 16
+          gcc-16 -x c -fsanitize=address,undefined,alignment -fno-sanitize-recover=all -o "$RUNNER_TEMP/native-dependencies-smoke" - <<'EOF'
+          #include <sys/stat.h>
+          #include <dirent.h>
+          #include <sys/param.h>
+          #include <unistd.h>
+          #include <stddef.h>
+          #include <stdint.h>
+          #include <sys/types.h>
+          #include <fcntl.h>
+          #include <errno.h>
+          #include <signal.h>
+          #include <sys/socket.h>
+          #include <limits.h>
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
+          #include <cpuid.h>
+          #include <immintrin.h>
+          int main(void) { return 0; }
+          EOF
+          ASAN_OPTIONS=abort_on_error=1:detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 "$RUNNER_TEMP/native-dependencies-smoke"
+      - name: Checkout frozen source and benchmark helper
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e036e637a5aff1e2506ff82953a3fbd9fdba6a9d
+          persist-credentials: false
+      - name: Checkout original source identity
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout exact frozen pilot driver helpers and collector
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: f7003b74572a93b774ffb9fe79fcc35a3efcdcb0
+          path: pilot
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout exact frozen S54 supplement driver and manifests
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 5eb741f73bc6cce9478793ba2101d719a40d3fc7
+          path: losses
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout this isolated missing-tier replay
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Persist exact checkout ownership exceptions for container subprocess Git
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: python
+        run: |
+          import json, os, subprocess
+          from pathlib import Path
+          roots = [Path.cwd(), *(Path.cwd() / name for name in ("baseline", "pilot", "losses", "auxiliary"))]
+          for root in roots:
+              subprocess.run(["git", "config", "--global", "--add", "safe.directory", str(root.resolve())], check=True)
+          print("STRINGZILLA_MISSING_GIT_CONTEXT " + json.dumps({
+              "home": os.environ.get("HOME"), "uid": os.getuid(), "gid": os.getgid(),
+              "roots": [{"path": str(root), "owner_uid": root.stat().st_uid,
+                         "git_owner_uid": (root / ".git").stat().st_uid} for root in roots]}), flush=True)
+          for root in roots:
+              result = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                                      text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+              print(str(root) + ": " + result.stdout, end="", flush=True)
+              result.check_returncode()
+      - name: Verify three current zero-timing ZIPs and preserved qualified C1
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: python
+        run: |
+          import py_compile, subprocess, sys
+          path = 'auxiliary/.github/scripts/stringzilla-sky-current-missing.py'
+          py_compile.compile(path, doraise=True)
+          py_compile.compile('pilot/.github/scripts/stringzilla-candidate-pilot.py', doraise=True)
+          subprocess.run([sys.executable, path, 'preflight'], check=True)
+      - name: Restore archived complete pair and attest actual SKY runtime and native contracts
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-sky-current-missing.py', 'prepare'], check=True)
+      - name: Measure only missing current SKY interpreter and C2 projections plus S54 C2
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-sky-current-missing.py', 'measure'], check=True)
+      - name: Preserve separate ABC and primary raw results and all original skip receipts
+        if: always() && steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-sky-current-missing-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain zero-timing nonselected decisions without replacement
+        if: always()
+        env:
+          FACT_OUTCOME: ${{ steps.fact.outcome }}
+          ELECTED_OUTCOME: ${{ steps.elected.outcome }}
+          SELECTED: ${{ steps.elected.outputs.selected }}
+        shell: python
+        run: |
+          import json, os
+          from pathlib import Path
+          folder = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-sky-election"
+          if folder.exists():
+              proof = json.loads((folder / "eligibility.json").read_text())
+              decision = {"run_id": proof["run_id"], "head": proof["head"], "job_id": proof["job"]["id"],
+                  "slot": proof["slot"], "available": proof["available"],
+                  "fact_outcome": os.environ["FACT_OUTCOME"], "elected_outcome": os.environ["ELECTED_OUTCOME"],
+                  "selected": os.environ["SELECTED"]}
+              if os.environ["ELECTED_OUTCOME"] != "success" or os.environ["SELECTED"] != "true":
+                  decision.update(timed_records=0, images_restored=False, reason="not-elected")
+                  (folder / "SKIPPED.json").write_text(json.dumps(decision, indent=2) + "\n")
+              (folder / "decision.json").write_text(json.dumps(decision, indent=2) + "\n")
+              print("STRINGZILLA_SKY_ELECTION_DECISION " + json.dumps(decision, separators=(",", ":")), flush=True)
+      - name: Retain each worker election outcome
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-sky-probe-final-${{ github.sha }}-${{ matrix.slot }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.eligibility.outputs.folder }}
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+  collect:
+    if: ${{ !cancelled() }}
+    needs: measure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout frozen source and benchmark helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e036e637a5aff1e2506ff82953a3fbd9fdba6a9d
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/stringzilla-performance.py
+            doc/stringzilla/native-cases.tsv
+      - name: Checkout exact frozen pilot driver helpers and collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: f7003b74572a93b774ffb9fe79fcc35a3efcdcb0
+          path: pilot
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout exact frozen S54 supplement driver and manifests
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 5eb741f73bc6cce9478793ba2101d719a40d3fc7
+          path: losses
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout this isolated missing-tier replay
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout original source identity for external ABC validation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+          sparse-checkout: README.md
+      - name: Bind separate ABC and primary logs to the successful actual worker
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-sky-current-missing.py', 'collection'], check=True)
+      - name: Strictly collect 77 unique triplets and every higher enabled mean
+        shell: node {0}
+        run: |
+          const fs = require("fs");
+          const crypto = require("crypto");
+          const collectorBytes = fs.readFileSync("pilot/.github/scripts/stringzilla-collector.js");
+          if (crypto.createHash("sha256").update(collectorBytes).digest("hex") !==
+              "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26") throw Error("Strict collector changed");
+          const collect = Function("return (" + fs.readFileSync("pilot/.github/scripts/stringzilla-collector.js", "utf8") + ")")();
+          const abcBytes = fs.readFileSync("pilot/.github/scripts/stringzilla-periodic-collector.js");
+          if (crypto.createHash("sha256").update(abcBytes).digest("hex") !==
+              "ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4") throw Error("ABC collector changed");
+          const collectABC = Function("return (" + abcBytes.toString("utf8") + ")")();
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          const expected = new Set(input.expected_physical_keys), seen = new Set(), all = [];
+          const table = [
+            "| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | Higher enabled mean |",
+            "| --- | --- | --- | ---: | ---: | ---: | --- |"
+          ];
+          for (const entry of input.entries) {
+            const collector = entry.kind === "abc" ? collectABC : collect;
+            const result = collector(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+              entry.manifest, entry.source, entry.base, entry.expected);
+            for (const group of result.groups) {
+              const enabled = group.controls.enabled;
+              const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+              const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+              if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate physical configuration: " + key);
+              seen.add(key);
+              const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean);
+              const cells = ["original", "enabled", "disabled"].map(control =>
+                group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+              table.push("| " + [entry.backend, group.tier, group.case, ...cells, higher.join(", ") || "-"].join(" | ") + " |");
+            }
+            all.push(result);
+          }
+          if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
+          if (seen.size !== 77 || all.length !== 5) throw Error("Incomplete current SKY interpreter/C2/S54 matrix");
+          fs.writeFileSync("perf-output/qualification.json", JSON.stringify({
+            source: process.env.SOURCE, triplets: seen.size, records: seen.size * 3, shards: all,
+            recovery: input.recovery, compilation_proofs: input.compilation_proofs
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/QUALIFICATION.md",
+            "Only the previously unmeasured current-source SKY interpreter32, C244 and S54C2one triplets are accepted; qualified C1 is preserved and all controls, raw samples and higher enabled means are retained.\n\n" +
+            table.join("\n") + "\n");
+          console.log("Qualified " + seen.size + " unique triplets across " + all.length + " backend/tier shards.");
+      - name: Retain strict missing-tier evidence and all controls
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-sky-current-missing-qualified-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
