@@ -1,0 +1,37 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla zero-timing eligibility cleanup
+on:
+  push:
+    branches: [codex/stringzilla-zero-timing-cleanup-39164738566]
+    paths: [.github/workflows/stringzilla-zero-timing-cleanup.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-final-qualification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify the superseded run identity
+        shell: python
+        run: |
+          import json, os, subprocess, time
+          assert os.environ["GITHUB_REF"] == "refs/heads/codex/stringzilla-zero-timing-cleanup-39164738566"
+          deadline = time.monotonic() + 110
+          while True:
+              run = json.loads(subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/39164738566"], text=True, timeout=15))
+              assert run["head_sha"] == "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+              assert run["workflow_id"] == 388761049
+              if run["status"] == "completed":
+                  break
+              assert time.monotonic() < deadline, "Superseded run cancellation did not finish"
+              time.sleep(5)
+          print(json.dumps({"superseded_run": run["id"], "head": run["head_sha"], "conclusion": run["conclusion"], "zero_timing_proof": "7c9d98c5dd34c5eeb015e751811f273c2e1d4be4"}))
