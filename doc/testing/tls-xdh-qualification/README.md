@@ -20,12 +20,14 @@ Use these exact files together:
 | `NativeClientHelloProbe.java` | `9d7915abe0626997d332ae34c4e4ade15bcc75e215bb01c7050ba02075c18223` |
 | `NativeHandshakeProbe.java` | `f4b89dc09c8272533856407fcad88a20856067d3b819799817d48a6c84126216` |
 
-Their helpers are `test/jdk/sun/security/ssl/NamedGroup/CustomXDHParameters.java`
+Use `test/jdk/sun/security/ssl/NamedGroup/CustomXDHParameters.java` from
+[commit ba3bb8e2](https://github.com/re-thc/openjdk-jdk27u/blob/ba3bb8e2c1622ca6c65eebf51fcb020b20ecb229/test/jdk/sun/security/ssl/NamedGroup/CustomXDHParameters.java)
 and `test/jdk/javax/net/ssl/templates/SSLContextTemplate.java` from
-[commit ba3bb8e2](https://github.com/re-thc/openjdk-jdk27u/tree/ba3bb8e2c1622ca6c65eebf51fcb020b20ecb229/test/jdk).
-The helper SHA256 values are respectively
+[commit fe381d6f](https://github.com/re-thc/openjdk-jdk27u/blob/fe381d6f56c2cd2e7f02dd572ffa74116ba6293b/test/jdk/javax/net/ssl/templates/SSLContextTemplate.java).
+The latter uses PKCS12, which is required after the JKS removal. The helper
+SHA256 values are respectively
 `4360561c70e7fbdb46298ca00e259de555ac793353c0e1fe9c19abe3846dfb4f` and
-`4e67bf89ad5cb3bf2b15f6a56581730edc25ad755a41510bd78e912a7b0700d7`.
+`e62bde69acd042760c6a48189c3e8dc6f8b10ea38923212e004502e1aa8e28ea`.
 
 Place the four sources in a separate fixture directory. With `CANDIDATE_JDK`
 pointing to a full candidate image and `CLASSES` to an external output directory:
