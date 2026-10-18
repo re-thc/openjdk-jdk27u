@@ -1,0 +1,76 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla second isolated native candidate screen
+on:
+  push:
+    branches: [codex/stringzilla-native-screen2]
+    paths: [.github/workflows/stringzilla-native-screen2.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-native-screen2
+  cancel-in-progress: false
+jobs:
+  component:
+    name: Native ${{ matrix.backend }} baseline459 and changed candidate controls
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: neon
+            runner: ubuntu-26.04-arm
+          - backend: serial
+            runner: ubuntu-26.04
+          - backend: avx2
+            runner: ubuntu-26.04
+          - backend: avx512
+            runner: ubuntu-26.04
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout unchanged production kernel and vendored library
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+      - name: Checkout isolated candidates and unchanged fixture definitions
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Check auxiliary Python syntax before setup
+        shell: python
+        run: |
+          import py_compile
+          py_compile.compile("auxiliary/.github/scripts/stringzilla-native-screen2.py", doraise=True)
+      - name: Install GCC16 and artifact inspection tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 binutils gh
+          gcc-16 --version
+          test "$(gcc-16 -dumpversion)" = 16
+      - name: Extract old ARM assembly then validate and measure changed native candidates
+        shell: python
+        env:
+          COMPONENT_BACKEND: ${{ matrix.backend }}
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, "auxiliary/.github/scripts/stringzilla-native-screen2.py",
+                          "--backend", os.environ["COMPONENT_BACKEND"]], check=True)
+      - name: Retain every raw sample input assembly and validation receipt
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-native-screen2-${{ matrix.backend }}-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: component-output
+          if-no-files-found: error
+          retention-days: 30
