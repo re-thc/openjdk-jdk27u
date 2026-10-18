@@ -32,7 +32,7 @@ jobs:
       - name: Checkout measured candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 23cf4f8af4bc54751b15d0ae9bfe7cc7424f585d
+          ref: e2bb20b95a65f7c19a62f2ebeeb6d7ca4ca6a31e
           persist-credentials: false
 
       - name: Install GCC 16
@@ -48,7 +48,12 @@ jobs:
           ASAN_OPTIONS: abort_on_error=1:detect_leaks=1:strict_string_checks=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
-          mkdir -p native-validation
+          mkdir -p native-validation/include
+          . make/conf/version-numbers.conf
+          sed -e "s/@@VERSION_CLASSFILE_MAJOR@@/${DEFAULT_VERSION_CLASSFILE_MAJOR}/g" \
+              -e "s/@@VERSION_CLASSFILE_MINOR@@/${DEFAULT_VERSION_CLASSFILE_MINOR}/g" \
+              src/java.base/share/native/include/classfile_constants.h.template \
+              > native-validation/include/classfile_constants.h
           git rev-parse HEAD > native-validation/source.txt
           gcc-16 --version > native-validation/compiler.txt
           sha256sum src/java.base/share/native/libjava/StringZillaKernels.c \
@@ -76,6 +81,7 @@ jobs:
             -fsanitize=address,undefined,alignment -fno-sanitize-recover=all
             -Wno-unknown-pragmas
             "-I$GITHUB_WORKSPACE"
+            "-I$GITHUB_WORKSPACE/native-validation/include"
             "-I$GITHUB_WORKSPACE/src/java.base/share/native/libjava"
             "-I$GITHUB_WORKSPACE/src/java.base/share/native/libjava/stringzilla"
             "-I$GITHUB_WORKSPACE/src/java.base/share/native/include"
