@@ -26,10 +26,12 @@
  * @test id=portable
  * @summary Wide String, non-array charset buffers and segment conversion preserve fallback semantics
  * @modules java.base/jdk.internal.access java.base/jdk.internal.util:+open java.base/java.lang:+open java.base/sun.nio.cs
+ * @run main/othervm SimdUTFWideTest
  * @run main/othervm -XX:SIMDUTFMinLength=16 SimdUTFWideTest
  * @run main/othervm -Xint -XX:SIMDUTFMinLength=16 SimdUTFWideTest
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics SimdUTFWideTest
  * @run main/othervm -XX:-CompactStrings -XX:SIMDUTFMinLength=16 SimdUTFWideTest
+ * @run main/othervm -XX:-CompactStrings SimdUTFWideTest
  */
 
 /*
@@ -43,6 +45,7 @@
  * @test id=compiled
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @modules java.base/jdk.internal.access java.base/jdk.internal.util:+open java.base/java.lang:+open java.base/sun.nio.cs
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 SimdUTFWideTest
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:SIMDUTFMinLength=16 SimdUTFWideTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:SIMDUTFMinLength=16 SimdUTFWideTest
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=16 SimdUTFWideTest
@@ -51,12 +54,18 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.charset.*;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
@@ -529,6 +538,46 @@ public class SimdUTFWideTest {
         }
     }
 
+    private static void concurrentStringInput() throws Exception {
+        VarHandle word = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+        for (String name : new String[]{"UTF-16LE", "UTF-32LE"}) {
+            Charset cs = Charset.forName(name);
+            byte[] bytes = ("\u6f22" + "a".repeat(1023)).getBytes(cs);
+            int suffix = name.equals("UTF-16LE") ? 'a' << 16 : 0;
+            AtomicBoolean stop = new AtomicBoolean();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            CountDownLatch ready = new CountDownLatch(1);
+            Thread mutator = Thread.ofPlatform().unstarted(() -> {
+                try {
+                    word.set(bytes, 0, suffix | 0x6f22);
+                    ready.countDown();
+                    while (!stop.get()) {
+                        word.set(bytes, 0, suffix | 0x00e9);
+                        Thread.yield();
+                        word.set(bytes, 0, suffix | 0x6f22);
+                        Thread.yield();
+                    }
+                } catch (Throwable ex) {
+                    failure.set(ex);
+                } finally {
+                    ready.countDown();
+                }
+            });
+            mutator.start();
+            try {
+                ready.await();
+                for (int i = 0; i < 2000; i++) {
+                    String text = new String(bytes, cs);
+                    check(text.equals(new String(text.toCharArray())), name + " stable String value");
+                }
+            } finally {
+                stop.set(true);
+                mutator.join();
+            }
+            check(failure.get() == null, name + " mutator: " + failure.get());
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length == 1 && args[0].equals("tinySegment")) {
             tinySegment();
@@ -548,6 +597,7 @@ public class SimdUTFWideTest {
             segments(cs);
         }
         subclassCharsets();
+        concurrentStringInput();
         System.out.println("PASS wide conversion checks=" + checks);
     }
 }

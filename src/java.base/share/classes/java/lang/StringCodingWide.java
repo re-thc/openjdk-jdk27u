@@ -141,9 +141,13 @@ final class StringCodingWide {
         }
         int units = len / kind.unit;
         boolean latin1 = String.COMPACT_STRINGS;
+        int nonLatinIndex = -1;
         for (int i = 0; i < len; i += kind.unit) {
             int cp = unit(src, segment, off + i, kind.unit, big);
-            latin1 &= cp >= 0 && cp <= 255;
+            if (latin1 && (cp < 0 || cp > 255)) {
+                nonLatinIndex = i / kind.unit + units - len / kind.unit;
+                latin1 = false;
+            }
             if (kind.unit == 4) {
                 // Java's UTF-32 decoder accepts surrogate-valued code points.
                 // Leave that dialect, and malformed input, to its decoder.
@@ -166,10 +170,13 @@ final class StringCodingWide {
                 ? SimdUTF.isEligibleUTF32Decoding(len) : SimdUTF.isEligible(len))) return null;
         byte[] value = StringUTF16.newBytesFor(units);
         if (src != null) {
+            if (kind.unit == 4 && SimdUTF.useScalarUTF32StringDecoding(len)) {
+                return decodeShortUTF32(src, (int)off, len, value, units, nonLatinIndex, big);
+            }
             int written = kind.unit == 2
                     ? SimdUTF.decodeUTF16Bytes(src, (int)off, len, value, 0, units, big)
                     : SimdUTF.decodeUTF32Bytes(src, (int)off, len, value, 0, units, big);
-            return written == units ? new String(value, String.UTF16) : null;
+            return written == units ? newUTF16String(value, nonLatinIndex) : null;
         }
         byte[] bytes = new byte[Math.min(len, 8192)];
         int consumed = 0;
@@ -189,7 +196,32 @@ final class StringCodingWide {
             consumed += size;
             written += count;
         }
-        return written == units ? new String(value, String.UTF16) : null;
+        return written == units ? newUTF16String(value, nonLatinIndex) : null;
+    }
+
+    private static String newUTF16String(byte[] value, int nonLatinIndex) {
+        // Input may change between the Latin-1 scan and conversion.
+        if (String.COMPACT_STRINGS && (nonLatinIndex < 0
+                || StringUTF16.getChar(value, nonLatinIndex) <= 255)) return null;
+        return new String(value, String.UTF16);
+    }
+
+    private static String decodeShortUTF32(byte[] src, int off, int len,
+                                          byte[] value, int capacity, int nonLatinIndex, boolean big) {
+        int written = 0;
+        for (int end = off + len; off < end; off += 4) {
+            int cp = UNSAFE.getIntUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + (long)off, big);
+            if (!Character.isValidCodePoint(cp) || cp >= 0xd800 && cp <= 0xdfff) return null;
+            int size = cp >= 0x10000 ? 2 : 1;
+            if (size > capacity - written) return null;
+            if (size == 1) {
+                StringUTF16.putChar(value, written++, cp);
+            } else {
+                StringUTF16.putChar(value, written++, Character.highSurrogate(cp));
+                StringUTF16.putChar(value, written++, Character.lowSurrogate(cp));
+            }
+        }
+        return written == capacity ? newUTF16String(value, nonLatinIndex) : null;
     }
 
     private static int decodeTail(byte[] src, int len, byte[] dst, int dp, int capacity,
