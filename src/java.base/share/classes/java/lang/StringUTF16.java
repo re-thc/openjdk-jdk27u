@@ -1207,6 +1207,17 @@ final class StringUTF16 {
                 return -1;
             }
             fromIndex = candidateEnd - last;
+            if (StringZilla.MSVC_SERIAL && StringZilla.compilerTier() == StringZilla.C2
+                    && fromIndex <= 1 && tgtCount <= (StringZilla.MAX_BYTES >> 1)) {
+                int bytes = tgtCount << 1;
+                if (ArraysSupport.mismatch(src, fromIndex << 1, tgt, 0, bytes) < 0) {
+                    return fromIndex;
+                }
+                if (fromIndex == 0) {
+                    return -1;
+                }
+                return ArraysSupport.mismatch(src, 0, tgt, 0, bytes) < 0 ? 0 : -1;
+            }
         }
         int searchLength = fromIndex + tgtCount;
         if (searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1) && StringZilla.ENABLED) {

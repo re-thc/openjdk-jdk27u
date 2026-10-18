@@ -99,6 +99,7 @@ public class TestStringZillaDispatch {
             boolean serialC2 = backend == 0 && expectedTier == 4;
             boolean avx2C2 = backend == 1 && expectedTier == 4;
             boolean msvcC2 = msvcSerial && expectedTier == 4;
+            boolean msvcC1 = msvcSerial && expectedTier == 1;
             boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
             boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
             boolean neonC1 = backend == 4 && expectedTier == 1;
@@ -148,8 +149,8 @@ public class TestStringZillaDispatch {
             check(utf16, 512, 129, true);
             check(utf16, 128, 33, !shortUTF16C2);
             check(utf16, 129, 128, !shortUTF16C2);
-            check(utf16, 129, 129, !longUTF16C1 && !shortUTF16C2);
-            check(utf16, 130, 129, !longUTF16C1 && !shortUTF16C2);
+            check(utf16, 129, 129, msvcC1 || (!longUTF16C1 && !shortUTF16C2));
+            check(utf16, 130, 129, msvcC1 || (!longUTF16C1 && !shortUTF16C2));
             check(utf16, 135, 129, !longUTF16C1 && !shortUTF16C2);
             check(utf16, 136, 129, !shortUTF16C2);
             check(utf16, 137, 129, !shortUTF16C2);
@@ -264,6 +265,20 @@ public class TestStringZillaDispatch {
     }
 
     private static void checkNarrowCandidates(Method search) throws Exception {
+        for (int count : new int[]{128, 129, 130, 1023, 1024, 32768, 32769}) {
+            String repeated = "\u0401".repeat(count);
+            String prefix = "\u0402" + repeated.substring(1);
+            String suffix = repeated.substring(0, count - 1) + "\u0402";
+            String interior = repeated.substring(0, count - 2) + "\u0501\u0401";
+            for (int from : new int[]{0, 1, Integer.MAX_VALUE}) {
+                checkReverse(search, repeated, repeated, from, 0);
+                checkReverse(search, repeated + "\u0401", repeated, from, Math.min(from, 1));
+                checkReverse(search, repeated + "\u0401", suffix, from, -1);
+                checkReverse(search, repeated + "\u0401", interior, from, -1);
+                checkReverse(search, prefix + "\u0401", prefix, from, 0);
+                checkReverse(search, "\u0401" + prefix, prefix, from, from < 1 ? -1 : 1);
+            }
+        }
         for (int count : new int[]{257, 258, 511}) {
             String repeated = "a".repeat(count);
             String prefix = "b" + repeated.substring(1);

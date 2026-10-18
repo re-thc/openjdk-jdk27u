@@ -303,6 +303,10 @@ final class StringZilla {
         if (tier == 0) {
             return true;
         }
+        if (MSVC_SERIAL && tier == C1 && count > 128 && length - count <= 1
+                && (long)length * count <= MAX_WORK / 4) {
+            return true;
+        }
         if (MSVC_SERIAL && tier == C2 && count <= 128) {
             return false;
         }

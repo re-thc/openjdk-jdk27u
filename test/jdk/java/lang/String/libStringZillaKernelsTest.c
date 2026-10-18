@@ -257,6 +257,118 @@ static jint check_kernels(void) {
             }
         }
 
+        // Serial probes cover immediate matches and repeated-suffix contrast
+        // outside the fixed samples, including a 511-byte needle.
+        const jint serial_counts[] = {5, 8, 16, 32, 64, 256, 257, 258, 511, 512};
+        const jint serial_spans[] = {0, 1, 2, 31, 32, 47, 63, 64, 65, 96, 512};
+        char serial_source[1040], serial_target[520];
+        for (unsigned int n = 0; n < sizeof(serial_counts) / sizeof(serial_counts[0]); n++) {
+            jint count = serial_counts[n];
+            jint contrast = count > 256 ? 254 : count / 2;
+            for (jint offset = 0; offset < 8; offset++) {
+                char* text = serial_source + offset;
+                char* target = serial_target + ((offset + 3) & 7);
+                memset(target, 'a', count);
+                target[contrast] = 'b';
+                for (unsigned int s = 0; s < sizeof(serial_spans) / sizeof(serial_spans[0]); s++) {
+                    jint span = serial_spans[s], length = count + span;
+                    const jint positions[] = {-1, 0, span / 2, span};
+                    for (unsigned int p = 0; p < sizeof(positions) / sizeof(positions[0]); p++) {
+                        jint position = positions[p];
+                        memset(text, 'a', length);
+                        if (position >= 0) memcpy(text + position, target, count);
+                        CHECK(kernels->rfindLatin1(text, length, target, count) == position);
+                    }
+                    // An absent first byte must remain a fast rejection.
+                    target[contrast] = 'a';
+                    target[0] = 'b';
+                    memset(text, 'a', length);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == -1);
+                    memcpy(text + span, target, count);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == span);
+                    // Uniform needles exercise the no-contrast case.
+                    target[0] = 'a';
+                    memset(text, 'a', length);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == span);
+                    memset(text, 'b', length);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == -1);
+                    target[contrast] = 'b';
+                }
+            }
+        }
+
+        // Select UTF-16 contrast by code unit. The byte-swapped rare character
+        // shares both bytes with the source, creating unaligned byte candidates.
+        const jint serial_utf16_counts[] = {129, 256};
+        const jchar serial_rare[] = {0x0402, 0x0104};
+        jchar serial_utf16_source[1040], serial_utf16_target[264];
+        for (unsigned int n = 0; n < sizeof(serial_utf16_counts) / sizeof(serial_utf16_counts[0]); n++) {
+            jint count = serial_utf16_counts[n];
+            for (unsigned int r = 0; r < sizeof(serial_rare) / sizeof(serial_rare[0]); r++) {
+                jchar rare = serial_rare[r];
+                for (jint offset = 0; offset < 8; offset++) {
+                    jchar* text = serial_utf16_source + offset;
+                    jchar* target = serial_utf16_target + ((offset + 3) & 7);
+                    for (jint i = 0; i < count; i++) target[i] = 0x0401;
+                    target[127] = rare;
+                    for (unsigned int s = 0; s < sizeof(serial_spans) / sizeof(serial_spans[0]); s++) {
+                        jint span = serial_spans[s], length = count + span;
+                        const jint positions[] = {-1, 0, span / 2, span};
+                        for (unsigned int p = 0; p < sizeof(positions) / sizeof(positions[0]); p++) {
+                            jint position = positions[p];
+                            for (jint i = 0; i < length; i++) text[i] = 0x0401;
+                            if (position >= 0) memcpy(text + position, target, count * sizeof(jchar));
+                            CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                                    (const char*)target, count * 2) == (position < 0 ? -1 : position * 2));
+                        }
+                        target[127] = 0x0401;
+                        target[0] = rare;
+                        for (jint i = 0; i < length; i++) text[i] = 0x0401;
+                        CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                                (const char*)target, count * 2) == -1);
+                        memcpy(text + span, target, count * sizeof(jchar));
+                        CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                                (const char*)target, count * 2) == span * 2);
+                        target[0] = 0x0401;
+                        for (jint i = 0; i < length; i++) text[i] = 0x0401;
+                        CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                                (const char*)target, count * 2) == span * 2);
+                        for (jint i = 0; i < length; i++) text[i] = 0x0403;
+                        CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                                (const char*)target, count * 2) == -1);
+                        target[127] = rare;
+                    }
+                }
+            }
+        }
+
+        // A rejected later contrast must not hide an earlier aligned match.
+        const jint serial_rejected_spans[] = {129, 191, 255, 256, 257, 512, 1024};
+        jchar serial_rejected_source[1296];
+        for (unsigned int r = 0; r < sizeof(serial_rare) / sizeof(serial_rare[0]); r++) {
+            for (jint offset = 0; offset < 8; offset++) {
+                jchar* text = serial_rejected_source + offset;
+                jchar* target = serial_utf16_target + ((offset + 3) & 7);
+                for (jint i = 0; i < 256; i++) target[i] = 0x0401;
+                target[127] = serial_rare[r];
+                for (unsigned int s = 0; s < sizeof(serial_rejected_spans) / sizeof(serial_rejected_spans[0]); s++) {
+                    jint span = serial_rejected_spans[s], length = 256 + span;
+                    for (jint i = 0; i < length; i++) text[i] = 0x0401;
+                    memcpy(text, target, 256 * sizeof(jchar));
+                    text[span + 127] = serial_rare[r];
+                    text[length - 1] = 0x0403;
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, 512) == 0);
+                    text[127] = 0x0401;
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, 512) == -1);
+                    text[length - 1] = 0x0401;
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, 512) == span * 2);
+                }
+            }
+        }
+
         // Long-needle verification must accept every byte-array alignment.
         sz_align_(64) char unaligned_source[576];
         sz_align_(64) char unaligned_target[320];
@@ -304,6 +416,11 @@ static jint check_kernels(void) {
             CHECK(chars[i](NULL, JVM_STRINGZILLA_MAX_BYTES + 2, 'a') == JVM_STRINGZILLA_FALLBACK);
         }
         CHECK(kernels->equal(NULL, NULL, JVM_STRINGZILLA_MAX_BYTES + 1) == JVM_STRINGZILLA_FALLBACK);
+        // Long-needle probes also reject excessive work before any array read.
+        CHECK(kernels->rfindLatin1(NULL, JVM_STRINGZILLA_MAX_BYTES + 1, NULL, 511) == JVM_STRINGZILLA_FALLBACK);
+        CHECK(kernels->rfindLatin1(NULL, JVM_STRINGZILLA_MAX_WORK / 511 + 1, NULL, 511) == JVM_STRINGZILLA_FALLBACK);
+        CHECK(kernels->rfindUTF16(NULL, JVM_STRINGZILLA_MAX_BYTES + 2, NULL, 512) == JVM_STRINGZILLA_FALLBACK);
+        CHECK(kernels->rfindUTF16(NULL, JVM_STRINGZILLA_MAX_WORK / 512 + 2, NULL, 512) == JVM_STRINGZILLA_FALLBACK);
 
         // An actual byte-perfect odd occurrence forces the aligned adapter.
         // Most earlier candidates agree until the penultimate code unit.
