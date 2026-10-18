@@ -10,21 +10,21 @@ cannot qualify this revision or an ARM target.
 
 Fetch the existing `review/instant-speedate-fast-path` branch from
 <https://github.com/re-thc/openjdk-jdk27u>, then check out the full immutable commit
-provided with the handoff. Record that commit as `REV`; never measure a moving
-branch. The reusable fixture is
+provided with the handoff. Record that procedure commit as `REV`; never measure a
+moving branch. Record product-image revisions separately. The reusable fixture is
 [`InstantParse.java`](../test/micro/org/openjdk/bench/java/time/InstantParse.java).
 
 | Route | Source and behavior |
 |---|---|
 | B | `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`, normal image |
-| E | Exact `REV`, normal native-enabled image |
+| E | `a8f54bf8e49f98d4389c1ad99815b4c9bdaaaee4`, normal native-enabled image |
 | D | Exact E image with startup `-Djdk.time.instantSpeedate=false` |
 | J | B plus only [`InstantParseCache.patch`](../test/micro/org/openjdk/bench/java/time/InstantParseCache.patch), separate normal image |
 | M | Exact E image after the fixture verifies permanent loader failure and restores the search path before warmup |
 
 J caches the existing variable-fraction parser tree, preserving its grammar and
 calendar conversion. It is a control, not part of the proposed product change.
-Production source at REV retains the guard revision from
+Production source in E retains the guard revision from
 `a062f73bd705486673b63f2339875f78bb7132cb`.
 
 Run on actual macOS arm64, or native Linux AArch64 with glibc, including a native
@@ -60,14 +60,63 @@ Maven. Cargo uses the checked-in lockfile (speedate 0.18.0); make uses `--frozen
 `CARGO_RAW` and `RUSTC_RAW` must name real installed executables, not wrappers with
 arguments. Pass them as configure command-line assignments.
 
+## Resume with retained B/E images
+
+The reported Mac build completed B at `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`
+and E at `a8f54bf8e49f98d4389c1ad99815b4c9bdaaaee4`. The subsequent whole-suite
+`build-microbenchmark` failed on desktop imports; no audit, correctness or timing
+work completed, and J does not exist yet. The profile disables desktop APIs;
+compiling the entire microbenchmark tree is unnecessary for this fixture.
+
+Keep those worktree HEADs, configurations and images unchanged. Fetch the approved
+procedure revision without checking it out over E:
+
+```bash
+# REV is the full procedure commit supplied with this continuation.
+set -euo pipefail
+git -C "$E_SOURCE" fetch origin refs/heads/review/instant-speedate-fast-path
+git -C "$E_SOURCE" cat-file -e "$REV^{commit}"
+git -C "$E_SOURCE" show "$REV:doc/instant-speedate-decision.md"
+git -C "$E_SOURCE" diff --exit-code "$REV" a8f54bf8e49f98d4389c1ad99815b4c9bdaaaee4 -- src make bin \
+  test/micro/org/openjdk/bench/java/time/InstantParse.java \
+  test/micro/org/openjdk/bench/java/time/InstantParseCache.patch
+test "$(git -C "$B_SOURCE" rev-parse HEAD)" = 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+test "$(git -C "$E_SOURCE" rev-parse HEAD)" = a8f54bf8e49f98d4389c1ad99815b4c9bdaaaee4
+git -C "$B_SOURCE" diff --exit-code HEAD
+git -C "$E_SOURCE" diff --exit-code HEAD
+git -C "$B_SOURCE" status --short
+git -C "$E_SOURCE" status --short
+```
+
+Record the procedure SHA separately from each actual image's source/build
+identity. Verify the fixture and cache patch in REV are byte-identical to E's
+recorded source. Recheck saved image, native-library, compiler, configuration and
+dependency hashes; do not relabel the retained images as rebuilt from REV.
+If no hashes were saved earlier, capture the retained files now and preserve the
+original build logs; do not claim a retrospective identity comparison.
+Reuse their pinned JMH jars. The dependency download script clears its destination,
+so do not rerun it over retained dependencies. Skip all configure/images commands
+below for B/E and build only the isolated fixture.
+
+Preserve failed-build logs, partial outputs and all consumed time. This approved
+procedure correction does not erase the unsuccessful prerequisite or reset the
+original three-hour/phase budgets. Before resuming, record elapsed/remaining time
+and available storage on the actual filesystems. Only 13 GiB free was reported;
+that has not been established sufficient for J's normal checkout/build plus tests
+and result logs. Use retained B's actual footprint to plan the remaining capacity.
+Do not delete retained data or clean/rebuild B/E to make space. If space or the
+remaining budget cannot cover the required work, stop with that unmet prerequisite.
+J is still required after stage 1 passes; the isolated fixture does not replace it.
+
 ## Ordinary builds and correctness
 
-Create detached worktrees E and B at REV and B's commit, respectively. Build B/E
-first; create/build J only after stage 1 passes. In each worktree configure the
-same release/server profile, then run normal make:
+For a fresh run, create detached worktrees E and B at their exact table revisions.
+Build B/E first; create/build J only after stage 1 passes. In each worktree
+configure the same release/server profile, then run normal make:
 
 ```bash
 # B; run from B's worktree. Add identical CC/CXX assignments if needed.
+set -euo pipefail
 bash bin/configure-dev --with-conf-name=instant --with-jobs=4 \
   --with-debug-level=release --disable-javac-server \
   --with-boot-jdk="$BOOT" --with-jtreg="$JTREG"
@@ -79,15 +128,69 @@ bash bin/configure-dev --with-conf-name=instant --with-jobs=4 \
   --with-boot-jdk="$BOOT" --with-jtreg="$JTREG" --with-jmh="$JMH" \
   --enable-instant-speedate "CARGO=$CARGO_RAW" "RUSTC=$RUSTC_RAW"
 make CONF=instant JOBS=4 images
-make CONF=instant JOBS=4 build-microbenchmark
 ```
 
-Use `build/instant/images/jdk` for each image. Build the benchmark jar once in E:
-`build/instant/images/test/micro/benchmarks.jar`. Use that identical jar with B,
-E/D/M and J's JVMs; its benchmark source need not be added to B/J. Before building
-J, apply the exact cache patch to a detached B worktree, commit it as Harry Chan
+Use `build/instant/images/jdk` for each image. Set E to the retained E image's
+absolute path and E_SOURCE to its unchanged source worktree. Compile only the
+Instant fixture with that image's javac, using real JMH annotation processing.
+Use a fresh output directory under the job's approved scratch parent; `mkdir`
+must fail if it already exists, preventing stale classes or benchmark metadata:
+
+```bash
+# E, E_SOURCE, JMH and FIXTURE_OUT must be absolute paths; its parent must exist.
+set -euo pipefail
+mkdir "$FIXTURE_OUT"
+mkdir "$FIXTURE_OUT/classes" "$FIXTURE_OUT/generated"
+JMH_CORE="$JMH/jmh-core-1.37.jar"
+JMH_PROCESSOR="$JMH/jmh-generator-annprocess-1.37.jar"
+"$E/bin/javac" -J-XX:ActiveProcessorCount=2 -encoding UTF-8 \
+  -cp "$JMH_CORE" -processorpath "$JMH_CORE:$JMH_PROCESSOR" \
+  -processor org.openjdk.jmh.generators.BenchmarkProcessor \
+  -d "$FIXTURE_OUT/classes" -s "$FIXTURE_OUT/generated" \
+  "$E_SOURCE/test/micro/org/openjdk/bench/java/time/InstantParse.java"
+JAR="$FIXTURE_OUT/instant-fixture.jar"
+"$E/bin/jar" -J-XX:ActiveProcessorCount=2 --create --file "$JAR" \
+  -C "$FIXTURE_OUT/classes" .
+JMH_RUNTIME="$JMH_CORE:$JMH/commons-math3-3.6.1.jar:$JMH/jopt-simple-5.0.4.jar"
+INSTANT_CP="$JAR:$JMH_RUNTIME"
+"$E/bin/java" -XX:ActiveProcessorCount=2 -Xms64m -Xmx256m \
+  -cp "$INSTANT_CP" org.openjdk.jmh.Main \
+  -l '^org.openjdk.bench.java.time.InstantParse.parse64$'
+```
+
+Discovery must list exactly `org.openjdk.bench.java.time.InstantParse.parse64`;
+`-l` runs no benchmark. Jar the entire classes tree, including generated classes,
+`META-INF/BenchmarkList` and `META-INF/CompilerHints`, not just InstantParse.class
+or the generated source tree. No WhiteBox jar, desktop modules, preview features
+or suite-wide exports are needed. The annotation processor is a build dependency;
+the three explicit runtime jars match the repository's JMH runtime dependencies.
+Use this identical jar and absolute INSTANT_CP with B, E/D/M and J. JMH inherits
+the launcher's classpath in its forks. Record the fixture source, generated output,
+jar and all dependency identities before use. This changes packaging only; the
+fixture, workload, flags, call counts, ordering and gates remain unchanged.
+
+Before building J, verify stage 1 PASS and remaining disk/time capacity, then apply
+the exact cache patch to a detached B worktree, commit it as Harry Chan
 `<38070640+re-thc@users.noreply.github.com>`, record its derived SHA, and use B's
-configure/make commands. Make no other source changes.
+configure/make commands. Make no other source changes:
+
+```bash
+# Run only after stage 1 PASS and the capacity/budget check. J_SOURCE must not exist.
+set -euo pipefail
+git -C "$E_SOURCE" worktree add --detach "$J_SOURCE" 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+git -C "$J_SOURCE" apply --check "$E_SOURCE/test/micro/org/openjdk/bench/java/time/InstantParseCache.patch"
+git -C "$J_SOURCE" apply "$E_SOURCE/test/micro/org/openjdk/bench/java/time/InstantParseCache.patch"
+git -C "$J_SOURCE" add src/java.base/share/classes/java/time/format/DateTimeFormatterBuilder.java
+git -C "$J_SOURCE" -c user.name='Harry Chan' \
+  -c user.email='38070640+re-thc@users.noreply.github.com' -c commit.gpgsign=false \
+  commit -m 'Java parser-cache comparison control'
+git -C "$J_SOURCE" rev-parse HEAD
+```
+
+In J run B's recorded configure command (including its actual compiler/linker
+selections and boot/jtreg paths), then `make CONF=instant JOBS=4 images`.
+Fingerprint J before its tests; never substitute a patch-module or E-disabled
+image for this separate Java-only control.
 
 Run the focused suite in E with JNI checking:
 
@@ -108,7 +211,7 @@ The jar also provides an untimed differential audit:
 ```bash
 "$IMAGE/bin/java" -XX:ActiveProcessorCount=2 -Xms64m -Xmx512m -Xcheck:jni \
   -XX:+CompactStrings --add-opens java.base/java.time=ALL-UNNAMED \
-  -cp "$JAR" org.openjdk.bench.java.time.InstantParse audit native
+  -cp "$INSTANT_CP" org.openjdk.bench.java.time.InstantParse audit native
 ```
 
 Use `audit native` for E and `audit` for B/J/D; D includes its startup opt-out.
@@ -160,7 +263,8 @@ Use normal JMH, one fork per invocation and one explicit corpus. Substitute the
 chosen IMAGE, ROUTE, corpus, String mode and output paths in this command:
 
 ```bash
-"$E/bin/java" -XX:ActiveProcessorCount=2 -Xms64m -Xmx256m -jar "$JAR" \
+"$E/bin/java" -XX:ActiveProcessorCount=2 -Xms64m -Xmx256m \
+  -cp "$INSTANT_CP" org.openjdk.jmh.Main \
   '^org.openjdk.bench.java.time.InstantParse.parse64$' \
   -jvm "$IMAGE/bin/java" -p input=happy -bm ss -tu ns \
   -f 1 -wf 0 -t 1 -wi 1 -wbs 16384 -i 4 -bs 2048 -foe true \
@@ -211,7 +315,7 @@ Cold measurements use the jar's plain Java main in fresh JVMs, not JMH warmup:
 python3 - "$IMAGE/bin/java" -XX:ActiveProcessorCount=2 -XX:+UseG1GC \
   -Xms256m -Xmx256m -Xbatch -XX:+CompactStrings "-Dinstant.route=$ROUTE" \
   -Djdk.time.instantSpeedate=true --add-opens java.base/java.time=ALL-UNNAMED \
-  -cp "$JAR" org.openjdk.bench.java.time.InstantParse cold happy <<'PY'
+  -cp "$INSTANT_CP" org.openjdk.bench.java.time.InstantParse cold happy <<'PY'
 import subprocess, sys, time
 start = time.perf_counter_ns()
 result = subprocess.run(sys.argv[1:])
