@@ -76,6 +76,7 @@ import java.io.ByteArrayOutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
@@ -770,6 +771,62 @@ public class SimdUTFTest {
             equal(utf8(new String(src, StandardCharsets.ISO_8859_1)),
                     Arrays.copyOfRange(dst, 7, 7 + written));
             guards(dst, 7, written);
+        }
+        nativeWideConversions(process);
+    }
+
+    private static void nativeWideConversions(Method process) throws Exception {
+        int units = 1024;
+        for (boolean supplementary : new boolean[]{false, true}) {
+            for (boolean big : new boolean[]{false, true}) {
+                byte[] storage = guardedBytes(2 * units, 6);
+                byte[] utf16 = guardedBytes(2 * units, 4);
+                int points = supplementary ? units / 2 : units;
+                byte[] utf32 = guardedBytes(4 * points, 4);
+                for (int i = 0; i < units; i++) {
+                    int c = supplementary ? ((i & 1) == 0 ? 0xd83d : 0xde03) : 0x6f22;
+                    putUnit(storage, 6 + 2 * i, c, 2, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
+                    putUnit(utf16, 4 + 2 * i, c, 2, big);
+                }
+                for (int i = 0; i < points; i++) {
+                    putUnit(utf32, 4 + 4 * i, supplementary ? 0x1f603 : 0x6f22, 4, big);
+                }
+                nativeWideConversion(process, storage, 3, units, utf16, 4,
+                        2 * units, big ? 15 : 16, "UTF16 byte-array encode");
+                nativeWideConversion(process, utf16, 4, 2 * units, storage, 3,
+                        units, big ? 17 : 18, "UTF16 byte-array decode");
+                nativeWideConversion(process, storage, 3, units, utf32, 4,
+                        4 * points, big ? 20 : 21, "UTF32 byte-array encode");
+                nativeWideConversion(process, utf32, 4, 4 * points, storage, 3,
+                        units, big ? 22 : 23, "UTF32 byte-array decode");
+            }
+        }
+    }
+
+    private static void nativeWideConversion(Method process, byte[] input, int offset, int length,
+                                             byte[] expected, int outputOffset, int capacity,
+                                             int operation, String message) throws Exception {
+        byte[] output = new byte[expected.length];
+        Arrays.fill(output, SENTINEL);
+        int written = (int)process.invoke(null, input, offset, length,
+                output, outputOffset, capacity, operation);
+        check(written == (accelerationAvailable ? capacity : -1), message + " count");
+        if (accelerationAvailable) {
+            equal(expected, output);
+        } else {
+            guards(output, 0, 0);
+        }
+    }
+
+    private static byte[] guardedBytes(int payload, int padding) {
+        byte[] bytes = new byte[payload + 2 * padding];
+        Arrays.fill(bytes, SENTINEL);
+        return bytes;
+    }
+
+    private static void putUnit(byte[] bytes, int offset, int value, int width, boolean big) {
+        for (int i = 0; i < width; i++) {
+            bytes[offset + (big ? width - 1 - i : i)] = (byte)(value >>> (8 * i));
         }
     }
 
