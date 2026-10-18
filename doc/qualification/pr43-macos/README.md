@@ -19,6 +19,9 @@ The user completed that exact-source check once per stage using recipe commit
 `10bb6e3b487f66c638b8b762e2da9b515b8e57da`; its reported NEON pass and remaining
 CI/SVE/profitability limits are reconciled in [MASK_TO_LONG.md](MASK_TO_LONG.md).
 No repeat of the completed Mac check is requested.
+The [retained-evidence decisions](EVIDENCE_DECISIONS.md) close the older paired
+capture and detailed SVE reviews with explicit availability verdicts and exact
+missing-file/artifact identities.
 The commands and manifest below
 retain the original five-test comparison; they do **not** qualify that new rule.
 No new native campaign is requested by this documentation update.

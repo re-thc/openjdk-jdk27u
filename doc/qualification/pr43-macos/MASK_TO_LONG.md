@@ -150,12 +150,14 @@ was inspected read-only. Its log explicitly records both
 including a driver run for the SVE launcher. These were existing CI runs, not
 newly dispatched tests.
 
-Nonzero-SVE qualification remains open: the two SVE rules are inapplicable on
-this Mac, not executed exclusion passes. The Linux launcher pass is supporting
-coverage, but the inspected aggregate log does not expose its effective SVE
-mode, applicable-rule inventory or phase records. Those existing records would
-need review before crediting the SVE exclusion gate; the aggregate pass alone
-is insufficient. No new SVE or wide-SVE campaign is requested.
+The completed [retained-evidence review](EVIDENCE_DECISIONS.md) assigns the
+Linux SVE launcher execution **ACCEPTED** and its detailed exclusion gate
+**UNAVAILABLE**. The retained JTR archive failed delivery, while the CI archive
+filter omits successful `hotspot_pid*.log` phase records. Effective SVE mode,
+applicable-rule inventory and matching phases therefore cannot be inspected.
+The two SVE rules are inapplicable on the Mac, not executed exclusion passes.
+This is a final availability outcome for these records, not another review
+waiter or a claim that the exclusion passed. No new SVE campaign is requested.
 
 Profitability and parser activation remain unmeasured. All four MOVs and DUP
 are inside each fused Mach node; C2 cannot hoist/share the weights independently.
@@ -173,9 +175,10 @@ No such timing is requested or run here. The original consolidated comparison st
 continues to pin that historical five-test matrix; it does not silently add
 another build or claim that historical 78-rule evidence qualifies this rule.
 
-Existing Mac shifted/rotated logical-selection and byte64 pressure captures
-remain unavailable here. Their reported custodian is
-`Sentinel_eac712c3944c8191b3618e75bef79647`; actual paths, receipts and hashes
-have not been supplied. The new toLong captures do not resolve those older
-shift/rotate selection and firstTrue byte64 pressure questions. No new capture
-was substituted or claimed inspected. PR43 remains draft and unmerged.
+The older paired shifted/rotated logical-selection and firstTrue byte64
+pressure reviews are **UNAVAILABLE**, not waiting for review. The completed
+[decision record](EVIDENCE_DECISIONS.md) names every missing receipt/capture,
+the exact old source pair, checked locations and delivery/retention limits.
+No image hashes or actual Mac root/PIDs were supplied for that pair. The new
+toLong captures do not resolve those different operators, and were not used
+as substitutes. PR43 remains draft and unmerged.

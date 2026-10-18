@@ -50,30 +50,30 @@ CI evidence for run 38860660092, whose 57 jobs passed.
 | Installed instructions | Separate captures reportedly show UBFX, LSR, W-register AND/ORR/EOR, FMOV/RBIT/CLZ/LSR and byte128 SHRN. Assembly flags were absent from the active-IR runs. This establishes the reported opcode checks, not a measured speedup. |
 
 No correctness or matcher blocker is apparent in that report or in the source
-review of the original aggregates. Their remaining material qualification step
-is **read-only review of the existing paired capture records**. Bind the
-records to the two commits, native images and one actual harness identity, then
-compare shifted/rotated logical alternatives, shared/loaded/call-pressure cases
-and byte64/byte128 for instruction count, moves, spills and live registers.
-In particular, the new shift/rotate plus narrow logical path has nominal cost
-2.0 versus the old shifted logical plus conversion at 2.9, and the byte64 rule
-reserves a vector temporary it does not emit. The supplied opcode summary does
-not explicitly resolve these selection/pressure questions. If that existing-code
-review finds no adverse selection, it resolves this gate for the original four
-ARM changes. The separate current-head mask-packing report now meets its native
-NEON correctness/matching and two-method code-generation gates as reported;
-it does not answer those older selection questions. No source/test correction
-is indicated by the new report. Overall ordinary CI completion, the older
-capture review and the unmeasured profitability decision remain separate.
-An adverse finding needs a focused source decision; a source change creates
-a new qualification identity.
+review of the original aggregates. The requested paired allocated-code reviews
+are now completed with **UNAVAILABLE** outcomes: neither the old logical
+captures nor the firstTrue byte64 captures/image receipts are accessible. The
+[decision record](EVIDENCE_DECISIONS.md) names the exact missing files and
+checked locations. These are closed availability decisions, not outstanding
+review assignments or accepted cost evidence.
 
-Performance/JMH and nonzero-SVE qualification remain open. No benchmark or
+The shift/rotate plus narrow logical path's nominal cost 2.0 versus the old
+shifted logical plus conversion's 2.9, and the byte64 rule's unused vector
+temporary, remain source observations only. The opcode summary cannot decide
+their allocated selection/pressure effects. The separate current-head
+mask-packing report meets its native NEON correctness/matching and two-method
+code-generation gates as reported; it does not substitute for those older
+operators. No source/test correction is indicated. Profitability is not
+established, and ordinary CI is reconciled at its own exact identity.
+
+Performance/JMH is unmeasured. No benchmark or
 build is requested by this review. The new NEON rule is statically guarded by
 `UseSVE == 0`; the Mac cannot exercise nonzero SVE. The existing Linux fastdebug
 compiler log records the SVE launcher's execution pass, but does not expose
 effective SVE flags, rule applicability or phase data. That pass is supporting
-coverage and is not credited as inspected SVE exclusion qualification.
+coverage. The detailed SVE gate is **UNAVAILABLE** after the retained-evidence
+review: archive delivery failed and the archive policy omits successful phase
+logs. It is not credited as inspected exclusion qualification.
 Keep the accepted upstream/BiSheng provenance for unchanged wide-SVE work as
 provenance, without restarting PR12/18 or requiring unavailable wide hardware
 for this scalar/NEON review.
