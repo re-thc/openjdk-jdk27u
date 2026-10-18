@@ -1,27 +1,5 @@
-/*
- * Copyright (c) 2026, Harry Chan. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
+// Copyright (c) 2026, Harry Chan. All rights reserved.
+// SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
 
 package jdk.internal.util;
 
@@ -34,9 +12,9 @@ import jdk.internal.misc.VM;
 
 /** Optional bulk conversion support. No native state is initialized during VM bootstrap. */
 public final class HexFormatSupport {
-    // Provisional binary-byte cutoffs from complete-call screening on Linux
-    // x64, including allocation and both copies. They are not qualified for
-    // default enablement or other targets. Keep small inputs in Java.
+    // Binary-byte cutoffs measured through complete public calls on Linux
+    // x64/AVX2, including allocation and both copies. Other targets remain
+    // explicit opt-ins. Keep small inputs in Java.
     public static final int ENCODE_MIN = 1024;
     public static final int DECODE_MIN = 128;
 
@@ -68,10 +46,18 @@ public final class HexFormatSupport {
     }
 
     public static boolean decode(String src, byte[] dst) {
+        int prefix = decodePrefix(src, dst);
+        return prefix >= 0 && prefix == src.length();
+    }
+
+    public static boolean canDecode(String src) {
+        return SharedSecrets.getJavaLangAccess().stringCoder(src) == 0 && isAvailable();
+    }
+
+    /** Returns validated prefix characters, or -1 if the operation is ineligible. */
+    public static int decodePrefix(String src, byte[] dst) {
+        if (!canDecode(src)) return -1;
         JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-        if (jla.stringCoder(src) != 0 || !isAvailable()) {
-            return false;
-        }
         try {
             // For coder zero this existing internal operation returns the backing
             // bytes without copying. They are only read by the JNI region API.
@@ -83,5 +69,5 @@ public final class HexFormatSupport {
 
     private static native int init0();
     private static native boolean encode0(byte[] src, int from, int len, byte[] dst, boolean upper);
-    private static native boolean decode0(byte[] src, byte[] dst);
+    private static native int decode0(byte[] src, byte[] dst);
 }

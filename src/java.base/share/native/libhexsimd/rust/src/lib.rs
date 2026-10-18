@@ -3,6 +3,20 @@
 
 use hex_simd::AsciiCase;
 
+// x64 activation is limited to the AVX2 backend qualified for this integration.
+// Other build targets remain explicit opt-ins.
+#[no_mangle]
+pub extern "C" fn jdk_hex_is_supported() -> i32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        i32::from(std::is_x86_feature_detected!("avx2"))
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        1
+    }
+}
+
 // Private leaf ABI. The caller supplies disjoint, valid ranges and keeps them
 // alive until return. No pointer escapes, Rust allocation or callback occurs.
 // JNI copies each successful bounded chunk into a private Java destination.

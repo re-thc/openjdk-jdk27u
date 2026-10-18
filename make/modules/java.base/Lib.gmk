@@ -68,7 +68,7 @@ ifeq ($(ENABLE_HEX_SIMD), true)
 	    MAKEFLAGS= CARGO_MAKEFLAGS= $(HEX_SIMD_RUST_ENV) \
 	    RUSTC='$(HEX_SIMD_RUSTC_EXECUTABLE)' \
 	    RUSTFLAGS='$(HEX_SIMD_RUST_FLAGS)' \
-	    $(CARGO) build --frozen --release --jobs 2 \
+	    $(CARGO) build --locked --release --jobs 2 \
 	        --manifest-path '$(HEX_SIMD_RUST_SRC)/Cargo.toml' \
 	        --target '$(HEX_SIMD_RUST_TARGET)' --target-dir '$(HEX_SIMD_RUST_OUTPUT)')
 

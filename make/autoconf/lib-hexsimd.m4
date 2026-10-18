@@ -1,28 +1,18 @@
-#
 # Copyright (c) 2026, Harry Chan. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
+# SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
 
 AC_DEFUN_ONCE([LIB_SETUP_HEX_SIMD],
 [
-  UTIL_ARG_ENABLE(NAME: hex-simd, DEFAULT: false, RESULT: ENABLE_HEX_SIMD,
-      DESC: [build the optional Rust-backed HexFormat library])
+  HEX_SIMD_DEFAULT=false
+  if test "x$COMPILE_TYPE" = xnative && \
+      test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = xlinux-x86_64 && \
+      test "x$OPENJDK_TARGET_LIBC" = xgnu; then
+    HEX_SIMD_DEFAULT=true
+  fi
+  UTIL_ARG_ENABLE(NAME: hex-simd, DEFAULT: $HEX_SIMD_DEFAULT,
+      DEFAULT_DESC: [enabled for native glibc Linux x64, disabled elsewhere],
+      RESULT: ENABLE_HEX_SIMD,
+      DESC: [build the Rust-backed HexFormat library])
   AC_ARG_WITH(rust-runtime-notices,
       [AS_HELP_STRING([--with-rust-runtime-notices=<path>],
           [Rust standard library copyright/license directory (normally in rustc sysroot)])])
@@ -110,7 +100,7 @@ AC_DEFUN_ONCE([LIB_SETUP_HEX_SIMD],
           test ! -f "$RUST_RUNTIME_NOTICES/LICENSE-MIT"; }; then
       AC_MSG_ERROR([Rust runtime notices are required; use --with-rust-runtime-notices pointing to the copyright and license texts for this rustc release])
     fi
-    AC_MSG_NOTICE([Hex SIMD uses Cargo's frozen dependency cache; run cargo fetch --locked --manifest-path $TOPDIR/src/java.base/share/native/libhexsimd/rust/Cargo.toml before building])
+    AC_MSG_NOTICE([Hex SIMD uses pinned Cargo dependencies; use --disable-hex-simd to build without Rust/Cargo])
   fi
 
   AC_SUBST(ENABLE_HEX_SIMD)

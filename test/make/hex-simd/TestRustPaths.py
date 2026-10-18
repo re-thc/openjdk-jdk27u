@@ -55,7 +55,7 @@ assert args[:2] == ['--color', 'never'], args
 args = args[2:]
 if args == ['--version']: print('cargo 1.85.0 (fixture)')
 else:
-    assert args[:5] == ['build', '--frozen', '--release', '--jobs', '2'], args
+    assert args[:5] == ['build', '--locked', '--release', '--jobs', '2'], args
     assert os.environ['RUSTC'] == os.environ['FIXTURE_EXPECTED_RUSTC'], os.environ['RUSTC']
     assert os.environ['MAKEFLAGS'] == os.environ['CARGO_MAKEFLAGS'] == ''
     subprocess.run([os.environ['RUSTC'], '--version'], check=True)
@@ -95,9 +95,10 @@ m4_include([util.m4])
 m4_include([lib-hexsimd.m4])
 AC_DEFUN([UTIL_REQUIRE_PROGS], [$1="[$]FIXTURE_$1"])
 AC_DEFUN([UTIL_FIXUP_PATH], [])
-COMPILE_TYPE=native
+COMPILE_TYPE="${FIXTURE_COMPILE:-native}"
 OPENJDK_TARGET_OS="$FIXTURE_OS"
-OPENJDK_TARGET_CPU=x86_64
+OPENJDK_TARGET_CPU="${FIXTURE_CPU:-x86_64}"
+OPENJDK_TARGET_LIBC="${FIXTURE_LIBC:-gnu}"
 CUT=cut
 ECHO=echo
 SED=sed
@@ -192,3 +193,24 @@ check: $(HEX_SIMD_RUST_ARCHIVE)
         run(["bash", str(root / "configure"), "--disable-hex-simd"], case, env)
         assert "ENABLE_HEX_SIMD := false" in (case / "spec.gmk").read_text()
         print(f"PASS {variant}: configure exports, real make recipe, flags rejection, disabled tools")
+
+    # Automatic enablement is confined to native Linux x64. Other defaults
+    # must not even probe Rust/Cargo; the explicit opt-out works on Linux too.
+    case = root / "defaults"
+    case.mkdir()
+    for target_os, cpu, compile_type in [("linux", "aarch64", "native"),
+            ("macosx", "aarch64", "native"), ("windows", "x86_64", "native"),
+            ("linux", "x86_64", "cross")]:
+        env.update(FIXTURE_OS=target_os, FIXTURE_CPU=cpu, FIXTURE_COMPILE=compile_type,
+                   FIXTURE_RUSTC="/missing/tool", FIXTURE_CARGO="/missing/tool")
+        run(["bash", str(root / "configure")], case, env)
+        assert "ENABLE_HEX_SIMD := false" in (case / "spec.gmk").read_text()
+    env.update(FIXTURE_OS="linux", FIXTURE_CPU="x86_64", FIXTURE_COMPILE="native",
+               FIXTURE_TARGET="x86_64-unknown-linux-gnu", FIXTURE_RUSTC=str(rustc),
+               FIXTURE_CARGO=str(cargo) + " --color never")
+    run(["bash", str(root / "configure")], case, env)
+    assert "ENABLE_HEX_SIMD := true" in (case / "spec.gmk").read_text()
+    env.update(FIXTURE_LIBC="musl", FIXTURE_RUSTC="/missing/tool", FIXTURE_CARGO="/missing/tool")
+    run(["bash", str(root / "configure")], case, env)
+    assert "ENABLE_HEX_SIMD := false" in (case / "spec.gmk").read_text()
+    print("PASS native Linux x64 default and non-Linux/cross defaults")

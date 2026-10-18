@@ -4,6 +4,8 @@
  * @test
  * @summary Bulk HexFormat conversion preserves bounds, validation and GC-safe array access
  * @modules java.base/jdk.internal.util
+ *          java.base/jdk.internal.loader
+ * @run main/othervm -Xms128m -Xmx512m -XX:ActiveProcessorCount=2 -Xcheck:jni -XX:+CompactStrings BulkHexFormatTest first-invalid
  * @run main/othervm -Xms128m -Xmx512m -XX:ActiveProcessorCount=2 -Xcheck:jni -XX:+CompactStrings BulkHexFormatTest true
  * @run main/othervm -Xms128m -Xmx512m -XX:ActiveProcessorCount=2 -Xcheck:jni -XX:-CompactStrings BulkHexFormatTest false
  */
@@ -12,6 +14,7 @@ import java.util.HexFormat;
 import java.util.Random;
 import java.util.Locale;
 import jdk.internal.util.HexFormatSupport;
+import jdk.internal.loader.BootLoader;
 
 public class BulkHexFormatTest {
     private static void require(boolean value) {
@@ -64,6 +67,8 @@ public class BulkHexFormatTest {
                     byte[] dst = new byte[chars.length / 2];
                     Arrays.fill(dst, (byte)0x5b);
                     require(!HexFormatSupport.decode(text, dst));
+                    require(HexFormatSupport.decodePrefix(text, dst) ==
+                            (nativeDecode ? (pos / 8192) * 8192 : -1));
                     for (int i = 0; i < dst.length; i++) {
                         // Only completed chunks may have reached this private
                         // destination; failed scratch output must stay native.
@@ -131,6 +136,20 @@ public class BulkHexFormatTest {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("first-invalid")) {
+            String symbol = "Java_jdk_internal_util_HexFormatSupport_init0";
+            require(BootLoader.getNativeLibraries().find(symbol) == 0);
+            int chars = 2 * HexFormatSupport.DECODE_MIN;
+            String wanted = invalid("g0");
+            require(invalid("g" + "0".repeat(chars - 1)).equals(wanted));
+            require(invalid("0g" + "0".repeat(chars - 2)).equals(wanted));
+            require(BootLoader.getNativeLibraries().find(symbol) == 0);
+            if (HexFormatSupport.isAvailable()) {
+                require(BootLoader.getNativeLibraries().find(symbol) != 0);
+            }
+            System.out.println("PASS first invalid pair stays in Java without loading the library");
+            return;
+        }
         require(args.length == 1 && (args[0].equals("true") || args[0].equals("false")));
         String expected = System.getProperty("hexsimd.expectNative");
         if (expected != null) require(HexFormatSupport.isAvailable() == Boolean.parseBoolean(expected));

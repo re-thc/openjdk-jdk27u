@@ -1,23 +1,5 @@
-/*
- * Copyright (c) 2026, Harry Chan. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation. Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+// Copyright (c) 2026, Harry Chan. All rights reserved.
+// SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
 
 #include <stdint.h>
 #include "jni.h"
@@ -26,6 +8,7 @@
  * this call, cross it. No allocation, callbacks, or retained pointers occur. */
 extern void jdk_hex_encode(const uint8_t *, uint8_t *, uint32_t, uint32_t);
 extern int32_t jdk_hex_decode(const uint8_t *, uint8_t *, uint32_t);
+extern int32_t jdk_hex_is_supported(void);
 
 #define HEX_CHUNK 4096
 
@@ -58,7 +41,7 @@ encode(JNIEnv *env, jclass cls, jbyteArray src, jint from, jint len,
     return JNI_TRUE;
 }
 
-static jboolean JNICALL
+static jint JNICALL
 decode(JNIEnv *env, jclass cls, jbyteArray src, jbyteArray dst) {
     jsize len, dst_len;
     jint i;
@@ -66,32 +49,32 @@ decode(JNIEnv *env, jclass cls, jbyteArray src, jbyteArray dst) {
     uint8_t output[HEX_CHUNK];
 
     if (src == NULL || dst == NULL || (*env)->IsSameObject(env, src, dst)) {
-        return JNI_FALSE;
+        return -1;
     }
     len = (*env)->GetArrayLength(env, src);
     dst_len = (*env)->GetArrayLength(env, dst);
-    if ((len & 1) != 0 || len / 2 != dst_len) return JNI_FALSE;
+    if ((len & 1) != 0 || len / 2 != dst_len) return -1;
     for (i = 0; i < len; ) {
         jint n = len - i < 2 * HEX_CHUNK ? len - i : 2 * HEX_CHUNK;
         (*env)->GetByteArrayRegion(env, src, i, n, (jbyte *)input);
-        if ((*env)->ExceptionCheck(env)) return JNI_FALSE;
+        if ((*env)->ExceptionCheck(env)) return -1;
         // Failed chunks never leave native scratch. Prior successful chunks
         // remain in a private Java array until the entire operation succeeds.
-        if (!jdk_hex_decode(input, output, (uint32_t)n)) return JNI_FALSE;
+        if (!jdk_hex_decode(input, output, (uint32_t)n)) return i;
         (*env)->SetByteArrayRegion(env, dst, i / 2, n / 2, (jbyte *)output);
-        if ((*env)->ExceptionCheck(env)) return JNI_FALSE;
+        if ((*env)->ExceptionCheck(env)) return -1;
         i += n;
     }
-    return JNI_TRUE;
+    return len;
 }
 
 JNIEXPORT jint JNICALL
 Java_jdk_internal_util_HexFormatSupport_init0(JNIEnv *env, jclass cls) {
     JNINativeMethod methods[] = {
         { "encode0", "([BII[BZ)Z", (void *)encode },
-        { "decode0", "([B[B)Z", (void *)decode }
+        { "decode0", "([B[B)I", (void *)decode }
     };
     // Registration is the ABI handshake: a wrong/incomplete library cannot
     // advertise availability and fail later at the first conversion.
-    return (*env)->RegisterNatives(env, cls, methods, 2) == 0 ? 1 : 0;
+    return jdk_hex_is_supported() && (*env)->RegisterNatives(env, cls, methods, 2) == 0 ? 1 : 0;
 }

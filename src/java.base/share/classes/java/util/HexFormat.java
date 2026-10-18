@@ -340,7 +340,9 @@ public final class HexFormat {
             return "";
         }
         // Format efficiently if possible
-        String s = formatBytes(bytes, fromIndex, toIndex);
+        String s = toIndex - fromIndex < HexFormatSupport.ENCODE_MIN
+                ? formatOptDelimiter(bytes, fromIndex, toIndex)
+                : formatBytes(bytes, fromIndex, toIndex);
         if (s == null) {
             long stride = prefix.length() + 2L + suffix.length() + delimiter.length();
             int capacity = checkMaxArraySize((toIndex - fromIndex) * stride - delimiter.length());
@@ -392,7 +394,9 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (length > 0) {
             try {
-                String s = formatBytes(bytes, fromIndex, toIndex);
+                String s = length < HexFormatSupport.ENCODE_MIN
+                        ? formatOptDelimiter(bytes, fromIndex, toIndex)
+                        : formatBytes(bytes, fromIndex, toIndex);
                 if (s != null) {
                     out.append(s);
                 } else {
@@ -420,7 +424,7 @@ public final class HexFormat {
 
     private String formatBytes(byte[] bytes, int fromIndex, int toIndex) {
         int length = toIndex - fromIndex;
-        if (length >= HexFormatSupport.ENCODE_MIN && isPlain()) {
+        if (isPlain()) {
             int size = checkMaxArraySize(length * 2L);
             if (HexFormatSupport.isAvailable()) {
                 byte[] rep = new byte[size];
@@ -837,17 +841,45 @@ public final class HexFormat {
      *          the string contains non-hexadecimal characters
      */
     private static byte[] parseNoDelimiter(CharSequence string, boolean nativeString) {
+        if (!nativeString || (string.length() & 1) != 0) {
+            return parseNoDelimiter(string);
+        }
+        // Keep String validation typed separately from arbitrary CharSequence callers.
+        String text = (String) string;
+        if (text.length() >= 2 * HexFormatSupport.DECODE_MIN &&
+                isHexDigit(text.charAt(0)) && isHexDigit(text.charAt(1)) &&
+                HexFormatSupport.canDecode(text)) {
+            return parseNoDelimiterNative(text);
+        }
+        byte[] bytes = new byte[text.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = parseHexPair(text, i * 2);
+        }
+        return bytes;
+    }
+
+    private static byte parseHexPair(String string, int offset) {
+        return (byte) ((fromHexDigit(string.charAt(offset)) << 4) |
+                fromHexDigit(string.charAt(offset + 1)));
+    }
+
+    private static byte[] parseNoDelimiterNative(String string) {
+        byte[] bytes = new byte[string.length() / 2];
+        int prefix = HexFormatSupport.decodePrefix(string, bytes);
+        // Only complete, validated chunks reach the private array. Replay the
+        // failed chunk onward in Java for the original first-error diagnostic.
+        for (int i = Math.max(prefix, 0) / 2; i < bytes.length; i++) {
+            bytes[i] = parseHexPair(string, i * 2);
+        }
+        return bytes;
+    }
+
+    private static byte[] parseNoDelimiter(CharSequence string) {
         if ((string.length() & 1) != 0)
             throw new IllegalArgumentException("string length not even: " +
                     string.length());
 
         byte[] bytes = new byte[string.length() / 2];
-        if (nativeString && bytes.length >= HexFormatSupport.DECODE_MIN &&
-                HexFormatSupport.decode((String) string, bytes)) {
-            return bytes;
-        }
-        // Native validation failure replays the Java parser into the same private
-        // array, preserving exact diagnostics without exposing partial output.
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = (byte) fromHexDigits(string, i * 2);
         }
