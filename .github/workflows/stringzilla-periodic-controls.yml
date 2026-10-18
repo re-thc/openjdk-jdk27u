@@ -66,7 +66,7 @@ jobs:
           py_compile.compile(script, doraise=True)
           py_compile.compile("auxiliary/.github/scripts/stringzilla-performance-extra.py", doraise=True)
           subprocess.run(["python", script, "physical", "--backend", "${{ matrix.backend }}"], check=True)
-      - name: Restore successful producer images and attest every tier and control
+      - name: Restore archived pairs after Linux and recovered MSVC qualification
         id: runtime
         if: steps.physical.outputs.available == 'true'
         shell: python
@@ -192,7 +192,7 @@ jobs:
           if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
           fs.writeFileSync("perf-output/periodic.json", JSON.stringify({
             source: "4592230b14fc2f4b537b162fd7f6b791e882b615", producer_run: 39121850979, triplets: seen.size, records: seen.size * 3, shards: all,
-            reverse_character_c2: input.reverse_character_c2
+            reverse_character_c2: input.reverse_character_c2, msvc_recovery_validation: input.msvc_recovery
           }, null, 2) + "\n");
           fs.writeFileSync("perf-output/PERIODIC.md",
             "All 30 periodic triplets retain matched complete images and every higher enabled mean. They are disjoint from the primary and preceding 35-control matrices. A ! marks nonoverlapping reported intervals.\n\n" +
