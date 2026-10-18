@@ -29,6 +29,7 @@
  */
 
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -42,10 +43,43 @@ public class RustRegexInitialization {
             output.shouldHaveExitValue(0);
             output.shouldContain(INITIALIZATION);
         }
+        for (String mode : new String[]{"lookahead", "lookbehind", "embedded", "unicode", "literal", "plain",
+                                        "quoted", "openQuote"}) {
+            ProcessTools.executeTestJava("-Xint", "-Xshare:off", "-Xlog:class+init=info",
+                    Search.class.getName(), mode)
+                    .shouldHaveExitValue(0)
+                    .shouldNotContain(INITIALIZATION);
+        }
     }
 
     public static class Search {
         public static void main(String[] args) {
+            if (!args[0].equals("short") && !args[0].equals("mutable") && !args[0].equals("long")) {
+                String expression = switch (args[0]) {
+                    case "lookahead" -> "(?=error)(error)([0-9]+)";
+                    case "lookbehind" -> "(?<!x)(error)([0-9]+)";
+                    case "embedded" -> "(?i)(error)([0-9]+)";
+                    case "literal", "plain" -> "error123";
+                    case "quoted" -> "\\Qerror123\\E";
+                    case "openQuote" -> "\\Qerror123";
+                    default -> "(error)([0-9]+)";
+                };
+                int flags = args[0].equals("literal") ? Pattern.LITERAL
+                        : args[0].equals("unicode") ? Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE : 0;
+                Matcher matcher = Pattern.compile(expression, flags).matcher("error123");
+                if (!matcher.find() || !matcher.group().equals("error123")
+                        || !matcher.reset().matches() || !matcher.reset().lookingAt())
+                    throw new AssertionError("Java-only regex state");
+                boolean literal = args[0].equals("literal") || args[0].equals("plain")
+                        || args[0].equals("quoted") || args[0].equals("openQuote");
+                if (matcher.groupCount() != (literal ? 0 : 2))
+                    throw new AssertionError("Java-only group count");
+                if (!literal && !matcher.group(2).equals("123"))
+                    throw new AssertionError("Java-only capture");
+                matcher.hitEnd();
+                matcher.requireEnd();
+                return;
+            }
             CharSequence input = args[0].equals("short") ? "x ".repeat(32) : "x ".repeat(2048);
             if (args[0].equals("mutable")) input = new StringBuilder(input);
             if (Pattern.compile("error[0-9]+").matcher(input).find()) {

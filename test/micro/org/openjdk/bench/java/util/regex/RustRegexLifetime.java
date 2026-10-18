@@ -81,8 +81,14 @@ public class RustRegexLifetime {
         };
         hit = candidate + miss.substring(candidate.length());
         Pattern warm = Pattern.compile(regex);
-        for (int i = 0; i < 12000; i++)
+        // Exercise the adapter beyond the short Java-choice window as well.
+        // Otherwise the first cold backend can compile that route in a sample.
+        Matcher warmAdapter = warm.matcher(candidate + "!".repeat(256));
+        for (int i = 0; i < 12000; i++) {
+            if (!warmAdapter.reset().find())
+                throw new IllegalStateException("adapter warmup result");
             Pattern.compile(regex).matcher(candidate + "!").find();
+        }
         if (threads > 1) {
             pool = Executors.newFixedThreadPool(threads);
             // Create workers before measuring Pattern lifetimes.
@@ -90,12 +96,10 @@ public class RustRegexLifetime {
             for (int i = 0; i < threads; i++) tasks.add(() -> 0);
             pool.invokeAll(tasks);
         }
-        // Warm the complete facade before timing cold backends. In the paired
+        // Warm the complete facade for both reuse modes. In the paired
         // C2 runs (CompileThreshold=1000), warming only Pattern.compile/find
         // leaves this low-invocation method in the interpreter.
-        if (reuse.equals("cold")) {
-            for (int i = 0; i < 2000; i++) lifetime();
-        }
+        for (int i = 0; i < 2000; i++) lifetime();
         java.lang.ref.Reference.reachabilityFence(warm);
     }
 

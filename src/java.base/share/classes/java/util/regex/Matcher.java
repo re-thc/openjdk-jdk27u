@@ -1816,7 +1816,7 @@ public final class Matcher implements MatchResult {
         acceptMode = NOANCHOR;
         Pattern.Node javaRoot;
         RustRegex engine = null;
-        if (!RustRegex.ENABLED || javaOnly) {
+        if (javaOnly) {
             clearNativeEnd();
             javaRoot = parentPattern.root;
         }
@@ -1969,7 +1969,7 @@ public final class Matcher implements MatchResult {
         acceptMode = anchor;
         Pattern.Node javaRoot;
         RustRegex engine = null;
-        if (!RustRegex.ENABLED || javaOnly) {
+        if (javaOnly) {
             clearNativeEnd();
             javaRoot = parentPattern.matchRoot;
         }
@@ -2000,6 +2000,19 @@ public final class Matcher implements MatchResult {
             oldLast = last;
             modCount++;
             return result;
+        }
+        // A mandatory prepared literal can reject an anchored String before
+        // entering the adapter. No atom has consumed input in this case.
+        int prefixFirstChar = engine.literalDigitsFirstChar();
+        if (prefixFirstChar >= 0 && text instanceof String input
+                && (from == to || input.charAt(from) != prefixFirstChar)) {
+            clearNativeEnd();
+            nativePendingLast = false;
+            hitEnd = from == to;
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
         }
         int nativeResult = nativeMatch(engine, base, from, anchor == ENDANCHOR ? 2 : 1);
         boolean result;
@@ -2165,7 +2178,7 @@ public final class Matcher implements MatchResult {
     }
 
     private void ensureContinuation() {
-        if (RustRegex.ENABLED && nativePendingLast) replayNative();
+        if (nativePendingLast) replayNative();
     }
 
     private void ensureEndFlags() {

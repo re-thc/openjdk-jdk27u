@@ -472,6 +472,7 @@ public class RustRegexTest {
         collectedPreparation();
         resetCapturePublication();
         preparedPlans();
+        preparedBoundaries();
         fixedCountContinuation();
         primary();
         shortAndEarlyMatches();
@@ -564,6 +565,37 @@ public class RustRegexTest {
                         a.reset(); b.reset();
                         equal(a, b, a.find(), b.find(), true);
                         if (exactPlan) nativeOnly(p);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void preparedBoundaries() throws Exception {
+        for (String expression : new String[]{"error[0-9]+", "(error)([0-9]+)",
+                "(?<word>error)(?<number>[0-9]+)"}) {
+            Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
+            for (int length : new int[]{16, 17, 32, 33, 39, 40, 41, 64, 65}) {
+                String padding = "!".repeat(length);
+                for (String input : new String[]{padding, "error123" + padding.substring(8),
+                        padding.substring(8) + "error123", "errorX" + padding.substring(6)}) {
+                    Matcher a = p.matcher(input), b = ref.matcher(input);
+                    // Include first use and reused preparations at each boundary.
+                    for (int use = 0; use < 20; use++) {
+                        for (int operation = 0; operation < 3; operation++) {
+                            a.reset(); b.reset();
+                            boolean av = switch (operation) {
+                                case 1 -> a.matches(); case 2 -> a.lookingAt(); default -> a.find();
+                            };
+                            boolean bv = switch (operation) {
+                                case 1 -> b.matches(); case 2 -> b.lookingAt(); default -> b.find();
+                            };
+                            equal(a, b, av, bv, true);
+                            nativeOnly(p);
+                            // A rejected anchor must preserve the next search position.
+                            equal(a, b, a.find(), b.find(), true);
+                            nativeOnly(p);
+                        }
                     }
                 }
             }

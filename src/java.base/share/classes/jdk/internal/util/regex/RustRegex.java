@@ -39,6 +39,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 /** Native primary engine for a parsed common subset of Java regex syntax. */
 public final class RustRegex {
     public static final boolean ENABLED;
+    public static final int SUPPORTED_FLAGS = Pattern.UNIX_LINES | Pattern.CASE_INSENSITIVE | Pattern.DOTALL;
+    public static final int MAX_PATTERN_LENGTH = 4096;
     private static final int JAVA_TIER;
     public static final int MAX_LENGTH = 65536;
     public final int groupCount;
@@ -66,7 +68,10 @@ public final class RustRegex {
         contextSensitive = subset.contextSensitive;
         finalTerminatorSensitive = subset.finalTerminatorSensitive;
         this.fastPlan = fastPlan;
-        javaPlanWidth = shortLiteralPrefix() == null ? 8 : 16;
+        String prefix = shortLiteralPrefix();
+        // The small prepared skip traversal avoids adapter work in interpreter
+        // and C1 configurations. Keep the C2 window narrow for vector searches.
+        javaPlanWidth = prefix == null ? 8 : JAVA_TIER == 2 ? 16 : Math.min(64, 8 * prefix.length());
         fixedWidth = !subset.variableLength;
         shortAlternatives = shortLiteralAlternatives(subset.source);
         deferred = handle == 0 ? subset : null;
@@ -98,8 +103,8 @@ public final class RustRegex {
     }
 
     public static RustRegex compile(String pattern, int flags) {
-        if (!ENABLED || pattern.length() > 4096 ||
-                (flags & ~(Pattern.UNIX_LINES | Pattern.CASE_INSENSITIVE | Pattern.DOTALL)) != 0)
+        if (!ENABLED || pattern.length() > MAX_PATTERN_LENGTH ||
+                (flags & ~SUPPORTED_FLAGS) != 0)
             return null;
         CacheKey key = new CacheKey(pattern, flags);
         synchronized (CompiledCache.ENTRIES) {
@@ -110,7 +115,7 @@ public final class RustRegex {
                 if (engine != null) return engine;
                 if (cached.preparedSubset != null) {
                     engine = new RustRegex(0, cached.preparedSubset, cached.fastPlan);
-                    cache(key, new CacheEntry(false, new WeakReference<>(engine), cached.preparedSubset, cached.fastPlan));
+                    cached.engine = new WeakReference<>(engine);
                     return engine;
                 }
             }
@@ -158,8 +163,20 @@ public final class RustRegex {
             return other instanceof CacheKey key && flags == key.flags && pattern.equals(key.pattern);
         }
     }
-    private record CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine,
-                              Subset preparedSubset, FastPlan fastPlan) { }
+    private static final class CacheEntry {
+        final boolean javaOnly;
+        // The mutable weak slot is guarded by CompiledCache.ENTRIES.
+        WeakReference<RustRegex> engine;
+        final Subset preparedSubset;
+        final FastPlan fastPlan;
+        CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine,
+                   Subset preparedSubset, FastPlan fastPlan) {
+            this.javaOnly = javaOnly;
+            this.engine = engine;
+            this.preparedSubset = preparedSubset;
+            this.fastPlan = fastPlan;
+        }
+    }
     private static final class CompiledCache {
         static final Map<CacheKey, CacheEntry> ENTRIES = new LinkedHashMap<>(32, 0.75f, true);
     }
@@ -204,6 +221,7 @@ public final class RustRegex {
     public boolean hasShortPlan() { return fastPlan != null; }
     // Supply the validated literal/digit layout when a Java traversal is needed.
     public String literalDigitsPrefix() { return fastPlan instanceof FastDigits digits ? digits.prefix : null; }
+    public int literalDigitsFirstChar() { return fastPlan instanceof FastDigits digits ? digits.firstChar : -1; }
     public int literalPrefixGroup() { return ((FastDigits) fastPlan).prefixGroup; }
     public int literalDigitsGroup() { return ((FastDigits) fastPlan).digitsGroup; }
     public String shortLiteralPrefix() {
@@ -378,7 +396,7 @@ public final class RustRegex {
         }
     }
 
-    private record FastDigits(String prefix, int prefixGroup, int digitsGroup) implements FastPlan {
+    private record FastDigits(String prefix, int prefixGroup, int digitsGroup, int firstChar) implements FastPlan {
         static FastDigits parse(String source, int groups) {
             if (source.isEmpty()) return null;
             int cursor = 0, prefixGroup = 0, digitsGroup = 0;
@@ -413,7 +431,7 @@ public final class RustRegex {
             }
             if (end != source.length() || groups != 1 + (prefixGroup != 0 ? 1 : 0) + (digitsGroup != 0 ? 1 : 0))
                 return null;
-            return new FastDigits(prefix, prefixGroup, digitsGroup);
+            return new FastDigits(prefix, prefixGroup, digitsGroup, prefix.isEmpty() ? -1 : prefix.charAt(0));
         }
 
         private static int groupBody(String source, int at) {

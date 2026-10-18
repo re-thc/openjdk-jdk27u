@@ -2049,7 +2049,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * of the expression which will create the object tree.
      */
     private void compile() {
-        RustRegex nativePattern = RustRegex.compile(pattern, flags);
+        // These flags and leading groups cannot use the native grammar. Avoid
+        // initializing its preparation/cache machinery for Java-only patterns.
+        RustRegex nativePattern = (flags & ~RustRegex.SUPPORTED_FLAGS) == 0
+                && pattern.length() <= RustRegex.MAX_PATTERN_LENGTH && !javaOnlySyntax()
+                ? RustRegex.compile(pattern, flags) : null;
         if (nativePattern != null) {
             rustRegex = nativePattern;
             capturingGroupCount = nativePattern.groupCount;
@@ -2059,6 +2063,30 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
         compileJava();
         javaCompiled = true;
+    }
+
+    private boolean javaOnlySyntax() {
+        if (pattern.startsWith("(?")) {
+            if (pattern.length() < 3) return true;
+            char kind = pattern.charAt(2);
+            if (kind == ':') return false;
+            if (kind != '<' || pattern.length() < 4) return true;
+            char next = pattern.charAt(3);
+            return next == '=' || next == '!';
+        }
+        if (pattern.startsWith("\\Q")) {
+            int endQuote = pattern.indexOf("\\E", 2);
+            if (endQuote < 0 || endQuote == pattern.length() - 2) return true;
+        }
+        // A plain literal has no complex native plan. Stop at the first
+        // possible operator or escape; the native parser validates the rest.
+        for (int i = 0; i < pattern.length(); i++) {
+            switch (pattern.charAt(i)) {
+                case '(', ')', '[', ']', '{', '}', '.', '^', '$', '|', '*', '+', '?', '\\':
+                    return false;
+            }
+        }
+        return true;
     }
 
     private void compileJava() {
