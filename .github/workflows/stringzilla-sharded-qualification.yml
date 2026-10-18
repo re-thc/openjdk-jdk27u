@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   configuration:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     outputs:
       source: ${{ steps.pin.outputs.source }}
       helper-hash: ${{ steps.proof.outputs.helper-sha256 }}
@@ -73,7 +73,7 @@ jobs:
 
   prepare-jtreg:
     needs: configuration
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -226,7 +226,7 @@ jobs:
   collect:
     if: ${{ !cancelled() && needs.configuration.result == 'success' }}
     needs: [configuration, serial_pair, avx2_pair, neon_pair, msvc_pair, serial_controls, avx2_controls, neon_controls, msvc_controls, avx512_controls]
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     env:
       SOURCE: ${{ needs.configuration.outputs.source }}
       GH_TOKEN: ${{ github.token }}
