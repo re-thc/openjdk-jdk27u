@@ -128,8 +128,11 @@ IMPORT_SOURCE_TEST := $(TEST_SUPPORT_DIR)/headless-module-info/gen-module-info-t
 IMPORT_SUPPORT_TEST := $(TEST_SUPPORT_DIR)/headless-source-imports
 # Resolve platform modules from the built JDK, while exposing only fixture
 # source modules. A separate -d directory must not implicitly rebuild java.base.
+# Use the same interim compiler directly: a preceding product make may still
+# have a javac server stopping asynchronously in the shared port directory.
 IMPORT_SOURCE_ARGS := IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) \
     SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) TOP_SRC_DIRS= \
+    ENABLE_JAVAC_SERVER=false \
     MODULEPATH=$(call PathList, $(JDK_OUTPUTDIR)/modules $(IMPORT_SUPPORT_TEST)/classes)
 # Product javac can emit a newer class-file version than the boot JDK accepts.
 source-imports: module-info
