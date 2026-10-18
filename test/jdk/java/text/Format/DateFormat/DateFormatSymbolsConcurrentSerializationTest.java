@@ -63,6 +63,7 @@ import jdk.test.lib.Utils;
 
 public class DateFormatSymbolsConcurrentSerializationTest {
     private static final String TARGET = Target.class.getName();
+    private static final String SNAPSHOT_TARGET = SnapshotTarget.class.getName();
     private static final String SYMBOLS = DateFormatSymbols.class.getName();
     private static final String WRITER = "symbols-writer";
     private static final String CLONER = "symbols-cloner";
@@ -71,13 +72,18 @@ public class DateFormatSymbolsConcurrentSerializationTest {
     public static void main(String[] args) throws Exception {
         run(false);
         run(true);
+        run(SNAPSHOT_TARGET, "", true);
     }
 
     private static void run(boolean withSetter) throws Exception {
+        run(TARGET, Boolean.toString(withSetter), false);
+    }
+
+    private static void run(String target, String argument, boolean snapshot) throws Exception {
         var launcher = Bootstrap.virtualMachineManager().defaultConnector();
         var arguments = launcher.defaultArguments();
         arguments.get("home").setValue(System.getProperty("test.jdk"));
-        arguments.get("main").setValue(TARGET + " " + withSetter);
+        arguments.get("main").setValue(target + " " + argument);
         var options = new ArrayList<>(List.of(Utils.getTestJavaOpts()));
         options.add("-cp");
         options.add(System.getProperty("test.class.path", System.getProperty("java.class.path")));
@@ -88,7 +94,8 @@ public class DateFormatSymbolsConcurrentSerializationTest {
         Thread output = copy(process.getInputStream());
         Thread errors = copy(process.getErrorStream());
         try {
-            exercise(vm);
+            if (snapshot) exerciseSnapshot(vm);
+            else exercise(vm);
             if (!process.waitFor(TIMEOUT, TimeUnit.MILLISECONDS)) {
                 throw new AssertionError("Debuggee did not terminate");
             }
@@ -112,6 +119,55 @@ public class DateFormatSymbolsConcurrentSerializationTest {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private static void exerciseSnapshot(VirtualMachine vm) throws Exception {
+        var requests = vm.eventRequestManager();
+        var captured = requests.createMethodEntryRequest();
+        captured.addClassFilter(SYMBOLS + "$SymbolArrays");
+        captured.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+        captured.enable();
+        var finished = requests.createMethodEntryRequest();
+        finished.addClassFilter(SNAPSHOT_TARGET);
+        finished.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
+        EventSet stoppedClone = null;
+        boolean copiedAfterExposure = false;
+        boolean disconnected = false;
+        while (!disconnected) {
+            EventSet events = vm.eventQueue().remove(TIMEOUT);
+            if (events == null) throw new AssertionError("Snapshot schedule timed out");
+            boolean resume = true;
+            for (Event event : events) {
+                if (event instanceof MethodEntryEvent entry
+                        && entry.thread().name().equals(CLONER)
+                        && entry.method().name().equals("copyTo")) {
+                    // The clone captured its immutable snapshot but has not
+                    // copied any references. Let serialization finish and
+                    // mutate the exposed source array before resuming it.
+                    captured.disable();
+                    stoppedClone = events;
+                    resume = false;
+                    finished.addThreadFilter(vm.allThreads().stream()
+                            .filter(t -> t.name().equals(WRITER)).findFirst().orElseThrow());
+                    finished.enable();
+                    ClassType target = (ClassType) vm.classesByName(SNAPSHOT_TARGET).getFirst();
+                    target.invokeMethod(entry.thread(), target.methodsByName("startWriter").getFirst(),
+                            List.of(), ClassType.INVOKE_SINGLE_THREADED);
+                } else if (event instanceof MethodEntryEvent entry
+                        && entry.thread().name().equals(WRITER)
+                        && entry.method().name().equals("writerFinished")) {
+                    if (stoppedClone == null) throw new AssertionError("No captured snapshot");
+                    copiedAfterExposure = true;
+                    stoppedClone.resume();
+                    stoppedClone = null;
+                    finished.disable();
+                } else if (event instanceof VMDeathEvent || event instanceof VMDisconnectEvent) {
+                    disconnected = true;
+                }
+            }
+            if (resume && !disconnected) events.resume();
+        }
+        if (!copiedAfterExposure) throw new AssertionError("Snapshot schedule did not execute");
     }
 
     private static void exercise(VirtualMachine vm) throws Exception {
@@ -260,6 +316,59 @@ public class DateFormatSymbolsConcurrentSerializationTest {
         contention.enable();
         target.invokeMethod(writer, target.methodsByName("startClone").getFirst(),
                 List.of(), ClassType.INVOKE_SINGLE_THREADED);
+    }
+
+    public static class SnapshotTarget {
+        private static final CountDownLatch write = new CountDownLatch(1);
+        private static DateFormatSymbols source;
+        private static DateFormatSymbols clone;
+        private static Throwable failure;
+
+        public static void main(String[] args) throws Exception {
+            source = new DateFormatSymbols(Locale.US);
+            source.setZoneStrings(new String[][] {{"GMT", "GMT", "GMT", "GMT", "GMT"}});
+            String[] expected = source.getEras();
+            Thread cloner = new Thread(() -> {
+                try {
+                    clone = (DateFormatSymbols) source.clone();
+                } catch (Throwable t) {
+                    failure = t;
+                }
+            }, CLONER);
+            Thread writer = new Thread(() -> {
+                try {
+                    write.await();
+                    try (var out = new ObjectOutputStream(new ByteArrayOutputStream()) {
+                        { enableReplaceObject(true); }
+                        @Override
+                        protected Object replaceObject(Object object) {
+                            if (object instanceof String[] array && Arrays.equals(array, expected)) {
+                                array[0] = "snapshot-hook-mutation";
+                            }
+                            return object;
+                        }
+                    }) {
+                        out.writeObject(source);
+                    }
+                    writerFinished();
+                } catch (Throwable t) {
+                    failure = t;
+                }
+            }, WRITER);
+            writer.start();
+            cloner.start();
+            writer.join();
+            cloner.join();
+            if (failure != null) throw new AssertionError(failure);
+            if (!source.getEras()[0].equals("snapshot-hook-mutation")
+                    || !Arrays.equals(clone.getEras(), expected)
+                    || !Arrays.equals(new DateFormatSymbols(Locale.US).getEras(), expected)) {
+                throw new AssertionError("Captured snapshot shared the exposed source array");
+            }
+        }
+
+        private static void startWriter() { write.countDown(); }
+        private static void writerFinished() { }
     }
 
     public static class Target {

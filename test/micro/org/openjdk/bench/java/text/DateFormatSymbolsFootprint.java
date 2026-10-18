@@ -36,8 +36,9 @@ import com.sun.management.ThreadMXBean;
 /**
  * Standalone bounded footprint/allocation probe; no JMH dependency is needed.
  * Run with this class as a javaagent to measure shallow sizes of the unique
- * six-field arrays reachable from a 1000-instance cohort. Strings, zone data,
- * and other cache storage are excluded. Timings are indicative fixed-loop
+ * six-field arrays and optional ownership snapshots reachable from a
+ * 1000-instance cohort. Strings, zone data, and other cache storage are
+ * excluded. Timings are indicative fixed-loop
  * measurements, not a substitute for a JMH performance comparison.
  *
  * From the repository root, using a built JDK:
@@ -97,8 +98,23 @@ public class DateFormatSymbolsFootprint {
             System.out.printf("%s distinct=%d%n", name, distinct.size());
         }
         long arrayBytes = arrays.keySet().stream().mapToLong(instrumentation::getObjectSize).sum();
-        System.out.printf("retained clones=%s arrays=%d slots=%d arrayBytes=%d instanceBytes=%d%n",
-                clones, arrays.size(), slots, arrayBytes, instrumentation.getObjectSize(instances[0]));
+        var snapshots = new IdentityHashMap<Object, Boolean>();
+        try {
+            Field field = DateFormatSymbols.class.getDeclaredField("sharedSymbolArrays");
+            field.setAccessible(true);
+            for (var instance : instances) {
+                Object snapshot = field.get(instance);
+                if (snapshot != null) snapshots.put(snapshot, true);
+            }
+        } catch (NoSuchFieldException baselineWithoutSnapshots) {
+            // The same probe measures the unmodified baseline.
+        }
+        long snapshotBytes = snapshots.keySet().stream().mapToLong(instrumentation::getObjectSize).sum();
+        long instanceBytes = instrumentation.getObjectSize(instances[0]);
+        System.out.printf("retained clones=%s arrays=%d slots=%d arrayBytes=%d instanceBytes=%d "
+                        + "snapshots=%d snapshotBytes=%d cohortShallowBytes=%d%n",
+                clones, arrays.size(), slots, arrayBytes, instanceBytes,
+                snapshots.size(), snapshotBytes, instances.length * instanceBytes + arrayBytes + snapshotBytes);
         keep[0] = instances;
     }
     public static void main(String[] args) throws Exception {
