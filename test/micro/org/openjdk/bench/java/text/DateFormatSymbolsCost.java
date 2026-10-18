@@ -23,6 +23,11 @@
 
 package org.openjdk.bench.java.text;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -91,6 +96,28 @@ public class DateFormatSymbolsCost {
         }
     }
 
+    @State(Scope.Thread)
+    public static class SerializationState {
+        @Setup(Level.Trial)
+        public void setup() throws IOException, ClassNotFoundException {
+            DateFormatSymbols original = new DateFormatSymbols(Locale.US);
+            try (var input = new ObjectInputStream(
+                    new ByteArrayInputStream(serialize(original)))) {
+                if (!original.equals(input.readObject())) {
+                    throw new AssertionError("Invalid symbols serialization state");
+                }
+            }
+        }
+    }
+
+    private static byte[] serialize(DateFormatSymbols symbols) throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        try (var output = new ObjectOutputStream(bytes)) {
+            output.writeObject(symbols);
+        }
+        return bytes.toByteArray();
+    }
+
     @Benchmark
     public DateFormatSymbols symbolsNew() {
         return new DateFormatSymbols(Locale.US);
@@ -104,6 +131,13 @@ public class DateFormatSymbolsCost {
     @Benchmark
     public Object symbolsCloneShared(SharedState state) {
         return state.symbols.clone();
+    }
+
+    @Benchmark
+    public byte[] symbolsSerialize(SerializationState state) throws IOException {
+        // A fresh instance exercises the first-write ownership transition on
+        // every invocation, rather than only during the first warmup.
+        return serialize(new DateFormatSymbols(Locale.US));
     }
 
     @Benchmark
