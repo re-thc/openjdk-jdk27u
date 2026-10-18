@@ -1,0 +1,333 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Qualify one pinned source using matched complete-image controls.
+name: StringZilla targeted complete-image pilot
+on:
+  push:
+    branches: [codex/stringzilla-candidate-pilot-qualification]
+    paths: [.github/workflows/stringzilla-candidate-pilot-qualification.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-candidate-pilot-qualification
+  cancel-in-progress: false
+
+jobs:
+  configuration:
+    runs-on: ubuntu-24.04
+    outputs:
+      source: ${{ steps.pin.outputs.source }}
+      helper-hash: ${{ steps.proof.outputs.helper-sha256 }}
+      parent-manifest-hash: ${{ steps.proof.outputs.parent-manifest-sha256 }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Pin the fully reviewed candidate
+        id: pin
+        shell: python
+        run: |
+          import os, re, subprocess
+          source = "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d"
+          assert re.fullmatch(r"[0-9a-f]{40}", source) and source != "0" * 40
+          status = subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/39073742791",
+                                           "--jq", ".status"], text=True).strip()
+          assert status == "completed", "The archived original-image campaign must be complete"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as stream:
+              stream.write("source=" + source + "\n")
+      - name: Checkout pinned runtime identity and frozen helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pin.outputs.source }}
+          persist-credentials: false
+          sparse-checkout: |
+            doc/stringzilla/native-cases.tsv
+            .github/scripts/stringzilla-performance.py
+      - name: Checkout pinned auxiliary driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Prove the projected matrix has no duplicates or omissions
+        id: proof
+        shell: python
+        env:
+          SOURCE: ${{ steps.pin.outputs.source }}
+        run: |
+          import os, py_compile, subprocess
+          path = "driver/.github/scripts/stringzilla-candidate-pilot.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run(["python", path, "proof", "--source", os.environ["SOURCE"]], check=True)
+      - name: Retain the complete matrix proof
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-candidate-pilot-matrix-${{ github.sha }}
+          path: perf-output/matrix-proof.json
+          retention-days: 30
+
+  prepare-jtreg:
+    needs: configuration
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.configuration.outputs.source }}
+          persist-credentials: false
+          sparse-checkout: |
+            .github
+            make/conf/github-actions.conf
+      - uses: ./.github/actions/build-jtreg
+
+  serial_pair:
+    needs: [configuration, prepare-jtreg]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-build.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: serial
+      runner: ubuntu-26.04
+      platform: linux-x64
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  avx2_pair:
+    needs: [configuration, prepare-jtreg]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-build.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: avx2
+      runner: ubuntu-26.04
+      platform: linux-x64
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  neon_pair:
+    needs: [configuration, prepare-jtreg]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-build.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: neon
+      runner: ubuntu-26.04-arm
+      platform: linux-aarch64
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  msvc_pair:
+    needs: [configuration, prepare-jtreg]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-build.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: msvc
+      runner: windows-2025
+      platform: windows-x64
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  serial_controls:
+    needs: [configuration, serial_pair]
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: serial
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04
+      artifact-id: ${{ needs.serial_pair.outputs.artifact-id }}
+      artifact-digest: ${{ needs.serial_pair.outputs.artifact-digest }}
+      original-image-hash: ${{ needs.serial_pair.outputs.original-image-hash }}
+      fork-image-hash: ${{ needs.serial_pair.outputs.fork-image-hash }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  avx2_controls:
+    needs: [configuration, avx2_pair]
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: avx2
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04
+      artifact-id: ${{ needs.avx2_pair.outputs.artifact-id }}
+      artifact-digest: ${{ needs.avx2_pair.outputs.artifact-digest }}
+      original-image-hash: ${{ needs.avx2_pair.outputs.original-image-hash }}
+      fork-image-hash: ${{ needs.avx2_pair.outputs.fork-image-hash }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  neon_controls:
+    needs: [configuration, neon_pair]
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: neon
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04-arm
+      artifact-id: ${{ needs.neon_pair.outputs.artifact-id }}
+      artifact-digest: ${{ needs.neon_pair.outputs.artifact-digest }}
+      original-image-hash: ${{ needs.neon_pair.outputs.original-image-hash }}
+      fork-image-hash: ${{ needs.neon_pair.outputs.fork-image-hash }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  msvc_controls:
+    needs: [configuration, msvc_pair]
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: msvc
+      tier: ${{ matrix.tier }}
+      runner: windows-2025
+      artifact-id: ${{ needs.msvc_pair.outputs.artifact-id }}
+      artifact-digest: ${{ needs.msvc_pair.outputs.artifact-digest }}
+      original-image-hash: ${{ needs.msvc_pair.outputs.original-image-hash }}
+      fork-image-hash: ${{ needs.msvc_pair.outputs.fork-image-hash }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  avx512_controls:
+    needs: [configuration, avx2_pair]
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-candidate-pilot-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: avx512
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04
+      artifact-id: ${{ needs.avx2_pair.outputs.artifact-id }}
+      artifact-digest: ${{ needs.avx2_pair.outputs.artifact-digest }}
+      original-image-hash: ${{ needs.avx2_pair.outputs.original-image-hash }}
+      fork-image-hash: ${{ needs.avx2_pair.outputs.fork-image-hash }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  collect:
+    if: ${{ !cancelled() && needs.configuration.result == 'success' }}
+    needs: [configuration, serial_pair, avx2_pair, neon_pair, msvc_pair, serial_controls, avx2_controls, neon_controls, msvc_controls, avx512_controls]
+    runs-on: ubuntu-24.04
+    env:
+      SOURCE: ${{ needs.configuration.outputs.source }}
+      GH_TOKEN: ${{ github.token }}
+      PAIR_SERIAL: ${{ toJSON(needs.serial_pair.outputs) }}
+      PAIR_AVX2: ${{ toJSON(needs.avx2_pair.outputs) }}
+      PAIR_NEON: ${{ toJSON(needs.neon_pair.outputs) }}
+      PAIR_MSVC: ${{ toJSON(needs.msvc_pair.outputs) }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout runtime identity and frozen helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.configuration.outputs.source }}
+          persist-credentials: false
+          sparse-checkout: |
+            doc/stringzilla/native-cases.tsv
+            .github/scripts/stringzilla-performance.py
+      - name: Checkout pinned strict collector and driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Verify result artifacts and recreate each exact shard manifest
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-candidate-pilot.py", "collection",
+                          "--source", os.environ["SOURCE"]], check=True)
+      - name: Strictly validate all triplets and their exact matrix union
+        shell: node {0}
+        run: |
+          const fs = require("fs"), crypto = require("crypto");
+          function collector(path, expectedHash) {
+            const source = fs.readFileSync(path, "utf8");
+            if (crypto.createHash("sha256").update(source).digest("hex") !== expectedHash) throw Error("Wrong collector: " + path);
+            return Function("return (" + source + ")")();
+          }
+          const normal = collector("driver/.github/scripts/stringzilla-collector.js", "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26");
+          const periodic = collector("driver/.github/scripts/stringzilla-periodic-collector.js", "ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4");
+          const utf16Probe = collector("driver/.github/scripts/stringzilla-utf16-probe-collector.js", "9e32812135573ff1ea9ba202a3f41016bec7a0e3c2536e3d5890574e2fe8c23c");
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          function qualify(entries, physicalKeys, collect, shardCount = 15) {
+            const expected = new Set(physicalKeys), seen = new Set(), shards = [];
+            if (expected.size !== physicalKeys.length || entries.length !== shardCount) throw Error("Invalid expected matrix");
+            const table = [
+              "| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | O/E | D/E | Higher enabled mean |",
+              "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |"
+            ];
+            for (const entry of entries) {
+              const result = collect(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+                entry.manifest, entry.source, entry.base, entry.expected);
+              for (const group of result.groups) {
+                const enabled = group.controls.enabled;
+                const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+                const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+                if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate physical configuration: " + key);
+                seen.add(key);
+                const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean)
+                  .map(control => control + (group.comparisons[control].intervals_overlap ? "" : "!"));
+                const cells = ["original", "enabled", "disabled"].map(control =>
+                  group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+                const ratios = ["original", "disabled"].map(control => group.comparisons[control].speedup.toFixed(3));
+                table.push("| " + [entry.backend, group.tier, group.case, ...cells, ...ratios, higher.join(", ") || "-"].join(" | ") + " |");
+              }
+              shards.push(result);
+            }
+            if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
+            return {triplets: seen.size, records: seen.size * 3, shards, markdown: table.join("\n")};
+          }
+          const normalResult = qualify(input.entries, input.expected_physical_keys, normal);
+          const periodicResult = qualify(input.periodic_entries, input.periodic_expected_physical_keys, periodic);
+          if (periodicResult.triplets !== 30 || input.expected_physical_keys.some(key =>
+              input.periodic_expected_physical_keys.includes(key))) throw Error("Wrong or overlapping periodic matrix");
+          const probeResult = qualify(input.utf16_probe_entries, input.utf16_probe_expected_physical_keys, utf16Probe, 3);
+          if (probeResult.triplets !== 28 || input.utf16_probe_expected_physical_keys.some(key =>
+              input.expected_physical_keys.includes(key) || input.periodic_expected_physical_keys.includes(key))) {
+            throw Error("Wrong or overlapping UTF-16 probe matrix");
+          }
+          const triplets = normalResult.triplets + periodicResult.triplets + probeResult.triplets;
+          fs.writeFileSync("perf-output/qualification.json", JSON.stringify({
+            source: process.env.SOURCE, triplets, records: triplets * 3,
+            normal: {...normalResult, markdown: undefined}, periodic: {...periodicResult, markdown: undefined},
+            utf16_probe: {...probeResult, markdown: undefined}
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/QUALIFICATION.md",
+            "Matched complete original/enabled/disabled images; every higher enabled mean is retained. " +
+            "A ! marks nonoverlapping reported intervals. Compilation traces are separate from timing evidence.\n\n" +
+            "Normal frozen e073 harness: " + normalResult.triplets + " triplets.\n\n" + normalResult.markdown + "\n\n" +
+            "Separate frozen external ABC fixture: " + periodicResult.triplets + " triplets.\n\n" + periodicResult.markdown + "\n\n" +
+            "Separate external UTF-16 negative probes: " + probeResult.triplets + " triplets.\n\n" + probeResult.markdown + "\n");
+          console.log("Qualified " + normalResult.triplets + " normal and " + periodicResult.triplets +
+            " external ABC and " + probeResult.triplets + " UTF-16 probe triplets across 15 matched backend/tier jobs.");
+      - name: Retain full evidence and every measured loss
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-candidate-pilot-qualification-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
