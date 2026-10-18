@@ -65,7 +65,7 @@ jobs:
           script = "auxiliary/.github/scripts/stringzilla-single-candidate.py"
           py_compile.compile(script, doraise=True)
           subprocess.run(["python", script, "physical", "--backend", "${{ matrix.backend }}"], check=True)
-      - name: Restore successful producer images and attest every tier and control
+      - name: Restore archived pairs after Linux and recovered MSVC qualification
         id: runtime
         if: steps.physical.outputs.available == 'true'
         shell: python
@@ -178,7 +178,8 @@ jobs:
           }
           if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
           fs.writeFileSync("perf-output/supplement.json", JSON.stringify({
-            source: "4592230b14fc2f4b537b162fd7f6b791e882b615", producer_run: 39121850979, triplets: seen.size, records: seen.size * 3, shards: all
+            source: "4592230b14fc2f4b537b162fd7f6b791e882b615", producer_run: 39121850979, triplets: seen.size, records: seen.size * 3, shards: all,
+            msvc_recovery_validation: input.msvc_recovery
           }, null, 2) + "\n");
           fs.writeFileSync("perf-output/SUPPLEMENT.md",
             "All35 supplemental triplets retain matched complete images and every higher enabled mean. They are disjoint from the primary matrix.\n\n" +
