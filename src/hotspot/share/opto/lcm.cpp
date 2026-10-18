@@ -516,6 +516,30 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 
 
 //------------------------------select-----------------------------------------
+// A local, single-use MachTemp reserves a register for its instruction; it does
+// not produce a value. Schedule it together with that instruction instead of
+// making the instruction wait behind otherwise-ready value producers. Keep the
+// usual scheduling for temps used by the block end or outside this block.
+static bool schedule_temp_with_use(const PhaseCFG* cfg, const Block* block, const Node* n) {
+  if (!n->is_MachTemp() || n->outcnt() != 1) {
+    return false;
+  }
+  // ADLC temps have no value inputs. Leave any constrained temp on the normal
+  // ready list so that moving it cannot violate an added dependency.
+  if (n->req() != 1 || (n->in(0) != nullptr && !n->in(0)->is_Root())) {
+    return false;
+  }
+  for (uint i = n->req(); i < n->len(); i++) {
+    if (n->in(i) != nullptr) {
+      return false;
+    }
+  }
+  Node* use = n->raw_out(0);
+  return cfg->get_block_for_node(n) == block &&
+         cfg->get_block_for_node(use) == block && use->is_Mach() &&
+         !use->is_MachProj() && use != block->head() && use != block->end();
+}
+
 // Select a nice fellow from the worklist to schedule next. If there is only one
 // choice, then use it. CreateEx nodes that are initially ready must start their
 // blocks and are given the highest priority, by being placed at the beginning
@@ -721,6 +745,10 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
     Node *src_n = n->in(i);
     if (src_n == nullptr) continue;
     if (!src_n->is_Mach()) continue;
+    // A bundled temp is not live yet when select() scores its instruction.
+    // Its definition and use cancel within the bundle. In finalize mode the
+    // temp has already been scheduled and must be included in the accounting.
+    if (!finalize_mode && schedule_temp_with_use(this, block, src_n)) continue;
     uint src = _regalloc->_lrg_map.find(src_n);
     if (src == 0) continue;
     LRG& lrg_src = _regalloc->lrgs(src);
@@ -1010,7 +1038,8 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       uint local = 0;
       for( uint j=0; j<cnt; j++ ) {
         Node *m = n->in(j);
-        if( m && get_block_for_node(m) == block && !m->is_top() )
+        if( m && get_block_for_node(m) == block && !m->is_top() &&
+            !schedule_temp_with_use(this, block, m) )
           local++;              // One more block-local input
       }
       ready_cnt.at_put(n->_idx, local); // Count em up
@@ -1065,6 +1094,9 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   Node_List worklist;
   for(uint i4=i3; i4<node_cnt; i4++ ) {    // Put ready guys on worklist
     Node *m = block->get_node(i4);
+    if (schedule_temp_with_use(this, block, m)) {
+      continue;
+    }
     if( !ready_cnt.at(m->_idx) ) {   // Zero ready count?
       if (m->is_iteratively_computed()) {
         // Push induction variable increments last to allow other uses
@@ -1128,6 +1160,16 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
 
     // Select and pop a ready guy from worklist
     Node* n = select(block, worklist, ready_cnt, next_call, phi_cnt, recalc_pressure_nodes);
+    for (uint j = 0; j < n->len(); j++) {
+      Node* temp = n->in(j);
+      if (temp != nullptr && schedule_temp_with_use(this, block, temp)) {
+        block->map_node(temp, phi_cnt++);
+        if (OptoRegScheduling && block_size_threshold_ok) {
+          temp->add_flag(Node::Flag_is_scheduled);
+          adjust_register_pressure(temp, block, recalc_pressure_nodes, true);
+        }
+      }
+    }
     block->map_node(n, phi_cnt++);    // Schedule him next
 
     if (OptoRegScheduling && block_size_threshold_ok) {
