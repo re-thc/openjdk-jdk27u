@@ -1,0 +1,187 @@
+{
+  "schema": "stringzilla-native-boundary-focused-summary-v1",
+  "run": 39145911992,
+  "head": "affdda9cc3d4ecc10262eab2546abd6fd48ff962",
+  "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "candidate": "7878b10e6cfbecab376d87e8b5fe638ff9b2ceb7",
+  "scope": "Native component screening versus already-enabled459 adapter; no JVM/JMH/original-Java/end-to-end claim.",
+  "jobs": {
+    "serial": 117729589429,
+    "avx2": 117729589602,
+    "neon": 117729589760
+  },
+  "all_jobs_success": true,
+  "publications": {
+    "serial": "5c52ed602984952524f7b572f210ec37c5b40c18",
+    "avx2": "9e339ef6e568548e6563a17e3d8561e8711630bd",
+    "neon": "86c2e489192c1ccc7fff08497991cfe3b5d9892b"
+  },
+  "comparisons": 20,
+  "raw_samples": 600,
+  "every_higher_mean": [
+    {
+      "backend": "serial",
+      "case": "latin-immediate",
+      "baseline_ns": 10.988562337771079,
+      "candidate_ns": 11.867181835133955,
+      "sem_ns": {
+        "baseline": 0.06089323551991899,
+        "candidate": 0.00890967291738535
+      },
+      "change_percent": 7.995763871155281
+    },
+    {
+      "backend": "serial",
+      "case": "latin-64-immediate",
+      "baseline_ns": 33.995288367199784,
+      "candidate_ns": 34.85319940423419,
+      "sem_ns": {
+        "baseline": 0.17518746492974885,
+        "candidate": 0.22810981764161883
+      },
+      "change_percent": 2.5236174724205584
+    },
+    {
+      "backend": "serial",
+      "case": "utf16-512-9-end",
+      "baseline_ns": 11.903030336578775,
+      "candidate_ns": 12.046045501792886,
+      "sem_ns": {
+        "baseline": 0.01906532707161142,
+        "candidate": 0.014210215166996805
+      },
+      "change_percent": 1.2015021483614552
+    },
+    {
+      "backend": "serial",
+      "case": "utf16-64-immediate",
+      "baseline_ns": 33.009650234309944,
+      "candidate_ns": 34.21129742433855,
+      "sem_ns": {
+        "baseline": 0.07427885292901615,
+        "candidate": 0.06133582121251661
+      },
+      "change_percent": 3.64029058623474
+    },
+    {
+      "backend": "serial",
+      "case": "utf16-overlap-bulk",
+      "baseline_ns": 495.1261487747726,
+      "candidate_ns": 1183.4938202470312,
+      "sem_ns": {
+        "baseline": 0.435445935671805,
+        "candidate": 0.3356550106812863
+      },
+      "change_percent": 139.0287451340788
+    },
+    {
+      "backend": "serial",
+      "case": "extra-utf16-odd-512-32-end",
+      "baseline_ns": 19.615758157626903,
+      "candidate_ns": 20.528371043085677,
+      "sem_ns": {
+        "baseline": 0.06778709121017025,
+        "candidate": 0.18044906545458322
+      },
+      "change_percent": 4.652447680712957
+    },
+    {
+      "backend": "avx2",
+      "case": "latin-immediate",
+      "baseline_ns": 13.085013891468975,
+      "candidate_ns": 13.219750633190783,
+      "sem_ns": {
+        "baseline": 0.2920278189274752,
+        "candidate": 0.39570383724256575
+      },
+      "change_percent": 1.029702702949753
+    },
+    {
+      "backend": "avx2",
+      "case": "latin-overlap-258",
+      "baseline_ns": 14.306190959441016,
+      "candidate_ns": 15.650741254697438,
+      "sem_ns": {
+        "baseline": 0.05277239432008522,
+        "candidate": 0.04740842228790396
+      },
+      "change_percent": 9.398380736481915
+    },
+    {
+      "backend": "avx2",
+      "case": "latin-period2",
+      "baseline_ns": 416.13245040739355,
+      "candidate_ns": 576.4963425752646,
+      "sem_ns": {
+        "baseline": 0.8971043457142406,
+        "candidate": 1.1905420629680576
+      },
+      "change_percent": 38.53674281130319
+    },
+    {
+      "backend": "avx2",
+      "case": "latin-period3",
+      "baseline_ns": 422.58437419095014,
+      "candidate_ns": 581.8703142229765,
+      "sem_ns": {
+        "baseline": 1.68252865153791,
+        "candidate": 0.8082956486902282
+      },
+      "change_percent": 37.69328677544783
+    },
+    {
+      "backend": "avx2",
+      "case": "utf16-512-9-end",
+      "baseline_ns": 13.851803432311845,
+      "candidate_ns": 13.85674531798537,
+      "sem_ns": {
+        "baseline": 0.02812828413061091,
+        "candidate": 0.03355349668599341
+      },
+      "change_percent": 0.035676839464793275
+    },
+    {
+      "backend": "avx2",
+      "case": "utf16-64-immediate",
+      "baseline_ns": 16.18046405559878,
+      "candidate_ns": 16.774363396608024,
+      "sem_ns": {
+        "baseline": 0.016963415879548135,
+        "candidate": 0.02795037915221242
+      },
+      "change_percent": 3.6704716191606535
+    }
+  ],
+  "validation": {
+    "native_contracts": 6,
+    "sanitized_fixture_checks": 447,
+    "pinned_input_hashes_per_host": 298,
+    "arm_repeated_timings": 0,
+    "arm_candidate_object_unchanged": {
+      "prior_run": 39143174053,
+      "prior_head": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea",
+      "prior_kernel_blob": "3aa9f9988f14f4dc8bf948230578624721da7687",
+      "prior_kernel_object_sha256": "c557217a61351663df0aa423c992e98ec9dd84dfde06e7cb5ef7d03de03a7fb0",
+      "current_kernel_object_sha256": "c557217a61351663df0aa423c992e98ec9dd84dfde06e7cb5ef7d03de03a7fb0",
+      "timed_records": 0,
+      "reason": "The only new source line is excluded by the x86 guard"
+    }
+  },
+  "assembly_observation": {
+    "backend": "avx2",
+    "baseline_latin_leaf_lines": 1190,
+    "candidate_latin_leaf_lines": 1188,
+    "both_leaf_frames": "0xe0",
+    "both_tail_jump_to_outlined_old_helper": true,
+    "baseline_old_helper_lines": 1862,
+    "candidate_old_helper_lines": 2043,
+    "baseline_old_helper_frame": "0xe0",
+    "candidate_old_helper_frame": "0x100"
+  },
+  "decision": "The old Haswell helper boundary and Latin64 immediate component loss are restored. Periodic Latin and serial UTF overlap component losses remain; no wholesale candidate promotion or no-regression claim. Await separately running complete-JDK matched original/enabled/disabled pilot.",
+  "further_unrun_proposal": {
+    "kernel": "2b57a86d723f3cc1d31a163ad295bd5594429d06",
+    "sha256": "27827f40b49e9327ea81855e6c861ac744049a1b84df3aeb8b8e0adbf5444fca",
+    "status": "Unreferenced, unrun ARM late-load proposal; independent source/bounds review passed; no machine-code/performance recovery claim"
+  }
+}

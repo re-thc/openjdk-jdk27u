@@ -1,0 +1,1519 @@
+{
+  "scope": "component-only; unpromoted native candidates; not JMH or original-Java controls",
+  "job": {
+    "id": 117729589760,
+    "name": "Native neon baseline459 and changed candidate controls",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 39145911992,
+    "logs_url": null,
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Checkout unchanged production kernel and vendored library",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Checkout isolated candidates and unchanged fixture definitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Check auxiliary Python syntax before setup",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Install GCC16 and artifact inspection tools",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Validate7878 boundary and compare ten existing controls",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Retain every raw sample input assembly and validation receipt",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Post Checkout isolated candidates and unchanged fixture definitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 13
+      },
+      {
+        "name": "Post Checkout unchanged production kernel and vendored library",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 14
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15
+      }
+    ]
+  },
+  "provenance": {
+    "production_source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+    "candidate_status": "unpromoted-isolated-native-copy",
+    "auxiliary_head": "affdda9cc3d4ecc10262eab2546abd6fd48ff962",
+    "backend": "neon",
+    "expected_capabilities": 4,
+    "input_blobs": {
+      "baseline": {
+        "kernel_blob": "39144674b48777a00a41cf1456cd253a41fca2c2",
+        "kernel_sha256": "e6511e32540530e2086bec93bd66cce096f5f3226ba2d71be8cdfc7d5d709117",
+        "tests_blob": "285615e7e6b50123d850c4fd141bd4aff52955ac",
+        "tests_sha256": "358174761f88b1a6fad74ac99714935af9191722bc75d52add77f8b09d52d4ed"
+      },
+      "combined": {
+        "kernel_blob": "7878b10e6cfbecab376d87e8b5fe638ff9b2ceb7",
+        "kernel_sha256": "c55255109d139eb287deeb5080afe385d48cf4fa36502f47286e5a7f40c98da5",
+        "tests_blob": "a562967a00e1728e4959b61121f99fa0b83f674d",
+        "tests_sha256": "50d7d560eb0cecf1725df812d9e5a2201eb30fa921faf4cd84c7474e40e80ed0"
+      }
+    },
+    "compiler": "gcc-16 (Ubuntu 16-20260322-1ubuntu1) 16.0.1 20260322 (experimental) [trunk r16-8246-g569ace1fa50]\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "compiler_fullversion": "16.0.1",
+    "historical_compiler_package": "16-20260322-1ubuntu1",
+    "matches_historical_compiler_package": true,
+    "machine": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+    "cpuinfo": "processor\t: 0\nBogoMIPS\t: 2000.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16\nCPU implementer\t: 0x41\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0xd49\nCPU revision\t: 0\n\nprocessor\t: 1\nBogoMIPS\t: 2000.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16\nCPU implementer\t: 0x41\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0xd49\nCPU revision\t: 0\n\nprocessor\t: 2\nBogoMIPS\t: 2000.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16\nCPU implementer\t: 0x41\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0xd49\nCPU revision\t: 0\n\nprocessor\t: 3\nBogoMIPS\t: 2000.00\nFeatures\t: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm uscat ilrcpc flagm sb paca pacg dcpodp sve2 sveaes svebitperm svesha3 svesm4 flagm2 frint svei8mm svebf16 i8mm bf16\nCPU implementer\t: 0x41\nCPU architecture: 8\nCPU variant\t: 0x0\nCPU part\t: 0xd49\nCPU revision\t: 0\n\n",
+    "hwcap": 4009754623,
+    "timing_scope": "Candidate screening: native component calls only; no JVM, Java dispatch, JMH or original-Java comparison",
+    "input_scope_labels": "Potential adapter input ranges, not proof a helper executed; equality-only single-candidate ranges are excluded.",
+    "header_generation": {
+      "template_sha256": "dd86648102a3f1b3fb344948398734606a8fe0b0f1b91308d90e247d49b2a847",
+      "major": 71,
+      "minor": 0
+    },
+    "harness_sha256": "34ab41f2d1d52d87ff084a0ba9c30ba45f8b6a7e72d80f61575e6bb54c2be9fe",
+    "runner_sha256": "975f2d2a2e1a82aeb66d8e24a732452c22203c7787c23be3ecb917b529c178ad",
+    "fixture_input_map_sha256": "27c6004491c0120db2c0ca94a23a034a760428ad0b5763b53e8c7f53b3738a9f",
+    "flags": [
+      "gcc-16",
+      "-std=c11",
+      "-O3",
+      "-march=armv8.2-a",
+      "-DSZ_USE_SVE=0",
+      "-fno-lto",
+      "-fno-omit-frame-pointer",
+      "-Wall",
+      "-Wextra",
+      "-Wno-unknown-pragmas",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include"
+    ],
+    "source_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree d77e74232ae110e28c55ad591921085b7c961b24\tsrc\n040000 tree 896828b2284a10d89b27abe400dd698973da28e7\ttest",
+    "builds": {
+      "baseline": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-c",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/kernel-unit.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/kernel.o"
+        ],
+        "log": "baseline/build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "baseline_sanitized": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-fsanitize=address,undefined,alignment",
+          "-fno-sanitize-recover=all",
+          "-c",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/kernel-unit.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/kernel-sanitized.o"
+        ],
+        "log": "baseline/sanitized-build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "baseline_contract": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-fsanitize=address,undefined,alignment",
+          "-fno-sanitize-recover=all",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/contract.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/native-contract"
+        ],
+        "log": "baseline/contract-build.log",
+        "log_sha256": "1d37702d002bc1cc378f3ef39250c3e0835ac78d240a76d5cf0770bfddbdc7f3"
+      },
+      "combined": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-c",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/kernel-unit.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/kernel.o"
+        ],
+        "log": "combined/build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "combined_sanitized": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-fsanitize=address,undefined,alignment",
+          "-fno-sanitize-recover=all",
+          "-c",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/kernel-unit.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/kernel-sanitized.o"
+        ],
+        "log": "combined/sanitized-build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "combined_contract": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-fsanitize=address,undefined,alignment",
+          "-fno-sanitize-recover=all",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/contract.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/native-contract"
+        ],
+        "log": "combined/contract-build.log",
+        "log_sha256": "bdf7c3ed9171a11446d220359f40a9acf5e1b6d6fa0aea17f4a4eefe23af5684"
+      },
+      "combined_link": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/auxiliary/.github/scripts/stringzilla-native-boundary.c",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/kernel.o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/kernel.o",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined-screen"
+        ],
+        "log": "combined-build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "combined_sanitized_link": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O3",
+          "-march=armv8.2-a",
+          "-DSZ_USE_SVE=0",
+          "-fno-lto",
+          "-fno-omit-frame-pointer",
+          "-Wall",
+          "-Wextra",
+          "-Wno-unknown-pragmas",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+          "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include",
+          "-fsanitize=address,undefined,alignment",
+          "-fno-sanitize-recover=all",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/auxiliary/.github/scripts/stringzilla-native-boundary.c",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/kernel-sanitized.o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/kernel-sanitized.o",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined-correctness"
+        ],
+        "log": "combined-sanitized-build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "combined_assembly": {
+        "command": [
+          "objdump",
+          "-d",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined-screen"
+        ],
+        "log": "combined-assembly.log",
+        "log_sha256": "b25767151754e85e6a476b5f0a80c32675e0b320af26e815f9c585a5987caf74"
+      },
+      "combined_correctness": {
+        "command": [
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined-correctness",
+          "neon",
+          "--check-only"
+        ],
+        "log": "combined-correctness.log",
+        "log_sha256": "592c26fd1fb15bda4b995c6867199f4b1ef3cc1c7f688cebe5bb435bdfe60e76"
+      }
+    },
+    "native_contracts": {
+      "baseline": {
+        "command": [
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/baseline/native-contract"
+        ],
+        "log": "baseline/contract.log",
+        "log_sha256": "6e5fd48d58ff2f54142d478bd94f1b540395c5b215b89f41041c7929c7970e2d"
+      },
+      "combined": {
+        "command": [
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/combined/native-contract"
+        ],
+        "log": "combined/contract.log",
+        "log_sha256": "6e5fd48d58ff2f54142d478bd94f1b540395c5b215b89f41041c7929c7970e2d"
+      }
+    },
+    "sanitized_fixture_checks": {
+      "combined": {
+        "host": {
+          "available": true,
+          "cpu": 0,
+          "backend": "neon",
+          "capabilities": 4,
+          "vector_bytes": 16,
+          "endianness": "little",
+          "compiler": "16.0.1 20260322 (experimental) [trunk r16-8246-g569ace1fa50]",
+          "check_only": true,
+          "policy": "production459 selected native backend versus isolated candidate",
+          "timing_evidence": "component-only"
+        },
+        "cases": [
+          {
+            "case": "latin-short-31-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-short-32-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-threshold-255-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-threshold-256-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-threshold-257-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-bulk-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-immediate",
+            "expected_byte_offset_or_equal": 4092,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-64-immediate",
+            "expected_byte_offset_or_equal": 4032,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-64-near-end-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-single-end-257",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-single-miss-257",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-overlap-258",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-overlap-288",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-overlap-289",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-overlap-290",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-overlap-bulk",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-period2",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-period3",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-prefix-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-short-15-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-short-16-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-threshold-127-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-threshold-128-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-threshold-129-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-bulk-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-512-9-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-513-9-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-512-9-end",
+            "expected_byte_offset_or_equal": 1006,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-512-9-near-end",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-immediate",
+            "expected_byte_offset_or_equal": 248,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-64-immediate",
+            "expected_byte_offset_or_equal": 8064,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-64-near-end-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-overlap-130",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-overlap-144",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-overlap-145",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-overlap-146",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-overlap-bulk",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-period2",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-period3",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-prefix-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-uniform-129",
+            "expected_byte_offset_or_equal": 0,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-uniform-130",
+            "expected_byte_offset_or_equal": 2,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-crossed-64",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-crossed-129",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-short",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-255",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-256",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-bulk",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-immediate",
+            "expected_byte_offset_or_equal": 4095,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-127",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-128",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-129",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-255",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-256",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-257",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-bulk",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-immediate",
+            "expected_byte_offset_or_equal": 8190,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-supplementary",
+            "expected_byte_offset_or_equal": 8188,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-4-last-minus1-match",
+            "expected_byte_offset_or_equal": 4091,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-4-last-minus8-match",
+            "expected_byte_offset_or_equal": 4084,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-9-last-minus1-match",
+            "expected_byte_offset_or_equal": 1004,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-9-last-minus8-match",
+            "expected_byte_offset_or_equal": 990,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-257-last-minus1-match",
+            "expected_byte_offset_or_equal": 3838,
+            "classification": "eligible"
+          },
+          {
+            "case": "latin-257-last-minus8-match",
+            "expected_byte_offset_or_equal": 3831,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-129-last-minus1-match",
+            "expected_byte_offset_or_equal": 3836,
+            "classification": "eligible"
+          },
+          {
+            "case": "utf16-129-last-minus8-match",
+            "expected_byte_offset_or_equal": 3822,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-last-minus1-match",
+            "expected_byte_offset_or_equal": 4094,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-latin-last-minus8-match",
+            "expected_byte_offset_or_equal": 4087,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-last-minus1-match",
+            "expected_byte_offset_or_equal": 8188,
+            "classification": "eligible"
+          },
+          {
+            "case": "char-utf16-last-minus8-match",
+            "expected_byte_offset_or_equal": 8174,
+            "classification": "eligible"
+          },
+          {
+            "case": "forward-latin-control",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "forward-utf16-control",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "equality-latin-control",
+            "expected_byte_offset_or_equal": 1,
+            "classification": "eligible"
+          },
+          {
+            "case": "equality-utf16-control",
+            "expected_byte_offset_or_equal": 1,
+            "classification": "eligible"
+          },
+          {
+            "case": "bytes-bound-fallback",
+            "expected_byte_offset_or_equal": -2,
+            "classification": "outside-production-bound"
+          },
+          {
+            "case": "work-bound-fallback",
+            "expected_byte_offset_or_equal": -2,
+            "classification": "outside-production-bound"
+          },
+          {
+            "case": "extra-utf16-odd-511-9-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-9-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-9-end",
+            "expected_byte_offset_or_equal": 1004,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-9-earlier-match",
+            "expected_byte_offset_or_equal": 968,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-9-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-9-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-9-end",
+            "expected_byte_offset_or_equal": 1006,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-9-earlier-match",
+            "expected_byte_offset_or_equal": 970,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-9-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-9-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-9-end",
+            "expected_byte_offset_or_equal": 1008,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-9-earlier-match",
+            "expected_byte_offset_or_equal": 972,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-9-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-9-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-9-end",
+            "expected_byte_offset_or_equal": 1136,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-9-earlier-match",
+            "expected_byte_offset_or_equal": 1100,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-9-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-9-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-9-end",
+            "expected_byte_offset_or_equal": 2028,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-9-earlier-match",
+            "expected_byte_offset_or_equal": 1992,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-9-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-9-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-9-end",
+            "expected_byte_offset_or_equal": 2030,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-9-earlier-match",
+            "expected_byte_offset_or_equal": 1994,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-16-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-16-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-16-end",
+            "expected_byte_offset_or_equal": 990,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-16-earlier-match",
+            "expected_byte_offset_or_equal": 940,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-16-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-16-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-16-end",
+            "expected_byte_offset_or_equal": 992,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-16-earlier-match",
+            "expected_byte_offset_or_equal": 942,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-16-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-16-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-16-end",
+            "expected_byte_offset_or_equal": 994,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-16-earlier-match",
+            "expected_byte_offset_or_equal": 944,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-16-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-16-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-16-end",
+            "expected_byte_offset_or_equal": 1122,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-16-earlier-match",
+            "expected_byte_offset_or_equal": 1072,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-16-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-16-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-16-end",
+            "expected_byte_offset_or_equal": 2014,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-16-earlier-match",
+            "expected_byte_offset_or_equal": 1964,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-16-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-16-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-16-end",
+            "expected_byte_offset_or_equal": 2016,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-16-earlier-match",
+            "expected_byte_offset_or_equal": 1966,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-32-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-32-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-32-end",
+            "expected_byte_offset_or_equal": 958,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-511-32-earlier-match",
+            "expected_byte_offset_or_equal": 876,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-32-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-32-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-32-end",
+            "expected_byte_offset_or_equal": 960,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-512-32-earlier-match",
+            "expected_byte_offset_or_equal": 878,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-32-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-32-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-32-end",
+            "expected_byte_offset_or_equal": 962,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-513-32-earlier-match",
+            "expected_byte_offset_or_equal": 880,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-32-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-32-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-32-end",
+            "expected_byte_offset_or_equal": 1090,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-32-earlier-match",
+            "expected_byte_offset_or_equal": 1008,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-32-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-32-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-32-end",
+            "expected_byte_offset_or_equal": 1982,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1023-32-earlier-match",
+            "expected_byte_offset_or_equal": 1900,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-32-sparse-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-32-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-32-end",
+            "expected_byte_offset_or_equal": 1984,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-1024-32-earlier-match",
+            "expected_byte_offset_or_equal": 1902,
+            "classification": "eligible"
+          },
+          {
+            "case": "extra-utf16-odd-577-64-dense-miss",
+            "expected_byte_offset_or_equal": -1,
+            "classification": "eligible"
+          }
+        ]
+      }
+    },
+    "unchanged_arm_object": {
+      "prior_run": 39143174053,
+      "prior_head": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea",
+      "prior_kernel_blob": "3aa9f9988f14f4dc8bf948230578624721da7687",
+      "prior_kernel_object_sha256": "c557217a61351663df0aa423c992e98ec9dd84dfde06e7cb5ef7d03de03a7fb0",
+      "current_kernel_object_sha256": "c557217a61351663df0aa423c992e98ec9dd84dfde06e7cb5ef7d03de03a7fb0",
+      "timed_records": 0,
+      "reason": "The only new source line is excluded by the x86 guard"
+    },
+    "hosts": {},
+    "binaries_sha256": {
+      "combined-screen": "9c969b96358532e57651a357d2b2b2fb0a2d609777085da9ff665faa78c0179a",
+      "combined-correctness": "bbdcd5cb61ea71c21656828fd4c3039531a8e89350308cff9a55e5c727ca4405",
+      "baseline/kernel.o": "77a8e9c7aeca618107e62454783168231216dd99daf88bfce5a5d388223aa9fe",
+      "combined/kernel.o": "c557217a61351663df0aa423c992e98ec9dd84dfde06e7cb5ef7d03de03a7fb0",
+      "baseline/kernel-sanitized.o": "baad51bc22fd43aeb64f14786070b99f463f85e77d426c1233139bac08b64e63",
+      "combined/kernel-sanitized.o": "bd917ab90bda70586b2b18445d4a979007c61ffe04da97abcd21b34c9915953b",
+      "baseline/native-contract": "7a5267fcd3e972a214add93dacb7485a3cb65b48ad719ccff277df2622efe99b",
+      "combined/native-contract": "ecbde182573e7d77e421b1b332cfed4df2a7d283d3257d1004033731903294e2"
+    },
+    "generated_sources_sha256": {
+      "baseline/StringZillaKernels.c": "e6511e32540530e2086bec93bd66cce096f5f3226ba2d71be8cdfc7d5d709117",
+      "baseline/kernel-unit.c": "a54e41a90f5fe9c139b147f6e6b4a9a5a5bf278824f9daf8c72cc387dfea5628",
+      "baseline/native-tests.c": "358174761f88b1a6fad74ac99714935af9191722bc75d52add77f8b09d52d4ed",
+      "baseline/contract.c": "7c5aeaf90746460e53c11eb808a1844518a9e96f56a1a259d422f6ef66b528db",
+      "combined/StringZillaKernels.c": "c55255109d139eb287deeb5080afe385d48cf4fa36502f47286e5a7f40c98da5",
+      "combined/kernel-unit.c": "4685fdd1dfbb75de37c70ba359099e14dca705ac9cddceabf49c2b5b017b8c29",
+      "combined/native-tests.c": "50d7d560eb0cecf1725df812d9e5a2201eb30fa921faf4cd84c7474e40e80ed0",
+      "combined/contract.c": "7c5aeaf90746460e53c11eb808a1844518a9e96f56a1a259d422f6ef66b528db"
+    },
+    "inputs_sha256": {
+      "bytes-bound-fallback-source.bin": "008ffc88d3c96a9f307524eb361e47c5222a887fc45fa0c1fb8d429c5c23b430",
+      "bytes-bound-fallback-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "char-latin-255-source.bin": "b0f3323e7a3cad8ae6778340cc2a17ae0cb31c818df3767cda7c3dd423725e90",
+      "char-latin-255-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-latin-256-source.bin": "02d7160d77e18c6447be80c2e355c7ed4388545271702c50253b0914c65ce5fe",
+      "char-latin-256-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-latin-bulk-source.bin": "c93eee2d0db02f10acc7460d9576e122dcf8cd53c4bf8dfcae1b3e74ebcfff5a",
+      "char-latin-bulk-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-latin-immediate-source.bin": "316d8c6afcd2fa71e45792616fbcec7567b6769449d66625931c162fbcd91266",
+      "char-latin-immediate-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-latin-last-minus1-match-source.bin": "6b629fc3bfffd95bae40d97210612d0498d70b548201a34b3896ceb83af055cf",
+      "char-latin-last-minus1-match-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-latin-last-minus8-match-source.bin": "511de4374730fe63c72bca9f8349fff79c800ac977b69286b72d1be7c6827a19",
+      "char-latin-last-minus8-match-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-latin-short-source.bin": "61c60b487d1a921e0bcc9bf853dda0fb159b30bf57b2e2d2c753b00be15b5a09",
+      "char-latin-short-target.bin": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+      "char-utf16-127-source.bin": "522292ede87aa3e8e6620d9ccac93042032f15823a516b068f750177a394bb3b",
+      "char-utf16-127-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-128-source.bin": "5a79ab7a94a1bd74ca6446cba9f7e76a209ad8a5c19a1b3b3aa010bb587e2ecf",
+      "char-utf16-128-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-129-source.bin": "afe03f9a89794b01c2a1f8a0a048f52a19795a1e08519b9359976d89aa8849ee",
+      "char-utf16-129-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-255-source.bin": "1452571196596aa92db7ec94d2119e25b2affb6168d4f0e1ae12a6a032167e41",
+      "char-utf16-255-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-256-source.bin": "b657e9255a57da3ab1bcdfbb59f9fef82d3a7d3cc22d349847609226479f311f",
+      "char-utf16-256-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-257-source.bin": "a85ceb033f14399d8e4547399322299bc69b96da7a36d1e0e9c200fef0905f31",
+      "char-utf16-257-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-bulk-source.bin": "10d8b13b1160b2e9d8d3591e38e306b6c7b936861709bdfddb338992ed877a25",
+      "char-utf16-bulk-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-immediate-source.bin": "1cb2d18b8ca65fe3b6bbdc074507e346248e5ed8ed70ed24bf92b8632b8a9291",
+      "char-utf16-immediate-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-last-minus1-match-source.bin": "e151d976ecf2ec1c6b1119148600a8491d2919e690abd251741eb1f8200f653b",
+      "char-utf16-last-minus1-match-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-last-minus8-match-source.bin": "ecaab441109d56ee1d7c6fae18054eb5322655b53342888087373b3028fddd18",
+      "char-utf16-last-minus8-match-target.bin": "421dd6c30feb9149b349ae67525aae7556eb6c552e0b363edd78f8a8d8646ab8",
+      "char-utf16-supplementary-source.bin": "44f7fd399aa1851e0500c8420eb753aadb9d615ed025e787d6e891d9e2eb2d13",
+      "char-utf16-supplementary-target.bin": "81c96284b596ed3155a3f0f11da0dd13494dc91618323a3bff4c9701229015cc",
+      "equality-latin-control-source.bin": "c93eee2d0db02f10acc7460d9576e122dcf8cd53c4bf8dfcae1b3e74ebcfff5a",
+      "equality-latin-control-target.bin": "c93eee2d0db02f10acc7460d9576e122dcf8cd53c4bf8dfcae1b3e74ebcfff5a",
+      "equality-utf16-control-source.bin": "10d8b13b1160b2e9d8d3591e38e306b6c7b936861709bdfddb338992ed877a25",
+      "equality-utf16-control-target.bin": "10d8b13b1160b2e9d8d3591e38e306b6c7b936861709bdfddb338992ed877a25",
+      "extra-utf16-odd-1023-16-dense-miss-source.bin": "a6b86ebf0023e32227d76c425da566359cb7a7b57d476a92bc59d141806d5958",
+      "extra-utf16-odd-1023-16-dense-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1023-16-earlier-match-source.bin": "ca89212004e82b1dfb90fe37d1f98652f7b16dea77d25f921ef0c53988c3dbef",
+      "extra-utf16-odd-1023-16-earlier-match-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1023-16-end-source.bin": "71a54c102e15b78d4ca11fae1933c7f935a5178fabc84f87d80fdf5e10367c0a",
+      "extra-utf16-odd-1023-16-end-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1023-16-sparse-miss-source.bin": "4d6523c60e4ecaadad9f7ffe8caf5655bc9e93690de505e7c45543016c6f7f9b",
+      "extra-utf16-odd-1023-16-sparse-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1023-32-dense-miss-source.bin": "d32a2a177b523f0600ce65eae16d034d8e59099fc31aa468f114a79800acb518",
+      "extra-utf16-odd-1023-32-dense-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1023-32-earlier-match-source.bin": "51030f4336b2b331ade7792a8570e908d8036e1d2168f72f9d96ab4815080c80",
+      "extra-utf16-odd-1023-32-earlier-match-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1023-32-end-source.bin": "5dff8fc289d4dcf239839ff6dfc941c2b3491822a036b0839cbedd362b077c6d",
+      "extra-utf16-odd-1023-32-end-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1023-32-sparse-miss-source.bin": "a421739b791005b46309ceb423887d43ecab41eaf2814ca05d8e1c62d19acda9",
+      "extra-utf16-odd-1023-32-sparse-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1023-9-dense-miss-source.bin": "5108b55a903d89be85e7ecbb8b09e4c0703c3e1a104ea26ec987f1bb1b99fe77",
+      "extra-utf16-odd-1023-9-dense-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1023-9-earlier-match-source.bin": "c732bc1d18223ccebea0a76837530c9c8999a11b2630859e8abaa865796e737f",
+      "extra-utf16-odd-1023-9-earlier-match-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1023-9-end-source.bin": "aa3e248f90948df871a052369ab216bc41babea0478daea23c5d41dbc26dcb02",
+      "extra-utf16-odd-1023-9-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1023-9-sparse-miss-source.bin": "e955eb84dd2dd4ac88a13613f63302e008a17f5c7547ce8eb7e8eef0e4fa5dea",
+      "extra-utf16-odd-1023-9-sparse-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1024-16-dense-miss-source.bin": "d465c79b43e76f17faf5c7c7bfd1b0885ddf8c52bb8957eb8cf9e95867d73975",
+      "extra-utf16-odd-1024-16-dense-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1024-16-earlier-match-source.bin": "fcd4d596cf0294dc6154e41c48c39cdac435a26f48bb3ba5a024681612983618",
+      "extra-utf16-odd-1024-16-earlier-match-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1024-16-end-source.bin": "e8f4fbed13b0cfacb02d8933051bf71b16b68d74199676ca94dfbbbce5c990f7",
+      "extra-utf16-odd-1024-16-end-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1024-16-sparse-miss-source.bin": "8ce824a6b60f8fc78a2ef2a55b699c170557bd610b5c587b3b38a1c15fc7514d",
+      "extra-utf16-odd-1024-16-sparse-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-1024-32-dense-miss-source.bin": "9b0b270a51a1864e75cc7b6d6962f4e9643c5537f4c675219f03f3c06afec56e",
+      "extra-utf16-odd-1024-32-dense-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1024-32-earlier-match-source.bin": "86a43889b512a2dd80eca338905b2ad3c5cd4b79ace43c5a2e3745b51a2556df",
+      "extra-utf16-odd-1024-32-earlier-match-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1024-32-end-source.bin": "1758ecc5341ac3372e90b83f845cce21d68d92c223cfc08c6c0a8ac4788f86fc",
+      "extra-utf16-odd-1024-32-end-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1024-32-sparse-miss-source.bin": "5a02f527022ec23ca8473962438d04e5386bcc659487c54340d8982ec2d81e09",
+      "extra-utf16-odd-1024-32-sparse-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-1024-9-dense-miss-source.bin": "eb65e1e349f4e9c2b496bac56aef6f28de704d443c99f37179f7eb2ed3e597a2",
+      "extra-utf16-odd-1024-9-dense-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1024-9-earlier-match-source.bin": "657c4fbf488c56f5e48961f795e0b10257ddeca5a164499ad89c30a1db46b802",
+      "extra-utf16-odd-1024-9-earlier-match-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1024-9-end-source.bin": "ad6bb773f8b03077f5a4e60bcc61fa832a20938c1372a6e6df368523afdb79da",
+      "extra-utf16-odd-1024-9-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-1024-9-sparse-miss-source.bin": "20bec4f164621d1156967e9c5c56282b137608847f4810d8a66495ad132bf60e",
+      "extra-utf16-odd-1024-9-sparse-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-511-16-dense-miss-source.bin": "6faa200238a6dfbcd1f4b29a90d0a6e2acba99184bcb04bd109b1e88bf85473b",
+      "extra-utf16-odd-511-16-dense-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-511-16-earlier-match-source.bin": "0925eda8a0dddc0694ff3e032a665d3899a11478adb553e0728df54dace8d7f8",
+      "extra-utf16-odd-511-16-earlier-match-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-511-16-end-source.bin": "eb64fddff5287921245ece33959d9b6a60fb7d04e43408bf72085dc6ef33b966",
+      "extra-utf16-odd-511-16-end-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-511-16-sparse-miss-source.bin": "79451ff3e487d3b24de0a7e18c730c2ce872eca58f7bee3ef01cff6df4db1d78",
+      "extra-utf16-odd-511-16-sparse-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-511-32-dense-miss-source.bin": "e9c3f1a15ccd1d8156e3a46295eabc90130b48ad8739ccbfd825a831618d9002",
+      "extra-utf16-odd-511-32-dense-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-511-32-earlier-match-source.bin": "e281655be09502e52fbf4bbf1e064b2325973078473c0d0421902f60a2ae3cff",
+      "extra-utf16-odd-511-32-earlier-match-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-511-32-end-source.bin": "d9ce60eb9c425d4d90c2b2440d870b05e95e3fd47338b5dda44c96055fd8733a",
+      "extra-utf16-odd-511-32-end-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-511-32-sparse-miss-source.bin": "ea29749956a88feac6746c7c4bce90562e3370ee5dccc76c4d966a445ed053d8",
+      "extra-utf16-odd-511-32-sparse-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-511-9-dense-miss-source.bin": "e0ed1d2fcea9820dd39e109f181698f0d755d8258e1d88b8e9f45fffacc5d472",
+      "extra-utf16-odd-511-9-dense-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-511-9-earlier-match-source.bin": "89b656c032d1c441b36893b3e57b94afa3d5d07b173ab116bf0b00d83d86eeba",
+      "extra-utf16-odd-511-9-earlier-match-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-511-9-end-source.bin": "85d07ddb643405f81aec5002404d0dad2915f127d1708490827f47bea85eb411",
+      "extra-utf16-odd-511-9-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-511-9-sparse-miss-source.bin": "c4ceaf6979dc1294b898ef7ccdf563a05519ad3ba44217ce7ff56bed75719544",
+      "extra-utf16-odd-511-9-sparse-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-512-16-dense-miss-source.bin": "83b6f6770ad70ade6f4066c0710f8adaa6d6702e3fe51989318008556c669175",
+      "extra-utf16-odd-512-16-dense-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-512-16-earlier-match-source.bin": "353f4d1521a9a927ee9817fa84e2415a8b49ba505c56634b2254a18980fc7317",
+      "extra-utf16-odd-512-16-earlier-match-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-512-16-end-source.bin": "e5187a452c37b2336e908256666fccad6ec34198dad62a708fecce5cc874e898",
+      "extra-utf16-odd-512-16-end-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-512-16-sparse-miss-source.bin": "1c490d6c69652c3b0e39caccd014dad289c116bda0d1ca00780c99aa2b099136",
+      "extra-utf16-odd-512-16-sparse-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-512-32-dense-miss-source.bin": "02f24e38117e58af5a75084d73697cbb3a61edf3bb75d0f3b3f279605bc029ca",
+      "extra-utf16-odd-512-32-dense-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-512-32-earlier-match-source.bin": "493558a1ee5c97a41416389e1184278a419a948a2503512824abf6c8cc64336c",
+      "extra-utf16-odd-512-32-earlier-match-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-512-32-end-source.bin": "031f384c8e10cc19161846d865e6c480a6930cbeb87ea5926896f757123f5253",
+      "extra-utf16-odd-512-32-end-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-512-32-sparse-miss-source.bin": "bb055a28680593b68315ee5f90510e1c47b72fbe1f8a0d9e73bab369e65d5116",
+      "extra-utf16-odd-512-32-sparse-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-512-9-dense-miss-source.bin": "48feb4ed6d6436d7fbfba4e4bd901b52f415032a1a3df74c8b419706df4e8c33",
+      "extra-utf16-odd-512-9-dense-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-512-9-earlier-match-source.bin": "a3f13e7dc0c1d4f1d02addf8b3e3bfd18c542190cae9092d9afc1008482b94c0",
+      "extra-utf16-odd-512-9-earlier-match-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-512-9-end-source.bin": "a95a686f003fa38c409d0b9a6d7eab37f389fd8e642c5fbac4b707f666cae882",
+      "extra-utf16-odd-512-9-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-512-9-sparse-miss-source.bin": "b0d62c3d580a03201a7f4dacec43774fe0dfbd9dd02af5538419ee17cfa8d8bf",
+      "extra-utf16-odd-512-9-sparse-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-513-16-dense-miss-source.bin": "43a310822eb01f66eba9e57a1865950242395f4ddc8221e2edee632b9e261968",
+      "extra-utf16-odd-513-16-dense-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-513-16-earlier-match-source.bin": "c9ea8beee78447dfa1ec40e3b364a7502322923a638ee545e1ea8c7ca32d4d56",
+      "extra-utf16-odd-513-16-earlier-match-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-513-16-end-source.bin": "f8209a8c5302ae988c1efa9ba7dc51443426c016ffb2da76a093ee15cfce0be7",
+      "extra-utf16-odd-513-16-end-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-513-16-sparse-miss-source.bin": "11b0e8e0ee82b7f6619ea1791c7cf7e9a6dd12cbba228ee563d9b903306b6913",
+      "extra-utf16-odd-513-16-sparse-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-513-32-dense-miss-source.bin": "16a0587e5428647db8542bef437468130cb0a7104cc55b449e4846985aa74b28",
+      "extra-utf16-odd-513-32-dense-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-513-32-earlier-match-source.bin": "4b9de4ef17680ce68c01192387a2f37d6415b0dabc4e49c12ca41600b565451b",
+      "extra-utf16-odd-513-32-earlier-match-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-513-32-end-source.bin": "850f2053fef9b63440a3317cd695e7aa4edc3352da04b2ed8b522b2c893884ac",
+      "extra-utf16-odd-513-32-end-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-513-32-sparse-miss-source.bin": "cff8479847f75c16a1a6517c511aa9f0d21f582536acef8bba8572744ee335d4",
+      "extra-utf16-odd-513-32-sparse-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-513-9-dense-miss-source.bin": "9c2661c7ff7281a9e4752070dabe88527bc3e16a2fa07144fb6e550e61f64f0e",
+      "extra-utf16-odd-513-9-dense-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-513-9-earlier-match-source.bin": "17ff4db2e2a54839b1bd66c2cf4a5e75d2d604106d1c0ac91ee6f9d6501c1429",
+      "extra-utf16-odd-513-9-earlier-match-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-513-9-end-source.bin": "6f7c4e1b350a5cc5c7f56268265233e3ea149288ff6571178ae7a44ce6677e1c",
+      "extra-utf16-odd-513-9-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-513-9-sparse-miss-source.bin": "2a3cebc74b5506222481631f0fd5861057c8287a30b5ef10b8ab4ea542dd79c6",
+      "extra-utf16-odd-513-9-sparse-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-577-16-dense-miss-source.bin": "e14adb090a5d4eb40e8c7ee34e3c6bd49974ffa7df9a27d25203889da7b2ee2b",
+      "extra-utf16-odd-577-16-dense-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-577-16-earlier-match-source.bin": "3fe39dfdf4b32d1509673a5b2b25ac0b2ffb471873af19f166f36ac9cc3ef44e",
+      "extra-utf16-odd-577-16-earlier-match-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-577-16-end-source.bin": "fb65793c7bbd3767418a458a718f906f4b3c1bc1fd4ccd27e6740f5dc579c32d",
+      "extra-utf16-odd-577-16-end-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-577-16-sparse-miss-source.bin": "2d628585a7752633f695615e052e1bc8efd3bf3b3321798339e7c984b7e13974",
+      "extra-utf16-odd-577-16-sparse-miss-target.bin": "ace1b4dc7918558cb4f3b0e034ff94f587bc6fa17de81c852ecb1cf7273801e5",
+      "extra-utf16-odd-577-32-dense-miss-source.bin": "aca91809a47e34dfc27dccd6fba73c988cf72390b3468fc0f769ef160f7f6f52",
+      "extra-utf16-odd-577-32-dense-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-577-32-earlier-match-source.bin": "c4c4a2965c383278328b4981e49a2cfbcbd572a48321701f2e54691526124448",
+      "extra-utf16-odd-577-32-earlier-match-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-577-32-end-source.bin": "54758d6f94b27a268c9d7aadf0672b15752fe6aea1170191d0a465ec11511cb4",
+      "extra-utf16-odd-577-32-end-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-577-32-sparse-miss-source.bin": "6d66185f4cc3546255317fb08b9591a7e50d22d9adb6a91a07938a33cc2b394e",
+      "extra-utf16-odd-577-32-sparse-miss-target.bin": "25bf687ce0bd94d666c4ca52f2e1a934ad2fcaf943e470f6dac8f6e245a6be00",
+      "extra-utf16-odd-577-64-dense-miss-source.bin": "12241a4f88623007c4a9334a316c6cf2ac1d1d9545cd19acd8c070790b8bab44",
+      "extra-utf16-odd-577-64-dense-miss-target.bin": "d71b5f663a60d3bf79f1985f4bd79ebd229c9cd0903efa7e0a2a5bbc5d730140",
+      "extra-utf16-odd-577-9-dense-miss-source.bin": "01666e55cc425e8f38f623f385c35115edb632dfba08ecfab78cd0d6404c84b7",
+      "extra-utf16-odd-577-9-dense-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-577-9-earlier-match-source.bin": "228eb37263ba1358e8594270149f1db753f682eecd08f80f66947d7cedc88b96",
+      "extra-utf16-odd-577-9-earlier-match-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-577-9-end-source.bin": "7d7a9047dbc2002f435673fd2575ab6e1e4062ded3011f1512fb18de65027d75",
+      "extra-utf16-odd-577-9-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "extra-utf16-odd-577-9-sparse-miss-source.bin": "40e2614057e595b7dc67ac52bc3dd5d4400134086f537d9c2c1dc3d46014241f",
+      "extra-utf16-odd-577-9-sparse-miss-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "forward-latin-control-source.bin": "c93eee2d0db02f10acc7460d9576e122dcf8cd53c4bf8dfcae1b3e74ebcfff5a",
+      "forward-latin-control-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "forward-utf16-control-source.bin": "10d8b13b1160b2e9d8d3591e38e306b6c7b936861709bdfddb338992ed877a25",
+      "forward-utf16-control-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "latin-257-last-minus1-match-source.bin": "6b629fc3bfffd95bae40d97210612d0498d70b548201a34b3896ceb83af055cf",
+      "latin-257-last-minus1-match-target.bin": "3dc0aae8fc4eda1fde368fbd878a01aa607b604737af868e7a44e5105bfe99cb",
+      "latin-257-last-minus8-match-source.bin": "511de4374730fe63c72bca9f8349fff79c800ac977b69286b72d1be7c6827a19",
+      "latin-257-last-minus8-match-target.bin": "3dc0aae8fc4eda1fde368fbd878a01aa607b604737af868e7a44e5105bfe99cb",
+      "latin-4-last-minus1-match-source.bin": "6b629fc3bfffd95bae40d97210612d0498d70b548201a34b3896ceb83af055cf",
+      "latin-4-last-minus1-match-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-4-last-minus8-match-source.bin": "511de4374730fe63c72bca9f8349fff79c800ac977b69286b72d1be7c6827a19",
+      "latin-4-last-minus8-match-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-64-immediate-source.bin": "316d8c6afcd2fa71e45792616fbcec7567b6769449d66625931c162fbcd91266",
+      "latin-64-immediate-target.bin": "97aa7c540da474936ff8bedd71acb8a59ff1d41b71fa52c0f4680a8e17b16ad6",
+      "latin-64-near-end-miss-source.bin": "c93eee2d0db02f10acc7460d9576e122dcf8cd53c4bf8dfcae1b3e74ebcfff5a",
+      "latin-64-near-end-miss-target.bin": "c5d842f9a07eb77a3067c331b27ddfeb21989ec90401eddbe25a7a9c4189672d",
+      "latin-bulk-miss-source.bin": "c93eee2d0db02f10acc7460d9576e122dcf8cd53c4bf8dfcae1b3e74ebcfff5a",
+      "latin-bulk-miss-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-immediate-source.bin": "316d8c6afcd2fa71e45792616fbcec7567b6769449d66625931c162fbcd91266",
+      "latin-immediate-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-overlap-258-source.bin": "04ef2b6be613e056cb49ffd110591874bb4af6bbd2bdf9c5f139e9fd59cc0907",
+      "latin-overlap-258-target.bin": "426ec30faf491d8b9ba74c94e7bad725949ccd8be6a35dacc47fa11442833f16",
+      "latin-overlap-288-source.bin": "31f897b7b89716f9f653800967fa3c0d72475c5683eb28b73451fc13ff2fc797",
+      "latin-overlap-288-target.bin": "426ec30faf491d8b9ba74c94e7bad725949ccd8be6a35dacc47fa11442833f16",
+      "latin-overlap-289-source.bin": "ca9b5be4c4b6a72b9d7b8eda8067beca976b39a8f8add61f3eaf07a3e5b14ee2",
+      "latin-overlap-289-target.bin": "426ec30faf491d8b9ba74c94e7bad725949ccd8be6a35dacc47fa11442833f16",
+      "latin-overlap-290-source.bin": "3233be993365305c9945d6900f0f33bae24072bb443510730c306851310d2935",
+      "latin-overlap-290-target.bin": "426ec30faf491d8b9ba74c94e7bad725949ccd8be6a35dacc47fa11442833f16",
+      "latin-overlap-bulk-source.bin": "bb09355aa5a6ed7aab2882574e2e8193496b34fe2033c9186fd1acf3522a3b80",
+      "latin-overlap-bulk-target.bin": "426ec30faf491d8b9ba74c94e7bad725949ccd8be6a35dacc47fa11442833f16",
+      "latin-period2-source.bin": "2c888a3809c425e853a6ac08e1c1ffd9393fe3e49419e8f71ac23ab0362617a3",
+      "latin-period2-target.bin": "10a5f1364f48293f5bc2d46de5544c11acc47c535a3a6ce2b2efcbbe32355dfe",
+      "latin-period3-source.bin": "dbe998974f373074bb6797788ff01a49ad34986bbe7bbf0d99e3b9a634a21521",
+      "latin-period3-target.bin": "b4ee79a45660940bb5798e80b3955de2925ce156f3ce7729d69ecf31734a434a",
+      "latin-prefix-miss-source.bin": "3338b95a6d0f287b4e94457c2d6418f5d54c56310de51e20bb2518d75d242386",
+      "latin-prefix-miss-target.bin": "57b849375b6f5b71b0add42a3cab927c29a2f4d9765f5af00f0b53f877bee9db",
+      "latin-short-31-miss-source.bin": "61c60b487d1a921e0bcc9bf853dda0fb159b30bf57b2e2d2c753b00be15b5a09",
+      "latin-short-31-miss-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-short-32-miss-source.bin": "3ba3f5f43b92602683c19aee62a20342b084dd5971ddd33808d81a328879a547",
+      "latin-short-32-miss-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-single-end-257-source.bin": "3dc0aae8fc4eda1fde368fbd878a01aa607b604737af868e7a44e5105bfe99cb",
+      "latin-single-end-257-target.bin": "3dc0aae8fc4eda1fde368fbd878a01aa607b604737af868e7a44e5105bfe99cb",
+      "latin-single-miss-257-source.bin": "e8d95cc2b4bc198c54b40bd214df958afb65f5e73d2c2eafe0593cf5c635c1f0",
+      "latin-single-miss-257-target.bin": "3dc0aae8fc4eda1fde368fbd878a01aa607b604737af868e7a44e5105bfe99cb",
+      "latin-threshold-255-miss-source.bin": "b0f3323e7a3cad8ae6778340cc2a17ae0cb31c818df3767cda7c3dd423725e90",
+      "latin-threshold-255-miss-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-threshold-256-miss-source.bin": "02d7160d77e18c6447be80c2e355c7ed4388545271702c50253b0914c65ce5fe",
+      "latin-threshold-256-miss-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "latin-threshold-257-miss-source.bin": "e8d95cc2b4bc198c54b40bd214df958afb65f5e73d2c2eafe0593cf5c635c1f0",
+      "latin-threshold-257-miss-target.bin": "85e90f7f0e71079806469831895acd620133bbe0937cc5403562968bbc7d8d1e",
+      "utf16-129-last-minus1-match-source.bin": "e6a0346f1209386f5aa80f29ab905e0f742ba83266b5fb8d69a5519671d87a07",
+      "utf16-129-last-minus1-match-target.bin": "e40b5f17d9659bff1c7a08b348ea055419d957645795a73bf32ef251ebf332cb",
+      "utf16-129-last-minus8-match-source.bin": "b9b274c4be0bf0fc441e1ea18ebd6158246289bec16cdfc1855961c6ee5162ca",
+      "utf16-129-last-minus8-match-target.bin": "e40b5f17d9659bff1c7a08b348ea055419d957645795a73bf32ef251ebf332cb",
+      "utf16-512-9-end-source.bin": "c7c147f67c56b4e6aec12dc3ee73fd5ad58c1a92c3bfd6fef5a393eb0386ad2c",
+      "utf16-512-9-end-target.bin": "c10cb7cb1af103b96cadf3ee02c6d0f4a642ebf01717dbfd3ef8b191d89ac7b7",
+      "utf16-512-9-miss-source.bin": "dbc936a27d554afaa434fd2e1dfe6b4b5de3d20578f5ac8119fc8c6ae1b4adf6",
+      "utf16-512-9-miss-target.bin": "c10cb7cb1af103b96cadf3ee02c6d0f4a642ebf01717dbfd3ef8b191d89ac7b7",
+      "utf16-512-9-near-end-source.bin": "dbc936a27d554afaa434fd2e1dfe6b4b5de3d20578f5ac8119fc8c6ae1b4adf6",
+      "utf16-512-9-near-end-target.bin": "099da6d8edfa02e210fc96386481d573d1a60821c00368f179e90ffd1f1116af",
+      "utf16-513-9-miss-source.bin": "5ac240397c53c82f08dcf9062f5bd60e08bef131435e6bb0d6c8efce07d2ef14",
+      "utf16-513-9-miss-target.bin": "c10cb7cb1af103b96cadf3ee02c6d0f4a642ebf01717dbfd3ef8b191d89ac7b7",
+      "utf16-64-immediate-source.bin": "1cb2d18b8ca65fe3b6bbdc074507e346248e5ed8ed70ed24bf92b8632b8a9291",
+      "utf16-64-immediate-target.bin": "64f9cd0649462df47e0a914853642700a2930ff74c1699b36c18cf375427ca6b",
+      "utf16-64-near-end-miss-source.bin": "dbc936a27d554afaa434fd2e1dfe6b4b5de3d20578f5ac8119fc8c6ae1b4adf6",
+      "utf16-64-near-end-miss-target.bin": "d71b5f663a60d3bf79f1985f4bd79ebd229c9cd0903efa7e0a2a5bbc5d730140",
+      "utf16-9-last-minus1-match-source.bin": "9cad8880c293eabfa5bbd6f6e40c70bde252890d1c6cfa3401ddbba871e2df98",
+      "utf16-9-last-minus1-match-target.bin": "c10cb7cb1af103b96cadf3ee02c6d0f4a642ebf01717dbfd3ef8b191d89ac7b7",
+      "utf16-9-last-minus8-match-source.bin": "a075efd0cdf05d7cdd9f6309025f06b4f015243475c48e8b7840936a86767e9f",
+      "utf16-9-last-minus8-match-target.bin": "c10cb7cb1af103b96cadf3ee02c6d0f4a642ebf01717dbfd3ef8b191d89ac7b7",
+      "utf16-bulk-miss-source.bin": "10d8b13b1160b2e9d8d3591e38e306b6c7b936861709bdfddb338992ed877a25",
+      "utf16-bulk-miss-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-crossed-129-source.bin": "dbc936a27d554afaa434fd2e1dfe6b4b5de3d20578f5ac8119fc8c6ae1b4adf6",
+      "utf16-crossed-129-target.bin": "b218377b78b185bf6a30b8406cc4972fd477c1070d9afb6435acd9e6723b3049",
+      "utf16-crossed-64-source.bin": "dbc936a27d554afaa434fd2e1dfe6b4b5de3d20578f5ac8119fc8c6ae1b4adf6",
+      "utf16-crossed-64-target.bin": "d388b6baba08814a93eb179d44406cfff08468cee0838dadeb3a7d1e14a38cc3",
+      "utf16-immediate-source.bin": "2ea86c839f000f4ff3de475fa8a9e98385443fb53da72db38beb3ebc86dfba32",
+      "utf16-immediate-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-overlap-130-source.bin": "9c90ef32fda6be00e9cfb914e28563bbc10107b1251deb70d03815e741cc72b2",
+      "utf16-overlap-130-target.bin": "fa6ab576efdbc933b55907546f83a2574514b9b0d2b3dab5be464b6421cc6c14",
+      "utf16-overlap-144-source.bin": "99bee67f0da48b765d41fb9a9c8b039d482ac702fb53ae35917702bea1e969d3",
+      "utf16-overlap-144-target.bin": "fa6ab576efdbc933b55907546f83a2574514b9b0d2b3dab5be464b6421cc6c14",
+      "utf16-overlap-145-source.bin": "ff18615fc7c03d57a2a88f0cf63863424bba2cf7862d560ac0c205f582e5b061",
+      "utf16-overlap-145-target.bin": "fa6ab576efdbc933b55907546f83a2574514b9b0d2b3dab5be464b6421cc6c14",
+      "utf16-overlap-146-source.bin": "7cea9d03c6a68e221392cd86b1040418c522cee248d415e439b913d3461b8430",
+      "utf16-overlap-146-target.bin": "fa6ab576efdbc933b55907546f83a2574514b9b0d2b3dab5be464b6421cc6c14",
+      "utf16-overlap-bulk-source.bin": "e50f03d171ab7796d5e1859180e18b077f0465dd14271b0692cd345c054daa49",
+      "utf16-overlap-bulk-target.bin": "8a9b43e436e0a598a01e99ad8833397b816404ec8547d8197331c908a0f0085e",
+      "utf16-period2-source.bin": "439ea7971c278297928ef6507d7820f195c8cb0620eedb4b4ac179f16dbcb8ea",
+      "utf16-period2-target.bin": "0ad979f8bab3b7556d961492b90def74da087a8459ffebac61d6a5d9e12915e6",
+      "utf16-period3-source.bin": "45a6cb2b8ed1308cbc4efec98d88f3fb5f398d6c5df36ee542194052fa745d44",
+      "utf16-period3-target.bin": "a06d796a0f6699b531381f6b035c48090849756b7b69c1fe2f7012b6a69cca4f",
+      "utf16-prefix-miss-source.bin": "476c6c9d66dd41e0a46f43bc14d28587a71e08d3e25d4de1f48dbadcb25d8e98",
+      "utf16-prefix-miss-target.bin": "4b5749ff505a9b6361196ad1f06a5f0c92a99503f0cd644bfdc02b12a641cb4c",
+      "utf16-short-15-miss-source.bin": "499b2c391e91313ef74ccd3d837ae225049b40e70934f9c7280f29fe5cc2d587",
+      "utf16-short-15-miss-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-short-16-miss-source.bin": "4850162942094bcbb1d12b2b5a4ec93e193d609a89893dfa504f2cf68883282c",
+      "utf16-short-16-miss-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-threshold-127-miss-source.bin": "522292ede87aa3e8e6620d9ccac93042032f15823a516b068f750177a394bb3b",
+      "utf16-threshold-127-miss-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-threshold-128-miss-source.bin": "5a79ab7a94a1bd74ca6446cba9f7e76a209ad8a5c19a1b3b3aa010bb587e2ecf",
+      "utf16-threshold-128-miss-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-threshold-129-miss-source.bin": "afe03f9a89794b01c2a1f8a0a048f52a19795a1e08519b9359976d89aa8849ee",
+      "utf16-threshold-129-miss-target.bin": "b7bdb2b4d55455bcdd502b13550f7a9445d195fd40ed4edd748d986ec8d8a980",
+      "utf16-uniform-129-source.bin": "afe03f9a89794b01c2a1f8a0a048f52a19795a1e08519b9359976d89aa8849ee",
+      "utf16-uniform-129-target.bin": "afe03f9a89794b01c2a1f8a0a048f52a19795a1e08519b9359976d89aa8849ee",
+      "utf16-uniform-130-source.bin": "083b42d2af169ee0c2a72f63e527322391342d474fd8e31cb74f26bd8bedea15",
+      "utf16-uniform-130-target.bin": "afe03f9a89794b01c2a1f8a0a048f52a19795a1e08519b9359976d89aa8849ee",
+      "work-bound-fallback-source.bin": "10d8b13b1160b2e9d8d3591e38e306b6c7b936861709bdfddb338992ed877a25",
+      "work-bound-fallback-target.bin": "40c8f4be27b5321099e07d7bf1c1b72ee1e266c311ac558536b8ba552159239d"
+    },
+    "raw_timings_sha256": {},
+    "focus_cases": [
+      "latin-immediate",
+      "utf16-512-9-end",
+      "extra-utf16-odd-512-32-end",
+      "latin-64-immediate",
+      "utf16-64-immediate",
+      "latin-period2",
+      "latin-period3",
+      "utf16-period3",
+      "latin-overlap-258",
+      "utf16-overlap-bulk"
+    ],
+    "cases_per_variant": 149,
+    "eligible_cases_per_variant": 147,
+    "outside_bound_cases_not_timed_per_variant": 2,
+    "comparisons": 0,
+    "timed_cases_per_variant": 0,
+    "native_contracts_all_passed": true
+  },
+  "rows": [],
+  "counts": {
+    "combined": 0
+  },
+  "higher_means": []
+}
