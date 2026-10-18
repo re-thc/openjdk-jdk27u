@@ -46,7 +46,7 @@ import org.openjdk.jmh.annotations.*;
 @Fork(3)
 public class SimdUTFWide {
     @State(Scope.Thread)
-    public static class Strings {
+    public static class Corpus {
         @Param({"UTF-16BE", "UTF-16LE", "UTF-16", "UTF-32BE", "UTF-32LE", "UTF-32"})
         public String charsetName;
 
@@ -61,8 +61,7 @@ public class SimdUTFWide {
         String text;
         byte[] bytes;
 
-        @Setup(Level.Trial)
-        public void setup() {
+        void setupCorpus() {
             charset = Charset.forName(charsetName);
             text = switch (content) {
                 case "LATIN1" -> "é".repeat(size);
@@ -79,7 +78,15 @@ public class SimdUTFWide {
     }
 
     @State(Scope.Thread)
-    public static class Buffers extends Strings {
+    public static class Strings extends Corpus {
+        @Setup(Level.Trial)
+        public void setup() {
+            setupCorpus();
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class Buffers extends Corpus {
         @Param({"HEAP", "DIRECT", "READ_ONLY", "SEGMENT"})
         public String sourceKind;
         @Param({"HEAP", "DIRECT", "SEGMENT"})
@@ -101,7 +108,8 @@ public class SimdUTFWide {
         }
 
         @Setup(Level.Trial)
-        public void setupBuffers() throws Exception {
+        public void setup() throws Exception {
+            setupCorpus();
             arena = Arena.ofConfined();
             inputBytes = allocate(bytes.length, sourceKind);
             inputBytes.put(bytes).flip();
@@ -161,14 +169,15 @@ public class SimdUTFWide {
     }
 
     @State(Scope.Thread)
-    public static class Segments extends Strings {
+    public static class Segments extends Corpus {
         @Param({"HEAP", "NATIVE"})
         public String memoryKind;
         Arena arena;
         MemorySegment segment;
 
         @Setup(Level.Trial)
-        public void setupSegment() {
+        public void setup() {
+            setupCorpus();
             arena = Arena.ofConfined();
             int capacity = Math.addExact(bytes.length, 4);
             segment = memoryKind.equals("HEAP")
