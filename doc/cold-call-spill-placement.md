@@ -117,9 +117,23 @@ with allocator, oop and GC verification. All four focused cold-call jtreg
 tests passed, including actual exercised-trap oop forwarding in compressed and
 uncompressed configurations. Nine existing allocator/spilling tests also passed
 with the option enabled. The updated default-mode focused tests passed on both
-retained release and fastdebug images with default-on emulated; actual
-no-argument startup on a binary containing the changed default is a separate
-automatic-CI check.
+retained release and fastdebug images with default-on emulated.
+
+Actual new-default execution was then validated with an ordinary local
+HotSpot-only build at `379b0eca902474dd082716c1de5498b9145e4534`, using the
+retained fastdebug configuration and GCC 16.2.0. The dependency-managed build
+completed all 1,218 objects and linked successfully. An isolated copy of the
+compatible CI fastdebug runtime received only the newly built `libjvm.so`, SHA256
+`2e830eba2fd47446798b59902a1f41d0c82f403dcfd85d7a2a0f9218ba7f323c`.
+The ordinary launcher loaded that exact library, verified through
+`/proc/self/maps`. With no feature option supplied, the value was `true` with
+`DEFAULT` origin and product metadata. Explicit off/on worked without diagnostic
+unlock. All 57 decoder frames passed 32 rounds in each mode with allocator,
+oop and GC verification, and all four focused jtreg tests passed on that image.
+Their default activation, exercised-trap forwarding, opt-out, GC and
+deoptimization assertions were unchanged. This validates the newly built VM;
+the reused Java/native JDK libraries were not rebuilt. Full PR CI remains a
+separate check. No additional throughput measurements were taken.
 
 The throughput plan was frozen before measurement: four independently started
 forks per option per case, alternating paired order, six seconds of warmup and
