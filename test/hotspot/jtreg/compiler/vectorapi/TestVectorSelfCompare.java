@@ -33,11 +33,21 @@ package compiler.vectorapi;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.RunInfo;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import jdk.incubator.vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
+/*
+ * Extra diagnostics: pass -retain:all and
+ * -javaoptions:-Dvector.selfcompare.diagnostics=true to jtreg.
+ * This records the 128-bit methods' assembly, compilation/deoptimization log,
+ * VM vector flags, and C2 residency before and after the checked invocation.
+ * The two-lane native mask IR rules are AArch64-specific. Other platforms may
+ * execute scalar/fallback paths even when the enclosing method resides in C2.
+ * NEON coverage does not qualify SVE full/partial-width or predicated cases.
+ */
 public class TestVectorSelfCompare {
     private static final byte[] BYTES = new byte[64];
     private static final short[] SHORTS = new short[32];
@@ -69,7 +79,22 @@ public class TestVectorSelfCompare {
     public static void main(String[] args) {
         // As in the other vector identity tests, populate shared access-check
         // profiles before capturing IR; retain the positive vector-load checks.
-        new TestFramework().setDefaultWarmup(10000).start();
+        boolean diagnostics = Boolean.getBoolean("vector.selfcompare.diagnostics");
+        if (diagnostics) System.setProperty("ReportStdout", "true");
+        TestFramework framework = new TestFramework().setDefaultWarmup(10000)
+                .addFlags("--add-modules=jdk.incubator.vector");
+        if (diagnostics) {
+            framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCompilation",
+                    "-XX:+LogCompilation", "-XX:+PrintFlagsFinal",
+                    "-XX:CompileCommand=PrintAssembly,compiler.vectorapi.TestVectorSelfCompare::long128*",
+                    "-XX:CompileCommand=PrintAssembly,compiler.vectorapi.TestVectorSelfCompare::double128*");
+            if (!System.getProperty("jdk.debug", "release").equals("release")) {
+                framework.addFlags(
+                        "-XX:CompileCommand=PrintIdeal,compiler.vectorapi.TestVectorSelfCompare::long128*",
+                        "-XX:CompileCommand=PrintIdeal,compiler.vectorapi.TestVectorSelfCompare::double128*");
+            }
+        }
+        framework.start();
     }
 
     @Test
@@ -478,5 +503,286 @@ public class TestVectorSelfCompare {
                 check(Double.doubleToRawLongBits(DOUBLE_RESULTS[op * 4 + i]) == Double.doubleToRawLongBits(expected));
             }
         }
+    }
+
+    private static final long[] LONG128_A = {Long.MIN_VALUE, Long.MAX_VALUE};
+    private static final long[] LONG128_B = {Long.MIN_VALUE, Long.MIN_VALUE};
+    private static final double[] DOUBLE128_A = {Double.longBitsToDouble(0x7ff8123456789abcL), -0.0d};
+    private static final double[] DOUBLE128_B = {1.0d, +0.0d};
+    private static final boolean[] MASK128_RESULT = new boolean[20];
+
+    // C2 residency alone does not establish native Vector API lowering. The
+    // AArch64 IR rules and optional assembly diagnostics establish that separately.
+    private static boolean mask128Before(RunInfo info) {
+        if (info.isWarmUp()) return false;
+        boolean required = info.isC2CompilationEnabled() && !info.isCompilationSkipped();
+        boolean compiled = info.isTestC2Compiled();
+        System.out.println("MASK128_RESIDENCY method=" + info.getTest().getName()
+                + " arch=" + System.getProperty("os.arch") + " beforeC2=" + compiled);
+        if (required) check(compiled);
+        return required;
+    }
+
+    private static void mask128After(RunInfo info, boolean required) {
+        if (info.isWarmUp()) return;
+        boolean compiled = info.isTestC2Compiled();
+        System.out.println("MASK128_RESIDENCY method=" + info.getTest().getName()
+                + " afterC2=" + compiled + " deoptimized=" + (required && !compiled));
+        if (required) check(compiled);
+    }
+
+    private static boolean long128Expected(int op, long a, long b) {
+        int order = op < 6 ? Long.compare(a, b) : Long.compareUnsigned(a, b);
+        return switch (op) {
+            case 0 -> order == 0;
+            case 1 -> order != 0;
+            case 2, 6 -> order < 0;
+            case 3, 7 -> order <= 0;
+            case 4, 8 -> order > 0;
+            default -> order >= 0;
+        };
+    }
+
+    private static boolean double128Expected(int op, double a, double b) {
+        return switch (op) {
+            case 0 -> a == b;
+            case 1 -> a != b;
+            case 2 -> a < b;
+            case 3 -> a <= b;
+            case 4 -> a > b;
+            default -> a >= b;
+        };
+    }
+
+    @Test
+    @IR(failOn = {IRNode.VECTOR_MASK_CMP},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static long long128SelfToLong() {
+        LongVector a = LongVector.fromArray(LongVector.SPECIES_128, LONG128_A, 0);
+        return (a.compare(EQ, a).toLong() << 0) |
+               (a.compare(NE, a).toLong() << 2) |
+               (a.compare(LT, a).toLong() << 4) |
+               (a.compare(LE, a).toLong() << 6) |
+               (a.compare(GT, a).toLong() << 8) |
+               (a.compare(GE, a).toLong() << 10) |
+               (a.compare(ULT, a).toLong() << 12) |
+               (a.compare(ULE, a).toLong() << 14) |
+               (a.compare(UGT, a).toLong() << 16) |
+               (a.compare(UGE, a).toLong() << 18);
+    }
+    @Run(test = "long128SelfToLong")
+    public static void runLong128SelfToLong(RunInfo info) {
+        boolean required = mask128Before(info);
+        long expected = 0;
+        for (int op = 0; op < 10; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                if (long128Expected(op, LONG128_A[lane], LONG128_A[lane])) expected |= 1L << (2 * op + lane);
+            }
+        }
+        check(long128SelfToLong() == expected);
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.VECTOR_MASK_CMP},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static void long128SelfIntoArray() {
+        LongVector a = LongVector.fromArray(LongVector.SPECIES_128, LONG128_A, 0);
+        a.compare(EQ, a).intoArray(MASK128_RESULT, 0);
+        a.compare(NE, a).intoArray(MASK128_RESULT, 2);
+        a.compare(LT, a).intoArray(MASK128_RESULT, 4);
+        a.compare(LE, a).intoArray(MASK128_RESULT, 6);
+        a.compare(GT, a).intoArray(MASK128_RESULT, 8);
+        a.compare(GE, a).intoArray(MASK128_RESULT, 10);
+        a.compare(ULT, a).intoArray(MASK128_RESULT, 12);
+        a.compare(ULE, a).intoArray(MASK128_RESULT, 14);
+        a.compare(UGT, a).intoArray(MASK128_RESULT, 16);
+        a.compare(UGE, a).intoArray(MASK128_RESULT, 18);
+    }
+    @Run(test = "long128SelfIntoArray")
+    public static void runLong128SelfIntoArray(RunInfo info) {
+        boolean required = mask128Before(info);
+        long128SelfIntoArray();
+        for (int op = 0; op < 10; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                check(MASK128_RESULT[2 * op + lane] == long128Expected(op, LONG128_A[lane], LONG128_A[lane]));
+            }
+        }
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_MASK_CMP, "> 0"},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static long long128DifferentToLong() {
+        LongVector a = LongVector.fromArray(LongVector.SPECIES_128, LONG128_A, 0);
+        LongVector b = LongVector.fromArray(LongVector.SPECIES_128, LONG128_B, 0);
+        return (a.compare(EQ, b).toLong() << 0) |
+               (a.compare(NE, b).toLong() << 2) |
+               (a.compare(LT, b).toLong() << 4) |
+               (a.compare(LE, b).toLong() << 6) |
+               (a.compare(GT, b).toLong() << 8) |
+               (a.compare(GE, b).toLong() << 10) |
+               (a.compare(ULT, b).toLong() << 12) |
+               (a.compare(ULE, b).toLong() << 14) |
+               (a.compare(UGT, b).toLong() << 16) |
+               (a.compare(UGE, b).toLong() << 18);
+    }
+    @Run(test = "long128DifferentToLong")
+    public static void runLong128DifferentToLong(RunInfo info) {
+        boolean required = mask128Before(info);
+        long expected = 0;
+        for (int op = 0; op < 10; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                if (long128Expected(op, LONG128_A[lane], LONG128_B[lane])) expected |= 1L << (2 * op + lane);
+            }
+        }
+        check(long128DifferentToLong() == expected);
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_MASK_CMP, "> 0"},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static void long128DifferentIntoArray() {
+        LongVector a = LongVector.fromArray(LongVector.SPECIES_128, LONG128_A, 0);
+        LongVector b = LongVector.fromArray(LongVector.SPECIES_128, LONG128_B, 0);
+        a.compare(EQ, b).intoArray(MASK128_RESULT, 0);
+        a.compare(NE, b).intoArray(MASK128_RESULT, 2);
+        a.compare(LT, b).intoArray(MASK128_RESULT, 4);
+        a.compare(LE, b).intoArray(MASK128_RESULT, 6);
+        a.compare(GT, b).intoArray(MASK128_RESULT, 8);
+        a.compare(GE, b).intoArray(MASK128_RESULT, 10);
+        a.compare(ULT, b).intoArray(MASK128_RESULT, 12);
+        a.compare(ULE, b).intoArray(MASK128_RESULT, 14);
+        a.compare(UGT, b).intoArray(MASK128_RESULT, 16);
+        a.compare(UGE, b).intoArray(MASK128_RESULT, 18);
+    }
+    @Run(test = "long128DifferentIntoArray")
+    public static void runLong128DifferentIntoArray(RunInfo info) {
+        boolean required = mask128Before(info);
+        long128DifferentIntoArray();
+        for (int op = 0; op < 10; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                check(MASK128_RESULT[2 * op + lane] == long128Expected(op, LONG128_A[lane], LONG128_B[lane]));
+            }
+        }
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_MASK_CMP, "> 0"},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static long double128SelfToLong() {
+        DoubleVector a = DoubleVector.fromArray(DoubleVector.SPECIES_128, DOUBLE128_A, 0);
+        return (a.compare(EQ, a).toLong() << 0) |
+               (a.compare(NE, a).toLong() << 2) |
+               (a.compare(LT, a).toLong() << 4) |
+               (a.compare(LE, a).toLong() << 6) |
+               (a.compare(GT, a).toLong() << 8) |
+               (a.compare(GE, a).toLong() << 10);
+    }
+    @Run(test = "double128SelfToLong")
+    public static void runDouble128SelfToLong(RunInfo info) {
+        boolean required = mask128Before(info);
+        long expected = 0;
+        for (int op = 0; op < 6; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                if (double128Expected(op, DOUBLE128_A[lane], DOUBLE128_A[lane])) expected |= 1L << (2 * op + lane);
+            }
+        }
+        check(double128SelfToLong() == expected);
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_MASK_CMP, "> 0"},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static void double128SelfIntoArray() {
+        DoubleVector a = DoubleVector.fromArray(DoubleVector.SPECIES_128, DOUBLE128_A, 0);
+        a.compare(EQ, a).intoArray(MASK128_RESULT, 0);
+        a.compare(NE, a).intoArray(MASK128_RESULT, 2);
+        a.compare(LT, a).intoArray(MASK128_RESULT, 4);
+        a.compare(LE, a).intoArray(MASK128_RESULT, 6);
+        a.compare(GT, a).intoArray(MASK128_RESULT, 8);
+        a.compare(GE, a).intoArray(MASK128_RESULT, 10);
+    }
+    @Run(test = "double128SelfIntoArray")
+    public static void runDouble128SelfIntoArray(RunInfo info) {
+        boolean required = mask128Before(info);
+        double128SelfIntoArray();
+        for (int op = 0; op < 6; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                check(MASK128_RESULT[2 * op + lane] == double128Expected(op, DOUBLE128_A[lane], DOUBLE128_A[lane]));
+            }
+        }
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_MASK_CMP, "> 0"},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static long double128DifferentToLong() {
+        DoubleVector a = DoubleVector.fromArray(DoubleVector.SPECIES_128, DOUBLE128_A, 0);
+        DoubleVector b = DoubleVector.fromArray(DoubleVector.SPECIES_128, DOUBLE128_B, 0);
+        return (a.compare(EQ, b).toLong() << 0) |
+               (a.compare(NE, b).toLong() << 2) |
+               (a.compare(LT, b).toLong() << 4) |
+               (a.compare(LE, b).toLong() << 6) |
+               (a.compare(GT, b).toLong() << 8) |
+               (a.compare(GE, b).toLong() << 10);
+    }
+    @Run(test = "double128DifferentToLong")
+    public static void runDouble128DifferentToLong(RunInfo info) {
+        boolean required = mask128Before(info);
+        long expected = 0;
+        for (int op = 0; op < 6; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                if (double128Expected(op, DOUBLE128_A[lane], DOUBLE128_B[lane])) expected |= 1L << (2 * op + lane);
+            }
+        }
+        check(double128DifferentToLong() == expected);
+        mask128After(info, required);
+    }
+
+    @Test
+    @IR(counts = {IRNode.VECTOR_MASK_CMP, "> 0"},
+        applyIfPlatform = {"aarch64", "true"},
+        applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", ">= 16"})
+    public static void double128DifferentIntoArray() {
+        DoubleVector a = DoubleVector.fromArray(DoubleVector.SPECIES_128, DOUBLE128_A, 0);
+        DoubleVector b = DoubleVector.fromArray(DoubleVector.SPECIES_128, DOUBLE128_B, 0);
+        a.compare(EQ, b).intoArray(MASK128_RESULT, 0);
+        a.compare(NE, b).intoArray(MASK128_RESULT, 2);
+        a.compare(LT, b).intoArray(MASK128_RESULT, 4);
+        a.compare(LE, b).intoArray(MASK128_RESULT, 6);
+        a.compare(GT, b).intoArray(MASK128_RESULT, 8);
+        a.compare(GE, b).intoArray(MASK128_RESULT, 10);
+    }
+    @Run(test = "double128DifferentIntoArray")
+    public static void runDouble128DifferentIntoArray(RunInfo info) {
+        boolean required = mask128Before(info);
+        double128DifferentIntoArray();
+        for (int op = 0; op < 6; op++) {
+            for (int lane = 0; lane < 2; lane++) {
+                check(MASK128_RESULT[2 * op + lane] == double128Expected(op, DOUBLE128_A[lane], DOUBLE128_B[lane]));
+            }
+        }
+        mask128After(info, required);
     }
 }

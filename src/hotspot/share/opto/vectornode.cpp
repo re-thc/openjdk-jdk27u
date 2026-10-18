@@ -2757,8 +2757,14 @@ Node* VectorMaskCmpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Floating-point self comparisons depend on NaNs. Predicated comparisons
   // must also preserve the result for inactive lanes.
   const TypeVect* input_type = in(1)->bottom_type()->isa_vect();
+  // ReplicateNode does not support boolean or char lanes. Check the mask
+  // type as well as the operand type; floating-point masks may use integers.
+  auto supported_type = [](BasicType bt) {
+    return bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG;
+  };
+  BasicType bt = vect_type()->element_basic_type();
   if (!is_predicated_vector() && in(1) == in(2) && input_type != nullptr &&
-      is_integral_type(input_type->element_basic_type())) {
+      supported_type(input_type->element_basic_type()) && supported_type(bt)) {
     int value;
     switch (_predicate) {
       case BoolTest::eq:
@@ -2778,7 +2784,6 @@ Node* VectorMaskCmpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       default:
         return VectorNode::Ideal(phase, can_reshape);
     }
-    BasicType bt = vect_type()->element_basic_type();
     Node* scalar;
     if (bt == T_LONG) {
       scalar = phase->longcon(value);
