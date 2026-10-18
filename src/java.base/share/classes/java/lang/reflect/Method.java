@@ -768,15 +768,7 @@ public final class Method extends Executable {
      * @jls 9.6.2 Defaults for Annotation Interface Elements
      */
     public Object getDefaultValue() {
-        if  (annotationDefault == null)
-            return null;
-        Class<?> memberType = AnnotationType.invocationHandlerReturnType(
-            getReturnType());
-        Object result = AnnotationParser.parseMemberValue(
-            memberType, ByteBuffer.wrap(annotationDefault),
-            SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-            getDeclaringClass());
+        Object result = parseDefaultValue();
         if (result instanceof ExceptionProxy) {
             if (result instanceof TypeNotPresentExceptionProxy proxy) {
                 throw new TypeNotPresentException(proxy.typeName(), proxy.getCause());
@@ -784,6 +776,19 @@ public final class Method extends Executable {
             throw new AnnotationFormatError("Invalid default: " + this);
         }
         return result;
+    }
+
+    // See JavaLangReflectAccess.parseDefaultValue for the raw parsing contract.
+    Object parseDefaultValue() {
+        if  (annotationDefault == null)
+            return null;
+        Class<?> memberType = AnnotationType.invocationHandlerReturnType(
+            getReturnType());
+        return AnnotationParser.parseMemberValue(
+            memberType, ByteBuffer.wrap(annotationDefault),
+            SharedSecrets.getJavaLangAccess().
+                getConstantPool(getDeclaringClass()),
+            getDeclaringClass());
     }
 
     /**
