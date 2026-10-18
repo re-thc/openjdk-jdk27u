@@ -511,8 +511,8 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   Symbol* tmp = ::new ((void*)u1_buf) Symbol((const u1*)name, len,
                                              (is_permanent || CDSConfig::is_dumping_static_archive()) ? PERM_REFCOUNT : 1);
 
-  // Either our new symbol, with our reference included, or the one another
-  // thread added concurrently, which the lookup referenced for us.
+  // Either our new symbol, with our reference included, or an existing
+  // symbol, which the lookup referenced for us.
   bool inserted = _local_table->insert_get(current, lookup, *tmp, stg, &rehash_warning, &clean_hint);
   Symbol* sym = stg.get_res_sym();
 
