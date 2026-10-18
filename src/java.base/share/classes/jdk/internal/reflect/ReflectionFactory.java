@@ -189,6 +189,17 @@ public class ReflectionFactory {
         return langReflectAccess.newInstance(ctor, args, caller);
     }
 
+    /**
+     * Invokes a zero-argument, non-caller-sensitive static method without access
+     * checks, using native reflection to avoid creating a method handle accessor.
+     *
+     * @throws InvocationTargetException if the method throws an exception
+     * @throws NullPointerException if the method is not static
+     */
+    public Object invokeStatic(Method method) throws InvocationTargetException {
+        return DirectMethodHandleAccessor.nativeAccessor(method, false).invoke(null, null);
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by serialization

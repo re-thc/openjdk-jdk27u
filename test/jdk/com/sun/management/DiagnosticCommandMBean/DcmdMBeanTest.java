@@ -71,10 +71,17 @@ public class DcmdMBeanTest {
             int operationFailures = 0;
             for (int i = 0; i < opInfo.length; i++) {
                 operationFailures += printOperation(opInfo[i]);
+                operationFailures += checkHelp(mbsc, name, opInfo[i]);
                 System.out.println("\n@@@@@@\n");
             }
             if (operationFailures > 0) {
-                throw new RuntimeException("FAILED.  " + operationFailures + " operations found with non-standard parameter types.");
+                throw new RuntimeException("FAILED.  " + operationFailures + " operations found with non-standard parameter types or wrong dcmd.help.");
+            }
+
+            // Also exercise local descriptor access, without serialization.
+            MBeanOperationInfo localOp = mbs.getMBeanInfo(name).getOperations()[0];
+            if (checkHelp(mbs, name, localOp) > 0) {
+                throw new RuntimeException("FAILED.  Wrong dcmd.help for " + localOp.getName() + " from the local MBeanServer.");
             }
         } finally {
             try {
@@ -85,6 +92,21 @@ public class DcmdMBeanTest {
         }
 
         System.out.println("Test passed");
+    }
+
+    /** Returns the number of mismatches between dcmd.help and the help operation. */
+    static int checkHelp(MBeanServerConnection conn, ObjectName name, MBeanOperationInfo info)
+            throws Exception {
+        Descriptor desc = info.getDescriptor();
+        String cmdName = (String) desc.getFieldValue("dcmd.name");
+        Object help = conn.invoke(name, "help", new Object[] { new String[] { cmdName } },
+                                  new String[] { String[].class.getName() });
+        if (!help.equals(desc.getFieldValue("dcmd.help"))) {
+            System.out.println("** FAILED ** dcmd.help of " + info.getName()
+                    + " differs from the output of \"help " + cmdName + "\"");
+            return 1;
+        }
+        return 0;
     }
 
     /**

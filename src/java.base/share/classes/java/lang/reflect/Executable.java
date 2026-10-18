@@ -26,14 +26,13 @@
 package java.lang.reflect;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
@@ -103,13 +102,9 @@ public abstract sealed class Executable extends AccessibleObject
 
             appendModifiers(sb);
             specificToStringHeader(sb);
-            sb.append(Arrays.stream(parameterTypes)
-                      .map(Type::getTypeName)
-                      .collect(Collectors.joining(",", "(", ")")));
+            sb.append(joinTypeNames(parameterTypes, ",", "(", ")"));
             if (exceptionTypes.length > 0) {
-                sb.append(Arrays.stream(exceptionTypes)
-                          .map(Type::getTypeName)
-                          .collect(Collectors.joining(",", " throws ", "")));
+                sb.append(joinTypeNames(exceptionTypes, ",", " throws ", ""));
             }
             return sb.toString();
         } catch (Exception e) {
@@ -123,15 +118,22 @@ public abstract sealed class Executable extends AccessibleObject
      */
     abstract void specificToStringHeader(StringBuilder sb);
 
+    private static String joinTypeNames(Type[] types, String delimiter,
+                                        String prefix, String suffix) {
+        StringJoiner sj = new StringJoiner(delimiter, prefix, suffix);
+        for (Type type : types) {
+            sj.add(type.getTypeName());
+        }
+        return sj.toString();
+    }
+
     static String typeVarBounds(TypeVariable<?> typeVar) {
         Type[] bounds = typeVar.getBounds();
         if (bounds.length == 1 && bounds[0].equals(Object.class)) {
             return typeVar.getName();
         } else {
             return typeVar.getName() + " extends " +
-                Arrays.stream(bounds)
-                .map(Type::getTypeName)
-                .collect(Collectors.joining(" & "));
+                joinTypeNames(bounds, " & ", "", "");
         }
     }
 
@@ -143,9 +145,11 @@ public abstract sealed class Executable extends AccessibleObject
 
             TypeVariable<?>[] typeparms = getTypeParameters();
             if (typeparms.length > 0) {
-                sb.append(Arrays.stream(typeparms)
-                          .map(Executable::typeVarBounds)
-                          .collect(Collectors.joining(",", "<", "> ")));
+                StringJoiner tj = new StringJoiner(",", "<", "> ");
+                for (TypeVariable<?> typeparm : typeparms) {
+                    tj.add(typeVarBounds(typeparm));
+                }
+                sb.append(tj);
             }
 
             specificToGenericStringHeader(sb);
@@ -164,9 +168,7 @@ public abstract sealed class Executable extends AccessibleObject
 
             Type[] exceptionTypes = getGenericExceptionTypes();
             if (exceptionTypes.length > 0) {
-                sb.append(Arrays.stream(exceptionTypes)
-                          .map(Type::getTypeName)
-                          .collect(Collectors.joining(",", " throws ", "")));
+                sb.append(joinTypeNames(exceptionTypes, ",", " throws ", ""));
             }
             return sb.toString();
         } catch (Exception e) {
@@ -597,6 +599,39 @@ public abstract sealed class Executable extends AccessibleObject
         if (parameterAnnotations == null)
             return new Annotation[numParameters][0];
 
+        // Share annotation instances, but clone both array levels for callers.
+        Annotation[][] result = declaredParameterAnnotations(parameterTypes, parameterAnnotations).clone();
+        for (int i = 0; i < result.length; i++) {
+            result[i] = result[i].clone();
+        }
+        return result;
+    }
+
+    private transient volatile Annotation[][] declaredParameterAnnotations;
+
+    private Annotation[][] declaredParameterAnnotations(Class<?>[] parameterTypes,
+                                                        byte[] parameterAnnotations) {
+        Annotation[][] result;
+        if ((result = declaredParameterAnnotations) == null) {
+            Executable root = (Executable)getRoot();
+            if (root != null) {
+                result = root.declaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                if (result == root.declaredParameterAnnotations) {
+                    declaredParameterAnnotations = result;
+                }
+            } else {
+                result = parseDeclaredParameterAnnotations(parameterTypes, parameterAnnotations);
+                if (!AnnotationParser.hasUnresolvedEnumConstant(result)) {
+                    result = publish(Offsets.DECLARED_PARAMETER_ANNOTATIONS, result);
+                }
+            }
+        }
+        return result;
+    }
+
+    private Annotation[][] parseDeclaredParameterAnnotations(Class<?>[] parameterTypes,
+                                                             byte[] parameterAnnotations) {
+        int numParameters = parameterTypes.length;
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
         if (result.length != numParameters &&
@@ -649,24 +684,46 @@ public abstract sealed class Executable extends AccessibleObject
     private Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         Map<Class<? extends Annotation>, Annotation> declAnnos;
         if ((declAnnos = declaredAnnotations) == null) {
-            synchronized (this) {
-                if ((declAnnos = declaredAnnotations) == null) {
-                    Executable root = (Executable)getRoot();
-                    if (root != null) {
-                        declAnnos = root.declaredAnnotations();
-                    } else {
-                        declAnnos = AnnotationParser.parseAnnotations(
-                                getAnnotationBytes(),
-                                SharedSecrets.getJavaLangAccess().
-                                        getConstantPool(getDeclaringClass()),
-                                getDeclaringClass()
-                        );
-                    }
+            Executable root = (Executable)getRoot();
+            if (root != null) {
+                declAnnos = root.declaredAnnotations();
+                if (declAnnos == root.declaredAnnotations) {
                     declaredAnnotations = declAnnos;
+                }
+            } else {
+                declAnnos = AnnotationParser.parseAnnotations(
+                        getAnnotationBytes(),
+                        SharedSecrets.getJavaLangAccess().
+                                getConstantPool(getDeclaringClass()),
+                        getDeclaringClass()
+                );
+                if (!AnnotationParser.hasUnresolvedEnumConstant(declAnnos.values())) {
+                    declAnnos = publish(Offsets.DECLARED_ANNOTATIONS, declAnnos);
                 }
             }
         }
         return declAnnos;
+    }
+
+    /*
+     * Parse outside locks to avoid deadlocks with enum initializers. CAS makes
+     * readers share annotation instances; copies cache only published results.
+     * Leave temporarily unresolved enum constants uncached for a later read.
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T publish(long offset, T annotations) {
+        Unsafe unsafe = Offsets.UNSAFE;
+        return unsafe.compareAndSetReference(this, offset, null, annotations)
+                ? annotations
+                : (T)unsafe.getReferenceVolatile(this, offset);
+    }
+
+    private static final class Offsets {
+        static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        static final long DECLARED_ANNOTATIONS
+                = UNSAFE.objectFieldOffset(Executable.class, "declaredAnnotations");
+        static final long DECLARED_PARAMETER_ANNOTATIONS
+                = UNSAFE.objectFieldOffset(Executable.class, "declaredParameterAnnotations");
     }
 
     /**

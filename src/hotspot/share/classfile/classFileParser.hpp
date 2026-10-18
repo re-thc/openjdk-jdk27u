@@ -187,6 +187,8 @@ class ClassFileParser {
   u2 _java_fields_count;
 
   bool _need_verify;
+  // Successful format checks by Utf8 index (Checked* mask).
+  u1* _checked_utf8;
 
   bool _has_nonstatic_concrete_methods;
   bool _declares_nonstatic_concrete_methods;
@@ -427,6 +429,14 @@ class ClassFileParser {
   int  verify_legal_method_signature(const Symbol* methodname,
                                      const Symbol* signature,
                                      TRAPS) const;
+
+  enum { CheckedFieldName = 1, CheckedMethodName = 2,
+         CheckedFieldSignature = 4, CheckedMethodSignature = 8 };
+  void verify_legal_field_name(int name_index, TRAPS);
+  void verify_legal_method_name(int name_index, TRAPS);
+  void verify_legal_field_signature(const Symbol* fieldname, int signature_index, TRAPS);
+  void verify_legal_method_signature(const Symbol* methodname, int signature_index, TRAPS);
+
   void verify_legal_name_with_signature(const Symbol* name,
                                         const Symbol* signature,
                                         TRAPS) const;

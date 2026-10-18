@@ -196,7 +196,16 @@ public abstract class ZoneRulesProvider {
      * @return the unmodifiable set of zone IDs, not null
      */
     public static Set<String> getAvailableZoneIds() {
-        return ZONE_IDS;
+        Set<String> ids = ZONE_IDS;
+        return ids != null ? ids : availableZoneIds();
+    }
+
+    private static synchronized Set<String> availableZoneIds() {
+        Set<String> ids = ZONE_IDS;
+        if (ids == null) {
+            ZONE_IDS = ids = Collections.unmodifiableSet(new HashSet<String>(ZONES.keySet()));
+        }
+        return ids;
     }
 
     /**
@@ -317,8 +326,7 @@ public abstract class ZoneRulesProvider {
                     ", currently loading from provider: " + provider);
             }
         }
-        Set<String> combinedSet = new HashSet<String>(ZONES.keySet());
-        ZONE_IDS = Collections.unmodifiableSet(combinedSet);
+        ZONE_IDS = null;
     }
 
     /**

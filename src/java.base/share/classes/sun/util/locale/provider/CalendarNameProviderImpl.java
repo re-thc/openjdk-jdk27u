@@ -69,7 +69,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             // If standalone names are requested and no "standalone." resources are found,
             // try the default ones instead.
             if (strings == null && key.contains("standalone.")) {
-                key = key.replaceFirst("standalone.", "");
+                key = key.replace("standalone.", "");
                 strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
             }
 
@@ -155,7 +155,7 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
             // If standalone names are requested and no "standalone." resources are found,
             // try the default ones instead.
             if (strings == null && key.contains("standalone.")) {
-                key = key.replaceFirst("standalone.", "");
+                key = key.replace("standalone.", "");
                 strings = javatime ? lr.getJavaTimeNames(key) : lr.getCalendarNames(key);
             }
 

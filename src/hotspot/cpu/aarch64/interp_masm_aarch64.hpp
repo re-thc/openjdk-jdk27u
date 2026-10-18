@@ -324,6 +324,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
   void verify_field_offset(Register reg) NOT_DEBUG_RETURN;
+
+ private:
+  int scale_resolved_entry_index(Register index, Register tmp, int entry_size);
 };
 
 #endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP
