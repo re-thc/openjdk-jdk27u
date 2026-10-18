@@ -1,0 +1,270 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Elect and measure a native AVX-512 backend and tier
+on:
+  workflow_call:
+    inputs:
+      source:
+        type: string
+        required: true
+      backend:
+        type: string
+        required: true
+      tier:
+        type: string
+        required: true
+      runner:
+        type: string
+        required: true
+      artifact-id:
+        type: string
+        required: true
+      artifact-digest:
+        type: string
+        required: true
+      original-image-hash:
+        type: string
+        required: true
+      fork-image-hash:
+        type: string
+        required: true
+      helper-hash:
+        type: string
+        required: true
+      parent-manifest-hash:
+        type: string
+        required: true
+      source-tree:
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  measure:
+    name: Final SKY ${{ inputs.tier }} slot ${{ matrix.slot }} on ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {slot: '0', runner: ubuntu-22.04}
+          - {slot: '1', runner: ubuntu-24.04}
+          - {slot: '2', runner: ubuntu-26.04}
+          - {slot: '3', runner: ubuntu-26.04}
+    timeout-minutes: 360
+    env:
+      SOURCE: ${{ inputs.source }}
+      SOURCE_TREE: ${{ inputs.source-tree }}
+      BACKEND: avx512
+      TIER: ${{ inputs.tier }}
+      ARTIFACT_ID: ${{ inputs.artifact-id }}
+      ARTIFACT_DIGEST: ${{ inputs.artifact-digest }}
+      ORIGINAL_HASH: ${{ inputs.original-image-hash }}
+      FORK_HASH: ${{ inputs.fork-image-hash }}
+      HELPER_HASH: ${{ inputs.helper-hash }}
+      MANIFEST_HASH: ${{ inputs.parent-manifest-hash }}
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+      EXPECTED_CONTAINER_IMAGE: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+      SKY_WORKER_NAME: avx512_controls (${{ inputs.tier }}) / Final SKY ${{ inputs.tier }} slot ${{ matrix.slot }} on ${{ matrix.runner }}
+      SKY_HOST_LABEL: ${{ matrix.runner }}
+      SKY_SLOT: ${{ matrix.slot }}
+    steps:
+      - name: Install only eligibility and artifact API dependencies
+        shell: bash
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python-is-python3 gh ca-certificates libstdc++6 libc6
+      - name: Record native CPU and source eligibility without compiler images or timings
+        id: eligibility
+        shell: python
+        run: |
+          import base64, hashlib, json, os, subprocess, sys
+          from pathlib import Path
+          ref = os.environ["GITHUB_SHA"]
+          path = ".github/scripts/stringzilla-final-sky-election.py"
+          payload = json.loads(subprocess.check_output(["gh", "api",
+              "repos/re-thc/openjdk-jdk27u/contents/" + path + "?ref=" + ref], text=True))
+          assert payload["type"] == "file" and payload["path"] == path and payload["encoding"] == "base64"
+          data = base64.b64decode(payload["content"])
+          assert hashlib.sha1(("blob " + str(len(data)) + "\0").encode() + data).hexdigest() == payload["sha"]
+          target = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-final-sky-election.py"
+          target.write_bytes(data)
+          print("STRINGZILLA_SKY_ALGORITHM " + json.dumps({"head": ref, "git_blob": payload["sha"],
+              "sha256": hashlib.sha256(data).hexdigest()}), flush=True)
+          subprocess.run([sys.executable, str(target), "probe"], check=True)
+      - name: Publish this slot's immutable eligibility fact
+        id: fact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-final-sky-fact-${{ github.run_id }}-${{ inputs.tier }}-${{ matrix.slot }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.eligibility.outputs.folder }}/eligibility.json
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Verify ALLFOUR facts then choose MIN eligible slot on ${{ steps.eligibility.outputs.cpu_model }}
+        id: elected
+        env:
+          FACT_ARTIFACT_ID: ${{ steps.fact.outputs.artifact-id }}
+          FACT_ARTIFACT_DIGEST: ${{ steps.fact.outputs.artifact-digest }}
+        shell: python
+        run: |
+          import subprocess, sys, os
+          from pathlib import Path
+          path = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-final-sky-election.py"
+          subprocess.run([sys.executable, str(path), "select"], check=True)
+      - name: Selected slot ${{ steps.elected.outputs.selected_slot }} CPU ${{ steps.elected.outputs.selected_cpu }} installs native dependencies
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: bash
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git gcc-16 libc6-dev tar unzip binutils
+          test "$(gcc-16 -dumpversion)" = 16
+          gcc-16 -x c -fsanitize=address,undefined,alignment -fno-sanitize-recover=all -o "$RUNNER_TEMP/native-dependencies-smoke" - <<'EOF'
+          #include <sys/stat.h>
+          #include <dirent.h>
+          #include <sys/param.h>
+          #include <unistd.h>
+          #include <stddef.h>
+          #include <stdint.h>
+          #include <sys/types.h>
+          #include <fcntl.h>
+          #include <errno.h>
+          #include <signal.h>
+          #include <sys/socket.h>
+          #include <limits.h>
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
+          #include <cpuid.h>
+          #include <immintrin.h>
+          int main(void) { return 0; }
+          EOF
+          ASAN_OPTIONS=abort_on_error=1:detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 "$RUNNER_TEMP/native-dependencies-smoke"
+      - name: Checkout candidate runtime and frozen harness
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - name: Checkout baseline identity
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout pinned auxiliary driver
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Persist exact checkout ownership exceptions for container subprocesses
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        shell: python
+        run: |
+          import subprocess
+          from pathlib import Path
+          for root in (Path.cwd(), Path.cwd() / "baseline", Path.cwd() / "driver"):
+              subprocess.run(["git", "config", "--global", "--add", "safe.directory", str(root.resolve())], check=True)
+              subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True)
+      - name: Check physical CPU and compiled profile prerequisites
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
+        id: physical
+        shell: python
+        run: |
+          import os, py_compile, subprocess
+          path = "driver/.github/scripts/stringzilla-final.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run(["python", path, "physical", "--source", os.environ["SOURCE"],
+                          "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"]], check=True)
+          import json
+          from pathlib import Path
+          assert json.loads(Path("perf-output/physical-host.json").read_text())["available"] is True
+      - name: Restore complete pair and project the fixed manifest
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true' && (steps.physical.outputs.available == 'true')
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final.py", "restore",
+              "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"],
+              "--artifact-id", os.environ["ARTIFACT_ID"], "--artifact-digest", os.environ["ARTIFACT_DIGEST"],
+              "--original-hash", os.environ["ORIGINAL_HASH"], "--fork-hash", os.environ["FORK_HASH"],
+              "--helper-hash", os.environ["HELPER_HASH"], "--parent-manifest-hash", os.environ["MANIFEST_HASH"]], check=True)
+      - name: Attest actual runtime flags and backend on this host
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true' && (steps.physical.outputs.available == 'true')
+        id: runtime
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final.py", "runtime",
+                          "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"]], check=True)
+          import json
+          from pathlib import Path
+          assert json.loads(Path("perf-output/runtime-attestation.json").read_text())["available"] is True
+      - name: Execute native AVX-512 contract on this physical host
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true' && (inputs.backend == 'avx512' && steps.runtime.outputs.available == 'true')
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final.py", "native",
+                          "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"]], check=True)
+          from pathlib import Path
+          assert "requested=2 selected=2 executable=1" in Path("perf-output/native-validation/run.log").read_text()
+      - name: Measure final SKY ${{ inputs.tier }} original enabled and disabled controls
+        if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true' && steps.runtime.outputs.available == 'true'
+        shell: python
+        run: |
+          import importlib.util, os, subprocess, sys
+          from pathlib import Path
+          path = Path("driver/.github/scripts/stringzilla-final-sky-election.py")
+          spec = importlib.util.spec_from_file_location("election", path)
+          election = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(election)
+          for mode in ("measure", "periodic", "utf16-probe"):
+              election.verify_saved(election.FOLDER)
+              values = [sys.executable, "driver/.github/scripts/stringzilla-final.py", mode,
+                  "--source", os.environ["SOURCE"], "--backend", "avx512", "--tier", os.environ["TIER"],
+                  "--original-hash", os.environ["ORIGINAL_HASH"], "--fork-hash", os.environ["FORK_HASH"]]
+              if mode == "measure":
+                  values += ["--helper-hash", os.environ["HELPER_HASH"]]
+              subprocess.run(values, check=True)
+      - name: Save the selected worker's complete election binding
+        if: ${{ !cancelled() && steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true' }}
+        shell: python
+        run: |
+          import importlib.util, json, shutil
+          from pathlib import Path
+          path = Path("driver/.github/scripts/stringzilla-final-sky-election.py")
+          spec = importlib.util.spec_from_file_location("election", path)
+          election = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(election)
+          binding = election.verify_saved(election.FOLDER)
+          output = Path("perf-output")
+          output.mkdir(exist_ok=True)
+          (output / "election-binding.json").write_text(json.dumps(binding, indent=2) + "\n")
+          shutil.copytree(election.FOLDER, output / "sky-election")
+      - name: Retain the selected worker's raw results and receipts
+        if: ${{ !cancelled() && steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-final-results-avx512-${{ inputs.tier }}-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain every slot's eligibility and selection evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-final-sky-eligibility-${{ inputs.tier }}-${{ matrix.slot }}-${{ github.sha }}
+          path: ${{ runner.temp }}/stringzilla-final-sky-${{ inputs.tier }}-election
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,186 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Build a matched StringZilla final pair
+on:
+  workflow_call:
+    inputs:
+      source:
+        type: string
+        required: true
+      backend:
+        type: string
+        required: true
+      runner:
+        type: string
+        required: true
+      platform:
+        type: string
+        required: true
+      helper-hash:
+        type: string
+        required: true
+      parent-manifest-hash:
+        type: string
+        required: true
+    outputs:
+      artifact-id:
+        value: ${{ jobs.build.outputs.artifact-id }}
+      artifact-digest:
+        value: ${{ jobs.build.outputs.artifact-digest }}
+      original-image-hash:
+        value: ${{ jobs.build.outputs.original-image-hash }}
+      fork-image-hash:
+        value: ${{ jobs.build.outputs.fork-image-hash }}
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    name: ${{ inputs.backend }} validated pair
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
+      original-image-hash: ${{ steps.pair.outputs.original-image-hash }}
+      fork-image-hash: ${{ steps.pair.outputs.fork-image-hash }}
+    env:
+      SOURCE: ${{ inputs.source }}
+      BACKEND: ${{ inputs.backend }}
+      HELPER_HASH: ${{ inputs.helper-hash }}
+      MANIFEST_HASH: ${{ inputs.parent-manifest-hash }}
+      GH_TOKEN: ${{ github.token }}
+      MSYS2_PATH_TYPE: minimal
+      CHERE_INVOKING: 1
+      CONFIGURE_DEV_NO_MOLD: 1
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - name: Checkout baseline identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout auxiliary driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Restore only the verified original image
+        shell: python
+        run: |
+          import os, py_compile, subprocess
+          path = "driver/.github/scripts/stringzilla-final.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run(["python", path, "original", "--source", os.environ["SOURCE"],
+                          "--backend", os.environ["BACKEND"]], check=True)
+      - name: Get MSYS2
+        if: runner.os == 'Windows'
+        uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+      - name: Get boot JDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ inputs.platform }}
+      - name: Get JTReg
+        uses: ./.github/actions/get-jtreg
+      - name: Verify vendoring
+        shell: bash
+        run: python make/scripts/update-stringzilla.py --verify | tee perf-output/vendor-verification.log
+      - name: Install GCC 16
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16
+          test "$(gcc-16 -dumpversion)" = 16
+          test "$(g++-16 -dumpversion)" = 16
+      - name: Check MSVC 14.44 toolset
+        if: runner.os == 'Windows'
+        id: msvc
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then echo "installed=true" >> "$GITHUB_OUTPUT"; else echo "installed=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Install MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.msvc.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+      - name: Build complete Linux fork
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+          CC: gcc-16
+          CXX: g++-16
+        run: |
+          test ! -e perf-images/fork
+          bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+            --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+            --with-source-date=1792195200 --with-native-debug-symbols=none --with-jmod-compress=zip-1
+          make CONF=perf JOBS=2 images
+          cp build/perf/spec.gmk perf-output/fork-spec.gmk
+          cp -a build/perf/images/jdk perf-images/fork
+          rm -rf build/perf
+      - name: Build complete MSVC fork
+        if: runner.os == 'Windows'
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          test ! -e perf-images/fork
+          bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+            --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+            --with-source-date=1792195200 --with-native-debug-symbols=none \
+            --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1
+          make CONF=perf JOBS=2 images
+          cp build/perf/spec.gmk perf-output/fork-spec.gmk
+          cp -a build/perf/images/jdk perf-images/fork
+          rm -rf build/perf
+      - name: Verify and archive matched complete pair
+        id: pair
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final.py", "pair",
+              "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"],
+              "--helper-hash", os.environ["HELPER_HASH"], "--parent-manifest-hash", os.environ["MANIFEST_HASH"]], check=True)
+      - name: Publish complete images before tests
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-final-pair-${{ inputs.backend }}-${{ github.sha }}
+          path: perf-image-archives
+          if-no-files-found: error
+          retention-days: 30
+      - name: Run profiles, jtreg and native contract checks
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final.py", "validate",
+                          "--source", os.environ["SOURCE"], "--backend", os.environ["BACKEND"]], check=True)
+      - name: Retain all build and validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-final-build-${{ inputs.backend }}-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
