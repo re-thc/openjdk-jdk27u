@@ -248,7 +248,9 @@ static jint check_kernels(void) {
     };
     jchar dense_short_source[544], dense_short_target[136];
     for (unsigned int n = 0; n < sizeof(dense_short_counts) / sizeof(dense_short_counts[0]); n++) {
-        jint count = dense_short_counts[n], stride = count + 3, length = 4 * count + 9;
+        jint count = dense_short_counts[n];
+        CHECK(count >= 33 && count <= 128);
+        jint stride = count + 3, length = 4 * count + 9;
         sz_size_t source_bytes = length * sizeof(jchar), target_bytes = count * sizeof(jchar);
         for (jint order = 0; order < 4; order++) {
             jchar values[5];
