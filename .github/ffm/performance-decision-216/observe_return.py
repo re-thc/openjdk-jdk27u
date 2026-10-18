@@ -121,7 +121,8 @@ def main():
         json.dump(verdict, stream, indent=2)
         stream.write("\n")
     print(json.dumps(verdict))
+    return 0 if verdict["terminal_observation_passed"] else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

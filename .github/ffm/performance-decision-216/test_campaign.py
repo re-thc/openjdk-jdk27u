@@ -3,6 +3,7 @@
 import copy
 import json
 from pathlib import Path
+import runpy
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
@@ -19,6 +20,70 @@ class CampaignTests(unittest.TestCase):
     def budget(self):
         return dict(start_monotonic_ns=1, preparation_deadline_ns=5100_000_000_001,
                     overall_deadline_ns=9000_000_000_001, boot_id="fixture")
+
+    def assert_script_exit(self, expected_code, status, supervision):
+        """Execute the real script entrypoint with only a mocked collector."""
+        source = Path(terminal.__file__).read_text()
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            script = root / "observe_return.py"
+            script.write_text(source)
+            (root / "EXECUTION_BINDINGS.json").write_text("{}")
+
+            def worker(command, cwd, deadline, launched, **kwargs):
+                launched(7)
+                out = root / "run"
+                out.mkdir()
+                (out / "status.json").write_text(json.dumps(dict(status=status)))
+                (out / "campaign-budget.json").write_text(json.dumps(dict(
+                    collector_pid=7, start_monotonic_ns=2, campaign_deadline_ns=3600_000_000_002)))
+                for suffix, value in [("intent", {}), ("launch", dict(pid=42)),
+                                       ("receipt", dict(pid=42, waited_pid=42, returncode=0))]:
+                    (out / ("fork-001." + suffix + ".json")).write_text(json.dumps(value))
+                return dict(collector_pid=7, **supervision)
+
+            with patch("inputs.get_budget", return_value=self.budget()), \
+                 patch("collector_supervisor.supervise", side_effect=worker) as launch, \
+                 patch.object(terminal.time, "monotonic_ns", side_effect=[2, 4]), \
+                 patch("builtins.print"), self.assertRaises(SystemExit) as exited:
+                runpy.run_path(str(script), run_name="__main__")
+            self.assertEqual(exited.exception.code, expected_code)
+            launch.assert_called_once()
+            observed = json.loads((root / "local/process-return.json").read_text())
+        self.assertEqual(observed["terminal_observation_passed"], expected_code == 0)
+        self.assertEqual(observed["collector_status"], status)
+        self.assertFalse(observed["shipping_qualified"])
+        return observed
+
+    def test_script_timeout_exits_nonzero_even_after_complete_reaping(self):
+        observed = self.assert_script_exit(1, "SELECTED_SCOPE_FAVORABLE_REVIEW_REQUIRED", dict(
+            process_return_code=-9, process_return_monotonic_ns=3,
+            supervisor_cleanup_complete=True, supervision_intervened=True,
+            supervision_reason="overall_deadline_reserve", pending_owned_pids=[]))
+        self.assertEqual(observed["status"], "STOPPED_EXECUTION_FAILURE")
+        self.assertTrue(observed["final_cleanup_complete"])
+
+    def test_script_pending_cleanup_and_unknown_return_exit_nonzero(self):
+        for code, returned, pending in [(0, 3, [42]), (None, None, [7, 42])]:
+            with self.subTest(returncode=code):
+                observed = self.assert_script_exit(1, "HELD_CANDIDATE_SLOWDOWN", dict(
+                    process_return_code=code, process_return_monotonic_ns=returned,
+                    supervisor_cleanup_complete=False, supervision_intervened=True,
+                    supervision_reason="remaining_owned_children", pending_owned_pids=pending))
+                self.assertEqual(observed["status"], "STOPPED_CLEANUP_INCOMPLETE")
+                self.assertEqual(observed["supervision"]["pending_owned_pids"], pending)
+                self.assertEqual(observed["process_return_code"], code)
+                self.assertFalse(observed["final_cleanup_complete"])
+
+    def test_script_normal_completion_exits_zero_without_performance_approval(self):
+        for status in ["SELECTED_SCOPE_FAVORABLE_REVIEW_REQUIRED", "HELD_CANDIDATE_SLOWDOWN",
+                       "STOPPED_CONTROL_FAILURE", "INCONCLUSIVE_REVIEW_REQUIRED"]:
+            with self.subTest(status=status):
+                observed = self.assert_script_exit(0, status, dict(
+                    process_return_code=0, process_return_monotonic_ns=3,
+                    supervisor_cleanup_complete=True, supervision_intervened=False,
+                    pending_owned_pids=[]))
+                self.assertEqual(observed["status"], status)
 
     def test_final_write_crossing_deadline_cannot_leave_authoritative_pass(self):
         budget = self.budget()

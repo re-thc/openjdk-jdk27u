@@ -1,10 +1,10 @@
 {
   "status": "PASS_OFFLINE_ONLY",
   "command": "python3 -m unittest -q test_decision test_child_collector test_campaign test_inputs test_baseline_replay test_budget test_collector_supervisor",
-  "tests": 85,
+  "tests": 88,
   "failures": 0,
   "errors": 0,
-  "log_sha256": "674d21dd71b2b39fea93c5e0c52b01f731f7a411201837b27c9df56d6a2a7564",
+  "log_sha256": "af8707c610c1a50d62e8912271e95b18ac0be37461e3dbf4cc25fc80c409dc9f",
   "runbook_python_blocks_syntax_checked": 3,
   "tested_python_sha256": {
     "accounting_contract.py": "b442f6dd6e62c5f9439199292d674b6dc1c1aa6abddf5e4c73f3d36fd15a7399",
@@ -15,10 +15,10 @@
     "decision.py": "ab22acf71a038586d64fe1f657f7761bc4c8c7bf2a9113042f90c66daea595ab",
     "inputs.py": "3a72ac8fa34ff6de0101f90a07eb9b8eb7808b78e7fd22fbac20932e09cb40ac",
     "measure_once.py": "e50f716e7a72984c15c50dfa08ee74868d4cc76c3876ba1e5f6f00c08dcda096",
-    "observe_return.py": "0398215b6b184952aba4b5f8ff165894a6576ab759092e94aecbe45790db8139",
+    "observe_return.py": "8740b75881c081f11bfed8b0da8e5081dad2014c6e2cad2eec5cb527a8098410",
     "test_baseline_replay.py": "6de041b2ee0388ab4e9bac1de41dbc62d8dab24616510d88350bb46446de58fd",
     "test_budget.py": "59675d74833f7ba2cf74aad3162a65ba318774768a75397b8db3830e23efc4c4",
-    "test_campaign.py": "788779777b5d759a0e29b9094f1ed6d1179398291b37240865e16fc0a155ccc2",
+    "test_campaign.py": "e90a7a5121ce54f91861c2ead12315a30d8d348a204d2aa9de048bbbaf43ad62",
     "test_child_collector.py": "03179bde60345127cce46f6162e305c83cb4132cd6fef58b3f0c9d846a876cea",
     "test_collector_supervisor.py": "6ea5dcde0c4953d3e5d77beef6b7cb464e4ead222644bc8a1d08f5729507b9a9",
     "test_decision.py": "e42d2fd1049d09f551c2c3891cce2c42868df0416dd6ea498fc3faf60bba4757",
@@ -42,5 +42,6 @@
     "luna_controls"
   ],
   "actual_Linux_supervision_executed": false,
-  "containment_runtime_readiness_established": false
+  "containment_runtime_readiness_established": false,
+  "observer_exit_status_repair": "main returns nonzero exactly when terminal_observation_passed is false; SystemExit(main()) propagates it. Mocked script-entrypoint tests cover timeout, pending cleanup, unknown return and normal completion. Normal completion preserves favorable, slowdown, failed-control and inconclusive dispositions without shipping approval."
 }

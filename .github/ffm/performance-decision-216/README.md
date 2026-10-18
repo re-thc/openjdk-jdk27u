@@ -52,3 +52,5 @@ python3 -m unittest -q test_decision test_child_collector test_campaign test_inp
 ```
 
 Do not invoke `observe_return.py` until the parent execution gate is satisfied and real `EXECUTION_BINDINGS.json`, evidence receipts and `LAUNCH_REVIEW.json` exist. It launches the collector once; an existing observer intent or `run/` prevents another launch. Collector output alone is provisional until the terminal observation succeeds. Preserve raw stdout/stderr, attempt/launch/terminal journals, every row, snapshot, report and original control disposition. The offline tests run no processes or Linux supervision probes and do not establish containment/runtime readiness. No campaign data or machinery is added to the product PR.
+
+The observer exits nonzero when `terminal_observation_passed` is false. Exit zero confirms terminal bookkeeping only; the recorded statistical disposition and `shipping_qualified=false` still apply.
