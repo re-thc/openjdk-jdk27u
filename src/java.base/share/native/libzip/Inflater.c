@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include "jlong.h"
@@ -180,7 +181,7 @@ static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
         JNU_ThrowInternalError(env, strm->msg);
         break;
     }
-    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | (((jlong)needDict) << 63);
+    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | ((jlong)((uint64_t)needDict << 63));
 }
 
 JNIEXPORT jint JNICALL

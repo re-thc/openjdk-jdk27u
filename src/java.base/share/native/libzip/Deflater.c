@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "jlong.h"
 #include "jni.h"
 #include "jni_util.h"
@@ -190,7 +191,7 @@ static jlong checkDeflateStatus(JNIEnv *env, jlong addr,
             return 0;
         }
     }
-    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | (((jlong)setParams) << 63);
+    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | ((jlong)((uint64_t)setParams << 63));
 }
 
 JNIEXPORT jint JNICALL

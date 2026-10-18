@@ -57,6 +57,16 @@ No source patches are carried. The native build uses compatibility mode,
 private `jdk_ng_` symbols and the configured target toolchain and sysroot.
 Windows builds require CMake and the configured MSVC toolchain's NMake.
 
+## Small streams
+
+Bulk throughput does not establish a benefit for tiny complete streams or for
+freshly allocated Deflaters. Compare fresh initialization/finish/end separately
+from reset/finish on reused streams, and record compressed sizes as well as time.
+A short `NO_FLUSH` write remains part of its enclosing stream; it does not select
+a different compression level or discard stream history. Default and explicit
+level 6 retain their requested level. The bundled backend keeps full native
+initialization and reset behavior; no tiny-stream specialization is carried.
+
 ## Validation
 
 Regression tests are in `test/hotspot/jtreg/compiler/intrinsics/zip/` and
