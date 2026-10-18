@@ -2685,12 +2685,13 @@ bool LibraryCallKit::inline_vector_extract() {
     }
   } else {
     // vbox_klass is vector. This is used for Vector.lane(int).
-    if (!idx->is_con()) {
-      log_if_needed("  ** missing constant: idx=%s", NodeClassNames[argument(4)->Opcode()]);
-      return false; // not enough info for intrinsification
+    bool variable_index = !idx->is_con();
+    if (variable_index && (elem_bt != T_BYTE || idx->_lo < 0 || idx->_hi >= num_elem)) {
+      log_if_needed("  ** variable extraction requires an in-range byte index");
+      return false;
     }
 
-    int vopc = ExtractNode::opcode(elem_bt);
+    int vopc = variable_index ? Op_ExtractBVar : ExtractNode::opcode(elem_bt);
     if (!arch_supports_vector(vopc, num_elem, elem_bt, VecMaskNotUsed)) {
       log_if_needed("  ** not supported: arity=1 op=extract vlen=%d etype=%s ismask=no",
                       num_elem, type2name(elem_bt));
@@ -2701,9 +2702,12 @@ bool LibraryCallKit::inline_vector_extract() {
     if (opd == nullptr) {
       return false;
     }
-    ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
-
-    opd = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
+    if (variable_index) {
+      opd = gvn().transform(new ExtractBVarNode(opd, argument(4)));
+    } else {
+      ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
+      opd = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
+    }
     switch (elem_bt) {
       case T_BYTE:
       case T_SHORT:

@@ -493,7 +493,10 @@ bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms
 }
 
 bool Compile::should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms) {
-  return EnableVectorSupport && call_method->is_vector_method();
+  // Resolve the scalar capability query before parsing the implementation
+  // branches. Unsupported targets retain their existing constant-lane path.
+  return EnableVectorSupport && call_method->is_vector_method() &&
+         call_method->intrinsic_id() != vmIntrinsics::_VectorExtractBSupported;
 }
 
 bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms) {

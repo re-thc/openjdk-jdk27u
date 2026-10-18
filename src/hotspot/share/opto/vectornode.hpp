@@ -1636,6 +1636,14 @@ class ExtractBNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
+// Extract a signed byte at a proven in-range variable position. A distinct
+// opcode lets the intrinsic retain its constant-lane fallback on other targets.
+class ExtractBVarNode : public ExtractBNode {
+ public:
+  ExtractBVarNode(Node* src, Node* pos) : ExtractBNode(src, pos) {}
+  virtual int Opcode() const;
+};
+
 // Extract a boolean from a vector at position "pos".
 class ExtractUBNode : public ExtractNode {
  public:

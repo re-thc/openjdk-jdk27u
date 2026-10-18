@@ -345,6 +345,11 @@ source %{
     // Check whether specific Op is supported.
     // Fail fast, otherwise fall through to common vector_size_supported() check.
     switch (opcode) {
+      case Op_ExtractBVar:
+        if (bt != T_BYTE || !VM_Version::use_neon_for_vector(length_in_bytes)) {
+          return false;
+        }
+        break;
       case Op_AndVMask:
       case Op_OrVMask:
       case Op_XorVMask:
@@ -5931,14 +5936,15 @@ instruct insertD_gt128b(vReg dst, vReg src, vRegD val, immI idx,
 
 // BOOLEAN
 
-instruct extractUB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
+instruct extractB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
   match(Set dst (ExtractUB src idx));
+  match(Set dst (ExtractBVar src idx));
   effect(TEMP tmp);
-  format %{ "extractUB_ireg $dst, $src, $idx\t# variable index. KILL $tmp" %}
+  format %{ "extractB_ireg $dst, $src, $idx\t# variable byte index. KILL $tmp" %}
   ins_encode %{
-    // Input "src" is a vector of boolean represented as
-    // bytes with 0x00/0x01 as element values.
-    // "idx" is expected to be in range.
+    // Signed data bytes and boolean bytes (0x00/0x01) use the same
+    // lookup. SMOV preserves the signed-byte result in either case.
+    // The caller proves that "idx" is in range.
 
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
     __ mov($tmp$$FloatRegister, __ B, 0, $idx$$Register);

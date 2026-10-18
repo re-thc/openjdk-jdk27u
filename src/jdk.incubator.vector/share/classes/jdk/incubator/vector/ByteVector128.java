@@ -529,6 +529,12 @@ final class ByteVector128 extends ByteVector {
     @ForceInline
     @Override
     public byte lane(int i) {
+        if (VectorSupport.isVariableByteLaneSupported(VLENGTH)) {
+            if (i < 0 || i >= VLENGTH) {
+                throw new IllegalArgumentException("Index " + i + " must be zero or positive, and less than " + VLENGTH);
+            }
+            return laneHelper(i & (VLENGTH - 1));
+        }
         switch(i) {
             case 0: return laneHelper(0);
             case 1: return laneHelper(1);
