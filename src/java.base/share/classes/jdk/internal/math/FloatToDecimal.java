@@ -194,8 +194,7 @@ public final class FloatToDecimal extends ToDecimal {
         }
         int magnitude = floatToRawIntBits(v) & 0x7fffffff;
         if (magnitude != 0 && magnitude <= 128) {
-            // Native shortest subnormal significands may differ from Java's
-            // two-digit preference. Keep append and toString consistent.
+            // Tiny subnormals are cheaper to format natively even in C2.
             return putDecimal(str, index, v);
         }
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";

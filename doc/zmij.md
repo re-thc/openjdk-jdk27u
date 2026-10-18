@@ -27,17 +27,19 @@ constructor. Builders and concatenation share the text conversion entries.
 
 Float builder append uses Java in C2 to avoid native array materialization
 and copying. `_useJavaFloatAppend` folds to true only in C2; the interpreter
-and C1 use native formatting. Tiny nonzero subnormals keep native formatting
-so append and `toString` agree.
+and C1 use native formatting. Tiny nonzero subnormals use the faster native
+path in C2 as well.
 
 ## Rendering and precision metadata
 
 `java-format.patch` supplies Java's fixed range `[1e-3, 1e7)`, uppercase `E`,
 unpadded exponents without `+`, and a digit after the decimal point. Zero,
-infinity and NaN use Java. Finite values use a shortest meaningful significand
-that round-trips to the same raw bits. This can differ from the stock JDK:
-`Float.MIN_VALUE` renders as `1.0E-45` and `Double.MIN_VALUE` as `5.0E-324`.
-Opt-out restores the stock choice.
+infinity and NaN use Java. Finite values follow the decimal selection rules of
+`Float.toString` and `Double.toString`, including the closest choice among
+one- and two-digit decimals when a one-digit decimal round-trips. The shared
+native writer handles the affected tiny subnormals with bounded integer
+arithmetic: `Float.MIN_VALUE` renders as `1.4E-45` and `Double.MIN_VALUE` as
+`4.9E-324` in every tier.
 
 BigDecimal `valueOf(double)`, Formatter, DecimalFormat and DigitList also need
 precision metadata. Tiny significands at most 128 retain the Java splitter;
@@ -85,7 +87,7 @@ python3 make/scripts/update-zmij.py /path/to/zmij --commit <40-hex-revision>
 ```
 
 Without `--commit`, the updater requires an exact release tag. It checks the
-MIT license and applies notation, Clang compatibility and unused-instantiation
+MIT license and applies decimal selection/notation, Clang compatibility and unused-instantiation
 patches with zero fuzz. Before installation, it verifies the production
 metadata and exact integer-store bridges against the staged vendor files,
 including sanitizer checks and scalar/SIMD fallback profiles. Failed patches,
@@ -97,7 +99,7 @@ make CONF=<configuration> images
 make CONF=<configuration> test TEST='test/jdk/jdk/internal/math/ToDecimal test/jdk/jdk/internal/util/DecimalDigits test/jdk/java/lang/Float test/jdk/java/lang/Double test/jdk/java/math/BigDecimal test/jdk/java/text/Format/DecimalFormat test/jdk/java/util/Formatter test/hotspot/jtreg/compiler/intrinsics/zmij test/hotspot/jtreg/compiler/intrinsics/decimalinteger'
 ```
 
-Tests cover raw-bit round trips, shortest significands, precision flags,
+Tests cover exact decimal selection, raw-bit round trips, precision flags,
 signed zero, subnormals, Latin1/UTF16 offsets and guarded output bounds across
 execution tiers, JNI, SSE2 and opt-outs. WhiteBox verifies intrinsic controls
 and the C2-only float append choice. `TestDecimalFactoryInlining` checks

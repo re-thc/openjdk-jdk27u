@@ -321,11 +321,6 @@ public final class Float extends Number
      * // 0.100000001490116
      * }
      *
-     * @implNote Native formatting may select a shortest one-digit
-     * significand for tiny subnormal values instead of the two-digit choice
-     * described above. Both choices round-trip to the same value.
-     * {@code -XX:-UseZmijIntrinsics} selects the original Java conversion.
-     *
      * @param   f   the {@code float} to be converted.
      * @return a string representation of the argument.
      */

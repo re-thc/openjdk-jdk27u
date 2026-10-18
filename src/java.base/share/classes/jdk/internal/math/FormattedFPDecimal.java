@@ -34,10 +34,8 @@ import jdk.internal.vm.annotation.ForceInline;
  * control reaches code in this class.
  *
  * It delegates the conversion to decimal to class DoubleToDecimal to get
- * the decimal d selected for precision consumers as a pair of integers
- * f and e meeting d = f 10^e. This selection preserves Java-compatible
- * precision metadata independently of the native shortest-rendering
- * preference used by Double.toString(double).
+ * the decimal d selected by Double.toString(double) as a pair of integers
+ * f and e meeting d = f 10^e, along with its precision metadata.
  * It then rounds d to the appropriate number of digits, as per specification,
  * and extracts the digits of both the significand and, where required, the
  * exponent of the rounded value.
@@ -86,9 +84,7 @@ public final class FormattedFPDecimal {
     }
 
     /**
-     * Returns a FormattedFPDecimal with Java-compatible decimal precision for
-     * {@link java.math.BigDecimal#valueOf(double)}, independently of the native
-     * shortest-rendering preference for tiny subnormals.
+     * Returns a FormattedFPDecimal for {@link java.math.BigDecimal#valueOf(double)}.
      *
      * @see java.math.BigDecimal#valueOf(double)
      */

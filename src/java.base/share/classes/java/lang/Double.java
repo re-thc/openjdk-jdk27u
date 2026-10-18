@@ -607,11 +607,6 @@ public final class Double extends Number
      * // 0.1000000000000000055511151
      * }
      *
-     * @implNote Native formatting may select a shortest one-digit
-     * significand for tiny subnormal values instead of the two-digit choice
-     * described above. Both choices round-trip to the same value.
-     * {@code -XX:-UseZmijIntrinsics} selects the original Java conversion.
-     *
      * @param   d   the {@code double} to be converted.
      * @return a string representation of the argument.
      */

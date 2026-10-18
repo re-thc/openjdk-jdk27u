@@ -51,6 +51,7 @@
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
+import java.math.BigDecimal;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -62,7 +63,6 @@ import jdk.internal.math.FormattedFPDecimal;
 public class TestZmij {
     private static final Method FLOAT, DOUBLE, DECIMAL_STRING;
     private static final Constructor<FormattedFPDecimal> DECIMAL;
-    private static final boolean NATIVE_ENABLED;
     static {
         try {
             FLOAT = FloatToDecimal.class.getDeclaredMethod("toDecimalJava", byte[].class, int.class, float.class);
@@ -74,9 +74,6 @@ public class TestZmij {
             DOUBLE.setAccessible(true);
             DECIMAL = FormattedFPDecimal.class.getDeclaredConstructor();
             DECIMAL.setAccessible(true);
-            Method enabled = Class.forName("jdk.internal.math.Zmij").getDeclaredMethod("isEnabled");
-            enabled.setAccessible(true);
-            NATIVE_ENABLED = (boolean) enabled.invoke(null);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -102,12 +99,10 @@ public class TestZmij {
             expected = (pair & 0xff00) == 0
                     ? new String(original, 0, pair & 0xff, StandardCharsets.ISO_8859_1) : special(pair & 0xff00);
             actual = Float.toString(v);
-            if (!NATIVE_ENABLED || !Float.isFinite(v) || v == 0) {
-                equal("float Java fallback", expected, actual);
-            } else if (Float.floatToRawIntBits(Float.parseFloat(actual)) != (int) bits) {
+            equal("float decimal selection", expected, actual);
+            if (!Float.isNaN(v) && Float.floatToRawIntBits(Float.parseFloat(actual)) != (int) bits) {
                 throw new AssertionError("float does not round-trip: " + actual);
             }
-            expected = actual;
             if (append) {
                 equal("builder float", "prefix:" + expected, new StringBuilder("prefix:").append(v).toString());
                 equal("UTF16 builder float", "\u0100" + expected, new StringBuilder("\u0100").append(v).toString());
@@ -121,12 +116,18 @@ public class TestZmij {
             expected = (pair & 0xff00) == 0
                     ? new String(original, 0, pair & 0xff, StandardCharsets.ISO_8859_1) : special(pair & 0xff00);
             actual = Double.toString(v);
-            if (!NATIVE_ENABLED || !Double.isFinite(v) || v == 0) {
-                equal("double Java fallback", expected, actual);
-            } else if (Double.doubleToRawLongBits(Double.parseDouble(actual)) != bits) {
+            equal("double decimal selection", expected, actual);
+            if (!Double.isNaN(v) && Double.doubleToRawLongBits(Double.parseDouble(actual)) != bits) {
                 throw new AssertionError("double does not round-trip: " + actual);
             }
-            expected = actual;
+            if (append && Double.isFinite(v)) {
+                BigDecimal fromText = new BigDecimal(actual);
+                BigDecimal fromValue = BigDecimal.valueOf(v);
+                if (!fromText.equals(fromValue)) {
+                    throw new AssertionError("BigDecimal.valueOf " + Long.toHexString(bits)
+                            + ": expected " + fromText + ", got " + fromValue);
+                }
+            }
             if (v >= 0 && Double.isFinite(v)) {
                 checkSplit(v);
             }
@@ -231,12 +232,23 @@ public class TestZmij {
                 check(Double.doubleToRawLongBits(n), false, true);
                 check(Float.floatToRawIntBits((float) n), true, true);
             }
+            // Exercise the p=1 selection rule throughout the exponent range,
+            // including cases whose canonical decimal ends in a padded zero.
+            for (int s = 1; s <= 9; ++s) {
+                BigDecimal decimal = BigDecimal.valueOf(s).scaleByPowerOfTen(e);
+                double d = decimal.doubleValue();
+                float f = decimal.floatValue();
+                check(Double.doubleToRawLongBits(d), false, true);
+                check(Double.doubleToRawLongBits(-d), false, true);
+                check(Float.floatToRawIntBits(f), true, true);
+                check(Float.floatToRawIntBits(-f), true, true);
+            }
         }
         Random random = new Random(0xF70A_1_11L);
         for (int i = 0; i < 50_000; ++i) {
             check(random.nextLong(), false, i < 1000);
             check(random.nextInt(), true, i < 1000);
         }
-        System.out.println("zmij round-trip, precision metadata and destination checks passed");
+        System.out.println("zmij decimal selection, round-trip, precision metadata and destination checks passed");
     }
 }
