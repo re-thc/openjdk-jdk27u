@@ -1,0 +1,41 @@
+name: Test two public String inline directives
+on:
+  push:
+    branches: [codex/stringzilla-public-inline-falsification]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnostics:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: msvc
+            runner: windows-2025
+          - backend: avx2
+            runner: ubuntu-26.04
+    runs-on: ${{ matrix.runner }}
+    name: Inspect ${{ matrix.backend }} public inline directives
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - name: Reuse complete images and unchanged application classes for public-inline diagnostics
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKEND: ${{ matrix.backend }}
+        shell: python
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, ".github/scripts/stringzilla-public-inline-falsification.py", os.environ["BACKEND"]], check=True)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-public-inline-falsification-${{ matrix.backend }}-${{ github.sha }}
+          path: |
+            public-inline-diagnostics/*.log
+            public-inline-diagnostics/*.json
+          if-no-files-found: error
+          retention-days: 30
