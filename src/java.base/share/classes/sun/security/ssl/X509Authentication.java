@@ -53,9 +53,6 @@ enum X509Authentication implements SSLAuthentication {
     // key for authentication and handshake.
     RSA_OR_PSS  ("RSA_OR_PSS",  "RSA", "RSASSA-PSS"),
 
-    // Require DSA public key
-    DSA         ("DSA",         "DSA"),
-
     // Require EC public key
     EC          ("EC",          "EC"),
     // Edwards-Curve key

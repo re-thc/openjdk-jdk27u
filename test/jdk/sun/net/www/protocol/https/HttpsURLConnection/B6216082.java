@@ -149,8 +149,8 @@ public class B6216082 {
         // system pick up an ephemeral port.
         httpTrans = new SimpleHttpTransaction();
         // create and initialize a SSLContext
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
         char[] passphrase = "passphrase".toCharArray();
 
         ks.load(new FileInputStream(System.getProperty("javax.net.ssl.keyStore")), passphrase);

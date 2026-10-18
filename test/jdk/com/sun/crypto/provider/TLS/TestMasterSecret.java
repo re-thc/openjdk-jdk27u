@@ -26,8 +26,7 @@
  * @bug 6313661
  * @summary Known-answer-test for TlsMasterSecret generator
  * @author Andreas Sterbenz
- * @modules java.base/sun.security.internal.interfaces
- *          java.base/sun.security.internal.spec
+ * @modules java.base/sun.security.internal.spec
  */
 
 import java.io.*;
@@ -42,7 +41,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.*;
 
 import sun.security.internal.spec.*;
-import sun.security.internal.interfaces.TlsMasterSecret;
 
 public class TestMasterSecret extends Utils {
 
@@ -64,8 +62,7 @@ public class TestMasterSecret extends Utils {
         byte[] serverRandom = null;
         int protoMajor = 0;
         int protoMinor = 0;
-        int preMajor = 0;
-        int preMinor = 0;
+        String hashAlgorithm = null;
         byte[] master = null;
 
         while (true) {
@@ -90,10 +87,8 @@ public class TestMasterSecret extends Utils {
                 protoMajor = Integer.parseInt(data);
             } else if (line.startsWith("m-protominor:")) {
                 protoMinor = Integer.parseInt(data);
-            } else if (line.startsWith("m-premajor:")) {
-                preMajor = Integer.parseInt(data);
-            } else if (line.startsWith("m-preminor:")) {
-                preMinor = Integer.parseInt(data);
+            } else if (line.startsWith("m-hashalg:")) {
+                hashAlgorithm = data;
             } else if (line.startsWith("m-master:")) {
                 master = parse(data);
 
@@ -104,19 +99,29 @@ public class TestMasterSecret extends Utils {
                     KeyGenerator.getInstance("SunTlsMasterSecret", provider);
                 SecretKey premasterKey =
                     new SecretKeySpec(premaster, algorithm);
+                int prfHashLength, prfBlockSize;
+                switch (hashAlgorithm) {
+                    case "SHA-256":
+                        prfHashLength = 32;
+                        prfBlockSize = 64;
+                        break;
+                    case "SHA-384":
+                        prfHashLength = 48;
+                        prfBlockSize = 128;
+                        break;
+                    default:
+                        throw new RuntimeException("Unexpected hashalg: " +
+                                hashAlgorithm);
+                }
                 TlsMasterSecretParameterSpec spec =
                     new TlsMasterSecretParameterSpec(premasterKey, protoMajor,
                         protoMinor, clientRandom, serverRandom,
-                        null, -1, -1);
+                        hashAlgorithm, prfHashLength, prfBlockSize);
                 kg.init(spec);
-                TlsMasterSecret key = (TlsMasterSecret)kg.generateKey();
+                SecretKey key = kg.generateKey();
                 byte[] enc = key.getEncoded();
                 if (Arrays.equals(master, enc) == false) {
                     throw new Exception("mismatch line: " + lineNumber);
-                }
-                if ((preMajor != key.getMajorVersion()) ||
-                        (preMinor != key.getMinorVersion())) {
-                    throw new Exception("version mismatch line: " + lineNumber);
                 }
             } else {
                 throw new Exception("Unknown line: " + line);

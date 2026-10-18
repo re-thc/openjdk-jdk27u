@@ -39,7 +39,6 @@ import java.security.InvalidKeyException;
  * @see AES_Crypt
  * @see DESCrypt
  * @see DESedeCrypt
- * @see BlowfishCrypt
  * @see FeedbackCipher
  */
 abstract class SymmetricCipher {

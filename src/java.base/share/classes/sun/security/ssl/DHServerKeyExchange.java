@@ -74,10 +74,9 @@ final class DHServerKeyExchange {
         private final byte[] y;        // 1 to 2^16 - 1 bytes
 
         // the signature algorithm used by this ServerKeyExchange message
-        private final boolean useExplicitSigAlgorithm;
         private final SignatureScheme signatureScheme;
 
-        // signature bytes, or null if anonymous
+        // signature bytes
         private final byte[] paramsSignature;
 
         DHServerKeyExchangeMessage(
@@ -116,57 +115,37 @@ final class DHServerKeyExchange {
             this.y = Utilities.toByteArray(publicKey.getY());
 
             if (x509Possession == null) {
-                // anonymous, no authentication, no signature
-                paramsSignature = null;
-                signatureScheme = null;
-                useExplicitSigAlgorithm = false;
-            } else {
-                useExplicitSigAlgorithm =
-                        shc.negotiatedProtocol.useTLS12PlusSpec();
-                Signature signer;
-                if (useExplicitSigAlgorithm) {
-                    Map.Entry<SignatureScheme, Signature> schemeAndSigner =
-                            SignatureScheme.getSignerOfPreferableAlgorithm(
-                                    shc.sslConfig,
-                                    shc.algorithmConstraints,
-                                    shc.peerRequestedSignatureSchemes,
-                                    x509Possession,
-                                    shc.negotiatedProtocol);
-                    if (schemeAndSigner == null) {
-                        // Unlikely, the credentials generator should have
-                        // selected the preferable signature algorithm properly.
-                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
-                                "No supported signature algorithm for " +
-                                x509Possession.popPrivateKey.getAlgorithm() +
-                                "  key");
-                    } else {
-                        signatureScheme = schemeAndSigner.getKey();
-                        signer = schemeAndSigner.getValue();
-                    }
-                } else {
-                    signatureScheme = null;
-                    try {
-                        signer = getSignature(
-                                x509Possession.popPrivateKey.getAlgorithm(),
-                                x509Possession.popPrivateKey);
-                    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
-                            "Unsupported signature algorithm: " +
-                            x509Possession.popPrivateKey.getAlgorithm(), e);
-                    }
-                }
+                // unlikely
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "No X.509 credentials negotiated for server key exchange");
+            }
 
-                byte[] signature;
-                try {
-                    updateSignature(signer, shc.clientHelloRandom.randomBytes,
-                            shc.serverHelloRandom.randomBytes);
-                    signature = signer.sign();
-                } catch (SignatureException ex) {
-                    throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
-                        "Failed to sign dhe parameters: " +
-                        x509Possession.popPrivateKey.getAlgorithm(), ex);
-                }
-                paramsSignature = signature;
+            Map.Entry<SignatureScheme, Signature> schemeAndSigner =
+                    SignatureScheme.getSignerOfPreferableAlgorithm(
+                            shc.sslConfig,
+                            shc.algorithmConstraints,
+                            shc.peerRequestedSignatureSchemes,
+                            x509Possession,
+                            shc.negotiatedProtocol);
+            if (schemeAndSigner == null) {
+                // Unlikely, the credentials generator should have
+                // selected the preferable signature algorithm properly.
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        "No supported signature algorithm for " +
+                        x509Possession.popPrivateKey.getAlgorithm() +
+                        "  key");
+            }
+            signatureScheme = schemeAndSigner.getKey();
+            Signature signer = schemeAndSigner.getValue();
+
+            try {
+                updateSignature(signer, shc.clientHelloRandom.randomBytes,
+                        shc.serverHelloRandom.randomBytes);
+                paramsSignature = signer.sign();
+            } catch (SignatureException ex) {
+                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    "Failed to sign dhe parameters: " +
+                    x509Possession.popPrivateKey.getAlgorithm(), ex);
             }
         }
 
@@ -201,63 +180,37 @@ final class DHServerKeyExchange {
             }
 
             if (x509Credentials == null) {
-                // anonymous, no authentication, no signature
-                if (m.hasRemaining()) {
-                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "Invalid DH ServerKeyExchange: unknown extra data");
-                }
-
-                this.signatureScheme = null;
-                this.paramsSignature = null;
-                this.useExplicitSigAlgorithm = false;
-
-                return;
+                // unlikely
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No X.509 credentials for DH ServerKeyExchange");
             }
 
-            this.useExplicitSigAlgorithm =
-                    chc.negotiatedProtocol.useTLS12PlusSpec();
-            if (useExplicitSigAlgorithm) {
-                int ssid = Record.getInt16(m);
-                signatureScheme = SignatureScheme.valueOf(ssid);
-                if (signatureScheme == null) {
-                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                            "Invalid signature algorithm (" + ssid +
-                            ") used in DH ServerKeyExchange handshake message");
-                }
+            int ssid = Record.getInt16(m);
+            signatureScheme = SignatureScheme.valueOf(ssid);
+            if (signatureScheme == null) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Invalid signature algorithm (" + ssid +
+                        ") used in DH ServerKeyExchange handshake message");
+            }
 
-                if (!chc.localSupportedSignAlgs.contains(signatureScheme)) {
-                    throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                            "Unsupported signature algorithm (" +
-                            signatureScheme.name +
-                            ") used in DH ServerKeyExchange handshake message");
-                }
-            } else {
-                this.signatureScheme = null;
+            if (!chc.localSupportedSignAlgs.contains(signatureScheme)) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Unsupported signature algorithm (" +
+                        signatureScheme.name +
+                        ") used in DH ServerKeyExchange handshake message");
             }
 
             // read and verify the signature
             this.paramsSignature = Record.getBytes16(m);
             Signature signer;
-            if (useExplicitSigAlgorithm) {
-                try {
-                    signer = signatureScheme.getVerifier(
-                            x509Credentials.popPublicKey);
-                } catch (NoSuchAlgorithmException | InvalidKeyException |
-                        InvalidAlgorithmParameterException nsae) {
-                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
-                            "Unsupported signature algorithm: " +
-                            signatureScheme.name, nsae);
-                }
-            } else {
-                try {
-                    signer = getSignature(
-                            x509Credentials.popPublicKey.getAlgorithm(),
-                            x509Credentials.popPublicKey);
-                } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
-                            "Unsupported signature algorithm: " +
-                            x509Credentials.popPublicKey.getAlgorithm(), e);
-                }
+            try {
+                signer = signatureScheme.getVerifier(
+                        x509Credentials.popPublicKey);
+            } catch (NoSuchAlgorithmException | InvalidKeyException |
+                    InvalidAlgorithmParameterException nsae) {
+                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        "Unsupported signature algorithm: " +
+                        signatureScheme.name, nsae);
             }
 
             try {
@@ -282,13 +235,8 @@ final class DHServerKeyExchange {
 
         @Override
         public int messageLength() {
-            int sigLen = 0;
-            if (paramsSignature != null) {
-                sigLen = 2 + paramsSignature.length;
-                if (useExplicitSigAlgorithm) {
-                    sigLen += SignatureScheme.sizeInRecord();
-                }
-            }
+            int sigLen = SignatureScheme.sizeInRecord() +
+                    2 + paramsSignature.length;
 
             return 6 + p.length + g.length + y.length + sigLen;
                     // 6: overhead for p, g, y values
@@ -300,146 +248,50 @@ final class DHServerKeyExchange {
             hos.putBytes16(g);
             hos.putBytes16(y);
 
-            if (paramsSignature != null) {
-                if (useExplicitSigAlgorithm) {
-                    hos.putInt16(signatureScheme.id);
-                }
-
-                hos.putBytes16(paramsSignature);
-            }
+            hos.putInt16(signatureScheme.id);
+            hos.putBytes16(paramsSignature);
         }
 
         @Override
         public String toString() {
-            if (paramsSignature == null) {    // anonymous
-                MessageFormat messageFormat = new MessageFormat(
-                        """
-                                "DH ServerKeyExchange": '{'
-                                  "parameters": '{'
-                                    "dh_p": '{'
-                                {0}
-                                    '}',
-                                    "dh_g": '{'
-                                {1}
-                                    '}',
-                                    "dh_Ys": '{'
-                                {2}
-                                    '}',
-                                  '}'
-                                '}'""",
+            HexDumpEncoder hexEncoder = new HexDumpEncoder();
+            MessageFormat messageFormat = new MessageFormat(
+                    """
+                            "DH ServerKeyExchange": '{'
+                              "parameters": '{'
+                                "dh_p": '{'
+                            {0}
+                                '}',
+                                "dh_g": '{'
+                            {1}
+                                '}',
+                                "dh_Ys": '{'
+                            {2}
+                                '}',
+                              '}',
+                              "digital signature":  '{'
+                                "signature algorithm": "{3}"
+                                "signature": '{'
+                            {4}
+                                '}',
+                              '}'
+                            '}'""",
                     Locale.ENGLISH);
 
-                HexDumpEncoder hexEncoder = new HexDumpEncoder();
-                Object[] messageFields = {
+            Object[] messageFields = {
                     Utilities.indent(
                             hexEncoder.encodeBuffer(p), "      "),
                     Utilities.indent(
                             hexEncoder.encodeBuffer(g), "      "),
                     Utilities.indent(
                             hexEncoder.encodeBuffer(y), "      "),
-                };
-
-                return messageFormat.format(messageFields);
-            }
-
-            MessageFormat messageFormat;
-            HexDumpEncoder hexEncoder = new HexDumpEncoder();
-            Object[] messageFields;
-            if (useExplicitSigAlgorithm) {
-                messageFormat = new MessageFormat(
-                        """
-                                "DH ServerKeyExchange": '{'
-                                  "parameters": '{'
-                                    "dh_p": '{'
-                                {0}
-                                    '}',
-                                    "dh_g": '{'
-                                {1}
-                                    '}',
-                                    "dh_Ys": '{'
-                                {2}
-                                    '}',
-                                  '}',
-                                  "digital signature":  '{'
-                                    "signature algorithm": "{3}"
-                                    "signature": '{'
-                                {4}
-                                    '}',
-                                  '}'
-                                '}'""",
-                        Locale.ENGLISH);
-
-                messageFields = new Object[]{
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(p), "      "),
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(g), "      "),
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(y), "      "),
-                        signatureScheme.name,
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(paramsSignature), "      ")
-                };
-
-            } else {
-                messageFormat = new MessageFormat(
-                        """
-                                "DH ServerKeyExchange": '{'
-                                  "parameters": '{'
-                                    "dh_p": '{'
-                                {0}
-                                    '}',
-                                    "dh_g": '{'
-                                {1}
-                                    '}',
-                                    "dh_Ys": '{'
-                                {2}
-                                    '}',
-                                  '}',
-                                  "signature": '{'
-                                {3}
-                                  '}'
-                                '}'""",
-                        Locale.ENGLISH);
-
-                messageFields = new Object[]{
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(p), "      "),
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(g), "      "),
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(y), "      "),
-                        Utilities.indent(
-                                hexEncoder.encodeBuffer(paramsSignature), "    ")
-                };
-
-            }
+                    signatureScheme.name,
+                    Utilities.indent(
+                            hexEncoder.encodeBuffer(paramsSignature), "      ")
+            };
             return messageFormat.format(messageFields);
         }
 
-        private static Signature getSignature(String keyAlgorithm,
-                Key key) throws NoSuchAlgorithmException, InvalidKeyException {
-            Signature signer;
-            switch (keyAlgorithm) {
-                case "DSA":
-                    signer = Signature.getInstance(JsseJce.SIGNATURE_DSA);
-                    break;
-                case "RSA":
-                    signer = RSASignature.getInstance();
-                    break;
-                default:
-                    throw new NoSuchAlgorithmException(
-                        "neither an RSA or a DSA key : " + keyAlgorithm);
-            }
-
-            if (key instanceof PublicKey) {
-                signer.initVerify((PublicKey)(key));
-            } else {
-                signer.initSign((PrivateKey)key);
-            }
-
-            return signer;
-        }
 
         /*
          * Update sig with nonces and Diffie-Hellman public key.

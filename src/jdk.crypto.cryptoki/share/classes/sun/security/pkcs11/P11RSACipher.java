@@ -38,8 +38,6 @@ import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
-import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
-import sun.security.util.KeyUtil;
 
 /**
  * RSA Cipher implementation class. We currently only support
@@ -105,12 +103,6 @@ final class P11RSACipher extends CipherSpi {
     // maximum output size. this is the length of the key
     private int outputSize;
 
-    // cipher parameter for TLS RSA premaster secret
-    private AlgorithmParameterSpec spec = null;
-
-    // the source of randomness
-    private SecureRandom random;
-
     P11RSACipher(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
         super();
@@ -170,17 +162,12 @@ final class P11RSACipher extends CipherSpi {
     }
 
     // see JCE spec
-    @SuppressWarnings("deprecation")
     protected void engineInit(int opmode, Key key,
             AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         if (params != null) {
-            if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
-                throw new InvalidAlgorithmParameterException(
+            throw new InvalidAlgorithmParameterException(
                         "Parameters not supported");
-            }
-            spec = params;
-            this.random = random;   // for TLS RSA premaster secret
         }
         implInit(opmode, key);
     }
@@ -482,15 +469,9 @@ final class P11RSACipher extends CipherSpi {
     }
 
     // see JCE spec
-    @SuppressWarnings("deprecation")
     protected Key engineUnwrap(byte[] wrappedKey, String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
 
-        boolean isTlsRsaPremasterSecret =
-                algorithm.equals("TlsRsaPremasterSecret");
-        Exception failover = null;
-
-        // Should C_Unwrap be preferred for non-TLS RSA premaster secret?
         if (token.supportsRawSecretKeyImport()) {
             // XXX implement unwrap using C_Unwrap() for all keys
             implInit(Cipher.DECRYPT_MODE, p11Key);
@@ -504,28 +485,10 @@ final class P11RSACipher extends CipherSpi {
                 try {
                     encoded = doFinal();
                 } catch (BadPaddingException e) {
-                    if (isTlsRsaPremasterSecret) {
-                        failover = e;
-                    } else {
-                        throw new InvalidKeyException("Unwrapping failed", e);
-                    }
+                    throw new InvalidKeyException("Unwrapping failed", e);
                 } catch (IllegalBlockSizeException e) {
                     // should not occur, handled with length check above
                     throw new InvalidKeyException("Unwrapping failed", e);
-                }
-
-                if (isTlsRsaPremasterSecret) {
-                    if (!(spec instanceof TlsRsaPremasterSecretParameterSpec)) {
-                        throw new IllegalStateException(
-                                "No TlsRsaPremasterSecretParameterSpec specified");
-                    }
-
-                    // polish the TLS premaster secret
-                    TlsRsaPremasterSecretParameterSpec psps =
-                            (TlsRsaPremasterSecretParameterSpec)spec;
-                    encoded = KeyUtil.checkTlsPreMasterSecretKey(
-                            psps.getClientVersion(), psps.getServerVersion(),
-                            random, encoded, (failover != null));
                 }
 
                 return ConstructKeys.constructKey(encoded, algorithm, type);
@@ -556,22 +519,7 @@ final class P11RSACipher extends CipherSpi {
                     secretKey = P11Key.secretKey(s, keyID,
                             algorithm, 48 << 3, attributes);
                 } catch (PKCS11Exception e) {
-                    if (isTlsRsaPremasterSecret) {
-                        failover = e;
-                    } else {
-                        throw new InvalidKeyException("unwrap() failed", e);
-                    }
-                }
-
-                if (isTlsRsaPremasterSecret) {
-                    TlsRsaPremasterSecretParameterSpec psps =
-                            (TlsRsaPremasterSecretParameterSpec)spec;
-
-                    // Please use the tricky failover as the parameter so that
-                    // smart compiler won't dispose the unused variable.
-                    secretKey = polishPreMasterSecretKey(token, s,
-                            failover, secretKey,
-                            psps.getClientVersion(), psps.getServerVersion());
+                    throw new InvalidKeyException("unwrap() failed", e);
                 }
 
                 return secretKey;
@@ -586,31 +534,6 @@ final class P11RSACipher extends CipherSpi {
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         int n = P11KeyFactory.convertKey(token, key, algorithm).length();
         return n;
-    }
-
-    private static SecretKey polishPreMasterSecretKey(
-            Token token, Session session,
-            Exception failover, SecretKey unwrappedKey,
-            int clientVersion, int serverVersion) {
-
-        SecretKey newKey;
-        CK_VERSION version = new CK_VERSION(
-                (clientVersion >>> 8) & 0xFF, clientVersion & 0xFF);
-        try {
-            CK_ATTRIBUTE[] attributes = token.getAttributes(
-                    O_GENERATE, CKO_SECRET_KEY,
-                    CKK_GENERIC_SECRET, new CK_ATTRIBUTE[0]);
-            long keyID = token.p11.C_GenerateKey(session.id(),
-                    new CK_MECHANISM(CKM_SSL3_PRE_MASTER_KEY_GEN, version),
-                    attributes);
-            newKey = P11Key.secretKey(session,
-                    keyID, "TlsRsaPremasterSecret", 48 << 3, attributes);
-        } catch (PKCS11Exception e) {
-            throw new ProviderException(
-                    "Could not generate premaster secret", e);
-        }
-
-        return (failover == null) ? unwrappedKey : newKey;
     }
 
 }

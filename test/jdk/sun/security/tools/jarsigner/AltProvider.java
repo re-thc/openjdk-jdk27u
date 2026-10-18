@@ -54,10 +54,10 @@ public class AltProvider {
     private static final Path MOD_SRC_DIR = Paths.get(TEST_SRC, "alt");
     private static final Path MOD_DEST_DIR = Paths.get("mods");
 
-    private static final String ktCommand = "-keystore x.jks " +
+    private static final String ktCommand = "-keystore x.p12 " +
             "-storepass changeit -storetype dummyks -list -debug";
 
-    private static final String jsCommand = "-keystore x.jks " +
+    private static final String jsCommand = "-keystore x.p12 " +
             "-storepass changeit -storetype dummyks -debug x.jar x";
 
     public static void main(String[] args) throws Throwable {
@@ -69,12 +69,12 @@ public class AltProvider {
                 MOD_SRC_DIR.toString());
 
         // Create a keystore
-        tool("keytool", "-keystore x.jks -storetype jks -genkeypair -keyalg dsa" +
+        tool("keytool", "-keystore x.p12 -storetype pkcs12 -genkeypair -keyalg rsa" +
                 " -storepass changeit -keypass changeit -alias x -dname CN=X")
                 .shouldHaveExitValue(0);
 
         // Create a jar file
-        JarUtils.createJar("x.jar", "x.jks");
+        JarUtils.createJar("x.jar", "x.p12");
 
         // Test starts here
 

@@ -563,8 +563,6 @@ public final class SunPKCS11 extends AuthProvider {
 
         // XXX register all aliases
 
-        d(MD, "MD2",            P11Digest,
-                m(CKM_MD2));
         d(MD, "MD5",            P11Digest,
                 m(CKM_MD5));
         dA(MD, "SHA-1",           P11Digest,
@@ -615,10 +613,6 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA3_384_HMAC));
         dA(MAC, "HmacSHA3-512",    P11Mac,
                 m(CKM_SHA3_512_HMAC));
-        d(MAC, "SslMacMD5",     P11Mac,
-                m(CKM_SSL3_MD5_MAC));
-        d(MAC, "SslMacSHA1",    P11Mac,
-                m(CKM_SSL3_SHA1_MAC));
 
         /*
         * PBA HMacs
@@ -986,10 +980,6 @@ public final class SunPKCS11 extends AuthProvider {
 
         d(SIG, "NONEwithRSA",    "sun.security.pkcs11.RSACipherAdaptor",
                 m(CKM_RSA_PKCS));
-        dA(SIG, "MD2withRSA",    P11Signature,
-                m(CKM_MD2_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
-        dA(SIG, "MD5withRSA",    P11Signature,
-                m(CKM_MD5_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA1withRSA",   P11Signature,
                 m(CKM_SHA1_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA224withRSA", P11Signature,
@@ -1029,26 +1019,12 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA3-512withRSASSA-PSS", P11PSSSignature,
                 m(CKM_SHA3_512_RSA_PKCS_PSS));
 
-        d(KG, "SunTlsRsaPremasterSecret",
-                    "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
-                List.of("SunTls12RsaPremasterSecret"),
-                m(CKM_SSL3_PRE_MASTER_KEY_GEN, CKM_TLS_PRE_MASTER_KEY_GEN));
-        d(KG, "SunTlsMasterSecret",
-                    "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-                m(CKM_SSL3_MASTER_KEY_DERIVE, CKM_TLS_MASTER_KEY_DERIVE,
-                    CKM_SSL3_MASTER_KEY_DERIVE_DH,
-                    CKM_TLS_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-            m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
-        d(KG, "SunTlsKeyMaterial",
-                    "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
-                m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
+            m(CKM_TLS12_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTls12KeyMaterial",
                 "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
             m(CKM_TLS12_KEY_AND_MAC_DERIVE));
-        d(KG, "SunTlsPrf", "sun.security.pkcs11.P11TlsPrfGenerator",
-                m(CKM_TLS_PRF, CKM_NSS_TLS_PRF_GENERAL));
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
 
@@ -1459,19 +1435,13 @@ public final class SunPKCS11 extends AuthProvider {
                 return new P11SecretKeyFactory(token, algorithm);
             } else if (type == KG) {
                 // reference equality
-                if (algorithm == "SunTlsRsaPremasterSecret") {
-                    return new P11TlsRsaPremasterSecretGenerator(
-                        token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsMasterSecret"
-                        || algorithm == "SunTls12MasterSecret") {
+                if (algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsKeyMaterial"
-                        || algorithm == "SunTls12KeyMaterial") {
+                } else if (algorithm == "SunTls12KeyMaterial") {
                     return new P11TlsKeyMaterialGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsPrf"
-                        || algorithm == "SunTls12Prf") {
+                } else if (algorithm == "SunTls12Prf") {
                     return new P11TlsPrfGenerator(token, algorithm, mechanism);
                 } else {
                     return new P11KeyGenerator(token, algorithm, mechanism);

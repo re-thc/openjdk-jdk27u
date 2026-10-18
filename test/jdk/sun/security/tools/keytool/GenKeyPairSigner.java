@@ -50,15 +50,14 @@ public class GenKeyPairSigner {
                 " -keystore " + ks);
     }
 
-    static OutputAnalyzer ktjks(String cmd, String ks, String kpass) throws Exception {
+    static OutputAnalyzer ktkp(String cmd, String ks, String kpass) throws Exception {
         return SecurityTools.keytool("-storepass changeit " + cmd +
-                " -keystore " + ks + " -storetype jks" + " -keypass " +
-                kpass);
+                " -keystore " + ks + " -keypass " + kpass);
     }
 
     public static void main(String[] args) throws Exception {
         testSignerPKCS12();
-        testSignerJKS();
+        testSignerKeyPass();
         testSignerOpt();
     }
 
@@ -180,13 +179,13 @@ public class GenKeyPairSigner {
                 .shouldContain("Subject Public Key Algorithm: X448 key")
                 .shouldHaveExitValue(0);
 
-        kt("-genkeypair -keyalg DSA -alias ca3 -dname CN=CA3 -ext bc:c ",
+        kt("-genkeypair -keyalg EC -alias ca3 -dname CN=CA3 -ext bc:c ",
                 "ks");
 
         System.out.println("Generating a DH cert with -signer option");
         SecurityTools.keytool("-keystore ks -storepass changeit " +
                 "-genkeypair -keyalg DH -alias e3 -dname CN=E3 -signer ca3")
-                .shouldContain("Generating 3072-bit DH key pair and a certificate (SHA256withDSA) issued by <ca3> with a validity of 90 days")
+                .shouldContain("Generating 3072-bit DH key pair and a certificate (SHA384withECDSA) issued by <ca3> with a validity of 90 days")
                 .shouldContain("for: CN=E3")
                 .shouldHaveExitValue(0);
 
@@ -194,7 +193,7 @@ public class GenKeyPairSigner {
         kstore = KeyStore.getInstance(new File("ks"), "changeit".toCharArray());
         cert = (X509Certificate)kstore.getCertificate("e3");
         sigName = cert.getSigAlgName();
-        if (sigName != "SHA256withDSA") {
+        if (sigName != "SHA384withECDSA") {
             throw new Exception("Signature algorithm name is in error");
         }
 
@@ -217,7 +216,7 @@ public class GenKeyPairSigner {
                 .shouldHaveExitValue(0);
     }
 
-    static void testSignerJKS() throws Exception {
+    static void testSignerKeyPass() throws Exception {
         KeyStore kstore;
         X509Certificate cert;
         String sigName, pKeyAlg;
@@ -225,38 +224,33 @@ public class GenKeyPairSigner {
         int keyLen;
 
         /*
-         * The signer alias is stored in the JKS keystore
-         * Using JKS keystore here is to test the scenario when the private key
-         * of the signer entry is protected by a password different from the
-         * store password, and -signerkeypass option needs to be specified
-         * along with -signer option.
+         * The signer alias is stored in a PKCS12 keystore, and the
+         * -signerkeypass option is specified along with -signer option.
          */
-        System.out.println("Testing the signer alias that is stored in the JKS keystore");
-        ktjks("-genkeypair -keyalg RSA -keysize 1024 -alias ca -dname CN=CA -ext bc:c",
-                "ksjks", "cakeypass");
+        System.out.println("Testing the signer alias with the -signerkeypass option");
+        ktkp("-genkeypair -keyalg RSA -keysize 1024 -alias ca -dname CN=CA -ext bc:c",
+                "kskp", "changeit");
 
-        System.out.println("Generating an DSA cert with -signer and -signerkeypass options");
-        SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
-                "-genkeypair -keyalg DSA -keysize 1024 -alias ca1 -dname CN=CA1 " +
-                "-keypass ca1keypass -signer ca -signerkeypass cakeypass")
-                .shouldContain("Generating 1024-bit DSA key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
+        System.out.println("Generating an EC cert with -signer and -signerkeypass options");
+        SecurityTools.keytool("-keystore kskp -storepass changeit " +
+                "-genkeypair -keyalg EC -alias ca1 -dname CN=CA1 " +
+                "-keypass changeit -signer ca -signerkeypass changeit")
+                .shouldContain("Generating 384-bit EC (secp384r1) key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
                 .shouldContain("for: CN=CA1")
-                .shouldContain("The generated certificate #1 of 2 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #2 of 2 uses a 1024-bit RSA key which is considered a security risk")
                 .shouldHaveExitValue(0);
 
         System.out.println("Generating an XDH cert with -signer and -signerkeypass options");
-        SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
+        SecurityTools.keytool("-keystore kskp -storepass changeit " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 " +
-                "-keypass e1keypass -signer ca1 -signerkeypass ca1keypass")
-                .shouldContain("Generating X25519 key pair and a certificate (SHA256withDSA) issued by <ca1> with a validity of 90 days")
+                "-keypass changeit -signer ca1 -signerkeypass changeit")
+                .shouldContain("Generating X25519 key pair and a certificate (SHA384withECDSA) issued by <ca1> with a validity of 90 days")
                 .shouldContain("for: CN=E1")
-                .shouldContain("The generated certificate #2 of 3 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #3 of 3 uses a 1024-bit RSA key which is considered a security risk")
                 .shouldHaveExitValue(0);
 
         // examine the resulting cert
-        kstore = KeyStore.getInstance(new File("ksjks"), "changeit".toCharArray());
+        kstore = KeyStore.getInstance(new File("kskp"), "changeit".toCharArray());
         cert = (X509Certificate)kstore.getCertificate("e1");
 
         Certificate[] certChain = kstore.getCertificateChain("e1");
@@ -265,7 +259,7 @@ public class GenKeyPairSigner {
         }
 
         sigName = cert.getSigAlgName();
-        if (sigName != "SHA256withDSA") {
+        if (sigName != "SHA384withECDSA") {
             throw new Exception("Signature algorithm name is in error");
         }
 
@@ -280,11 +274,11 @@ public class GenKeyPairSigner {
             throw new Exception("Subject Public Key Algorithm is in error");
         }
 
-        SecurityTools.keytool("-keystore ksjks -storepass changeit " +
+        SecurityTools.keytool("-keystore kskp -storepass changeit " +
                 "-list -v")
                 .shouldContain("Alias name: e1")
                 .shouldContain("Certificate chain length: 3")
-                .shouldContain("Signature algorithm name: SHA256withDSA")
+                .shouldContain("Signature algorithm name: SHA384withECDSA")
                 .shouldContain("Subject Public Key Algorithm: X25519 key")
                 .shouldHaveExitValue(0);
     }

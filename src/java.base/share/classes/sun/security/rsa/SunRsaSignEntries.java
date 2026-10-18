@@ -66,10 +66,6 @@ public final class SunRsaSignEntries {
         add(p, "KeyPairGenerator", "RSA",
                 "sun.security.rsa.RSAKeyPairGenerator$Legacy",
                 getAliases("PKCS1"), null);
-        addA(p, "Signature", "MD2withRSA",
-                "sun.security.rsa.RSASignature$MD2withRSA", attrs);
-        addA(p, "Signature", "MD5withRSA",
-                "sun.security.rsa.RSASignature$MD5withRSA", attrs);
         addA(p, "Signature", "SHA1withRSA",
                 "sun.security.rsa.RSASignature$SHA1withRSA", attrs);
         addA(p, "Signature", "SHA224withRSA",

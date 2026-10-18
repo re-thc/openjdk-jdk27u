@@ -146,9 +146,6 @@ public class Krb5 {
 
     //Key Types
     public static final int KEYTYPE_NULL = 0;
-    public static final int KEYTYPE_DES  = 1;
-
-    public static final int KEYTYPE_DES3 = 2;
     public static final int KEYTYPE_AES  = 3;
     public static final int KEYTYPE_ARCFOUR_HMAC = 4;
 

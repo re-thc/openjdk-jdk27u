@@ -70,12 +70,11 @@ public class CICOSkipTest {
      */
     private static final int DISCARD = BLOCK - SAVE;
 
-    private static final String[] ALGOS = {"DES", "DESede", "Blowfish"};
+    private static final String[] ALGOS = {"DES", "DESede"};
     private static final String[] MODES = {"ECB", "CBC", "CFB", "CFB32",
-        "OFB", "OFB64", "PCBC"};
+        "OFB", "OFB64"};
     private static final String[] PADDINGS = {"NoPadding", "Pkcs5Padding"};
-    private static final String[] PBE_ALGOS = {"PBEWithMD5AndDES",
-        "PBEWithMD5AndDES/CBC/PKCS5Padding", "PBEWithSHA1AndDESede"};
+    private static final String[] PBE_ALGOS = {"PBEWithSHA1AndDESede"};
 
     public static void main(String[] args) throws Exception {
         // how many kinds of padding mode such as PKCS5padding and NoPadding
@@ -83,11 +82,10 @@ public class CICOSkipTest {
             for (String mode : MODES) {
                 int padKinds = 1;
                 if (mode.equalsIgnoreCase("ECB")
-                        || mode.equalsIgnoreCase("PCBC")
                         || mode.equalsIgnoreCase("CBC")) {
                     padKinds = PADDINGS.length;
                 }
-                // PKCS5padding is meaningful only for ECB, CBC, PCBC
+                // PKCS5padding is meaningful only for ECB, CBC
                 for (int k = 0; k < padKinds; k++) {
                     String info = algo + "/" + mode + "/" + PADDINGS[k];
                     try {

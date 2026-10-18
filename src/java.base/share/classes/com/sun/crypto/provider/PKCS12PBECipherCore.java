@@ -36,19 +36,13 @@ import javax.security.auth.DestroyFailedException;
 
 /**
  * This class implements password-base encryption algorithm with
- * SHA1 digest and the following Ciphers (in CBC mode, where applicable):
- * - DESede cipher and
- * - RC2 Cipher with 40-bit or 128-bit effective key length and
- * - RC4 Cipher with 40-bit or 128-bit effective key length
+ * SHA1 digest and the DESede cipher in CBC mode
  * as defined by PKCS #12 version 1.0 standard.
  *
  * @author Valerie Peng
  * @see javax.crypto.CipherSpi
  */
 final class PKCS12PBECipherCore {
-    private final int keySize; // in bytes
-    private final String algo;
-    private final String pbeAlgo;
     private byte[] salt = null;
     private int iCount = 0;
 
@@ -180,20 +174,6 @@ final class PKCS12PBECipherCore {
         }
     }
 
-    PKCS12PBECipherCore(String symmCipherAlg, int keySizeInBits)
-            throws NoSuchAlgorithmException {
-
-        algo = symmCipherAlg;
-        pbeAlgo = switch (algo) {
-            case "RC4" -> "PBEWithSHA1AndRC4_" + keySizeInBits;
-            case "DESede" -> "PBEWithSHA1AndDESede";
-            case "RC2" -> "PBEWithSHA1AndRC2_" + keySizeInBits;
-            default -> throw new NoSuchAlgorithmException(
-                   "No Cipher implementation for PBEWithSHA1And" + algo);
-        };
-        keySize = keySizeInBits >> 3;
-    }
-
     AlgorithmParameters implGetParameters() {
         AlgorithmParameters params = null;
         if (salt == null) {
@@ -206,7 +186,7 @@ final class PKCS12PBECipherCore {
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
         try {
-            params = AlgorithmParameters.getInstance(pbeAlgo,
+            params = AlgorithmParameters.getInstance("PBEWithSHA1AndDESede",
                 SunJCE.getInstance());
             params.init(pbeSpec);
         } catch (NoSuchAlgorithmException nsae) {
@@ -305,19 +285,12 @@ final class PKCS12PBECipherCore {
             }
 
             byte[] derivedKey = derive(passwdChars, salt, iCount,
-                    keySize, CIPHER_KEY);
-            SecretKey cipherKey = new SecretKeySpec(derivedKey, algo);
+                    24, CIPHER_KEY);
+            SecretKey cipherKey = new SecretKeySpec(derivedKey, "DESede");
             Arrays.fill(derivedKey, (byte)0);
 
-            return switch (algo) {
-                case "RC4" -> new KeyAndIv(cipherKey, null);
-                case "RC2", "DESede" -> new KeyAndIv(cipherKey,
-                    new IvParameterSpec(derive(passwdChars, salt, iCount, 8,
-                            CIPHER_IV)));
-                default ->
-                    throw new ProviderException("Unsupported cipher impl: "
-                            + algo);
-            };
+            return new KeyAndIv(cipherKey, new IvParameterSpec(
+                    derive(passwdChars, salt, iCount, 8, CIPHER_IV)));
         } finally {
            Arrays.fill(passwdChars, '\0');
         }
@@ -336,10 +309,6 @@ final class PKCS12PBECipherCore {
         }
     }
 
-    int implGetKeySize(Key key) throws InvalidKeyException {
-        return keySize << 3; // in bits
-    }
-
     public static final class PBEWithSHA1AndDESede extends DESedeCipher {
         private final PKCS12PBECipherCore core;
 
@@ -350,7 +319,7 @@ final class PKCS12PBECipherCore {
             } catch (NoSuchPaddingException nspe) {
                 // should never happen
             }
-            core = new PKCS12PBECipherCore("DESede", 192);
+            core = new PKCS12PBECipherCore();
         }
         @Override
         protected int engineGetKeySize(Key key) throws InvalidKeyException {
@@ -400,143 +369,6 @@ final class PKCS12PBECipherCore {
                 throw new NoSuchPaddingException("Unsupported padding: " +
                         paddingScheme);
             }
-        }
-    }
-
-    static sealed class PBEWithSHA1AndRC2 extends RC2Cipher {
-        private final PKCS12PBECipherCore core;
-
-        public PBEWithSHA1AndRC2(int keysize) throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC2", keysize);
-            try {
-                super.engineSetMode("CBC");
-                super.engineSetPadding("PKCS5Padding");
-            } catch (NoSuchPaddingException nspe) {
-                // should never happen
-            }
-        }
-        @Override
-        protected AlgorithmParameters engineGetParameters() {
-            return core.implGetParameters();
-        }
-        @Override
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            try (var derived = core.implInit(opmode, key, params, random)) {
-                super.engineInit(opmode, derived.key(), derived.iv(), random);
-            }
-        }
-        @Override
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            engineInit(opmode, key, toParamSpec(params), random);
-        }
-        @Override
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-                throws InvalidKeyException {
-            try {
-                engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
-            } catch (InvalidAlgorithmParameterException iape) {
-                // should never happen
-            }
-        }
-        @Override
-        protected void engineSetMode(String mode)
-                throws NoSuchAlgorithmException {
-            if (!"CBC".equalsIgnoreCase(mode)) {
-                throw new NoSuchAlgorithmException("Unsupported mode: " + mode);
-            }
-        }
-        @Override
-        protected void engineSetPadding(String paddingScheme)
-                throws NoSuchPaddingException {
-            if (!"PKCS5Padding".equalsIgnoreCase(paddingScheme)) {
-                throw new NoSuchPaddingException("Unsupported padding: " +
-                        paddingScheme);
-            }
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC2_40 extends PBEWithSHA1AndRC2 {
-        public PBEWithSHA1AndRC2_40() throws NoSuchAlgorithmException {
-            super(40);
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC2_128 extends PBEWithSHA1AndRC2 {
-        public PBEWithSHA1AndRC2_128() throws NoSuchAlgorithmException {
-            super(128);
-        }
-    }
-
-    static sealed class PBEWithSHA1AndRC4 extends ARCFOURCipher {
-        private final PKCS12PBECipherCore core;
-
-        public PBEWithSHA1AndRC4(int keysize) throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC4", keysize);
-        }
-        @Override
-        protected int engineGetKeySize(Key key) throws InvalidKeyException {
-            return core.implGetKeySize(key);
-        }
-        @Override
-        protected AlgorithmParameters engineGetParameters() {
-            return core.implGetParameters();
-        }
-        @Override
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            try (var derived = core.implInit(opmode, key, params, random)) {
-                super.engineInit(opmode, derived.key(), derived.iv(), random);
-            }
-        }
-        @Override
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            engineInit(opmode, key, toParamSpec(params), random);
-        }
-        @Override
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-                throws InvalidKeyException {
-            try {
-                engineInit(opmode, key, (AlgorithmParameterSpec) null, random);
-            } catch (InvalidAlgorithmParameterException iape) {
-                // should never happen
-            }
-        }
-        @Override
-        protected void engineSetMode(String mode)
-                throws NoSuchAlgorithmException {
-            if (!"ECB".equalsIgnoreCase(mode)) {
-                throw new NoSuchAlgorithmException("Unsupported mode: " + mode);
-            }
-        }
-        @Override
-        protected void engineSetPadding(String paddingScheme)
-                throws NoSuchPaddingException {
-            if (!"NoPadding".equalsIgnoreCase(paddingScheme)) {
-                throw new NoSuchPaddingException("Unsupported padding: " +
-                        paddingScheme);
-            }
-        }
-    }
-
-    public static final class PBEWithSHA1AndRC4_40 extends PBEWithSHA1AndRC4 {
-        public PBEWithSHA1AndRC4_40() throws NoSuchAlgorithmException {
-            super(40);
-        }
-    }
-    public static final class PBEWithSHA1AndRC4_128 extends PBEWithSHA1AndRC4 {
-        public PBEWithSHA1AndRC4_128() throws NoSuchAlgorithmException {
-            super(128);
         }
     }
 }

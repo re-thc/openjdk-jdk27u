@@ -104,16 +104,8 @@ abstract class InitialToken extends Krb5Token {
             }
 
             if (context.getCredDelegState()) {
-                KrbCred krbCred;
-                CipherHelper cipherHelper =
-                    context.getCipherHelper(serviceTicket.getSessionKey());
-                if (useNullKey(cipherHelper)) {
-                    krbCred = new KrbCred(tgt, serviceTicket,
-                                              EncryptionKey.NULL_KEY);
-                } else {
-                    krbCred = new KrbCred(tgt, serviceTicket,
+                KrbCred krbCred = new KrbCred(tgt, serviceTicket,
                                     serviceTicket.getSessionKey());
-                }
                 krbCredMessage = krbCred.getMessage();
                 size += CHECKSUM_DELEG_OPT_SIZE +
                         CHECKSUM_DELEG_LGTH_SIZE +
@@ -281,12 +273,6 @@ abstract class InitialToken extends Krb5Token {
                 }
                 delegCreds = cred.getDelegatedCreds()[0];
             }
-        }
-
-        // check if KRB-CRED message should use NULL_KEY for encryption
-        private boolean useNullKey(CipherHelper ch) {
-            // for "newer" etypes and RC4-HMAC do not use NULL KEY
-            return (ch.getProto() != 1) && !ch.isArcFour();
         }
 
         public Checksum getChecksum() throws KrbException {

@@ -39,13 +39,7 @@ import javax.crypto.Cipher;
 public class PBESameBuffer {
 
     private static final String[] pbeAlgorithms = {
-        "pbeWithMD5ANDdes", "PBEWithMD5AndDES/CBC/PKCS5Padding",
-        "pbeWithMD5ANDtripledes", "PBEWithMD5AndTRIPLEDES/CBC/PKCS5Padding",
         "PBEwithSHA1AndDESede", "PBEwithSHA1AndDESede/CBC/PKCS5Padding",
-        "PBEwithSHA1AndRC2_40", "PBEwithSHA1AndRC2_40/CBC/PKCS5Padding",
-        "PBEWithSHA1AndRC2_128", "PBEWithSHA1AndRC2_128/CBC/PKCS5Padding",
-        "PBEWithSHA1AndRC4_40", "PBEWithSHA1AndRC4_40/ECB/NoPadding",
-        "PBEWithSHA1AndRC4_128", "PBEWithSHA1AndRC4_128/ECB/NoPadding",
         "PBEWithHmacSHA1AndAES_128",
         "PBEWithHmacSHA224AndAES_128",
         "PBEWithHmacSHA256AndAES_128",

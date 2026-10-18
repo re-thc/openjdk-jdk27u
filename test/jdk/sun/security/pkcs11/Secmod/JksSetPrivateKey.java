@@ -63,7 +63,7 @@ public class JksSetPrivateKey extends SecmodTest {
 
         X509Certificate[] chain = (X509Certificate[])ks.getCertificateChain(keyAlias);
 
-        KeyStore jks = KeyStore.getInstance("JKS");
+        KeyStore jks = KeyStore.getInstance("PKCS12");
         jks.load(null, null);
 
         try {

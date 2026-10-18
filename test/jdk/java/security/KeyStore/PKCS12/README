@@ -26,3 +26,12 @@ storepass -storetype pkcs12
 3. Import certificate
 <JAVA-HOME>/bin/keytool -import -alias pkcs12test -keystore ks-pkcs.data 
 -storepass storepass -file pkcs12testCA.cer.data
+
+The encrypted certificate bags of the *.p12.data and *.pfx.data files (here
+and in certs/readP12) were originally protected with pbeWithSHAAnd40BitRC2-CBC.
+They were re-encrypted in place with pbeWithSHAAnd3-KeyTripleDES-CBC using the
+same salt and iteration count, and the MAC was recalculated. All other bytes
+are unchanged.
+
+certs/writeP12/keystoreCA.p12.data and certs/writeP12/keystoreEU.p12.data are
+PKCS12 keystores (store password "storepass", key password "keypass").

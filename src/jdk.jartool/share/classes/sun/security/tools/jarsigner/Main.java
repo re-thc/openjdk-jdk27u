@@ -167,7 +167,6 @@ public class Main {
     char[] storepass; // keystore password
     boolean protectedPath; // protected authentication path
     String storetype; // keystore type
-    String realStoreType;
     String providerName; // provider name
     List<String> providers = null; // list of provider names
     List<String> providerClasses = null; // list of provider classes
@@ -241,7 +240,6 @@ public class Main {
     private boolean signerSelfSigned = false;
     private boolean allAliasesFound = true;
     private boolean hasMultipleManifests = false;
-    private boolean weakKeyStore = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -1484,12 +1482,6 @@ public class Main {
             warnings.add(rb.getString("external.file.attributes.detected"));
         }
 
-        if (weakKeyStore) {
-            warnings.add(String.format(rb.getString(
-                    "jks.storetype.warning"),
-                    realStoreType, keystore));
-        }
-
         if ((strict) && (!errors.isEmpty())) {
             result = isSigning
                     ? rb.getString("jar.signed.with.signer.errors.")
@@ -2428,23 +2420,6 @@ public class Main {
                     } finally {
                         if (is != null) {
                             is.close();
-                        }
-                    }
-
-                    File storeFile = new File(keyStoreName);
-                    if (storeFile.exists()) {
-                        // Probe for real type. A JKS can be loaded as PKCS12 because
-                        // DualFormat support, vice versa.
-                        try {
-                            KeyStore keyStore = KeyStore.getInstance(storeFile, storepass);
-                            realStoreType = keyStore.getType();
-                            if (realStoreType.equalsIgnoreCase("JKS")
-                                    || realStoreType.equalsIgnoreCase("JCEKS")) {
-                                weakKeyStore = true;
-                            }
-                        } catch (KeyStoreException e) {
-                            // Probing not supported, therefore cannot be JKS or JCEKS.
-                            // Skip the legacy type warning at all.
                         }
                     }
                 }

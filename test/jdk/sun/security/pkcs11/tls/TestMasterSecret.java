@@ -27,8 +27,7 @@
  * @summary Known-answer-test for TlsMasterSecret generator
  * @author Andreas Sterbenz
  * @library /test/lib ..
- * @modules java.base/sun.security.internal.interfaces
- *          java.base/sun.security.internal.spec
+ * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestMasterSecret
  */
@@ -37,14 +36,12 @@ import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Provider;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.Arrays;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import jtreg.SkippedException;
-import sun.security.internal.interfaces.TlsMasterSecret;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 
 public class TestMasterSecret extends PKCS11Test {
@@ -57,7 +54,7 @@ public class TestMasterSecret extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
-        if (provider.getService("KeyGenerator", "SunTlsMasterSecret") == null) {
+        if (provider.getService("KeyGenerator", "SunTls12MasterSecret") == null) {
             throw new SkippedException("Not supported by provider, skipping");
         }
 
@@ -73,8 +70,7 @@ public class TestMasterSecret extends PKCS11Test {
             byte[] serverRandom = null;
             int protoMajor = 0;
             int protoMinor = 0;
-            int preMajor = 0;
-            int preMinor = 0;
+            String hashAlgorithm = null;
             byte[] master = null;
 
             while (true) {
@@ -99,10 +95,8 @@ public class TestMasterSecret extends PKCS11Test {
                     protoMajor = Integer.parseInt(data);
                 } else if (line.startsWith("m-protominor:")) {
                     protoMinor = Integer.parseInt(data);
-                } else if (line.startsWith("m-premajor:")) {
-                    preMajor = Integer.parseInt(data);
-                } else if (line.startsWith("m-preminor:")) {
-                    preMinor = Integer.parseInt(data);
+                } else if (line.startsWith("m-hashalg:")) {
+                    hashAlgorithm = data;
                 } else if (line.startsWith("m-master:")) {
                     master = parse(data);
 
@@ -110,31 +104,20 @@ public class TestMasterSecret extends PKCS11Test {
                     n++;
 
                     KeyGenerator kg =
-                        KeyGenerator.getInstance("SunTlsMasterSecret", provider);
+                        KeyGenerator.getInstance("SunTls12MasterSecret", provider);
                     SecretKey premasterKey =
                         new SecretKeySpec(premaster, algorithm);
+                    // prfHashLength and prfBlockSize are ignored by PKCS11 provider
                     TlsMasterSecretParameterSpec spec =
                         new TlsMasterSecretParameterSpec(premasterKey,
                             protoMajor, protoMinor, clientRandom, serverRandom,
-                            null, -1, -1);
+                            hashAlgorithm, -1 /*ignored*/, -1 /*ignored*/);
 
-                    try {
-                        kg.init(spec);
-                        TlsMasterSecret key = (TlsMasterSecret)kg.generateKey();
-                        byte[] enc = key.getEncoded();
-                        if (Arrays.equals(master, enc) == false) {
-                            throw new Exception("mismatch line: " + lineNumber);
-                        }
-                        if ((preMajor != key.getMajorVersion()) ||
-                                (preMinor != key.getMinorVersion())) {
-                           throw new Exception("version mismatch line: " + lineNumber);
-                        }
-                    } catch (InvalidAlgorithmParameterException iape) {
-                        // SSLv3 support is removed in S12
-                        if (preMajor == 3 && preMinor == 0) {
-                            System.out.println("Skip testing SSLv3");
-                            continue;
-                        }
+                    kg.init(spec);
+                    SecretKey key = kg.generateKey();
+                    byte[] enc = key.getEncoded();
+                    if (Arrays.equals(master, enc) == false) {
+                        throw new Exception("mismatch line: " + lineNumber);
                     }
                 } else {
                     throw new Exception("Unknown line: " + line);

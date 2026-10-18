@@ -63,7 +63,7 @@ public class DigestDontIgnoreCase {
 
     @BeforeClass
     public void prepareCertificate() throws Exception {
-        SecurityTools.keytool("-genkeypair -keyalg DSA -keystore "
+        SecurityTools.keytool("-genkeypair -keyalg EC -keystore "
                 + KEYSTORE_FILENAME + " -storepass changeit -keypass changeit"
                 + " -alias a -dname CN=X").shouldHaveExitValue(0);
     }

@@ -90,7 +90,7 @@ public class PKCS12SameKeyId {
         String[] aliases = new String[SIZE];
 
         // Reads from JKS keystore and pre-calculate
-        KeyStore ks = KeyStore.getInstance("jks");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (FileInputStream fis = new FileInputStream(JKSFILE)) {
             ks.load(fis, PASSWORD);
         }

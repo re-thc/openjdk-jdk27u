@@ -206,14 +206,14 @@ public class TestBadDNForPeerCA12 {
         clientEngine.setEnabledProtocols(new String[] {proto});
         clientEngine.setUseClientMode(true);
         clientEngine.setEnabledCipherSuites(new String[]
-            {"TLS_RSA_WITH_AES_256_CBC_SHA"});
+            {"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"});
 
         serverEngine = sslc.createSSLEngine();
         serverEngine.setEnabledProtocols(new String[] {proto});
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(true);
         serverEngine.setEnabledCipherSuites(new String[]
-            {"TLS_RSA_WITH_AES_256_CBC_SHA"});
+            {"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"});
     }
 
     private void createBuffers() {

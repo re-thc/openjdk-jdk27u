@@ -29,19 +29,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.CryptoPrimitive;
 import java.security.GeneralSecurityException;
-import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.XECPublicKey;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.NamedParameterSpec;
 import java.text.MessageFormat;
 import java.util.EnumSet;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
-import sun.security.ssl.X509Authentication.X509Credentials;
-import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.HexDumpEncoder;
 
 /**
@@ -53,11 +47,6 @@ import sun.security.util.HexDumpEncoder;
  * ECPublicKey/XECPublicKey, KeyExchange.getInstance("EC"/"XDH"), etc.).
  */
 final class ECDHClientKeyExchange {
-    static final SSLConsumer ecdhHandshakeConsumer =
-            new ECDHClientKeyExchangeConsumer();
-    static final HandshakeProducer ecdhHandshakeProducer =
-            new ECDHClientKeyExchangeProducer();
-
     static final SSLConsumer ecdheHandshakeConsumer =
             new ECDHEClientKeyExchangeConsumer();
     static final HandshakeProducer ecdheHandshakeProducer =
@@ -130,225 +119,6 @@ final class ECDHClientKeyExchange {
                             hexEncoder.encodeBuffer(encodedPoint), "    "),
                 };
                 return messageFormat.format(messageFields);
-            }
-        }
-    }
-
-    /**
-     * The ECDH "ClientKeyExchange" handshake message producer.
-     */
-    private static final
-            class ECDHClientKeyExchangeProducer implements HandshakeProducer {
-        // Prevent instantiation of this class.
-        private ECDHClientKeyExchangeProducer() {
-            // blank
-        }
-
-        @Override
-        public byte[] produce(ConnectionContext context,
-                HandshakeMessage message) throws IOException {
-            // The producing happens in client side only.
-            ClientHandshakeContext chc = (ClientHandshakeContext)context;
-
-            X509Credentials x509Credentials = null;
-            for (SSLCredentials credential : chc.handshakeCredentials) {
-                if (credential instanceof X509Credentials) {
-                    x509Credentials = (X509Credentials)credential;
-                    break;
-                }
-            }
-
-            if (x509Credentials == null) {
-                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
-                    "No server certificate for ECDH client key exchange");
-            }
-
-            PublicKey publicKey = x509Credentials.popPublicKey;
-
-            NamedGroup namedGroup = null;
-            String algorithm = publicKey.getAlgorithm();
-
-            // Determine which NamedGroup we'll be using, then use
-            // the creator functions.
-            if (algorithm.equals("EC")) {
-                ECParameterSpec params = ((ECPublicKey)publicKey).getParams();
-                namedGroup = NamedGroup.valueOf(params);
-            } else if (algorithm.equals("XDH")) {
-                AlgorithmParameterSpec params =
-                        ((XECPublicKey)publicKey).getParams();
-                if (params instanceof NamedParameterSpec) {
-                    String name = ((NamedParameterSpec)params).getName();
-                    namedGroup = NamedGroup.nameOf(name);
-                }
-            } else {
-                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Not EC/XDH server certificate for " +
-                            "ECDH client key exchange");
-            }
-
-            if (namedGroup == null) {
-                throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Unsupported EC/XDH server cert for " +
-                        "ECDH client key exchange");
-            }
-
-            SSLPossession sslPossession = namedGroup.createPossession(
-                    chc.sslContext.getSecureRandom());
-
-            chc.handshakePossessions.add(sslPossession);
-            ECDHClientKeyExchangeMessage cke =
-                    new ECDHClientKeyExchangeMessage(
-                            chc, sslPossession.encode());
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.fine(
-                    "Produced ECDH ClientKeyExchange handshake message", cke);
-            }
-
-            // Output the handshake message.
-            cke.write(chc.handshakeOutput);
-            chc.handshakeOutput.flush();
-
-            // update the states
-            SSLKeyExchange ke = SSLKeyExchange.valueOf(
-                    chc.negotiatedCipherSuite.keyExchange,
-                    chc.negotiatedProtocol);
-            if (ke == null) {
-                // unlikely
-                throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
-                        "Not supported key exchange type");
-            } else {
-                SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
-                SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
-                chc.handshakeSession.setMasterSecret(masterSecret);
-
-                SSLTrafficKeyDerivation kd =
-                        SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
-                if (kd == null) {
-                    // unlikely
-                    throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
-                            "Not supported key derivation: " +
-                            chc.negotiatedProtocol);
-                } else {
-                    chc.handshakeKeyDerivation =
-                        kd.createKeyDerivation(chc, masterSecret);
-                }
-            }
-
-            // The handshake message has been delivered.
-            return null;
-        }
-    }
-
-    /**
-     * The ECDH "ClientKeyExchange" handshake message consumer.
-     */
-    private static final
-            class ECDHClientKeyExchangeConsumer implements SSLConsumer {
-        // Prevent instantiation of this class.
-        private ECDHClientKeyExchangeConsumer() {
-            // blank
-        }
-
-        @Override
-        public void consume(ConnectionContext context,
-                ByteBuffer message) throws IOException {
-            // The consuming happens in server side only.
-            ServerHandshakeContext shc = (ServerHandshakeContext)context;
-
-            X509Possession x509Possession = null;
-            for (SSLPossession possession : shc.handshakePossessions) {
-                if (possession instanceof X509Possession) {
-                    x509Possession = (X509Possession)possession;
-                    break;
-                }
-            }
-
-            if (x509Possession == null) {
-                // unlikely, have been checked during cipher suite negotiation.
-                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
-                    "No expected EC server cert for ECDH client key exchange");
-            }
-
-            // Determine which NamedGroup we'll be using, then use
-            // the creator functions.
-            NamedGroup namedGroup;
-
-            // Iteratively determine the X509Possession type's ParameterSpec.
-            ECParameterSpec ecParams = x509Possession.getECParameterSpec();
-            if (ecParams != null) {
-                namedGroup = NamedGroup.valueOf(ecParams);
-            } else {
-                // Wasn't EC, try XEC.
-                NamedParameterSpec namedParams =
-                        x509Possession.getXECParameterSpec();
-                if (namedParams == null) {
-                    throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                        "Unknown named parameters in server cert for " +
-                            "ECDH client key exchange");
-                }
-                namedGroup = NamedGroup.nameOf(namedParams.getName());
-            }
-
-            // unlikely, have been checked during cipher suite negotiation.
-            if (namedGroup == null) {
-                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Unknown named group in server cert for " +
-                        "ECDH client key exchange");
-            }
-
-            SSLKeyExchange ke = SSLKeyExchange.valueOf(
-                    shc.negotiatedCipherSuite.keyExchange,
-                    shc.negotiatedProtocol);
-            if (ke == null) {
-                // unlikely
-                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
-                        "Not supported key exchange type");
-            }
-
-            // parse either handshake message containing either EC/XEC.
-            ECDHClientKeyExchangeMessage cke =
-                    new ECDHClientKeyExchangeMessage(shc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                SSLLogger.fine(
-                    "Consuming ECDH ClientKeyExchange handshake message", cke);
-            }
-
-            // create the credentials
-            try {
-                SSLCredentials sslCredentials =
-                        namedGroup.decodeCredentials(cke.encodedPoint);
-                if (shc.algorithmConstraints != null &&
-                        sslCredentials instanceof
-                            NamedGroupCredentials namedGroupCredentials) {
-                    if (!shc.algorithmConstraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                            namedGroupCredentials.getPublicKey())) {
-                        shc.conContext.fatal(Alert.INSUFFICIENT_SECURITY,
-                            "ClientKeyExchange for " + namedGroup +
-                            " does not comply with algorithm constraints");
-                    }
-                }
-
-                shc.handshakeCredentials.add(sslCredentials);
-            } catch (GeneralSecurityException e) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        "Cannot decode ECDH PublicKey: " + namedGroup);
-            }
-
-            // update the states
-            SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
-            SecretKey masterSecret = masterKD.deriveKey("MasterSecret");
-            shc.handshakeSession.setMasterSecret(masterSecret);
-
-            SSLTrafficKeyDerivation kd =
-                    SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
-            if (kd == null) {
-                // unlikely
-                throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
-                    "Not supported key derivation: " + shc.negotiatedProtocol);
-            } else {
-                shc.handshakeKeyDerivation =
-                    kd.createKeyDerivation(shc, masterSecret);
             }
         }
     }

@@ -50,11 +50,11 @@ import java.util.Enumeration;
 
 public class WriteP12Test {
 
-    private static final String IN_KEYSTORE_TYPE = "jks";
+    private static final String IN_KEYSTORE_TYPE = "pkcs12";
     private static final String IN_KEYSTORE_PRV = "SUN";
 
-    private static final String IN_KEYSTORE_ENDUSER = "keystoreEU.jks.data";
-    private static final String IN_KEYSTORE_CA = "keystoreCA.jks.data";
+    private static final String IN_KEYSTORE_ENDUSER = "keystoreEU.p12.data";
+    private static final String IN_KEYSTORE_CA = "keystoreCA.p12.data";
     private static final String OUT_KEYSTORE = "outKeyStore.p12";
 
     private static final String IN_STORE_PASS = "storepass";

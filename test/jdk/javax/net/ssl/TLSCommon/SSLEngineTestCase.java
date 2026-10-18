@@ -800,8 +800,8 @@ abstract public class SSLEngineTestCase {
                     "jdk.tls.disabledAlgorithms", "");
             java.security.Security.setProperty(
                     "jdk.certpath.disabledAlgorithms", "");
-            KeyStore ks = KeyStore.getInstance("JKS");
-            KeyStore ts = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            KeyStore ts = KeyStore.getInstance("PKCS12");
             char[] passphrase = PASSWD.toCharArray();
             try (FileInputStream keyFileStream =
                     new FileInputStream(KEY_FILE_NAME)) {

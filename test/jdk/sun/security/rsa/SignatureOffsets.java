@@ -37,8 +37,6 @@ import java.security.SignatureException;
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @compile ../../../java/security/Signature/Offsets.java
- * @run main SignatureOffsets SunRsaSign MD2withRSA
- * @run main SignatureOffsets SunRsaSign MD5withRSA
  * @run main SignatureOffsets SunRsaSign SHA1withRSA
  * @run main SignatureOffsets SunRsaSign SHA224withRSA
  * @run main SignatureOffsets SunRsaSign SHA256withRSA

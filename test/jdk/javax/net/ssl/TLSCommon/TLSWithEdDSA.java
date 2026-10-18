@@ -69,7 +69,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
-import jdk.test.lib.security.SecurityUtils;
 
 public class TLSWithEdDSA extends SSLSocketTemplate {
 
@@ -92,7 +91,7 @@ public class TLSWithEdDSA extends SSLSocketTemplate {
             "EE_ECDSA_SECP384R1:EE_ECDSA_SECP521R1:EE_RSA_2048:" +
             "EE_EC_RSA_SECP256R1:EE_DSA_2048:EE_DSA_1024:EE_ED25519:EE_ED448";
     private static final List<String> TEST_PROTOS = List.of(
-            "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1");
+            "TLSv1.3", "TLSv1.2");
 
     private static CertificateFactory certFac;
     private static final Map<ParamType, String> clientParameters =
@@ -570,7 +569,6 @@ public class TLSWithEdDSA extends SSLSocketTemplate {
             System.setProperty("javax.net.debug", "ssl,handshake");
         }
 
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLSv1");
         certFac = CertificateFactory.getInstance("X.509");
         String testFormat;
 

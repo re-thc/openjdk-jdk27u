@@ -93,13 +93,13 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         //
         SSLParameters paramsServer = serverEngine.getSSLParameters();
         paramsServer.setProtocols(new String[] {
-                "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1", "SSLv3"
+                "TLSv1.3", "TLSv1.2"
         });
         serverEngine.setSSLParameters(paramsServer);
     }
 
     public static void main(String[] args) throws Exception {
-        // Turn off the disabled Algorithms so we can also test SSLv3/TLSv1/etc.
+        // Turn off the disabled Algorithms.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         if ((args.length > 0) && (args[0].equals("PKCS11"))) {
@@ -124,35 +124,11 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
         new ExportKeyingMaterialTests(
                 "TLSv1.2", "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256").runTest();
         new ExportKeyingMaterialTests(
-                "TLSv1.2", "TLS_RSA_WITH_AES_256_GCM_SHA384").runTest();
+                "TLSv1.2", "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384").runTest();
 
         // Try one TLSv1.2/CBC suite just for grins, the triggers are the same.
         new ExportKeyingMaterialTests(
                 "TLSv1.2", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256").runTest();
-
-        // Use appropriate protocol/ciphersuite combos.  Some of the 1.2
-        // suites (e.g. GCM) can't be used in earlier TLS versions.
-        new ExportKeyingMaterialTests(
-                "TLSv1.1", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA").runTest();
-        new ExportKeyingMaterialTests(
-                "TLSv1.1", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA").runTest();
-        new ExportKeyingMaterialTests(
-                "TLSv1.1", "TLS_RSA_WITH_AES_256_CBC_SHA").runTest();
-
-        new ExportKeyingMaterialTests(
-                "TLSv1", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA").runTest();
-        new ExportKeyingMaterialTests(
-                "TLSv1", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA").runTest();
-        new ExportKeyingMaterialTests(
-                "TLSv1", "TLS_RSA_WITH_AES_256_CBC_SHA").runTest();
-
-        try {
-            new ExportKeyingMaterialTests(
-                    "SSLv3", "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA").runTest();
-            throw new Exception("SSLv3 export test should not have passed");
-        } catch (SSLException e) {
-            System.out.println("SSLv3 test failed as expected");
-        }
 
         System.out.println("All tests PASSED");
     }
@@ -478,8 +454,6 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
 
             break;
 
-        case "TLSv1":
-        case "TLSv1.1":
         case "TLSv1.2":
             // Don't see a limit of the label.length or output length.
 
@@ -487,10 +461,9 @@ public class ExportKeyingMaterialTests extends SSLEngineTemplate {
             try {
                 clientSession.exportKeyingMaterialData("hello",
                         new byte[1 << 16], 128);
-                throw new Exception("large context accepted in " +
-                        "TLSv1/TLSv1.1/TLSv1.2");
+                throw new Exception("large context accepted in TLSv1.2");
             } catch (IllegalArgumentException e) {
-                log("large context passed in TLSv1/TLSv1.1/TLSv1.2");
+                log("large context passed in TLSv1.2");
             }
 
             // Do a null/byte[0] comparison.  Should NOT be the same.

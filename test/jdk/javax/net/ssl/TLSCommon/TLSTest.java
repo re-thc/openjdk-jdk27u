@@ -83,13 +83,14 @@ import javax.net.ssl.TrustManagerFactory;
  * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha384 TLS_AES_256_GCM_SHA384
  * @run main/othervm TLSTest TLSv1.3 rsa_pss_pss_sha512 TLS_AES_256_GCM_SHA384
  *
- * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha1
+ *      TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha256
- *      TLS_RSA_WITH_AES_128_CBC_SHA
+ *      TLS_DHE_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha384
- *      TLS_RSA_WITH_AES_256_GCM_SHA384
+ *      TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
  * @run main/othervm TLSTest TLSv1.2 rsa_pkcs1_sha512
- *      TLS_RSA_WITH_AES_128_GCM_SHA256
+ *      TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm TLSTest TLSv1.2 ec_rsa_pkcs1_sha256
  *      TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm TLSTest TLSv1.2 ecdsa_sha1
@@ -99,42 +100,17 @@ import javax.net.ssl.TrustManagerFactory;
  * @run main/othervm TLSTest TLSv1.2 ecdsa_secp521r1_sha512
  *      TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
  * @run main/othervm TLSTest TLSv1.2 rsa_pss_rsae_sha256
- *      TLS_RSA_WITH_AES_256_CBC_SHA256
+ *      TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
  * @run main/othervm TLSTest TLSv1.2 rsa_pss_rsae_sha384
- *      TLS_RSA_WITH_AES_256_CBC_SHA
+ *      TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
  * @run main/othervm TLSTest TLSv1.2 rsa_pss_rsae_sha512
- *      TLS_RSA_WITH_AES_128_CBC_SHA256
+ *      TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
  * @run main/othervm TLSTest TLSv1.2 rsa_pss_pss_sha256
  *      TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
  * @run main/othervm TLSTest TLSv1.2 rsa_pss_pss_sha384
  *      TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
  * @run main/othervm TLSTest TLSv1.2 rsa_pss_pss_sha512
  *      TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
- *
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha256
- *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha384
- *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pkcs1_sha512
- *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pss_rsae_sha256
- *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pss_rsae_sha384
- *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1.1 rsa_pss_rsae_sha512
- *      TLS_RSA_WITH_AES_128_CBC_SHA
- *
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha1 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha256 TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha384 TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pkcs1_sha512 TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pss_rsae_sha256
- *      TLS_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pss_rsae_sha384
- *      TLS_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSTest TLSv1 rsa_pss_rsae_sha512
- *      TLS_RSA_WITH_AES_128_CBC_SHA
  */
 public class TLSTest {
 
