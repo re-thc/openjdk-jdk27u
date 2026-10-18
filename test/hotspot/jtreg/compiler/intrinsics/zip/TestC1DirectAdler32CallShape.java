@@ -23,7 +23,7 @@
 
 /*
  * @test id=parser
- * @summary Reject incomplete, intrinsified and method-handle C1 Adler call shapes
+ * @summary Reject incomplete, wrong-route and method-handle C1 Adler call shapes
  * @library /test/lib
  * @modules java.xml
  * @run driver TestC1DirectAdler32CallShape parser
@@ -31,7 +31,7 @@
 
 /*
  * @test id=apple-call-shape
- * @summary Verify a direct native Adler invocation in the C1 compilation holding FP values
+ * @summary Verify the C1 Adler intrinsic and JNI control in the compilation holding FP values
  * @requires vm.compiler1.enabled & os.family == "mac" & os.simpleArch == "aarch64"
  * @library /test/lib
  * @modules java.xml
@@ -121,8 +121,9 @@ public class TestC1DirectAdler32CallShape {
 
     // A successful level1 compilation alone is insufficient. Require the public
     // wrapper parse inside the FP root and its direct invokestatic target, with
-    // the native-method decline. Never accept a linkToStatic/adapter parse path.
-    static void verifyLog(String xml) throws Exception {
+    // the intrinsic (enabled) or native decline (disabled). Never accept a
+    // linkToStatic/adapter parse path.
+    static void verifyLog(String xml, boolean intrinsicExpected) throws Exception {
         var factory = DocumentBuilderFactory.newInstance();
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         var document = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
@@ -162,19 +163,28 @@ public class TestC1DirectAdler32CallShape {
                         adapter |= name.startsWith("java.lang.invoke.");
                     }
                 }
-                boolean declined = false;
+                boolean declined = false, intrinsic = false;
                 for (Node next = call.getNextSibling(); next != null; next = next.getNextSibling()) {
                     if (!(next instanceof Element e)) continue;
-                    if (Set.of("call", "parse", "intrinsic").contains(e.getTagName())) break;
+                    if (Set.of("call", "parse").contains(e.getTagName())) break;
+                    if (e.getTagName().equals("intrinsic")) {
+                        if (!e.getAttribute("id").equals("_updateByteBufferAdler32")) {
+                            throw new AssertionError("Unexpected Adler intrinsic ID");
+                        }
+                        intrinsic = true;
+                    }
+                    if (e.getTagName().equals("inline_success") &&
+                        e.getAttribute("reason").equals("intrinsic")) intrinsic = true;
                     if (e.getTagName().equals("inline_fail") &&
                         e.getAttribute("reason").equals("native method")) declined = true;
                 }
-                if (!wrapper || !root || adapter || !declined) {
-                    throw new AssertionError("Adler target is outlined, adapted or intrinsified");
+                if (!wrapper || !root || adapter ||
+                    (intrinsicExpected ? !intrinsic || declined : !declined || intrinsic)) {
+                    throw new AssertionError("Adler target is outlined, adapted or uses the wrong route");
                 }
                 found = true;
             }
-            if (!found) throw new AssertionError("No direct declined Adler target in FP compilation " +
+            if (!found) throw new AssertionError("No direct Adler target with expected route in FP compilation " +
                                                   task.getAttribute("compile_id"));
             checked++;
         }
@@ -192,9 +202,42 @@ public class TestC1DirectAdler32CallShape {
             <inline_fail reason='native method'/></parse></parse><task_done success='1'/>
             </task></hotspot_log>
             """;
-        verifyLog(good);
+        verifyLog(good, false);
+        String leaf = good.replace("<inline_fail reason='native method'/>",
+                "<inline_success reason='intrinsic'/>");
+        verifyLog(leaf, true);
+        verifyLog(good.replace("<inline_fail reason='native method'/>",
+                "<intrinsic id='_updateByteBufferAdler32'/>"), true);
+        try {
+            verifyLog(good, true);
+            throw new IllegalStateException("Accepted native decline for intrinsic route");
+        } catch (AssertionError expected) { }
+        try {
+            verifyLog(leaf, false);
+            throw new IllegalStateException("Accepted intrinsic for JNI route");
+        } catch (AssertionError expected) { }
         for (String bad : new String[]{
-                good.replace("<inline_fail reason='native method'/>", "<intrinsic id='_updateByteBufferAdler32'/>"),
+                leaf.replace("reason='intrinsic'", "reason='inline'"),
+                leaf.replace("<inline_success reason='intrinsic'/>",
+                        "<intrinsic id='_updateBytesAdler32'/>"),
+                leaf.replace("instr='invokestatic'", "instr='invokehandle'"),
+                leaf.replace("name='update'", "name='outlinedHelper'"),
+                leaf.replace("name='checksumWithFp'", "name='outlinedFpHelper'"),
+                leaf.replace("success='1'", "success='0'"),
+                leaf.replace("compiler='c1'", "compiler='c2'"),
+                leaf.replace("level='1'", "level='4'"),
+                leaf.replace("<inline_success reason='intrinsic'/>",
+                        "<inline_success reason='intrinsic'/><inline_fail reason='native method'/>"),
+                leaf.replace("<parse method='11'>", "<klass id='3' name='java.lang.invoke.MethodHandle'/><method id='13' holder='3' name='linkToStatic'/><parse method='13'><parse method='11'>").replace("</parse></parse><task_done", "</parse></parse></parse><task_done")}) {
+            try {
+                verifyLog(bad, true);
+                throw new IllegalStateException("Accepted invalid intrinsic call-shape fixture");
+            } catch (AssertionError expected) { }
+        }
+        for (String bad : new String[]{
+                good.replace("<inline_fail reason='native method'/>", "<inline_success reason='intrinsic'/>"),
+                good.replace("<inline_fail reason='native method'/>",
+                        "<inline_fail reason='native method'/><intrinsic id='_updateByteBufferAdler32'/>"),
                 good.replace("instr='invokestatic'", "instr='invokehandle'"),
                 good.replace("name='update'", "name='outlinedHelper'"),
                 good.replace("success='1'", "success='0'"),
@@ -203,7 +246,7 @@ public class TestC1DirectAdler32CallShape {
                 good.replace("<parse method='11'>", "<klass id='3' name='java.lang.invoke.MethodHandle'/><method id='13' holder='3' name='linkToStatic'/><parse method='13'><parse method='11'>").replace("</parse></parse><task_done", "</parse></parse></parse><task_done"),
                 good.replace("name='java.util.zip.Adler32'", "name='java.lang.invoke.MethodHandle'")}) {
             try {
-                verifyLog(bad);
+                verifyLog(bad, false);
                 throw new IllegalStateException("Accepted invalid call-shape fixture");
             } catch (AssertionError expected) { }
         }
@@ -215,14 +258,14 @@ public class TestC1DirectAdler32CallShape {
         if (args.length != 0 && args[0].equals("parser")) return;
         for (String adler : new String[]{"+", "-"}) {
             Path log = Path.of("direct-adler-" + (adler.equals("+") ? "enabled" : "disabled") + ".xml").toAbsolutePath();
-            ProcessTools.executeTestJava("-Xbatch", "-XX:TieredStopAtLevel=1",
+            ProcessTools.executeTestJava("-Xbatch", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1",
                     "-XX:+UnlockDiagnosticVMOptions", "-XX:+LogCompilation", "-XX:LogFile=" + log,
                     "-XX:C1MaxInlineSize=300", "-XX:C1InlineStackLimit=100",
                     "-XX:CompileCommand=inline,java.util.zip.Adler32::update",
                     "-XX:CompileCommand=dontinline,TestC1DirectAdler32CallShape::checksumWithFp",
                     "-XX:" + adler + "UseAdler32Intrinsics", "-Xcheck:jni",
                     TestC1DirectAdler32CallShape.class.getName(), "child").shouldHaveExitValue(0);
-            verifyLog(Files.readString(log));
+            verifyLog(Files.readString(log), adler.equals("+"));
         }
     }
 }
