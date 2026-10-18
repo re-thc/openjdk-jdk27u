@@ -1,0 +1,74 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: Release obsolete StringZilla qualification queue
+on:
+  push:
+    branches: [codex/stringzilla-queue-cleanup]
+    paths: [.github/workflows/stringzilla-queue-cleanup.yml]
+permissions:
+  contents: read
+  actions: write
+jobs:
+  cleanup:
+    if: github.repository == 're-thc/openjdk-jdk27u'
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Force-cancel only the verified obsolete run
+        shell: python
+        run: |
+          import json, subprocess, time
+          repo = "re-thc/openjdk-jdk27u"
+          target = 39112646870
+          path = "repos/" + repo + "/actions/runs/" + str(target)
+          def get(endpoint):
+              return json.loads(subprocess.check_output(["gh", "api", endpoint], text=True))
+          run = get(path)
+          assert run["id"] == target and run["repository"]["full_name"] == repo
+          assert run["head_repository"]["full_name"] == repo
+          assert run["head_sha"] == "45b35f60ed1601d425abf17ad1d158af2aae203d"
+          assert run["head_branch"] == "codex/stringzilla-sharded-qualification"
+          assert run["path"] == ".github/workflows/stringzilla-sharded-qualification.yml"
+          assert run["event"] == "push" and run["run_attempt"] == 1
+          if run["status"] == "completed":
+              print("Obsolete run already completed:", run["conclusion"])
+              raise SystemExit(0)
+          assert run["status"] in ("queued", "in_progress")
+          response = get(path + "/jobs?filter=latest&per_page=100")
+          jobs = response["jobs"]
+          skipped = {name + suffix for name in ("serial", "avx2", "neon", "msvc")
+                     for suffix in ("_pair", "_controls")} | {"avx512_controls"}
+          expected = skipped | {"configuration", "prepare-jtreg", "collect"}
+          assert response["total_count"] == len(jobs) == len(expected)
+          assert {job["name"] for job in jobs} == expected
+          named = {job["name"]: job for job in jobs}
+          assert all(named[name]["status"] == "completed" and
+                     named[name]["conclusion"] == "skipped" for name in skipped)
+          assert named["configuration"]["status"] == "completed"
+          assert named["configuration"]["conclusion"] == "success"
+          assert named["prepare-jtreg"]["status"] == "completed"
+          assert named["prepare-jtreg"]["conclusion"] == "cancelled"
+          unfinished = [job for job in jobs if job["status"] != "completed"]
+          assert len(unfinished) == 1 and unfinished[0]["id"] == 117641200358
+          assert unfinished[0]["name"] == "collect"
+          assert unfinished[0]["status"] in ("queued", "in_progress")
+          print(json.dumps({"target": target, "head": run["head_sha"], "jobs": [
+              {"id": job["id"], "name": job["name"], "status": job["status"],
+               "conclusion": job["conclusion"]} for job in jobs]}, indent=2), flush=True)
+          cancelled = subprocess.run(["gh", "api", "--method", "POST",
+                                      path + "/force-cancel"], text=True,
+                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          print(cancelled.stdout, flush=True)
+          if cancelled.returncode:
+              assert get(path)["status"] == "completed", "Force-cancel failed"
+          for attempt in range(15):
+              current = get(path)
+              if current["status"] == "completed":
+                  print("Obsolete run completed:", current["conclusion"])
+                  break
+              time.sleep(2)
+          else:
+              raise RuntimeError("Force-cancel accepted but obsolete run remains active")
