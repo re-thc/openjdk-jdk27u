@@ -38,6 +38,9 @@ libraries are omitted from its link inputs. Fatal-error prompts use standard
 error and read a response only from an attached console. Callers without a
 console, including services and JNI applications, return immediately.
 
+The Windows core launcher also retains `user32` for `CharNextExA`'s multibyte
+command-line traversal.
+
 On macOS, the instrumentation agent uses its JDK libraries, iconv and zlib.
 Kerberos configuration retains Foundation collections, Kerberos credentials
 and SystemConfiguration services. Configuration-change notifications run on a

@@ -48,7 +48,8 @@ ifeq ($(ENABLE_DESKTOP), false)
     INCLUDE_GUARD_common/modules/LauncherCommon.gmk := true
     SetupBuildLauncher = $(eval TEST_LAUNCHERS += $(strip $1))
     SetupJdkExecutable =
-    SetupJdkLibrary =
+    # Capture the actual library inputs, including required non-GUI OS APIs.
+    SetupJdkLibrary = $(eval TEST_LIBRARY_ARGS_$(strip $1) := $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9) $(10) $(11) $(12) $(13) $(14) $(15))
     include $(TOPDIR)/make/modules/java.base/Launcher.gmk
     include $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
     $(call AssertEquals, $(filter javaw, $(TEST_LAUNCHERS)), , GUI Windows launcher)
@@ -56,10 +57,13 @@ ifeq ($(ENABLE_DESKTOP), false)
     $(call AssertEquals, $(filter -DHEADLESS, $(LIBJLI_CFLAGS)), -DHEADLESS, Launcher desktop code enabled)
     $(call AssertEquals, $(filter splashscreen_stubs.c, $(LIBJLI_EXCLUDE_FILES)), splashscreen_stubs.c, Splash sources enabled)
     $(call AssertEquals, $(LIBJLI_LIBS_macosx) $(LIBJLI_LIBS_windows), , GUI launcher libraries)
+    ifeq ($(OPENJDK_TARGET_OS), windows)
+      $(call AssertEquals, $(filter user32.lib, $(TEST_LIBRARY_ARGS_BUILD_LIBJLI)), user32.lib, Missing CharNextExA library)
+      $(call AssertEquals, $(filter comctl32.lib, $(TEST_LIBRARY_ARGS_BUILD_LIBJLI)), , GUI launcher library)
+    endif
     ifeq ($(OPENJDK_TARGET_OS), macosx)
       # Capture the actual library setup arguments without requiring a Mac SDK.
       INCLUDE_GUARD_common/modules/LibCommon.gmk := true
-      SetupJdkLibrary = $(eval TEST_LIBRARY_ARGS_$(strip $1) := $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9) $(10) $(11) $(12) $(13) $(14) $(15))
       include $(TOPDIR)/make/modules/java.instrument/Lib.gmk
       include $(TOPDIR)/make/modules/java.security.jgss/Lib.gmk
       $(call AssertEquals, $(filter -framework, $(TEST_LIBRARY_ARGS_BUILD_LIBINSTRUMENT)), , Unused instrument frameworks)
