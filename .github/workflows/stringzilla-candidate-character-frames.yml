@@ -1,0 +1,31 @@
+name: Read existing StringZilla C1 character frames
+on:
+  push:
+    branches: [codex/stringzilla-candidate-character-frames]
+    paths: [.github/workflows/stringzilla-candidate-character-frames.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  receipts:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          sparse-checkout: .github/scripts/stringzilla-candidate-character-frames.py
+          persist-credentials: false
+      - name: Extract saved character graphs without running Java
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, ".github/scripts/stringzilla-candidate-character-frames.py"], check=True)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-candidate-character-frames-${{ github.sha }}
+          path: character-frame-evidence
+          if-no-files-found: error
+          retention-days: 30
