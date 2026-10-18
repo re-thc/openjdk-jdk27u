@@ -69,6 +69,23 @@ jobs:
           path: auxiliary
           persist-credentials: false
           sparse-checkout: .github/scripts
+      - name: Persist exact checkout ownership exceptions for container subprocess Git
+        shell: python
+        run: |
+          import json, os, subprocess
+          from pathlib import Path
+          roots = [Path.cwd(), *(Path.cwd() / name for name in ("baseline", "producer", "periodic", "auxiliary"))]
+          for root in roots:
+              subprocess.run(["git", "config", "--global", "--add", "safe.directory", str(root.resolve())], check=True)
+          print("STRINGZILLA_MISSING_GIT_CONTEXT " + json.dumps({
+              "home": os.environ.get("HOME"), "uid": os.getuid(), "gid": os.getgid(),
+              "roots": [{"path": str(root), "owner_uid": root.stat().st_uid,
+                         "git_owner_uid": (root / ".git").stat().st_uid} for root in roots]}), flush=True)
+          for root in roots:
+              result = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                                      text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+              print(str(root) + ": " + result.stdout, end="", flush=True)
+              result.check_returncode()
       - name: Verify all four original zero-timing ZIPs before checking this CPU
         shell: python
         run: |

@@ -155,8 +155,34 @@ def container_provenance():
     print("STRINGZILLA_MISSING_CONTAINER " + json.dumps(provenance, separators=(",", ":")), flush=True)
 
 
+def failed_replay_proof():
+    run_id, head, job_id = 39141121791, "f0b69202c6b6809187c571b5696c23856a624d09", 117715594103
+    run = frozen.api("actions/runs/" + str(run_id))
+    assert run["head_sha"] == head and run["status"] == "completed" and run["conclusion"] == "failure"
+    matching = [job for job in jobs(run_id) if job["id"] == job_id]
+    assert len(matching) == 1
+    job = matching[0]
+    assert job["head_sha"] == head and job["status"] == "completed" and job["conclusion"] == "failure"
+    steps = {step["name"]: step["conclusion"] for step in job["steps"]}
+    assert steps["Verify all four original zero-timing ZIPs before checking this CPU"] == "failure"
+    assert steps["Restore archived complete pair and attest actual SKY runtime and native contracts"] == "skipped"
+    assert steps["Measure only six ABC triplets then missing interpreter and C1 projections"] == "skipped"
+    artifacts = frozen.api("actions/runs/" + str(run_id) + "/artifacts?per_page=100")["artifacts"]
+    assert artifacts == [], "The failed setup produced no measurement artifact"
+    receipt = {"source": SOURCE, "run_id": run_id, "head": head, "job": job,
+               "artifacts": artifacts, "timed_records": 0, "failure_phase": "preflight-before-restore"}
+    write(OUT / "failed-replay-proof.json", receipt)
+    print("STRINGZILLA_MISSING_FAILED_REPLAY " + json.dumps(receipt, separators=(",", ":")), flush=True)
+    return receipt
+
+
 def preflight():
-    inputs()
+    failed_replay_proof()
+    try:
+        inputs()
+    except Exception as error:
+        print("STRINGZILLA_MISSING_INPUT_ERROR " + str(getattr(error, "output", error)), flush=True)
+        raise
     assert current()["attempt"] == 1, "A timed replay may not be rerun"
     container_provenance()
     folder = OUT / "old-skips"
@@ -245,6 +271,7 @@ def prepare():
         "producer_image_hashes": pair["image_hashes"], "source_trees": pair["source_trees"],
         "helper_sha256": HELPER_HASH, "parent_manifest_sha256": MANIFEST_HASH,
         "driver_sha256": DRIVER_HASH, "old_skip_proof_sha256": sha(OUT / "old-skip-proof.json"),
+        "failed_replay_proof_sha256": sha(OUT / "failed-replay-proof.json"),
         "requested_counts": COUNTS, "abc_triplets": 6, "runtime_sky_attested": True, "native_sky_contract_passed": True,
         "container_provenance_sha256": sha(OUT / "container-provenance.json"),
         "abc_wrapper_sha256": ABC_WRAPPER_HASH, "abc_helper_sha256": abc.EXTRA_HELPER_SHA,
@@ -344,7 +371,7 @@ def collection():
     folder = OUT / "collected"
     with zipfile.ZipFile(archive) as bundle:
         names = ["replay-preparation.json", "replay-complete.json", "old-skip-proof.json",
-                 "physical-host.json", "restore/pair-receipt.json", "restore/native-validation.json",
+                 "physical-host.json", "failed-replay-proof.json", "restore/pair-receipt.json", "restore/native-validation.json",
                  "restore/native-validation/run.log", "container-provenance.json"]
         names += ["old-skips/" + pin["label"] + ".zip" for pin in PINS]
         names += [name for name in bundle.namelist() if name.startswith("abc/") and not name.endswith("/")]
@@ -375,6 +402,8 @@ def collection():
     assert preparation["runtime_sky_attested"] is True and preparation["native_sky_contract_passed"] is True
     assert json.loads((folder / "restore/native-validation.json").read_text())["passed"] is True
     assert "requested=2 selected=2 executable=1" in (folder / "restore/native-validation/run.log").read_text()
+    assert sha(folder / "failed-replay-proof.json") == preparation["failed_replay_proof_sha256"]
+    assert json.loads((folder / "failed-replay-proof.json").read_text()) == failed_replay_proof()
     assert sha(folder / "old-skip-proof.json") == preparation["old_skip_proof_sha256"]
     old = json.loads((folder / "old-skip-proof.json").read_text())
     assert old["source"] == SOURCE and old["timed_records"] == 0 and len(old["proofs"]) == 4
