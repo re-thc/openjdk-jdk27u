@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Harry Chan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@ import java.util.concurrent.RecursiveTask;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.DontInline;
 
 /**
  * This class implements powerful and fully optimized versions, both
@@ -77,6 +79,16 @@ final class DualPivotQuicksort {
      * Min array size to try merging of runs.
      */
     private static final int MIN_TRY_MERGE_SIZE = 4 << 10;
+
+    /**
+     * Min serial int range size to sort as a whole after run detection.
+     */
+    private static final int MIN_WHOLE_INT_SORT_SIZE = 4 << 10;
+
+    /**
+     * Max range size admitted to a single non-safepointing native sort.
+     */
+    private static final int MAX_WHOLE_INT_SORT_SIZE = 1 << 20;
 
     /**
      * Min size of the first run to continue with scanning.
@@ -234,9 +246,34 @@ final class DualPivotQuicksort {
             int depth = getDepth(parallelism, size >> 12);
             int[] b = depth == 0 ? null : new int[size];
             new Sorter(null, a, b, low, size, low, depth).invoke();
+        } else if (parallelism == 0 && size >= MIN_WHOLE_INT_SORT_SIZE
+                && size <= MAX_WHOLE_INT_SORT_SIZE) {
+            sortWholeInt(a, low, high);
         } else {
             sort(null, a, 0, low, high);
         }
+    }
+
+    /**
+     * Keeps the large-range native call out of small-sort callers.
+     */
+    @DontInline
+    private static void sortWholeInt(int[] a, int low, int high) {
+        if (!tryMergeRuns(null, a, low, high - low)) {
+            sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high,
+                    DualPivotQuicksort::sortAfterRunDetection);
+        }
+    }
+
+    /**
+     * Resumes normal int sorting when whole-range intrinsification is unavailable.
+     * Run detection can reverse descending runs even when it returns false, so
+     * do not scan them again. The sign bit skips only that initial scan and is
+     * cleared before accounting for partition depth.
+     * This entry is used only for ranges of at least MIN_WHOLE_INT_SORT_SIZE.
+     */
+    private static void sortAfterRunDetection(int[] a, int low, int high) {
+        sort(null, a, Integer.MIN_VALUE, low, high);
     }
 
     /**
@@ -277,6 +314,7 @@ final class DualPivotQuicksort {
                     && tryMergeRuns(sorter, a, low, size)) {
                 return;
             }
+            bits &= Integer.MAX_VALUE; // Clear the initial-run marker.
 
             /*
              * Switch to heap sort if execution
