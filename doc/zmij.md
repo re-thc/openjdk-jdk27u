@@ -47,10 +47,13 @@ the exponent. Positive zero leaves metadata unchanged. The metadata bridge
 depends on private vendor tables and representation, so upgrades must pass
 the production-bridge verifier.
 
-The precision factory chain is forced inline so compiled callers can optimize
-the metadata holder together with the resulting value. When native splitting
-is unavailable, positive non-tiny inputs with a holder omit the unused text
-buffer. Null holders, negative inputs and tiny subnormals keep that buffer.
+The precision factories request forced inlining in C2 and when native
+conversion is enabled in C1, so callers can optimize the metadata holder
+together with the resulting value. With native conversion disabled or
+unavailable, C1 applies its ordinary inlining budgets to these factories.
+In that Java-only route, positive non-tiny inputs with a holder omit the
+unused text buffer. Null holders, negative inputs, tiny subnormals and
+native-declined paths keep that buffer.
 
 ## Integer formatting
 
@@ -97,7 +100,9 @@ make CONF=<configuration> test TEST='test/jdk/jdk/internal/math/ToDecimal test/j
 Tests cover raw-bit round trips, shortest significands, precision flags,
 signed zero, subnormals, Latin1/UTF16 offsets and guarded output bounds across
 execution tiers, JNI, SSE2 and opt-outs. WhiteBox verifies intrinsic controls
-and the C2-only float append choice.
+and the C2-only float append choice. `TestDecimalFactoryInlining` checks
+the Java-only C1 policy, native and C2 controls, explicit inlining directives,
+compilation order and initialization behavior.
 
 `TestZmijSplitFallback` compares precision metadata with the allocating Java
 splitter and checks that a null holder preserves the original native dispatch

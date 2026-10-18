@@ -89,6 +89,8 @@ class SerializeClosure;
   template(java_lang_Long,                            "java/lang/Long")                           \
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
   template(java_lang_Void,                            "java/lang/Void")                           \
+  template(java_math_BigDecimal,                      "java/math/BigDecimal")                     \
+  template(jdk_internal_math_FormattedFPDecimal,       "jdk/internal/math/FormattedFPDecimal")     \
                                                                                                   \
   template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")     \
   template(jdk_internal_vm_vector_Float16Math,        "jdk/internal/vm/vector/Float16Math")       \
@@ -534,6 +536,9 @@ class SerializeClosure;
   template(float_int_signature,                       "(F)I")                                     \
   template(double_long_signature,                     "(D)J")                                     \
   template(double_double_signature,                   "(D)D")                                     \
+  template(double_BigDecimal_signature,               "(D)Ljava/math/BigDecimal;")                  \
+  template(double_FormattedFPDecimal_signature,        "(D)Ljdk/internal/math/FormattedFPDecimal;") \
+  template(valueForDoubleToString_name,                "valueForDoubleToString")                    \
   template(float_float_signature,                     "(F)F")                                     \
   template(int_float_signature,                       "(I)F")                                     \
   template(long_int_signature,                        "(J)I")                                     \

@@ -24,6 +24,7 @@
  *
  */
 
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/zmij.hpp"
@@ -35,6 +36,14 @@
 #define ZMIJ_FREE(ptr) os::free(ptr)
 #include "utilities/zmij/zmij-impl.hpp"
 #include "utilities/zmijMetadata.inline.hpp"
+
+bool Zmij::is_enabled() {
+#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
+  return UseZmijIntrinsics;
+#else
+  return false;
+#endif
+}
 
 Zmij::Formatter Zmij::formatter() {
 #if defined(AMD64) && !defined(ZERO)
