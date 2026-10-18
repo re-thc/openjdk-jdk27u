@@ -1,0 +1,233 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla disjoint remaining-loss controls
+on:
+  push:
+    branches: [codex/stringzilla-candidate-losses]
+    paths: [.github/workflows/stringzilla-candidate-losses.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-candidate-losses
+  cancel-in-progress: false
+env:
+  GH_TOKEN: ${{ github.token }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+
+jobs:
+  configuration:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e036e637a5aff1e2506ff82953a3fbd9fdba6a9d
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/stringzilla-performance.py
+            doc/stringzilla/native-cases.tsv
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: f7003b74572a93b774ffb9fe79fcc35a3efcdcb0
+          path: pilot
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Require all four validated image producers and prove the exact disjoint 54
+        shell: python
+        run: |
+          import py_compile, subprocess, sys
+          path = "auxiliary/.github/scripts/stringzilla-candidate-losses.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run([sys.executable, path, "proof"], check=True)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: stringzilla-candidate-losses-proof-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
+
+  measure:
+    needs: configuration
+    name: ${{ matrix.backend }}-${{ matrix.tier }} missing controls
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {backend: serial, tier: interpreter, runner: ubuntu-26.04}
+          - {backend: serial, tier: c1, runner: ubuntu-26.04}
+          - {backend: serial, tier: c2, runner: ubuntu-26.04}
+          - {backend: avx2, tier: c1, runner: ubuntu-26.04}
+          - {backend: avx2, tier: c2, runner: ubuntu-26.04}
+          - {backend: avx512, tier: c2, runner: ubuntu-26.04}
+          - {backend: neon, tier: interpreter, runner: ubuntu-26.04-arm}
+          - {backend: neon, tier: c1, runner: ubuntu-26.04-arm}
+          - {backend: neon, tier: c2, runner: ubuntu-26.04-arm}
+          - {backend: msvc, tier: c2, runner: windows-2025}
+    env:
+      BACKEND: ${{ matrix.backend }}
+      TIER: ${{ matrix.tier }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e036e637a5aff1e2506ff82953a3fbd9fdba6a9d
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: f7003b74572a93b774ffb9fe79fcc35a3efcdcb0
+          path: pilot
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Check the actual backend before image downloads or timings
+        id: physical
+        shell: python
+        run: |
+          import os, py_compile, subprocess, sys
+          path = "auxiliary/.github/scripts/stringzilla-candidate-losses.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run([sys.executable, path, "physical", "--backend", os.environ["BACKEND"],
+                          "--tier", os.environ["TIER"]], check=True)
+      - name: Install GCC 16 only for native SKY contract checks
+        if: matrix.backend == 'avx512' && steps.physical.outputs.available == 'true'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16
+          test "$(gcc-16 -dumpversion)" = 16
+      - name: Restore only validated complete pilot images and attest runtime
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, "auxiliary/.github/scripts/stringzilla-candidate-losses.py",
+              "prepare", "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"]], check=True)
+      - name: Check MSVC 14.44 toolset
+        if: runner.os == 'Windows' && steps.physical.outputs.available == 'true'
+        id: msvc
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then echo "installed=true" >> "$GITHUB_OUTPUT"; else echo "installed=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Install MSVC 14.44 only for the frozen baseline probe
+        if: runner.os == 'Windows' && steps.physical.outputs.available == 'true' && steps.msvc.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+      - name: Measure only the disjoint original enabled and disabled triplets
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, "auxiliary/.github/scripts/stringzilla-candidate-losses.py",
+              "measure", "--backend", os.environ["BACKEND"], "--tier", os.environ["TIER"]], check=True)
+      - name: Retain every raw result or zero-timing unsupported receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-candidate-losses-${{ matrix.backend }}-${{ matrix.tier }}-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+
+  collect:
+    if: ${{ !cancelled() && needs.configuration.result == 'success' }}
+    needs: [configuration, measure]
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: e036e637a5aff1e2506ff82953a3fbd9fdba6a9d
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/stringzilla-performance.py
+            doc/stringzilla/native-cases.tsv
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: f7003b74572a93b774ffb9fe79fcc35a3efcdcb0
+          path: pilot
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Reconstruct the exact 54 projections and validated image bindings
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, "auxiliary/.github/scripts/stringzilla-candidate-losses.py",
+                          "collection"], check=True)
+      - name: Strictly qualify all controls samples and higher means
+        shell: node {0}
+        run: |
+          const fs = require("fs"), crypto = require("crypto");
+          const source = fs.readFileSync("pilot/.github/scripts/stringzilla-collector.js", "utf8");
+          if (crypto.createHash("sha256").update(source).digest("hex") !==
+              "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26") throw Error("Wrong collector");
+          const collect = Function("return (" + source + ")")();
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          const expected = new Set(input.expected_physical_keys), seen = new Set(), shards = [];
+          if (expected.size !== 54 || input.entries.length !== 10) throw Error("Wrong supplement scope");
+          const table = ["| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | O/E | D/E | Higher enabled mean |",
+                         "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |"];
+          for (const entry of input.entries) {
+            const result = collect(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+              entry.manifest, entry.source, entry.base, entry.expected);
+            for (const group of result.groups) {
+              const enabled = group.controls.enabled;
+              const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+              const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+              if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate input");
+              seen.add(key);
+              const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean)
+                .map(control => control + (group.comparisons[control].intervals_overlap ? "" : "!"));
+              const cells = ["original", "enabled", "disabled"].map(control =>
+                group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+              const ratios = ["original", "disabled"].map(control => group.comparisons[control].speedup.toFixed(3));
+              table.push("| " + [entry.backend, group.tier, group.case, ...cells, ...ratios, higher.join(", ") || "-"].join(" | ") + " |");
+            }
+            shards.push(result);
+          }
+          if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete supplement");
+          fs.writeFileSync("perf-output/qualification.json", JSON.stringify({
+            source: "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d", triplets: 54, records: 162, shards,
+            forward_positive_diagnostics: input.forward_positive_diagnostics
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/QUALIFICATION.md",
+            "These 54 matched complete-image triplets are disjoint from the 568-triplet pilot. Every higher enabled mean is retained; ! marks nonoverlapping reported intervals.\n\n" +
+            table.join("\n") + "\n");
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: stringzilla-candidate-losses-qualified-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
