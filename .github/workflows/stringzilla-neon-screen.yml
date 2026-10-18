@@ -1,0 +1,59 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla isolated NEON candidate screening
+on:
+  push:
+    branches: [codex/stringzilla-neon-screen]
+    paths: [.github/workflows/stringzilla-neon-screen.yml]
+permissions:
+  contents: read
+concurrency:
+  group: stringzilla-neon-screen
+  cancel-in-progress: false
+jobs:
+  component:
+    name: Production459 and isolated candidate native controls
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 20
+    env:
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout the unchanged final production kernel
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+      - name: Checkout this isolated candidate and component harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Check auxiliary Python syntax before setup
+        shell: python
+        run: |
+          import py_compile
+          py_compile.compile("auxiliary/.github/scripts/stringzilla-neon-screen.py", doraise=True)
+      - name: Install GCC16
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16
+          gcc-16 --version
+          test "$(gcc-16 -dumpversion)" = 16
+      - name: Run both native contracts and compare isolated components
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "auxiliary/.github/scripts/stringzilla-neon-screen.py"], check=True)
+      - name: Retain all raw samples inputs compile logs and provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-neon-screen-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: component-output
+          if-no-files-found: warn
+          retention-days: 30
