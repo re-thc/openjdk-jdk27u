@@ -1,0 +1,209 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla MSVC candidate controls
+
+on:
+  push:
+    branches: [codex/stringzilla-serial-candidate]
+    paths: [.github/workflows/stringzilla-serial-candidate.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stringzilla-msvc-serial-candidate
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: msvc candidate complete image controls
+    runs-on: windows-2025
+    timeout-minutes: 360
+    env:
+      MSYS2_PATH_TYPE: minimal
+      CHERE_INVOKING: 1
+      CONFIGURE_DEV_NO_MOLD: 1
+
+    steps:
+      - name: Checkout complete candidate sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 7e5f3c5721d1213cd956c9d754d52d716a9e80e0
+          persist-credentials: false
+
+      - name: Checkout untouched original source identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+
+      - name: Checkout pinned auxiliary driver and manifest
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/stringzilla-serial-candidate.py
+            doc/stringzilla/tail-cases.tsv
+
+      - name: Restore and verify only the complete original image
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import py_compile, subprocess
+          py_compile.compile("driver/.github/scripts/stringzilla-serial-candidate.py", doraise=True)
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-serial-candidate.py", "restore"], check=True)
+
+      - name: Get MSYS2
+        uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+
+      - name: Get boot JDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: windows-x64
+
+      - name: Restore verified JTReg 8.2.1
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import hashlib, json, subprocess, zipfile
+          from pathlib import Path, PurePosixPath
+
+          endpoint = "repos/re-thc/openjdk-jdk27u/actions/artifacts/12111121678"
+          artifact = json.loads(subprocess.check_output(["gh", "api", endpoint], text=True))
+          digest = "a44a66929557be2dc1b8e257ebdff1c1268aeab9894c4a239316c2cedf27fb49"
+          assert artifact["id"] == 12111121678
+          assert artifact["name"] == "bundles-jtreg-8.2.1+1"
+          assert artifact["digest"] == "sha256:" + digest and not artifact["expired"]
+          assert artifact["workflow_run"]["id"] == 39059898881
+          assert "JTREG_VERSION=8.2.1+1" in Path("make/conf/github-actions.conf").read_text()
+          archive = Path("jtreg-bundle.zip")
+          with archive.open("wb") as output:
+              subprocess.run(["gh", "api", endpoint + "/zip"], stdout=output, check=True)
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == digest
+          with zipfile.ZipFile(archive) as bundle:
+              assert all(not PurePosixPath(name).is_absolute() and ".." not in PurePosixPath(name).parts
+                         for name in bundle.namelist())
+              bundle.extractall("jtreg/installed")
+          jar = Path("jtreg/installed/lib/jtreg.jar")
+          assert jar.is_file()
+          print("STRINGZILLA_JTREG_REUSE " + json.dumps({
+              "artifact": artifact["id"], "producer_run": 39059898881,
+              "zip_sha256": digest, "jar_sha256": hashlib.sha256(jar.read_bytes()).hexdigest()
+          }), flush=True)
+
+
+      - name: Record candidate sources and vendoring
+        shell: bash
+        run: |
+          git rev-parse HEAD > perf-output/source.txt
+          git ls-tree HEAD -- src make test bin > perf-output/runtime-trees.txt
+          python make/scripts/update-stringzilla.py --verify | tee perf-output/vendor-verification.log
+
+      - name: Check MSVC 14.44 toolset
+        id: msvc-check
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install MSVC 14.44 toolset
+        if: steps.msvc-check.outputs.installed != 'true'
+        shell: bash
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+
+      - name: Build one new complete candidate image
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          test ! -e perf-images/fork
+          bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+            --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+            --with-source-date=1792195200 --with-native-debug-symbols=none \
+            --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 \
+            --with-jmod-compress=zip-1
+          make CONF=perf JOBS=2 images
+          cp build/perf/spec.gmk perf-output/fork-spec.gmk
+          cp -a build/perf/images/jdk perf-images/fork
+          rm -rf build/perf
+
+      - name: Verify matched specs and archive the complete pair
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-serial-candidate.py", "archive"], check=True)
+
+      - name: Retain complete pair before validation and timing
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-serial-candidate-images-${{ github.sha }}
+          path: perf-image-archives
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Validate both development profiles
+        shell: bash
+        run: |
+          bash .github/scripts/check-dev-profile.sh perf-images/original perf-output/original-spec.gmk
+          bash .github/scripts/check-dev-profile.sh perf-images/fork perf-output/fork-spec.gmk
+
+      - name: Run candidate StringZilla jtreg smoke and dispatch tests
+        shell: pwsh
+        run: |
+          $jdk = (Resolve-Path perf-images/fork).Path
+          $jtreg = (Resolve-Path jtreg/installed/lib/jtreg.jar).Path
+          & "$jdk/bin/java.exe" -jar $jtreg "-jdk:$jdk" `
+            -w:perf-output/jtreg-work -r:perf-output/jtreg-report `
+            "-javaoption:-XX:ActiveProcessorCount=2" -verbose:summary `
+            test/jdk/java/lang/String/StringZillaSearch.java `
+            test/jdk/java/lang/String/StringZillaBounded.java 2>&1 |
+              Tee-Object -FilePath perf-output/jtreg.log
+          if ($LASTEXITCODE -ne 0) { throw 'StringZilla jtreg smoke failed' }
+          & "$jdk/bin/java.exe" -jar $jtreg "-jdk:$jdk" `
+            -w:perf-output/jtreg-bounds-work -r:perf-output/jtreg-bounds-report `
+            "-javaoption:-XX:ActiveProcessorCount=2" -verbose:summary `
+            test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java `
+            test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java `
+            2>&1 | Tee-Object -FilePath perf-output/jtreg-bounds.log
+          if ($LASTEXITCODE -ne 0) { throw 'StringZilla bounds and dispatch jtreg failed' }
+
+      - name: Compile and execute candidate native kernel regression tests
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-serial-candidate.py",
+                          "native-tests", "--jtreg", "jtreg/installed/lib/jtreg.jar"], check=True)
+
+      - name: Measure all existing MSVC supplemental triplets
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-serial-candidate.py", "measure"], check=True)
+
+      - name: Retain every raw result and provenance record
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-serial-candidate-results-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,99 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla serial candidate native contracts
+
+on:
+  push:
+    branches: [codex/stringzilla-serial-candidate]
+    paths: [.github/workflows/stringzilla-serial-native.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stringzilla-serial-native-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    name: ${{ matrix.backend }} production native contracts
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-26.04
+            backend: x64
+          - runner: ubuntu-26.04-arm
+            backend: arm64
+    steps:
+      - name: Checkout measured candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 7e5f3c5721d1213cd956c9d754d52d716a9e80e0
+          persist-credentials: false
+
+      - name: Install GCC 16
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16
+          test "$(gcc-16 -dumpversion)" = 16
+
+      - name: Compile and execute production native contracts
+        shell: bash
+        env:
+          ASAN_OPTIONS: abort_on_error=1:detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          mkdir -p native-validation
+          git rev-parse HEAD > native-validation/source.txt
+          gcc-16 --version > native-validation/compiler.txt
+          sha256sum src/java.base/share/native/libjava/StringZillaKernels.c \
+            test/jdk/java/lang/String/libStringZillaKernelsTest.c > native-validation/sources.sha256
+          cat > native-validation/driver.c <<'EOF'
+          #include "test/jdk/java/lang/String/libStringZillaKernelsTest.c"
+          #include <stdio.h>
+          int main(void) {
+              for (jint mask = 0; mask < 8; mask++) {
+                  requested_capabilities = mask;
+                  test_initialize();
+                  printf("requested=%d selected=%d executable=%d\n",
+                         mask, published->capabilities, can_execute(published->capabilities));
+              }
+              int failure = check_kernels();
+              if (failure != 0) {
+                  fprintf(stderr, "Native kernel check failed at line %d\n", failure);
+                  return 1;
+              }
+              puts("StringZilla production native kernel checks passed");
+              return 0;
+          }
+          EOF
+          native_compile=(gcc-16 -std=c11 -O2 -g -fno-omit-frame-pointer
+            -fsanitize=address,undefined,alignment -fno-sanitize-recover=all
+            -Wno-unknown-pragmas
+            "-I$GITHUB_WORKSPACE"
+            "-I$GITHUB_WORKSPACE/src/java.base/share/native/libjava"
+            "-I$GITHUB_WORKSPACE/src/java.base/share/native/libjava/stringzilla"
+            "-I$GITHUB_WORKSPACE/src/java.base/share/native/include"
+            "-I$GITHUB_WORKSPACE/src/java.base/unix/native/include"
+            "-I$GITHUB_WORKSPACE/src/hotspot/share/include"
+            "-I$GITHUB_WORKSPACE/src/hotspot/os/posix/include"
+            native-validation/driver.c -o native-validation/native-sanitizers)
+          printf '%q ' "${native_compile[@]}" > native-validation/compile-command.txt
+          printf '\n' >> native-validation/compile-command.txt
+          "${native_compile[@]}" 2>&1 | tee native-validation/build.log
+          native-validation/native-sanitizers 2>&1 | tee native-validation/run.log
+          git diff --exit-code -- src make test bin
+
+      - name: Retain compiler and sanitizer receipts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-serial-native-${{ matrix.backend }}-${{ github.sha }}
+          path: native-validation
+          if-no-files-found: error
+          retention-days: 30
