@@ -1,0 +1,56 @@
+name: Export only remaining saved StringZilla evidence on x64
+on:
+  push:
+    branches: [codex/stringzilla-candidate-evidence-x64]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  bindings:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      matrix: ${{ steps.proof.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - id: proof
+        name: Stop only the two pinned readers and preserve every completed export
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m py_compile .github/scripts/stringzilla-evidence-reader.py .github/scripts/stringzilla-raw-jmh.py .github/scripts/stringzilla-evidence-recovery77.py .github/scripts/stringzilla-evidence-x64-controller.py
+          python3 .github/scripts/stringzilla-evidence-x64-controller.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-candidate-evidence-migration-${{ github.sha }}
+          path: evidence-migration
+          if-no-files-found: error
+          retention-days: 30
+  export:
+    needs: bindings
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.bindings.outputs.matrix) }}
+    name: Export saved ${{ matrix.id }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - name: Authenticate archives and export only the unfinished saved group
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/stringzilla-evidence-reader.py read --index ${{ matrix.index }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-candidate-evidence-x64-${{ matrix.id }}-${{ github.sha }}
+          path: evidence-output
+          if-no-files-found: error
+          retention-days: 30
