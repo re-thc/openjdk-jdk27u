@@ -32,7 +32,7 @@ jobs:
         shell: python
         run: |
           import os, re, subprocess
-          source = "7b92b744be6947b22c5cbadd76fd5331c95e73b8"
+          source = "b2585a2293b681b891720af21bfffba03844b4e8"
           assert re.fullmatch(r"[0-9a-f]{40}", source) and source != "0" * 40
           status = subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/39073742791",
                                            "--jq", ".status"], text=True).strip()
@@ -224,7 +224,7 @@ jobs:
       parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
 
   collect:
-    if: ${{ always() && needs.configuration.result == 'success' }}
+    if: ${{ !cancelled() && needs.configuration.result == 'success' }}
     needs: [configuration, serial_pair, avx2_pair, neon_pair, msvc_pair, serial_controls, avx2_controls, neon_controls, msvc_controls, avx512_controls]
     runs-on: ubuntu-26.04
     env:
