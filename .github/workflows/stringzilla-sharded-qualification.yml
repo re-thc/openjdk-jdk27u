@@ -1,7 +1,7 @@
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Fill the single source pin only after the existing campaign has completed.
+# Qualify one pinned source using matched complete-image controls.
 name: StringZilla sharded native qualification
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   actions: read
 concurrency:
   group: stringzilla-sharded-qualification
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   configuration:
@@ -32,7 +32,7 @@ jobs:
         shell: python
         run: |
           import os, re, subprocess
-          source = "e2bb20b95a65f7c19a62f2ebeeb6d7ca4ca6a31e"  # Replace this single pin after final review.
+          source = "7b92b744be6947b22c5cbadd76fd5331c95e73b8"
           assert re.fullmatch(r"[0-9a-f]{40}", source) and source != "0" * 40
           status = subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/39073742791",
                                            "--jq", ".status"], text=True).strip()
