@@ -1,0 +1,41 @@
+name: Inspect matched StringZilla positive call graphs
+on:
+  push:
+    branches: [codex/stringzilla-candidate-positive-call-graphs]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnostics:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: msvc
+            runner: windows-2025
+          - backend: avx2
+            runner: ubuntu-26.04
+    runs-on: ${{ matrix.runner }}
+    name: Inspect ${{ matrix.backend }} positive call graphs
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - name: Reuse exact archived images and application classes for six JIT diagnostic runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKEND: ${{ matrix.backend }}
+        shell: python
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, ".github/scripts/stringzilla-candidate-positive-call-graphs.py", os.environ["BACKEND"]], check=True)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-candidate-positive-call-graphs-${{ matrix.backend }}-${{ github.sha }}
+          path: |
+            positive-call-diagnostics/*.log
+            positive-call-diagnostics/*.json
+          if-no-files-found: error
+          retention-days: 30
