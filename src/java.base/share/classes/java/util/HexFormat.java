@@ -340,7 +340,7 @@ public final class HexFormat {
             return "";
         }
         // Format efficiently if possible
-        String s = formatOptDelimiter(bytes, fromIndex, toIndex);
+        String s = formatBytes(bytes, fromIndex, toIndex);
         if (s == null) {
             long stride = prefix.length() + 2L + suffix.length() + delimiter.length();
             int capacity = checkMaxArraySize((toIndex - fromIndex) * stride - delimiter.length());
@@ -392,7 +392,7 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (length > 0) {
             try {
-                String s = formatOptDelimiter(bytes, fromIndex, toIndex);
+                String s = formatBytes(bytes, fromIndex, toIndex);
                 if (s != null) {
                     out.append(s);
                 } else {
@@ -411,6 +411,27 @@ public final class HexFormat {
             }
         }
         return out;
+    }
+
+    private boolean isPlain() {
+        // All three fields are final, non-null Strings.
+        return delimiter.isEmpty() & prefix.isEmpty() & suffix.isEmpty();
+    }
+
+    private String formatBytes(byte[] bytes, int fromIndex, int toIndex) {
+        int length = toIndex - fromIndex;
+        if (length >= HexFormatSupport.ENCODE_MIN && isPlain()) {
+            int size = checkMaxArraySize(length * 2L);
+            if (HexFormatSupport.isAvailable()) {
+                byte[] rep = new byte[size];
+                if (HexFormatSupport.encode(bytes, fromIndex, length, rep, ucase)) {
+                    return jla.uncheckedNewStringWithLatin1Bytes(rep);
+                }
+            }
+        }
+        // Keep optional dispatch out of the existing scalar formatter. This
+        // method also serves formats with a single-byte delimiter.
+        return formatOptDelimiter(bytes, fromIndex, toIndex);
     }
 
     /**
@@ -436,10 +457,6 @@ public final class HexFormat {
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[checkMaxArraySize(length * 2L)];
-            if (length >= HexFormatSupport.ENCODE_MIN &&
-                    HexFormatSupport.encode(bytes, fromIndex, length, rep, ucase)) {
-                return jla.uncheckedNewStringWithLatin1Bytes(rep);
-            }
             for (int i = 0; i < length; i++) {
                 short pair = HexDigits.digitPair(bytes[fromIndex + i], ucase);
                 int pos = i * 2;
@@ -530,7 +547,7 @@ public final class HexFormat {
 
         if (string.isEmpty())
             return EMPTY_BYTES;
-        if (delimiter.isEmpty() && prefix.isEmpty() && suffix.isEmpty())
+        if (isPlain())
             return parseNoDelimiter(string, nativeString);
 
         // avoid overflow for max length prefix or suffix

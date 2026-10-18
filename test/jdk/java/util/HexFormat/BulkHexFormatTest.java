@@ -87,6 +87,49 @@ public class BulkHexFormatTest {
         }
     }
 
+    private static void dispatchFallbacks() {
+        String text = "aB".repeat(1024);
+        // A non-String source must still use its CharSequence contract. A
+        // subrange may return a String without making the original eligible.
+        class Sequence implements CharSequence {
+            int reads, slices;
+            public int length() { return text.length(); }
+            public char charAt(int index) { reads++; return text.charAt(index); }
+            public CharSequence subSequence(int from, int to) {
+                slices++;
+                return text.substring(from, to);
+            }
+        }
+        HexFormat h = HexFormat.of();
+        Sequence seq = new Sequence();
+        require(Arrays.equals(h.parseHex(text), h.parseHex(seq)));
+        require(seq.reads > 0 && seq.slices == 0);
+        require(Arrays.equals(h.parseHex(text, 2, text.length() - 2),
+                h.parseHex(seq, 2, text.length() - 2)));
+        require(seq.slices == 1);
+        try {
+            h.parseHex(seq, -1, text.length());
+            throw new AssertionError();
+        } catch (IndexOutOfBoundsException expected) {
+            require(seq.slices == 1);
+        }
+        try {
+            h.parseHex((CharSequence)null, -1, -1);
+            throw new AssertionError();
+        } catch (NullPointerException expected) { }
+        String odd = "g" + text;
+        require(invalid(odd).equals("java.lang.IllegalArgumentException:string length not even: " + odd.length()));
+
+        byte[] bytes = h.parseHex(text);
+        for (HexFormat format : new HexFormat[]{h.withDelimiter(":"), h.withPrefix("["),
+                h.withSuffix("]"), h.withDelimiter("\u1234").withUpperCase()}) {
+            String encoded = format.formatHex(bytes);
+            require(Arrays.equals(bytes, format.parseHex(encoded)));
+            require(format.formatHex(new StringBuilder(), bytes).toString().equals(encoded));
+            require(Arrays.equals(bytes, format.parseHex("!!" + encoded + "!!", 2, encoded.length() + 2)));
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         require(args.length == 1 && (args[0].equals("true") || args[0].equals("false")));
         String expected = System.getProperty("hexsimd.expectNative");
@@ -121,6 +164,7 @@ public class BulkHexFormatTest {
         }
         invalidCodeUnits();
         invalidBoundaries(nativeDecode);
+        dispatchFallbacks();
         // Request a small platform stack to exercise bounded scratch frames.
         // The VM may round the requested size up to its platform minimum.
         Thread small = new Thread(null, () -> {

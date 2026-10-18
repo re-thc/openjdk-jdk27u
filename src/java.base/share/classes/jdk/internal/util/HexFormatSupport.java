@@ -34,9 +34,9 @@ import jdk.internal.misc.VM;
 
 /** Optional bulk conversion support. No native state is initialized during VM bootstrap. */
 public final class HexFormatSupport {
-    // Binary byte counts, selected from complete calls through the JNI region
-    // boundary, including allocation and both copies, on Linux x64. Suitability
-    // on other targets is not yet measured. Keep small inputs in Java.
+    // Provisional binary-byte cutoffs from complete-call screening on Linux
+    // x64, including allocation and both copies. They are not qualified for
+    // default enablement or other targets. Keep small inputs in Java.
     public static final int ENCODE_MIN = 1024;
     public static final int DECODE_MIN = 128;
 
