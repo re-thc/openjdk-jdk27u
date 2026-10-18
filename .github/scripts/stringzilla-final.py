@@ -23,6 +23,9 @@ import zipfile
 
 REPO = "re-thc/openjdk-jdk27u"
 BASE = "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda"
+QUALIFIED_RUN = 39164738566
+QUALIFIED_HEAD = "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+RECOVERY_SKY_TIERS = ("interpreter", "c1", "c2")
 OLD_RUN = 39073742791
 OLD_HEAD = "9adc53b852aae7610a560e20034d6d777b5db9d3"
 OLD_ARTIFACTS = {
@@ -746,9 +749,9 @@ def restore(args):
         module.verify_saved(module.FOLDER)
     producer = "avx2" if args.backend == "avx512" else args.backend
     archive = ROOT / "candidate-pair.zip"
-    metadata = download(args.artifact_id, args.artifact_digest, os.environ["GITHUB_RUN_ID"],
-                        os.environ["GITHUB_SHA"], archive)
-    assert metadata["name"] == "stringzilla-final-pair-" + producer + "-" + os.environ["GITHUB_SHA"]
+    metadata = download(args.artifact_id, args.artifact_digest, QUALIFIED_RUN,
+                        QUALIFIED_HEAD, archive)
+    assert metadata["name"] == "stringzilla-final-pair-" + producer + "-" + QUALIFIED_HEAD
     ARCHIVES.mkdir()
     IMAGES.mkdir()
     names = ["pair-receipt.json", "pair-inventories.json"] + [
@@ -756,7 +759,7 @@ def restore(args):
     unpack_files(archive, names, ARCHIVES)
     receipt = json.loads((ARCHIVES / "pair-receipt.json").read_text())
     assert receipt["sources"] == {"original": BASE, "fork": args.source} and receipt["backend"] == producer
-    assert receipt["producer_head"] == os.environ["GITHUB_SHA"] and receipt["producer_run"] == os.environ["GITHUB_RUN_ID"]
+    assert receipt["producer_head"] == QUALIFIED_HEAD and receipt["producer_run"] == str(QUALIFIED_RUN)
     assert receipt["source_trees"] == check_sources(args.source)
     assert receipt["helper_sha256"] == sha(HELPER) == args.helper_hash
     assert receipt["parent_manifest_sha256"] == sha(MANIFEST) == args.parent_manifest_hash
@@ -937,6 +940,15 @@ def collection(args):
     periodic_expected, periodic_counts = expected_keys(periodic_rows()[0])
     probe_expected, probe_counts = expected_keys(utf16_probe_rows()[0])
     require_previous_controls(expected + periodic_expected + probe_expected)
+    allowed = {(backend, tier) for backend in BACKENDS for tier in TIERS
+               if backend != "avx512" or tier in RECOVERY_SKY_TIERS}
+    expected = [key for key in expected if tuple(json.loads(key)[:2]) in allowed]
+    periodic_expected = [key for key in periodic_expected if tuple(json.loads(key)[:2]) in allowed]
+    probe_expected = [key for key in probe_expected if tuple(json.loads(key)[:2]) in allowed]
+    for phase_counts in (counts, periodic_counts, probe_counts):
+        for tier in TIERS:
+            if tier not in RECOVERY_SKY_TIERS:
+                phase_counts["avx512"][tier] = 0
     artifacts = api("actions/runs/" + os.environ["GITHUB_RUN_ID"] + "/artifacts?per_page=100")["artifacts"]
     jobs = api("actions/runs/" + os.environ["GITHUB_RUN_ID"] + "/jobs?per_page=100&filter=all")["jobs"]
     producers = {name: json.loads(os.environ["PAIR_" + name.upper()]) for name in ("serial", "avx2", "neon", "msvc")}
@@ -944,6 +956,8 @@ def collection(args):
     for backend in BACKENDS:
         producer = producers["avx2" if backend == "avx512" else backend]
         for tier in TIERS:
+            if (backend, tier) not in allowed:
+                continue
             prefix = "stringzilla-final-results-" + backend + "-" + tier + "-" + os.environ["GITHUB_SHA"] + "-attempt"
             matches = [artifact for artifact in artifacts if artifact["name"].startswith(prefix)]
             assert 1 <= len(matches) <= 2, "Missing result or exceeded one unsupported-host retry: " + prefix

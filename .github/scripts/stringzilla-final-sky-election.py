@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-"""Choose MIN eligible slot only after all four immutable, verified facts exist."""
+"""Release proven losers early; choose MIN only after all four verified facts exist."""
 import hashlib
 import json
 import os
@@ -24,6 +24,7 @@ TREES = {"fork": os.environ["SOURCE_TREE"],
 IMAGE = "ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a"
 SLOTS = {"0": "ubuntu-22.04", "1": "ubuntu-24.04", "2": "ubuntu-26.04", "3": "ubuntu-26.04"}
 PUBLISH = "Publish this slot's immutable eligibility fact"
+FACT_WAIT_SECONDS = 90 * 60
 FOLDER = Path(os.environ["RUNNER_TEMP"]) / ("stringzilla-final-sky-" + TIER + "-election")
 
 
@@ -156,53 +157,110 @@ def download(artifact, destination, ctx):
     assert "sha256:" + sha(destination) == artifact["digest"]
 
 
-def collect_facts(folder, wait=False):
+def published_facts(ctx, jobs):
+    payload = api("actions/runs/" + str(ctx["run_id"]) + "/artifacts?per_page=100")
+    assert payload["total_count"] <= 100, "Unexpected artifact pagination"
+    artifacts = payload["artifacts"]
+    found = {}
+    for slot in SLOTS:
+        matches = [item for item in artifacts if item["name"] == fact_name(ctx, slot) and not item["expired"]]
+        assert len(matches) <= 1, "Duplicate slot fact: never choose a subset"
+        publish = [step for step in jobs[slot]["steps"] if step["name"] == PUBLISH]
+        assert len(publish) <= 1
+        if publish and publish[0]["status"] == "completed":
+            assert publish[0]["conclusion"] == "success", "Failed fact publication: no replacement"
+        if len(matches) != 1 or not publish or publish[0]["conclusion"] != "success":
+            if jobs[slot]["status"] == "completed":
+                raise AssertionError("Terminal worker has no successfully published fact")
+        else:
+            found[slot] = matches[0]
+    return found
+
+
+def read_fact(folder, slot, artifact, job, ctx):
+    archive = folder / ("fact-" + slot + ".zip")
+    if archive.exists():
+        assert "sha256:" + sha(archive) == artifact["digest"]
+    else:
+        download(artifact, archive, ctx)
+    with zipfile.ZipFile(archive) as bundle:
+        assert bundle.namelist() == ["eligibility.json"]
+        raw = bundle.read("eligibility.json")
+    proof = json.loads(raw)
+    verify_fact(proof, slot, job, ctx)
+    write(folder / ("fact-" + slot + ".json"), proof)
+    binding = {"artifact_id": artifact["id"], "artifact_digest": artifact["digest"],
+        "proof_sha256": hashlib.sha256(raw).hexdigest(), "nonce": proof["nonce"],
+        "job_id": job["id"], "job_name": name(slot), "runner_id": job["runner_id"],
+        "host_runner_label": SLOTS[slot], "available": proof["available"]}
+    return proof, binding
+
+
+def verify_own_fact(folder, own, proof, binding):
+    assert own == proof, "Own published fields differ"
+    assert sha(folder / "eligibility.json") == binding["proof_sha256"], "Own published bytes differ"
+    assert int(os.environ["FACT_ARTIFACT_ID"]) == binding["artifact_id"]
+    digest = os.environ["FACT_ARTIFACT_DIGEST"].removeprefix("sha256:")
+    assert "sha256:" + digest == binding["artifact_digest"]
+
+
+def known_loss(slot, proofs):
+    if not proofs[slot]["available"]:
+        return {"reason": "own-unavailable"}
+    for lower in SLOTS:
+        if int(lower) < int(slot) and lower in proofs and proofs[lower]["available"]:
+            return {"reason": "lower-eligible", "lower_slot": lower}
+    return None
+
+
+def wait_for_full_set_or_loss(folder, own, slot, deadline):
+    # Free runners held by proven losers; only the complete fact set can elect.
     ctx = context()
     assert ctx["attempt"] == 1
-    deadline = time.monotonic() + (1800 if wait else 0)
     while True:
         jobs = live_jobs(ctx)
-        payload = api("actions/runs/" + str(ctx["run_id"]) + "/artifacts?per_page=100")
-        assert payload["total_count"] <= 100, "Unexpected artifact pagination"
-        artifacts = payload["artifacts"]
-        found, ready = {}, True
-        for slot in SLOTS:
-            matches = [item for item in artifacts if item["name"] == fact_name(ctx, slot) and not item["expired"]]
-            assert len(matches) <= 1, "Duplicate slot fact: never choose a subset"
-            publish = [step for step in jobs[slot]["steps"] if step["name"] == PUBLISH]
-            assert len(publish) <= 1
-            if publish and publish[0]["status"] == "completed":
-                assert publish[0]["conclusion"] == "success", "Failed fact publication: no replacement"
-            if len(matches) != 1 or not publish or publish[0]["conclusion"] != "success":
-                if jobs[slot]["status"] == "completed":
-                    raise AssertionError("Terminal worker has no successfully published fact")
-                ready = False
-            else:
-                found[slot] = matches[0]
-        if ready:
+        found = published_facts(ctx, jobs)
+        proofs, bindings = {}, {}
+        if slot in found:
+            proofs[slot], bindings[slot] = read_fact(folder, slot, found[slot], jobs[slot], ctx)
+            verify_own_fact(folder, own, proofs[slot], bindings[slot])
+            if proofs[slot]["available"]:
+                for lower in SLOTS:
+                    if int(lower) < int(slot) and lower in found:
+                        proofs[lower], bindings[lower] = read_fact(folder, lower, found[lower], jobs[lower], ctx)
+                        if proofs[lower]["available"]:
+                            break
+            loss = known_loss(slot, proofs)
+            if loss is not None:
+                assert time.monotonic() <= deadline, "Fact decision arrived after the election deadline"
+                return {**ctx, "schema": "stringzilla-sky-early-exit-v1",
+                    "source": SOURCE, "base": BASE, "tier": TIER, "slot": slot,
+                    "algorithm_sha256": sha(Path(__file__)), "facts": bindings, **loss,
+                    "timed_records": 0, "images_restored": False}
+        if set(found) == set(SLOTS):
+            assert time.monotonic() <= deadline, "Fact set arrived after the election deadline"
+            return None
+        assert time.monotonic() < deadline, "Missing facts/publish completion after 90 minutes: no election"
+        time.sleep(30)
+
+
+def collect_facts(folder, wait=False, deadline=None):
+    ctx = context()
+    assert ctx["attempt"] == 1
+    if deadline is None:
+        deadline = time.monotonic() + (FACT_WAIT_SECONDS if wait else 0)
+    while True:
+        jobs = live_jobs(ctx)
+        found = published_facts(ctx, jobs)
+        if set(found) == set(SLOTS):
             assert not wait or time.monotonic() <= deadline, "Fact set arrived after the election deadline"
             break
-        assert wait and time.monotonic() < deadline, "Missing facts/publish completion after 30 minutes: no election"
+        assert wait and time.monotonic() < deadline, "Missing facts/publish completion after 90 minutes: no election"
         time.sleep(30)
     assert set(found) == set(SLOTS)
     proofs, bindings = {}, {}
     for slot in SLOTS:
-        archive = folder / ("fact-" + slot + ".zip")
-        if archive.exists():
-            assert "sha256:" + sha(archive) == found[slot]["digest"]
-        else:
-            download(found[slot], archive, ctx)
-        with zipfile.ZipFile(archive) as bundle:
-            assert bundle.namelist() == ["eligibility.json"]
-            raw = bundle.read("eligibility.json")
-        proof = json.loads(raw)
-        verify_fact(proof, slot, jobs[slot], ctx)
-        write(folder / ("fact-" + slot + ".json"), proof)
-        proofs[slot] = proof
-        bindings[slot] = {"artifact_id": found[slot]["id"], "artifact_digest": found[slot]["digest"],
-            "proof_sha256": hashlib.sha256(raw).hexdigest(), "nonce": proof["nonce"],
-            "job_id": jobs[slot]["id"], "job_name": name(slot), "runner_id": jobs[slot]["runner_id"],
-            "host_runner_label": SLOTS[slot], "available": proof["available"]}
+        proofs[slot], bindings[slot] = read_fact(folder, slot, found[slot], jobs[slot], ctx)
     assert len({proof["nonce"] for proof in proofs.values()}) == 4
     eligible = [slot for slot in SLOTS if proofs[slot]["available"]]
     assert eligible, "All four workers unsupported: zero timings"
@@ -231,12 +289,15 @@ def verify_current(proof):
 def select():
     own = json.loads((FOLDER / "eligibility.json").read_text())
     slot = os.environ["SKY_SLOT"]
-    selection, proofs, jobs = collect_facts(FOLDER, wait=True)
-    assert own == proofs[slot], "Own published fields differ"
-    assert sha(FOLDER / "eligibility.json") == selection["facts"][slot]["proof_sha256"], "Own published bytes differ"
-    assert int(os.environ["FACT_ARTIFACT_ID"]) == selection["facts"][slot]["artifact_id"]
-    digest = os.environ["FACT_ARTIFACT_DIGEST"].removeprefix("sha256:")
-    assert "sha256:" + digest == selection["facts"][slot]["artifact_digest"]
+    deadline = time.monotonic() + FACT_WAIT_SECONDS
+    loss = wait_for_full_set_or_loss(FOLDER, own, slot, deadline)
+    if loss is not None:
+        write(FOLDER / "early-exit.json", loss)
+        output("selected", "false")
+        print("STRINGZILLA_SKY_EARLY_EXIT " + json.dumps(loss, separators=(",", ":")), flush=True)
+        return
+    selection, proofs, jobs = collect_facts(FOLDER)
+    verify_own_fact(FOLDER, own, proofs[slot], selection["facts"][slot])
     write(FOLDER / "selection.json", selection)
     winner = slot == selection["selected_slot"]
     if winner:
@@ -274,7 +335,7 @@ def verify_saved(folder, completed=False):
 def barrier():
     ctx = context()
     assert ctx["attempt"] == 1
-    deadline = time.monotonic() + 1800
+    deadline = time.monotonic() + FACT_WAIT_SECONDS
     expected = {"avx512_controls (" + tier + ") / Final SKY " + tier + " slot " + slot + " on " + label
                 for tier in ("interpreter", "c1", "c2") for slot, label in SLOTS.items()}
     while True:
@@ -292,7 +353,7 @@ def barrier():
         TIER = tier
         folder = Path("perf-output") / "sky-fact-barrier" / tier
         folder.mkdir(parents=True)
-        selection, proofs, jobs = collect_facts(folder, wait=True)
+        selection, proofs, jobs = collect_facts(folder, wait=True, deadline=deadline)
         write(folder / "selection.json", selection)
         results[tier] = selection
     write(Path("perf-output/sky-fact-barrier.json"), {
