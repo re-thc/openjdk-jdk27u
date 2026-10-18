@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "qualification_source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "qualification_tree": "d3de6a4fcf40e5b45b58d7e0874ed2ab34fe2e01",
+  "reviewed_pr_head": "c73d3586b13764f912c52c9f407020866f0e252c",
+  "reviewed_pr_tree": "73fb813593ef2fc25df47cd96185e4dd9c506390",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "production_trees_equal": {
+    "src": "7de52d62a1ff5ff5e6103c6d3caff7707894dddc",
+    "make": "64d6b10b1481107be1627ebf1243cbd5c163f898",
+    "bin": "a90cc9b6106f06949724750dbb6be23227ecba82"
+  },
+  "benchmark_micro_tree_equal": "2eb967ce3bafdff2024aa14e02a134449a4fb3a3",
+  "only_delta": {
+    "file": "test/jdk/java/lang/String/libStringZillaKernelsTest.c",
+    "patch": "@@ -248,7 +248,9 @@ static jint check_kernels(void) {\n     };\n     jchar dense_short_source[544], dense_short_target[136];\n     for (unsigned int n = 0; n < sizeof(dense_short_counts) / sizeof(dense_short_counts[0]); n++) {\n-        jint count = dense_short_counts[n], stride = count + 3, length = 4 * count + 9;\n+        jint count = dense_short_counts[n];\n+        CHECK(count >= 33 && count <= 128);\n+        jint stride = count + 3, length = 4 * count + 9;\n         sz_size_t source_bytes = length * sizeof(jchar), target_bytes = count * sizeof(jchar);\n         for (jint order = 0; order < 4; order++) {\n             jchar values[5];"
+  },
+  "image_claim": "Measurement images are built from qualification_source, not reviewed_pr_head. The reviewed PR adds only an explicit native test fixture range assertion; production and benchmark source trees are identical."
+}
