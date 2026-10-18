@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: stringzilla-serial-native-${{ github.sha }}
-  cancel-in-progress: false
+  group: stringzilla-serial-native-d5af36fcdff8af8bab1ad7e75bbf52578b4dd9b3
+  cancel-in-progress: true
 
 jobs:
   native:
@@ -32,7 +32,7 @@ jobs:
       - name: Checkout measured candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 7e5f3c5721d1213cd956c9d754d52d716a9e80e0
+          ref: 06e6e18159b599730016fec743a3e5ac83933521
           persist-credentials: false
 
       - name: Install GCC 16

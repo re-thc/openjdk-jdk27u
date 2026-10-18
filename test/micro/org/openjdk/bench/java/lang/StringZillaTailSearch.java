@@ -51,6 +51,8 @@ public class StringZillaTailSearch {
         }
         char repeated;
         int mismatch = -1;
+        int period = 0;
+        char marker = 0;
         switch (shape) {
             case "LATIN_PREFIX_MISS":
                 if (needleLength < 257) throw new IllegalArgumentException("Needle is too short");
@@ -65,6 +67,18 @@ public class StringZillaTailSearch {
             case "UTF16_UNIFORM_END":
                 repeated = '\u0101';
                 break;
+            case "LATIN_PERIOD2_MISS":
+            case "LATIN_PERIOD3_MISS":
+                repeated = 'a';
+                period = shape.equals("LATIN_PERIOD2_MISS") ? 2 : 3;
+                marker = 'c';
+                break;
+            case "UTF16_PERIOD2_MISS":
+            case "UTF16_PERIOD3_MISS":
+                repeated = '\u0401';
+                period = shape.equals("UTF16_PERIOD2_MISS") ? 2 : 3;
+                marker = '\u0501';
+                break;
             default:
                 throw new IllegalArgumentException("Unknown shape: " + shape);
         }
@@ -72,7 +86,22 @@ public class StringZillaTailSearch {
         char[] target = new char[needleLength];
         Arrays.fill(haystack, repeated);
         Arrays.fill(target, repeated);
-        if (mismatch >= 0) target[mismatch]++;
+        if (period != 0) {
+            mismatch = needleLength - (period == 2 ? 3 : 4);
+            int unit = repeated > 0xff ? 2 : 1;
+            if ((long)needleLength * unit <= 256 || mismatch <= needleLength / 2) {
+                throw new IllegalArgumentException("Periodic needle is too short");
+            }
+            for (int i = 0; i < haystack.length; i++) {
+                haystack[i] = i % period == period - 1 ? (char)(repeated + 1) : repeated;
+            }
+            for (int i = 0; i < target.length; i++) {
+                target[i] = i % period == period - 1 ? (char)(repeated + 1) : repeated;
+            }
+            target[mismatch] = marker;
+        } else if (mismatch >= 0) {
+            target[mismatch]++;
+        }
         value = new String(haystack);
         needle = new String(target);
         int first = mismatch >= 0 ? -1 : 0;
