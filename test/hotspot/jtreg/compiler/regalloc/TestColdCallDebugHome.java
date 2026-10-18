@@ -58,6 +58,21 @@ public class TestColdCallDebugHome {
     private static int gcEvents, deoptEvents, trapEvents;
     private static volatile long sink;
 
+    private static int bootstrapC2(int value) {
+        return value + 1;
+    }
+
+    private static void initializeC2() throws Exception {
+        // C2 initializes on a compiler thread and checks UseCompiler while
+        // generating its runtime stubs. Complete a blocking level-4 compile
+        // before temporarily disabling compilation for interpreted profiling.
+        Method bootstrap = TestColdCallDebugHome.class.getDeclaredMethod("bootstrapC2", int.class);
+        if (!wb.enqueueMethodForCompilation(bootstrap, 4)
+                || wb.getMethodCompilationLevel(bootstrap) != 4 || bootstrapC2(41) != 42) {
+            throw new AssertionError("Missing normal C2 bootstrap compilation");
+        }
+    }
+
     private static void helperReturning(long value) {
         sink ^= value;
         int requested = action;
@@ -178,6 +193,7 @@ public class TestColdCallDebugHome {
             for (int i = 0; i < array.length; i++) array[i] = (byte) random.nextInt();
         }
         for (int i = 0; i < values.length; i++) values[i] = random.nextLong();
+        initializeC2();
         wb.setBooleanVMFlag("UseCompiler", false);
         wb.markMethodProfiled(target);
         long[] expected = new long[64];
@@ -231,6 +247,7 @@ public class TestColdCallDebugHome {
                 "-XX:+UseG1GC", "-Xms128m", "-Xmx128m",
                 "-XX:" + (framePointer ? "+" : "-") + "PreserveFramePointer",
                 "-XX:" + (compressedOops ? "+" : "-") + "UseCompressedOops",
+                "-XX:CompileCommand=compileonly,compiler.regalloc.TestColdCallDebugHome::bootstrapC2",
                 "-XX:CompileCommand=compileonly,compiler.regalloc.TestColdCallDebugHome::testDebugHomes",
                 "-XX:CompileCommand=dontinline,compiler.regalloc.TestColdCallDebugHome::helper*",
                 TestColdCallDebugHome.class.getName(), "child", Boolean.toString(Boolean.TRUE.equals(enabled))));
