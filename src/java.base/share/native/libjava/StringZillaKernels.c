@@ -215,21 +215,17 @@ static sz_cptr_t rfind_serial_long(sz_cptr_t src, sz_size_t src_bytes,
         candidates = candidate - src;
         if (utf16 && (candidates & 1) != 0) continue;
         if (matches_serial_candidate(candidate, tgt, tgt_bytes)) return candidate;
-        if (!selected && candidates != 0) {
-            if (utf16) {
-                // Compare code units as byte pairs, independent of endianness.
-                for (sz_size_t i = 2; i < tgt_bytes; i += 2) {
-                    if (tgt[i] != tgt[0] || tgt[i + 1] != tgt[1]) {
-                        pivot = tgt[i] != tgt[0] ? i : i + 1;
-                        break;
-                    }
-                }
-            } else {
-                for (sz_size_t i = 1; i < tgt_bytes; i++) {
-                    if (tgt[i] != tgt[0]) {
-                        pivot = i;
-                        break;
-                    }
+        if (selected) {
+            // Bound failed verifications when the selected byte is common.
+            return candidates == 0 ? NULL
+                    : sz_rfind_serial(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
+        }
+        if (candidates != 0) {
+            // The candidate is unequal: choose a byte that rejected this hit.
+            for (sz_size_t i = 0; i < tgt_bytes; i++) {
+                if (candidate[i] != tgt[i]) {
+                    pivot = i;
+                    break;
                 }
             }
             selected = JNI_TRUE;

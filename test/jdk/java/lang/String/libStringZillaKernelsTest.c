@@ -369,6 +369,63 @@ static jint check_kernels(void) {
             }
         }
 
+        // Common periodic pivots must retain misses and earlier matches when
+        // the bounded serial adapter falls back to the upstream suffix search.
+        const jint periodic_counts[] = {512, 513};
+        const jint periodic_lengths[] = {4096, 4095};
+        const jint periodic_periods[] = {2, 3};
+        char periodic_source[4104], periodic_target[520];
+        for (unsigned int n = 0; n < sizeof(periodic_counts) / sizeof(periodic_counts[0]); n++) {
+            jint count = periodic_counts[n], length = periodic_lengths[n];
+            jint period = periodic_periods[n], span = length - count;
+            for (jint offset = 0; offset < 8; offset++) {
+                char* text = periodic_source + offset;
+                char* target = periodic_target + ((offset + 3) & 7);
+                for (jint i = 0; i < count; i++) target[i] = i % period == period - 1 ? 'b' : 'a';
+                target[509] = 'c';
+                for (jint i = 0; i < length; i++) text[i] = i % period == period - 1 ? 'b' : 'a';
+                CHECK(kernels->rfindLatin1(text, length, target, count) == -1);
+                memcpy(text, target, count);
+                CHECK(kernels->rfindLatin1(text, length, target, count) == 0);
+                memcpy(text + span, target, count);
+                CHECK(kernels->rfindLatin1(text, length, target, count) == span);
+            }
+        }
+
+        // Swapping the code-unit bytes exercises either byte as the selected
+        // contrast and creates odd byte candidates sharing the common values.
+        const jint periodic_utf16_counts[] = {256, 258};
+        const jint periodic_utf16_lengths[] = {2048, 2049};
+        const jchar periodic_units[][3] = {{0x0401, 0x0104, 0x0204},
+                                           {0x0104, 0x0401, 0x0402}};
+        jchar periodic_utf16_source[2064], periodic_utf16_target[272];
+        for (unsigned int n = 0; n < sizeof(periodic_utf16_counts) / sizeof(periodic_utf16_counts[0]); n++) {
+            jint count = periodic_utf16_counts[n], length = periodic_utf16_lengths[n];
+            jint period = periodic_periods[n], span = length - count;
+            jint contrast = count - (period == 2 ? 3 : 4);
+            for (unsigned int order = 0; order < sizeof(periodic_units) / sizeof(periodic_units[0]); order++) {
+                for (jint offset = 0; offset < 8; offset++) {
+                    jchar* text = periodic_utf16_source + offset;
+                    jchar* target = periodic_utf16_target + ((offset + 3) & 7);
+                    for (jint i = 0; i < count; i++) {
+                        target[i] = periodic_units[order][i % period == period - 1 ? 1 : 0];
+                    }
+                    target[contrast] = periodic_units[order][2];
+                    for (jint i = 0; i < length; i++) {
+                        text[i] = periodic_units[order][i % period == period - 1 ? 1 : 0];
+                    }
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, count * 2) == -1);
+                    memcpy(text, target, count * sizeof(jchar));
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, count * 2) == 0);
+                    memcpy(text + span, target, count * sizeof(jchar));
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, count * 2) == span * 2);
+                }
+            }
+        }
+
         // Long-needle verification must accept every byte-array alignment.
         sz_align_(64) char unaligned_source[576];
         sz_align_(64) char unaligned_target[320];
