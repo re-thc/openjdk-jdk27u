@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1742,6 +1743,7 @@ class VectorMaskCmpNode : public VectorNode {
   virtual bool cmp( const Node &n ) const {
     return VectorNode::cmp(n) && _predicate == ((VectorMaskCmpNode&)n)._predicate;
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   bool predicate_can_be_negated();
   BoolTest::mask get_predicate() { return _predicate; }
 #ifndef PRODUCT

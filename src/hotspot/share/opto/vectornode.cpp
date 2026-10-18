@@ -2753,6 +2753,43 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   return redundant_logical_identity(this);
 }
 
+Node* VectorMaskCmpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating-point self comparisons depend on NaNs. Predicated comparisons
+  // must also preserve the result for inactive lanes.
+  const TypeVect* input_type = in(1)->bottom_type()->isa_vect();
+  if (!is_predicated_vector() && in(1) == in(2) && input_type != nullptr &&
+      is_integral_type(input_type->element_basic_type())) {
+    int value;
+    switch (_predicate) {
+      case BoolTest::eq:
+      case BoolTest::le:
+      case BoolTest::ge:
+      case BoolTest::ule:
+      case BoolTest::uge:
+        value = -1;
+        break;
+      case BoolTest::ne:
+      case BoolTest::lt:
+      case BoolTest::gt:
+      case BoolTest::ult:
+      case BoolTest::ugt:
+        value = 0;
+        break;
+      default:
+        return VectorNode::Ideal(phase, can_reshape);
+    }
+    BasicType bt = vect_type()->element_basic_type();
+    Node* scalar;
+    if (bt == T_LONG) {
+      scalar = phase->longcon(value);
+    } else {
+      scalar = phase->intcon(value);
+    }
+    return VectorNode::scalar2vector(scalar, length(), bt, vect_type()->isa_pvectmask() != nullptr);
+  }
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
 // Returns whether (XorV (VectorMaskCmp) -1) can be optimized by negating the
 // comparison operation.
 bool VectorMaskCmpNode::predicate_can_be_negated() {
@@ -2870,6 +2907,14 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   // (VectorBlend X X MASK) => X
   if (in(1) == in(2)) {
     return in(1);
+  }
+  if (!is_predicated_vector()) {
+    if (VectorNode::is_all_zeros_vector(in(3))) {
+      return in(1);
+    }
+    if (VectorNode::is_all_ones_vector(in(3))) {
+      return in(2);
+    }
   }
   return this;
 }
