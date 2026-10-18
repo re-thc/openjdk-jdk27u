@@ -1197,8 +1197,9 @@ final class StringUTF16 {
 
         if (tgtCount > 128 && fromIndex < 8 && StringZilla.ENABLED
                 && StringZilla.compilerTier() != 0) {
-            if (StringZilla.MSVC_SERIAL && fromIndex <= 1
-                    && StringZilla.compilerTier() == StringZilla.C2) {
+            if (fromIndex <= 1
+                    && ((StringZilla.MSVC_SERIAL && StringZilla.compilerTier() == StringZilla.C2)
+                        || !StringZilla.useReverseUTF16(fromIndex + tgtCount, tgtCount))) {
                 return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             int last = tgtCount - 1;
