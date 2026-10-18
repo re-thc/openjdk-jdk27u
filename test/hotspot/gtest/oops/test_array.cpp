@@ -28,8 +28,10 @@
 #include "nmt/memTracker.hpp"
 #include "sanitizers/address.hpp"
 
+#include <string>
+
 template <typename T>
-static void check_c_heap_array(int length, T value) {
+static void check_c_heap_array(const char* kind, int length, T value) {
   Array<T>* array = MetadataFactory::new_array_from_c_heap<T>(length, mtClassShared);
   ASSERT_NE(nullptr, array);
 
@@ -41,6 +43,9 @@ static void check_c_heap_array(int length, T value) {
   const size_t requested_size = header->size();
   const MemTag allocation_tag = header->mem_tag();
   ASAN_POISON_MEMORY_REGION(header, sizeof(MallocHeader));
+  ::testing::Test::RecordProperty(std::string(kind) + "_length_" +
+                                 std::to_string(length) + "_requested_bytes",
+                                 static_cast<int>(requested_size));
   EXPECT_EQ(requested_size, size_t(Array<T>::size(length)) * BytesPerWord);
   EXPECT_EQ(allocation_tag, mtClassShared);
   EXPECT_EQ(array->length(), length);
@@ -62,12 +67,14 @@ TEST_VM(Array, c_heap_allocation_size) {
     GTEST_SKIP() << "Requires -XX:NativeMemoryTracking=summary or detail";
   }
 
+  ::testing::Test::RecordProperty("bytes_per_word", BytesPerWord);
+
   int pointee = 0;
   const int lengths[] = {0, 1, 7, 1000};
   for (int length : lengths) {
     SCOPED_TRACE(length);
-    check_c_heap_array<u1>(length, 0xa5);
-    check_c_heap_array<u4>(length, 0xabcdef);
-    check_c_heap_array<void*>(length, &pointee);
+    check_c_heap_array<u1>("u1", length, 0xa5);
+    check_c_heap_array<u4>("u4", length, 0xabcdef);
+    check_c_heap_array<void*>("pointer", length, &pointee);
   }
 }
