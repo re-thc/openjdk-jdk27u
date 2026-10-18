@@ -69,7 +69,8 @@ public class SymbolRefcount {
     }
 
     public static void main(String[] args) throws Exception {
-        testDuplicateNames();
+        testDuplicateNames(0);
+        testDuplicateNames(8192);
         testParsingLimitsAndErrors();
         testConcurrentNames();
     }
@@ -85,7 +86,7 @@ public class SymbolRefcount {
         int references = wb.getSymbolRefcount(retained);
         Asserts.assertEquals(references, before + 1);
         for (int error = 1; error <= 4; error++) {
-            byte[] malformed = parsingClass(300, error);
+            byte[] malformed = parsingClass(65535, error);
             try {
                 new Loader().define("ParsingLimits", malformed);
                 throw new AssertionError("Accepted malformed class, case " + error);
@@ -142,7 +143,7 @@ public class SymbolRefcount {
     }
 
     // A class file with two Utf8 entries of the same new name, used as the names of two fields.
-    static void testDuplicateNames() throws Exception {
+    static void testDuplicateNames(int padding) throws Exception {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(bytes);
         out.writeInt(0xCAFEBABE);
@@ -151,24 +152,31 @@ public class SymbolRefcount {
         String duplicate = "batchedInterningDuplicate" + System.nanoTime();
         String[] utf8 = { "DuplicateNames", "java/lang/Object", duplicate,
                           duplicate, "I", "J" };
-        out.writeShort(1 + utf8.length + 2);
-        for (String s : utf8) {
-            out.writeByte(1);  // CONSTANT_Utf8, at 1 to 6
-            out.writeUTF(s);
+        out.writeShort(1 + utf8.length + 2 + padding);
+        for (int i = 0; i < utf8.length; i++) {
+            out.writeByte(1);  // CONSTANT_Utf8
+            out.writeUTF(utf8[i]);
+            if (i == 2) {
+                // Separate the duplicate names across batches in a large pool.
+                for (int j = 0; j < padding; j++) {
+                    out.writeByte(1);
+                    out.writeUTF("unusedPadding");
+                }
+            }
         }
-        out.writeByte(7);      // CONSTANT_Class #7
+        out.writeByte(7);      // CONSTANT_Class
         out.writeShort(1);
-        out.writeByte(7);      // CONSTANT_Class #8
+        out.writeByte(7);      // CONSTANT_Class
         out.writeShort(2);
         out.writeShort(0x0021);  // ACC_PUBLIC | ACC_SUPER
-        out.writeShort(7);
-        out.writeShort(8);
+        out.writeShort(7 + padding);
+        out.writeShort(8 + padding);
         out.writeShort(0);     // interfaces
         out.writeShort(2);     // fields
         for (int i = 0; i < 2; i++) {
             out.writeShort(0x0009);  // ACC_PUBLIC | ACC_STATIC
-            out.writeShort(3 + i);
-            out.writeShort(5 + i);
+            out.writeShort(i == 0 ? 3 : 4 + padding);
+            out.writeShort(5 + i + padding);
             out.writeShort(0);
         }
         out.writeShort(0);     // methods
