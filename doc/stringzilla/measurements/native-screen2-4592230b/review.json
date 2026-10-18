@@ -1,0 +1,107 @@
+{
+  "scope": "Second native component screen; production459 baseline; no original-Java/JMH/whole-JDK claim",
+  "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "head": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea",
+  "run": 39143174053,
+  "executed_backends": [
+    "avx2",
+    "neon",
+    "serial"
+  ],
+  "comparisons": 1323,
+  "raw_samples": 39690,
+  "fixtures_per_variant": 149,
+  "variants": 3,
+  "publications": {
+    "avx2": "3094fd02f47e3dcc71a7106fb47fbe6913c24776",
+    "neon": "cfe6c15e1e2d24dfc25b1808b46b8a69279c7626",
+    "serial": "d9afc83f13b5219761de084609485e9a858966e0"
+  },
+  "unsupported": {
+    "backend": "avx512",
+    "timed_records": 0,
+    "receipt": "72d89aa3e38b96ba2eee5342f52ed97fe99d2d81",
+    "log": "08b7776048a2cce2886aa3272da637751f81603e"
+  },
+  "counts": {
+    "avx2": {
+      "long": {
+        "comparisons": 147,
+        "higher_means": 68,
+        "over1percent": 40,
+        "over5percent": 11
+      },
+      "short": {
+        "comparisons": 147,
+        "higher_means": 67,
+        "over1percent": 5,
+        "over5percent": 1
+      },
+      "combined": {
+        "comparisons": 147,
+        "higher_means": 66,
+        "over1percent": 36,
+        "over5percent": 13
+      }
+    },
+    "neon": {
+      "long": {
+        "comparisons": 147,
+        "higher_means": 73,
+        "over1percent": 22,
+        "over5percent": 1
+      },
+      "short": {
+        "comparisons": 147,
+        "higher_means": 70,
+        "over1percent": 32,
+        "over5percent": 1
+      },
+      "combined": {
+        "comparisons": 147,
+        "higher_means": 64,
+        "over1percent": 40,
+        "over5percent": 1
+      }
+    },
+    "serial": {
+      "long": {
+        "comparisons": 147,
+        "higher_means": 87,
+        "over1percent": 62,
+        "over5percent": 24
+      },
+      "short": {
+        "comparisons": 147,
+        "higher_means": 49,
+        "over1percent": 4,
+        "over5percent": 0
+      },
+      "combined": {
+        "comparisons": 147,
+        "higher_means": 86,
+        "over1percent": 59,
+        "over5percent": 18
+      }
+    }
+  },
+  "actual_assembly": {
+    "x64": {
+      "run": 39144258390,
+      "head": "257b302a3a4538f973bb038c083b1ef98eb54dac",
+      "job": 117724766611,
+      "selected_verified_latin_bodies": "dc71260fbb5aefc34fa7551a720f1e59810236b1"
+    },
+    "neon": {
+      "run": 39144830969,
+      "head": "3f2afd25c47633c7109881c02f65f71ecc768479",
+      "job": 117726445034,
+      "selected_verified_filter_bodies": "427e27afb15bfa40970504d6f8b001a09f89bb70"
+    }
+  },
+  "decision": "Do not promote the second-screen combined candidate wholesale. Await actual whole-JDK O/E/D data for the subsequent 7878 boundary candidate. All component losses remain visible.",
+  "confirmed_codegen": {
+    "x64": "Generic UTF replacement removes old helper caller; Latin old helper becomes inlined. Latin leaf1190→2711 disassemblylines, stackframe0xe0→0x180, static stack-store instructions33→85. Outer callback ABI remains unchanged.",
+    "neon": "Shortlatefilter eagerly loads tgt[count-2], increasesframe0xa0→0xb0/registersaves, changes zero-mask edge fromfallthrough to takenbranch. Sourceplacement alone is not proof of cycle attribution."
+  }
+}

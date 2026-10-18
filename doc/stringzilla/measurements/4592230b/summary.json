@@ -1,0 +1,69 @@
+{
+  "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "main": {
+    "qualified_shards": 13,
+    "expected_shards": 15,
+    "qualified_triplets": 1386,
+    "expected_triplets": 1635,
+    "records": 4158,
+    "raw_samples": 41580,
+    "distinct_inputs": 219,
+    "manifest_rows": 249,
+    "missing_backend_tiers": [
+      "avx512:interpreter",
+      "avx512:c1"
+    ],
+    "backend_summary": [
+      {
+        "backend": "serial",
+        "triplets": 253,
+        "records": 759,
+        "higher_than_original": 66,
+        "higher_than_disabled": 71,
+        "higher_nonoverlapping_original": 29,
+        "higher_nonoverlapping_disabled": 32
+      },
+      {
+        "backend": "avx2",
+        "triplets": 367,
+        "records": 1101,
+        "higher_than_original": 65,
+        "higher_than_disabled": 55,
+        "higher_nonoverlapping_original": 18,
+        "higher_nonoverlapping_disabled": 11
+      },
+      {
+        "backend": "avx512",
+        "triplets": 118,
+        "records": 354,
+        "higher_than_original": 31,
+        "higher_than_disabled": 25,
+        "higher_nonoverlapping_original": 14,
+        "higher_nonoverlapping_disabled": 4
+      },
+      {
+        "backend": "neon",
+        "triplets": 332,
+        "records": 996,
+        "higher_than_original": 70,
+        "higher_than_disabled": 73,
+        "higher_nonoverlapping_original": 37,
+        "higher_nonoverlapping_disabled": 35
+      },
+      {
+        "backend": "msvc",
+        "triplets": 316,
+        "records": 948,
+        "higher_than_original": 72,
+        "higher_than_disabled": 75,
+        "higher_nonoverlapping_original": 9,
+        "higher_nonoverlapping_disabled": 18
+      }
+    ]
+  },
+  "all_higher_means_retained": true,
+  "whole_images": true,
+  "patched_classes": false,
+  "subsequent_candidate_not_qualified": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d"
+}

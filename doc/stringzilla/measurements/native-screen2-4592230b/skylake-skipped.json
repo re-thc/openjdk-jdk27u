@@ -1,0 +1,176 @@
+{
+  "scope": "Unsupported native SKY host; zero timings and no candidate qualification",
+  "job": {
+    "id": 117721581106,
+    "name": "Native avx512 baseline459 and changed candidate controls",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 39143174053,
+    "logs_url": null,
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Checkout unchanged production kernel and vendored library",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Checkout isolated candidates and unchanged fixture definitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Check auxiliary Python syntax before setup",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Install GCC16 and artifact inspection tools",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Extract old ARM assembly then validate and measure changed native candidates",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Retain every raw sample input assembly and validation receipt",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Post Checkout isolated candidates and unchanged fixture definitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 13
+      },
+      {
+        "name": "Post Checkout unchanged production kernel and vendored library",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 14
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15
+      }
+    ]
+  },
+  "production_source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "auxiliary_head": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea",
+  "log_sha256": "8bd4da51f5a2978177ca4ba41b8c0b694dc5ac62d90eb69a2dc59bb3eb38fb95",
+  "provenance": {
+    "production_source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+    "candidate_status": "unpromoted-isolated-native-copy",
+    "auxiliary_head": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea",
+    "backend": "avx512",
+    "expected_capabilities": 2,
+    "input_blobs": {
+      "baseline": {
+        "kernel_blob": "39144674b48777a00a41cf1456cd253a41fca2c2",
+        "kernel_sha256": "e6511e32540530e2086bec93bd66cce096f5f3226ba2d71be8cdfc7d5d709117",
+        "tests_blob": "285615e7e6b50123d850c4fd141bd4aff52955ac",
+        "tests_sha256": "358174761f88b1a6fad74ac99714935af9191722bc75d52add77f8b09d52d4ed"
+      },
+      "long": {
+        "kernel_blob": "d14881913b31e421fc8f090e33790550b5974b48",
+        "kernel_sha256": "f2d15c1861e76e76f08fab8009f2720017a113c566a2d3147de73c6214664536",
+        "tests_blob": "14b07efccebdabf864bd3c558ca5bb7077331a41",
+        "tests_sha256": "844241dd646dd35513da4eb626e5926afbb950d61b255d6333c9f88bd30def23"
+      },
+      "short": {
+        "kernel_blob": "2b12a3e8f302433c77a490c7386a1c2d89297350",
+        "kernel_sha256": "58f571e4dffb3b7263dee05354516678682eefaa6b5986ab758d2dcf564b3c8f",
+        "tests_blob": "bf2d0b1c38544b6ef1991d3b4d764d80a3d70508",
+        "tests_sha256": "a33758de63b6c8a8ae4302289233d66d08e5d6ab670bbe60201fb82945f8e18f"
+      },
+      "combined": {
+        "kernel_blob": "3aa9f9988f14f4dc8bf948230578624721da7687",
+        "kernel_sha256": "60a38056f9fd4732a7135d0c947c260f5ecb48acf26e3ecda9bfc786831eb858",
+        "tests_blob": "a562967a00e1728e4959b61121f99fa0b83f674d",
+        "tests_sha256": "50d7d560eb0cecf1725df812d9e5a2201eb30fa921faf4cd84c7474e40e80ed0"
+      }
+    },
+    "compiler": "gcc-16 (Ubuntu 16-20260322-1ubuntu1) 16.0.1 20260322 (experimental) [trunk r16-8246-g569ace1fa50]\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "compiler_fullversion": "16.0.1",
+    "historical_compiler_package": "16-20260322-1ubuntu1",
+    "matches_historical_compiler_package": true,
+    "machine": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+    "cpuinfo": "processor\t: 0\nvendor_id\t: AuthenticAMD\ncpu family\t: 25\nmodel\t\t: 1\nmodel name\t: AMD EPYC 7763 64-Core Processor\nstepping\t: 1\nmicrocode\t: 0xffffffff\ncpu MHz\t\t: 3244.128\ncache size\t: 512 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 0\ncpu cores\t: 2\napicid\t\t: 0\ninitial apicid\t: 0\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 13\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm\nbugs\t\t: sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user tsa\nbogomips\t: 4890.85\nTLB size\t: 2560 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 1\nvendor_id\t: AuthenticAMD\ncpu family\t: 25\nmodel\t\t: 1\nmodel name\t: AMD EPYC 7763 64-Core Processor\nstepping\t: 1\nmicrocode\t: 0xffffffff\ncpu MHz\t\t: 3245.409\ncache size\t: 512 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 0\ncpu cores\t: 2\napicid\t\t: 1\ninitial apicid\t: 1\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 13\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm\nbugs\t\t: sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user tsa\nbogomips\t: 4890.85\nTLB size\t: 2560 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 2\nvendor_id\t: AuthenticAMD\ncpu family\t: 25\nmodel\t\t: 1\nmodel name\t: AMD EPYC 7763 64-Core Processor\nstepping\t: 1\nmicrocode\t: 0xffffffff\ncpu MHz\t\t: 3239.912\ncache size\t: 512 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 1\ncpu cores\t: 2\napicid\t\t: 2\ninitial apicid\t: 2\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 13\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm\nbugs\t\t: sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user tsa\nbogomips\t: 4890.85\nTLB size\t: 2560 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\nprocessor\t: 3\nvendor_id\t: AuthenticAMD\ncpu family\t: 25\nmodel\t\t: 1\nmodel name\t: AMD EPYC 7763 64-Core Processor\nstepping\t: 1\nmicrocode\t: 0xffffffff\ncpu MHz\t\t: 3243.213\ncache size\t: 512 KB\nphysical id\t: 0\nsiblings\t: 4\ncore id\t\t: 1\ncpu cores\t: 2\napicid\t\t: 3\ninitial apicid\t: 3\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 13\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves user_shstk clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload umip vaes vpclmulqdq rdpid fsrm\nbugs\t\t: sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user tsa\nbogomips\t: 4890.85\nTLB size\t: 2560 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management:\n\n",
+    "hwcap": null,
+    "timing_scope": "Candidate screening: native component calls only; no JVM, Java dispatch, JMH or original-Java comparison",
+    "input_scope_labels": "Potential adapter input ranges, not proof a helper executed; equality-only single-candidate ranges are excluded.",
+    "header_generation": {
+      "template_sha256": "dd86648102a3f1b3fb344948398734606a8fe0b0f1b91308d90e247d49b2a847",
+      "major": 71,
+      "minor": 0
+    },
+    "harness_sha256": "b5cd930ef46078b444506bd0e41762e5d160dc36f1522cfddaac8edb778cfdde",
+    "runner_sha256": "5a1d2b9e37d3724fccab62633a01a086929217f83deb7a066530b8ed6c331726",
+    "fixture_input_map_sha256": "27c6004491c0120db2c0ca94a23a034a760428ad0b5763b53e8c7f53b3738a9f",
+    "flags": [
+      "gcc-16",
+      "-std=c11",
+      "-O3",
+      "-march=x86-64-v3",
+      "-DSZ_USE_SVE=0",
+      "-fno-lto",
+      "-fno-omit-frame-pointer",
+      "-Wall",
+      "-Wextra",
+      "-Wno-unknown-pragmas",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include",
+      "-I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include"
+    ],
+    "source_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree d77e74232ae110e28c55ad591921085b7c961b24\tsrc\n040000 tree 896828b2284a10d89b27abe400dd698973da28e7\ttest",
+    "builds": {
+      "cpu_probe": {
+        "command": [
+          "gcc-16",
+          "-std=c11",
+          "-O2",
+          "-march=x86-64",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/cpu-probe.c",
+          "-o",
+          "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/component-output/cpu-probe"
+        ],
+        "log": "cpu-probe-build.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "native_contracts": {},
+    "physical_cpu": {
+      "v3": 1,
+      "skylake": 0
+    },
+    "cpu_probe_sha256": {
+      "source": "5e6595363a73f46f7d7e82244dce0f85bdf316d0d092eaf720bf0e2711478312",
+      "binary": "1f6dd8126068d21cedd3d85a375541e9fafa711c8e0b7af6ce80de76cb90c379"
+    },
+    "unsupported": {
+      "available": false,
+      "timed_records": 0,
+      "reason": "Required native architecture or ISA absent"
+    }
+  }
+}

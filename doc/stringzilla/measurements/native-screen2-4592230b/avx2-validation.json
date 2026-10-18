@@ -1,0 +1,132 @@
+{
+  "scope": "component-only; unpromoted native candidates; not JMH or original-Java controls",
+  "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "auxiliary_head": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea",
+  "backend": "avx2",
+  "job": {
+    "id": 117721580809,
+    "name": "Native avx2 baseline459 and changed candidate controls",
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 39143174053,
+    "logs_url": null,
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1
+      },
+      {
+        "name": "Checkout unchanged production kernel and vendored library",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2
+      },
+      {
+        "name": "Checkout isolated candidates and unchanged fixture definitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3
+      },
+      {
+        "name": "Check auxiliary Python syntax before setup",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4
+      },
+      {
+        "name": "Install GCC16 and artifact inspection tools",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5
+      },
+      {
+        "name": "Extract old ARM assembly then validate and measure changed native candidates",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6
+      },
+      {
+        "name": "Retain every raw sample input assembly and validation receipt",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7
+      },
+      {
+        "name": "Post Checkout isolated candidates and unchanged fixture definitions",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 13
+      },
+      {
+        "name": "Post Checkout unchanged production kernel and vendored library",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 14
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15
+      }
+    ]
+  },
+  "artifact": {
+    "id": 12141859072,
+    "name": "stringzilla-native-screen2-avx2-8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea-attempt1",
+    "size_in_bytes": 4551348,
+    "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12141859072",
+    "archive_download_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12141859072/zip",
+    "expired": false,
+    "created_at": "2026-10-18T16:09:46Z",
+    "expires_at": "2026-11-17T16:09:43Z",
+    "updated_at": "2026-10-18T16:09:46Z",
+    "digest": "sha256:a13199df3095e4bf80fa0d9b5665d97b9b662b6cad5ed947b6678dee9df331b9",
+    "workflow_run": {
+      "id": 39143174053,
+      "repository_id": 1401557205,
+      "head_repository_id": 1401557205,
+      "head_branch": "codex/stringzilla-native-screen2",
+      "head_sha": "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea"
+    }
+  },
+  "cases_per_variant": 149,
+  "eligible_cases_per_variant": 147,
+  "variants": 3,
+  "comparisons": 441,
+  "raw_samples": 13230,
+  "all_higher_means": 201,
+  "native_contracts_all_passed": true,
+  "log_sha256": "5b0eed9fd9c7293c6cca490b786048db8803959a05efbf9e45f65a0dc516d3a5",
+  "log_chunks": [
+    {
+      "file": "avx2-job-01.log",
+      "sha256": "cec7f4b4d2c9bb359fcbee20547074f4def56564151af8474b0d1d2c25bb8da4"
+    },
+    {
+      "file": "avx2-job-02.log",
+      "sha256": "f553949bb0b71eec9b38f6f079e56dbbd5182094c353c696b376a85afd7e7d91"
+    },
+    {
+      "file": "avx2-job-03.log",
+      "sha256": "a7c74c2dbcd6439c2df55b97469fdccd42a8257026ac0f86c62fef3fb0f4815f"
+    },
+    {
+      "file": "avx2-job-04.log",
+      "sha256": "a534095d4c47a4835b768834bc89414e9ba8e1b26d47a94c8955ee2b2b6cb26f"
+    }
+  ],
+  "files_sha256": {
+    "avx2-RESULTS.md": "f8615cbd7b8730c9a7d90cdac9f38426d75ee1aa9830ec96598b6dcbab03577e",
+    "avx2-long.jsonl": "77b0a576b674284b97bd297610174604bec984913c27a5ccc1b5b5ce61a343ae",
+    "avx2-short.jsonl": "1d28d154cd2fe69d6bfd789162939836dbbdffd6cc0d0eddb0e3d5ffe99836f7",
+    "avx2-combined.jsonl": "b53a00c4e1046dfc04ffa9151a9019bd3eebb96440e85a5dc50ecf01c8867198",
+    "avx2-provenance.json": "88b88ffe28084465d4df3db2fe13ed7b1343f1f3603089e3c23c5dec0bc36df1",
+    "avx2-job-01.log": "cec7f4b4d2c9bb359fcbee20547074f4def56564151af8474b0d1d2c25bb8da4",
+    "avx2-job-02.log": "f553949bb0b71eec9b38f6f079e56dbbd5182094c353c696b376a85afd7e7d91",
+    "avx2-job-03.log": "a7c74c2dbcd6439c2df55b97469fdccd42a8257026ac0f86c62fef3fb0f4815f",
+    "avx2-job-04.log": "a534095d4c47a4835b768834bc89414e9ba8e1b26d47a94c8955ee2b2b6cb26f"
+  }
+}
