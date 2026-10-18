@@ -248,6 +248,8 @@ public class TestColdCallDebugHome {
 
     private static void run(Boolean enabled, boolean framePointer, boolean compressedOops,
                             boolean debug, boolean requireOopWitness) throws Exception {
+        // This test requires amd64; automatic enablement is limited to Linux.
+        boolean expectedEnabled = enabled != null ? enabled : Platform.isLinux();
         List<String> options = new ArrayList<>(List.of(
                 "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
                 "-Xbatch", "-XX:-TieredCompilation", "-XX:-UseOnStackReplacement",
@@ -259,7 +261,7 @@ public class TestColdCallDebugHome {
                 "-XX:CompileCommand=compileonly,compiler.regalloc.TestColdCallDebugHome::bootstrapC2",
                 "-XX:CompileCommand=compileonly,compiler.regalloc.TestColdCallDebugHome::testDebugHomes",
                 "-XX:CompileCommand=dontinline,compiler.regalloc.TestColdCallDebugHome::helper*",
-                TestColdCallDebugHome.class.getName(), "child", Boolean.toString(Boolean.TRUE.equals(enabled))));
+                TestColdCallDebugHome.class.getName(), "child", Boolean.toString(expectedEnabled)));
         if (enabled != null) {
             options.add(2, "-XX:" + (enabled ? "+" : "-") + "UseColdCallSpillDeferral");
         }
@@ -274,7 +276,7 @@ public class TestColdCallDebugHome {
         int end = text.indexOf("END_DEBUG_HOME_COMPILE 2", begin);
         if (begin < 0 || end < 0) throw new AssertionError("Missing compilation boundary");
         String compilation = text.substring(begin, end);
-        if (!Boolean.TRUE.equals(enabled) && text.contains("CCDEBUG_HOME ")) {
+        if (!expectedEnabled && text.contains("CCDEBUG_HOME ")) {
             throw new AssertionError("Disabled feature forwarded a debug home");
         }
         if (requireOopWitness) {
@@ -314,7 +316,7 @@ public class TestColdCallDebugHome {
         OutputAnalyzer probe = ProcessTools.executeTestJava(TestColdCallDebugHome.class.getName(), "probe");
         probe.shouldHaveExitValue(0);
         boolean debug = probe.getOutput().contains("DEBUG_BUILD=true");
-        run(null, false, true, debug, false);
+        run(null, false, true, debug, debug && Platform.isLinux());
         run(false, false, true, debug, false);
         run(true, false, true, debug, debug);
         run(true, true, false, debug, debug);

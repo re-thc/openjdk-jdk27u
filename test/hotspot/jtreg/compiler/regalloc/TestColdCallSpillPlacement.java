@@ -692,6 +692,8 @@ public class TestColdCallSpillPlacement {
 
     private static void run(Boolean enabled, boolean framePointer, boolean selection, boolean stress,
                             boolean debug, boolean legacyShifts, boolean joinsOnly) throws Exception {
+        // This test requires amd64; automatic enablement is limited to Linux.
+        boolean expectedEnabled = enabled != null ? enabled : Platform.isLinux();
         List<String> options = new ArrayList<>(List.of(
                 "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
                 "-XX:-TieredCompilation", "-Xbatch", "-XX:CompileThreshold=1000000",
@@ -701,7 +703,7 @@ public class TestColdCallSpillPlacement {
                 "-XX:CompileCommand=compileonly,compiler.regalloc.TestColdCallSpillPlacement::test*",
                 "-XX:CompileCommand=inline,compiler.regalloc.TestColdCallSpillPlacement::kernel",
                 "-XX:CompileCommand=dontinline,compiler.regalloc.TestColdCallSpillPlacement::helper*",
-                TestColdCallSpillPlacement.class.getName(), "child", Boolean.toString(Boolean.TRUE.equals(enabled)),
+                TestColdCallSpillPlacement.class.getName(), "child", Boolean.toString(expectedEnabled),
                 Boolean.toString(joinsOnly)));
         if (enabled != null) {
             options.add(options.indexOf("-XX:+WhiteBoxAPI") + 1,
@@ -731,7 +733,7 @@ public class TestColdCallSpillPlacement {
             boolean deferred = text.substring(begin, end).contains("CCDEFER ");
             String compilation = text.substring(begin, end);
             boolean placement = deferred || compilation.contains("CCPHI ") || compilation.contains("CCPHI_INPUT ") || compilation.contains("CCHRP ");
-            if (!Boolean.TRUE.equals(enabled) && placement) throw new AssertionError("Disabled feature selected " + name);
+            if (!expectedEnabled && placement) throw new AssertionError("Disabled feature selected " + name);
             PlacementTrace trace = debug ? checkPlacementTrace(compilation) : null;
             if (selection) {
                 boolean expected = name.equals("testCold") || name.equals("testJoins") || name.equals("testVoid") || name.equals("testMaps")
@@ -759,8 +761,8 @@ public class TestColdCallSpillPlacement {
         OutputAnalyzer probe = ProcessTools.executeTestJava(TestColdCallSpillPlacement.class.getName(), "probe");
         probe.shouldHaveExitValue(0);
         boolean debug = probe.getOutput().contains("DEBUG_BUILD=true");
-        // Default and explicit-off runs also guard the opt-in compatibility promise.
-        run(null, false, false, false, debug, false, false);
+        // Check Linux amd64 automatic activation and the explicit opt-out.
+        run(null, false, debug && Platform.isLinux(), false, debug, false, false);
         run(false, false, false, false, debug, false, false);
         run(true, false, debug, false, debug, false, false);
         run(true, true, false, false, debug, false, false);
