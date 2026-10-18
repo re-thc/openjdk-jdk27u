@@ -73,6 +73,10 @@ public class TestColdCallDebugHome {
         }
     }
 
+    private static byte[] helperArray(byte[] array) {
+        return array;
+    }
+
     private static void helperReturning(long value) {
         sink ^= value;
         int requested = action;
@@ -97,7 +101,11 @@ public class TestColdCallDebugHome {
     // All eight base oops and the scalar state are live at the unprofiled
     // branch. They must retain distinct valid Java debug values even when
     // their short DebugUse copies would compete for the same call register.
-    // The returning call separately exercises the oop maps while C2 is active.
+    // The opaque array return supplies a full oop with a machine definition;
+    // loading an element of byte[][] can leave only a cold narrow debug value.
+    // The next call clobbers the return register, so ordinary splitting creates
+    // a DOWN home before the trap instead of relying on a loop Phi home.
+    // The returning call also exercises that oop map while C2 is active.
     private static long testDebugHomes(byte[][] arrays, long[] values, int trapIndex, long seed) {
         byte[] s0 = arrays[0], s1 = arrays[1], s2 = arrays[2], s3 = arrays[3];
         byte[] s4 = arrays[4], s5 = arrays[5], s6 = arrays[6], s7 = arrays[7];
@@ -106,7 +114,9 @@ public class TestColdCallDebugHome {
         long a8 = values[8], a9 = values[9], a10 = values[10], a11 = values[11];
         long a12 = values[12], a13 = values[13], a14 = values[14], a15 = values[15];
         long state = seed;
-        for (int i = 0; i < 256; i++) {
+        // Exceed the ordinary high-frequency threshold of 375. At 256 trips,
+        // only loop-header Phis may reach the outer-loop frequency threshold.
+        for (int i = 0; i < 512; i++) {
             int index = (int) state & 63;
             long bytes = s0[index] + 3L * s1[index] + 5L * s2[index] + 7L * s3[index]
                     + 11L * s4[index] + 13L * s5[index] + 17L * s6[index] + 19L * s7[index];
@@ -126,9 +136,8 @@ public class TestColdCallDebugHome {
             a13 ^= Long.rotateLeft(a14 + state, 47);
             a14 += Long.rotateLeft(a15 ^ bytes, 53);
             a15 ^= Long.rotateLeft(a0 + state, 59);
-            if (i == 0) {
-                helperReturning(7);
-            }
+            s0 = helperArray(s0);
+            helperReturning(7);
             if (i == trapIndex) {
                 helperTrap(11);
             }
@@ -308,6 +317,6 @@ public class TestColdCallDebugHome {
         run(null, false, true, debug, false);
         run(false, false, true, debug, false);
         run(true, false, true, debug, debug);
-        run(true, true, false, debug, false);
+        run(true, true, false, debug, debug);
     }
 }
