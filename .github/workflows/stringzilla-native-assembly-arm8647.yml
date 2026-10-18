@@ -1,0 +1,96 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Inspect saved StringZilla native assembly
+on:
+  push:
+    branches: [codex/stringzilla-native-assembly-arm8647]
+    paths: [.github/workflows/stringzilla-native-assembly-arm8647.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    name: Read verified NEON aligned-filter assembly without execution
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify immutable artifact and print complete selected function bodies
+        shell: python
+        run: |
+          import hashlib, io, json, re, subprocess, zipfile
+          from pathlib import Path
+          artifact_id = 12141884509
+          digest = "sha256:4ef884ab4b5a48e1bc468d13ac84db25a5d2ea6c944f450b929b4f0533330be0"
+          head = "8647b50c881c69ea9f2fa5eacd3da3bd3a2ce0ea"
+          source = "4592230b14fc2f4b537b162fd7f6b791e882b615"
+          endpoint = "repos/re-thc/openjdk-jdk27u/actions/artifacts/" + str(artifact_id)
+          metadata = json.loads(subprocess.check_output(["gh", "api", endpoint], text=True))
+          assert metadata["id"] == artifact_id and metadata["digest"] == digest and not metadata["expired"]
+          assert metadata["workflow_run"]["id"] == 39143174053 and metadata["workflow_run"]["head_sha"] == head
+          assert metadata["name"] == "stringzilla-native-screen2-neon-" + head + "-attempt1"
+          archive = subprocess.check_output(["gh", "api", endpoint + "/zip"])
+          assert "sha256:" + hashlib.sha256(archive).hexdigest() == digest
+          out = Path("assembly-output")
+          out.mkdir()
+          with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+              pbytes = bundle.read("provenance.json")
+              p = json.loads(pbytes)
+              assert p["production_source"] == source and p["auxiliary_head"] == head and p["backend"] == "neon"
+              assert p["runner_sha256"] == "5a1d2b9e37d3724fccab62633a01a086929217f83deb7a066530b8ed6c331726"
+              assert p["harness_sha256"] == "b5cd930ef46078b444506bd0e41762e5d160dc36f1522cfddaac8edb778cfdde"
+              assert p["input_blobs"] == json.loads(r'''{"baseline":{"kernel_blob":"39144674b48777a00a41cf1456cd253a41fca2c2","kernel_sha256":"e6511e32540530e2086bec93bd66cce096f5f3226ba2d71be8cdfc7d5d709117","tests_blob":"285615e7e6b50123d850c4fd141bd4aff52955ac","tests_sha256":"358174761f88b1a6fad74ac99714935af9191722bc75d52add77f8b09d52d4ed"},"long":{"kernel_blob":"d14881913b31e421fc8f090e33790550b5974b48","kernel_sha256":"f2d15c1861e76e76f08fab8009f2720017a113c566a2d3147de73c6214664536","tests_blob":"14b07efccebdabf864bd3c558ca5bb7077331a41","tests_sha256":"844241dd646dd35513da4eb626e5926afbb950d61b255d6333c9f88bd30def23"},"short":{"kernel_blob":"2b12a3e8f302433c77a490c7386a1c2d89297350","kernel_sha256":"58f571e4dffb3b7263dee05354516678682eefaa6b5986ab758d2dcf564b3c8f","tests_blob":"bf2d0b1c38544b6ef1991d3b4d764d80a3d70508","tests_sha256":"a33758de63b6c8a8ae4302289233d66d08e5d6ab670bbe60201fb82945f8e18f"},"combined":{"kernel_blob":"3aa9f9988f14f4dc8bf948230578624721da7687","kernel_sha256":"60a38056f9fd4732a7135d0c947c260f5ecb48acf26e3ecda9bfc786831eb858","tests_blob":"a562967a00e1728e4959b61121f99fa0b83f674d","tests_sha256":"50d7d560eb0cecf1725df812d9e5a2201eb30fa921faf4cd84c7474e40e80ed0"}}''')
+              assert p["comparisons"] == 441 and p["native_contracts_all_passed"] is True
+              assert p["flags"][:10] == ["gcc-16", "-std=c11", "-O3", "-march=armv8.2-a", "-DSZ_USE_SVE=0",
+                                        "-fno-lto", "-fno-omit-frame-pointer", "-Wall", "-Wextra", "-Wno-unknown-pragmas"]
+              assert all(h["backend"] == "neon" and h["capabilities"] == 4 and h["vector_bytes"] == 16
+                         for h in p["hosts"].values())
+              assert len(p["hosts"]) == 3
+              (out / "provenance.json").write_bytes(pbytes)
+              reports = {}
+              for variant in ("long", "short", "combined"):
+                  assembly = bundle.read(variant + "-assembly.log")
+                  assembly_sha = hashlib.sha256(assembly).hexdigest()
+                  assert assembly_sha == p["builds"][variant + "_assembly"]["log_sha256"]
+                  binary = bundle.read(variant + "-screen")
+                  assert hashlib.sha256(binary).hexdigest() == p["binaries_sha256"][variant + "-screen"]
+                  assert binary.startswith(b"\x7fELF")
+                  (out / (variant + "-assembly.log")).write_bytes(assembly)
+                  text = assembly.decode()
+                  headers = list(re.finditer(r"(?m)^([0-9a-f]+) <([^>]+)>:\s*$", text))
+                  entries, callbacks = [], 0
+                  for i, match in enumerate(headers):
+                      name = match[2]
+                      if not any(token in name for token in (
+                          "search_utf16", "neon_rfind_utf16", "neon_rfind_mixed",
+                          "neon_rfind_char_utf16", "search_impl", "rfind_utf16_neon", "rfind_after_mismatch_units")):
+                          continue
+                      body = text[match.start():headers[i + 1].start() if i + 1 < len(headers) else len(text)]
+                      calls = [line for line in body.splitlines() if re.search(r"\s(?:call|callq|jmp|jmpq)\s", line)]
+                      entry = {"symbol": name, "address": match[1], "lines": len(body.splitlines()),
+                               "sha256": hashlib.sha256(body.encode()).hexdigest(), "calls_and_tail_branches": calls}
+                      entries.append(entry)
+                      callbacks += name.startswith("neon_rfind_utf16")
+                      # The entire selected function is printed, including register saves,
+                      # stack slots, direct/indirect calls and return paths.
+                      print("STRINGZILLA_ASSEMBLY_FUNCTION " + json.dumps({"variant": variant, **entry}, separators=(",", ":")), flush=True)
+                      print(body, end="" if body.endswith("\n") else "\n", flush=True)
+                  assert callbacks >= 2
+                  reports[variant] = {"assembly_sha256": assembly_sha,
+                                      "binary_sha256": hashlib.sha256(binary).hexdigest(), "functions": entries}
+          receipt = {"scope": "Read-only saved machine-code inspection; no compile, JVM or timing execution",
+                     "artifact_id": artifact_id, "artifact_digest": digest, "producer_run": 39143174053,
+                     "producer_head": head, "source": source, "timed_records": 0,
+                     "provenance_sha256": hashlib.sha256(pbytes).hexdigest(), "reports": reports}
+          (out / "assembly-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print("STRINGZILLA_ASSEMBLY_COMPLETE " + json.dumps(receipt, separators=(",", ":")), flush=True)
+          
+      - name: Retain verified saved assembly and inspection receipt
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-native-assembly-arm8647-${{ github.sha }}
+          path: assembly-output
+          if-no-files-found: error
+          retention-days: 30
