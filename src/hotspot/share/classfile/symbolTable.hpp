@@ -51,7 +51,6 @@ class SymbolTable : public AllStatic {
   friend class ClassFileParser;
   friend class SymbolTableConfig;
   friend class SymbolTableCreateEntry;
-  friend class SymbolTableTest;
 
  private:
   static volatile bool _has_work;
@@ -84,12 +83,10 @@ class SymbolTable : public AllStatic {
   // Adding elements
   static void new_symbols(ClassLoaderData* loader_data,
                           const constantPoolHandle& cp, int names_count,
-                          const char** names, int* lengths, int* cp_indices);
+                          const char** name, int* lengths,
+                          int* cp_indices, unsigned int* hashValues);
 
   static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(nullptr);
-  // Uses original hashes and sets syms[i] to the shared symbol of each name that has one.
-  static void lookup_shared(int count, const char** names, const int* lens,
-                            const unsigned int* hashes, Symbol** syms) NOT_CDS_RETURN;
   static Symbol* lookup_dynamic(const char* name, int len, unsigned int hash);
   static Symbol* lookup_common(const char* name, int len, unsigned int hash);
 
@@ -107,6 +104,7 @@ public:
   static TableStatistics get_table_statistics();
 
   enum {
+    symbol_alloc_batch_size = 8,
     // Pick initial size based on java -version size measurements
     symbol_alloc_arena_size = 360*K // TODO (revisit)
   };

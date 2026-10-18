@@ -24,13 +24,13 @@
 
 /*
  * @test
- * @summary Batch interning preserves new, shared and duplicate constant pool names
- *          during concurrent class loading.
+ * @summary Symbol insertion and constant pool cleanup preserve one reference per entry,
+ *          including duplicate names and concurrent class loading.
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *      -XX:+WhiteBoxAPI -Xlog:symboltable=info BatchedInterning
+ *      -XX:+WhiteBoxAPI -Xlog:symboltable=info SymbolRefcount
  */
 
 import java.io.ByteArrayOutputStream;
@@ -53,15 +53,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
-public class BatchedInterning {
+public class SymbolRefcount {
     static final int THREADS = 8;
     static final int ROUNDS = 20;
-    // More names than the SymbolTable looks up side by side.
     static final int NAMES = 300;
 
     static class Loader extends ClassLoader {
         Loader() {
-            super(BatchedInterning.class.getClassLoader());
+            super(SymbolRefcount.class.getClassLoader());
         }
 
         Class<?> define(String name, byte[] bytes) {
@@ -75,7 +74,7 @@ public class BatchedInterning {
         testConcurrentNames();
     }
 
-    // Exercise the largest batch and failures before and after it is interned.
+    // Exercise a maximum-size pool and failures during and after parsing.
     static void testParsingLimitsAndErrors() throws Exception {
         byte[] valid = parsingClass(65535, 0);
         WhiteBox wb = WhiteBox.getWhiteBox();
