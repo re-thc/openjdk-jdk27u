@@ -1,0 +1,300 @@
+{
+  "schema": "stringzilla-source-specific-measurement-union-v1",
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "scope": "Exactly the630 measured e036 source configurations in the supplied549-row strict summaries, the77-row missing-only SKY recovery and the4-row NEON crossover addendum. These data do not qualify subsequent runtime sources.",
+  "arithmetic": "549 + 77 = 626; 626 + 4 = 630",
+  "totals": {
+    "triplets": 630,
+    "records": 1890,
+    "raw_samples": 18900,
+    "higher_mean_rows": 279,
+    "higher_than_original": 223,
+    "higher_than_disabled": 225,
+    "nonoverlap_loss_rows": 176,
+    "nonoverlap_higher_original": 142,
+    "nonoverlap_higher_disabled": 130
+  },
+  "by_backend": {
+    "avx2": {
+      "triplets": 115,
+      "records": 345,
+      "raw_samples": 3450,
+      "higher_mean_rows": 45,
+      "higher_than_original": 38,
+      "higher_than_disabled": 35,
+      "nonoverlap_loss_rows": 33,
+      "nonoverlap_higher_original": 29,
+      "nonoverlap_higher_disabled": 20
+    },
+    "avx512": {
+      "triplets": 109,
+      "records": 327,
+      "raw_samples": 3270,
+      "higher_mean_rows": 34,
+      "higher_than_original": 28,
+      "higher_than_disabled": 26,
+      "nonoverlap_loss_rows": 16,
+      "nonoverlap_higher_original": 13,
+      "nonoverlap_higher_disabled": 10
+    },
+    "msvc": {
+      "triplets": 115,
+      "records": 345,
+      "raw_samples": 3450,
+      "higher_mean_rows": 52,
+      "higher_than_original": 35,
+      "higher_than_disabled": 43,
+      "nonoverlap_loss_rows": 16,
+      "nonoverlap_higher_original": 13,
+      "nonoverlap_higher_disabled": 15
+    },
+    "neon": {
+      "triplets": 141,
+      "records": 423,
+      "raw_samples": 4230,
+      "higher_mean_rows": 68,
+      "higher_than_original": 59,
+      "higher_than_disabled": 56,
+      "nonoverlap_loss_rows": 52,
+      "nonoverlap_higher_original": 45,
+      "nonoverlap_higher_disabled": 39
+    },
+    "serial": {
+      "triplets": 150,
+      "records": 450,
+      "raw_samples": 4500,
+      "higher_mean_rows": 80,
+      "higher_than_original": 63,
+      "higher_than_disabled": 65,
+      "nonoverlap_loss_rows": 59,
+      "nonoverlap_higher_original": 42,
+      "nonoverlap_higher_disabled": 46
+    }
+  },
+  "by_tier": {
+    "interpreter": {
+      "triplets": 162,
+      "records": 486,
+      "raw_samples": 4860,
+      "higher_mean_rows": 34,
+      "higher_than_original": 27,
+      "higher_than_disabled": 22,
+      "nonoverlap_loss_rows": 6,
+      "nonoverlap_higher_original": 6,
+      "nonoverlap_higher_disabled": 0
+    },
+    "c1": {
+      "triplets": 191,
+      "records": 573,
+      "raw_samples": 5730,
+      "higher_mean_rows": 94,
+      "higher_than_original": 80,
+      "higher_than_disabled": 71,
+      "nonoverlap_loss_rows": 60,
+      "nonoverlap_higher_original": 51,
+      "nonoverlap_higher_disabled": 41
+    },
+    "c2": {
+      "triplets": 277,
+      "records": 831,
+      "raw_samples": 8310,
+      "higher_mean_rows": 151,
+      "higher_than_original": 116,
+      "higher_than_disabled": 132,
+      "nonoverlap_loss_rows": 110,
+      "nonoverlap_higher_original": 85,
+      "nonoverlap_higher_disabled": 89
+    }
+  },
+  "physical_keys_sha256": "921bee12e7e8e859841e0bab57d988049dcd156f791b3efef6431abff28bf94c",
+  "stages": {
+    "before_recovery": {
+      "triplets": 549,
+      "records": 1647,
+      "raw_samples": 16470,
+      "higher_mean_rows": 254,
+      "nonoverlap_loss_rows": 165
+    },
+    "after_recovery626": {
+      "totals": {
+        "triplets": 626,
+        "records": 1878,
+        "raw_samples": 18780,
+        "higher_mean_rows": 277,
+        "higher_than_original": 221,
+        "higher_than_disabled": 223,
+        "nonoverlap_loss_rows": 174,
+        "nonoverlap_higher_original": 140,
+        "nonoverlap_higher_disabled": 128
+      },
+      "by_backend": {
+        "avx2": {
+          "triplets": 115,
+          "records": 345,
+          "raw_samples": 3450,
+          "higher_mean_rows": 45,
+          "higher_than_original": 38,
+          "higher_than_disabled": 35,
+          "nonoverlap_loss_rows": 33,
+          "nonoverlap_higher_original": 29,
+          "nonoverlap_higher_disabled": 20
+        },
+        "avx512": {
+          "triplets": 109,
+          "records": 327,
+          "raw_samples": 3270,
+          "higher_mean_rows": 34,
+          "higher_than_original": 28,
+          "higher_than_disabled": 26,
+          "nonoverlap_loss_rows": 16,
+          "nonoverlap_higher_original": 13,
+          "nonoverlap_higher_disabled": 10
+        },
+        "msvc": {
+          "triplets": 115,
+          "records": 345,
+          "raw_samples": 3450,
+          "higher_mean_rows": 52,
+          "higher_than_original": 35,
+          "higher_than_disabled": 43,
+          "nonoverlap_loss_rows": 16,
+          "nonoverlap_higher_original": 13,
+          "nonoverlap_higher_disabled": 15
+        },
+        "neon": {
+          "triplets": 137,
+          "records": 411,
+          "raw_samples": 4110,
+          "higher_mean_rows": 66,
+          "higher_than_original": 57,
+          "higher_than_disabled": 54,
+          "nonoverlap_loss_rows": 50,
+          "nonoverlap_higher_original": 43,
+          "nonoverlap_higher_disabled": 37
+        },
+        "serial": {
+          "triplets": 150,
+          "records": 450,
+          "raw_samples": 4500,
+          "higher_mean_rows": 80,
+          "higher_than_original": 63,
+          "higher_than_disabled": 65,
+          "nonoverlap_loss_rows": 59,
+          "nonoverlap_higher_original": 42,
+          "nonoverlap_higher_disabled": 46
+        }
+      },
+      "by_tier": {
+        "interpreter": {
+          "triplets": 162,
+          "records": 486,
+          "raw_samples": 4860,
+          "higher_mean_rows": 34,
+          "higher_than_original": 27,
+          "higher_than_disabled": 22,
+          "nonoverlap_loss_rows": 6,
+          "nonoverlap_higher_original": 6,
+          "nonoverlap_higher_disabled": 0
+        },
+        "c1": {
+          "triplets": 191,
+          "records": 573,
+          "raw_samples": 5730,
+          "higher_mean_rows": 94,
+          "higher_than_original": 80,
+          "higher_than_disabled": 71,
+          "nonoverlap_loss_rows": 60,
+          "nonoverlap_higher_original": 51,
+          "nonoverlap_higher_disabled": 41
+        },
+        "c2": {
+          "triplets": 273,
+          "records": 819,
+          "raw_samples": 8190,
+          "higher_mean_rows": 149,
+          "higher_than_original": 114,
+          "higher_than_disabled": 130,
+          "nonoverlap_loss_rows": 108,
+          "nonoverlap_higher_original": 83,
+          "nonoverlap_higher_disabled": 87
+        }
+      },
+      "physical_keys_sha256": "0eb1e163b95e764dc7db556e1979d4c8c49431af31e1fa9536d7f85da8ef921a"
+    },
+    "neon_addendum": {
+      "triplets": 4,
+      "records": 12,
+      "raw_samples": 120,
+      "higher_mean_rows": 2,
+      "nonoverlap_loss_rows": 2
+    }
+  },
+  "inputs": [
+    {
+      "role": "MSVC,qualifiedSKYC1,S54 andMSVCneighbors193",
+      "summary_blob": "47cd2c6811526a242fa9af58f5eaa770606b6c8a",
+      "triplets": 193
+    },
+    {
+      "role": "SERIALprimary136",
+      "summary_blob": "4eaa0ff173c31ecdf7f60d003961f242ec1969c6",
+      "triplets": 136
+    },
+    {
+      "role": "AVX2primary108",
+      "summary_blob": "8bbe1fbc4ea81a44506b24e662dffcfefae651e3",
+      "triplets": 108
+    },
+    {
+      "role": "NEONprimary112",
+      "summary_blob": "e71e203bab59500a6c9bedf354d034c965ffa086",
+      "triplets": 112
+    },
+    {
+      "role": "Missing-onlySKY77",
+      "index": {
+        "path": "doc/stringzilla/measurements/e036e637/sky-recovery77-index.json",
+        "blob": "bb8e34a5f7f16f8bd0bca29d4cc19f88e0f250f3",
+        "bytes": 26207,
+        "sha256": "0f91c2c3bd1da40a61b0bd834ac6d2146b3dd6feccf8f766de039cfe808de2f3"
+      },
+      "triplets": 77
+    },
+    {
+      "role": "NEONcrossover4",
+      "summary_blob": "33ea0221e4d049c19519363a972371b31b777e81",
+      "triplets": 4
+    }
+  ],
+  "tables": {
+    "after_recovery626": {
+      "path": "doc/stringzilla/measurements/e036e637/COMPLETE-626-RESULTS.md",
+      "blob": "f1294cd8b01f186fe0d50bf5ba699f3327a2ba99",
+      "bytes": 94267,
+      "sha256": "cbf510de6119276c1bec47dd318b0d8b374f5d29a4f0417980253db67c5486bb"
+    },
+    "with_neon_addendum630": {
+      "path": "doc/stringzilla/measurements/e036e637/COMPLETE-630-RESULTS.md",
+      "blob": "edb12e067a855ceb1e5848442800929dab648a79",
+      "bytes": 94892,
+      "sha256": "55a877f0001344c6c5f314901a60898cb2fc2728db1fb4e90a690b3e1a530f99"
+    }
+  },
+  "checks": {
+    "source_and_baseline_separate_and_equal_across_inputs": true,
+    "all_physical_keys_reconstructed": true,
+    "full_union_unique": true,
+    "no_cross_source_rows": true,
+    "all_higher_means_retained": true,
+    "flags_use_unrounded_means_and_errors": true,
+    "no_retiming": true,
+    "no_worker_log_refetch": true
+  },
+  "note": "The index contains compact metadata only. Source datasets retain exact scores/raw samples/original benchmark JSON hashes. Tables show all three controls; ! marks descriptive nonoverlap. Original JSON file bytes are a separately indexed evidence layer.",
+  "publication": {
+    "git_blobs_only": true,
+    "repository_refs_changed": false,
+    "contains_full_host_or_jit_dumps": false
+  }
+}

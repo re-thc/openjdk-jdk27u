@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117748240409,
+    "artifact_id": 12147253952,
+    "artifact_digest": "sha256:c27ecdca7f99c74360bf7b63ea904843907b6cb55e6989b68493ca5d445d416b"
+  },
+  "phase": "periodic",
+  "backend": "serial",
+  "tier": "interpreter",
+  "control": "original",
+  "record_format": "Frozen helper RESULT records; original full JMH JSON bytes are retained by the verified artifact reader.",
+  "manifest_sha256": "8cf638200670921eb66bc8958113a635fc71afc8a492980bdf21391ccb24b98e",
+  "runner_sha256": "74ed5c71dd487e08d0ef017ead2f59172acbca9a7edad9b51ad976e54e80e532",
+  "records": [
+    {
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "backend_control": "serial",
+      "tier": "interpreter",
+      "control": "original",
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/original/bin/java",
+      "params": {
+        "length": "4095",
+        "needleLength": "513",
+        "shape": "LATIN_PERIOD3_ABC_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-Xint"
+      ],
+      "score": 82477.77713068819,
+      "error": 792.0787326587083,
+      "rawData": [
+        [
+          82170.78376602038,
+          81804.97988223749,
+          82671.25679907697,
+          82933.12835820895,
+          82438.2003292181
+        ],
+        [
+          82805.3107615894,
+          82689.77673576835,
+          83415.60206804537,
+          82052.49450369155,
+          81796.23810302535
+        ]
+      ],
+      "json_sha256": "814c7fa420983ce7f83101bd393f8c67536537fd8255d4744ce1e4aa247972b4"
+    },
+    {
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "backend_control": "serial",
+      "tier": "interpreter",
+      "control": "original",
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/original/bin/java",
+      "params": {
+        "length": "2047",
+        "needleLength": "257",
+        "shape": "UTF16_PERIOD3_ABC_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-Xint"
+      ],
+      "score": 164170.7028106637,
+      "error": 1924.6531335020868,
+      "rawData": [
+        [
+          163067.28333876753,
+          162253.85045219638,
+          164457.49161460047,
+          164568.58933859822,
+          164954.57058437294
+        ],
+        [
+          163159.78473581214,
+          166270.60694214876,
+          164022.69760577238,
+          165740.75447316104,
+          163211.39902120718
+        ]
+      ],
+      "json_sha256": "d13f94ce98b80e077286b60ea852e7fedb1e01a2d7738c890f58151ec1d99f4a"
+    }
+  ],
+  "raw_jmh_files": [
+    {
+      "path": "periodic/serial-interpreter-supp-latin-period3-abc-miss-4095-513-original.json",
+      "sha256": "814c7fa420983ce7f83101bd393f8c67536537fd8255d4744ce1e4aa247972b4"
+    },
+    {
+      "path": "periodic/serial-interpreter-supp-utf16-period3-abc-miss-2047-257-original.json",
+      "sha256": "d13f94ce98b80e077286b60ea852e7fedb1e01a2d7738c890f58151ec1d99f4a"
+    }
+  ]
+}

@@ -1,0 +1,388 @@
+{
+  "schema": "stringzilla-source-specific-measurement-union-v1",
+  "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "scope": "Complete historical459-source union:1635 original main triplets,30 externalABC triplets and35 supplemental single-candidate triplets. These results do not qualify later sources.",
+  "arithmetic": "1386 main + 24 ABC + 35 single = 1445; 1445 + 249 missing main + 6 missing ABC = 1700",
+  "totals": {
+    "triplets": 1700,
+    "records": 5100,
+    "raw_samples": 51000,
+    "higher_mean_rows": 448,
+    "higher_than_original": 351,
+    "higher_than_disabled": 347,
+    "nonoverlap_loss_rows": 182,
+    "nonoverlap_higher_original": 133,
+    "nonoverlap_higher_disabled": 128
+  },
+  "by_backend": {
+    "avx2": {
+      "triplets": 376,
+      "records": 1128,
+      "raw_samples": 11280,
+      "higher_mean_rows": 78,
+      "higher_than_original": 67,
+      "higher_than_disabled": 57,
+      "nonoverlap_loss_rows": 26,
+      "nonoverlap_higher_original": 20,
+      "nonoverlap_higher_disabled": 13
+    },
+    "avx512": {
+      "triplets": 376,
+      "records": 1128,
+      "raw_samples": 11280,
+      "higher_mean_rows": 68,
+      "higher_than_original": 53,
+      "higher_than_disabled": 51,
+      "nonoverlap_loss_rows": 25,
+      "nonoverlap_higher_original": 21,
+      "nonoverlap_higher_disabled": 13
+    },
+    "msvc": {
+      "triplets": 331,
+      "records": 993,
+      "raw_samples": 9930,
+      "higher_mean_rows": 112,
+      "higher_than_original": 78,
+      "higher_than_disabled": 80,
+      "nonoverlap_loss_rows": 24,
+      "nonoverlap_higher_original": 12,
+      "nonoverlap_higher_disabled": 21
+    },
+    "neon": {
+      "triplets": 349,
+      "records": 1047,
+      "raw_samples": 10470,
+      "higher_mean_rows": 101,
+      "higher_than_original": 80,
+      "higher_than_disabled": 82,
+      "nonoverlap_loss_rows": 60,
+      "nonoverlap_higher_original": 46,
+      "nonoverlap_higher_disabled": 44
+    },
+    "serial": {
+      "triplets": 268,
+      "records": 804,
+      "raw_samples": 8040,
+      "higher_mean_rows": 89,
+      "higher_than_original": 73,
+      "higher_than_disabled": 77,
+      "nonoverlap_loss_rows": 47,
+      "nonoverlap_higher_original": 34,
+      "nonoverlap_higher_disabled": 37
+    }
+  },
+  "by_tier": {
+    "interpreter": {
+      "triplets": 575,
+      "records": 1725,
+      "raw_samples": 17250,
+      "higher_mean_rows": 64,
+      "higher_than_original": 52,
+      "higher_than_disabled": 49,
+      "nonoverlap_loss_rows": 5,
+      "nonoverlap_higher_original": 5,
+      "nonoverlap_higher_disabled": 0
+    },
+    "c1": {
+      "triplets": 566,
+      "records": 1698,
+      "raw_samples": 16980,
+      "higher_mean_rows": 158,
+      "higher_than_original": 119,
+      "higher_than_disabled": 129,
+      "nonoverlap_loss_rows": 73,
+      "nonoverlap_higher_original": 46,
+      "nonoverlap_higher_disabled": 63
+    },
+    "c2": {
+      "triplets": 559,
+      "records": 1677,
+      "raw_samples": 16770,
+      "higher_mean_rows": 226,
+      "higher_than_original": 180,
+      "higher_than_disabled": 169,
+      "nonoverlap_loss_rows": 104,
+      "nonoverlap_higher_original": 82,
+      "nonoverlap_higher_disabled": 65
+    }
+  },
+  "physical_keys_sha256": "b65ad6776baeec92e5f0bcbb56ad7956f2bcf5ea2b6c2e74d4e352892e7d6e15",
+  "base_aux_commit": "ebe5415c87abfd0f3ac84bfc372e100e7c31bc01",
+  "before_recovery": {
+    "triplets": 1445,
+    "records": 4335,
+    "raw_samples": 43350,
+    "higher_mean_rows": 418,
+    "nonoverlap_loss_rows": 172
+  },
+  "recovery": {
+    "triplets": 255,
+    "records": 765,
+    "raw_samples": 7650,
+    "higher_mean_rows": 30,
+    "nonoverlap_loss_rows": 10
+  },
+  "inputs": {
+    "base_summary_blob": "cd4fdf2a4ec6715747ed1426c91315b1de78dd39",
+    "primary1386_table_blob": "50856ffc2815cbba76d7efc79c25894a80bd0244",
+    "abc24_index_blob": "34b377c16400dc62337a2cf76c82101ed8758a05",
+    "single35_table_blob": "b040ac2bbf9155cb9957a70e4c84b5615a73cd64",
+    "base_numeric_score_files": [
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-avx2-disabled.json",
+        "blob": "83813a40361ffdd0e38b7071d5277d4d69dc2294"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-avx2-enabled.json",
+        "blob": "eca6714032c9efd086d8b80320fea4e70deee524"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-avx2-original.json",
+        "blob": "ee0a6b6e5be9bcf349da4ba9e7c69dd9548c1618"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-msvc-disabled.json",
+        "blob": "0be737321c37b6019ad7a4d91347c3497d7dd6db"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-msvc-enabled.json",
+        "blob": "506e8badb0323fc7f3cb0015dcafc8bae014b603"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-msvc-original.json",
+        "blob": "c05c8400bd88b812098d2259044270f3f938cd71"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-neon-disabled.json",
+        "blob": "09f799af8c500f72a56acb1720689b75aefec9e9"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-neon-enabled.json",
+        "blob": "cef960ae319bfb7efc06b368534fbe96b3fbff9c"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-neon-original.json",
+        "blob": "c71d44d83fa0941aa14ce6a95c0e0d2a687eb643"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-serial-disabled.json",
+        "blob": "eca99b4e717c6b9235e79348047dc81a5aa69535"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-serial-enabled.json",
+        "blob": "e3795da2c55b0fbaee12f737f8a9efe8ee59f2e6"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/abc-serial-original.json",
+        "blob": "58e454f801e4eee20bbb3a20c2fa3592ae621f55"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-c1-disabled.json",
+        "blob": "8aae7035bdbec507100de68ab513ef28acad4875"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-c1-enabled.json",
+        "blob": "571a42e39f6a06a2ab2e53043351a1842617847f"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-c1-original.json",
+        "blob": "38d243fa456a8986486214b4f4fb7c8e1cc70b0a"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-c2-disabled.json",
+        "blob": "10685ff0a04efbd7405560141ce41a04e18c48a9"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-c2-enabled.json",
+        "blob": "cdff723b43b9296141e7beea42ef486b4eab0a7d"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-c2-original.json",
+        "blob": "d6c814a86003d8a843fb51e0138961d0a384966f"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-interpreter-disabled.json",
+        "blob": "76972ab76d5f831d13db0f7fee49e0101da3724d"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-interpreter-enabled.json",
+        "blob": "f6c38e404ebc0fffdce53ae36175ddd7a46d2cab"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx2-interpreter-original.json",
+        "blob": "6b02a139b9575a344bb7736511bb17b73b96fa32"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx512-c2-disabled.json",
+        "blob": "ebb82942ac2972a6c6b34af4e39f0a08b37afdd6"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx512-c2-enabled.json",
+        "blob": "ebff8279af900746561cefef3bf5231467c9b075"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/avx512-c2-original.json",
+        "blob": "ec71bc4e1ca41f5ba0241f5504e7351b3dc0138e"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-c1-disabled.json",
+        "blob": "9d7b06786c7f7a97400754cd8efa73005f05b680"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-c1-enabled.json",
+        "blob": "924d5611641e2218df6059072f639e679490ffe9"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-c1-original.json",
+        "blob": "97ea05e9ea83180bb6b75086285a7fc6909e3ee4"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-c2-disabled.json",
+        "blob": "9c6ec2708095166635782e03adf4e7d97735e5f2"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-c2-enabled.json",
+        "blob": "bb5acd2ef0332bac980fce375ca1fa361fe363eb"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-c2-original.json",
+        "blob": "0bfe33ea5bc8523b6d10782a5ca6435986eab514"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-interpreter-disabled.json",
+        "blob": "def2e9109faaa915b2d642743fc278424382bb86"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-interpreter-enabled.json",
+        "blob": "6aa306b7f51fbabe3451037734e10e9ef58fbe8a"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/msvc-interpreter-original.json",
+        "blob": "9b644ce0724489e087b4b7d8f992ecd6ab9e4f77"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-c1-disabled.json",
+        "blob": "44c5bae973f05b314457b61b7f2393e819827541"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-c1-enabled.json",
+        "blob": "f57b4fe660f04ffdef6ca34a7b179674832336ac"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-c1-original.json",
+        "blob": "84e9393259fbdeb2fe099673d210cf7294ac82df"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-c2-disabled.json",
+        "blob": "866b998c197ed29b34328a37173d5bea4348c76b"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-c2-enabled.json",
+        "blob": "dbc3ca24d4fc3ab2de6b96ee5eac516b446fecca"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-c2-original.json",
+        "blob": "96a4dc015c4b7f43f9093897ca4ee738f4702a6b"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-interpreter-disabled.json",
+        "blob": "204b53034f900a3e1ef77c2cd5d855d0eff8dba6"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-interpreter-enabled.json",
+        "blob": "67fd4db0cfa1b1487a3fd12133153988f1f63070"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/neon-interpreter-original.json",
+        "blob": "061ea264f4f88593cdcd4815cc1695c37c74dc4c"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-c1-disabled.json",
+        "blob": "1e26180f9d7ca33952023d238ab5102b65144bff"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-c1-enabled.json",
+        "blob": "c565857b3293ea8926d88f5b4f561bcaa92c94d9"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-c1-original.json",
+        "blob": "d9bfa0b61dd921f2d7faaed250f561326c42d9bf"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-c2-disabled.json",
+        "blob": "75861db93f1a52a55b79f35481b48a4d48f80477"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-c2-enabled.json",
+        "blob": "4ec1e20c721922d9bc591e3a48a105082fec1045"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-c2-original.json",
+        "blob": "6dce715800780483c95191e3dbc3d651bd21cd80"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-interpreter-disabled.json",
+        "blob": "2442b4ad3efef5c9e22a94df0d276ad16ee27cd0"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-interpreter-enabled.json",
+        "blob": "17f9546662f5a541c23999e64cded24c340e57ca"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/serial-interpreter-original.json",
+        "blob": "9d9bb4f2bcde43dcd0f23c862200817fc9d09abc"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/single-candidate-avx2.json",
+        "blob": "d4258a55ba3838afe1ccd9dc48a08e7bb206cfb0"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/single-candidate-avx512.json",
+        "blob": "355adcfff1546849a9c0874866b2a33fdf715361"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/single-candidate-msvc.json",
+        "blob": "021e0a0c16b2967748a2fae8c0edf6afb47c3219"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/single-candidate-neon.json",
+        "blob": "490f9b49b1f8adeedf84dba5b7854d293a56b1cb"
+      },
+      {
+        "path": "doc/stringzilla/measurements/4592230b/single-candidate-serial.json",
+        "blob": "c8197d0d2a98800e33b7a77f7127585b645293a8"
+      }
+    ],
+    "recovery255_index": {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-index.json",
+      "blob": "f476dd0663bfcdf7755fbee700f328d664bc7042",
+      "bytes": 32008,
+      "sha256": "5f64869fb3a791da94a4980a1f10e356f53fc54643ec499534f394a2353cf4ba"
+    }
+  },
+  "table": {
+    "path": "doc/stringzilla/measurements/4592230b/COMPLETE-1700-RESULTS.md",
+    "blob": "3d99edf7d57c3a506d54e95a338e9975569a1d42",
+    "bytes": 249833,
+    "sha256": "4ca148739cec1edc0ffe8d8e8827f0cde2cecc206c1862094200d50996aaddbc"
+  },
+  "checks": {
+    "source_and_baseline_separate_and_equal_across_inputs": true,
+    "all_physical_keys_reconstructed": true,
+    "full_union_unique": true,
+    "existing56score_files_read": true,
+    "existing_base_4335_records_raw_2x5_means_and_errors_recomputed": true,
+    "no_cross_source_rows": true,
+    "all_higher_means_retained": true,
+    "flags_use_unrounded_means_and_errors": true,
+    "no_retiming": true,
+    "no_worker_log_refetch": true
+  },
+  "note": "Existing control score files and new recovery chunks retain original raw samples and benchmark JSON byte hashes. All1700 rows and every higher mean are retained. ! marks descriptive nonoverlap.",
+  "publication": {
+    "git_blobs_only": true,
+    "repository_refs_changed": false,
+    "contains_full_host_or_jit_dumps": false
+  }
+}

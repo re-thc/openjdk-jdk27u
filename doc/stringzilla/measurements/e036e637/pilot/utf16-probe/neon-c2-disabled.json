@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117744021323,
+    "artifact_id": 12147651624,
+    "artifact_digest": "sha256:3d38f0deb8bda89ae0f0a4bd6f9447b715195efd21fc82037a07fde670d8acd7"
+  },
+  "phase": "utf16-probe",
+  "backend": "neon",
+  "tier": "c2",
+  "control": "disabled",
+  "record_format": "Frozen helper RESULT records; original full JMH JSON bytes are retained by the verified artifact reader.",
+  "manifest_sha256": "6ba7e69945e8a0be9d7f92ea29805a1a2f1e22a5de39c3f610aa9786dea83747",
+  "runner_sha256": "74ed5c71dd487e08d0ef017ead2f59172acbca9a7edad9b51ad976e54e80e532",
+  "records": [
+    {
+      "case": "probe-utf16-single-64-penultimate-miss",
+      "backend_control": "neon",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/fork/bin/java",
+      "params": {
+        "length": "64",
+        "needleLength": "64",
+        "shape": "PENULTIMATE_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics"
+      ],
+      "score": 3.3992790269756563,
+      "error": 0.03420161896950918,
+      "rawData": [
+        [
+          3.421470079994818,
+          3.417640799952573,
+          3.4210316163345285,
+          3.413093070097668,
+          3.4281252822416937
+        ],
+        [
+          3.3792403603132284,
+          3.371262664579947,
+          3.377858567839069,
+          3.379935267324918,
+          3.3831325610781153
+        ]
+      ],
+      "json_sha256": "700d935cf754a1b5491d2c7ea3617b64a316035eaa00b6e9ae876a77636a4549"
+    },
+    {
+      "case": "probe-utf16-single-64-near-end-miss",
+      "backend_control": "neon",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/fork/bin/java",
+      "params": {
+        "length": "64",
+        "needleLength": "64",
+        "shape": "NEAR_END_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics"
+      ],
+      "score": 5.210021085233754,
+      "error": 0.011696270998471382,
+      "rawData": [
+        [
+          5.204906021067553,
+          5.219000121608109,
+          5.2007758368993064,
+          5.199348431023869,
+          5.20043243312721
+        ],
+        [
+          5.21779601952539,
+          5.214536783997143,
+          5.214902525382919,
+          5.214195034510933,
+          5.2143176451951065
+        ]
+      ],
+      "json_sha256": "c3cfd8cca756eb80135270b881e3de36a05c6887a08b7828764d0d05da776a32"
+    },
+    {
+      "case": "probe-utf16-bulk-4096-64-penultimate-miss",
+      "backend_control": "neon",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/fork/bin/java",
+      "params": {
+        "length": "4096",
+        "needleLength": "64",
+        "shape": "PENULTIMATE_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics"
+      ],
+      "score": 2148.8046703602713,
+      "error": 4.399678761448496,
+      "rawData": [
+        [
+          2150.0094755758864,
+          2142.0961932906052,
+          2147.330130063078,
+          2148.4522112733257,
+          2150.3325851586214
+        ],
+        [
+          2151.753352566611,
+          2152.619453705529,
+          2149.0324311612794,
+          2148.9605301041215,
+          2147.4603407036516
+        ]
+      ],
+      "json_sha256": "b2df15713b572c645aac1c6e10173c1fa4c97d99c94a96e81553d80ab45de44c"
+    },
+    {
+      "case": "probe-utf16-bulk-4096-64-near-end-miss",
+      "backend_control": "neon",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/fork/bin/java",
+      "params": {
+        "length": "4096",
+        "needleLength": "64",
+        "shape": "NEAR_END_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics"
+      ],
+      "score": 8954.982061312981,
+      "error": 952.5086380510888,
+      "rawData": [
+        [
+          8363.257135695187,
+          8351.446585811596,
+          8354.835755813954,
+          8360.58410055773,
+          8356.495555258496
+        ],
+        [
+          9550.72755205252,
+          9543.238674096408,
+          9558.212668993003,
+          9565.722864005491,
+          9545.29972084544
+        ]
+      ],
+      "json_sha256": "5dd7fcca71ba84285e1321d15441899b98c2e4a6522d0cae680ebd485b1f40a7"
+    }
+  ],
+  "raw_jmh_files": [
+    {
+      "path": "utf16-probe/neon-c2-probe-utf16-single-64-penultimate-miss-disabled.json",
+      "sha256": "700d935cf754a1b5491d2c7ea3617b64a316035eaa00b6e9ae876a77636a4549"
+    },
+    {
+      "path": "utf16-probe/neon-c2-probe-utf16-single-64-near-end-miss-disabled.json",
+      "sha256": "c3cfd8cca756eb80135270b881e3de36a05c6887a08b7828764d0d05da776a32"
+    },
+    {
+      "path": "utf16-probe/neon-c2-probe-utf16-bulk-4096-64-penultimate-miss-disabled.json",
+      "sha256": "b2df15713b572c645aac1c6e10173c1fa4c97d99c94a96e81553d80ab45de44c"
+    },
+    {
+      "path": "utf16-probe/neon-c2-probe-utf16-bulk-4096-64-near-end-miss-disabled.json",
+      "sha256": "5dd7fcca71ba84285e1321d15441899b98c2e4a6522d0cae680ebd485b1f40a7"
+    }
+  ]
+}

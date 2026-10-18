@@ -1,0 +1,1506 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117748240397,
+    "artifact_id": 12147469766,
+    "artifact_digest": "sha256:8d5d0b666707822f93c69dfad429370ff51a9106dc95d6fd3494c97dec1341ff"
+  },
+  "phase": "utf16-probe",
+  "timing_evidence": false,
+  "scope": "All benchmark records/raw samples are unchanged. Detailed hosted-runner fields, machine-code dumps and full JIT logs stay in the immutable original artifact; compact references follow the prior automatic-review restriction.",
+  "records": [
+    {
+      "case": "mixed64",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "1a7ff84f00bfecb3d39fc4b65d0a4775d534691da36c45575b1618cf99442e99"
+    },
+    {
+      "case": "equals4096",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "LATIN1",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "0d891ce400f79e2fadb8821e850a35681eac8a1bea9f5d8c2fc58bbc49ce89f0"
+    },
+    {
+      "case": "latin255",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "255",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "11245d90b469e725283f235d3a102c0014ba0bf6af84682df4a4687dc85ae2cf"
+    },
+    {
+      "case": "utf16-127",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "127",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "de35e3900ca450408f406a4bb4546ce134f9db0911334f8364772e808a58b9ce"
+    },
+    {
+      "case": "utf16-128",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "ea4e9af23a02f8c76ce0adbad6c182230d1b19937c2d236b8ef5cee50b936d90"
+    },
+    {
+      "case": "utf16-511",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "511",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "8b5f0b5da670646f55671a97102bbe19531184be32ba1c8905bacb7fccb7456b"
+    },
+    {
+      "case": "tiny-latin",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "1a00371f46478493793d74c2c49c2590da673a1fd5f797600edc546ed5671f38"
+    },
+    {
+      "case": "tiny-utf16",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "41b7e03af4de1a0f32f287a8aff775f812315d82de17a59521a43ffd0f27f102"
+    },
+    {
+      "case": "equals-utf16-4096",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "UTF16",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_equals_jmhTest::equals_avgt_jmhStub",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::equals"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "7c9b9766edd96fac5667ee0c722ce133cab592cf72033e6cee2372553a2096c9"
+    },
+    {
+      "case": "utf16-128-end",
+      "tier": "c1",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "END",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "a6f50931852a462d3814a31d3ae4fe42a490569eea2bb0f4bd42010b02ac9035"
+    },
+    {
+      "case": "mixed64",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "41dffcaf91acc706836338e01de0585e9f9240cf5d14f7bdd6c6688e8e1dfec8"
+    },
+    {
+      "case": "equals4096",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "LATIN1",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "50780d1a9edf0ea8a5fb5ee4d187341db245f83513dbb77dae21557d7a21705a"
+    },
+    {
+      "case": "latin255",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "255",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "19c4edfdc885125421deb944d172580edfb2aa1d483d797029a13b66bf34852b"
+    },
+    {
+      "case": "utf16-127",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "127",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "d13a3fab3bf166b141c8111b70d08c3f1fabe130b198f3065207c4ba7ea95c2b"
+    },
+    {
+      "case": "utf16-128",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "3768493d42f9e2d32e03faf5ab7c9ca962bffbf182647b7d81faf31b629fde13"
+    },
+    {
+      "case": "utf16-511",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "511",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "0531eb2592e2de058a5ac851447387e042d198678623300bc3cdad6631f51470"
+    },
+    {
+      "case": "tiny-latin",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "f0360ae8a105a818ec69284685f8114a01d1947576ea030e9ddccd9ba3c574d5"
+    },
+    {
+      "case": "tiny-utf16",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "d67357273b4717c8c8aca8d9d676169d1e12e8f040e7beb6b3fa49b44067351c"
+    },
+    {
+      "case": "equals-utf16-4096",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "UTF16",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_equals_jmhTest::equals_avgt_jmhStub",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::equals"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "04aaf9fa02db9e6e463bed3f845c34f3fbd5a4cd2491a3835bdb8cb25d0c017e"
+    },
+    {
+      "case": "utf16-128-end",
+      "tier": "c1",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "END",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "3ed49a6746d4df32aff3894fd69358913790fb5866542197f21f8fc2d3e06972"
+    },
+    {
+      "case": "mixed64",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "a8558e19d8d781fd1a46cdbd1fc8d600c82ae8112a3c5caf68dc4a54da124a05"
+    },
+    {
+      "case": "equals4096",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "LATIN1",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "bd7d390b8162427783539990fc911b134efe729a8e317714b37d23bb65279d21"
+    },
+    {
+      "case": "latin255",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "255",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "18e735f13beab716dc4700562ef56e68a429793f5326587b60d4a22438976215"
+    },
+    {
+      "case": "utf16-127",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "127",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "90b8f79fadd16bbaa1bd40fedc103a04da83e52f84d201f0c3f4219df83bf278"
+    },
+    {
+      "case": "utf16-128",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "f82b6796eb61f517149494b5bc1f0982f4f492428e4e0d611143f9b08c8fc6c7"
+    },
+    {
+      "case": "utf16-511",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "511",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "8e1701faa6b3ecca7fd1cedc4bce995c890b0c4f03f9c7aea3371167219ae7ba"
+    },
+    {
+      "case": "tiny-latin",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "19e0c737e50e5847b7e24e98ae87ff0577f125800785bd1657b9f6a93ff2b926"
+    },
+    {
+      "case": "tiny-utf16",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "c5afe3b3da2415e90fcc2238314dcbb4478f6d12bc8bd5737cd28cbfb5f95feb"
+    },
+    {
+      "case": "equals-utf16-4096",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "UTF16",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_equals_jmhTest::equals_avgt_jmhStub",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::equals"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "8aa0e22e387ca6716f7239cf51a205f69dcd6fdc50eb0baf3e3f5ee9969f13cf"
+    },
+    {
+      "case": "utf16-128-end",
+      "tier": "c1",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "END",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:TieredStopAtLevel=1",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "e72df71a4f4dc5b9edf98a3ab7bc9d430a6fa79efdd61d153f7331ce8af00573"
+    },
+    {
+      "case": "mixed64",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "214b166331ac5f9908b77e699840968dd0d54000abab5c1d623c047dd5df9daf"
+    },
+    {
+      "case": "equals4096",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "LATIN1",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "497ade92c82ca90d9340153829a92317393db328cbec806b3b016dee44410e54"
+    },
+    {
+      "case": "latin255",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "255",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "8d9ed1d7c230cef21b88ea5f77eb11a6beca79be7cb57ad45701f43083c4ee7f"
+    },
+    {
+      "case": "utf16-127",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "127",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "db6d8ee1a0033c374c89310738190525f8a299a10af1cbcd2c5dc0eea8862a8d"
+    },
+    {
+      "case": "utf16-128",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "39ece43c34382973d4ef19c3d675582f614e3d605998651979f0aa2eaf374d6a"
+    },
+    {
+      "case": "utf16-511",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "511",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "bbe7bd059c02daf2ca60c2cf95d8d911e97106b319190db4048678e294ebddc8"
+    },
+    {
+      "case": "tiny-latin",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "3fa4864e68d4079046d7311c60db5dba23183d01c1fc2cc6e1def5b7cd81dc35"
+    },
+    {
+      "case": "tiny-utf16",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "0e36e794e7ab26a9ebeec7f81f668c79d072c773d92532c74dbf373e5141ebfa"
+    },
+    {
+      "case": "equals-utf16-4096",
+      "tier": "c2",
+      "control": "enabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "UTF16",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_equals_jmhTest::equals_avgt_jmhStub",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::equals"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "7f703dd8de22d44dba7a4b657df605133f5174de3df235a9b9d057cef8aa3d4d"
+    },
+    {
+      "case": "mixed64",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "81a92d1cf879235f5d49f6d0d5ad9f7b659d7167e6bbc08ddf66509ac5aa82d7"
+    },
+    {
+      "case": "equals4096",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "LATIN1",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "72dfe5e605f2fb5e35794d9eda0c842eebed7f9bf396c9101ac2ecc6110be918"
+    },
+    {
+      "case": "latin255",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "255",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "84477385fafa0e9a59af75e6359f3c19aabaac176a64f585bd7144ca27a0d405"
+    },
+    {
+      "case": "utf16-127",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "127",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "461438254ffe92a74d03ea5a7368a8f2f2c51ce9a4703d10cb6d82327a08c18f"
+    },
+    {
+      "case": "utf16-128",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "82da2695b321400b77152b65e65cd60eea328160c01959ab32f3347e1b39b6f0"
+    },
+    {
+      "case": "utf16-511",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "511",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "b147f801f82d9114f2e6f767a9a98088bcda21eb017a7a57e3deaed84a3911a7"
+    },
+    {
+      "case": "tiny-latin",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "e3c76cff7f86c783be018b4a324ee0ee72f0d5b40a6b92e84613366ca97e1007"
+    },
+    {
+      "case": "tiny-utf16",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "95de03d718d3770d530617e20b2fad1d800e679723c8e5ae8c42eacf1b1dc684"
+    },
+    {
+      "case": "equals-utf16-4096",
+      "tier": "c2",
+      "control": "disabled",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "UTF16",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_equals_jmhTest::equals_avgt_jmhStub",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::equals"
+      ],
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "timing_evidence": false,
+      "log_sha256": "e9cb3ba4bfbf7242d9f52bf234acd522c24f9efcee912d55e81e74a707b3c6ae"
+    },
+    {
+      "case": "mixed64",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "aeb5f82f8118f01700f9631f7ccda88ddb8e9f48afe434d5a4715ae4830d6712"
+    },
+    {
+      "case": "equals4096",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "LATIN1",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "6487fa972c736d1176dfcdf9fca5c472565041f62e09d1fea0316b56b07bac89"
+    },
+    {
+      "case": "latin255",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "255",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "f062aee3f94a80f576cd38e5128a1282413c56153c1eb2453cd441b59281bea8"
+    },
+    {
+      "case": "utf16-127",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "127",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "db88c6a74d23a598e8ab5161886200562e7903aa15b19d91543c7964790c1885"
+    },
+    {
+      "case": "utf16-128",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "128",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "72784303da0dc06677d4c8d11516893045df35141fff1465e8ab964945d6f5e1"
+    },
+    {
+      "case": "utf16-511",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "511",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "07d55c1713b225e5af33a75013597a368ddf8cf30ca15d48238777957f508528"
+    },
+    {
+      "case": "tiny-latin",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "LATIN1",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "9cccddaca78679724025916204fa88ac90b7df2f0a6184e60643f4be4eaf5d74"
+    },
+    {
+      "case": "tiny-utf16",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "lastIndexOf",
+      "params": {
+        "length": "4",
+        "coder": "UTF16",
+        "position": "MISS",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "333f38f08b02c06aebf986f2c9df56fec7e2708a76977cbbc8936323227f7727"
+    },
+    {
+      "case": "equals-utf16-4096",
+      "tier": "c2",
+      "control": "original",
+      "benchmark": "equals",
+      "params": {
+        "length": "4096",
+        "coder": "UTF16",
+        "position": "EQUAL",
+        "needleLength": "4"
+      },
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-XX:-TieredCompilation",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_equals_jmhTest::equals_avgt_jmhStub",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::equals"
+      ],
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "timing_evidence": false,
+      "log_sha256": "ba340b8eaf8776fba932656c0a28ba1061d14e0a239d4134412ed548bf30390b"
+    }
+  ],
+  "original_normalized_diagnostics_sha256": "2cb6e2b88f0c0fcc4877a707599be63b6f9bfe433c742be8b7484a42b3ecd20b",
+  "source_artifact": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117748240397,
+    "artifact_id": 12147469766,
+    "artifact_digest": "sha256:8d5d0b666707822f93c69dfad429370ff51a9106dc95d6fd3494c97dec1341ff"
+  }
+}

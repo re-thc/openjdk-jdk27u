@@ -1,0 +1,4924 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0"
+  },
+  "backend": "neon",
+  "method": {
+    "forks": 2,
+    "warmup": "3 x500ms",
+    "measurement": "5 x500ms",
+    "gc": "Serial",
+    "cds": "off",
+    "active_processors": 1,
+    "confidence_interval": "JMH99.9%, ten iteration samples, Student-t df9"
+  },
+  "scope": "Every accepted candidate mean, both paired comparisons and original rawJSON hashes. Exact samples are in the indexed control files; no host/JIT dumps.",
+  "rows": [
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "tiny-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4,
+      "controls": {
+        "enabled": {
+          "score_ns": 321.6380427366249,
+          "error_ns": 13.73703311496191,
+          "json_sha256": "c1e2e25da25ff77acb2b87615423fa0f22deacb2182e32907fa48e8ee9bb4c30"
+        },
+        "disabled": {
+          "score_ns": 322.2287570737534,
+          "error_ns": 26.86084556029941,
+          "json_sha256": "515f36adf0f0a9e269f6ceda4aa097fd10fa359ccd9c3bf259d25a74abf7d96b"
+        },
+        "original": {
+          "score_ns": 317.74954334284064,
+          "error_ns": 27.8125808621767,
+          "json_sha256": "580b0b211ae4aca3181e0f3baea9bcd6954d6fc6ce95b44c34e50a7aa1a94922"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9879103250327623,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.001836581058952,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "tiny-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4,
+      "controls": {
+        "disabled": {
+          "score_ns": 555.3800754216256,
+          "error_ns": 19.689369290836307,
+          "json_sha256": "e1da7dac45e5f36b6ca9c7145258c7d22af83d196fb5928f1005f7fd5c48d6b1"
+        },
+        "original": {
+          "score_ns": 546.7645548160001,
+          "error_ns": 12.033066494165606,
+          "json_sha256": "3ef0dc1ce13f421e0635d114c1d8eb465a08563bb475135bb6f55a695f77555d"
+        },
+        "enabled": {
+          "score_ns": 550.8893102212774,
+          "error_ns": 23.69257965399328,
+          "json_sha256": "6162bb208044bdb299d4e662a5f2aeecffc84a370cff0e7326862040d2323584"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.992512551380566,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0081518466904802,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-latin-31-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 31,
+      "controls": {
+        "original": {
+          "score_ns": 367.3220841015747,
+          "error_ns": 32.77482151898837,
+          "json_sha256": "25a575856cc0e56fce8881027b6143c88b21aae25a29f36f1f5a0ec3e2e95245"
+        },
+        "enabled": {
+          "score_ns": 374.3689210894842,
+          "error_ns": 28.363446319984597,
+          "json_sha256": "d35fc1f3ece12dacbed8f9f008dd26c7061031af6827abf5e76b053d3ad53d04"
+        },
+        "disabled": {
+          "score_ns": 376.65759960226706,
+          "error_ns": 33.799647957279646,
+          "json_sha256": "a6f6543899e27f2970aad2708e73a09cb4617324f6f15ab1da1cb9df8563243b"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9811767574952486,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0061134308535078,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-latin-31-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 31,
+      "controls": {
+        "enabled": {
+          "score_ns": 592.9019613408467,
+          "error_ns": 47.67266513260965,
+          "json_sha256": "81328f52d6da55edb2aa9465e31d340ff7a7a8b5c15a182323f08f4234d1458f"
+        },
+        "disabled": {
+          "score_ns": 589.0951830679351,
+          "error_ns": 50.25939326297597,
+          "json_sha256": "2db9e3fee2066ac7401932d604693bd4ec0f00c28dbc5cea44ff42665b59033b"
+        },
+        "original": {
+          "score_ns": 605.2724831852739,
+          "error_ns": 65.78085283735703,
+          "json_sha256": "4562da04c6685e448132992f3b455845e1482fd445a0e385c3b9686f53d1345a"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.020864363167987,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9935794135942768,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-latin-32-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "32",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 32,
+      "controls": {
+        "disabled": {
+          "score_ns": 426.6996469887332,
+          "error_ns": 29.575746822834905,
+          "json_sha256": "56cc687d1366aa3e312cf6e06cc3f7b789824409aecf55ae5308b8be3b11c0c4"
+        },
+        "original": {
+          "score_ns": 371.2239107526042,
+          "error_ns": 33.63180614162351,
+          "json_sha256": "e4784b3647a06a8527a932988ab8278470106eb66ae00c8ed7b635ea29bf9592"
+        },
+        "enabled": {
+          "score_ns": 361.2512978095628,
+          "error_ns": 20.32620170367379,
+          "json_sha256": "06325fb5a42095fa1fbff0e9e023c30da8975f1c458b1e26654f038ee9dd706f"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.0276057498021738,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.181171249974781,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-latin-32-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "32",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 32,
+      "controls": {
+        "original": {
+          "score_ns": 606.8729012562687,
+          "error_ns": 50.49764623294729,
+          "json_sha256": "00a0ef8da86afdd32d6c8df0c9570255dec26d018383523e9986526730e8ad6b"
+        },
+        "enabled": {
+          "score_ns": 450.7473628489332,
+          "error_ns": 6.3555195001337905,
+          "json_sha256": "69a72944217f976c6439cbe441e0e55608733cfa8ce560e1c8a70cd3cfdf557a"
+        },
+        "disabled": {
+          "score_ns": 688.2685406413686,
+          "error_ns": 44.73445904120405,
+          "json_sha256": "6b067374a0cd4d58ccd96dc439c591a399fff208cb4cc441decae8e313efa595"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.3463703867739778,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.5269496781771301,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-latin-33-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "33",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 33,
+      "controls": {
+        "enabled": {
+          "score_ns": 357.4638686268705,
+          "error_ns": 7.099786180627786,
+          "json_sha256": "210aee9cef185e2141b0d1d7dfd89d4db4251947e95f838dee913b14dee50fd4"
+        },
+        "disabled": {
+          "score_ns": 418.2696572247388,
+          "error_ns": 17.46911555760582,
+          "json_sha256": "0d348b70b9f3e8596dbfd5d3a9f1ff135a0a7cd87a79ae1a94e2958602a62f34"
+        },
+        "original": {
+          "score_ns": 365.5190921176269,
+          "error_ns": 27.260146638983276,
+          "json_sha256": "f9c4449fcbd9503f95bc2882f53cc315fe54c74130352e21d941e8903fcf0acb"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.022534371156724,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.170103313745924,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-latin-33-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "33",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 33,
+      "controls": {
+        "disabled": {
+          "score_ns": 691.4912683399234,
+          "error_ns": 47.947268165430934,
+          "json_sha256": "ff050b435df5b19ee039f69a474c4c4a509d27cdf254fa11ddfad1d84fdb3844"
+        },
+        "original": {
+          "score_ns": 624.9217424469696,
+          "error_ns": 81.36792161083126,
+          "json_sha256": "54c4c9304f494c6fc5a269cd0d96662a1c4bd2ee0f99eccd73ab7fc006570e92"
+        },
+        "enabled": {
+          "score_ns": 449.44279694809336,
+          "error_ns": 5.471793002658804,
+          "json_sha256": "4bbe466a69dc9c4ac1b3df7f908e526b75bfb6e6b0f837fcc3350181e2cfcfb0"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.3904366622192021,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.5385523431133874,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-end-129-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "129",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 6993.101263495778,
+          "error_ns": 711.8789661458087,
+          "json_sha256": "ca02a5a6a23df62afb1fd63c675b512708416b2ea73b8219da567f9ca815e282"
+        },
+        "enabled": {
+          "score_ns": 4274.683692912527,
+          "error_ns": 89.5898949958748,
+          "json_sha256": "53dccd6dfa612bc95f98d06d22ee53f2b7995902a5629d0bc62a6a3df3a3dc16"
+        },
+        "disabled": {
+          "score_ns": 7012.877642430403,
+          "error_ns": 662.9700164864294,
+          "json_sha256": "b32fc0b8554d1a801e21d827396f35ba31e82ae1528768c44991805a303c06c3"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.6359342037611855,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.6405605996199983,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-end-64",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "64",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 536.5315975384885,
+          "error_ns": 5.844346444685314,
+          "json_sha256": "4785a9e4ff52fc8ef69bc4fe9b4acb2ceef59763efee763e89ad089d1044aca8"
+        },
+        "disabled": {
+          "score_ns": 3822.0683915198133,
+          "error_ns": 292.1828371311642,
+          "json_sha256": "92349155c3cdb97444838cd4cefe6b8f4662590f8a773202aab7a80bb1a8f9c6"
+        },
+        "original": {
+          "score_ns": 3723.07011999109,
+          "error_ns": 294.8495400143032,
+          "json_sha256": "37161bb1657eaca90c9d01296d75f3ad453063a2f699686da8415670ebcb8bcd"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 6.939144194064008,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 7.123659462098379,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-miss-64",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "64",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 196340.4707386357,
+          "error_ns": 13278.237964797141,
+          "json_sha256": "405a07751649495fefe6b47bcd43d0af2a6d1292636522c075963e78381ef67c"
+        },
+        "original": {
+          "score_ns": 188867.61652506277,
+          "error_ns": 10209.143356770843,
+          "json_sha256": "0734ce9c6abe8712dc55bc12758ddb1e510bd585287aa48347bd8e6999da87ec"
+        },
+        "enabled": {
+          "score_ns": 1208.417505345787,
+          "error_ns": 4.854859110368537,
+          "json_sha256": "7cdc994f110668653cb4e5c1d15e98db03682185c5c257b55408c808253059ad"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 156.29334703407707,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 162.47734733241316,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-miss-129-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "129",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 183568.65364276894,
+          "error_ns": 5900.629764177571,
+          "json_sha256": "1228dee77c4ce316a9655de8de4d30bb175313129d819c96ed3661f482ced5cd"
+        },
+        "enabled": {
+          "score_ns": 1141.3981207831962,
+          "error_ns": 7.0159871242008265,
+          "json_sha256": "6f31bb6bd6890aa5cb9335e7168f74857186138728c0c6020e7a06534d8e8b50"
+        },
+        "disabled": {
+          "score_ns": 190569.8616762304,
+          "error_ns": 11495.973408117969,
+          "json_sha256": "1f3758cfe99740a7a0ce86e7aa08a9cfb3608ec2faac20ca4b7f772ed88d619f"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 160.8278919513282,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 166.96177977362234,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-fallback-127-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "127",
+        "needleLength": "65",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 127,
+      "controls": {
+        "enabled": {
+          "score_ns": 594.0684506062461,
+          "error_ns": 9.680333734084341,
+          "json_sha256": "f0bd0909b8b6e347bcbb3e93be9f95bba1fd7aa8c55407e47d0b06647bcfa858"
+        },
+        "disabled": {
+          "score_ns": 3714.889859701284,
+          "error_ns": 271.3101888326794,
+          "json_sha256": "7b7c6546765336c0c4f726256ede106eedfb6a4130c6f5feb021cb544fdedc06"
+        },
+        "original": {
+          "score_ns": 3650.2971089852886,
+          "error_ns": 153.76430764565222,
+          "json_sha256": "d0ac80cd411330de178bafaba7f9311e651600d33d3bfbd7472acc73fee567de"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 6.144573247847391,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 6.253302722792708,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"127\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-fallback-127-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "127",
+        "needleLength": "65",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 127,
+      "controls": {
+        "disabled": {
+          "score_ns": 3487.0506201464764,
+          "error_ns": 216.00458675729718,
+          "json_sha256": "33c31b05f9bfe804fed82781099911cba8183e3047de748102a2fe85643921a1"
+        },
+        "original": {
+          "score_ns": 3373.3451341836817,
+          "error_ns": 172.10882302762226,
+          "json_sha256": "f59149ce9c756300d8142f11822c1af4d3f4db35018aa00be9b5a94e781c2f1c"
+        },
+        "enabled": {
+          "score_ns": 547.8444305838354,
+          "error_ns": 8.739058068697918,
+          "json_sha256": "db56ea46da6b04073bbab62f04916a2c008d1dedcf7623ba19914313e7b0f0d2"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 6.15748731914409,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 6.36503800254087,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-fallback-128-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "128",
+        "needleLength": "65",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "original": {
+          "score_ns": 3829.2095348016273,
+          "error_ns": 306.02960934777485,
+          "json_sha256": "6d57a4b49260a66bf4771c4dc76f6a5ed6048e483bf11d309236d035c32f1ac2"
+        },
+        "enabled": {
+          "score_ns": 598.1305428658624,
+          "error_ns": 3.237530545335756,
+          "json_sha256": "fbabce440e7e836f00fa3b035eefef07bdaa94c0012e09e1d959c0780e5b7981"
+        },
+        "disabled": {
+          "score_ns": 3736.29624754853,
+          "error_ns": 377.1201779359482,
+          "json_sha256": "65b8b718f063c65e2850a9f3243a34208b0eef0053b3acaec648dcc666ca61b6"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 6.401962883310528,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 6.246623403724825,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"65\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-mixed-fallback-128-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "128",
+        "needleLength": "65",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "enabled": {
+          "score_ns": 563.9637882963461,
+          "error_ns": 9.042129998802988,
+          "json_sha256": "0c3d3265d71e09344302b8c899695385235299e3979a0decc10509c95c4957ea"
+        },
+        "disabled": {
+          "score_ns": 3456.840860144024,
+          "error_ns": 148.70195087241768,
+          "json_sha256": "dc036f3c3f164c9eeefed691e71acb8c31300f91a6533a7a28241e769b3c6907"
+        },
+        "original": {
+          "score_ns": 3417.0923374082813,
+          "error_ns": 193.67048072267616,
+          "json_sha256": "0cdfda5ab5282cd677384fc5411e73e4eb9c318c159a2d80d3f8791c4f49c177"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 6.059063380169901,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 6.129544009530551,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-char-forward-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "disabled": {
+          "score_ns": 6222.100201586856,
+          "error_ns": 536.9581588789245,
+          "json_sha256": "7c1b11861206fec653ff100f175bbc1f7e8d7a499cccd674a6ba2b78d9b3fff1"
+        },
+        "original": {
+          "score_ns": 6150.656211319752,
+          "error_ns": 610.0849656235673,
+          "json_sha256": "2f52382dc252f79ba4cc168d9388aa632bf52f253e4e647c55dc469f02e53a76"
+        },
+        "enabled": {
+          "score_ns": 6508.928788772934,
+          "error_ns": 542.8853546952411,
+          "json_sha256": "58281ca2a466009d37108dee7d01e94f848e1b0232bb1467cff27f7a892d2e3b"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.944956752627075,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9559330580354758,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-char-forward-utf16-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "129",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 129,
+      "controls": {
+        "original": {
+          "score_ns": 5915.36514368867,
+          "error_ns": 529.6093180841716,
+          "json_sha256": "73cf2c3c39c0a6131e8af7c63b5e4b7418cbf5d8e9056986b69c13d1db366ddd"
+        },
+        "enabled": {
+          "score_ns": 446.1563354699289,
+          "error_ns": 8.756054433876397,
+          "json_sha256": "a519c9b995c150c2ff58cdc60e4585235b6d5fadd577ac31a752f277e346960d"
+        },
+        "disabled": {
+          "score_ns": 6369.4780724177745,
+          "error_ns": 609.4323321102529,
+          "json_sha256": "0e76d2eb4ec6b5e73c5ad493fc4b4a48f2e07e2ba47100617b3de4a6496dad0c"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 13.258503070360117,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 14.276336714369217,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-char-forward-utf16-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 852.871653253198,
+          "error_ns": 9.914394271778075,
+          "json_sha256": "41f67aa8161227dc0fa1ab9bed98f76734a6985b2a52fdced2f8a3cfceea735e"
+        },
+        "disabled": {
+          "score_ns": 195799.34312101483,
+          "error_ns": 17268.413505861794,
+          "json_sha256": "e6e46e3c5c8682382560c7969b5e3cd8398132dc264492cc63e2cd824adb3d70"
+        },
+        "original": {
+          "score_ns": 196954.53634082436,
+          "error_ns": 26213.51643746365,
+          "json_sha256": "00e4c774f9cf90b90f82f87f7a9657bd45d8dfddf12d3eae774356d53e1bc477"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 230.93103820435346,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 229.57656333653114,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-char-reverse-latin-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 255,
+      "controls": {
+        "disabled": {
+          "score_ns": 3103.4122733381437,
+          "error_ns": 194.336409957666,
+          "json_sha256": "419b5747e9eb0fc2d8f2d2b1d9fb6cb79e2217a6da1183a8042a241caaa61b4f"
+        },
+        "original": {
+          "score_ns": 2756.1961117779933,
+          "error_ns": 388.0397765227807,
+          "json_sha256": "9e0c3001af452a3a7855e6a01217096e7cf574795b79694baec42e3967b89826"
+        },
+        "enabled": {
+          "score_ns": 3106.0934315105796,
+          "error_ns": 204.57375757103884,
+          "json_sha256": "5b167c6dfbb9f7d259565e33ed8a7e0075876f07236cf3a49d2b08f47716e43b"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8873513217010921,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9991368069790701,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-char-reverse-latin-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 230.3661517570086,
+          "error_ns": 13.756419353513438,
+          "json_sha256": "2e0272c0e1b1cfcc397d5a8ebec25a5bca145e96b8eba8cbbcf61cd158da11ef"
+        },
+        "enabled": {
+          "score_ns": 259.7740476144483,
+          "error_ns": 21.850521052431187,
+          "json_sha256": "2d2e0867993d80b8cce63534a9f4137f284f075b43141508837da12b46e683b1"
+        },
+        "disabled": {
+          "score_ns": 254.99524775122646,
+          "error_ns": 16.8633887788858,
+          "json_sha256": "58c5fed42ea06bd41249bfd4d7736fda503471c14d2a84458797a0d93bb54854"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8867943271181332,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9816040135375091,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-char-reverse-utf16-128-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "enabled": {
+          "score_ns": 844.6035396850097,
+          "error_ns": 22.199776344823995,
+          "json_sha256": "2466dfb297d2f4c7a9037d3bf59917dd8b11d4e0c9160de702cc62f959c39155"
+        },
+        "disabled": {
+          "score_ns": 6321.359581202078,
+          "error_ns": 526.2194876910536,
+          "json_sha256": "802b6934763908bfdb9e5e778bea14d8987b106c98693987298ee81ab7ce2d4e"
+        },
+        "original": {
+          "score_ns": 5996.645571743256,
+          "error_ns": 548.0849149888762,
+          "json_sha256": "a2fa2cac29124c52431ca252fb530729cefb6efff888621843e6b6b28df3ff75"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 7.099953161432017,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 7.484410476848812,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "pilot-char-reverse-utf16-4096-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 190772.71299396647,
+          "error_ns": 14933.800351361579,
+          "json_sha256": "5085390358d0fb6774b5206485ab10f2f1362e7a43e237878e9a56349b0cb681"
+        },
+        "original": {
+          "score_ns": 188230.98883657652,
+          "error_ns": 24008.215234799685,
+          "json_sha256": "3d350945f80b5e61e67a25e7a275d6feeefc147638133bc0fc9325499f81f160"
+        },
+        "enabled": {
+          "score_ns": 1421.9253863225572,
+          "error_ns": 14.744741468250526,
+          "json_sha256": "1a33b0e85f3b1c4a0651e572d7540e224387d3de17a3817cb4a13bf310d36ff7"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 132.37754290567057,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 134.16506578263633,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-char-reverse-utf16-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 397.9227332590059,
+          "error_ns": 23.586831148267187,
+          "json_sha256": "4defe73b6753e31b8b07bd019915c11509ac0f052aa4bde71683013de81ec2c5"
+        },
+        "enabled": {
+          "score_ns": 425.3225888632116,
+          "error_ns": 32.321072895279926,
+          "json_sha256": "0a04dcfbeb750de3d83658cc7d378a3e6266c6250dd0f55cfff5edc2fa6a860b"
+        },
+        "disabled": {
+          "score_ns": 414.18309672716003,
+          "error_ns": 11.927092147282819,
+          "json_sha256": "0776ac23baa6838e1caea228cdf4ad06f43b518d42de6d94e3eaca440c46c7e5"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9355786494259825,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9738093098562556,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "utf16-uniform-end-129-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "129",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "actual_haystack_code_units": 129,
+      "controls": {
+        "enabled": {
+          "score_ns": 628.6671767769587,
+          "error_ns": 10.29063076666365,
+          "json_sha256": "87191766c390b25fb6e8255c2a36bfd6b0a182213bbfebdab618da121ec6efa8"
+        },
+        "disabled": {
+          "score_ns": 11111.15221040307,
+          "error_ns": 863.7319926893672,
+          "json_sha256": "a6eb458952994ade55cefc3d1c359305f592319304dcb3574016451223ff8dc7"
+        },
+        "original": {
+          "score_ns": 11056.856473840462,
+          "error_ns": 713.4983189769454,
+          "json_sha256": "e51b1445ddc22f5bea6871fad1bbc95339fd6cf608b88aea8eec1eb904a4d6eb"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 17.587774393641137,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 17.674140818624497,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "utf16-uniform-end-130-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "130",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "actual_haystack_code_units": 130,
+      "controls": {
+        "disabled": {
+          "score_ns": 11721.146684184801,
+          "error_ns": 1361.75092518287,
+          "json_sha256": "908408ea6ce5ddb6fe5b6ce17f379152c468eddf17ecfb952f8d7705fac1f08e"
+        },
+        "original": {
+          "score_ns": 11815.216754790048,
+          "error_ns": 977.0841781623592,
+          "json_sha256": "eb91b622e7479b31db8c32befea066cfa6c512c25a3b391340c213b03c96ab2d"
+        },
+        "enabled": {
+          "score_ns": 632.8629642532003,
+          "error_ns": 6.708901924262015,
+          "json_sha256": "ec57ffa53dd20b35fbc1d6d66b1194f4d8b47271f01f5d621f766b47b8a2e10c"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 18.669470994771203,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 18.52082890964579,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "overlap-min-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "257",
+        "shape": "OVERLAP_LATIN1"
+      },
+      "actual_haystack_code_units": 258,
+      "controls": {
+        "original": {
+          "score_ns": 7987.067145005201,
+          "error_ns": 866.0564169946458,
+          "json_sha256": "c57e1dd14c29361555f6b6e01d80521f48168f74cb3bc4a494290f2672cea1b3"
+        },
+        "enabled": {
+          "score_ns": 475.3209314943747,
+          "error_ns": 6.976094340650054,
+          "json_sha256": "a57eb7bac5788a362f5fe710f536d8ce90c9c18346c8badb512ba8b4e822f43b"
+        },
+        "disabled": {
+          "score_ns": 8414.813081195742,
+          "error_ns": 1368.863618132296,
+          "json_sha256": "d111d7856fc19a5c8058c8889733f9e8a076aa7da11bfffe330a7ff8e54b7ab4"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 16.803524978154105,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 17.703434718812353,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "overlap-min-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "129",
+        "shape": "OVERLAP"
+      },
+      "actual_haystack_code_units": 130,
+      "controls": {
+        "enabled": {
+          "score_ns": 636.557822427348,
+          "error_ns": 7.56229124158119,
+          "json_sha256": "d9857826f046f96c9fc81dd3c6c475281a505ccfed3f7edbfdcda24c9d1f18e7"
+        },
+        "disabled": {
+          "score_ns": 21299.887578110483,
+          "error_ns": 2305.234332228532,
+          "json_sha256": "74cd0c84aaa5c35a8d1331c2e4d6e3e03a9d92c8affba35ee911d67abc3007c9"
+        },
+        "original": {
+          "score_ns": 22906.953328831783,
+          "error_ns": 2632.5514140158957,
+          "json_sha256": "7c890303c556bc82b403425af27ced8af566ae286e07f408bc7210e25210934f"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 35.985659938137374,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 33.46104128748099,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"575\",\"needleLength\":\"511\",\"shape\":\"LATIN_PREFIX_MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "latin-prefix-miss-575-511",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "575",
+        "needleLength": "511",
+        "shape": "LATIN_PREFIX_MISS"
+      },
+      "actual_haystack_code_units": 575,
+      "controls": {
+        "disabled": {
+          "score_ns": 259077.66694769813,
+          "error_ns": 31884.646887058967,
+          "json_sha256": "702259c5c00e44de96a7ca13eb3a09cf47eecd2491b58665d7e383259739bfd1"
+        },
+        "original": {
+          "score_ns": 248640.81277166092,
+          "error_ns": 36767.725883658546,
+          "json_sha256": "9e163ba6bf9a1e56bb996df453fc47d3c684ff095e91bd11540746d4aee51515"
+        },
+        "enabled": {
+          "score_ns": 508.73035315223433,
+          "error_ns": 8.509577027370055,
+          "json_sha256": "8a32c0105b121e6346f813dab83726fec17c4b98f91297a5c302be3417a09591"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 488.74774471586665,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 509.2632380638998,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"303\",\"needleLength\":\"256\",\"shape\":\"UTF16_PREFIX_MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "utf16-prefix-miss-303-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "303",
+        "needleLength": "256",
+        "shape": "UTF16_PREFIX_MISS"
+      },
+      "actual_haystack_code_units": 303,
+      "controls": {
+        "original": {
+          "score_ns": 510356.91067154205,
+          "error_ns": 22042.643537216456,
+          "json_sha256": "22ed003cdc339567b8123c587f54c01adf659885c8c3b6dec8c91f772714de46"
+        },
+        "enabled": {
+          "score_ns": 714.9518374882119,
+          "error_ns": 7.641020383289528,
+          "json_sha256": "48df7193d4284b2c701e3bcd943c350031a683ab2ad76c639d44770c58ffa510"
+        },
+        "disabled": {
+          "score_ns": 501150.5726149981,
+          "error_ns": 55578.93100541862,
+          "json_sha256": "ed05071476c21407bb87deb5b28a511b77e493abbee29e14605d6c180c163dbe"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 713.8339730191361,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 700.957108349639,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]",
+      "phase": "periodic",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "params": {
+        "length": "4095",
+        "needleLength": "513",
+        "shape": "LATIN_PERIOD3_ABC_MISS"
+      },
+      "actual_haystack_code_units": 4095,
+      "controls": {
+        "enabled": {
+          "score_ns": 570.1110452932679,
+          "error_ns": 7.749426998131998,
+          "json_sha256": "1ab336ad9fd550d8d60242aee29d32a0f26930d1b51be58d096337b8262c8457"
+        },
+        "disabled": {
+          "score_ns": 98276.00629722104,
+          "error_ns": 9008.299842804343,
+          "json_sha256": "8455d75601c18abbfabd753c5a64f2eeabf7669b9ae96e178fece0b3d503a813"
+        },
+        "original": {
+          "score_ns": 90279.76352315533,
+          "error_ns": 6060.58990730508,
+          "json_sha256": "b8d06d0703fdbf2105b47e7acd908d78972eaa7781188277dda109195e241c71"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 158.35469996325887,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 172.38046361067674,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+      "phase": "periodic",
+      "backend": "neon",
+      "tier": "interpreter",
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "params": {
+        "length": "2047",
+        "needleLength": "257",
+        "shape": "UTF16_PERIOD3_ABC_MISS"
+      },
+      "actual_haystack_code_units": 2047,
+      "controls": {
+        "disabled": {
+          "score_ns": 200219.77899525512,
+          "error_ns": 20689.049865122415,
+          "json_sha256": "049e7cc08a511cb95ad6874af8701f6d014275ba7edf671a34b32874a24380fe"
+        },
+        "original": {
+          "score_ns": 198559.93120204483,
+          "error_ns": 21788.749858068997,
+          "json_sha256": "d61c20f2a183924e0416054b0783371a3cf3dbe6e08346c44f8d52b71eb8aef1"
+        },
+        "enabled": {
+          "score_ns": 846.2432086815925,
+          "error_ns": 11.675349791637617,
+          "json_sha256": "b56d17d5da3f523a02640d54cd8e31c454bd6c43e8223a2917b3c009c310e4a0"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 234.63695680511512,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 236.5983879589276,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "tiny-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4,
+      "controls": {
+        "enabled": {
+          "score_ns": 6.65048661455509,
+          "error_ns": 0.09636050491845226,
+          "json_sha256": "f44b9fce17fbb59014b847b2039afe3a97bd230c4d75963f3c4863becd07c961"
+        },
+        "disabled": {
+          "score_ns": 6.483111682157805,
+          "error_ns": 0.04654802429429858,
+          "json_sha256": "2185492c080e086a2ada2e2fbc19384bb29b07f3a97370b92002051a210490d3"
+        },
+        "original": {
+          "score_ns": 6.466478297432869,
+          "error_ns": 0.028388151335020123,
+          "json_sha256": "554bc5c3579cec87f4f7414da9efc557c1d1d937d1062c860e9da52dee70f150"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.972331601011044,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9748326788552626,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "tiny-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4,
+      "controls": {
+        "disabled": {
+          "score_ns": 5.90953272589982,
+          "error_ns": 0.00781804834364693,
+          "json_sha256": "56b742778aeb5f241704357ecb9c8449c27bf52cdde0749c4126658489a9c07c"
+        },
+        "original": {
+          "score_ns": 7.086726335583778,
+          "error_ns": 0.03587241650724382,
+          "json_sha256": "687349c46a7707a50deef615784d86060b3dfc367360a24234e927c0a4a1916a"
+        },
+        "enabled": {
+          "score_ns": 5.984939631329608,
+          "error_ns": 0.01861488073303048,
+          "json_sha256": "d5ee320fae1c7ae736402df5c0bbd0d0ac1eb45d097129189d9c5c631e03c4ff"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.184093202625905,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9874005570523966,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-latin-31-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 31,
+      "controls": {
+        "original": {
+          "score_ns": 10.20286469961925,
+          "error_ns": 0.01601704388666267,
+          "json_sha256": "30a0b9d2a479ccfca75144401512f7957418ca400053b0bb5a8867f9d2373fca"
+        },
+        "enabled": {
+          "score_ns": 10.282155605759431,
+          "error_ns": 0.047233024203742695,
+          "json_sha256": "046e01edba86c419761aa414cc97da8c5679953066f050d5f5bb5d03968d23bf"
+        },
+        "disabled": {
+          "score_ns": 10.262261544514953,
+          "error_ns": 0.04998133912657912,
+          "json_sha256": "fb5a6565777b5c32ce04a5f188eff4f821d521dc96e4c4cba88be63cee134071"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9922884938547547,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9980651857443846,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-latin-31-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 31,
+      "controls": {
+        "enabled": {
+          "score_ns": 28.12188851369374,
+          "error_ns": 0.09269032004697864,
+          "json_sha256": "34be2422ef9d15f6bfa934d24563452133d97ab3b9b22c65f2294e7ed458b3df"
+        },
+        "disabled": {
+          "score_ns": 28.564730618336522,
+          "error_ns": 2.0673888480588793,
+          "json_sha256": "278303166cb985badff82ad805738408567cef64f0d9739e3a3064268e87ef94"
+        },
+        "original": {
+          "score_ns": 27.83296037546914,
+          "error_ns": 0.07913226396920069,
+          "json_sha256": "fb83347272268c5b41234ac21f767080fd783169e1a9aa35511d1e8df7ba4f18"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9897258628955907,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.015747239180866,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-latin-32-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "32",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 32,
+      "controls": {
+        "disabled": {
+          "score_ns": 10.412953427880037,
+          "error_ns": 0.042577479473242565,
+          "json_sha256": "8ffe3c43008f366fd74a4ff04ddb8d412893edd95c79493ef22a265d4cef8020"
+        },
+        "original": {
+          "score_ns": 10.22008071929456,
+          "error_ns": 0.051903037169422295,
+          "json_sha256": "c8b9747d567f43870e161e21a082037cd64a788cfcaaf5698e9657f078b53b5f"
+        },
+        "enabled": {
+          "score_ns": 8.129394199891108,
+          "error_ns": 0.02574910799336602,
+          "json_sha256": "344c435d0d1398db2e2f08131533302d9df1af10230599c5894bfae8a7031227"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.257176176723163,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.2809015249893427,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-latin-32-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "32",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 32,
+      "controls": {
+        "original": {
+          "score_ns": 28.675984639656424,
+          "error_ns": 0.18184216458178576,
+          "json_sha256": "78a691ab27fc22d73c8e0192b0c6161de94b5ad9fd93b9c3e15ef7f24d6f87ed"
+        },
+        "enabled": {
+          "score_ns": 31.5035368240436,
+          "error_ns": 0.19015888511153742,
+          "json_sha256": "ea606f5a09e7f94c7e66c1167642aec58097fa05a079cfa50e2b73a0ff38ac65"
+        },
+        "disabled": {
+          "score_ns": 29.289020015801373,
+          "error_ns": 0.1361006969138276,
+          "json_sha256": "2862da2d48e8e016b9e9337f410fde316f007d89074de77b910175d730c04f00"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9102465161235744,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.929705771748393,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-latin-33-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "33",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 33,
+      "controls": {
+        "enabled": {
+          "score_ns": 8.224233690916623,
+          "error_ns": 0.09585585109586715,
+          "json_sha256": "89597ea9633046e7205be9578dbd6e3a18be133d92562a540ae8830e3402007f"
+        },
+        "disabled": {
+          "score_ns": 10.448478917970737,
+          "error_ns": 0.03394676351873771,
+          "json_sha256": "2adc8096418861069cde8ae5f7a3c4434af60179e9df393e51bffcd94763228d"
+        },
+        "original": {
+          "score_ns": 10.213443761025749,
+          "error_ns": 0.05713821383905815,
+          "json_sha256": "1941b18809f8db13658c9d71835a68ef7e910cd05e9a1cb74d3c16acf989f0c9"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.2418717834229513,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.2704501489920836,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-latin-33-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "33",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 33,
+      "controls": {
+        "disabled": {
+          "score_ns": 30.1307248001008,
+          "error_ns": 2.0275829688132134,
+          "json_sha256": "1b1b7c347e07c5397efb376d6519432fc7f45646112962ad8e57b90510f79485"
+        },
+        "original": {
+          "score_ns": 29.23910749738518,
+          "error_ns": 0.10626675009186558,
+          "json_sha256": "5d6e5ced4a1646df6a33d48f36bb47f873f7079e69a936d521df92f18e628b56"
+        },
+        "enabled": {
+          "score_ns": 32.162347546666375,
+          "error_ns": 0.06955993443305933,
+          "json_sha256": "b77c4c0a1953328580e5dc937adf335a175b9b1d393a285de6d54cdd72128053"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.909109866901361,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.936832261898241,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-mixed-end-9-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "9",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 15.708138870171638,
+          "error_ns": 0.057555161804458556,
+          "json_sha256": "35e362107802b25bd519ceba8adda9138b35edbe7812553dcc1f428994c86271"
+        },
+        "enabled": {
+          "score_ns": 18.09205490730024,
+          "error_ns": 0.07740777522477518,
+          "json_sha256": "57057f7d2b3096fd532659425ccc4698cc0fd182ebc2f12b686c174842a82368"
+        },
+        "disabled": {
+          "score_ns": 14.189649076618059,
+          "error_ns": 0.04618779736032462,
+          "json_sha256": "a4dddbe3a6f490b6870777baae89e413b36eab4ee36b12557bf3af35120d520a"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8682340922939229,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.7843027864619435,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-mixed-end-31-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 31.16427656705086,
+          "error_ns": 0.48515905417063454,
+          "json_sha256": "bab3de111d4c88f7fce6afe3785b579bec4ae339c219f80aa45ba79c0ade7134"
+        },
+        "disabled": {
+          "score_ns": 35.870410384972594,
+          "error_ns": 0.06095224668067019,
+          "json_sha256": "e6973133d535dea2c32bd714464832de6654f19e53cb674eace700214f0cb45d"
+        },
+        "original": {
+          "score_ns": 40.43186584181062,
+          "error_ns": 0.08489466880919143,
+          "json_sha256": "0bd8d01dbab068c07eb1b58d4424a0118286a318d4cd7875e3c32c7ee5ccf2ea"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.2973786108854564,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.1510105266777604,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-mixed-end-32-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "32",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 36.8749718515658,
+          "error_ns": 0.12019976101299945,
+          "json_sha256": "08370cab342b2ca031fe9c34842005386efd84a902e974d5f23d19b892d25a34"
+        },
+        "original": {
+          "score_ns": 41.47758253459461,
+          "error_ns": 0.031640783699652196,
+          "json_sha256": "e5e0e4914771a2cf21a11800fcca354121ceaf5b8a35f3d246a172ce44241226"
+        },
+        "enabled": {
+          "score_ns": 30.43404929424741,
+          "error_ns": 0.038787533422161166,
+          "json_sha256": "26522120e52022da4b45e5ee6f273eae2f7ecf3c547c561fd587d69347f3ae94"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.3628676924839782,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.211635411871921,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-mixed-end-33-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "33",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 42.66100223819567,
+          "error_ns": 0.06292208308765118,
+          "json_sha256": "9287ee5671854ccae7f35b635a10870448a7aed03715657e329c1a0eb99df37e"
+        },
+        "enabled": {
+          "score_ns": 36.29875816755618,
+          "error_ns": 0.4811523156683581,
+          "json_sha256": "fbba7cf39e82497781cf56a96f714dbfb008ddbc09b22c369ab2546152314289"
+        },
+        "disabled": {
+          "score_ns": 37.88997939996311,
+          "error_ns": 0.07770378380574605,
+          "json_sha256": "3144e15cddab876a5e66fd73c19613e52e2fdca18ee32c39730d6a2eb62d6004"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.175274427881835,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0438367953267658,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-mixed-end-129-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "129",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 148.03424196588975,
+          "error_ns": 0.5804382497209469,
+          "json_sha256": "4c921ec397d27d60fdd178bee04682c3f0fc23753e6b1c694716bd42b077acda"
+        },
+        "disabled": {
+          "score_ns": 134.3305161585227,
+          "error_ns": 0.8630481262545792,
+          "json_sha256": "6e9ec6740c33bb8ccc62ab330da3dbc803e774127931109f493b275c750b0e3d"
+        },
+        "original": {
+          "score_ns": 150.68940378462753,
+          "error_ns": 0.19449894464858425,
+          "json_sha256": "cf0dc6d44341202de1c86a2bf82f35e3923431471e296903a1dbfb1444c0ecfb"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.0179361327722378,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9074286757889118,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-forward-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "disabled": {
+          "score_ns": 75.58505670142645,
+          "error_ns": 0.13094581842603586,
+          "json_sha256": "b44fb87224a779389509a697e637327a74ca4cb96e4fe0ee0cc912097d968086"
+        },
+        "original": {
+          "score_ns": 75.62700083052414,
+          "error_ns": 0.07091470674718467,
+          "json_sha256": "aada10a825e47fb107a763eeeb20eca8973b62c16adeb8aecf192cf58b5d18d5"
+        },
+        "enabled": {
+          "score_ns": 78.60704600112956,
+          "error_ns": 0.10999060855750993,
+          "json_sha256": "2349ea6c0077509ec9bbb53824523ff9f4958d329a2abd0d1e4265566407250f"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9620893377603504,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.961555745274289,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-forward-utf16-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "129",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 129,
+      "controls": {
+        "original": {
+          "score_ns": 76.33961120543245,
+          "error_ns": 0.13730556397812926,
+          "json_sha256": "ad4223442d195f54f68e1632d5d1508e9c50b80edccc17ef4f44a380d9039c9f"
+        },
+        "enabled": {
+          "score_ns": 29.193295222608604,
+          "error_ns": 0.216179961498278,
+          "json_sha256": "d27e9adf8f2441931b0d9b1a535ebc261fe7e0dfd8fc7c47a3f9f58bea88628c"
+        },
+        "disabled": {
+          "score_ns": 76.3612995103128,
+          "error_ns": 0.16274459013529188,
+          "json_sha256": "14f815b9662d796889f751fd892812a6c0eb8a67948bd9150a104ec41ab57ed5"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.6149706849917926,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.6157136057451704,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-forward-utf16-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 431.9772505786217,
+          "error_ns": 0.8055836618880933,
+          "json_sha256": "2089acb467143f08c2d530bdc207caed4897702960583190e5c483172d3247d3"
+        },
+        "disabled": {
+          "score_ns": 2380.889976849747,
+          "error_ns": 5.972399946269089,
+          "json_sha256": "ac8127f1054daf8381aa71b015150cfb687606ed589205057fa2f943f53756d1"
+        },
+        "original": {
+          "score_ns": 2379.8720008866985,
+          "error_ns": 3.281390875001861,
+          "json_sha256": "827db3fb0cf2163c083393c2d0a6557dce54d42a8a867fffe273ca91bff513e0"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 5.509253086126469,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 5.511609636064423,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-reverse-latin-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 255,
+      "controls": {
+        "disabled": {
+          "score_ns": 171.9806046796625,
+          "error_ns": 0.15172567788913707,
+          "json_sha256": "1ce4157f5c697c947d5facc92683100923446d780c7dfa62ee6e921872d2888f"
+        },
+        "original": {
+          "score_ns": 171.8494704669118,
+          "error_ns": 1.6786482709347736,
+          "json_sha256": "cca7223bc9766fdb420e034631d4771177c2a4c366b8f33bc178e7e426051377"
+        },
+        "enabled": {
+          "score_ns": 159.28895393613135,
+          "error_ns": 0.8411478425836734,
+          "json_sha256": "c6d46e538d9df6456e11dd2ed4cd31c4b4695b9a943a5b1d55b2873010b7edba"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.0788536569573854,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0796769043295997,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-reverse-latin-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 256,
+      "controls": {
+        "original": {
+          "score_ns": 172.62162402600774,
+          "error_ns": 1.127268091425935,
+          "json_sha256": "658287dc7b7934495ce939a6d6efbef4d9feea878786a82213ad311bae715996"
+        },
+        "enabled": {
+          "score_ns": 24.38059243762777,
+          "error_ns": 0.2846760626087681,
+          "json_sha256": "f0d843c317a4036bdb6b5cf4cdf0d0403ca081eb4f92915736fce624bc99543c"
+        },
+        "disabled": {
+          "score_ns": 172.63360407396988,
+          "error_ns": 0.30990448527333797,
+          "json_sha256": "41c2091eddb231ebcbcc1c2aba5f85a21f00ffe668ef1d21330354b3049e4821"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 7.080288326365371,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 7.0807797027744055,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-reverse-latin-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 165.66843562522436,
+          "error_ns": 0.25388571434546076,
+          "json_sha256": "5c12193d6661eca8903c87719491e1b17012f439bb592fdf50af29b73a672c12"
+        },
+        "disabled": {
+          "score_ns": 2670.5742612799227,
+          "error_ns": 3.6874105878859686,
+          "json_sha256": "0d98b3888c6b271f47d45848ce21c0b835f271ffb2da679be674d8317e5bb95a"
+        },
+        "original": {
+          "score_ns": 2675.921304049697,
+          "error_ns": 10.055358543450923,
+          "json_sha256": "68df8db9b36f3661c93c35ce80ff234dc00fd5775ef552494680c432d5e3f71d"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 16.15227000816966,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 16.119994440711107,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-reverse-latin-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 7.283235722092167,
+          "error_ns": 0.025945143705724833,
+          "json_sha256": "ae2751b45c7a9ef6a247a3caedfc4bedad69fb6389b73a36b780599224109880"
+        },
+        "original": {
+          "score_ns": 7.237813704869839,
+          "error_ns": 0.01717870187378987,
+          "json_sha256": "d1fbac03749dc9fae01e8da7b59b93dda11156d7d1f255927120b2e9985d0c72"
+        },
+        "enabled": {
+          "score_ns": 7.248451007397364,
+          "error_ns": 0.06275307952640571,
+          "json_sha256": "37774aeb4cb260fe547d6a7dc3be8a2b4588e60be8128cdeafc2acb621c25f04"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9985324723148892,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0047989169905824,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-char-reverse-utf16-128-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "original": {
+          "score_ns": 83.0112771449704,
+          "error_ns": 0.60718130856685,
+          "json_sha256": "8dd5438efa4ad7cbea9574ca0c475e815a49574606c6953d8657cb36645399c8"
+        },
+        "enabled": {
+          "score_ns": 44.729260934590464,
+          "error_ns": 0.1949028338614083,
+          "json_sha256": "8922df5cb9bea879a31be2678cc07328ebc5daaeb8db75d6e5f02ccd248706dc"
+        },
+        "disabled": {
+          "score_ns": 89.16306838623633,
+          "error_ns": 0.1872857029312303,
+          "json_sha256": "4d45dd656c6a3af493e59fb8092c4ee1dfe790f570eaa09faace49fff7e6a906"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.855860691871511,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.9933946263190745,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-char-reverse-utf16-255-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 255,
+      "controls": {
+        "enabled": {
+          "score_ns": 60.28517050605694,
+          "error_ns": 0.1482741962340934,
+          "json_sha256": "81472f3d137025702e011e63574cf67cb9b2a2716f192eea4154a2c6c11fbdc7"
+        },
+        "disabled": {
+          "score_ns": 171.8570833841448,
+          "error_ns": 0.2996578417588202,
+          "json_sha256": "f97496de18879bcfc7ddb76903d2410ae727302ac090470991a2e3e003b1db5f"
+        },
+        "original": {
+          "score_ns": 158.7524983534617,
+          "error_ns": 0.38665252427871943,
+          "json_sha256": "ef84cfbe27bdf0564aa68a8ec5233fc1be55b654400fae0cfeea91def4964db6"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.6333590337529458,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.8507356277092732,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-char-reverse-utf16-256-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 256,
+      "controls": {
+        "disabled": {
+          "score_ns": 172.22677266420882,
+          "error_ns": 0.24219139166588868,
+          "json_sha256": "3a2256f8dd03e2c081763b8133953cc29d356a8d6f62254abb7e578ddb5d8adf"
+        },
+        "original": {
+          "score_ns": 158.90225677176997,
+          "error_ns": 0.9610119703785068,
+          "json_sha256": "7073f784e9d7223bebf6bc32f0537afc1f3cf521e16335adaf9d6ed5dae2ffc9"
+        },
+        "enabled": {
+          "score_ns": 62.73644922333733,
+          "error_ns": 0.3259487586814286,
+          "json_sha256": "337a7be260b07b76352b743fd8725698f4fbec0c6b20aa82cc999fea5989fdbe"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.5328538471485555,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.7452425949561423,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-char-reverse-utf16-4096-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 2428.918235601731,
+          "error_ns": 3.1168124310127756,
+          "json_sha256": "ba660db75c125f7e6ce01919a472431f06adfd7a806017315479fa34956f78c8"
+        },
+        "enabled": {
+          "score_ns": 620.3826755831517,
+          "error_ns": 1.2498817714945816,
+          "json_sha256": "25210488bff871ea26d02b54bc9eb8f6abca047f80c363345580e41cfff7c547"
+        },
+        "disabled": {
+          "score_ns": 2672.462826867721,
+          "error_ns": 4.496093193776685,
+          "json_sha256": "5688ec2b255db00f5b22e2cfc30b8df8ab9bd3609d5980ebaaf6176ead41fedb"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 3.9151935268317724,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 4.307765081214817,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-char-reverse-utf16-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 6.91637957238536,
+          "error_ns": 0.07440929838329943,
+          "json_sha256": "60af1467904cf32156c66fe83ef5dd5421611dcb263e23b27b8f3c29636b1898"
+        },
+        "disabled": {
+          "score_ns": 6.821612687548587,
+          "error_ns": 0.031677391247914403,
+          "json_sha256": "3c2319abde83fc2966d123cc6d384ad3acc4d5447fddf4d1b20c27a59603ba36"
+        },
+        "original": {
+          "score_ns": 7.003762280111007,
+          "error_ns": 0.08505800355010279,
+          "json_sha256": "45a41307f6057117f3ee6ea7e094363dbc7ab76f78a2f857dee127b71e6f9152"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.012634168904572,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9862981949089169,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "utf16-uniform-end-129-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "129",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "actual_haystack_code_units": 129,
+      "controls": {
+        "disabled": {
+          "score_ns": 142.7165680066762,
+          "error_ns": 0.2783040980038331,
+          "json_sha256": "135966d7754a2113b8ecd3a45fdde66cb21c8044a3064c3714c8df2229cce3e2"
+        },
+        "original": {
+          "score_ns": 135.5015301775914,
+          "error_ns": 0.20659059404273042,
+          "json_sha256": "42cf76cff3b342cba72725ec5e0b2e3c15512ba3b10f1a12e5f58e61027b11cb"
+        },
+        "enabled": {
+          "score_ns": 138.6478057679735,
+          "error_ns": 0.20411271909267592,
+          "json_sha256": "cc3de7f99a503c5f121c3ff9264206fb9932df59c222227d09017d5397a452bb"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9773074260140303,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.029346026907283,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "utf16-uniform-end-130-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "130",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "actual_haystack_code_units": 130,
+      "controls": {
+        "original": {
+          "score_ns": 135.4214354279936,
+          "error_ns": 0.08531504693503947,
+          "json_sha256": "a6e5b7988d53eb77aa1b79229d0cdf6594e2f9801d75551b028e14d5e1ece196"
+        },
+        "enabled": {
+          "score_ns": 138.51501071410462,
+          "error_ns": 0.10392570704392068,
+          "json_sha256": "9813e51b92bb330acffd355bd2127b4fc7708719424dae3d81c71118b235d071"
+        },
+        "disabled": {
+          "score_ns": 142.7522351607357,
+          "error_ns": 0.34751364981452465,
+          "json_sha256": "dfa612c37b1a73a481f3be0abd2da0f099a93af156f4256e8cbfff52213debdf"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9776661369034135,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0305903629129172,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "overlap-min-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "257",
+        "shape": "OVERLAP_LATIN1"
+      },
+      "actual_haystack_code_units": 258,
+      "controls": {
+        "enabled": {
+          "score_ns": 647.8146545968964,
+          "error_ns": 0.8091727535651642,
+          "json_sha256": "c3cb730d87bf320700a6cac3e236714dc815db8b701d26858ba230e55df739a7"
+        },
+        "disabled": {
+          "score_ns": 643.388045349304,
+          "error_ns": 0.5423618925897108,
+          "json_sha256": "7d68cef61cae35303c6a35263229be56b9a44c6bc3459665e30495d448d671e2"
+        },
+        "original": {
+          "score_ns": 643.9025643535222,
+          "error_ns": 2.8658111877338963,
+          "json_sha256": "2717fd8be76a60e0c45096a64b88e0b737b6098f960d53fe3e875266799cd0c6"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9939610964098852,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.993166858427513,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "overlap-min-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "129",
+        "shape": "OVERLAP"
+      },
+      "actual_haystack_code_units": 130,
+      "controls": {
+        "disabled": {
+          "score_ns": 279.4359909915104,
+          "error_ns": 0.30530372988424936,
+          "json_sha256": "12bdb255fa5b1e76d5546b82a0efd6a0347ca96e5e3a026b0dfa64af29b4647c"
+        },
+        "original": {
+          "score_ns": 264.7588360150112,
+          "error_ns": 0.27835104422051465,
+          "json_sha256": "6c855b9ded5cb5b39a5ed6079e1f918df5324e8525435ec9aa67b2743a36279f"
+        },
+        "enabled": {
+          "score_ns": 268.04255370211956,
+          "error_ns": 0.3363641315395487,
+          "json_sha256": "a850ac03aad18c7b16aeefda6e6a3afdd029385f50ad389203e72b9037b9385a"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9877492672646387,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0425060764868423,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-bulk-latin-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 3174.044226911684,
+          "error_ns": 10.520062518655457,
+          "json_sha256": "1235edb380ebb4c4475d13035a13f24646ade30e36b151d4ff4f3bdb1c93bda1"
+        },
+        "enabled": {
+          "score_ns": 327.27874580214956,
+          "error_ns": 0.38775442724739984,
+          "json_sha256": "0c2967062764c565d47951d2c699b823880f9648d26527ff34581a681728d1fd"
+        },
+        "disabled": {
+          "score_ns": 3176.1043530923243,
+          "error_ns": 22.132985521384203,
+          "json_sha256": "9b41a60635019cf6c52e704d5ae5df771f1536aaf84bb2aee9173f76c4bf45de"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 9.698290120038822,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 9.704584834275735,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "pilot-neon-utf16-127-4-miss-c1",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 127,
+      "controls": {
+        "enabled": {
+          "score_ns": 104.9308702561168,
+          "error_ns": 0.33864137742762457,
+          "json_sha256": "9be4379d1c21d0f310a89a6a2bf577d985635d6f120b90c79dcd8d4d736b5815"
+        },
+        "disabled": {
+          "score_ns": 88.61079300224488,
+          "error_ns": 1.2518421489599294,
+          "json_sha256": "4ebad117489f150cd5d6a5e161561fab014a96ff0045b798e30abaf00c926494"
+        },
+        "original": {
+          "score_ns": 87.8710471983907,
+          "error_ns": 0.5246137793918481,
+          "json_sha256": "a9f6ffa9a46e746091b62e086733531155a3fe7bbc7dd008d9ae4fd994f86be2"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8374184544921219,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.844468294086977,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]",
+      "phase": "periodic",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "params": {
+        "length": "4095",
+        "needleLength": "513",
+        "shape": "LATIN_PERIOD3_ABC_MISS"
+      },
+      "actual_haystack_code_units": 4095,
+      "controls": {
+        "enabled": {
+          "score_ns": 171.6021498467014,
+          "error_ns": 0.2610379961971052,
+          "json_sha256": "39939a9feab1d1a5469d86f33755cae9920ca9c3b299ecdae539dcf33a3da1b5"
+        },
+        "disabled": {
+          "score_ns": 5994.684944734844,
+          "error_ns": 9.497877944040914,
+          "json_sha256": "c94b2b2edca0526553d70278f38ffbd5cc6001f9705eb4c2470cfdaffd6f3d01"
+        },
+        "original": {
+          "score_ns": 5995.217010828822,
+          "error_ns": 8.204093914250416,
+          "json_sha256": "ac988ba399814ef1cd1d9746da9fb6bd6e56fac4c72af163148291ef36a202bd"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 34.936724371953225,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 34.93362379253477,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+      "phase": "periodic",
+      "backend": "neon",
+      "tier": "c1",
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "params": {
+        "length": "2047",
+        "needleLength": "257",
+        "shape": "UTF16_PERIOD3_ABC_MISS"
+      },
+      "actual_haystack_code_units": 2047,
+      "controls": {
+        "disabled": {
+          "score_ns": 2503.569848727494,
+          "error_ns": 6.401744996521079,
+          "json_sha256": "2d2d9c5d60acf62df18643c6037bc8c42ae68dff748b830b71e54465941d5e62"
+        },
+        "original": {
+          "score_ns": 2458.340371402283,
+          "error_ns": 3.9294506976566588,
+          "json_sha256": "dec9f4053095fbd68713f864a5139d754f58eb14a5c2b3e78c79a921cbc87e3f"
+        },
+        "enabled": {
+          "score_ns": 247.8663827611618,
+          "error_ns": 0.746909141139539,
+          "json_sha256": "d1ef8ef66b7a8e7fb36d12ee3061c1ff7a73a953bee81c187235da74049d1467"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 9.918006403357579,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 10.100481641917028,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "tiny-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4,
+      "controls": {
+        "enabled": {
+          "score_ns": 3.6790761443912863,
+          "error_ns": 0.018306858616330118,
+          "json_sha256": "44a3879dfa00299ee748c305578affb9d9c98467acc21cb1dc878bf6cd7c915e"
+        },
+        "disabled": {
+          "score_ns": 3.668784761228694,
+          "error_ns": 0.024866169793869054,
+          "json_sha256": "a83d68fa370d9c50bab0a49143c9523de38b98bf685a65522a418fd9d44fcbff"
+        },
+        "original": {
+          "score_ns": 3.4223356663553766,
+          "error_ns": 0.012548505669769165,
+          "json_sha256": "110236f0c4452726551b5248a81f835f6058772e3bf4f1b850b69c0894ba2e3a"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9302160466487469,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9972027262392268,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "tiny-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4,
+      "controls": {
+        "disabled": {
+          "score_ns": 2.7448291815297705,
+          "error_ns": 0.006570152969525377,
+          "json_sha256": "89e19f763f238c800811da21d9e306df63f7fbd9329024be03faf0228e890a6e"
+        },
+        "original": {
+          "score_ns": 2.8457324242611337,
+          "error_ns": 0.030244187790562132,
+          "json_sha256": "3568d35ae84f30c463d982414ac5c03c53db140696130da9c7a60f539b99756f"
+        },
+        "enabled": {
+          "score_ns": 2.743875088842249,
+          "error_ns": 0.0054142869812619995,
+          "json_sha256": "5bf216f995e3ca56bf8eead157d00718c5e27ad512fbeec8bbbc64bb014d7751"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.037121710034498,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0003477172453663,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-9-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "9",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 11.030749476407866,
+          "error_ns": 0.04299422467856798,
+          "json_sha256": "e88ac4b1eae544b480b441941cb680d6e18c90ba3f52e55ebe16af4d13b3c46a"
+        },
+        "enabled": {
+          "score_ns": 9.93520049691812,
+          "error_ns": 0.25069208236476237,
+          "json_sha256": "9cdac2ee869f652333fc7e03c7b5deb7d3d8c26f75ab121aae4d8e71b84bf312"
+        },
+        "disabled": {
+          "score_ns": 8.010005637455013,
+          "error_ns": 0.05708888170137844,
+          "json_sha256": "204888e2a02afff9b292a257c48d00129f2eb9540aac4f585c294026dbc36e2e"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1102694384305163,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8062248607805853,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-31-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 15.725678962096229,
+          "error_ns": 0.03533651193388599,
+          "json_sha256": "13be01475a0a893338e95ad5ca38164901f8488369b56cc4a321ff11bb8c7094"
+        },
+        "disabled": {
+          "score_ns": 16.018803135244973,
+          "error_ns": 0.051788950472328794,
+          "json_sha256": "368cbb86e55f4505e2a009c0bbbf5e3f83306c8d36bce48890be0762eccce15f"
+        },
+        "original": {
+          "score_ns": 15.768927611168468,
+          "error_ns": 0.0639474530677771,
+          "json_sha256": "dd8486cb060d86f4401b8f47caa772e59772e9667b5b7fa5f1b5fc76fa848b9a"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.00275019280099,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.018639842124163,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-32-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "32",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 16.359322363725262,
+          "error_ns": 0.04622226260183079,
+          "json_sha256": "3c3dd731d5ee7938c31e8197bc8996b23be018db5f9ae6d8002835914b6bd92a"
+        },
+        "original": {
+          "score_ns": 16.172180227869926,
+          "error_ns": 0.054261336833033955,
+          "json_sha256": "15b5f0d278fccef4909f1483df59d0381a6d41dfcf7c9d510266f790cceca2b1"
+        },
+        "enabled": {
+          "score_ns": 13.1512849996087,
+          "error_ns": 0.21945672149427667,
+          "json_sha256": "83719bf174050b9560b72b475f3d6bed556987512a9e9e153806b70c459873fc"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.2297034265739895,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.243933377172802,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"33\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-33-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "33",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 18.262141263630735,
+          "error_ns": 2.173958151925858,
+          "json_sha256": "9495746287c54536f88c58ac8add74d037a250f8dd0149df820fbbd81fb9eb93"
+        },
+        "enabled": {
+          "score_ns": 14.486311255713996,
+          "error_ns": 0.056065576883598235,
+          "json_sha256": "74054b5ab91aba447a3a02624b84e6923cf668073da461552610723f09d227fa"
+        },
+        "disabled": {
+          "score_ns": 17.15753721528425,
+          "error_ns": 0.0535341198244417,
+          "json_sha256": "70a7cb708e28edbef85a7db94c45ea68b13f4950ae00c4fe2024baa3d2496cde"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.2606481347297709,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.1843965597878903,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-129-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "129",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 42.25931924391411,
+          "error_ns": 0.18109664541033785,
+          "json_sha256": "2d375e3c7f843da67b7e3c043c3ae18669123558b8faff0eca11802dd354ce1c"
+        },
+        "disabled": {
+          "score_ns": 47.50511702076158,
+          "error_ns": 0.08851436074444761,
+          "json_sha256": "ab3b7f3a6f65a09e79c7be82a6e48766322e8a64aeafb5191b52d0aff966c04d"
+        },
+        "original": {
+          "score_ns": 49.97766014259618,
+          "error_ns": 0.1843641439514531,
+          "json_sha256": "a596fa158c0359971a3e38ce7cd613167e316879793d234b323273d861681c10"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1826423387024534,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.1241335135232433,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"129\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-miss-129-scope2",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "129",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 757.933132861113,
+          "error_ns": 3.004987343617241,
+          "json_sha256": "308b995737c15d9eea00c463f4b958ff3d0e4536acf903ec20d814a10a206811"
+        },
+        "original": {
+          "score_ns": 711.3770105198736,
+          "error_ns": 1.9938622880804813,
+          "json_sha256": "a17e466c5accdfbdf1c92a449267d59320d005ab6e67bd99ca3550114ea272d4"
+        },
+        "enabled": {
+          "score_ns": 375.23777527680846,
+          "error_ns": 1.1054609911459123,
+          "json_sha256": "23060596ad9438f2fd9a64d3a47e0ce67dd437685f02d8a208a39dc264a33b84"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.8958032943114513,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.019874284517316,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-forward-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "original": {
+          "score_ns": 11.610120592227656,
+          "error_ns": 0.02197480703066648,
+          "json_sha256": "f285ee4d1c6fc021fbd654e659864509e25047c02f540680c083eb78c876446b"
+        },
+        "enabled": {
+          "score_ns": 11.654654746535385,
+          "error_ns": 0.04570794265366662,
+          "json_sha256": "416b1bd2cd4f6a7bfb34678e6fb7c05df925bd0f6d716c662343afd291fcf158"
+        },
+        "disabled": {
+          "score_ns": 11.625802185416335,
+          "error_ns": 0.029106888006625493,
+          "json_sha256": "29f21e65ebb9d0c9d8e454caefb0fec6000f75f73e8bb11d234fbec8c452cd4e"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9961788525463641,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9975243744455298,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"129\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-forward-utf16-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "129",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 129,
+      "controls": {
+        "enabled": {
+          "score_ns": 12.248387525032971,
+          "error_ns": 0.022029361922397298,
+          "json_sha256": "1c330e6c80003388f538f37d251794bc99a42d9e186b88761bfc6dbaa64820d3"
+        },
+        "disabled": {
+          "score_ns": 12.272069392583415,
+          "error_ns": 0.07329321211951967,
+          "json_sha256": "23fa9a75ebc72b92787340d83ecda1a180c6c3816d66c8200fa2349d62df8775"
+        },
+        "original": {
+          "score_ns": 12.248838503949184,
+          "error_ns": 0.020385367656161623,
+          "json_sha256": "4c69503a56f59a64860dd016349a71317f9f4a39057a74b2191e6779a25a735e"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.000036819451972,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0019334681811825,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-forward-utf16-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 351.06582789438215,
+          "error_ns": 4.19561938580659,
+          "json_sha256": "c1ee3acf8debaee5277a8880298e5e7a1b201ab1ee236421877534846f3b5d82"
+        },
+        "original": {
+          "score_ns": 350.9016244972835,
+          "error_ns": 1.58361746890441,
+          "json_sha256": "16e009261b62ad8c81c78945107825e10dfe34d2eee4160fd1740676a0af5626"
+        },
+        "enabled": {
+          "score_ns": 350.22661142205027,
+          "error_ns": 2.452726985527868,
+          "json_sha256": "497feb1dbc6ab1fcb8722a4203f3e3a25b35d2dcd837cf0e3381d23cbabe872d"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.0019273608949715,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0023962098965706,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-reverse-latin-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 255,
+      "controls": {
+        "original": {
+          "score_ns": 54.77683886415275,
+          "error_ns": 0.2106754843561172,
+          "json_sha256": "5f3270cd35c0b5c85b15096b6f4423fbf035a29124d237ab57f7967c76c9b4b7"
+        },
+        "enabled": {
+          "score_ns": 56.190892676828355,
+          "error_ns": 0.37885477568819087,
+          "json_sha256": "ade8b2833e5cc48c75de8c9d069651ec6eb6d2d010ed2518f4f1059803534a04"
+        },
+        "disabled": {
+          "score_ns": 55.964803826649984,
+          "error_ns": 0.3917459192682956,
+          "json_sha256": "03f5cf99c5f57b7d883006b8a41327831ae47de8369bc02b1edd58374f7f05f5"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9748348220625667,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9959764146927034,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-reverse-latin-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 256,
+      "controls": {
+        "enabled": {
+          "score_ns": 20.249449033956996,
+          "error_ns": 0.18583866219690787,
+          "json_sha256": "057b962efcc2e2265854de38625f396e5e4b1daafca5b4a2d9226381906b6976"
+        },
+        "disabled": {
+          "score_ns": 51.707543227742825,
+          "error_ns": 0.35606184109519573,
+          "json_sha256": "b997c1fdb59f8939f41debac380d6ec5b3a9e54afd63c2a31e35e0acdeba01b3"
+        },
+        "original": {
+          "score_ns": 55.39521864779461,
+          "error_ns": 0.38756265426742215,
+          "json_sha256": "817ead381cda877f053968de084b9fc43ce52122590ed291ac7f5d2577109fb4"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.7356407848381683,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.5535284017373843,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-reverse-latin-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 746.0914347195356,
+          "error_ns": 72.92341495721928,
+          "json_sha256": "32a72ff3d5b8703c19d1e050683d943332fdc4826ad9719c2f864662e0d4b24e"
+        },
+        "original": {
+          "score_ns": 788.4872876791227,
+          "error_ns": 1.5679918915406301,
+          "json_sha256": "186d8305c000c67ae4f75d784d6961a752a44953437746b153470acad693cca5"
+        },
+        "enabled": {
+          "score_ns": 162.39936207087698,
+          "error_ns": 0.7178408493739676,
+          "json_sha256": "550b010bbf60af73809b59052586008d404689f7fcda79c2abb5592b10fb77dd"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 4.8552363606884015,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 4.594177127333261,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-reverse-latin-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 2.8911861916348345,
+          "error_ns": 0.024338030436041852,
+          "json_sha256": "fe9b37ccbef33a7962a91bbea9e9982c3fc62ff948eecb005803776436df4d0d"
+        },
+        "enabled": {
+          "score_ns": 3.7242725525502003,
+          "error_ns": 0.014989662313791405,
+          "json_sha256": "3da254e40ebabf01d76eae37b30511bbee96eb567cac13161adbcf5f69b7273a"
+        },
+        "disabled": {
+          "score_ns": 3.7167605737912455,
+          "error_ns": 0.013777736726597316,
+          "json_sha256": "411c576b7f17c85b33f8f7180eb896b6793c7f87deff42f3dd0fcb1ba7dde432"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.7763089706351086,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9979829675049398,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-char-reverse-utf16-128-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "enabled": {
+          "score_ns": 32.536215498538034,
+          "error_ns": 0.08488119160426721,
+          "json_sha256": "8896d53ccf7558fc4cc716529ab7028c7c5f193951e668518ed2eef2ee9ac24f"
+        },
+        "disabled": {
+          "score_ns": 31.83426207058494,
+          "error_ns": 0.07270959803833059,
+          "json_sha256": "24925155e970d584714cf98701ae438f7796d7efe37a58315e123c1ae3915726"
+        },
+        "original": {
+          "score_ns": 30.551629568595576,
+          "error_ns": 0.09841781348328944,
+          "json_sha256": "1819964dc7f4eeca23c060b94a3bbe217112d11ad488f27176196811a1b78382"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9390037870252109,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.978425473977309,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-char-reverse-utf16-255-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 255,
+      "controls": {
+        "disabled": {
+          "score_ns": 53.610769929681545,
+          "error_ns": 0.49355956700778647,
+          "json_sha256": "6b0072902645a112ff61d8f232de9d0390918f39b8827c7209f0c66566e6a531"
+        },
+        "original": {
+          "score_ns": 52.75206985342068,
+          "error_ns": 0.05372148989397562,
+          "json_sha256": "177aeceeecfc32bb1676ab1ab71372819eba734a7a69ccaadc7ab83d8f62f7e7"
+        },
+        "enabled": {
+          "score_ns": 54.56617801794132,
+          "error_ns": 0.1584718946364854,
+          "json_sha256": "564d7b02c6e247c7bd69a28941e950e9a40badaf41385cc96b1c7c80e5d6309e"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9667539814878703,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9824908373105107,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-char-reverse-utf16-256-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 256,
+      "controls": {
+        "original": {
+          "score_ns": 52.76312450316478,
+          "error_ns": 0.11707964153109182,
+          "json_sha256": "7a88820cd7317c0316626a1780ce532e64f42992d315426f16f1dfd013a0ab89"
+        },
+        "enabled": {
+          "score_ns": 58.687680661275536,
+          "error_ns": 0.37090996851742514,
+          "json_sha256": "9228a746d52dbe23c250a47675c548cf36b1313680dadfe6de0783d69997e406"
+        },
+        "disabled": {
+          "score_ns": 53.95899483126091,
+          "error_ns": 0.1689213998054154,
+          "json_sha256": "d635b6ec55df78a5e46027db64503a21f384c7ca53bfc405616cfda517b9edbe"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8990494071097274,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9194262615810816,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-char-reverse-utf16-4096-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 627.3787365838915,
+          "error_ns": 0.33183656439517645,
+          "json_sha256": "b070273210773dfcfea425eeadfd907c05895687bef4fff380fee138969d46a6"
+        },
+        "disabled": {
+          "score_ns": 722.2542795917467,
+          "error_ns": 2.96663338964571,
+          "json_sha256": "ae6f7ef55b286d1645e21ee95586a1fa5c8bda6948409e036fd699c70903453f"
+        },
+        "original": {
+          "score_ns": 729.4101342725837,
+          "error_ns": 3.1558678898920864,
+          "json_sha256": "f144c8ecda5d4d800091ec51b7bafa7c70f081c288b03cbd446946982308eec0"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1626312651975714,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.1512253085344544,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-char-reverse-utf16-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 3.3688078752906763,
+          "error_ns": 0.039122032745154765,
+          "json_sha256": "e909cf0ea96c3420a28bfdbf3c2dea414f2bfd9118d1e388b5a7dd19fb0a85f8"
+        },
+        "original": {
+          "score_ns": 2.9526194345645167,
+          "error_ns": 0.10845238290816306,
+          "json_sha256": "1ac37b51ac194b69b16e36e6766df1e212536308cacbd608335f17514596b18d"
+        },
+        "enabled": {
+          "score_ns": 3.3666955486608217,
+          "error_ns": 0.04103110409403923,
+          "json_sha256": "02448ac2bd1ec99b2a70d322cc7b9dccbb51a1e8fbd2230d0765ea83f9dc9c18"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8770081499466107,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.000627418368939,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"129\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "utf16-uniform-end-129-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "129",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "actual_haystack_code_units": 129,
+      "controls": {
+        "original": {
+          "score_ns": 48.86441066731048,
+          "error_ns": 5.321386844865362,
+          "json_sha256": "1631bd9bdef68d5a2976c864abe69d9ac6eb71af08fde461927291df845909cf"
+        },
+        "enabled": {
+          "score_ns": 59.58890218872928,
+          "error_ns": 0.15045986916021487,
+          "json_sha256": "b16768777b025e196a6b73bb84646a8602180a0950ec1d82abea0be7936fd7b6"
+        },
+        "disabled": {
+          "score_ns": 48.275923402305914,
+          "error_ns": 0.08616109792882756,
+          "json_sha256": "7668216312b38628f960bc6600d101f66bfcd911d45d82a4a3c10dff3a14ae46"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8200253549318242,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8101495686127422,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"130\",\"needleLength\":\"129\",\"shape\":\"UTF16_UNIFORM_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "utf16-uniform-end-130-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "130",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "actual_haystack_code_units": 130,
+      "controls": {
+        "enabled": {
+          "score_ns": 59.59952580423386,
+          "error_ns": 0.07491184305697983,
+          "json_sha256": "a5a827c8654e7933a95d2d316e393794cb3da2c1a2cd63950cf170eed2518a42"
+        },
+        "disabled": {
+          "score_ns": 48.26476218103945,
+          "error_ns": 0.06881991946680387,
+          "json_sha256": "2bd7a6157a70e2cb6bad06cc553d49156f674f888643900a00efd5f5eb302a2d"
+        },
+        "original": {
+          "score_ns": 52.23443007599603,
+          "error_ns": 0.06450795040756531,
+          "json_sha256": "a4732585f71e5a9b19412b9eef33b8432b432634267288dd064b6d899d5c692b"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8764235851065341,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8098178891485541,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"257\",\"shape\":\"OVERLAP_LATIN1\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "overlap-min-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "257",
+        "shape": "OVERLAP_LATIN1"
+      },
+      "actual_haystack_code_units": 258,
+      "controls": {
+        "disabled": {
+          "score_ns": 229.12775173103196,
+          "error_ns": 0.3083482937988419,
+          "json_sha256": "9d9c6e2e746f2e30501af49906832161a5e6d84155e73700c07bfb71f7f47aac"
+        },
+        "original": {
+          "score_ns": 230.1974504446659,
+          "error_ns": 0.15089108076727883,
+          "json_sha256": "f0e3bbb8ac9e1d8dd5e24f796c0506dbe1fb3743593cfe4461e78b84618597e6"
+        },
+        "enabled": {
+          "score_ns": 120.0986281882684,
+          "error_ns": 0.12652760637862465,
+          "json_sha256": "4e1ad68d47c6c2d2b18a73f241d73734ea47553dd478d7e1f0fb502d6e0a17c0"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.9167367181230823,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.9078298827181261,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"0\",\"needleLength\":\"129\",\"shape\":\"OVERLAP\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "overlap-min-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "129",
+        "shape": "OVERLAP"
+      },
+      "actual_haystack_code_units": 130,
+      "controls": {
+        "original": {
+          "score_ns": 117.56661901292662,
+          "error_ns": 0.16749224369562066,
+          "json_sha256": "fe1b5b5e7292d092fc81eb32d6a26817e9daf9d39aff4e6b01365a0ba1d77e2d"
+        },
+        "enabled": {
+          "score_ns": 113.23954248242202,
+          "error_ns": 0.19194287278376063,
+          "json_sha256": "27ef6611a38ef8e355689dd9d0c00bd20bc5ac05f17bbf44c2c706a618268c87"
+        },
+        "disabled": {
+          "score_ns": 109.03625849345035,
+          "error_ns": 0.2141977348228117,
+          "json_sha256": "e72fc7ceeedb5fa48e69ddc74bb37c0a1daf911371596f352377deebb9a09ccf"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.0382117097583319,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9628814820615851,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-utf16-126-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "126",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 126,
+      "controls": {
+        "enabled": {
+          "score_ns": 6.062136028744711,
+          "error_ns": 0.016617519385724557,
+          "json_sha256": "281bf1232ba1d1c9f6e75506acd16bc0f9e0e1016fa9283589477400bc7aa383"
+        },
+        "disabled": {
+          "score_ns": 5.506250448139863,
+          "error_ns": 0.013547603550812195,
+          "json_sha256": "86448a018af2c837562cfac0ff185a87f399413c0ea13fd0f5e80be75f411712"
+        },
+        "original": {
+          "score_ns": 5.309462602774623,
+          "error_ns": 0.02881174310706279,
+          "json_sha256": "59735eb696a0f7f34879bb8034277fa7c7ef20d97d62cdd2650464225b43424d"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.875840228196604,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9083020278711964,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"127\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-utf16-127-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 127,
+      "controls": {
+        "disabled": {
+          "score_ns": 5.540306600067127,
+          "error_ns": 0.03513877914759389,
+          "json_sha256": "d0b433ff8fbcbd2c1536664be850f428d43c83995b265aa342886da5189e0070"
+        },
+        "original": {
+          "score_ns": 5.297917202966081,
+          "error_ns": 0.009618659908110136,
+          "json_sha256": "a19b09112c821b0339bfeecbdd354cfc66bac3c64a875161d925bdad64dd7a72"
+        },
+        "enabled": {
+          "score_ns": 6.061141490298008,
+          "error_ns": 0.01839179722295657,
+          "json_sha256": "ce0c97a108170ec57f25a83859a76c912be5374218ec229bfdf0c9096f556e82"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.874079117183849,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.914069834689625,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-utf16-128-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 128,
+      "controls": {
+        "original": {
+          "score_ns": 5.317523524806184,
+          "error_ns": 0.012018236385286122,
+          "json_sha256": "0b16506441992928c47a793511d54e69f2aa9f0762f1b0f90c1bd839e95840a0"
+        },
+        "enabled": {
+          "score_ns": 6.072557138222988,
+          "error_ns": 0.03869390805558149,
+          "json_sha256": "6f70cbc0317b807fc608814281d0d063ee4cca36a5d0fa97c98c3e42d0995a5d"
+        },
+        "disabled": {
+          "score_ns": 5.540071785912899,
+          "error_ns": 0.023517640883071945,
+          "json_sha256": "e0c806e7f3b90bf5664be3a2323fbf69675ee09087a8566e4127de2366ef6399"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.8756646341515116,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9123128296383705,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-latin-bulk-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 5.738482625894211,
+          "error_ns": 0.03577667429015121,
+          "json_sha256": "d205d7d2f31c903f578e2dad2ac827753631515028577ad3568b685c2d7591db"
+        },
+        "disabled": {
+          "score_ns": 5.480968126922305,
+          "error_ns": 0.03937347756457778,
+          "json_sha256": "19df19e6bc91bef4abeeb3b86cab6a8ac7d6cde1951d145f571a055d9a657742"
+        },
+        "original": {
+          "score_ns": 5.31881182362096,
+          "error_ns": 0.033547401399238785,
+          "json_sha256": "72e592c999cf63b050a368bdf410737738209e42c506bde08501fa95391cf873"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.9268672871153191,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9551249841186409,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"127\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-127",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "127",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 46.59495616942048,
+          "error_ns": 0.06806534708860691,
+          "json_sha256": "eba754ded41242a09b5f29cf8c772dc90c0fae617316f379ae93cd0fdbc6426c"
+        },
+        "original": {
+          "score_ns": 48.850884873759455,
+          "error_ns": 0.21601846282245893,
+          "json_sha256": "8a1dc297140c5001ec65c55828769079f023d3e488e88041cd88418c56979bd3"
+        },
+        "enabled": {
+          "score_ns": 41.35057181002808,
+          "error_ns": 0.1791239504614524,
+          "json_sha256": "d6b217e024b2ee8c0808047ae2df1e67619b28ad9b3930b06dd718b34ec38157"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1813835392213958,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.1268273721458082,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"128\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-end-128",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "128",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 49.30419520972997,
+          "error_ns": 0.4598510298979186,
+          "json_sha256": "f400cf621d70aa62ac181658e26d6824c579fdfd76d43b920b94fc6e7b09d687"
+        },
+        "enabled": {
+          "score_ns": 41.5418415861151,
+          "error_ns": 0.1215705646948641,
+          "json_sha256": "8859437396a71be0b64c12d858ad3ce20dd1a36ba6258209885e8ab663447b91"
+        },
+        "disabled": {
+          "score_ns": 46.93822782509962,
+          "error_ns": 0.0822749434421593,
+          "json_sha256": "acfa8977b28c302d6d1156b952bfb3086adff74a130fbfb543d6ac4801f127df"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1868562713456918,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.1299024316916224,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"511\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-utf16-511-9-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "511",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 511,
+      "controls": {
+        "enabled": {
+          "score_ns": 45.96099194977311,
+          "error_ns": 0.16307018171070187,
+          "json_sha256": "b9460e691213eaf5214d7c97d855b92f40204993e85db318821dc79d781ee73c"
+        },
+        "disabled": {
+          "score_ns": 96.49751182297308,
+          "error_ns": 0.25239246874877325,
+          "json_sha256": "94cdc17dc15a31592ba0fd1416df2d3db70d3fd4fb9f85cbd7e7298b6974a87a"
+        },
+        "original": {
+          "score_ns": 101.1101472067446,
+          "error_ns": 0.5624548344477239,
+          "json_sha256": "9b679f500dae8ee8002e6b921fa7e38e2c8a32ed5ed12784ed4ec73bafa5c34b"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.199912206360545,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.09955241889529,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"512\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-utf16-512-9-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "512",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 512,
+      "controls": {
+        "disabled": {
+          "score_ns": 96.45885821678115,
+          "error_ns": 0.5134697983456195,
+          "json_sha256": "3ae7e66a0d27fe56c1145d4bd2ed976a69b119bea73275488a904860804e2693"
+        },
+        "original": {
+          "score_ns": 101.88867225160757,
+          "error_ns": 0.7477800227581941,
+          "json_sha256": "b3260592ac27ba771832fc8441ba9291cd1b131e3322fb9af968a46059fbcb8a"
+        },
+        "enabled": {
+          "score_ns": 46.721771716429785,
+          "error_ns": 0.2218985604821722,
+          "json_sha256": "68ed68ad70b2a66bb1e9952ce164d7406bbf8536f196e76258dc147b5bda8965"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.18075360818944,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.064537680681772,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"513\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-utf16-513-9-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "513",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 513,
+      "controls": {
+        "original": {
+          "score_ns": 101.16048771549585,
+          "error_ns": 1.1762703461272737,
+          "json_sha256": "c40d73d5d7ebc304c2398467af275ef6f24b4af19d91b86b29e2d1f5134ecea0"
+        },
+        "enabled": {
+          "score_ns": 47.328276901545735,
+          "error_ns": 0.20801334279213335,
+          "json_sha256": "2222d9f9099ab2f940ebcab360c1471ebdd324323af95ff50afab5b21ae1bb23"
+        },
+        "disabled": {
+          "score_ns": 95.2270652336603,
+          "error_ns": 0.37645053969092823,
+          "json_sha256": "27d8eaeaab96036c77954d86a797f4420aa2819206585407fa987517067837a4"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.1374217347049025,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.0120543461101623,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"1023\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-utf16-1023-9-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "1023",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 1023,
+      "controls": {
+        "enabled": {
+          "score_ns": 89.87261767607929,
+          "error_ns": 0.6383806653861375,
+          "json_sha256": "90d520539b9a89bb300b053eb818c4a8fc0559f55a027067c3e12aef4a1c6280"
+        },
+        "disabled": {
+          "score_ns": 185.52514397371115,
+          "error_ns": 0.29373248900690974,
+          "json_sha256": "bc40fa6e2869b61535f3486ae5bc183285db409a288f519ff3d10249f44e8588"
+        },
+        "original": {
+          "score_ns": 193.7260068831385,
+          "error_ns": 0.19659246200849828,
+          "json_sha256": "d636b9a2100a64dda77b5001b91dedb81b7495810e02e5b70092c4ee0bd68eb4"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.155562082116821,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.0643122318121927,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"1024\",\"needleLength\":\"9\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-utf16-1024-9-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "1024",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 1024,
+      "controls": {
+        "disabled": {
+          "score_ns": 184.17643049421616,
+          "error_ns": 0.9879580222281602,
+          "json_sha256": "f60cd66a9bf9ab11001626554559cd26425f43b6b2de3bce6d5544131afcbec3"
+        },
+        "original": {
+          "score_ns": 194.01303064545135,
+          "error_ns": 0.46535181432068257,
+          "json_sha256": "e2a33d964d9c15860490d5097aaa416ef5f407828efdd1566415ca7709865d1a"
+        },
+        "enabled": {
+          "score_ns": 184.9160331303893,
+          "error_ns": 0.17225955109148733,
+          "json_sha256": "26a204c120bed25a8c5868f42a6e7b753f7bb5d9c0df0224d7437bfae378469e"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.0491952880508069,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9960003325636364,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"512\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "neon-threshold-utf16-512-9-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "512",
+        "needleLength": "9",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 512,
+      "controls": {
+        "original": {
+          "score_ns": 7.22880838274169,
+          "error_ns": 0.02729284396212138,
+          "json_sha256": "fc002c0fda028d73037a1f4978c57053d09b52777a98c15c91ec87a5dc2abd14"
+        },
+        "enabled": {
+          "score_ns": 9.876116685485345,
+          "error_ns": 0.032535663648898844,
+          "json_sha256": "902f07ec6271d74cde81bf08cb111a87f035003e17a80a87d20eedc83162b5aa"
+        },
+        "disabled": {
+          "score_ns": 7.97359387693737,
+          "error_ns": 0.013690168955883857,
+          "json_sha256": "f2abf81506819ffc507989f4a121c36b5527eb1196c31741b2fdca481065e372"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.7319484583819944,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8073612464153993,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"502\",\"needleLength\":\"9\",\"shape\":\"NEAR_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "neon-dense-utf16-512-9",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "502",
+        "needleLength": "9",
+        "shape": "NEAR_END"
+      },
+      "actual_haystack_code_units": 512,
+      "controls": {
+        "enabled": {
+          "score_ns": 159.4678956685303,
+          "error_ns": 0.1327901291555848,
+          "json_sha256": "8eca98179967d4ac14b46cc6858082d0c251ac48e5f47a4a1b9a70e3ce6f3864"
+        },
+        "disabled": {
+          "score_ns": 386.48301039407045,
+          "error_ns": 0.6010732849042218,
+          "json_sha256": "44ef44a0a3a8479b6958e507c49f9127b15f1e51d481e11a84286eacfaf4441d"
+        },
+        "original": {
+          "score_ns": 393.59482460809113,
+          "error_ns": 1.6275392969845952,
+          "json_sha256": "02c37e12a7929d59e61a5d9bd3b66f91aa6fce35ed29028f5f4cb9ebde3772b4"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 2.4681759482561723,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 2.4235787948027694,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf\",{\"length\":\"512\",\"needleLength\":\"64\",\"shape\":\"NEAR_END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-dense-utf16-577-64",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "512",
+        "needleLength": "64",
+        "shape": "NEAR_END"
+      },
+      "actual_haystack_code_units": 577,
+      "controls": {
+        "disabled": {
+          "score_ns": 381.9062039280724,
+          "error_ns": 7.686680738871796,
+          "json_sha256": "e3296dc902db2dc182d1f5e4b8defd651faf7ef7daee3c2391602079666ddca0"
+        },
+        "original": {
+          "score_ns": 397.4068737164006,
+          "error_ns": 15.57899130099818,
+          "json_sha256": "272f5090a0f1498bf53846c0af7541cdc6b4e57b142834f101a9fa94877d753a"
+        },
+        "enabled": {
+          "score_ns": 114.75419586301322,
+          "error_ns": 0.12401771702200634,
+          "json_sha256": "05744bff1049e3d4676b46e3ca1c9d136f098ae03bfd64326d15af7807cb5c64"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 3.4631140999044727,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 3.328036949376295,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"31\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-miss-31",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 732.9802575608826,
+          "error_ns": 4.456700989505207,
+          "json_sha256": "d2cf98045190fcd40bccfd27610f399643df4423474bf25070cca5ede5e6257c"
+        },
+        "enabled": {
+          "score_ns": 659.4421579277644,
+          "error_ns": 0.8262758221602567,
+          "json_sha256": "9a9ab76dd8cbf4c10a929c3a22c12b046db001633da44378ae5e9f4ea96ab660"
+        },
+        "disabled": {
+          "score_ns": 787.360292745276,
+          "error_ns": 7.388799604677681,
+          "json_sha256": "0f44cf4a9a9e23458d15a77a25e6592c575129e5a59a13b1bbba7821f5f4a8d9"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1115156177824677,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.19397931005728,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"32\",\"position\":\"MISS\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-mixed-miss-32",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "32",
+        "position": "MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 632.9504179236388,
+          "error_ns": 1.1335645756502293,
+          "json_sha256": "f8e74db11d6859febd9ed1ff001eb1350bc2c5080205526a77a460a7e70b5d62"
+        },
+        "disabled": {
+          "score_ns": 757.3699729901184,
+          "error_ns": 29.74434698393287,
+          "json_sha256": "65a0a821caab2444ecf16fa981f67e5acf7e139e66c30e54263e49b22d8c1d51"
+        },
+        "original": {
+          "score_ns": 744.1850480949836,
+          "error_ns": 1.437455967395822,
+          "json_sha256": "5c4e643d58c38b23a76e2d4d8f37ec38a32b405ae75b0b6576c3acfeb6bd1a45"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1757398794936327,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.196570776388191,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"64\",\"position\":\"END\"}]",
+      "phase": "stock",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "pilot-neon-utf16-end-64",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "64",
+        "position": "END"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "disabled": {
+          "score_ns": 26.770516756884298,
+          "error_ns": 0.17539574989373874,
+          "json_sha256": "e313eb7fcfff229dffb398a2b1f2a588d0e32203cc30446c2a752ab61daaa2b3"
+        },
+        "original": {
+          "score_ns": 25.051327560497686,
+          "error_ns": 0.0977400482252083,
+          "json_sha256": "c564d3cd26db8010ba598a0e46a4a6d8967c74eb108bab62cadf0926bf35c8f8"
+        },
+        "enabled": {
+          "score_ns": 22.06754610173575,
+          "error_ns": 0.0476559726627457,
+          "json_sha256": "53c558226a323c00eed879e2488f39ea785d1b695a9abf324268b302125a00d3"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 1.1352112937707761,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.21311706491818,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]",
+      "phase": "periodic",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "params": {
+        "length": "4095",
+        "needleLength": "513",
+        "shape": "LATIN_PERIOD3_ABC_MISS"
+      },
+      "actual_haystack_code_units": 4095,
+      "controls": {
+        "enabled": {
+          "score_ns": 167.6514232130101,
+          "error_ns": 0.24823700053276926,
+          "json_sha256": "0637b3a8ba2e5bdcfbf370b423a7ffc1588ee8bf97529fc4f4540947a0b1b507"
+        },
+        "disabled": {
+          "score_ns": 4606.813205506815,
+          "error_ns": 9.462860269189033,
+          "json_sha256": "1d6065445f182e07ff94d73a3e2640a52ff32a61900cb318a19d62dbafd3b6a2"
+        },
+        "original": {
+          "score_ns": 4660.667253010881,
+          "error_ns": 12.0365898091365,
+          "json_sha256": "616ce0a0d9c8fe0a6d8947cfd89b5bafabe8f5fba01fe2cfa1d65e25c6ba6441"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 27.79974761734801,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 27.478521310574337,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+      "phase": "periodic",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "params": {
+        "length": "2047",
+        "needleLength": "257",
+        "shape": "UTF16_PERIOD3_ABC_MISS"
+      },
+      "actual_haystack_code_units": 2047,
+      "controls": {
+        "disabled": {
+          "score_ns": 1647.4114791363543,
+          "error_ns": 1.288485220649835,
+          "json_sha256": "54b71cd9494c2cc8ff8d108873e876dca270368cf8052dcb79dd9daab2a6b86d"
+        },
+        "original": {
+          "score_ns": 2932.5863083445283,
+          "error_ns": 7.1008581832305495,
+          "json_sha256": "77a5483e21f82bb562d8bf757e9cb464bec4f4bd2442d42d5beb98a798032306"
+        },
+        "enabled": {
+          "score_ns": 240.61431920407222,
+          "error_ns": 0.7608461800060254,
+          "json_sha256": "4b5b9b80c7a9ab0cf1f1f1e7f234298b931827d542f8d4fd556ed5a1551aaa69"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 12.187912664737604,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 6.846689276788782,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]",
+      "phase": "utf16-probe",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "probe-utf16-single-64-penultimate-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "params": {
+        "length": "64",
+        "needleLength": "64",
+        "shape": "PENULTIMATE_MISS"
+      },
+      "actual_haystack_code_units": 64,
+      "controls": {
+        "enabled": {
+          "score_ns": 7.75931049549003,
+          "error_ns": 0.02243971210963422,
+          "json_sha256": "d08e5f6321bd6d8f65fe5b7a2fddec07b073d8313831f0e36f39032e55f170fc"
+        },
+        "disabled": {
+          "score_ns": 3.3992790269756563,
+          "error_ns": 0.03420161896950918,
+          "json_sha256": "700d935cf754a1b5491d2c7ea3617b64a316035eaa00b6e9ae876a77636a4549"
+        },
+        "original": {
+          "score_ns": 3.372598279409676,
+          "error_ns": 0.021619247131746167,
+          "json_sha256": "15256d7a7d72d428253d699074a0a2bd7e261227d643c144949484aad0442a4f"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.4346518007456903,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.4380903469388718,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"64\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+      "phase": "utf16-probe",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "probe-utf16-single-64-near-end-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "params": {
+        "length": "64",
+        "needleLength": "64",
+        "shape": "NEAR_END_MISS"
+      },
+      "actual_haystack_code_units": 64,
+      "controls": {
+        "disabled": {
+          "score_ns": 5.210021085233754,
+          "error_ns": 0.011696270998471382,
+          "json_sha256": "c3cfd8cca756eb80135270b881e3de36a05c6887a08b7828764d0d05da776a32"
+        },
+        "original": {
+          "score_ns": 5.269371294858798,
+          "error_ns": 0.03839142025166804,
+          "json_sha256": "b0b693b0f6ce998b892725ca621154cdee69b0bcd1e34222c6fb632382b7454e"
+        },
+        "enabled": {
+          "score_ns": 9.848577438524824,
+          "error_ns": 0.12175066523844662,
+          "json_sha256": "b121ac02959a8767025b7b569a0136aedbca351418f65e5e487b0f2ccfa3fcc2"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 0.5350388244140236,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.5290125520924106,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"PENULTIMATE_MISS\"}]",
+      "phase": "utf16-probe",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "probe-utf16-bulk-4096-64-penultimate-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "params": {
+        "length": "4096",
+        "needleLength": "64",
+        "shape": "PENULTIMATE_MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "original": {
+          "score_ns": 2120.531233792245,
+          "error_ns": 5.115618011971315,
+          "json_sha256": "697c7f980d12c7491cf6dcfed5b02afd6627790c56e4a4ad02cb910f0706f040"
+        },
+        "enabled": {
+          "score_ns": 669.0150623971299,
+          "error_ns": 0.6816998015803127,
+          "json_sha256": "f16178d817040802947b6f758f790ff11f5d04dd3031944f9f9304f9bb19bf0e"
+        },
+        "disabled": {
+          "score_ns": 2148.8046703602713,
+          "error_ns": 4.399678761448496,
+          "json_sha256": "b2df15713b572c645aac1c6e10173c1fa4c97d99c94a96e81553d80ab45de44c"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 3.169631526970748,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 3.2118928124890744,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "key": "[\"neon\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf\",{\"length\":\"4096\",\"needleLength\":\"64\",\"shape\":\"NEAR_END_MISS\"}]",
+      "phase": "utf16-probe",
+      "backend": "neon",
+      "tier": "c2",
+      "case": "probe-utf16-bulk-4096-64-near-end-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "params": {
+        "length": "4096",
+        "needleLength": "64",
+        "shape": "NEAR_END_MISS"
+      },
+      "actual_haystack_code_units": 4096,
+      "controls": {
+        "enabled": {
+          "score_ns": 683.4983680009883,
+          "error_ns": 0.7281235103667442,
+          "json_sha256": "47eecf2fe41c44670e7338b1bbfbafdf7052f5e79e747cee750f121c77615962"
+        },
+        "disabled": {
+          "score_ns": 8954.982061312981,
+          "error_ns": 952.5086380510888,
+          "json_sha256": "5dd7fcca71ba84285e1321d15441899b98c2e4a6522d0cae680ebd485b1f40a7"
+        },
+        "original": {
+          "score_ns": 12407.983435327125,
+          "error_ns": 173.45004841211647,
+          "json_sha256": "016fc931549460202fcbd9a51f5817c2de854f21eaf1140eee35e13a806c5737"
+        }
+      },
+      "comparisons": {
+        "original": {
+          "speedup": 18.15364017856614,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 13.101687554139168,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    }
+  ]
+}

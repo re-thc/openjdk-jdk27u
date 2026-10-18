@@ -1,0 +1,1232 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117744727914,
+    "artifact_id": 12146267731,
+    "artifact_digest": "sha256:75213da9a591c3fb9f49c5d615d0fe23509b9a02ab462af4277196fd32a6a175"
+  },
+  "backend": "msvc",
+  "tier": "c2",
+  "phase": "stock",
+  "control": "enabled",
+  "records": [
+    {
+      "case": "tiny-latin",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 5.2983102812914105,
+      "error": 0.26835142869127665,
+      "rawData": [
+        [
+          5.391311494291665,
+          5.418574735644944,
+          5.2505138900131705,
+          5.429328111960484,
+          5.054709153568973
+        ],
+        [
+          5.055908673604104,
+          5.475269410621269,
+          5.434044364511154,
+          5.417776429014932,
+          5.055666549683416
+        ]
+      ],
+      "json_sha256": "884eec8f75c2e90d32bab07210a53f5cc0ace7b13f33edf994b775e396ed7abd"
+    },
+    {
+      "case": "tiny-utf16",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 3.6936180193596093,
+      "error": 0.16502862534447452,
+      "rawData": [
+        [
+          3.746983311639601,
+          3.7530892955411197,
+          3.756282248702125,
+          3.7601931904539407,
+          3.5094836857910354
+        ],
+        [
+          3.504344124903139,
+          3.765090943594146,
+          3.7488128208132254,
+          3.610521400982825,
+          3.7813791711749403
+        ]
+      ],
+      "json_sha256": "7fa13917a35687ce698202858a75c689d4621e12ab51ba447758b4f71594ae63"
+    },
+    {
+      "case": "supp-char-forward-utf16-below",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 5.824178083118438,
+      "error": 0.29333462057083837,
+      "rawData": [
+        [
+          5.570762529904882,
+          5.980582198936528,
+          5.979685900136046,
+          5.569844364346589,
+          5.573891782198205
+        ],
+        [
+          5.948641995133125,
+          5.983064693411429,
+          5.973163059954431,
+          5.964455420380496,
+          5.697688886782659
+        ]
+      ],
+      "json_sha256": "94b61936dd72a6a1150147b53ee75358cc1acd932d980e42453c191c5c314b14"
+    },
+    {
+      "case": "supp-char-forward-utf16-at",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "129",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 7.418482341918003,
+      "error": 1.937675170430908,
+      "rawData": [
+        [
+          7.171361496236322,
+          7.3558662824726655,
+          8.443787453164449,
+          9.550246200812632,
+          9.437508766447381
+        ],
+        [
+          6.582287689267135,
+          6.090088059149075,
+          6.339911690376681,
+          6.381039600240225,
+          6.832726181013468
+        ]
+      ],
+      "json_sha256": "fd58210db17245b7b96543d41b0d84d7e89716c6a0f9b40a295dd1b2293cac29"
+    },
+    {
+      "case": "supp-char-forward-utf16-bulk",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 124.00447842794229,
+      "error": 6.08281486021161,
+      "rawData": [
+        [
+          119.70217320714475,
+          127.05856388720666,
+          129.82022768935508,
+          128.26113358363142,
+          119.96960950811612
+        ],
+        [
+          118.94763894639976,
+          127.44702713238097,
+          123.66932282596586,
+          120.57667097387093,
+          124.59241652535134
+        ]
+      ],
+      "json_sha256": "604e0b8334d9dd0e1e7c116b2c6125337993dbf5b5b7ffb9cb7d248533ede197"
+    },
+    {
+      "case": "supp-char-reverse-latin-below",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 71.84456951811136,
+      "error": 3.719153657336715,
+      "rawData": [
+        [
+          72.50749867201908,
+          72.7927048934254,
+          72.59687115130467,
+          67.88119489058754,
+          70.02734759942331
+        ],
+        [
+          72.66304096495439,
+          75.03186490011774,
+          73.03105227112695,
+          67.8156359829656,
+          74.09848385518892
+        ]
+      ],
+      "json_sha256": "726f310b2dbcf41b3ba84abb96d79e27de988627d833065942b4885ddbb9cc40"
+    },
+    {
+      "case": "supp-char-reverse-latin-at",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 52.84304870246317,
+      "error": 2.857921121041343,
+      "rawData": [
+        [
+          54.16038045423317,
+          54.413633602173384,
+          50.594287160996124,
+          50.62200695093264,
+          54.36004244655549
+        ],
+        [
+          54.12870963589373,
+          50.6752083130662,
+          54.386227394538686,
+          54.38286695155429,
+          50.707124114687986
+        ]
+      ],
+      "json_sha256": "04cd4aee39572153ac5863dfa47fe27dc32b74a520689f7c46f2e16b44f3a049"
+    },
+    {
+      "case": "supp-char-reverse-latin-bulk",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 580.0167583372498,
+      "error": 16.265144927020412,
+      "rawData": [
+        [
+          574.0724992247708,
+          569.6289545950002,
+          561.833551915679,
+          569.1321949154697,
+          583.2503305884974
+        ],
+        [
+          585.2054685816067,
+          595.3750442508691,
+          590.4758419317897,
+          584.1103115158785,
+          587.0833858529375
+        ]
+      ],
+      "json_sha256": "0902d6f95b6a27819ea8151d2ec49d74d392f3d7869ac878be1e6d2638ed14cf"
+    },
+    {
+      "case": "supp-char-reverse-latin-early",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 4.545208012945069,
+      "error": 0.2842228221960169,
+      "rawData": [
+        [
+          4.422998195202165,
+          4.879951209576235,
+          4.367245535230717,
+          4.588182728090227,
+          4.685598663639163
+        ],
+        [
+          4.375557642155483,
+          4.369950684224979,
+          4.702853049475473,
+          4.6927327470794635,
+          4.367009674776782
+        ]
+      ],
+      "json_sha256": "0c2ee18e1689be68903594d1248bf4f6ed0105c26bb8eddf7e2674b4e253f8a4"
+    },
+    {
+      "case": "pilot-char-reverse-utf16-128-miss",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 32.07379965483082,
+      "error": 1.6486759932454054,
+      "rawData": [
+        [
+          32.4348129125404,
+          32.73456533780703,
+          33.660456637508226,
+          32.48536731867355,
+          30.30509449733497
+        ],
+        [
+          32.59077488715949,
+          32.42960067518012,
+          31.302741418394405,
+          30.29801628439696,
+          32.496566579313075
+        ]
+      ],
+      "json_sha256": "91f55ad5c97fd9d6c15870d0188d10ea2beff20ca87d9cac15ade18d5f10cb04"
+    },
+    {
+      "case": "pilot-char-reverse-utf16-255-miss",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 54.91232057373854,
+      "error": 2.6068583153647853,
+      "rawData": [
+        [
+          52.804096405923936,
+          54.89492724504096,
+          56.835978004851924,
+          56.83148673583018,
+          54.63254330837372
+        ],
+        [
+          54.047890786296215,
+          56.663899651914896,
+          56.617858234355836,
+          52.84139304685978,
+          52.95313231793797
+        ]
+      ],
+      "json_sha256": "2c4247769724683d0eeda7dbd1aec7a4ee6eef1c16dca2ae56888c6863e951ac"
+    },
+    {
+      "case": "pilot-char-reverse-utf16-256-miss",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 56.520659705345636,
+      "error": 1.4009678442635158,
+      "rawData": [
+        [
+          54.41402092454286,
+          57.35282572885746,
+          57.03560517578175,
+          57.00934165007918,
+          57.05377320574184
+        ],
+        [
+          55.71277064484427,
+          56.99631291169874,
+          56.922774659759,
+          56.95198710736765,
+          55.75718504478357
+        ]
+      ],
+      "json_sha256": "b60a5c174dbca324c978d17e1fc19c751dfae4ee276c7ab703c8b5eba7944657"
+    },
+    {
+      "case": "pilot-char-reverse-utf16-4096-miss",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 780.7558545890196,
+      "error": 38.958972658297675,
+      "rawData": [
+        [
+          797.2425422173729,
+          799.6121973105309,
+          799.8195447620616,
+          745.3604943989769,
+          744.8904174586864
+        ],
+        [
+          798.3265536326921,
+          800.7855232179064,
+          801.4902737078371,
+          774.9525749505336,
+          745.078424233598
+        ]
+      ],
+      "json_sha256": "f8c835bb7a8fc7a42436376bbbabaae942b15def68ad9fb696415175024483f4"
+    },
+    {
+      "case": "supp-char-reverse-utf16-early",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 3.767664618410471,
+      "error": 0.2079948599320142,
+      "rawData": [
+        [
+          3.873179148445916,
+          3.6360191104920014,
+          3.8911899223909905,
+          3.635572611557418,
+          3.633346172684518
+        ],
+        [
+          3.89952108315927,
+          3.6410568236962044,
+          3.64199417561326,
+          3.916611038257451,
+          3.9081560978076815
+        ]
+      ],
+      "json_sha256": "4c1ac16987986f7d91efaf92dd568cedae09ad7574df84d0903190eb8b7a5f2e"
+    },
+    {
+      "case": "utf16-uniform-end-129-129",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "length": "129",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 50.13264612206768,
+      "error": 2.685417767669023,
+      "rawData": [
+        [
+          48.19611382136636,
+          51.58505741504802,
+          51.62144361614817,
+          51.714852348200566,
+          48.23174586222496
+        ],
+        [
+          48.32543604097822,
+          48.59265769807043,
+          48.98623211634547,
+          52.0624062224044,
+          52.01051607989024
+        ]
+      ],
+      "json_sha256": "3bdfcdba7853e88915cf67bc562c7975c0290e351626b931b0b38c82a13443d3"
+    },
+    {
+      "case": "utf16-uniform-end-130-129",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "length": "130",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 50.3764612554668,
+      "error": 2.1903353478023853,
+      "rawData": [
+        [
+          51.414389432799,
+          48.49370839311466,
+          50.84126363148796,
+          48.63240453518486,
+          51.908696217874535
+        ],
+        [
+          50.00785484035563,
+          51.75691459096993,
+          51.983191459127305,
+          48.36661529646251,
+          50.35957415729165
+        ]
+      ],
+      "json_sha256": "a38769ab2d986c094c916000d725f2c442c4e68b569ee1253f13a028571025d1"
+    },
+    {
+      "case": "overlap-min-latin",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "length": "0",
+        "needleLength": "257",
+        "shape": "OVERLAP_LATIN1"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 98.90696957849552,
+      "error": 4.717586144114713,
+      "rawData": [
+        [
+          103.30355921702159,
+          94.28013816436304,
+          103.32186478271683,
+          99.00353292361194,
+          96.70725190102439
+        ],
+        [
+          96.19972470825675,
+          97.37510906426128,
+          100.66805386309025,
+          96.90309385981803,
+          101.30736730079117
+        ]
+      ],
+      "json_sha256": "71e8b135f6e0076fa77c5aa983867de605c8b02cca08747c48d47f54ad9d7b8e"
+    },
+    {
+      "case": "overlap-min-utf16",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "length": "0",
+        "needleLength": "129",
+        "shape": "OVERLAP"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 89.84672768735467,
+      "error": 2.775079500583381,
+      "rawData": [
+        [
+          90.70354316199568,
+          86.43867864818692,
+          90.66677827745036,
+          88.708653394628,
+          91.09428779825694
+        ],
+        [
+          88.04965985881562,
+          89.37341849172164,
+          89.18367568142118,
+          92.4261507247751,
+          91.82243083629523
+        ]
+      ],
+      "json_sha256": "3378a36576936c684094124c497520c6860a3280870e5ad970fed538749b052c"
+    },
+    {
+      "case": "pilot-utf16-126-end",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "126",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 9.704292703550463,
+      "error": 1.531974408564095,
+      "rawData": [
+        [
+          9.086683308429643,
+          9.066088137505758,
+          9.084196997215983,
+          9.072905088450185,
+          9.070629487994308
+        ],
+        [
+          11.529608498776165,
+          10.62228598510308,
+          10.697996080232606,
+          10.388123670106875,
+          8.42440978169003
+        ]
+      ],
+      "json_sha256": "a02c1bc85575f76466ec8974a73016f4a8a2d6297c05d41287ce4a9dca5ce5ea"
+    },
+    {
+      "case": "pilot-utf16-127-end",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 8.806338006164866,
+      "error": 0.4805923359546161,
+      "rawData": [
+        [
+          8.438611049490996,
+          8.42990609142472,
+          8.436907498549669,
+          9.032917661557219,
+          9.052533907906476
+        ],
+        [
+          9.027384230987067,
+          8.444051374589808,
+          9.073753188508215,
+          9.059370234424485,
+          9.067944824210016
+        ]
+      ],
+      "json_sha256": "497a0ba5b3602df7e8a0ce1800ffd2f84aef285e365be134aed60ba37b962a2e"
+    },
+    {
+      "case": "pilot-utf16-128-end",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 8.6055389047436,
+      "error": 0.31823094163938004,
+      "rawData": [
+        [
+          8.711946505791982,
+          8.437838735228734,
+          9.05180358483912,
+          8.419792816534198,
+          8.68213110628618
+        ],
+        [
+          8.47541350799644,
+          8.822202650924906,
+          8.452086240147239,
+          8.573697558140292,
+          8.42847634154689
+        ]
+      ],
+      "json_sha256": "63cbb00566ae89adf1617a307d55909780bb93fbc901906fa1c0dc86860a4a6d"
+    },
+    {
+      "case": "pilot-latin-bulk-end",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 7.369238795330236,
+      "error": 0.430126768155398,
+      "rawData": [
+        [
+          7.766157227309421,
+          7.689428967269004,
+          7.485117825566045,
+          7.2045983696002605,
+          7.511270558466798
+        ],
+        [
+          7.476739292565942,
+          7.503009131445896,
+          7.0986277748605495,
+          6.980749377168562,
+          6.9766894290498795
+        ]
+      ],
+      "json_sha256": "385efdd4821e417fef866a53e492ec5990031a9948c30a3a70e9954fbd28e5f4"
+    },
+    {
+      "case": "pilot-serial-latin-end-31",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 31.71497419234305,
+      "error": 2.094525850980251,
+      "rawData": [
+        [
+          29.68832367434363,
+          32.38522826102461,
+          32.02731109460903,
+          30.406686698681323,
+          30.630388210873267
+        ],
+        [
+          30.119195058292018,
+          32.70052685555648,
+          33.33733647817356,
+          33.494039498678745,
+          32.36070609319782
+        ]
+      ],
+      "json_sha256": "6e21b8a8dd8232fbccd008ccdd91c574d4819bc8663c050f7efdb092788b7b01"
+    },
+    {
+      "case": "pilot-serial-latin-end-32",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "32",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 16.03397531048933,
+      "error": 1.086584635618918,
+      "rawData": [
+        [
+          15.354397870954854,
+          15.466089573614662,
+          15.637191005304478,
+          15.28431987645266,
+          16.445232492099862
+        ],
+        [
+          16.84082284065413,
+          17.362503513506486,
+          16.41342459905123,
+          15.397464195219904,
+          16.138307138035028
+        ]
+      ],
+      "json_sha256": "6acc54af138124836ef4d694a263daf84ba9642bdbedc82206e9df134199b1b4"
+    },
+    {
+      "case": "pilot-serial-latin-end-33",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "33",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 16.497695863906817,
+      "error": 0.7134914719641328,
+      "rawData": [
+        [
+          15.763182220520516,
+          16.90663935957446,
+          16.51724326082137,
+          16.588691018910485,
+          15.683171005294069
+        ],
+        [
+          16.76911073047864,
+          16.97434436557193,
+          16.593864683275477,
+          16.976572833462978,
+          16.204139161158217
+        ]
+      ],
+      "json_sha256": "11ec3a67e219ff5779bc3e07ebb639864de71bb690866b3c277bbeb43f0e3d22"
+    },
+    {
+      "case": "pilot-serial-latin-end-63",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "63",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 21.700144141527986,
+      "error": 0.8699721287481362,
+      "rawData": [
+        [
+          22.4562718626353,
+          21.937176151293087,
+          21.89770560349918,
+          20.4204102192644,
+          21.79670714689271
+        ],
+        [
+          20.981159189351963,
+          22.002818655337656,
+          21.87091456950869,
+          21.812634079447058,
+          21.82564393804981
+        ]
+      ],
+      "json_sha256": "004d3b3a575e08788861bbb541524aeeb4f03496709f5d0919bd722b2700901f"
+    },
+    {
+      "case": "pilot-serial-latin-end-64",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "64",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 18.574288416882247,
+      "error": 0.7875958879237311,
+      "rawData": [
+        [
+          18.757204561272616,
+          18.037714812581317,
+          18.965485783837856,
+          19.282605199850163,
+          18.99043312762419
+        ],
+        [
+          17.972734216976193,
+          18.047406514009797,
+          19.20658038431412,
+          18.114435146595966,
+          18.368284421760237
+        ]
+      ],
+      "json_sha256": "56c8f916cd2af0e17d776d6f9b4b945252c14ddec221ffdd11a21a552555c1b3"
+    },
+    {
+      "case": "pilot-serial-latin-end-65",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "65",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 18.351226015353518,
+      "error": 0.8846880572820379,
+      "rawData": [
+        [
+          18.874470345991515,
+          19.236747394082442,
+          17.88766182897331,
+          18.6660534132186,
+          17.884885782338163
+        ],
+        [
+          17.95720221878059,
+          17.88641228032868,
+          18.02054110830214,
+          17.866002380221612,
+          19.232283401298133
+        ]
+      ],
+      "json_sha256": "579cbfa3bd5b8a0813d6ee95954d3b06457774e37de28315b9cd3a538bbe51ff"
+    },
+    {
+      "case": "pilot-serial-utf16-end-64",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "64",
+        "position": "END"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 30.640275797906146,
+      "error": 8.127365412310034,
+      "rawData": [
+        [
+          26.504739417448434,
+          26.576366480131213,
+          37.483679286653995,
+          27.9019762653027,
+          27.98801560405872
+        ],
+        [
+          37.83642272290397,
+          28.13935573766615,
+          39.71405312147374,
+          26.93477704844643,
+          27.32337229497608
+        ]
+      ],
+      "json_sha256": "c4ef093ec1de6a017cea0cb6b1c611b594446da6d8b50dc427f2d9a5a918e790"
+    }
+  ]
+}

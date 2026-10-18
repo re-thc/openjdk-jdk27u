@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117744727914,
+    "artifact_id": 12146267731,
+    "artifact_digest": "sha256:75213da9a591c3fb9f49c5d615d0fe23509b9a02ab462af4277196fd32a6a175"
+  },
+  "backend": "msvc",
+  "tier": "c2",
+  "phase": "periodic",
+  "control": "disabled",
+  "records": [
+    {
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "length": "4095",
+        "needleLength": "513",
+        "shape": "LATIN_PERIOD3_ABC_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics"
+      ],
+      "score": 5459.152557699572,
+      "error": 237.21021116716983,
+      "rawData": [
+        [
+          5402.154974324136,
+          5297.922566487277,
+          5267.852711254498,
+          5422.29735318445,
+          5429.8597466661095
+        ],
+        [
+          5755.907242437434,
+          5307.218750657494,
+          5507.492587121253,
+          5607.861751444049,
+          5592.957893419021
+        ]
+      ],
+      "json_sha256": "ddcd92979482ec6aee3e43ee60f66df11a4b47089ff4a77be0d53b51199f0752"
+    },
+    {
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "backend_control": "msvc",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\perf-images\\fork\\bin\\java.exe",
+      "params": {
+        "length": "2047",
+        "needleLength": "257",
+        "shape": "UTF16_PERIOD3_ABC_MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=2",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics"
+      ],
+      "score": 1957.189637590498,
+      "error": 172.25247400750186,
+      "rawData": [
+        [
+          2141.5645576415973,
+          2121.820686731666,
+          1918.3855347793,
+          1977.9700898043482,
+          1933.0054636831137
+        ],
+        [
+          2017.9767313414222,
+          1897.625928906318,
+          1949.537407323361,
+          1787.0419801857115,
+          1826.9679955081415
+        ]
+      ],
+      "json_sha256": "f60fbd04daf6ac8456b007f1a7734bfe14c39dce78a438274146e37ace591d24"
+    }
+  ]
+}

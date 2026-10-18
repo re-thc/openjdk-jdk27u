@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39145136082,
+    "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+    "job_id": 117748240409,
+    "artifact_id": 12147253952,
+    "artifact_digest": "sha256:c27ecdca7f99c74360bf7b63ea904843907b6cb55e6989b68493ca5d445d416b"
+  },
+  "backend": "serial",
+  "tier": "interpreter",
+  "scope": "Complete matched images, original/enabled/disabled controls; two JMH forks with3x500ms warmup and5x500ms measurement",
+  "counts": {
+    "triplets": 32,
+    "records": 96,
+    "higher_means": 8,
+    "nonoverlap_losses": 5
+  },
+  "producer": {
+    "job_id": 117733444162,
+    "conclusion": "success",
+    "artifact_id": 12145506718,
+    "artifact_digest": "sha256:f452b3221e10716664eb7aa0ceffc2dba78d621d222c78c4b6cb210bd49aaea0"
+  },
+  "producer_image_hashes": {
+    "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+    "fork": "bc1eb0494e08b9ec068f0b19f68ce9cd60508aecc81c23f900faccf9f794aa4e"
+  },
+  "phases": {
+    "stock": {
+      "runner_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+      "manifest_sha256": "fea1b8503ff53e6ec35aefebedc9f7c3138468c974ab27bbbdd2c694ea4491f3",
+      "metadata_file": "stock/serial-interpreter-metadata.json",
+      "complete": {
+        "measurements": 90,
+        "triplets": 30,
+        "sources": {
+          "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "fork": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d"
+        },
+        "images_unchanged": true,
+        "all_means_retained": true
+      },
+      "diagnostics": {
+        "records": 57,
+        "files": [
+          {
+            "name": "stock/serial-interpreter-diagnostics-1.json",
+            "sha256": "a1e1be6490423600c852cb660bfe0e57b7515622f4b9ab5817890353a38c0f1e",
+            "parts": 1
+          },
+          {
+            "name": "stock/serial-interpreter-diagnostics-2.json",
+            "sha256": "ce86a95c755dc66b303591bbd822fea93304893f05bb73f91fdedc62c8c59f31",
+            "parts": 1
+          },
+          {
+            "name": "stock/serial-interpreter-diagnostics-3.json",
+            "sha256": "ad4074a8002bc377f07acda2337f8d47e310ea12b4616129822d66cf82d07f62",
+            "parts": 1,
+            "publication": "reference_only",
+            "reference_name": "stock/serial-interpreter-diagnostics-3-reference.json"
+          }
+        ]
+      }
+    },
+    "periodic": {
+      "runner_sha256": "74ed5c71dd487e08d0ef017ead2f59172acbca9a7edad9b51ad976e54e80e532",
+      "manifest_sha256": "8cf638200670921eb66bc8958113a635fc71afc8a492980bdf21391ccb24b98e",
+      "metadata_file": "periodic/serial-interpreter-metadata.json",
+      "complete": {
+        "measurements": 6,
+        "triplets": 2,
+        "sources": {
+          "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "fork": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d"
+        },
+        "images_unchanged": true,
+        "all_means_retained": true
+      },
+      "diagnostics": {
+        "records": 57,
+        "files": [
+          {
+            "name": "periodic/serial-interpreter-diagnostics-1.json",
+            "sha256": "c515831eccb4a803c90b9c8617049cfee854d51eb10bca32372a9b3866f7e382",
+            "parts": 1,
+            "publication": "reference_only",
+            "reference_name": "periodic/serial-interpreter-diagnostics-1-reference.json"
+          },
+          {
+            "name": "periodic/serial-interpreter-diagnostics-2.json",
+            "sha256": "e4255611595b9a0f42f1cc0d392d80da2c33b53b3ca56b1945e64b8e04710201",
+            "parts": 1,
+            "publication": "reference_only",
+            "reference_name": "periodic/serial-interpreter-diagnostics-2-reference.json"
+          },
+          {
+            "name": "periodic/serial-interpreter-diagnostics-3.json",
+            "sha256": "75c91d557cd756de38a7ca4df560ae1df78540ce0b6d892d96768459aec0d868",
+            "parts": 1,
+            "publication": "reference_only",
+            "reference_name": "periodic/serial-interpreter-diagnostics-3-reference.json"
+          }
+        ]
+      }
+    }
+  },
+  "publication_limits": [
+    {
+      "kind": "JIT machine-code export",
+      "original_name": "stock/serial-interpreter-diagnostics-3.json",
+      "original_sha256": "ad4074a8002bc377f07acda2337f8d47e310ea12b4616129822d66cf82d07f62",
+      "reference_name": "stock/serial-interpreter-diagnostics-3-reference.json",
+      "records": 10,
+      "artifact_id": 12147253952,
+      "benchmark_samples_affected": 0
+    },
+    {
+      "kind": "JIT machine-code export",
+      "original_name": "periodic/serial-interpreter-diagnostics-1.json",
+      "original_sha256": "c515831eccb4a803c90b9c8617049cfee854d51eb10bca32372a9b3866f7e382",
+      "reference_name": "periodic/serial-interpreter-diagnostics-1-reference.json",
+      "records": 20,
+      "artifact_id": 12147253952,
+      "benchmark_samples_affected": 0
+    },
+    {
+      "kind": "JIT machine-code export",
+      "original_name": "periodic/serial-interpreter-diagnostics-2.json",
+      "original_sha256": "e4255611595b9a0f42f1cc0d392d80da2c33b53b3ca56b1945e64b8e04710201",
+      "reference_name": "periodic/serial-interpreter-diagnostics-2-reference.json",
+      "records": 27,
+      "artifact_id": 12147253952,
+      "benchmark_samples_affected": 0
+    },
+    {
+      "kind": "JIT machine-code export",
+      "original_name": "periodic/serial-interpreter-diagnostics-3.json",
+      "original_sha256": "75c91d557cd756de38a7ca4df560ae1df78540ce0b6d892d96768459aec0d868",
+      "reference_name": "periodic/serial-interpreter-diagnostics-3-reference.json",
+      "records": 10,
+      "artifact_id": 12147253952,
+      "benchmark_samples_affected": 0
+    }
+  ],
+  "decoded_job_log": {
+    "schema": 1,
+    "decoded_job_log_sha256": "d6089cf2b08809b8dd45fcc50efa9b8f0de2130d0ecd3019d87c6ed0a5a3e65d",
+    "characters": 1007506,
+    "immutable_artifact": {
+      "run_id": 39145136082,
+      "head": "f7003b74572a93b774ffb9fe79fcc35a3efcdcb0",
+      "job_id": 117748240409,
+      "artifact_id": 12147253952,
+      "artifact_digest": "sha256:c27ecdca7f99c74360bf7b63ea904843907b6cb55e6989b68493ca5d445d416b"
+    },
+    "scope": "Original log retained by the immutable result artifact; this evidence export includes all benchmark raw samples and does not re-export a blocked machine-code batch indirectly.",
+    "full_log_republished": false
+  },
+  "full_collector_receipt_sha256": "20f751d555e3f06ba3041d697d1635e1533660990f656323aba935e07ee9014d",
+  "full_receipt_scope": "Collector validated complete image/source/host/flags/harness provenance. Detailed provenance is retained in phase metadata and the original artifact; this compact receipt omits repeated hosted-runner environment fields."
+}

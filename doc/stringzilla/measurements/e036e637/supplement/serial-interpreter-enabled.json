@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39152364859,
+    "head": "5eb741f73bc6cce9478793ba2101d719a40d3fc7",
+    "job_id": 117751315791,
+    "artifact_id": 12147109954,
+    "artifact_digest": "sha256:4dd2bf755d752bda8ca3fb767f7168ea682292f12ec1918e6065f66c0695087e"
+  },
+  "backend": "serial",
+  "tier": "interpreter",
+  "phase": "supplement",
+  "control": "enabled",
+  "records": [
+    {
+      "case": "gap-lower-mixed-15-serial-interpreter",
+      "backend_control": "serial",
+      "tier": "interpreter",
+      "control": "enabled",
+      "source": "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d",
+      "java": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/perf-images/fork/bin/java",
+      "params": {
+        "coder": "MIXED",
+        "length": "15",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=0",
+        "-Xint",
+        "-XX:+UseStringZillaIntrinsics"
+      ],
+      "score": 1250.5971877972818,
+      "error": 32.7343955587456,
+      "rawData": [
+        [
+          1251.7988680964395,
+          1254.9117655865575,
+          1266.8527567731885,
+          1247.307300721068,
+          1240.9170727833966
+        ],
+        [
+          1216.5538143790723,
+          1252.3524736309637,
+          1218.9963972774024,
+          1286.870820006561,
+          1269.410608718166
+        ]
+      ],
+      "json_sha256": "87eea86301019ad187c9067802cff83db7d7dadbbef2c636783e21ea879f5bd7"
+    }
+  ]
+}

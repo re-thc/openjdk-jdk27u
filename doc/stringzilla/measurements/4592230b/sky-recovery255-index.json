@@ -1,0 +1,843 @@
+{
+  "schema": "stringzilla-normalized-recovery-index-v1",
+  "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "scope": "Only255 previously unmeasured historical459 SKY triplets: original primary interpreter129/C1120 and externalABC6. These do not qualify subsequent sources.",
+  "triplets": 255,
+  "records": 765,
+  "raw_samples": 7650,
+  "higher_mean_rows": 30,
+  "nonoverlap_loss_rows": 10,
+  "counts_by_tier": {
+    "interpreter": 131,
+    "c1": 122,
+    "c2": 2
+  },
+  "binding": {
+    "repository": "re-thc/openjdk-jdk27u",
+    "source": "4592230b14fc2f4b537b162fd7f6b791e882b615",
+    "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "workflow": {
+      "run_id": 39151817578,
+      "head": "4de5ccab4d25934bf1d31c244989373079aa43ec",
+      "attempt": 1,
+      "measurement_job_id": 117746847963,
+      "measurement_conclusion": "success",
+      "collector_job_id": 117778788589,
+      "collector_conclusion": "success"
+    },
+    "results_artifact": {
+      "id": 12149103768,
+      "digest": "sha256:7c72871e4ecd6ab7d1fed0c0d79356a4e3fde5e3e327240dab744da449792a64"
+    },
+    "qualified_artifact": {
+      "id": 12149012862,
+      "digest": "sha256:96e3109cd78fb2a49aa03443448575837bb161df75e8ed8f5f321d691b895c05"
+    },
+    "original_producer": {
+      "run_id": 39121850979,
+      "head": "8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3",
+      "job_id": 117670856710,
+      "conclusion": "success",
+      "pair_artifact": {
+        "id": 12136383132,
+        "digest": "sha256:eacc03474b8dd7cc4d2eec96ec23c7901e62472b26d6087871654694a74fbde4"
+      }
+    },
+    "image_hashes": {
+      "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+      "fork": "d0a5064b9360e8b464b559585e095e05f173e1b4ab17e79bde56d03760c6642a"
+    },
+    "method": {
+      "forks": 2,
+      "warmup_iterations": 3,
+      "warmup_iteration_ms": 500,
+      "measurement_iterations": 5,
+      "measurement_iteration_ms": 500,
+      "gc": "Serial",
+      "cds": "off",
+      "active_processors": 1,
+      "score_unit": "ns/op",
+      "reported_interval": "JMH 99.9% Student-t df9",
+      "raw_data_shape": [
+        2,
+        5
+      ]
+    },
+    "physical_worker": {
+      "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+      "host_runner_label": "ubuntu-22.04",
+      "container_image": "ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a",
+      "native_execution": true,
+      "compiler": "16.0.1"
+    },
+    "validation": {
+      "complete_images_restored": true,
+      "source_and_profile_verified": true,
+      "runtime_backend": 2,
+      "native_sky_contract_passed": true,
+      "strict_collector_success": true,
+      "all_four_election_complete": true,
+      "chosen_measurement_success": true,
+      "other_three_measurements_skipped": true,
+      "no_replacement": true,
+      "original_zero_timing_receipts_retained": true,
+      "all_higher_means_retained": true
+    },
+    "phases": [
+      {
+        "phase": "abc",
+        "tier": null,
+        "triplets": 6,
+        "records": 18,
+        "diagnostics": 57,
+        "manifest_sha256": "6da9ae88c0dcf42e740cc27de54eca4fe1cffa9560e9b28cad854776bb55e2b3",
+        "runner_sha256": "74ed5c71dd487e08d0ef017ead2f59172acbca9a7edad9b51ad976e54e80e532",
+        "normalized_tagged_stream_sha256": "8b42e53d785cfdc623221e50b4f2accbe9f251d0effb2e2ff8071fe3c25ac5d1",
+        "extra_benchmark_source_sha256": "fead0e50103b20ca4bb1f3eeb47a71b1fc79f52fd91d0c7bb9007a502f7de44b"
+      },
+      {
+        "phase": "interpreter",
+        "tier": null,
+        "triplets": 129,
+        "records": 387,
+        "diagnostics": 57,
+        "manifest_sha256": "0608def65f0e7c1764f7b9e3e01160c783eeeadd1d1eabc33f5f0c1e8e798d5a",
+        "runner_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+        "normalized_tagged_stream_sha256": "9005984c52d3522fa0ada24f8d2f4081d5b2ba7627d19b1eb68689d3e10a6842"
+      },
+      {
+        "phase": "c1",
+        "tier": null,
+        "triplets": 120,
+        "records": 360,
+        "diagnostics": 57,
+        "manifest_sha256": "0759b2d73395fc7899fb35a9a55fbdbb0a436d83d91852168831f37dc132fcf7",
+        "runner_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+        "normalized_tagged_stream_sha256": "64a5242c081733bc00a56c4a4eb42a38ea60c82731e24a424b1d9a49044b7740"
+      }
+    ],
+    "source_commit_trees": {
+      "original": "dd8fc9c14c376d51876fbe312f419cb1d2c086d1",
+      "fork": "9469745b97faacbfbc6c2a33279131eb4385ad3e"
+    },
+    "spec_sha256": "be0e69d327840a33b76cc3e39123da991a688e40ffdacd5e4f2d4c661d8e9a8b",
+    "strict_collectors": {
+      "normal": {
+        "git_blob": "2f60bf32d3817bde9b1b80d6d41e33422a02a5fa",
+        "sha256": "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26"
+      },
+      "periodic": {
+        "git_blob": "8c0a426c874b67983fa3dee62df9dc36e902026c",
+        "sha256": "ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4"
+      }
+    },
+    "raw_json_hash_note": "json_sha256 identifies original benchmark JSON bytes. This score file contains validated numeric records, not the original benchmark file bytes."
+  },
+  "files": [
+    {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-scores-01.json",
+      "blob": "df16b91ef27a0ecfd977b0cc9dfcf86bb17b16cc",
+      "bytes": 132268,
+      "sha256": "0e6e599e99ba21094f60a1103636edbdc31af3318c95eeca3274277dd63f464a",
+      "triplets": 48,
+      "records": 144
+    },
+    {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-scores-02.json",
+      "blob": "7db450837b604de95bc0f803e49ef205987fc31c",
+      "bytes": 132275,
+      "sha256": "ca8c32bae6fa629aee05084a32a1d97bbf3aaec53fd14d417c3dda460730a420",
+      "triplets": 48,
+      "records": 144
+    },
+    {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-scores-03.json",
+      "blob": "aae60b9ecc3e3612ec65f018b81b8999a97a5034",
+      "bytes": 132897,
+      "sha256": "3de5953acf11da4e13a5f7ba9cb06635f1b43e8b930ca692495f05b6524122d0",
+      "triplets": 48,
+      "records": 144
+    },
+    {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-scores-04.json",
+      "blob": "0854ae459ea9d3248adcc3cb892ecc12b6f1d815",
+      "bytes": 133401,
+      "sha256": "9c0976cc46c08baa1b14533471f93c63e72ada14d278c4481a8a942f18933b3e",
+      "triplets": 48,
+      "records": 144
+    },
+    {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-scores-05.json",
+      "blob": "a2398e38798904e2708f8d153cdf87ad53bb1524",
+      "bytes": 133962,
+      "sha256": "3ec4e633d15ab45c58ea4ebcb127718402d6ad3731043637c98b59608ab51332",
+      "triplets": 48,
+      "records": 144
+    },
+    {
+      "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-scores-06.json",
+      "blob": "49e522ff150f037619b3de54624679bdb2d5b275",
+      "bytes": 44456,
+      "sha256": "16deea56e6adcf581540879303d37c13dc3a9b0800f14e07ff304fcb9e519a46",
+      "triplets": 15,
+      "records": 45
+    }
+  ],
+  "table": {
+    "path": "doc/stringzilla/measurements/4592230b/sky-recovery255-RESULTS.md",
+    "blob": "40bc5aff876e3f7b980212f48c572ac2f2091164",
+    "bytes": 39106,
+    "sha256": "b2bef0346737277beea4b49334e72c9c2a138c7708c6e00f3a4d70b29fec8107"
+  },
+  "raw_samples_per_control": [
+    2,
+    5
+  ],
+  "higher_means": [
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]",
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.1548135113586524,
+          "control_over_enabled": 0.8659406823388198,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 1.112319152105796,
+          "control_over_enabled": 0.8990225495145363,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"4095\",\"needleLength\":\"513\",\"shape\":\"LATIN_PERIOD3_ABC_MISS\"}]",
+      "case": "supp-latin-period3-abc-miss-4095-513",
+      "tier": "c2",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 2.0413589565720636,
+          "control_over_enabled": 0.48986974915927683,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 1.947218464738615,
+          "control_over_enabled": 0.5135530594581923,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.6833629478073409,
+          "control_over_enabled": 0.5940489549817802,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 2.029657785296756,
+          "control_over_enabled": 0.4926938951207433,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c2\",\"org.openjdk.bench.java.lang.StringZillaPeriodicSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_ABC_MISS\"}]",
+      "case": "supp-utf16-period3-abc-miss-2047-257",
+      "tier": "c2",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 2.292161019562542,
+          "control_over_enabled": 0.4362695253367714,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 3.023065853385432,
+          "control_over_enabled": 0.33079001533497293,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "tiny-latin",
+      "tier": "interpreter",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.038304457117988,
+          "control_over_enabled": 0.9631086461630827,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0433460601804339,
+          "control_over_enabled": 0.9584547621975611,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"15\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "lower-utf16-15-miss",
+      "tier": "interpreter",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.9480551965377677,
+          "control_over_enabled": 1.0547909063226815,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0371935416851081,
+          "control_over_enabled": 0.9641402108764769,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"15\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "case": "lower-utf16-15-end",
+      "tier": "interpreter",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.9421094588918263,
+          "control_over_enabled": 1.0614477867319883,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.006686479744194,
+          "control_over_enabled": 0.9933579323068957,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"257\",\"needleLength\":\"257\",\"position\":\"MISS\"}]",
+      "case": "latin-span-0-miss",
+      "tier": "interpreter",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0094623231099198,
+          "control_over_enabled": 0.9906263731758026,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 0.9290738423467566,
+          "control_over_enabled": 1.0763407109537066,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "char-forward-latin-256",
+      "tier": "interpreter",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.9170336770065568,
+          "control_over_enabled": 1.0904724930760095,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0123108630649076,
+          "control_over_enabled": 0.9878388511730134,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"interpreter\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "case": "supp-char-reverse-utf16-early",
+      "tier": "interpreter",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.9678832994755162,
+          "control_over_enabled": 1.0331824100507647,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0083112836564079,
+          "control_over_enabled": 0.9917572243898045,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "tiny-latin",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.1220063254542672,
+          "control_over_enabled": 0.8912605725240718,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 1.0654642904695864,
+          "control_over_enabled": 0.9385579685258771,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"4\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "tiny-utf16",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.9561807929312398,
+          "control_over_enabled": 1.0458273240716636,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0615809646706755,
+          "control_over_enabled": 0.9419912689468963,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"255\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "threshold-latin1-255",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.031026207540409,
+          "control_over_enabled": 0.9699074501564567,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0212103685541951,
+          "control_over_enabled": 0.9792301672531741,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "case": "immediate-utf16",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0167903730050132,
+          "control_over_enabled": 0.9834868882999048,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 0.966104997818037,
+          "control_over_enabled": 1.0350841805585473,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"9\",\"position\":\"END\"}]",
+      "case": "mixed-end-9",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0406297722255193,
+          "control_over_enabled": 0.960956554088754,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0790290973560708,
+          "control_over_enabled": 0.926759067434127,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"15\",\"position\":\"END\"}]",
+      "case": "mixed-boundary-end-15",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0393750723108923,
+          "control_over_enabled": 0.9621165897087103,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0697689109510389,
+          "control_over_enabled": 0.934781324978856,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"16\",\"position\":\"END\"}]",
+      "case": "mixed-boundary-end-16",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0168349750823025,
+          "control_over_enabled": 0.9834437489908923,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0841844868670103,
+          "control_over_enabled": 0.9223522491912056,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"17\",\"position\":\"END\"}]",
+      "case": "mixed-boundary-end-17",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0580435839019948,
+          "control_over_enabled": 0.9451406494164125,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0854932715124892,
+          "control_over_enabled": 0.9212401644891214,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"MIXED\",\"length\":\"4096\",\"needleLength\":\"24\",\"position\":\"END\"}]",
+      "case": "mixed-c1-24-end",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0308412939857572,
+          "control_over_enabled": 0.970081433324708,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.068939818515478,
+          "control_over_enabled": 0.9355063612362947,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"UTF16\",\"length\":\"126\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "case": "immediate-utf16-126",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.045040181919811,
+          "control_over_enabled": 0.9569010046703955,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 0.9922424866124925,
+          "control_over_enabled": 1.0078181628907985,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "case": "short-latin-c1-31-end",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0600899897503575,
+          "control_over_enabled": 0.9433161426564285,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0407209568383096,
+          "control_over_enabled": 0.9608723581756063,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"31\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "short-latin-c1-31-miss",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0200393810694774,
+          "control_over_enabled": 0.9803543064695533,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 0.990518884606038,
+          "control_over_enabled": 1.0095718673730616,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"32\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "short-latin-c1-32-miss",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0608715860204032,
+          "control_over_enabled": 0.9426211552627703,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.006616110410802,
+          "control_over_enabled": 0.9934273748031889,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf\",{\"coder\":\"LATIN1\",\"length\":\"33\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "short-latin-c1-33-miss",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0481377010869364,
+          "control_over_enabled": 0.9540731136404913,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0555245559577804,
+          "control_over_enabled": 0.9473962442234255,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"LATIN1\",\"length\":\"256\",\"needleLength\":\"4\",\"position\":\"START\"}]",
+      "case": "supp-forward-latin-early",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.8107875364881018,
+          "control_over_enabled": 1.233368737180477,
+          "higher_mean": false,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0254308251884703,
+          "control_over_enabled": 0.9751998627661732,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOf\",{\"coder\":\"MIXED\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"START\"}]",
+      "case": "supp-forward-mixed-early",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.8789123240592502,
+          "control_over_enabled": 1.1377699147299554,
+          "higher_mean": false,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0277066559655113,
+          "control_over_enabled": 0.9730403069740934,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar\",{\"coder\":\"UTF16\",\"length\":\"128\",\"needleLength\":\"4\",\"position\":\"MISS\"}]",
+      "case": "supp-char-forward-utf16-below",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 0.9881810632401091,
+          "control_over_enabled": 1.0119602947268977,
+          "higher_mean": false,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0013721740792783,
+          "control_over_enabled": 0.9986297062023518,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar\",{\"coder\":\"UTF16\",\"length\":\"4096\",\"needleLength\":\"4\",\"position\":\"END\"}]",
+      "case": "supp-char-reverse-utf16-early",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.0660920140885077,
+          "control_over_enabled": 0.9380053379866883,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        },
+        "disabled": {
+          "enabled_over_control": 1.0486360782794657,
+          "control_over_enabled": 0.9536196786598601,
+          "higher_mean": true,
+          "intervals_overlap": true,
+          "nonoverlap_higher_mean": false
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"2048\",\"needleLength\":\"256\",\"shape\":\"UTF16_PERIOD2_MISS\"}]",
+      "case": "utf16-period2-miss-2048-256",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 2.0729832737535245,
+          "control_over_enabled": 0.4823965599053352,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 2.301937539488923,
+          "control_over_enabled": 0.4344166524266425,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    },
+    {
+      "physical_key": "[\"avx512\",\"c1\",\"org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf\",{\"length\":\"2047\",\"needleLength\":\"257\",\"shape\":\"UTF16_PERIOD3_MISS\"}]",
+      "case": "utf16-period3-miss-2047-257",
+      "tier": "c1",
+      "comparisons": {
+        "original": {
+          "enabled_over_control": 1.1338339702999938,
+          "control_over_enabled": 0.8819633440118366,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        },
+        "disabled": {
+          "enabled_over_control": 1.2346874075396592,
+          "control_over_enabled": 0.8099215995024062,
+          "higher_mean": true,
+          "intervals_overlap": false,
+          "nonoverlap_higher_mean": true
+        }
+      }
+    }
+  ],
+  "validation": {
+    "raw_score_blobs_readback_sha256_verified": true,
+    "frozen_collector_accepted_all_records": true,
+    "complete_archive_chain_collector_success": true,
+    "means_and_errors_recomputed_from_ten_samples": true,
+    "unique_physical_keys": true,
+    "all_three_controls_preserved": true
+  },
+  "publication": {
+    "git_blobs_only": true,
+    "repository_refs_changed": false,
+    "contains_full_host_or_jit_dumps": false,
+    "contains_original_jmh_file_bytes": false
+  }
+}
