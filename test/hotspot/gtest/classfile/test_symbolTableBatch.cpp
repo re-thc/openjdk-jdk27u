@@ -105,16 +105,10 @@ TEST_VM(SymbolTable, batch_reference_ownership) {
   }
 }
 
-class VM_RehashSymbolsForBatchTest : public VM_Operation {
-public:
-  VMOp_Type type() const { return VMOp_Dummy; }
-  void doit() { SymbolTable::rehash_table(); }
-};
-
 TEST_VM(SymbolTable, batch_reference_ownership_alt_hash) {
   {
     ThreadInVMfromNative tiv(JavaThread::current());
-    VM_RehashSymbolsForBatchTest op;
+    VM_RehashSymbolTable op;
     VMThread::execute(&op);
   }
   const int counts[] = {1, 17, 257};
