@@ -33,21 +33,38 @@ jar="$jdk/bin/jar"
 [[ -x $jar ]] || jar="$jar.exe"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
+# Keep launcher arguments relative so MSYS native-path conversion cannot change
+# the archive names echoed in diagnostics (including -javaagent's option value).
+cd "$work"
 
 expect_error() {
   local expected=$1
   shift
   local result=0
   "$java" "$@" > "$work/stdout" 2> "$work/stderr" || result=$?
-  if [[ $result != 1 || -s $work/stdout ]] || ! grep -Fxq "$expected" "$work/stderr"; then
+  if [[ $result != 1 || -s $work/stdout ]] \
+      || ! grep -Fxq -e "$expected" -e "$expected"$'\r' "$work/stderr"; then
     cat "$work/stdout" "$work/stderr" >&2
     echo "Unexpected launcher error (exit $result): $expected" >&2
     exit 1
   fi
 }
-expect_error "Error: Unable to access jarfile $work/missing.jar" -jar "$work/missing.jar"
+expect_output() {
+  local expected=$1
+  shift
+  local actual
+  actual=$("$java" "$@") || {
+    echo "Launcher failed: $*" >&2
+    exit 1
+  }
+  if [[ ${actual%$'\r'} != "$expected" ]]; then
+    echo "Unexpected launcher output: $actual (expected $expected)" >&2
+    exit 1
+  fi
+}
+expect_error 'Error: Unable to access jarfile missing.jar' -jar missing.jar
 printf 'invalid archive\n' > "$work/corrupt.jar"
-expect_error "Error: Invalid or corrupt jarfile $work/corrupt.jar" -jar "$work/corrupt.jar"
+expect_error 'Error: Invalid or corrupt jarfile corrupt.jar' -jar corrupt.jar
 
 cat > "$work/LauncherJarSmoke.java" <<'JAVA'
 public class LauncherJarSmoke {
@@ -78,18 +95,18 @@ public class LauncherJarSmoke {
     }
 }
 JAVA
-"$javac" -d "$work/classes" "$work/LauncherJarSmoke.java"
-"$jar" --create --file "$work/no-manifest.jar" --no-manifest -C "$work/classes" .
-expect_error "Error: Invalid or corrupt jarfile $work/no-manifest.jar" -jar "$work/no-manifest.jar"
-"$jar" --create --file "$work/no-main.jar" -C "$work/classes" .
-expect_error "no main manifest attribute, in $work/no-main.jar" -jar "$work/no-main.jar"
+"$javac" -d classes LauncherJarSmoke.java
+"$jar" --create --file no-manifest.jar --no-manifest -C classes .
+expect_error 'Error: Invalid or corrupt jarfile no-manifest.jar' -jar no-manifest.jar
+"$jar" --create --file no-main.jar -C classes .
+expect_error 'no main manifest attribute, in no-main.jar' -jar no-main.jar
 # Splash metadata is harmless; it must not enable a graphical launcher path.
 printf 'Main-Class: LauncherJarSmoke\nSplashScreen-Image: absent.png\n\n' > "$work/main.mf"
-"$jar" --create --file "$work/main.jar" --manifest "$work/main.mf" -C "$work/classes" .
-[[ $("$java" -jar "$work/main.jar" plain) == JAR_OK:plain ]]
+"$jar" --create --file main.jar --manifest main.mf -C classes .
+expect_output JAR_OK:plain -jar main.jar plain
 printf 'Premain-Class: LauncherJarSmoke$Agent\n\n' > "$work/agent.mf"
-"$jar" --create --file "$work/agent.jar" --manifest "$work/agent.mf" -C "$work/classes" .
-[[ $("$java" -javaagent:"$work/agent.jar" -jar "$work/main.jar" agent) == JAR_OK:agent ]]
+"$jar" --create --file agent.jar --manifest agent.mf -C classes .
+expect_output JAR_OK:agent -javaagent:agent.jar -jar main.jar agent
 
 if [[ $(uname -s) == Darwin ]]; then
   instrument_deps=$(otool -L "$jdk/lib/libinstrument.dylib")
@@ -100,7 +117,7 @@ if [[ $(uname -s) == Darwin ]]; then
   fi
   # The graph test checks the retained framework inputs. Exercise their native
   # services here without assuming how the OS represents framework reexports.
-  [[ $("$java" --add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED \
-      -cp "$work/classes" LauncherJarSmoke kerberos) == KRB5_OK ]]
+  expect_output KRB5_OK --add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+      -cp classes LauncherJarSmoke kerberos
 fi
 echo 'Headless launcher/archive and native-service checks passed.'

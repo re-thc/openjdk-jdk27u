@@ -160,6 +160,7 @@ native-diagnostics: $(HEADLESS_MESSAGE_BOX_TEST)
 
 launcher-errors:
 	$(BASH) $(TOPDIR)/.github/scripts/check-headless-launcher.sh "$(IMAGES_OUTPUTDIR)/jdk"
+	$(BASH) $(TOPDIR)/test/make/launcher/test-launcher.sh "$(IMAGES_OUTPUTDIR)/jdk" "$(TOPDIR)/.github/scripts/check-headless-launcher.sh"
 
 prebuilt:
 	+$(BASH) $(TOPDIR)/test/make/prebuilt/test-prebuilt.sh "$(MAKE)" "$(TOPDIR)" "$(BOOT_JDK)" "$(IMAGES_OUTPUTDIR)/jdk" "$(TEST_SUPPORT_DIR)/prebuilt"
