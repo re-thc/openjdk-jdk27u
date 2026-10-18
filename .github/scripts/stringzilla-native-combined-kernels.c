@@ -384,7 +384,7 @@ static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 // The rightmost start has already failed equality or a necessary byte sample.
 // Probe at most two earlier aligned starts before resuming the bulk backend.
-static sz_cptr_t rfind_after_mismatch(sz_cptr_t src, sz_size_t src_bytes,
+SZ_HELPER_NOINLINE sz_cptr_t rfind_after_mismatch(sz_cptr_t src, sz_size_t src_bytes,
                                      sz_cptr_t tgt, sz_size_t tgt_bytes, jboolean utf16,
                                      sz_find_byte_t byte_search, sz_equal_t equality,
                                      search_fn bulk_search) {
