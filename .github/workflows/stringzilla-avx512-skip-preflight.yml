@@ -1,0 +1,145 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Verify two archived AVX-512 zero-timing skips
+on:
+  push:
+    branches: [codex/stringzilla-avx512-skip-preflight]
+    paths: [.github/workflows/stringzilla-avx512-skip-preflight.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-avx512-zero-timing-preflight
+  cancel-in-progress: false
+jobs:
+  inspect:
+    name: Verify exact archived zero-timing receipts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Verify ZIP digests and print both original hardware receipts
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import zipfile
+          
+          repo = "re-thc/openjdk-jdk27u"
+          source = "4592230b14fc2f4b537b162fd7f6b791e882b615"
+          pins = [
+              {
+                  "label": "primary-interpreter",
+                  "run": 39121850979,
+                  "head": "8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3",
+                  "job": 117676794961,
+                  "job_name": "avx512_controls (interpreter) / avx512-interpreter controls",
+                  "artifact": 12139543436,
+                  "digest": "sha256:1c57c6e166cfc2c1806a7cf4bf8ae4e9bd0408c888d8dfee1492714af89febfb",
+                  "name": "stringzilla-sharded-results-avx512-interpreter-8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3-attempt1",
+                  "tier": "interpreter",
+                  "gate": "Check physical CPU and compiled profile prerequisites",
+                  "restore": "Restore complete pair and project the fixed manifest"
+              },
+              {
+                  "label": "abc",
+                  "run": 39133706140,
+                  "head": "bef5407df2d4da71cc1414da26a90a5d665f014b",
+                  "job": 117693851322,
+                  "job_name": "avx512 periodic controls",
+                  "artifact": 12139488074,
+                  "digest": "sha256:a2b98ea49e4ec99875cb253a4185e381570976251af025571436bfd90479a2c8",
+                  "name": "stringzilla-periodic-controls-avx512-bef5407df2d4da71cc1414da26a90a5d665f014b-attempt1",
+                  "tier": "all",
+                  "gate": "Validate fixed inputs and physical CPU prerequisites",
+                  "restore": "Restore archived pairs after Linux and recovered MSVC qualification"
+              }
+          ]
+          out = Path("skip-preflight")
+          out.mkdir()
+          proofs = []
+          
+          
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", "repos/" + repo + "/" + path], text=True))
+          
+          
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+          
+          
+          for pin in pins:
+              run = api("actions/runs/" + str(pin["run"]))
+              assert run["head_sha"] == pin["head"]
+              jobs = api("actions/runs/" + str(pin["run"]) + "/jobs?per_page=100&filter=all")["jobs"]
+              selected = [job for job in jobs if job["id"] == pin["job"]]
+              assert len(selected) == 1
+              job = selected[0]
+              assert job["name"] == pin["job_name"] and job["run_id"] == pin["run"]
+              assert job["run_attempt"] == 1
+              assert job["status"] == "completed" and job["conclusion"] == "success"
+              steps = {step["name"]: step["conclusion"] for step in job["steps"]}
+              assert steps[pin["gate"]] == "success" and steps[pin["restore"]] == "skipped"
+              measured = [step for step in job["steps"] if step["name"].startswith("Measure ")]
+              assert len(measured) == 1 and measured[0]["conclusion"] == "skipped"
+              artifact = api("actions/artifacts/" + str(pin["artifact"]))
+              assert artifact["id"] == pin["artifact"] and not artifact["expired"]
+              assert artifact["name"] == pin["name"] and artifact["digest"] == pin["digest"]
+              assert artifact["workflow_run"]["id"] == pin["run"]
+              assert artifact["workflow_run"]["head_sha"] == pin["head"]
+              archive = out / (pin["label"] + ".zip")
+              with archive.open("wb") as stream:
+                  subprocess.run(["gh", "api", "repos/" + repo + "/actions/artifacts/" +
+                                  str(pin["artifact"]) + "/zip"], stdout=stream, check=True)
+              downloaded = sha(archive.read_bytes())
+              assert "sha256:" + downloaded == pin["digest"]
+              with zipfile.ZipFile(archive) as bundle:
+                  names = bundle.namelist()
+                  assert len(names) == 2 and set(names) == {"SKIPPED.json", "physical-host.json"}
+                  assert "experiment.log" not in names
+                  raw = {}
+                  receipts = {}
+                  for name in names:
+                      info = bundle.getinfo(name)
+                      assert not info.is_dir() and 0 < info.file_size < 65536
+                      raw[name] = bundle.read(name)
+                      receipts[name] = json.loads(raw[name])
+                      (out / (pin["label"] + "-" + name)).write_bytes(raw[name])
+              skipped, physical = receipts["SKIPPED.json"], receipts["physical-host.json"]
+              assert skipped == physical
+              assert skipped["available"] is False
+              assert type(skipped["timed_records"]) is int and skipped["timed_records"] == 0
+              assert skipped["source"] == source and skipped["backend"] == "avx512"
+              assert skipped["tier"] == pin["tier"]
+              assert isinstance(skipped["physical"], dict)
+              assert isinstance(skipped["physical"]["fields"], dict)
+              assert isinstance(skipped["physical"]["missing"], list)
+              proof = {
+                  "pin": pin, "downloaded_zip_sha256": downloaded,
+                  "job": {"id": job["id"], "name": job["name"], "run_attempt": job["run_attempt"],
+                          "conclusion": job["conclusion"], "steps": steps},
+                  "artifact": {"id": artifact["id"], "name": artifact["name"], "digest": artifact["digest"]},
+                  "files_sha256": {name: sha(data) for name, data in raw.items()},
+                  "receipts": receipts, "timed_records": 0}
+              proofs.append(proof)
+              print("STRINGZILLA_AVX512_SKIPPED_PROOF " + json.dumps(proof, separators=(",", ":")), flush=True)
+          
+          assert len(proofs) == 2
+          receipt = {"schema": "stringzilla-avx512-zero-timing-preflight-v1", "source": source,
+                     "preflight_run": int(os.environ["GITHUB_RUN_ID"]), "preflight_head": os.environ["GITHUB_SHA"],
+                     "attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]), "proofs": proofs,
+                     "timed_records": 0, "jdk_restored": False, "compiler_invoked": False}
+          (out / "skip-preflight.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print("STRINGZILLA_AVX512_SKIPPED_PREFLIGHT " + json.dumps(receipt, separators=(",", ":")), flush=True)
+      - name: Retain the original ZIPs and decoded binding receipts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-avx512-skip-preflight-${{ github.sha }}
+          path: skip-preflight
+          if-no-files-found: error
+          retention-days: 30
