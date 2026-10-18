@@ -622,6 +622,16 @@ final class StringLatin1 {
                 if (index < 0) {
                     return fromIndex;
                 }
+            } else if (tgtCount > 256 && fromIndex <= 1) {
+                int last = tgtCount - 1;
+                byte tail = tgt[last];
+                byte beforeTail = tgt[last - 1];
+                boolean rightPossible = src[fromIndex + last] == tail
+                        && src[fromIndex + last - 1] == beforeTail;
+                if (!rightPossible && (fromIndex == 0
+                        || src[last] != tail || src[last - 1] != beforeTail)) {
+                    return -1;
+                }
             }
             if (searchLength >= StringZilla.MIN_INTERPRETER_REVERSE_BYTES) {
                 if (searchLength < StringZilla.MIN_BYTES && StringZilla.compilerTier() != 0) {
@@ -636,17 +646,6 @@ final class StringLatin1 {
                         return StringZilla.compilerTier() == StringZilla.C2
                                 ? StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex)
                                 : lastIndexOfJava(src, tgt, tgtCount, fromIndex);
-                    }
-                    if (tgtCount > 256 && fromIndex <= 1) {
-                        int last = tgtCount - 1;
-                        byte tail = tgt[last];
-                        byte beforeTail = tgt[last - 1];
-                        boolean rightPossible = src[fromIndex + last] == tail
-                                && src[fromIndex + last - 1] == beforeTail;
-                        if (!rightPossible && (fromIndex == 0
-                                || src[last] != tail || src[last - 1] != beforeTail)) {
-                            return -1;
-                        }
                     }
                     int result = StringZilla.rfindLatin1(src, 0, searchLength,
                             tgt, tgtCount);
