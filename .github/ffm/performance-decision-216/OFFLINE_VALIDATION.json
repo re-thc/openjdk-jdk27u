@@ -1,24 +1,26 @@
 {
   "status": "PASS_OFFLINE_ONLY",
-  "command": "python3 -m unittest -q test_decision test_child_collector test_campaign test_inputs test_baseline_replay test_budget",
-  "tests": 60,
+  "command": "python3 -m unittest -q test_decision test_child_collector test_campaign test_inputs test_baseline_replay test_budget test_collector_supervisor",
+  "tests": 85,
   "failures": 0,
   "errors": 0,
-  "log_sha256": "0ce65d2b129bb877781d9c61f1419746cf5f47fd95cc74687aa9f985fa222dab",
+  "log_sha256": "674d21dd71b2b39fea93c5e0c52b01f731f7a411201837b27c9df56d6a2a7564",
   "runbook_python_blocks_syntax_checked": 3,
   "tested_python_sha256": {
     "accounting_contract.py": "b442f6dd6e62c5f9439199292d674b6dc1c1aa6abddf5e4c73f3d36fd15a7399",
     "baseline_replay.py": "fe6ce5a398af2c748b484a1c91f7c2a8c7f8f3c7cbdb1b5feee6f6a37ca072bd",
-    "budget.py": "2f07266152a8f01efcd8ef3f92659e809bf1277e61a3a7bde3db12bc40186160",
+    "budget.py": "74d5a222cb86122972aab54546061638afd683dee9bedc81c2deeec713f7f4d6",
     "child_collector.py": "6e68284c843dac54d90769b919d6f6485c1d3ccc9a577302a6f1e16da8b052d2",
+    "collector_supervisor.py": "b2f679ca0c9d9a1bec6366019114d049001c42dfbd95e654c83d3a7dcc349038",
     "decision.py": "ab22acf71a038586d64fe1f657f7761bc4c8c7bf2a9113042f90c66daea595ab",
     "inputs.py": "3a72ac8fa34ff6de0101f90a07eb9b8eb7808b78e7fd22fbac20932e09cb40ac",
-    "measure_once.py": "6cf1041cba4d44cb8016b737dcfaf63f17efd4f774f8d78ea50f9235b6052334",
-    "observe_return.py": "6ae0fe991c7d9c5e65df743eccb2987e2fc49d13d217bae45f0adb624e4d93c8",
+    "measure_once.py": "e50f716e7a72984c15c50dfa08ee74868d4cc76c3876ba1e5f6f00c08dcda096",
+    "observe_return.py": "0398215b6b184952aba4b5f8ff165894a6576ab759092e94aecbe45790db8139",
     "test_baseline_replay.py": "6de041b2ee0388ab4e9bac1de41dbc62d8dab24616510d88350bb46446de58fd",
-    "test_budget.py": "b4866b61a3c9c7a9f3c1d2197510ed5fe94cac1e7306d1d05ebaeea9ab861345",
-    "test_campaign.py": "43af962c8a22fd674de352d6374970b9d8df7af97105c10c6790c33f0ba57a84",
+    "test_budget.py": "59675d74833f7ba2cf74aad3162a65ba318774768a75397b8db3830e23efc4c4",
+    "test_campaign.py": "788779777b5d759a0e29b9094f1ed6d1179398291b37240865e16fc0a155ccc2",
     "test_child_collector.py": "03179bde60345127cce46f6162e305c83cb4132cd6fef58b3f0c9d846a876cea",
+    "test_collector_supervisor.py": "6ea5dcde0c4953d3e5d77beef6b7cb464e4ead222644bc8a1d08f5729507b9a9",
     "test_decision.py": "e42d2fd1049d09f551c2c3891cce2c42868df0416dd6ea498fc3faf60bba4757",
     "test_inputs.py": "06bbd33bc98857daf4774eee2795f120837de42a4c209ef848add3db5dd236f8"
   },
@@ -34,5 +36,11 @@
     "luna_controls",
     "luna_platform_safety"
   ],
-  "reporting_repair": "Collector pre-seal estimate is provisional; owner observes actual return and final child cleanup against unchanged overall deadline. Synthetic tests cover late final writing and cleanup."
+  "reporting_repair": "Bounded Linux collector supervision replaces unbounded wait. Session/group anchor, observer subreaping, exact-child WNOHANG reaps and ECHILD emptiness; no signals authorized after endpoint. Existing preparation, actual campaign/sealing and original overall deadlines remain enforced. Unknown return/pending ownership and any intervention fail acceptance. Original statistical holds retained.",
+  "bounded_supervision_reviewers": [
+    "luna_runner_ownership",
+    "luna_controls"
+  ],
+  "actual_Linux_supervision_executed": false,
+  "containment_runtime_readiness_established": false
 }

@@ -50,31 +50,109 @@ class CampaignTests(unittest.TestCase):
             root = Path(temporary)
             (root / "EXECUTION_BINDINGS.json").write_text("{}")
 
-            def worker_return():
+            def worker_return(command, cwd, deadline, launched, **kwargs):
+                self.assertEqual(deadline, end)
+                launched(7)
                 out = root / "run"
                 out.mkdir()
+                (out / "campaign-budget.json").write_text(json.dumps(dict(
+                    collector_pid=7, start_monotonic_ns=2, campaign_deadline_ns=3600_000_000_002)))
                 m.write_pre_seal_report(out, dict(status="SELECTED_SCOPE_FAVORABLE_REVIEW_REQUIRED"),
                                         budget, clock=lambda: end - 1)
                 for suffix, value in [("intent", {}), ("launch", dict(pid=42)),
                                        ("receipt", dict(pid=42, waited_pid=42, returncode=0))]:
                     (out / ("fork-001." + suffix + ".json")).write_text(json.dumps(value))
-                return 0
+                return dict(collector_pid=7, process_return_code=0,
+                            process_return_monotonic_ns=end + 1,
+                            supervisor_cleanup_complete=True, supervision_intervened=False)
 
-            process = Mock(pid=7)
-            process.wait.side_effect = worker_return
             with patch.object(terminal, "__file__", str(root / "observe_return.py")), \
                  patch("inputs.get_budget", return_value=budget), \
-                 patch.object(terminal.subprocess, "Popen", return_value=process) as launch, \
-                 patch.object(terminal.time, "monotonic_ns", side_effect=[end + 1, end + 2]), \
+                 patch.object(terminal, "supervise", side_effect=worker_return) as launch, \
+                 patch.object(terminal.time, "monotonic_ns", side_effect=[2, end + 2]), \
                  patch("builtins.print"):
                 terminal.main()
             observed = json.loads((root / "local/process-return.json").read_text())
             self.assertEqual(launch.call_count, 1)
-            self.assertEqual(process.wait.call_count, 1)
+            self.assertEqual(json.loads((root / "local/collector-launch.json").read_text())["collector_pid"], 7)
             self.assertEqual(observed["collector_pid"], 7)
             self.assertTrue(observed["final_cleanup_complete"])
             self.assertFalse(observed["overall_budget_passed"])
             self.assertEqual(observed["status"], "STOPPED_OVERALL_BUDGET")
+
+    def test_supervisor_intervention_cannot_salvage_zero_exit_or_original_hold(self):
+        for status in ["SELECTED_SCOPE_FAVORABLE_REVIEW_REQUIRED", "STOPPED_CONTROL_FAILURE",
+                       "HELD_CANDIDATE_SLOWDOWN", "INCONCLUSIVE_REVIEW_REQUIRED"]:
+            observed = final_budget_observation(self.budget(), status, 0, 2, 3, True, True)
+            self.assertEqual(observed["collector_status"], status)
+            self.assertEqual(observed["status"], "STOPPED_EXECUTION_FAILURE")
+            self.assertFalse(observed["terminal_observation_passed"])
+            self.assertFalse(observed["overall_budget_passed"])
+            self.assertFalse(observed["shipping_qualified"])
+
+    def test_unknown_return_is_explicit_and_cannot_claim_authoritative_cleanup(self):
+        observed = final_budget_observation(self.budget(), "SELECTED_SCOPE_FAVORABLE_REVIEW_REQUIRED",
+                                            None, None, 3, False, True)
+        self.assertIsNone(observed["process_return_code"])
+        self.assertIsNone(observed["process_return_monotonic_ns"])
+        self.assertEqual(observed["status"], "STOPPED_CLEANUP_INCOMPLETE")
+        self.assertFalse(observed["process_return_observed"])
+        self.assertFalse(observed["authoritative_process_return_and_cleanup"])
+        self.assertFalse(observed["terminal_observation_passed"])
+        with self.assertRaises(ValueError):
+            final_budget_observation(self.budget(), "fixture", None, None, 3, True)
+
+    def test_missing_malformed_or_collecting_status_never_passes_terminal_observation(self):
+        for content in [None, "{", json.dumps(dict(status="COLLECTING")),
+                        json.dumps(dict(status="UNKNOWN"))]:
+            with self.subTest(content=content), TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / "EXECUTION_BINDINGS.json").write_text("{}")
+
+                def worker(command, cwd, deadline, launched, **kwargs):
+                    launched(7)
+                    out = root / "run"
+                    out.mkdir()
+                    if content is not None:
+                        (out / "status.json").write_text(content)
+                    return dict(collector_pid=7, process_return_code=0, process_return_monotonic_ns=2,
+                                supervisor_cleanup_complete=True, supervision_intervened=False)
+
+                with patch.object(terminal, "__file__", str(root / "observe_return.py")), \
+                     patch("inputs.get_budget", return_value=self.budget()), \
+                     patch.object(terminal, "supervise", side_effect=worker), \
+                     patch.object(terminal.time, "monotonic_ns", return_value=3), patch("builtins.print"):
+                    terminal.main()
+                observed = json.loads((root / "local/process-return.json").read_text())
+                self.assertFalse(observed["terminal_observation_passed"])
+                self.assertEqual(observed["status"], "STOPPED_CLEANUP_INCOMPLETE")
+                self.assertIn("cleanup_observation_error", observed)
+
+    def test_campaign_marker_anchors_window_after_delayed_preflight(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.assertIsNone(terminal.campaign_endpoint(root, self.budget(), 7))
+            with self.assertRaisesRegex(ValueError, "preparation deadline"):
+                terminal.campaign_endpoint(root, self.budget(), 7,
+                                           self.budget()["preparation_deadline_ns"])
+            (root / "run").mkdir()
+            start = 240_000_000_001  # synthetic four-minute input validation
+            marker = root / "run/campaign-budget.json"
+            record = dict(collector_pid=7, start_monotonic_ns=start,
+                          campaign_deadline_ns=start + 3600_000_000_000)
+            marker.write_text(json.dumps(record))
+            self.assertEqual(terminal.campaign_endpoint(root, self.budget(), 7),
+                             start + 3900_000_000_000)
+            record["collector_pid"] = 8
+            marker.write_text(json.dumps(record))
+            with self.assertRaises(ValueError):
+                terminal.campaign_endpoint(root, self.budget(), 7)
+            record["collector_pid"] = 7
+            record["start_monotonic_ns"] = self.budget()["preparation_deadline_ns"] + 1
+            record["campaign_deadline_ns"] = record["start_monotonic_ns"] + 3600_000_000_000
+            marker.write_text(json.dumps(record))
+            with self.assertRaisesRegex(ValueError, "preparation budget expired"):
+                terminal.campaign_endpoint(root, self.budget(), 7)
 
     def test_final_cleanup_overrun_overrides_timely_process_return(self):
         budget = self.budget()

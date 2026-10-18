@@ -144,6 +144,13 @@ def main():
     deadline = campaign_deadline(attempt_budget, start)
     out = root / "run"
     out.mkdir()  # Exclusive attempt marker. Never replace, resume or pick a new path automatically.
+    # Publish the actual post-validation campaign clock atomically for the owner.
+    # It can only shorten the original overall supervision endpoint.
+    with (out / "campaign-budget.json.tmp").open("x") as stream:
+        json.dump(dict(collector_pid=os.getpid(), start_monotonic_ns=start,
+                       campaign_deadline_ns=deadline), stream)
+        stream.write("\n")
+    (out / "campaign-budget.json.tmp").rename(out / "campaign-budget.json")
     (out / "inputs-before.json").write_text(json.dumps(fingerprints, indent=2) + "\n")
     report = None
 

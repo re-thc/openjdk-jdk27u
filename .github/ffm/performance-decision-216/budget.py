@@ -29,31 +29,44 @@ def overall_budget_passed(record, end):
     return type(end) is int and record["start_monotonic_ns"] <= end <= record["overall_deadline_ns"]
 
 
+def collector_supervision_deadline(record, launch_ns):
+    """Existing 60-minute campaign plus five-minute sealing window, never reset."""
+    return campaign_deadline(record, launch_ns) + 300_000_000_000
+
+
 def final_budget_observation(record, collector_status, returncode, returned_ns,
-                             cleanup_observed_ns, cleanup_complete):
+                             cleanup_observed_ns, cleanup_complete, supervision_intervened=False):
     """Owner observation after collector return and final owned-child cleanup.
 
     The observation closes the attempt endpoint; persisting this audit record
     cannot turn the collector's earlier pre-seal estimate into authoritative data.
     """
     validate_budget(record)
-    if (type(returncode) is not int or type(returned_ns) is not int
+    return_observed = type(returncode) is int and type(returned_ns) is int
+    return_unknown = returncode is None and returned_ns is None
+    if (not (return_observed or return_unknown)
             or type(cleanup_observed_ns) is not int or type(cleanup_complete) is not bool
-            or not record["start_monotonic_ns"] <= returned_ns <= cleanup_observed_ns):
+            or type(supervision_intervened) is not bool
+            or cleanup_observed_ns < record["start_monotonic_ns"]
+            or (return_observed and not record["start_monotonic_ns"] <= returned_ns <= cleanup_observed_ns)
+            or (return_unknown and cleanup_complete)):
         raise ValueError("ordered process-return and final-cleanup observations required")
     in_budget = overall_budget_passed(record, cleanup_observed_ns)
     status = collector_status
-    if returncode != 0:
+    if returncode != 0 or supervision_intervened:
         status = "STOPPED_EXECUTION_FAILURE"
     if not cleanup_complete:
         status = "STOPPED_CLEANUP_INCOMPLETE"
     if not in_budget:
         status = "STOPPED_OVERALL_BUDGET"
     return dict(status=status, collector_status=collector_status, process_return_code=returncode,
+                process_return_observed=return_observed,
                 process_return_monotonic_ns=returned_ns,
                 final_cleanup_observed_monotonic_ns=cleanup_observed_ns,
                 final_cleanup_complete=cleanup_complete,
                 overall_deadline_ns=record["overall_deadline_ns"],
-                overall_budget_passed=in_budget and cleanup_complete,
-                terminal_observation_passed=in_budget and cleanup_complete and returncode == 0,
-                authoritative_process_return_and_cleanup=True, shipping_qualified=False)
+                overall_budget_passed=in_budget and cleanup_complete and not supervision_intervened,
+                terminal_observation_passed=in_budget and cleanup_complete and returncode == 0 and not supervision_intervened,
+                supervision_intervened=supervision_intervened,
+                authoritative_process_return_and_cleanup=return_observed and cleanup_complete,
+                shipping_qualified=False)
