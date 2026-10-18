@@ -50,8 +50,9 @@ import org.openjdk.jmh.annotations.Warmup;
 /**
  * Cost checks separate from the instrumented allocation-only footprint probe.
  * Return values escape through JMH. Formatting/parsing state is private to each
- * worker; only symbolsCloneShared uses a shared, never-mutated prototype.
- * Run that method at one and four workers to expose clone-monitor contention.
+ * worker; shared clone methods use a shared, never-mutated prototype.
+ * Run them at one and four workers to expose clone-monitor contention, both
+ * with initialized time-zone tables and with the ordinary lazy table.
  * This read-only prototype scenario is not a concurrent-mutation safety claim.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -90,8 +91,22 @@ public class DateFormatSymbolsCost {
         @Setup(Level.Trial)
         public void setup() {
             symbols = new DateFormatSymbols(Locale.US);
+            // equals initializes both time-zone tables.
             if (!symbols.equals(symbols.clone())) {
                 throw new AssertionError("Invalid shared symbols prototype");
+            }
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class LazyZoneSharedState {
+        DateFormatSymbols symbols;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            symbols = new DateFormatSymbols(Locale.US);
+            if (!"January".equals(symbols.getMonths()[0])) {
+                throw new AssertionError("Invalid lazy-zone symbols prototype");
             }
         }
     }
@@ -130,6 +145,11 @@ public class DateFormatSymbolsCost {
 
     @Benchmark
     public Object symbolsCloneShared(SharedState state) {
+        return state.symbols.clone();
+    }
+
+    @Benchmark
+    public Object symbolsCloneSharedLazyZone(LazyZoneSharedState state) {
         return state.symbols.clone();
     }
 
