@@ -66,38 +66,12 @@ abstract class UnicodeDecoder extends CharsetDecoder {
     }
 
     protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
+        if (SimdUTF.isEligible(src.remaining())) {
+            decodeLoopBulk(src, dst);
+        }
         int mark = src.position();
 
         try {
-            // Resolve the initial BOM once, before attempting a bulk conversion.
-            boolean bulk = SimdUTF.isEligible(src.remaining());
-            if (bulk && currentByteOrder == NONE && src.remaining() > 1) {
-                char first = (char)(((src.get(mark) & 0xff) << 8) | (src.get(mark + 1) & 0xff));
-                if (first == BYTE_ORDER_MARK || first == REVERSED_MARK) {
-                    currentByteOrder = first == BYTE_ORDER_MARK ? BIG : LITTLE;
-                    mark += 2;
-                    src.position(mark);
-                } else {
-                    currentByteOrder = defaultByteOrder;
-                }
-            }
-            if (bulk && currentByteOrder != NONE && src.hasArray() && dst.hasArray()) {
-                int converted = SimdUTF.decodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
-                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
-                        dst.remaining(), currentByteOrder == BIG);
-                if (converted >= 0) {
-                    mark = src.limit();
-                    dst.position(dst.position() + converted);
-                    return CoderResult.UNDERFLOW;
-                }
-            }
-            if (bulk && (!src.hasArray() || !dst.hasArray())) {
-                try {
-                    SimdUTFBufferSupport.decode(src, dst, currentByteOrder == BIG, false);
-                } finally {
-                    mark = src.position();
-                }
-            }
             while (src.remaining() > 1) {
                 int b1 = src.get() & 0xff;
                 int b2 = src.get() & 0xff;
@@ -148,6 +122,42 @@ abstract class UnicodeDecoder extends CharsetDecoder {
             }
             return CoderResult.UNDERFLOW;
 
+        } finally {
+            src.position(mark);
+        }
+    }
+
+    private void decodeLoopBulk(ByteBuffer src, CharBuffer dst) {
+        int mark = src.position();
+        try {
+            // Resolve the initial BOM once, before attempting a bulk conversion.
+            if (currentByteOrder == NONE && src.remaining() > 1) {
+                char first = (char)(((src.get(mark) & 0xff) << 8) | (src.get(mark + 1) & 0xff));
+                if (first == BYTE_ORDER_MARK || first == REVERSED_MARK) {
+                    currentByteOrder = first == BYTE_ORDER_MARK ? BIG : LITTLE;
+                    mark += 2;
+                    src.position(mark);
+                } else {
+                    currentByteOrder = defaultByteOrder;
+                }
+            }
+            if (currentByteOrder != NONE && src.hasArray() && dst.hasArray()) {
+                int converted = SimdUTF.decodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
+                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
+                        dst.remaining(), currentByteOrder == BIG);
+                if (converted >= 0) {
+                    mark = src.limit();
+                    dst.position(dst.position() + converted);
+                    return;
+                }
+            }
+            if (!src.hasArray() || !dst.hasArray()) {
+                try {
+                    SimdUTFBufferSupport.decode(src, dst, currentByteOrder == BIG, false);
+                } finally {
+                    mark = src.position();
+                }
+            }
         } finally {
             src.position(mark);
         }

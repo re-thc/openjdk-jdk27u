@@ -50,6 +50,7 @@ public class TestSimdUTFUTF32Admission {
     private static int bufferCases;
 
     public static void main(String[] args) {
+        checkShortInput();
         int minimum = Integer.parseInt(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
                 .getVMOption("SIMDUTFMinLength").getValue());
         int minimum32 = aligned(minimum, 4);
@@ -171,6 +172,49 @@ public class TestSimdUTFUTF32Admission {
     private static void checkString(byte[] input, Charset charset, String text) {
         if (!new String(input, charset).equals(text)) {
             throw new AssertionError("String decode for " + charset + " at " + input.length);
+        }
+    }
+
+    private static void checkShortInput() {
+        for (boolean big : new boolean[]{false, true}) {
+            Charset charset = Charset.forName(big ? "UTF-32BE" : "UTF-32LE");
+            byte[] bytes = wire(4, 1, big, false, false);
+            for (int length = 0; length < 4; length++) {
+                ByteBuffer direct = ByteBuffer.allocateDirect(4);
+                direct.put(bytes).flip();
+                for (ByteBuffer input : new ByteBuffer[]{ByteBuffer.wrap(bytes), direct,
+                        ByteBuffer.wrap(bytes).asReadOnlyBuffer()}) {
+                    char[] storage = new char[8];
+                    Arrays.fill(storage, '\u5555');
+                    CharBuffer output = CharBuffer.wrap(storage);
+                    output.position(3).limit(5);
+                    input.limit(length);
+                    var decoder = charset.newDecoder();
+                    var result = decoder.decode(input, output, false);
+                    if (!result.isUnderflow() || input.position() != 0 || output.position() != 3) {
+                        throw new AssertionError("Partial UTF32 input at " + length);
+                    }
+                    input.limit(4);
+                    result = decoder.decode(input, output, true);
+                    if (!result.isUnderflow() || input.position() != 4 || output.position() != 4) {
+                        throw new AssertionError("Resumed UTF32 input at " + length);
+                    }
+                    for (int i = 0; i < storage.length; i++) {
+                        if (storage[i] != (i == 3 ? '\u6f22' : '\u5555')) {
+                            throw new AssertionError("Partial UTF32 output/canary at " + i);
+                        }
+                    }
+                    ByteBuffer truncated = input.duplicate();
+                    truncated.position(0).limit(length);
+                    result = charset.newDecoder().decode(truncated, CharBuffer.allocate(2), true);
+                    if (length == 0 ? !result.isUnderflow()
+                            : !result.isMalformed() || result.length() != length) {
+                        throw new AssertionError("Truncated UTF32 result at " + length);
+                    }
+                    if (truncated.position() != 0) throw new AssertionError("Truncated UTF32 position");
+                    bufferCases++;
+                }
+            }
         }
     }
 

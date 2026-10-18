@@ -30,11 +30,14 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.SimdUTF;
 import sun.nio.cs.*;
 
 /** Valid-input specializations; null requests the existing charset fallback. */
 final class StringCodingWide {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     private StringCodingWide() { }
 
     private static final class SegmentLayouts {
@@ -214,6 +217,20 @@ final class StringCodingWide {
         }
     }
 
+    private static void encodeLatin1(byte[] src, int sp, int len, byte[] dst, int dp, Kind kind) {
+        long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + (long)dp;
+        if (kind.unit == 2) {
+            for (int i = 0; i < len; i++) {
+                UNSAFE.putShortUnaligned(dst, offset + ((long)i << 1),
+                        (short)(src[sp + i] & 255), kind.big);
+            }
+        } else {
+            for (int i = 0; i < len; i++) {
+                UNSAFE.putIntUnaligned(dst, offset + ((long)i << 2), src[sp + i] & 255, kind.big);
+            }
+        }
+    }
+
     static int encodeSegment(String string, MemorySegment segment, long offset,
                              Charset cs, int from, int len) {
         if (!SimdUTF.isEligible(len) || from < 0 || len > string.length() - from || segment.isMapped()) return -1;
@@ -248,7 +265,10 @@ final class StringCodingWide {
                     size--;
                 }
                 int n = -1;
-                if (coder == String.UTF16) {
+                if (coder == String.LATIN1) {
+                    encodeLatin1(value, from + consumed, size, bytes, 0, kind);
+                    n = size * kind.unit;
+                } else {
                     n = kind.unit == 2
                             ? SimdUTF.encodeUTF16Bytes(value, from + consumed, size,
                                     bytes, 0, bytes.length, kind.big)
@@ -293,9 +313,7 @@ final class StringCodingWide {
         byte[] dst = new byte[(int)capacity];
         if (prefix != 0) put(dst, 0, 0xfeff, kind.unit, kind.big);
         if (coder == String.LATIN1) {
-            for (int i = 0; i < len; i++) {
-                put(dst, prefix + i * kind.unit, value[i] & 255, kind.unit, kind.big);
-            }
+            encodeLatin1(value, 0, len, dst, prefix, kind);
             return dst;
         }
         int written = kind.unit == 2

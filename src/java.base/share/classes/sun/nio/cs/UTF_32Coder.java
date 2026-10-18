@@ -32,7 +32,6 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import jdk.internal.util.SimdUTF;
-import jdk.internal.vm.annotation.DontInline;
 
 class UTF_32Coder {
     protected static final int BOM_BIG = 0xFEFF;
@@ -66,6 +65,9 @@ class UTF_32Coder {
         protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
             if (src.remaining() < 4)
                 return CoderResult.UNDERFLOW;
+            if (SimdUTF.isEligibleUTF32Decoding(src.remaining())) {
+                decodeLoopBulk(src, dst);
+            }
             int mark = src.position();
             int cp;
             try {
@@ -86,24 +88,6 @@ class UTF_32Coder {
                         else
                             currentBO = expectedBO;
                         src.position(mark);
-                    }
-                }
-                if (SimdUTF.isEligibleUTF32Decoding(src.remaining()) && src.hasArray() && dst.hasArray()) {
-                    int length = src.remaining() & ~3;
-                    int written = SimdUTF.decodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
-                            length, dst.array(), dst.arrayOffset() + dst.position(),
-                            dst.remaining(), currentBO == BIG);
-                    if (written >= 0) {
-                        mark += length;
-                        dst.position(dst.position() + written);
-                        return CoderResult.UNDERFLOW;
-                    }
-                }
-                if (SimdUTF.isEligibleUTF32Decoding(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
-                    try {
-                        SimdUTFBufferSupport.decode(src, dst, currentBO == BIG, true);
-                    } finally {
-                        mark = src.position();
                     }
                 }
                 while (src.remaining() >= 4) {
@@ -128,6 +112,48 @@ class UTF_32Coder {
                 src.position(mark);
             }
         }
+        private void decodeLoopBulk(ByteBuffer src, CharBuffer dst) {
+            int mark = src.position();
+            try {
+                if (currentBO == NONE) {
+                    int cp = ((src.get() & 0xff) << 24) |
+                             ((src.get() & 0xff) << 16) |
+                             ((src.get() & 0xff) <<  8) |
+                             (src.get() & 0xff);
+                    if (cp == BOM_BIG && expectedBO != LITTLE) {
+                        currentBO = BIG;
+                        mark += 4;
+                    } else if (cp == BOM_LITTLE && expectedBO != BIG) {
+                        currentBO = LITTLE;
+                        mark += 4;
+                    } else {
+                        currentBO = expectedBO == NONE ? BIG : expectedBO;
+                        src.position(mark);
+                    }
+                }
+                if (!SimdUTF.isEligibleUTF32Decoding(src.remaining())) return;
+                if (src.hasArray() && dst.hasArray()) {
+                    int length = src.remaining() & ~3;
+                    int written = SimdUTF.decodeUTF32Bytes(src.array(), src.arrayOffset() + mark,
+                            length, dst.array(), dst.arrayOffset() + dst.position(),
+                            dst.remaining(), currentBO == BIG);
+                    if (written >= 0) {
+                        mark += length;
+                        dst.position(dst.position() + written);
+                        return;
+                    }
+                } else {
+                    try {
+                        SimdUTFBufferSupport.decode(src, dst, currentBO == BIG, true);
+                    } finally {
+                        mark = src.position();
+                    }
+                }
+            } finally {
+                src.position(mark);
+            }
+        }
+
         protected void implReset() {
             currentBO = NONE;
         }
@@ -164,34 +190,8 @@ class UTF_32Coder {
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             if (SimdUTF.isEligible(src.remaining())) {
-                if (!doneBOM && src.hasRemaining()) {
-                    if (dst.remaining() < 4) {
-                        return CoderResult.OVERFLOW;
-                    }
-                    put(BOM_BIG, dst);
-                    doneBOM = true;
-                }
-                if (!src.hasArray() || !dst.hasArray()) {
-                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, true);
-                    return encodeLoopScalar(src, dst);
-                }
-                int length = src.remaining();
-                int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + src.position(),
-                        length, dst.array(), dst.arrayOffset() + dst.position(),
-                        dst.remaining(), byteOrder == BIG);
-                if (written >= 0) {
-                    src.position(src.position() + length);
-                    dst.position(dst.position() + written);
-                    return CoderResult.UNDERFLOW;
-                }
+                encodeLoopBulk(src, dst);
             }
-            return encodeLoopScalar(src, dst);
-        }
-
-        // Keep scalar buffer accesses separate from the native call's memory
-        // effects so C2 can optimize short inputs independently.
-        @DontInline
-        private CoderResult encodeLoopScalar(CharBuffer src, ByteBuffer dst) {
             int mark = src.position();
             if (!doneBOM && src.hasRemaining()) {
                 if (dst.remaining() < 4)
@@ -227,6 +227,26 @@ class UTF_32Coder {
                 return CoderResult.UNDERFLOW;
             } finally {
                 src.position(mark);
+            }
+        }
+
+        private void encodeLoopBulk(CharBuffer src, ByteBuffer dst) {
+            if (!doneBOM && src.hasRemaining()) {
+                if (dst.remaining() < 4) return;
+                put(BOM_BIG, dst);
+                doneBOM = true;
+            }
+            if (!src.hasArray() || !dst.hasArray()) {
+                SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, true);
+                return;
+            }
+            int length = src.remaining();
+            int written = SimdUTF.encodeUTF32Bytes(src.array(), src.arrayOffset() + src.position(),
+                    length, dst.array(), dst.arrayOffset() + dst.position(),
+                    dst.remaining(), byteOrder == BIG);
+            if (written >= 0) {
+                src.position(src.position() + length);
+                dst.position(dst.position() + written);
             }
         }
 

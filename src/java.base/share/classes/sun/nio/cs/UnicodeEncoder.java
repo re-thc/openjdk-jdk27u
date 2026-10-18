@@ -69,6 +69,9 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
+        if (SimdUTF.isEligible(src.remaining())) {
+            encodeLoopBulk(src, dst);
+        }
         int mark = src.position();
 
         if (needsMark && src.hasRemaining()) {
@@ -78,23 +81,6 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
             needsMark = false;
         }
         try {
-            if (SimdUTF.isEligible(src.remaining()) && src.hasArray() && dst.hasArray()) {
-                int converted = SimdUTF.encodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
-                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
-                        dst.remaining(), byteOrder == BIG);
-                if (converted >= 0) {
-                    mark = src.limit();
-                    dst.position(dst.position() + converted);
-                    return CoderResult.UNDERFLOW;
-                }
-            }
-            if (SimdUTF.isEligible(src.remaining()) && (!src.hasArray() || !dst.hasArray())) {
-                try {
-                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, false);
-                } finally {
-                    mark = src.position();
-                }
-            }
             while (src.hasRemaining()) {
                 char c = src.get();
                 if (!Character.isSurrogate(c)) {
@@ -114,6 +100,35 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
                 put(Character.lowSurrogate(d), dst);
             }
             return CoderResult.UNDERFLOW;
+        } finally {
+            src.position(mark);
+        }
+    }
+
+    private void encodeLoopBulk(CharBuffer src, ByteBuffer dst) {
+        if (needsMark && src.hasRemaining()) {
+            if (dst.remaining() < 2) return;
+            put(BYTE_ORDER_MARK, dst);
+            needsMark = false;
+        }
+        int mark = src.position();
+        try {
+            if (src.hasArray() && dst.hasArray()) {
+                int converted = SimdUTF.encodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
+                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
+                        dst.remaining(), byteOrder == BIG);
+                if (converted >= 0) {
+                    mark = src.limit();
+                    dst.position(dst.position() + converted);
+                    return;
+                }
+            } else {
+                try {
+                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, false);
+                } finally {
+                    mark = src.position();
+                }
+            }
         } finally {
             src.position(mark);
         }
