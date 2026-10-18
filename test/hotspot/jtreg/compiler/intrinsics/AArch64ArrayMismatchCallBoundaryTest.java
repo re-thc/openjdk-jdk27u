@@ -421,6 +421,8 @@ public class AArch64ArrayMismatchCallBoundaryTest {
 
     private static void child() throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
+        compile(wb, ArraysSupport.class.getDeclaredMethod("mismatchSmall",
+                Object.class, long.class, Object.class, long.class, int.class, int.class, int.class));
         for (int kind = 0; kind < TYPES.length; kind++) {
             Class<?> array = Array.newInstance(TYPES[kind], 0).getClass();
             Object a = Array.newInstance(TYPES[kind], 4097);
@@ -443,11 +445,8 @@ public class AArch64ArrayMismatchCallBoundaryTest {
             }
             // Compile callees before callers, reproducing the early-mismatch inlining cliff.
             // A cold bulk exit may be an uncommon trap rather than a retained call.
-            compile(wb, kind >= 6
-                    ? ArraysSupport.class.getDeclaredMethod("mismatchLarge",
-                            array, int.class, array, int.class, int.class, boolean.class)
-                    : ArraysSupport.class.getDeclaredMethod("mismatchLarge",
-                            array, int.class, array, int.class, int.class));
+            compile(wb, ArraysSupport.class.getDeclaredMethod("mismatchLarge",
+                    array, int.class, array, int.class, int.class));
             for (Method callee : List.of(
                     ArraysSupport.class.getMethod("mismatch", array, int.class, array, int.class, int.class),
                     ArraysSupport.class.getMethod("mismatch", array, array, int.class),

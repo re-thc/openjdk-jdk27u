@@ -6744,9 +6744,8 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
   bool native_access = _gvn.type(argument(0)) == TypePtr::NULL_PTR ||
                        _gvn.type(argument(3)) == TypePtr::NULL_PTR;
   if (AARCH64_ONLY(true) NOT_AARCH64(false) && !native_access) {
-    // Heap calls also need the short-input Java expansion on AArch64.
-    // Large heap calls use a bounded vector prefix inside the intrinsic.
-    maximum = max_jint;
+    // Keep larger heap scans in their typed Java caller, with its polls.
+    maximum = (2 * K) >> scale->get_con();
   }
   // The unsigned range also excludes empty/negative inputs.
   Node* adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum)));
@@ -6780,14 +6779,14 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   bool native_access = a_native || b_native;
   const bool aarch64_mismatch = AARCH64_ONLY(true) NOT_AARCH64(false);
   const bool has_java_path = native_access || aarch64_mismatch;
-  const bool heap_fallback = aarch64_mismatch && !native_access;
+  const bool heap_access = aarch64_mismatch && !native_access;
   int intrinsic_limit = 0;
   if (has_java_path) {
     const TypeInt* scale_type = _gvn.type(scale)->is_int();
     if (!scale_type->is_con() || scale_type->get_con() < 0 || scale_type->get_con() > 3) {
       return false;
     }
-    intrinsic_limit = native_access ? (64 * K) >> scale_type->get_con() : max_jint;
+    intrinsic_limit = (native_access ? 64 * K : 2 * K) >> scale_type->get_con();
     const TypeInt* length_type = _gvn.type(length)->is_int();
     if (length_type->_lo > intrinsic_limit || length_type->_hi < (128 >> scale_type->get_con())) {
       return false;
@@ -6820,11 +6819,11 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
          stub_path   = 2,  // bounded stub result
          java_path   = 3,  // input is outside the intrinsic range
          first_word_path = 4, // an input differs in its scalar prefix
-         bulk_java_path = 5,  // an equal vector prefix precedes a large Java scan
+         matched_prefix_path = 5, // the scalar prefix covers the complete range
          PATH_LIMIT  = 6
   };
 
-  Node* exit_block = new RegionNode(has_java_path ? (heap_fallback ? PATH_LIMIT : bulk_java_path) : java_path);
+  Node* exit_block = new RegionNode(has_java_path ? PATH_LIMIT : java_path);
   Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
   Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
   Node* io_phi = has_java_path ? new PhiNode(exit_block, Type::ABIO) : nullptr;
@@ -6909,7 +6908,20 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     }
   }
 
-  Node* call_stub_path = control();
+  if (aarch64_mismatch && native_access && !stopped()) {
+    // Every byte of the minimum native range has already compared equal.
+    Node* cmp = _gvn.transform(new CmpINode(length, intcon(128 >> _gvn.type(scale)->is_int()->get_con())));
+    Node* complete = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+    Node* complete_control = generate_guard(complete, nullptr, PROB_MIN);
+    if (complete_control != nullptr) {
+      exit_block->init_req(matched_prefix_path, complete_control);
+      memory_phi->init_req(matched_prefix_path, map()->memory());
+      io_phi->init_req(matched_prefix_path, i_o());
+      result_phi->init_req(matched_prefix_path, intcon(-1));
+    }
+  }
+
+  Node* call_stub_path = stopped() ? nullptr : control();
 
   BasicType elem_bt = T_ILLEGAL;
 
@@ -6975,40 +6987,14 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
-    // Bound the AArch64 heap prefix; native ranges retain their guarded 64 KiB
-    // stub. Equal large heap inputs rescan in Java with the original arguments,
-    // preserving deoptimization, indices and the negative tail result.
-    int vector_limit = heap_fallback ? (2 * K) >> scale_t->get_con() : 0;
-    Node* stub_length = heap_fallback
-        ? _gvn.transform(new MinINode(length, intcon(vector_limit))) : length;
+    // The heap guard admits at most 2 KiB. Retain the explicit cap as well.
+    Node* stub_length = heap_access
+        ? _gvn.transform(new MinINode(length, intcon((2 * K) >> scale_t->get_con()))) : length;
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
                                    StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
                                    obja_adr, objb_adr, stub_length, scale);
     Node* stub_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    if (heap_fallback) {
-      RegionNode* keep_stub_result = new RegionNode(1);
-      record_for_igvn(keep_stub_result);
-      Node* large_cmp = _gvn.transform(new CmpINode(length, intcon(vector_limit)));
-      Node* small = _gvn.transform(new BoolNode(large_cmp, BoolTest::le));
-      generate_slow_guard(small, keep_stub_result);
-      if (!stopped()) {
-        Node* result_cmp = _gvn.transform(new CmpINode(stub_result, intcon(0)));
-        Node* different = _gvn.transform(new BoolNode(result_cmp, BoolTest::ge));
-        generate_slow_guard(different, keep_stub_result);
-      }
-      if (!stopped()) {
-        PreserveJVMState pjvms(this);
-        CallJavaNode* java_call = generate_method_call_static(vmIntrinsics::_vectorizedMismatch, false);
-        Node* java_result = set_results_for_java_call(java_call);
-        exit_block->init_req(bulk_java_path, control());
-        memory_phi->init_req(bulk_java_path, reset_memory());
-        io_phi->init_req(bulk_java_path, i_o());
-        result_phi->init_req(bulk_java_path, java_result);
-      }
-      set_control(_gvn.transform(keep_stub_result));
-    }
-
     exit_block->init_req(stub_path, control());
     memory_phi->init_req(stub_path, map()->memory());
     if (io_phi != nullptr) io_phi->init_req(stub_path, i_o());

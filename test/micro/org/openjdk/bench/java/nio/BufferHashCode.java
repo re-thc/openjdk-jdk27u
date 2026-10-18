@@ -26,7 +26,11 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -53,10 +57,12 @@ public class BufferHashCode {
     public int size;
 
     /**
-     * BYTE_HEAP, BYTE_DIRECT, CHAR_HEAP, INT_HEAP, or INT_VIEW (an int view of a
-     * direct byte buffer in the opposite byte order).
+     * Array-backed buffers, ordinary direct bytes, and typed views of a direct
+     * byte buffer in the opposite byte order.
      */
-    @Param({"BYTE_HEAP", "BYTE_DIRECT", "CHAR_HEAP", "INT_HEAP", "INT_VIEW"})
+    @Param({"BYTE_HEAP", "BYTE_DIRECT", "CHAR_HEAP", "SHORT_HEAP", "INT_HEAP",
+            "LONG_HEAP", "FLOAT_HEAP", "DOUBLE_HEAP", "CHAR_VIEW", "SHORT_VIEW",
+            "INT_VIEW", "LONG_VIEW", "FLOAT_VIEW", "DOUBLE_VIEW"})
     public String kind;
 
     private Buffer buffer;
@@ -72,7 +78,20 @@ public class BufferHashCode {
                                     .put(fill(ByteBuffer.allocate(2 * size)).asCharBuffer()).flip();
             case "INT_HEAP" -> IntBuffer.allocate(size)
                                    .put(fill(ByteBuffer.allocate(4 * size)).asIntBuffer()).flip();
+            case "SHORT_HEAP" -> ShortBuffer.allocate(size)
+                                   .put(fill(ByteBuffer.allocate(2 * size)).asShortBuffer()).flip();
+            case "LONG_HEAP" -> LongBuffer.allocate(size)
+                                   .put(fill(ByteBuffer.allocate(8 * size)).asLongBuffer()).flip();
+            case "FLOAT_HEAP" -> FloatBuffer.allocate(size)
+                                   .put(fill(ByteBuffer.allocate(4 * size)).asFloatBuffer()).flip();
+            case "DOUBLE_HEAP" -> DoubleBuffer.allocate(size)
+                                   .put(fill(ByteBuffer.allocate(8 * size)).asDoubleBuffer()).flip();
+            case "CHAR_VIEW" -> fill(ByteBuffer.allocateDirect(2 * size)).order(swapped).asCharBuffer();
+            case "SHORT_VIEW" -> fill(ByteBuffer.allocateDirect(2 * size)).order(swapped).asShortBuffer();
             case "INT_VIEW" -> fill(ByteBuffer.allocateDirect(4 * size)).order(swapped).asIntBuffer();
+            case "LONG_VIEW" -> fill(ByteBuffer.allocateDirect(8 * size)).order(swapped).asLongBuffer();
+            case "FLOAT_VIEW" -> fill(ByteBuffer.allocateDirect(4 * size)).order(swapped).asFloatBuffer();
+            case "DOUBLE_VIEW" -> fill(ByteBuffer.allocateDirect(8 * size)).order(swapped).asDoubleBuffer();
             default -> throw new IllegalArgumentException(kind);
         };
     }

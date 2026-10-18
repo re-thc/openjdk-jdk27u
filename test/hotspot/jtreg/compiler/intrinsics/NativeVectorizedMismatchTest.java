@@ -177,26 +177,38 @@ public class NativeVectorizedMismatchTest {
 
     // Guarded native ranges exceed the partial inlining size: no masked path is emitted.
     @Test
-    @IR(counts = {LEAF, "1", "CountTrailingZerosL", "1"}, failOn = {"VectorCmpMasked"},
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1", "CountTrailingZerosL", "1"}, failOn = {"VectorCmpMasked"},
         phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        failOn = {LEAF, "VectorCmpMasked", IRNode.SAFEPOINT,
+                  "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAtMinimum(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM, 0);
     }
 
     @Test
-    @IR(counts = {LEAF, "1"}, failOn = {"VectorCmpMasked"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, failOn = {"VectorCmpMasked"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        failOn = {LEAF, "VectorCmpMasked", IRNode.SAFEPOINT,
+                  "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeChars(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM >> 1, 1);
     }
 
     @Test
-    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        failOn = {LEAF, "VectorCmpMasked", IRNode.SAFEPOINT,
+                  "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeInts(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM >> 2, 2);
     }
 
     @Test
-    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        failOn = {LEAF, "VectorCmpMasked", IRNode.SAFEPOINT,
+                  "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLongs(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM >> 3, 3);
     }
@@ -268,8 +280,11 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Test
-    @IR(counts = {LEAF, "1", "CountTrailingZerosL", "1"}, failOn = {"VectorCmpMasked"},
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1", "CountTrailingZerosL", "1"}, failOn = {"VectorCmpMasked"},
         phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "true"},
+        failOn = {LEAF, "VectorCmpMasked", IRNode.SAFEPOINT,
+                  "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int mixedAtMinimum(byte[] a, long b) {
         return ArraysSupport.vectorizedMismatch(a, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, b, MINIMUM, 0);
     }
@@ -471,6 +486,18 @@ public class NativeVectorizedMismatchTest {
             }
         }
 
+        // Every byte of a complete scalar prefix, including both mixed orders.
+        for (int at = 0; at < MINIMUM; at++) {
+            setB(at, 1);
+            check(nativeAtMinimum(a, b), MINIMUM, 0, at);
+            check(nativeChars(a, b), MINIMUM >> 1, 1, at >> 1);
+            check(nativeInts(a, b), MINIMUM >> 2, 2, at >> 2);
+            check(nativeLongs(a, b), MINIMUM >> 3, 3, at >> 3);
+            check(mixedAtMinimum(HEAP, b), MINIMUM, 0, at);
+            check(mixedReverseRange(b, HEAP, MINIMUM), MINIMUM, 0, at);
+            setB(at, 0);
+        }
+
         // Constant sizes at and around the bound, for each element scale.
         checkConstant(0, MINIMUM - 1, () -> nativeBelowMinimum(a, b));
         checkConstant(0, MINIMUM, () -> nativeAtMinimum(a, b));
@@ -630,6 +657,9 @@ public class NativeVectorizedMismatchTest {
                 new IdealCase("mixedRange", Kind.VARIABLE, 0, mixed),
                 new IdealCase("mixedReverseRange", Kind.VARIABLE, 0, reverse),
                 new IdealCase("nativeAtMinimum", Kind.IN_RANGE, 0, i -> nativeAtMinimum(NA, NB)),
+                new IdealCase("nativeChars", Kind.IN_RANGE, 1, i -> nativeChars(NA, NB)),
+                new IdealCase("nativeInts", Kind.IN_RANGE, 2, i -> nativeInts(NA, NB)),
+                new IdealCase("nativeLongs", Kind.IN_RANGE, 3, i -> nativeLongs(NA, NB)),
                 new IdealCase("nativeAtLimit", Kind.AT_LIMIT, 0, i -> nativeAtLimit(NA, NB)),
                 new IdealCase("nativeCharsAtLimit", Kind.AT_LIMIT, 1, i -> nativeCharsAtLimit(NA, NB)),
                 new IdealCase("nativeIntsAtLimit", Kind.AT_LIMIT, 2, i -> nativeIntsAtLimit(NA, NB)),
@@ -1132,6 +1162,15 @@ public class NativeVectorizedMismatchTest {
         private void verifyAArch64(Kind kind, int scale, Fallback expected,
                                    List<N> leaves, List<N> calls, List<N> safepoints, List<N> traps,
                                    boolean polls) {
+            if (kind == Kind.IN_RANGE) {
+                Set<Integer> start = named("Start").stream().map(N::idx).collect(Collectors.toSet());
+                if (!leaves.isEmpty() || !calls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty() ||
+                        firstWordEqual(start).size() != 16) {
+                    throw new AssertionError("complete 128-byte prefix must have sixteen pinned comparisons, " +
+                                             "no leaf, fallback, trap or poll");
+                }
+                return;
+            }
             if (leaves.size() != 1) {
                 throw new AssertionError("expected exactly one bounded leaf: " + leaves);
             }

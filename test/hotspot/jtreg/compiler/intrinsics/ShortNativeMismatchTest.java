@@ -96,10 +96,11 @@ public class ShortNativeMismatchTest {
         return a.mismatch(b);
     }
 
-    // The minimum itself calls the stub. This calls ArraysSupport directly, so that
-    // its profile does not reach the scoped scans above.
+    // AArch64 compares the minimum in its scalar prefix; x86 calls the stub.
+    // This direct call keeps its profile separate from the scoped scans above.
     @Test
-    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {LEAF}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAtMinimum(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM, 0);
     }

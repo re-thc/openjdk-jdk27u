@@ -29,8 +29,11 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,6 +104,12 @@ public class MemoryMismatch {
     private IntBuffer swappedInts;
     private LongBuffer srcLongs;
     private LongBuffer dstLongs;
+    private ShortBuffer srcShorts;
+    private ShortBuffer dstShorts;
+    private FloatBuffer srcFloats;
+    private FloatBuffer dstFloats;
+    private DoubleBuffer srcDoubles;
+    private DoubleBuffer dstDoubles;
     private byte[] srcArray;
     private byte[] dstArray;
 
@@ -188,9 +197,18 @@ public class MemoryMismatch {
         swappedInts = dst.duplicate().order(opposite).asIntBuffer();
         srcLongs = src.asLongBuffer();
         dstLongs = dst.asLongBuffer();
+        srcShorts = src.asShortBuffer();
+        dstShorts = dst.asShortBuffer();
+        srcFloats = src.asFloatBuffer();
+        dstFloats = dst.asFloatBuffer();
+        srcDoubles = src.asDoubleBuffer();
+        dstDoubles = dst.asDoubleBuffer();
         if (segmentMismatch() != index || bufferMismatch() != index || arrayMismatch() != index ||
                 charMismatch() != typed(index, Character.BYTES) || intMismatch() != typed(index, Integer.BYTES) ||
                 longMismatch() != typed(index, Long.BYTES) ||
+                shortMismatch() != typed(index, Short.BYTES) ||
+                floatMismatch() != typed(index, Float.BYTES) ||
+                doubleMismatch() != typed(index, Double.BYTES) ||
                 intMismatchOppositeOrder() != typed(index, Integer.BYTES) || bufferEquals() != (index < 0)) {
             throw new AssertionError("Mismatch fixture disagrees with public API");
         }
@@ -210,6 +228,9 @@ public class MemoryMismatch {
         srcChars = dstChars = null;
         srcInts = dstInts = swappedInts = null;
         srcLongs = dstLongs = null;
+        srcShorts = dstShorts = null;
+        srcFloats = dstFloats = null;
+        srcDoubles = dstDoubles = null;
         arena.close();
         for (ByteBuffer mapping : mappings) {
             UNSAFE.invokeCleaner(mapping);
@@ -254,6 +275,21 @@ public class MemoryMismatch {
     @Benchmark
     public int longMismatch() {
         return srcLongs.mismatch(dstLongs);
+    }
+
+    @Benchmark
+    public int shortMismatch() {
+        return srcShorts.mismatch(dstShorts);
+    }
+
+    @Benchmark
+    public int floatMismatch() {
+        return srcFloats.mismatch(dstFloats);
+    }
+
+    @Benchmark
+    public int doubleMismatch() {
+        return srcDoubles.mismatch(dstDoubles);
     }
 
     /** Control kept local: the public mismatch method changes its inlining policy. */
