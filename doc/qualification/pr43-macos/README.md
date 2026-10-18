@@ -15,6 +15,10 @@ fixture and its separate test-source identity.
 PR43 now also contains the [byte128 mask-packing prototype](MASK_TO_LONG.md),
 with its final test correction at `3afce4988dc00fba614929d5f6f10c873afde87e`.
 The [focused Mac recipe](MASK_TO_LONG_MAC.md) covers only that new rule.
+The user completed that exact-source check once per stage using recipe commit
+`10bb6e3b487f66c638b8b762e2da9b515b8e57da`; its reported NEON pass and remaining
+CI/SVE/profitability limits are reconciled in [MASK_TO_LONG.md](MASK_TO_LONG.md).
+No repeat of the completed Mac check is requested.
 The commands and manifest below
 retain the original five-test comparison; they do **not** qualify that new rule.
 No new native campaign is requested by this documentation update.

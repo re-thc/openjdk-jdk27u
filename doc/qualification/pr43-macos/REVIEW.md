@@ -7,8 +7,11 @@ PR43's draft head is `3afce4988dc00fba614929d5f6f10c873afde87e` on
 validation are described in [MASK_TO_LONG.md](MASK_TO_LONG.md). The follow-up
 test correction checks every C2 target again after exhaustive inputs and sets
 the NEON driver's MaxVectorSize to 16. The [focused Mac recipe](MASK_TO_LONG_MAC.md)
-pins this exact corrected source. Native matching,
-installed-code and pressure checks remain pending. The original native report
+pins this exact corrected source. The user's completed native Mac check reports
+all 32 NEON rules, stable C2 execution of all 16 targets and spill-free allocated
+code in byte128/block64. Its identity, separate IR/capture JVMs and limits are
+reconciled in [MASK_TO_LONG.md](MASK_TO_LONG.md); the finished check is not being
+repeated. Profitability and parser-wide pressure remain unmeasured. The original native report
 belongs to `bf4d2615bf435e8889ef95e48220938505905bbb`.
 The paired prerequisite-only baseline
 is `9711df62d0d019e6670f83832b09bd5dcf797dcb`, with the same C1 fix in both arms.
@@ -57,17 +60,32 @@ In particular, the new shift/rotate plus narrow logical path has nominal cost
 reserves a vector temporary it does not emit. The supplied opcode summary does
 not explicitly resolve these selection/pressure questions. If that existing-code
 review finds no adverse selection, it resolves this gate for the original four
-ARM changes. The later mask-packing rule requires its own native correctness and
-code-generation evidence before the current PR can be recommended for final
-review. An adverse finding needs a focused source decision; a source change
-creates a new qualification identity.
+ARM changes. The separate current-head mask-packing report now meets its native
+NEON correctness/matching and two-method code-generation gates as reported;
+it does not answer those older selection questions. No source/test correction
+is indicated by the new report. Overall ordinary CI completion, the older
+capture review and the unmeasured profitability decision remain separate.
+An adverse finding needs a focused source decision; a source change creates
+a new qualification identity.
 
-Performance/JMH and nonzero-SVE execution/IR/performance remain untested. No
-benchmark or build is requested by this review. The new NEON rule is statically
-guarded by `UseSVE == 0`; its SVE runtime exclusion is not claimed as executed.
+Performance/JMH and nonzero-SVE qualification remain open. No benchmark or
+build is requested by this review. The new NEON rule is statically guarded by
+`UseSVE == 0`; the Mac cannot exercise nonzero SVE. The existing Linux fastdebug
+compiler log records the SVE launcher's execution pass, but does not expose
+effective SVE flags, rule applicability or phase data. That pass is supporting
+coverage and is not credited as inspected SVE exclusion qualification.
 Keep the accepted upstream/BiSheng provenance for unchanged wide-SVE work as
 provenance, without restarting PR12/18 or requiring unavailable wide hardware
 for this scalar/NEON review.
+
+For the current head, ordinary run
+[`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
+has passed all four Linux builds and all 12 AArch64 tier1 jobs; the overall run
+is not yet complete. It builds merge `40ed69081e6968ce4d0cbdd2b20a31c2e2191315`
+with master `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`, not the detached Mac
+source tree. Both identities are retained. PR43 remains draft/unmerged, and
+the supplied native result is not a performance go/no-go or an instruction
+count-based speedup claim.
 
 ## Harness minimum
 

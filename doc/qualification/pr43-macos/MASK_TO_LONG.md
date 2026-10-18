@@ -35,8 +35,9 @@ independently. Four fused nodes in `block64` each materialize their own weights.
 | Existing byte64, deliberately retained | NEG + FMOV + 3 ORR + AND = 6 |
 
 These are source-level sequence counts, including constant materialization;
-they are not measured performance or installed-code results. Native review must
-check actual moves, live ranges, spills and selection alongside other rules.
+they do not measure performance. The reported native captures below confirm
+the sequence and allocation in two methods; parser selection and pressure
+remain unmeasured.
 The existing normalized-boolean path, shared normalization, non-byte masks and
 SVE rules retain their implementations. Direct boolean-array masks eliminate
 the load/store normalization round trip and do not enter this raw-mask rule.
@@ -63,7 +64,7 @@ That source comparison alone does not establish a runtime-version regression.
 - `git diff --check` passed. The product increment changes four files, with
   the generated/source AD additions identical and no existing rule edited.
 
-Local evidence is under `/tmp/pr43-maskpack-adlc` (exact commands, logs and
+Pre-disconnect local evidence was under `/tmp/pr43-maskpack-adlc` (exact commands, logs and
 generated output) and `/tmp/pr43-maskpack-jtreg` (JTR and summary). These are
 local validation records, not the missing paired Mac captures.
 
@@ -88,7 +89,7 @@ campaign was restarted to recreate the files. The existing ordinary AArch64
 release/debug CI jobs were independently confirmed still building after the
 reconnect; their eventual results remain separate from the earlier local checks.
 
-## Native gates still pending
+## Reported native NEON qualification
 
 `TestByteMaskToLong` has 16 C2 probes, **32 NEON IR assertions** across Before
 Matching and Matching, and **two SVE exclusion assertions**. Seven methods
@@ -99,19 +100,75 @@ oracles cover all 65,536 byte128 patterns, all 256 byte64 patterns, explicit
 full-block zero/all/alternating/single-bit masks and floating-point edges.
 Positive cases do not use a `fromLong()` round trip.
 
-Ordinary PR CI is the authorized native execution path for this increment.
-Run `39077120882` belongs to the initial prototype head, before the post-input
-assertion correction, and was automatically cancelled. Ordinary run
-[`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
-belongs to the final corrected pin. Subsequent test commits trigger ordinary CI automatically.
-No manual workflow, diagnostics,
-JMH, provisioning or native campaign was launched. A green run alone does not
-prove every applicable IR rule ran or resolve installed-code/pressure checks.
-The SVE launcher requires actual SVE hardware; a Mac NEON pass cannot cover it.
+The user's 2026-10-18 native Mac report records a pass at exactly
+`3afce4988dc00fba614929d5f6f10c873afde87e`, using recipe commit
+`10bb6e3b487f66c638b8b762e2da9b515b8e57da`. The recipe file's independently
+checked SHA256 is
+`19a04936c386690a8aeadb02ee83b3098cf018e0a98bba50710023b955d0838b`,
+matching the prefix in the report. Both IR and code stages ran once and passed
+1/1, with no retries. The worktree stayed clean and image hashes were unchanged
+before/after. The completed check is not being repeated.
 
-For isolating this new rule, compare `9fd8620e40573264ec1f601db67e7f93e05b4939`
-with its parent `456afea88231bc9ebf17dfa48811db90a8bae8b8`, holding all original
-ARM fixes and C1 constant. The original consolidated comparison still uses
+The reported image is native Mach-O arm64 fastdebug, stamped with source
+`3afce4988dc0`, on Apple M6/macOS 27.0.1, Xcode 27.1/Apple Clang 21 with
+`CXX=/usr/bin/clang++`. Effective Test VM flags were `UseSVE=0` and
+`MaxVectorSize=16`. A dependency file was made from already installed JDK 27,
+jtreg 8.3-dev+1 and GoogleTest 1.14.0. That harness identity is separate from
+the older matrix's jtreg 8.2.1 identity.
+
+| Gate | Reconciliation of the supplied report |
+| --- | --- |
+| Active IR and semantics | All 32 NEON rules match: Before Matching and Matching for all 16 targets, including byte64, shared stores, normalized booleans and non-byte controls. Only rule 3 of byte128/byte64 is inapplicable, because it requires nonzero SVE. |
+| C2 retention | Every target has one standalone, don't-inline C2 nmethod and no target runtime trap or recompilation through the exhaustive inputs. Seven deoptimization records belong to C1 helpers before the target C2 installs; they do not indicate target C2 loss. |
+| byte128 allocated code | 56 instructions for the whole nmethod. Its fused sequence materializes `0x8040201008040201` with MOV plus three MOVK, then DUP, AND, three ADDP and zero-extending UMOV. No spills or stack traffic beyond the frame were reported. |
+| block64 allocated code | 102 instructions for the whole nmethod, with four independent weight materializations, four packing sequences and ORR shifts 16/32/48. Eight vector loads/four masks fit in v16-v23 without spills. Weights are neither shared nor hoisted. |
+| Decoding and lane oracle | There was no hsdis. Capstone and llvm-mc agreed on the raw MachCode bytes. Decoded-instruction replay matched 65,536 byte128 masks and 125,604 block64 cases; deliberately corrupting a weight or shift made the oracle fail. These are replay sensitivity controls, not a rule-absent native baseline run. |
+
+IR and capture used separate JVMs. Code-stage C2 ids 1263/1270 are not relabeled
+as the IR-stage compilations. This is a reconciliation of the user's supplied
+report; raw Mac JTRs, phase logs, nmethod bytes and full image/harness hashes
+remain on the Mac and were not independently reprocessed in this checkout.
+The native correctness, matcher and two-method code-generation gates are met
+**as reported**. No remaining ordinary source/test correction is indicated.
+
+## Remaining decision limits
+
+Ordinary run
+[`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
+belongs to this source head and tests synthetic merge
+`40ed69081e6968ce4d0cbdd2b20a31c2e2191315` with master
+`416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`. At the 2026-10-18 inspection,
+all four Linux builds and all 12 AArch64 tier1 jobs passed. Ten x64 tier1 jobs
+passed; langtools was running and JDK part 2 was queued. The overall run had
+not completed. Green CI is supporting context, not a substitute for the native
+IR/capture evidence above. No manual workflow or timing was started.
+
+The existing AArch64 fastdebug
+[compiler-part-1 job](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554/job/117574251027)
+was inspected read-only. Its log explicitly records both
+`TestByteMaskToLong.java` and `TestByteMaskToLongSVE.java` as execution passes,
+including a driver run for the SVE launcher. These were existing CI runs, not
+newly dispatched tests.
+
+Nonzero-SVE qualification remains open: the two SVE rules are inapplicable on
+this Mac, not executed exclusion passes. The Linux launcher pass is supporting
+coverage, but the inspected aggregate log does not expose its effective SVE
+mode, applicable-rule inventory or phase records. Those existing records would
+need review before crediting the SVE exclusion gate; the aggregate pass alone
+is insufficient. No new SVE or wide-SVE campaign is requested.
+
+Profitability and parser activation remain unmeasured. All four MOVs and DUP
+are inside each fused Mach node; C2 cannot hoist/share the weights independently.
+The 10-versus-12 sequence count and the whole-method 56/102 counts establish no
+throughput, latency or simdjson speedup. No spills in these two probes does not
+establish parser-wide register pressure. The current evidence cannot decide
+performance go/no-go or a controlled JDK-version regression.
+
+Any later, separately authorized profitability comparison must isolate this
+rule: current source `3afce4988dc00fba614929d5f6f10c873afde87e` versus
+`456afea88231bc9ebf17dfa48811db90a8bae8b8`, holding the original ARM fixes and
+C1 constant, with matched native workload activation and unchanged controls.
+No such timing is requested or run here. The original consolidated comparison still uses
 `9711df62d0d019e6670f83832b09bd5dcf797dcb` as its C1-only baseline. The manifest
 continues to pin that historical five-test matrix; it does not silently add
 another build or claim that historical 78-rule evidence qualifies this rule.
@@ -119,4 +176,6 @@ another build or claim that historical 78-rule evidence qualifies this rule.
 Existing Mac shifted/rotated logical-selection and byte64 pressure captures
 remain unavailable here. Their reported custodian is
 `Sentinel_eac712c3944c8191b3618e75bef79647`; actual paths, receipts and hashes
-have not been supplied. No new capture was substituted or claimed inspected.
+have not been supplied. The new toLong captures do not resolve those older
+shift/rotate selection and firstTrue byte64 pressure questions. No new capture
+was substituted or claimed inspected. PR43 remains draft and unmerged.
