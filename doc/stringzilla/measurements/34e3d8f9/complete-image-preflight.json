@@ -1,0 +1,505 @@
+{
+  "schema": 1,
+  "scope": "All four complete-image producer builds and correctness/preflight validation; performance collection and standard tier1 CI are separate",
+  "run_id": 39164738566,
+  "auxiliary_head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+  "runtime_source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source_tree": "d3de6a4fcf40e5b45b58d7e0874ed2ab34fe2e01",
+  "original_source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow_build_blob": "1848f93d3d36ee91f3ffc25a14f2eb3cb68cf928",
+  "driver_blob": "4420bcd49f4df3645c4dffbdd12a9e3cea2f165a",
+  "matrix": {
+    "normal": 1828,
+    "periodic": 30,
+    "utf16_probe": 28,
+    "total": 1886,
+    "prior_controls_preserved": 630,
+    "parent_manifest_sha256": "d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d",
+    "runner_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea"
+  },
+  "runtime_native_inputs": {
+    "test/jdk/java/lang/String/libStringZillaKernelsTest.c": "51657fdf5a621ca88f70c11362c874a86785eb0b",
+    "src/java.base/share/native/libjava/StringZillaKernels.c": "ef4bcc989fcea08c8ce17bd8e37b50669708b503",
+    "test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java": "1b0beb2c340d4acad9c329c4ee602f2697399e94"
+  },
+  "boot_jdk": {
+    "version": "26+35-2893",
+    "original_actual_version_receipt": "ecf6352d526e61029321b3b018c733ba1cc50e07",
+    "unchanged_action_blob": "377c1999c564cf1f6a02e5cf887a6684ad1a08c0",
+    "unchanged_archive_config_blob": "9aee8e87e3c4f8a082cc8ff64e6a7650a275f661",
+    "archive_pins": [
+      "LINUX_X64_BOOT_JDK_EXT=tar.gz",
+      "LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_linux-x64_bin.tar.gz",
+      "LINUX_X64_BOOT_JDK_SHA256=83c78367f8c81257beef72aca4bbbf8e6dac8ca2b3a4546a85879a09e6e4e128",
+      "LINUX_AARCH64_BOOT_JDK_EXT=tar.gz",
+      "LINUX_AARCH64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_linux-aarch64_bin.tar.gz",
+      "LINUX_AARCH64_BOOT_JDK_SHA256=403ccf451e88d0be9e1dec129fcb9318de9752121e0eb92dfa9a8cf06f249007",
+      "WINDOWS_X64_BOOT_JDK_EXT=zip",
+      "WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_windows-x64_bin.zip",
+      "WINDOWS_X64_BOOT_JDK_SHA256=2dd2d92c9374cd49a120fe9d916732840bf6bb9f0e0cc29794917a3c08b99c5f"
+    ]
+  },
+  "producer_native_compile_contract": {
+    "linux": [
+      "gcc-16",
+      "-std=c11",
+      "-O2",
+      "-g",
+      "-fno-omit-frame-pointer",
+      "-fsanitize=address,undefined,alignment",
+      "-fno-sanitize-recover=all",
+      "-Wno-unknown-pragmas"
+    ],
+    "linux_explicit_fortify": false,
+    "linux_werror": false,
+    "windows": [
+      "cl.exe",
+      "/nologo",
+      "/std:c11",
+      "/O2",
+      "/utf-8",
+      "/LD"
+    ],
+    "windows_jtreg_native_passed": true,
+    "native_fixture_blob": "51657fdf5a621ca88f70c11362c874a86785eb0b",
+    "fixture_overlay_applied": false,
+    "description": "make images does not build test-image; direct frozen-driver native compilation and direct jtreg invocation were used. All native fixtures retained source916. Actual fixture counts33/64/128 remain unchanged."
+  },
+  "pr_test_only_followup": {
+    "head": "c73d3586b13764f912c52c9f407020866f0e252c",
+    "parent": "916ba895e834378e3f7eac7f030fc4abff641d33",
+    "only_changed_file": "test/jdk/java/lang/String/libStringZillaKernelsTest.c",
+    "patch": "@@ -248,7 +248,9 @@ static jint check_kernels(void) {\n     };\n     jchar dense_short_source[544], dense_short_target[136];\n     for (unsigned int n = 0; n < sizeof(dense_short_counts) / sizeof(dense_short_counts[0]); n++) {\n-        jint count = dense_short_counts[n], stride = count + 3, length = 4 * count + 9;\n+        jint count = dense_short_counts[n];\n+        CHECK(count >= 33 && count <= 128);\n+        jint stride = count + 3, length = 4 * count + 9;\n         sz_size_t source_bytes = length * sizeof(jchar), target_bytes = count * sizeof(jchar);\n         for (jint order = 0; order < 4; order++) {\n             jchar values[5];",
+    "fixed_test_blob": "350a0fc7cee17e1ec4a035be96ab9d81efcb2e1e",
+    "actual_warning_reproduction_and_fixed_native_sanitizer_receipt": "bba628430ba5ec9adcf14d380048592d8f313f20",
+    "runtime_and_microbenchmark_sources_unchanged": true
+  },
+  "image_inventory_binding": {
+    "description": "Each successful pair step compared matching GCC16/MSVC14.44 build specs, verified original inventory/release/source identity, computed both complete image inventories/tree hashes, archived them and published producer outputs. The successful validation step recomputed inventories to ensure both archived images remained unchanged.",
+    "hash_values": "Hash-bound pair-receipt.json/pair-inventories.json within each identified pair archive; timing collector binds producer-output environment hashes across all consumer siblings and cross-checks copied receipts during exact-byte export.",
+    "no_extra_receipt_reader_or_timing_run": true
+  },
+  "producers": [
+    {
+      "backend": "serial",
+      "job": {
+        "id": 117789053116,
+        "name": "serial_pair / serial validated pair",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "started_at": "2026-10-18T21:37:53Z",
+        "completed_at": "2026-10-18T21:55:52Z",
+        "runner_name": "GitHub Actions 1000019856",
+        "labels": [
+          "ubuntu-26.04"
+        ]
+      },
+      "required_steps": [
+        {
+          "name": "Verify and archive matched complete pair",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:52:09Z",
+          "completed_at": "2026-10-18T21:52:50Z"
+        },
+        {
+          "name": "Publish complete images before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:52:50Z",
+          "completed_at": "2026-10-18T21:53:03Z"
+        },
+        {
+          "name": "Run profiles, jtreg and native contract checks",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:53:03Z",
+          "completed_at": "2026-10-18T21:55:48Z"
+        }
+      ],
+      "pair_artifact": {
+        "id": 12151758260,
+        "name": "stringzilla-final-pair-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:4eb4aec81c2905af9ff8fe867d431b65c9b6cbf24821cbfbe4cf2aaefb334e36",
+        "size_in_bytes": 399062624,
+        "created_at": "2026-10-18T21:53:03Z",
+        "expires_at": "2026-11-17T21:52:50Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "validation_artifact": {
+        "id": 12152326660,
+        "name": "stringzilla-final-build-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:d60cb49009db517b2306897d002130b110bfcb790c10c9b70197360e5866be9c",
+        "size_in_bytes": 1242498,
+        "created_at": "2026-10-18T21:55:49Z",
+        "expires_at": "2026-11-17T21:55:48Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "producer_log_sha256": "f05ca29ddd2b04ce2ee591d2af63d79aca193ff4ba49344187e078472054fec2",
+      "producer_log_characters": 536760,
+      "actual_boot_jdk_lines": [
+        "2026-10-18T21:39:37.3660462Z checking Boot JDK version... openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing)",
+        "2026-10-18T21:39:40.0688674Z * Boot JDK:       openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing) (at /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk)"
+      ],
+      "actual_compiler_lines": [
+        "2026-10-18T21:39:40.0689920Z * C Compiler:     Version 16.0.1 (at /usr/bin/gcc-16)",
+        "2026-10-18T21:39:40.0690266Z * C++ Compiler:   Version 16.0.1 (at /usr/bin/g++-16)"
+      ],
+      "profile_success_lines": [
+        "2026-10-18T21:53:05.7948272Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration.",
+        "2026-10-18T21:53:08.0218521Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration."
+      ],
+      "jtreg_summary_lines": [
+        "2026-10-18T21:55:07.2053379Z Test results: passed: 4",
+        "2026-10-18T21:55:37.4808981Z Test results: passed: 4"
+      ],
+      "native_capability_observations": [
+        "requested=0 selected=0 executable=1",
+        "requested=1 selected=1 executable=1",
+        "requested=2 selected=2 executable=0",
+        "requested=3 selected=2 executable=0",
+        "requested=4 selected=0 executable=1",
+        "requested=5 selected=1 executable=1",
+        "requested=6 selected=2 executable=0",
+        "requested=7 selected=2 executable=0"
+      ],
+      "native_sanitizer_errors": false,
+      "forced_jni_search_resolution_lines": 47,
+      "forced_jni_runs_required": 6,
+      "non_timed_character_diagnostics": {
+        "STRINGZILLA_AUX_CHAR_JAVAP": 4,
+        "STRINGZILLA_AUX_CHAR_COMPILATION": 18,
+        "STRINGZILLA_AUX_CHAR_REVERSE_COMPILATION": 33
+      }
+    },
+    {
+      "backend": "avx2",
+      "job": {
+        "id": 117789053163,
+        "name": "avx2_pair / avx2 validated pair",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "started_at": "2026-10-18T21:50:14Z",
+        "completed_at": "2026-10-18T22:03:04Z",
+        "runner_name": "GitHub Actions 1000019878",
+        "labels": [
+          "ubuntu-26.04"
+        ]
+      },
+      "required_steps": [
+        {
+          "name": "Verify and archive matched complete pair",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T22:00:36Z",
+          "completed_at": "2026-10-18T22:01:05Z"
+        },
+        {
+          "name": "Publish complete images before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T22:01:05Z",
+          "completed_at": "2026-10-18T22:01:15Z"
+        },
+        {
+          "name": "Run profiles, jtreg and native contract checks",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T22:01:15Z",
+          "completed_at": "2026-10-18T22:02:59Z"
+        }
+      ],
+      "pair_artifact": {
+        "id": 12151804060,
+        "name": "stringzilla-final-pair-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f",
+        "size_in_bytes": 399053461,
+        "created_at": "2026-10-18T22:01:14Z",
+        "expires_at": "2026-11-17T22:01:05Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "validation_artifact": {
+        "id": 12152835042,
+        "name": "stringzilla-final-build-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:29ae506c6ccb65a087f78e30fcf3a74adfce710e8201e274326655ade01bef56",
+        "size_in_bytes": 1241175,
+        "created_at": "2026-10-18T22:03:01Z",
+        "expires_at": "2026-11-17T22:03:00Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "producer_log_sha256": "8a84af3819b2319d60f468e4266c0eea2107e73377ca78fbd077a6ff0ec2e7e8",
+      "producer_log_characters": 536073,
+      "actual_boot_jdk_lines": [
+        "2026-10-18T21:51:57.0519854Z checking Boot JDK version... openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing)",
+        "2026-10-18T21:51:59.6022436Z * Boot JDK:       openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing) (at /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk)"
+      ],
+      "actual_compiler_lines": [
+        "2026-10-18T21:51:59.6023250Z * C Compiler:     Version 16.0.1 (at /usr/bin/gcc-16)",
+        "2026-10-18T21:51:59.6023456Z * C++ Compiler:   Version 16.0.1 (at /usr/bin/g++-16)"
+      ],
+      "profile_success_lines": [
+        "2026-10-18T22:01:16.7655003Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration.",
+        "2026-10-18T22:01:18.2949872Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration."
+      ],
+      "jtreg_summary_lines": [
+        "2026-10-18T22:02:30.5500908Z Test results: passed: 4",
+        "2026-10-18T22:02:51.0928862Z Test results: passed: 4"
+      ],
+      "native_capability_observations": [
+        "requested=0 selected=0 executable=1",
+        "requested=1 selected=1 executable=1",
+        "requested=2 selected=2 executable=1",
+        "requested=3 selected=2 executable=1",
+        "requested=4 selected=0 executable=1",
+        "requested=5 selected=1 executable=1",
+        "requested=6 selected=2 executable=1",
+        "requested=7 selected=2 executable=1"
+      ],
+      "native_sanitizer_errors": false,
+      "forced_jni_search_resolution_lines": 47,
+      "forced_jni_runs_required": 6,
+      "non_timed_character_diagnostics": {
+        "STRINGZILLA_AUX_CHAR_JAVAP": 4,
+        "STRINGZILLA_AUX_CHAR_COMPILATION": 18,
+        "STRINGZILLA_AUX_CHAR_REVERSE_COMPILATION": 33
+      }
+    },
+    {
+      "backend": "neon",
+      "job": {
+        "id": 117789053159,
+        "name": "neon_pair / neon validated pair",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "started_at": "2026-10-18T21:40:36Z",
+        "completed_at": "2026-10-18T21:55:50Z",
+        "runner_name": "GitHub Actions 1000019860",
+        "labels": [
+          "ubuntu-26.04-arm"
+        ]
+      },
+      "required_steps": [
+        {
+          "name": "Verify and archive matched complete pair",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:53:04Z",
+          "completed_at": "2026-10-18T21:53:39Z"
+        },
+        {
+          "name": "Publish complete images before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:53:39Z",
+          "completed_at": "2026-10-18T21:53:48Z"
+        },
+        {
+          "name": "Run profiles, jtreg and native contract checks",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:53:48Z",
+          "completed_at": "2026-10-18T21:55:45Z"
+        }
+      ],
+      "pair_artifact": {
+        "id": 12151936751,
+        "name": "stringzilla-final-pair-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:674d6a986ee2856c3975dab979546c0237ef595740e46cd43ea45669108b55f2",
+        "size_in_bytes": 392836233,
+        "created_at": "2026-10-18T21:53:48Z",
+        "expires_at": "2026-11-17T21:53:39Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "validation_artifact": {
+        "id": 12152650113,
+        "name": "stringzilla-final-build-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:b28e9d1baa392ab865163bd788832b7e5f93994ca5a33de3d1fb9464a18da21d",
+        "size_in_bytes": 1088698,
+        "created_at": "2026-10-18T21:55:47Z",
+        "expires_at": "2026-11-17T21:55:46Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "producer_log_sha256": "55dc50849d9546bd4ffb5b0c088e16b1b8149fc5ade39886464f39a41580f743",
+      "producer_log_characters": 440433,
+      "actual_boot_jdk_lines": [
+        "2026-10-18T21:42:21.9955747Z checking Boot JDK version... openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing)",
+        "2026-10-18T21:42:24.5499034Z * Boot JDK:       openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing) (at /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk)"
+      ],
+      "actual_compiler_lines": [
+        "2026-10-18T21:42:24.5500188Z * C Compiler:     Version 16.0.1 (at /usr/bin/gcc-16)",
+        "2026-10-18T21:42:24.5500525Z * C++ Compiler:   Version 16.0.1 (at /usr/bin/g++-16)"
+      ],
+      "profile_success_lines": [
+        "2026-10-18T21:53:50.8583848Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration.",
+        "2026-10-18T21:53:52.6220617Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration."
+      ],
+      "jtreg_summary_lines": [
+        "2026-10-18T21:55:20.1304844Z Test results: passed: 3; did not meet platform requirements: 1",
+        "2026-10-18T21:55:36.8198733Z Test results: passed: 2; did not meet platform requirements: 2"
+      ],
+      "native_capability_observations": [
+        "requested=0 selected=0 executable=1",
+        "requested=1 selected=0 executable=1",
+        "requested=2 selected=0 executable=1",
+        "requested=3 selected=0 executable=1",
+        "requested=4 selected=4 executable=1",
+        "requested=5 selected=4 executable=1",
+        "requested=6 selected=4 executable=1",
+        "requested=7 selected=4 executable=1"
+      ],
+      "native_sanitizer_errors": false,
+      "forced_jni_search_resolution_lines": 24,
+      "forced_jni_runs_required": 3,
+      "non_timed_character_diagnostics": {
+        "STRINGZILLA_AUX_CHAR_JAVAP": 4,
+        "STRINGZILLA_AUX_CHAR_COMPILATION": 18,
+        "STRINGZILLA_AUX_CHAR_REVERSE_COMPILATION": 33
+      }
+    },
+    {
+      "backend": "msvc",
+      "job": {
+        "id": 117789053344,
+        "name": "msvc_pair / msvc validated pair",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "started_at": "2026-10-18T21:24:06Z",
+        "completed_at": "2026-10-18T21:56:24Z",
+        "runner_name": "GitHub Actions 1000019833",
+        "labels": [
+          "windows-2025"
+        ]
+      },
+      "required_steps": [
+        {
+          "name": "Verify and archive matched complete pair",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:51:05Z",
+          "completed_at": "2026-10-18T21:51:56Z"
+        },
+        {
+          "name": "Publish complete images before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:51:56Z",
+          "completed_at": "2026-10-18T21:52:09Z"
+        },
+        {
+          "name": "Run profiles, jtreg and native contract checks",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-10-18T21:52:09Z",
+          "completed_at": "2026-10-18T21:56:13Z"
+        }
+      ],
+      "pair_artifact": {
+        "id": 12151927587,
+        "name": "stringzilla-final-pair-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+        "size_in_bytes": 384452812,
+        "created_at": "2026-10-18T21:52:09Z",
+        "expires_at": "2026-11-17T21:51:56Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "validation_artifact": {
+        "id": 12151219729,
+        "name": "stringzilla-final-build-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "digest": "sha256:e6040cc6a244f91e1bc8d6dd9f619903787327bd8d0a40f6ede5416c030da948",
+        "size_in_bytes": 1092285,
+        "created_at": "2026-10-18T21:56:14Z",
+        "expires_at": "2026-11-17T21:56:13Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "producer_log_sha256": "a0359f722ccf3a4789dd89c8debb338004f6923aa62ab5b9c7018d4786c273c9",
+      "producer_log_characters": 576760,
+      "actual_boot_jdk_lines": [
+        "2026-10-18T21:28:46.2374450Z checking Boot JDK version... openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing)\r",
+        "2026-10-18T21:29:37.3885204Z * Boot JDK:       openjdk version \"26\" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing) (at /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk)\r"
+      ],
+      "actual_compiler_lines": [
+        "2026-10-18T21:29:37.3886703Z * C Compiler:     Version 19.44.35229 (at /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe)\r",
+        "2026-10-18T21:29:37.3887474Z * C++ Compiler:   Version 19.44.35229 (at /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe)\r"
+      ],
+      "profile_success_lines": [
+        "2026-10-18T21:52:13.6332475Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration.\r",
+        "2026-10-18T21:52:16.8129195Z Development profile passed: Serial, G1, ZGC, excluded collectors, no desktop or audio modules, libraries or configuration.\r"
+      ],
+      "jtreg_summary_lines": [
+        "2026-10-18T21:52:36.3738026Z Test results: passed: 1\r",
+        "2026-10-18T21:55:11.9208375Z Test results: passed: 4\r",
+        "2026-10-18T21:55:55.8213132Z Test results: passed: 4\r"
+      ],
+      "native_capability_observations": [],
+      "native_sanitizer_errors": false,
+      "forced_jni_search_resolution_lines": 46,
+      "forced_jni_runs_required": 6,
+      "non_timed_character_diagnostics": {
+        "STRINGZILLA_AUX_CHAR_JAVAP": 4,
+        "STRINGZILLA_AUX_CHAR_COMPILATION": 18,
+        "STRINGZILLA_AUX_CHAR_REVERSE_COMPILATION": 33
+      }
+    }
+  ],
+  "qualification_limits": [
+    "Linux native sanitizers execute only callbacks supported by the physical CPU. The AVX2 producer executed capability2/SKY successfully; the SERIAL producer correctly skipped unsupportedSKY. NEON executed SERIAL+NEON. MSVC used its native SERIAL test DLL.",
+    "ARM jtreg metadata skips x86-only variants: smoke3passed/1skip and dispatch2passed/2skips; forcedJNI still executed all3 ARM tiers.",
+    "This receipt does not assert performance acceptance or completion of the separate standard sanity CI."
+  ]
+}
