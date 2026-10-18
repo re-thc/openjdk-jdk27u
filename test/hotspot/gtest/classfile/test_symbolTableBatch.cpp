@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -48,6 +49,14 @@ public:
     ResourceMark rm(THREAD);
     ClassLoaderData* cld = ClassLoaderData::class_loader_data(SystemDictionary::java_system_loader());
     ASSERT_NE(cld, nullptr);
+    if (layout == 1 && CDSConfig::is_using_archive()) {
+      const char* name = "java/lang/Object";
+      unsigned int hash = 0;
+      for (const char* p = name; *p != '\0'; p++) {
+        hash = 31 * hash + *p;
+      }
+      ASSERT_NE(SymbolTable::lookup_shared(name, (int)strlen(name), hash), nullptr);
+    }
     const char** original = NEW_RESOURCE_ARRAY(const char*, count);
     char duplicate[80];
     os::snprintf_checked(duplicate, sizeof(duplicate), "test_symbol_batch_duplicate_%d", count);
@@ -57,7 +66,7 @@ public:
     for (int i = 0; i < count; i++) {
       if (layout == 1 || (layout == 0 && i % 3 == 1)) {
         original[i] = "java/lang/Object";
-      } else if (i % 3 == 0) {
+      } else if (layout != 3 && i % 3 == 0) {
         original[i] = duplicate;
         duplicates++;
       } else {
@@ -83,6 +92,9 @@ public:
       batch(cld, cp, count, names, lengths, indices);
       for (int i = 0; i < count; i++) {
         EXPECT_TRUE(cp->symbol_at(i + 1)->equals(original[i], (int)strlen(original[i])));
+        if (layout == 3) {
+          EXPECT_EQ(cp->symbol_at(i + 1)->refcount(), pass + 1);
+        }
         if (pass != 0) {
           EXPECT_EQ(cp->symbol_at(i + 1), pools[0]->symbol_at(i + 1));
         }
@@ -99,13 +111,13 @@ public:
 TEST_VM(SymbolTable, batch_reference_ownership) {
   const int counts[] = {0, 1, 15, 16, 17, 257};
   for (int count : counts) {
-    for (int layout = 0; layout < 3; layout++) {
+    for (int layout = 0; layout < 4; layout++) {
       SymbolTableTest::check(count, layout);
     }
   }
 }
 
-TEST_VM(SymbolTable, batch_reference_ownership_alt_hash) {
+TEST_OTHER_VM(SymbolTable, batch_reference_ownership_alt_hash) {
   {
     ThreadInVMfromNative tiv(JavaThread::current());
     VM_RehashSymbolTable op;
@@ -113,7 +125,7 @@ TEST_VM(SymbolTable, batch_reference_ownership_alt_hash) {
   }
   const int counts[] = {1, 17, 257};
   for (int count : counts) {
-    for (int layout = 0; layout < 3; layout++) {
+    for (int layout = 0; layout < 4; layout++) {
       SymbolTableTest::check(count, layout);
     }
   }

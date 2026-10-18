@@ -27,7 +27,10 @@
  * @summary Batch interning preserves new, shared and duplicate constant pool names
  *          during concurrent class loading.
  * @library /test/lib
- * @run main/othervm -Xlog:symboltable=info BatchedInterning
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -Xlog:symboltable=info BatchedInterning
  */
 
 import java.io.ByteArrayOutputStream;
@@ -36,6 +39,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -47,6 +51,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
 
 public class BatchedInterning {
     static final int THREADS = 8;
@@ -73,7 +78,13 @@ public class BatchedInterning {
     // Exercise the largest batch and failures before and after it is interned.
     static void testParsingLimitsAndErrors() throws Exception {
         byte[] valid = parsingClass(65535, 0);
-        Asserts.assertEquals(new Loader().define("ParsingLimits", valid).getName(), "ParsingLimits");
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        String retained = "batchedParsing10";
+        int before = wb.getSymbolRefcount(retained);
+        Class<?> parsed = new Loader().define("ParsingLimits", valid);
+        Asserts.assertEquals(parsed.getName(), "ParsingLimits");
+        int references = wb.getSymbolRefcount(retained);
+        Asserts.assertEquals(references, before + 1);
         for (int error = 1; error <= 4; error++) {
             byte[] malformed = parsingClass(300, error);
             try {
@@ -81,7 +92,10 @@ public class BatchedInterning {
                 throw new AssertionError("Accepted malformed class, case " + error);
             } catch (ClassFormatError expected) {
             }
+            Asserts.assertEquals(wb.getSymbolRefcount(retained), references,
+                                "Rejected class retained symbols, case " + error);
         }
+        Reference.reachabilityFence(parsed);
         System.gc();
         new Loader().define("ParsingLimits", valid);
     }
