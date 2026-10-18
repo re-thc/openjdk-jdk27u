@@ -79,6 +79,30 @@ static sz_cptr_t counted_selector_byte_search(sz_cptr_t text, sz_size_t length, 
     return sz_rfind_byte_serial(text, length, needle);
 }
 
+static unsigned int unit_probe_calls, unit_verification_calls, unit_bulk_calls;
+static sz_size_t unit_bulk_length;
+
+static sz_cptr_t counted_unit_byte_search(sz_cptr_t text, sz_size_t length, sz_cptr_t needle) {
+    unit_probe_calls++;
+    return sz_rfind_byte_serial(text, length, needle);
+}
+
+static sz_cptr_t counted_unit_search(sz_cptr_t text, sz_size_t length,
+                                     sz_cptr_t needle, sz_size_t count) {
+    if (count == 2) {
+        unit_probe_calls++;
+    } else {
+        unit_bulk_calls++;
+        unit_bulk_length = length;
+    }
+    return sz_rfind_serial(text, length, needle, count);
+}
+
+static sz_bool_t counted_unit_equal(sz_cptr_t text, sz_cptr_t needle, sz_size_t length) {
+    unit_verification_calls++;
+    return sz_equal_serial(text, needle, length);
+}
+
 // Return the failing line rather than relying on assertions enabled by the build.
 #define CHECK(condition) do { if (!(condition)) return __LINE__; } while (0)
 
@@ -154,6 +178,56 @@ static jint check_kernels(void) {
                 &selector_pivot) == selector_source + 5);
         CHECK(selector_probe_calls == 1 && selector_pivot == 0);
         CHECK(selector_mutation_destination == NULL);
+    }
+    // Rejection contents can become equal before the bounded unit scan.
+    // All reads remain in range and the safe default pivot is zero.
+    char unit_equal[260] = {0};
+    CHECK(reverse_mismatch_unit(unit_equal, unit_equal, sizeof(unit_equal), 1) == 0);
+    CHECK(reverse_mismatch_unit(unit_equal, unit_equal, sizeof(unit_equal), 2) == 0);
+
+    // Count real serial primitives through the shared adapter. Three rejected
+    // interiors require three unit queries; the unverified third hit at zero
+    // must be retained for exactly one original bulk search.
+    jchar unit_source[528], unit_target[130];
+    for (sz_size_t size = 1; size <= 2; size++) {
+        char* text = (char*)unit_source;
+        char* target = (char*)unit_target;
+        const sz_size_t count = size == 1 ? 257 : 129;
+        const sz_size_t stride = count + 3, length = 4 * count + 9;
+        const sz_size_t source_bytes = length * size, target_bytes = count * size;
+        if (size == 1) {
+            memset(text, 'x', source_bytes);
+            memset(target, 'a', target_bytes);
+            target[count - 3] = 'b';
+            target[count - 4] = 'c';
+            target[count - 5] = 'd';
+        } else {
+            for (sz_size_t i = 0; i < length; i++) unit_source[i] = 0x0407;
+            for (sz_size_t i = 0; i < count; i++) unit_target[i] = 0x0406;
+            unit_target[count - 3] = 0x0401;
+            unit_target[count - 4] = 0x0402;
+            unit_target[count - 5] = 0x0403;
+        }
+        for (sz_size_t i = 0; i < 4; i++) {
+            memcpy(text + i * stride * size, target, target_bytes);
+        }
+        if (size == 1) {
+            text[3 * stride + count - 3] = 'x';
+            text[2 * stride + count - 4] = 'x';
+            text[stride + count - 5] = 'x';
+        } else {
+            unit_source[3 * stride + count - 3] = 0x0407;
+            unit_source[2 * stride + count - 4] = 0x0407;
+            unit_source[stride + count - 5] = 0x0407;
+        }
+        unit_probe_calls = unit_verification_calls = unit_bulk_calls = 0;
+        unit_bulk_length = 0;
+        CHECK(!matches_bounded_candidate(text + source_bytes - target_bytes, target,
+                target_bytes, counted_unit_equal));
+        CHECK(rfind_after_mismatch_units(text, source_bytes, target, target_bytes, size,
+                counted_unit_byte_search, counted_unit_equal, counted_unit_search) == text);
+        CHECK(unit_probe_calls == 3 && unit_verification_calls == 3 &&
+                unit_bulk_calls == 1 && unit_bulk_length == target_bytes);
     }
     const jint counts[] = {0, 1, 63, 64};
     const jint invalid_counts[] = {-1, INT_MIN, 65, 128, 4096, INT_MAX};
@@ -260,6 +334,35 @@ static jint check_kernels(void) {
                     aligned_source[position + marker] = 0x0403;
                     CHECK(kernels->rfindUTF16((const char*)aligned_source, sizeof(aligned_source),
                             (const char*)aligned_target, count * sizeof(jchar)) == -1);
+                }
+            }
+        }
+
+        // An odd byte occurrence must not make short dense candidates match.
+        const jint short_odd_counts[] = {2, 3, 8, 9, 16, 31, 32, 33, 64};
+        const jint short_odd_lengths[] = {511, 512, 513, 1023, 1024};
+        jchar short_odd_source[1032], short_odd_target[72];
+        for (unsigned int c = 0; c < sizeof(short_odd_counts) / sizeof(short_odd_counts[0]); c++) {
+            jint count = short_odd_counts[c];
+            for (jint offset = 0; offset < 8; offset++) {
+                jchar* text = short_odd_source + offset;
+                jchar* target = short_odd_target + ((offset + 3) & 7);
+                for (jint i = 0; i < count; i++) target[i] = 0x0401;
+                target[count - 2] = 0x0402;
+                for (unsigned int n = 0; n < sizeof(short_odd_lengths) / sizeof(short_odd_lengths[0]); n++) {
+                    jint length = short_odd_lengths[n], padding = length - count - 1;
+                    for (jint i = 0; i < length; i++) text[i] = i < padding ? 0x0401 : 0;
+                    memcpy((char*)(text + padding) + 1, target, count * sizeof(jchar));
+                    CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                            (const char*)target, count * 2) == -1);
+                    const jint positions[] = {0, 1, 31, 32, 33};
+                    for (unsigned int p = 0; p < sizeof(positions) / sizeof(positions[0]); p++) {
+                        jint position = positions[p];
+                        memcpy(text + position, target, count * sizeof(jchar));
+                        CHECK(kernels->rfindUTF16((const char*)text, length * 2,
+                                (const char*)target, count * 2) == position * 2);
+                        for (jint i = position; i < position + count; i++) text[i] = 0x0401;
+                    }
                 }
             }
         }
@@ -532,6 +635,88 @@ static jint check_kernels(void) {
                     }
                 }
             }
+        }
+
+        // Exercise the ABC/D pattern separately from AAB/C: every distinct
+        // period value occurs in the text, and the last marker is not sampled.
+        // UTF-16 includes both byte orders; a present byte need not form a unit.
+        for (jint n = 0; n < 2; n++) {
+            jint period = n + 2, count = 512 + n, length = 4096 - n;
+            jint utf_count = 256 + n, utf_length = 2048 - n;
+            for (jint phase = 0; phase < period; phase++) {
+                for (jint offset = 0; offset < 8; offset++) {
+                    char* text = periodic_source + offset;
+                    char* target = periodic_target + ((offset + 3) & 7);
+                    for (jint k = 0; k < count; k++) target[k] = (char)('a' + k % period);
+                    target[count - 3] = (char)('a' + period);
+                    for (jint k = 0; k < length; k++) text[k] = (char)('a' + (k + phase) % period);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == -1);
+                    memcpy(text, target, count);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == 0);
+                    memcpy(text + length - count, target, count);
+                    CHECK(kernels->rfindLatin1(text, length, target, count) == length - count);
+                    for (jint order = 0; order < 2; order++) {
+                        jchar* utf_text = periodic_utf16_source + offset;
+                        jchar* utf_target = periodic_utf16_target + ((offset + 3) & 7);
+                        for (jint k = 0; k < utf_count; k++) {
+                            jchar value = (jchar)(0x0401 + k % period);
+                            utf_target[k] = order ? (jchar)((value << 8) | (value >> 8)) : value;
+                        }
+                        jchar marker = (jchar)(0x0401 + period);
+                        utf_target[utf_count - 3] = order
+                                ? (jchar)((marker << 8) | (marker >> 8)) : marker;
+                        for (jint k = 0; k < utf_length; k++) {
+                            jchar value = (jchar)(0x0401 + (k + phase) % period);
+                            utf_text[k] = order ? (jchar)((value << 8) | (value >> 8)) : value;
+                        }
+                        CHECK(kernels->rfindUTF16((const char*)utf_text, utf_length * 2,
+                                (const char*)utf_target, utf_count * 2) == -1);
+                        memcpy(utf_text, utf_target, utf_count * sizeof(jchar));
+                        CHECK(kernels->rfindUTF16((const char*)utf_text, utf_length * 2,
+                                (const char*)utf_target, utf_count * 2) == 0);
+                        memcpy(utf_text + utf_length - utf_count, utf_target, utf_count * sizeof(jchar));
+                        CHECK(kernels->rfindUTF16((const char*)utf_text, utf_length * 2,
+                                (const char*)utf_target, utf_count * 2) == (utf_length - utf_count) * 2);
+                    }
+                }
+            }
+        }
+
+        // A third presence-query hit is not fully verified. Retain it for
+        // bulk fallback, including the sole valid match at start zero.
+        for (jint offset = 0; offset < 8; offset++) {
+            char* text = periodic_source + offset;
+            char* target = periodic_target + ((offset + 3) & 7);
+            const jint count = 257, stride = count + 3, length = 4 * count + 9;
+            memset(text, 'x', length);
+            memset(target, 'a', count);
+            target[0] = 'b';
+            target[count / 2] = 'd';
+            target[count - 2] = 'e';
+            target[count - 1] = 'c';
+            for (jint k = 0; k < 4; k++) memcpy(text + k * stride, target, count);
+            text[3 * stride + count / 2] = 'x';
+            text[2 * stride + count - 1] = 'x';
+            text[stride + count - 2] = 'x';
+            CHECK(kernels->rfindLatin1(text, length, target, count) == 0);
+
+            jchar* utf_text = periodic_utf16_source + offset;
+            jchar* utf_target = periodic_utf16_target + ((offset + 3) & 7);
+            const jint utf_count = 129, utf_stride = utf_count + 3, utf_length = 4 * utf_count + 9;
+            for (jint k = 0; k < utf_length; k++) utf_text[k] = 0x0405;
+            for (jint k = 0; k < utf_count; k++) utf_target[k] = 0x0406;
+            utf_target[0] = 0x0401;
+            utf_target[utf_count / 2] = 0x0402;
+            utf_target[utf_count - 2] = 0x0404;
+            utf_target[utf_count - 1] = 0x0403;
+            for (jint k = 0; k < 4; k++) {
+                memcpy(utf_text + k * utf_stride, utf_target, utf_count * sizeof(jchar));
+            }
+            utf_text[3 * utf_stride + utf_count / 2] = 0x0405;
+            utf_text[2 * utf_stride + utf_count - 1] = 0x0405;
+            utf_text[utf_stride + utf_count - 2] = 0x0405;
+            CHECK(kernels->rfindUTF16((const char*)utf_text, utf_length * 2,
+                    (const char*)utf_target, utf_count * 2) == 0);
         }
 
         // A bounded UTF-16 byte probe may encounter an odd candidate first.

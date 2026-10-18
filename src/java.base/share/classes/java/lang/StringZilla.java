@@ -27,6 +27,7 @@ package java.lang;
 
 import java.util.Objects;
 
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -44,9 +45,9 @@ final class StringZilla {
     private static final int SKYLAKE = 2;
     private static final int NEON = 4;
     static final boolean MSVC_SERIAL = (CONFIGURATION & MSVC_BIT) != 0 && BACKEND == SERIAL;
+    static final int UNRESOLVED_TIER = -1;
     static final int C1 = 1;
     static final int C2 = 4;
-    private static final int MIN_MSVC_C1_CHAR_UNITS = 256;
     // Keep small inputs on the existing Java / platform intrinsic paths.
     static final int MIN_BYTES = 256;
     static final int MIN_INTERPRETER_REVERSE_BYTES = 32;
@@ -95,6 +96,20 @@ final class StringZilla {
     }
 
     @ForceInline
+    static boolean matchesUTF16C2(byte[] src, int offset, byte[] tgt, int length) {
+        if (!MSVC_SERIAL && BACKEND == SERIAL && length >= 32 && length <= 128) {
+            int prefix = length - 4;
+            for (int index = length - 1; index >= prefix; index--) {
+                if (StringUTF16.getChar(src, offset + index) != StringUTF16.getChar(tgt, index)) {
+                    return false;
+                }
+            }
+            return ArraysSupport.mismatch(src, offset << 1, tgt, 0, prefix << 1) < 0;
+        }
+        return matchesUTF16(src, offset, tgt, length);
+    }
+
+    @ForceInline
     static boolean matchesUTF16Latin1(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
             if (StringUTF16.getChar(src, offset + i) != (tgt[i] & 0xff)) {
@@ -128,16 +143,20 @@ final class StringZilla {
         }
         int tier = compilerTier();
         return !(reverse && tier == C2)
-                && (!MSVC_SERIAL || tier != C1 || length >= MIN_MSVC_C1_CHAR_UNITS);
+                && (!MSVC_SERIAL || tier != C1);
     }
 
     @ForceInline
     static boolean probeMixedImmediate(int count) {
+        return probeMixedImmediate(count, compilerTier());
+    }
+
+    @ForceInline
+    static boolean probeMixedImmediate(int count, int tier) {
         if (BACKEND == SERIAL) {
-            return compilerTier() != 0;
+            return tier != 0;
         }
         if (BACKEND == HASWELL || BACKEND == SKYLAKE || BACKEND == NEON) {
-            int tier = compilerTier();
             return (tier == C1 && count <= 24) || (tier == C2 && count <= 64);
         }
         return false;
@@ -145,15 +164,24 @@ final class StringZilla {
 
     @ForceInline
     static boolean useMixedRangeIntrinsic(int count) {
-        return count > 48 && count <= MAX_MIXED_NEEDLE
-                && (BACKEND == HASWELL || BACKEND == SKYLAKE) && compilerTier() == C2;
+        return useMixedRangeIntrinsic(count, compilerTier());
+    }
+
+    @ForceInline
+    static boolean useMixedRangeIntrinsic(int count, int tier) {
+        return count >= 48 && count <= MAX_MIXED_NEEDLE
+                && (BACKEND == HASWELL || BACKEND == SKYLAKE) && tier == C2;
     }
 
     @ForceInline
     static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count) {
-        int tier = compilerTier();
+        return matchesUTF16Latin1Reverse(src, offset, tgt, count, compilerTier());
+    }
+
+    @ForceInline
+    static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count, int tier) {
         if ((count >= (MSVC_SERIAL ? 64 : 32) && tier == C1)
-                || (count > 32 && tier == C2 && BACKEND == NEON)) {
+                || (count >= 31 && tier == C2 && BACKEND == NEON)) {
             int last = count - 1;
             return StringUTF16.getChar(src, offset + last) == (tgt[last] & 0xff)
                     && matchesUTF16Latin1Native(src, offset, tgt, count);
@@ -259,7 +287,7 @@ final class StringZilla {
         return result < 0 ? -1 : from + result;
     }
 
-    @DontInline
+    @ForceInline
     static int indexOfCharUTF16(byte[] src, int end, int ch, int from) {
         int result = findCharUTF16(src, from << 1, (end - from) << 1, ch);
         if (result == FALLBACK) {
@@ -272,6 +300,24 @@ final class StringZilla {
     }
 
     @DontInline
+    static int lastIndexOfCharLatin1(byte[] src, int end, int ch) {
+        int result = rfindCharLatin1(src, 0, end, ch);
+        if (result == FALLBACK) {
+            result = searchCharLarge(src, 0, end, ch, false, true);
+        }
+        return result;
+    }
+
+    @DontInline
+    static int lastIndexOfCharUTF16(byte[] src, int end, int ch) {
+        int result = rfindCharUTF16(src, 0, end << 1, ch);
+        if (result == FALLBACK) {
+            result = searchCharLarge(src, 0, end << 1, ch, true, true);
+        }
+        return result == FALLBACK ? FALLBACK : result < 0 ? -1 : result >> 1;
+    }
+
+    @DontInline
     static int indexOfUTF16Latin1(byte[] src, int end, byte[] tgt, int count, int from) {
         int result = findUTF16Latin1(src, from << 1, (end - from) << 1, tgt, count);
         if (result == FALLBACK) {
@@ -281,6 +327,23 @@ final class StringZilla {
             return FALLBACK;
         }
         return result < 0 ? -1 : from + (result >> 1);
+    }
+
+    // Keep C1's caller graph separate from the accelerated substring bodies.
+    // The explicit tier remains C1 if these bridges later compile in C2.
+    @DontInline
+    static int lastIndexOfLatin1C1(byte[] src, int srcCount, byte[] tgt, int count, int from) {
+        return StringLatin1.lastIndexOf(src, srcCount, tgt, count, from, C1);
+    }
+
+    @DontInline
+    static int lastIndexOfUTF16C1(byte[] src, int srcCount, byte[] tgt, int count, int from) {
+        return StringUTF16.lastIndexOf(src, srcCount, tgt, count, from, C1);
+    }
+
+    @DontInline
+    static int lastIndexOfUTF16Latin1C1(byte[] src, int srcCount, byte[] tgt, int count, int from) {
+        return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, count, from, C1);
     }
 
     private StringZilla() {}
@@ -299,7 +362,11 @@ final class StringZilla {
     // in code units, after the public API has normalized fromIndex.
     @ForceInline
     static boolean useReverseLatin1(int length, int count) {
-        int tier = compilerTier();
+        return useReverseLatin1(length, count, compilerTier());
+    }
+
+    @ForceInline
+    static boolean useReverseLatin1(int length, int count, int tier) {
         if (tier == 0) {
             return true;
         }
@@ -334,7 +401,12 @@ final class StringZilla {
 
     @ForceInline
     static boolean useReverseLatin1Filter() {
-        return BACKEND == SERIAL && compilerTier() == C2;
+        return useReverseLatin1Filter(compilerTier());
+    }
+
+    @ForceInline
+    static boolean useReverseLatin1Filter(int tier) {
+        return BACKEND == SERIAL && tier == C2;
     }
 
     // Expose the validated ranges to C2 before compiling the scalar loop.
@@ -348,7 +420,11 @@ final class StringZilla {
 
     @ForceInline
     static boolean useReverseUTF16(int length, int count) {
-        int tier = compilerTier();
+        return useReverseUTF16(length, count, compilerTier());
+    }
+
+    @ForceInline
+    static boolean useReverseUTF16(int length, int count, int tier) {
         if (tier == 0) {
             return true;
         }

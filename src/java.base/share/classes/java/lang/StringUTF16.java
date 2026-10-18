@@ -1192,22 +1192,40 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
-        assert fromIndex >= 0;
-        assert tgtCount > 0;
-        assert tgtCount <= length(tgt);
-        checkIndex(tgtCount - 1, tgt);
-        checkIndex(fromIndex + tgtCount - 1, src);
+        return lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
+    }
 
-        if (tgtCount <= 8 && StringZilla.ENABLED
-                && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
-            return fromIndex;
+    @ForceInline
+    static int lastIndexOf(byte[] src, int srcCount,
+                           byte[] tgt, int tgtCount, int fromIndex, int tier) {
+        if (tier == StringZilla.UNRESOLVED_TIER) {
+            assert fromIndex >= 0;
+            assert tgtCount > 0;
+            assert tgtCount <= length(tgt);
+            checkIndex(tgtCount - 1, tgt);
+            checkIndex(fromIndex + tgtCount - 1, src);
+
+            if (tgtCount <= 8 && StringZilla.ENABLED
+                    && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
+                return fromIndex;
+            }
+
+            if (fromIndex + tgtCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                    || !StringZilla.ENABLED) {
+                return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+            }
+            tier = StringZilla.compilerTier();
+            if (tier == StringZilla.C1) {
+                return StringZilla.lastIndexOfUTF16C1(src, srcCount, tgt, tgtCount, fromIndex);
+            }
         }
 
         if (tgtCount > 128 && fromIndex < 8 && StringZilla.ENABLED
-                && StringZilla.compilerTier() != 0) {
+                && tier != 0) {
             if (fromIndex <= 1
-                    && ((StringZilla.MSVC_SERIAL && StringZilla.compilerTier() == StringZilla.C2)
-                        || !StringZilla.useReverseUTF16(fromIndex + tgtCount, tgtCount))) {
+                    && (((StringZilla.MSVC_SERIAL || StringZilla.usesNeon())
+                            && tier == StringZilla.C2)
+                        || !StringZilla.useReverseUTF16(fromIndex + tgtCount, tgtCount, tier))) {
                 return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             int last = tgtCount - 1;
@@ -1223,11 +1241,15 @@ final class StringUTF16 {
         }
         int searchLength = fromIndex + tgtCount;
         if (searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1) && StringZilla.ENABLED) {
-            if (searchLength < (StringZilla.MIN_BYTES >> 1) && StringZilla.compilerTier() != 0) {
-                if (StringZilla.compilerTier() == StringZilla.C2) {
-                    if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()
-                            && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
-                        return fromIndex;
+            if (searchLength < (StringZilla.MIN_BYTES >> 1) && tier != 0) {
+                if (tier == StringZilla.C2) {
+                    if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()) {
+                        if (StringZilla.matchesUTF16C2(src, fromIndex, tgt, tgtCount)) {
+                            return fromIndex;
+                        }
+                        if (!StringZilla.MSVC_SERIAL && fromIndex == 0) {
+                            return -1;
+                        }
                     }
                     return lastIndexOfJavaC2Filtered(src, tgt, tgtCount, fromIndex);
                 }
@@ -1240,24 +1262,34 @@ final class StringUTF16 {
             } else {
                 // Probe the rightmost candidate before selecting a search backend.
                 if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()) {
-                    int tier = StringZilla.compilerTier();
-                    if ((tier == StringZilla.C2 || (StringZilla.MSVC_SERIAL && tier == StringZilla.C1))
+                    if (tier == StringZilla.C2) {
+                        if (StringZilla.matchesUTF16C2(src, fromIndex, tgt, tgtCount)) {
+                            return fromIndex;
+                        }
+                        if (!StringZilla.MSVC_SERIAL && fromIndex == 0) {
+                            return -1;
+                        }
+                    } else if (StringZilla.MSVC_SERIAL && tier == StringZilla.C1
                             && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
                         return fromIndex;
                     }
                 }
                 if (StringZilla.usesNeon() && tgtCount > 8 && tgtCount <= 128
                         && searchLength >= 512 && searchLength < 1024
-                        && StringZilla.compilerTier() == StringZilla.C2) {
+                        && tier == StringZilla.C2) {
                     int last = tgtCount - 1;
                     char lastChar = getChar(tgt, last);
-                    if (getChar(src, searchLength - 1) != lastChar
-                            && indexOfChar0(src, lastChar, last, searchLength) < 0) {
+                    if (getChar(src, searchLength - 1) == lastChar) {
+                        if (tgtCount <= 32
+                                && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
+                            return fromIndex;
+                        }
+                    } else if (indexOfChar0(src, lastChar, last, searchLength) < 0) {
                         return -1;
                     }
                 }
-                if (StringZilla.useReverseUTF16(searchLength, tgtCount)) {
-                    int result = StringZilla.compilerTier() == StringZilla.C1
+                if (StringZilla.useReverseUTF16(searchLength, tgtCount, tier)) {
+                    int result = tier == StringZilla.C1
                             ? StringZilla.rfindUTF16C1(src, searchLength, tgt, tgtCount)
                             : StringZilla.rfindUTF16(src, 0, searchLength << 1, tgt, tgtCount << 1);
                     if (result == StringZilla.FALLBACK) {
@@ -1267,12 +1299,12 @@ final class StringUTF16 {
                         return result < 0 ? -1 : result >> 1;
                     }
                 }
-                if (StringZilla.compilerTier() == StringZilla.C2
+                if (tier == StringZilla.C2
                         && StringZilla.useReverseUTF16Filter(tgtCount)) {
                     return lastIndexOfJavaC2Filtered(src, tgt, tgtCount, fromIndex);
                 }
-                if (StringZilla.compilerTier() == StringZilla.C1 ||
-                        (StringZilla.compilerTier() == StringZilla.C2 && tgtCount >= 128)) {
+                if (tier == StringZilla.C1 ||
+                        (tier == StringZilla.C2 && tgtCount >= 128)) {
                     return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
                 }
             }
@@ -1393,12 +1425,9 @@ final class StringUTF16 {
                     }
                     searchLength = limit + 2;
                 }
-                int result = StringZilla.rfindCharUTF16(value, 0, searchLength << 1, ch);
-                if (result == StringZilla.FALLBACK) {
-                    result = StringZilla.searchCharLarge(value, 0, searchLength << 1, ch, true, true);
-                }
+                int result = StringZilla.lastIndexOfCharUTF16(value, searchLength, ch);
                 if (result != StringZilla.FALLBACK) {
-                    return result < 0 ? -1 : result >> 1;
+                    return result;
                 }
             }
         }
@@ -2234,74 +2263,102 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
-        Preconditions.checkIndex(fromIndex + tgtCount - 1, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
-        if (fromIndex == 0) {
-            if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE
-                    && StringZilla.ENABLED && StringZilla.compilerTier() == 0) {
-                int result = StringZilla.rfindUTF16Latin1(src, 0, tgtCount << 1, tgt, tgtCount);
-                if (result != StringZilla.FALLBACK) {
-                    return result < 0 ? -1 : 0;
-                }
-            }
-            for (int i = tgtCount - 1; i >= 0; i--) {
-                if (getChar(src, i) != (tgt[i] & 0xff)) {
-                    return -1;
-                }
-            }
-            return 0;
-        }
+        return lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
+    }
+
+    @ForceInline
+    static int lastIndexOfLatin1(byte[] src, int srcCount,
+                                        byte[] tgt, int tgtCount, int fromIndex, int tier) {
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= (StringZilla.MIN_BYTES >> 1)
-                && tgtCount > 8 && tgtCount <= StringZilla.MAX_MIXED_NEEDLE
-                && StringZilla.ENABLED && StringZilla.probeMixedImmediate(tgtCount)) {
-            if (StringZilla.useMixedRangeIntrinsic(tgtCount)) {
-                // C2 verifies only the rightmost candidate with its existing mixed-coder intrinsic.
-                if (getChar(src, searchLength - 1) == (tgt[tgtCount - 1] & 0xff)
-                        && indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex) >= 0) {
+      accelerated: {
+            if (tier == StringZilla.UNRESOLVED_TIER) {
+                Preconditions.checkIndex(fromIndex + tgtCount - 1, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
+                if (fromIndex == 0) {
+                    if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE
+                            && StringZilla.ENABLED && StringZilla.compilerTier() == 0) {
+                        int result = StringZilla.rfindUTF16Latin1(src, 0, tgtCount << 1, tgt, tgtCount);
+                        if (result != StringZilla.FALLBACK) {
+                            return result < 0 ? -1 : 0;
+                        }
+                    }
+                    for (int i = tgtCount - 1; i >= 0; i--) {
+                        if (getChar(src, i) != (tgt[i] & 0xff)) {
+                            return -1;
+                        }
+                    }
+                    return 0;
+                }
+                if (searchLength < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                        || !StringZilla.ENABLED) {
+                    break accelerated;
+                }
+                if (searchLength >= (StringZilla.MIN_BYTES >> 1)
+                        && tgtCount <= 8 && StringZilla.ENABLED
+                        && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
-            } else if (StringZilla.matchesUTF16Latin1Reverse(src, fromIndex, tgt, tgtCount)) {
-                return fromIndex;
+                tier = StringZilla.compilerTier();
+                if (tier == StringZilla.C1) {
+                    return StringZilla.lastIndexOfUTF16Latin1C1(src, srcCount, tgt, tgtCount, fromIndex);
+                }
             }
-        }
-        if (fromIndex > 0 && searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
-                && StringZilla.ENABLED
-                && (searchLength >= (StringZilla.MIN_BYTES >> 1) || StringZilla.compilerTier() == 0)) {
-            if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
-                if (tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
+            if (searchLength >= (StringZilla.MIN_BYTES >> 1)
+                    && tgtCount > 8 && tgtCount <= StringZilla.MAX_MIXED_NEEDLE
+                    && StringZilla.ENABLED && StringZilla.probeMixedImmediate(tgtCount, tier)) {
+                if (StringZilla.useMixedRangeIntrinsic(tgtCount, tier)) {
+                    // C2 verifies only the rightmost candidate with its existing mixed-coder intrinsic.
+                    if (getChar(src, searchLength - 1) == (tgt[tgtCount - 1] & 0xff)
+                            && indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex) >= 0) {
+                        return fromIndex;
+                    }
+                } else if (StringZilla.matchesUTF16Latin1Reverse(src, fromIndex, tgt, tgtCount, tier)) {
                     return fromIndex;
                 }
-                if (StringZilla.MSVC_SERIAL && StringZilla.compilerTier() == StringZilla.C2) {
-                    return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
-                }
-                return lastIndexOfLatin1Native(src, searchLength, tgt, tgtCount);
-            } else {
-                int tier = StringZilla.compilerTier();
-                if (getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
-                    if (tier == 0 || tier == StringZilla.C1) {
+            }
+            if (fromIndex > 0 && searchLength >= (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                    && StringZilla.ENABLED
+                    && (searchLength >= (StringZilla.MIN_BYTES >> 1) || tier == 0)) {
+                if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
+                    if (searchLength < (StringZilla.MIN_BYTES >> 1)
+                            && tgtCount <= 8 && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
+                        return fromIndex;
+                    }
+                    if (StringZilla.MSVC_SERIAL && tier == StringZilla.C2) {
+                        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
+                    }
+                    return lastIndexOfLatin1Native(src, searchLength, tgt, tgtCount);
+                } else {
+                    if (getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+                        if (tier == 0 || tier == StringZilla.C1) {
+                            fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
+                            if (fromIndex < 0) {
+                                return -1;
+                            }
+                        } else if (tier == StringZilla.C2) {
+                            return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
+                        }
+                    } else if (tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE || tier == 0) {
+                        // Interpreted suffix loops allow longer needles without enlarging the native prefix.
+                        if (tier == StringZilla.C2 && !StringZilla.usesNeon()) {
+                            // The range contains only the rightmost candidate.
+                            int result = indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex);
+                            return result >= 0 ? result : lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex - 1);
+                        }
+                        if (StringZilla.matchesLongUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
+                            return fromIndex;
+                        }
+                        if (--fromIndex < 0) {
+                            return -1;
+                        }
                         fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
                         if (fromIndex < 0) {
                             return -1;
                         }
-                    } else if (tier == StringZilla.C2) {
-                        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
-                    }
-                } else if (tgtCount <= 2 * StringZilla.MAX_MIXED_NEEDLE || tier == 0) {
-                    // Interpreted suffix loops allow longer needles without enlarging the native prefix.
-                    if (tier == StringZilla.C2 && !StringZilla.usesNeon()) {
-                        // The range contains only the rightmost candidate.
-                        int result = indexOfLatin1_0(src, searchLength, tgt, tgtCount, fromIndex);
-                        return result >= 0 ? result : lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex - 1);
-                    }
-                    if (StringZilla.matchesLongUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
-                        return fromIndex;
-                    }
-                    if (--fromIndex < 0) {
-                        return -1;
-                    }
-                    fromIndex = StringZilla.lastMixedCandidate(src, tgt, tgtCount, fromIndex);
-                    if (fromIndex < 0) {
-                        return -1;
+                    } else if (tier == StringZilla.C2 && StringZilla.usesNeon()) {
+                        if (StringZilla.matchesLongUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
+                            return fromIndex;
+                        }
+                        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex - 1);
                     }
                 }
             }

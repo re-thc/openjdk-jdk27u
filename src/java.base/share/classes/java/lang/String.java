@@ -3219,17 +3219,17 @@ public final class String
             if (srcCoder == LATIN1) {
                 return searchLength < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
                         ? StringLatin1.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
-                        : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
+                        : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
             }
             return searchLength < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
                     ? StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
-                    : StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
+                    : StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
         }
         if (srcCoder == LATIN1) {    // && tgtCoder == UTF16
             return -1;
         }
         // srcCoder == UTF16 && tgtCoder == LATIN1
-        return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex);
+        return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
     }
 
     /**

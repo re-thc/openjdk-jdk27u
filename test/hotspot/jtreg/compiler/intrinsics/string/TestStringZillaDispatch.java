@@ -58,6 +58,8 @@
  */
 
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestStringZillaDispatch {
@@ -84,6 +86,7 @@ public class TestStringZillaDispatch {
             checkForwardAndChar(forwardUTF16, charUTF16, backend, msvcSerial, 0);
             checkNarrowCandidates(search);
             checkShortAndMixed(search);
+            checkIntermediateUTF16(search);
             return;
         }
         for (int level : new int[]{1, 4}) {
@@ -169,6 +172,7 @@ public class TestStringZillaDispatch {
             checkNarrowCandidates(search);
             checkFilteredBlocks(search);
             checkShortAndMixed(search);
+            checkIntermediateUTF16(search);
         }
     }
 
@@ -188,7 +192,7 @@ public class TestStringZillaDispatch {
             }
         }
         for (int length : new int[]{0, 127, 128, 129, 255, 256, 257, 4096, 65536}) {
-            boolean forwardNative = !msvcC1 || length >= 256;
+            boolean forwardNative = !msvcC1;
             boolean reverseNative = forwardNative && !serialC2
                     && (!avx2OrNeonC2 || length >= 256);
             if ((boolean)chars.invoke(null, length, false) != forwardNative
@@ -290,6 +294,41 @@ public class TestStringZillaDispatch {
                 String value = "\u0100" + "x".repeat(16) + repeated + "a".repeat(33);
                 checkReverse(search, value, repeated, Integer.MAX_VALUE, 17);
                 checkReverse(search, value, repeated, 16, -1);
+            }
+        }
+    }
+
+    private static void checkIntermediateUTF16(Method search) throws Exception {
+        for (int count : new int[]{8, 9, 16, 32, 64, 128, 129}) {
+            String needle = "\u0402" + "\u0401".repeat(count - 2) + "\u0403";
+            String denseNeedle = "\u0401".repeat(count - 2) + "\u0402\u0401";
+            for (int length : new int[]{511, 512, 513, 1023, 1024}) {
+                String absent = "\u0401".repeat(length);
+                checkReverse(search, absent, needle, Integer.MAX_VALUE, -1);
+                checkReverse(search, absent, denseNeedle, Integer.MAX_VALUE, -1);
+                char[] shiftedValue = absent.toCharArray();
+                ByteBuffer shifted = ByteBuffer.allocate((count + 1) * 2).order(ByteOrder.nativeOrder());
+                for (int i = 0; i < count; i++) {
+                    shifted.putChar(1 + i * 2, denseNeedle.charAt(i));
+                }
+                for (int i = 0; i <= count; i++) {
+                    shiftedValue[length - count - 1 + i] = shifted.getChar(i * 2);
+                }
+                checkReverse(search, new String(shiftedValue), denseNeedle, Integer.MAX_VALUE, -1);
+                for (int position : new int[]{0, 1, length / 2, length - count}) {
+                    String value = absent.substring(0, position) + needle
+                            + absent.substring(position + count);
+                    for (int from : new int[]{position - 1, position, length - count,
+                                             Integer.MAX_VALUE}) {
+                        checkReverse(search, value, needle, from, from < position ? -1 : position);
+                    }
+                    String dense = absent.substring(0, position) + denseNeedle
+                            + absent.substring(position + count);
+                    for (int from : new int[]{position - 1, position, length - count,
+                                             Integer.MAX_VALUE}) {
+                        checkReverse(search, dense, denseNeedle, from, from < position ? -1 : position);
+                    }
+                }
             }
         }
     }
