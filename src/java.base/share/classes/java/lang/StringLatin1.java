@@ -638,6 +638,9 @@ final class StringLatin1 {
                     if (StringZilla.compilerTier() == StringZilla.C2) {
                         return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
                     }
+                    if (tgtCount <= 8) {
+                        fromIndex--;
+                    }
                 } else {
                     if (!StringZilla.useReverseLatin1(searchLength, tgtCount)) {
                         if (StringZilla.useReverseLatin1Filter()) {
