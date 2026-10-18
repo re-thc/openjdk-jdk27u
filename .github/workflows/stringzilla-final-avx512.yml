@@ -1,0 +1,149 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+name: StringZilla final AVX-512 controls
+
+on:
+  push:
+    branches: [codex/stringzilla-final-artifacts]
+    paths: [.github/workflows/stringzilla-final-avx512.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stringzilla-final-avx512-controls
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: avx512 complete image controls
+    runs-on: ubuntu-26.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout evidence driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: driver
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            doc/stringzilla/tail-cases.tsv
+            test/micro/org/openjdk/bench/java/lang
+
+      - name: Check physical AVX-512 support
+        id: physical
+        shell: python
+        run: |
+          import py_compile, subprocess
+          py_compile.compile("driver/.github/scripts/stringzilla-final-artifacts.py", doraise=True)
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-artifacts.py", "probe"], check=True)
+
+      - name: Checkout measured fork
+        if: steps.physical.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 2550a2100281b5a6d6aa7a9310a9e6b047937e2c
+          path: fork-source
+          persist-credentials: false
+
+      - name: Checkout untouched original
+        if: steps.physical.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: original-source
+          persist-credentials: false
+
+      - name: Restore verified complete image pair
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-artifacts.py",
+                          "restore", "--backend", "avx512"], check=True)
+
+      - name: Install GCC 16 for native contract checks
+        if: steps.physical.outputs.available == 'true'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16
+          test "$(gcc-16 -dumpversion)" = 16
+
+      - name: Build and execute native ASan and UBSan contract checks
+        if: steps.physical.outputs.available == 'true'
+        shell: bash
+        env:
+          ASAN_OPTIONS: abort_on_error=1:detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          mkdir -p perf-output/native-validation
+          cat > perf-output/native-validation/driver.c <<'EOF'
+          #include "test/jdk/java/lang/String/libStringZillaKernelsTest.c"
+          #include <stdio.h>
+          int main(void) {
+              for (jint mask = 0; mask < 8; mask++) {
+                  requested_capabilities = mask;
+                  test_initialize();
+                  printf("requested=%d selected=%d executable=%d\n",
+                         mask, published->capabilities, can_execute(published->capabilities));
+              }
+              int failure = check_kernels();
+              if (failure != 0) {
+                  fprintf(stderr, "Native kernel check failed at line %d\n", failure);
+                  return 1;
+              }
+              puts("StringZilla production native kernel checks passed");
+              return 0;
+          }
+          EOF
+          native_compile=(gcc-16 -std=c11 -O2 -g -fno-omit-frame-pointer
+            -fsanitize=address,undefined,alignment -fno-sanitize-recover=all
+            -Wno-unknown-pragmas
+            "-I$GITHUB_WORKSPACE/fork-source"
+            "-I$GITHUB_WORKSPACE/fork-source/src/java.base/share/native/libjava"
+            "-I$GITHUB_WORKSPACE/fork-source/src/java.base/share/native/libjava/stringzilla"
+            "-I$GITHUB_WORKSPACE/fork-source/src/hotspot/share/include"
+            "-I$GITHUB_WORKSPACE/fork-source/src/hotspot/os/posix/include"
+            "-I$GITHUB_WORKSPACE/perf-images/fork/include"
+            "-I$GITHUB_WORKSPACE/perf-images/fork/include/linux"
+            perf-output/native-validation/driver.c
+            -o perf-output/native-validation/native-sanitizers)
+          printf '%q ' "${native_compile[@]}" > perf-output/native-validation/compile-command.txt
+          printf '\n' >> perf-output/native-validation/compile-command.txt
+          "${native_compile[@]}" 2>&1 | tee perf-output/native-validation/build.log
+          perf-output/native-validation/native-sanitizers 2>&1 |
+            tee perf-output/native-validation/run.log
+          grep -Fx 'requested=2 selected=2 executable=1' perf-output/native-validation/run.log
+          git -C fork-source diff --exit-code -- src make test
+
+      - name: Measure original enabled and disabled controls
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-artifacts.py",
+                          "measure", "--backend", "avx512"], check=True)
+
+      - name: Measure reverse-tail controls on the same complete images
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-artifacts.py",
+                          "measure-tail", "--backend", "avx512"], check=True)
+
+      - name: Retain complete raw evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-final-avx512-${{ github.sha }}
+          path: |
+            perf-output
+            perf-tail-output
+          if-no-files-found: error
+          retention-days: 30

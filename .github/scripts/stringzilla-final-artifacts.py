@@ -40,6 +40,12 @@ ARTIFACTS = {
         "id": 12118163827,
         "name": "stringzilla-performance-images-serial-9adc53b852aae7610a560e20034d6d777b5db9d3",
         "digest": "sha256:93d2fe194c762ce06e9323c1e90c33d4db5f9fb5d145a6f0ddf1f36a8ae6e0ca"
+    },
+    "avx2": {
+        "job": 117516727905,
+        "id": 12118664019,
+        "name": "stringzilla-performance-images-avx2-9adc53b852aae7610a560e20034d6d777b5db9d3",
+        "digest": "sha256:806f1f32d16b735fdd4dcc119e23854140afb70c26af8969b5c40ef6e540d1d8"
     }
 }
 WORKSPACE = Path.cwd()
