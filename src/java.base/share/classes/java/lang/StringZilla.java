@@ -46,6 +46,7 @@ final class StringZilla {
     static final boolean MSVC_SERIAL = (CONFIGURATION & MSVC_BIT) != 0 && BACKEND == SERIAL;
     static final int C1 = 1;
     static final int C2 = 4;
+    private static final int MIN_MSVC_C1_CHAR_UNITS = 256;
     // Keep small inputs on the existing Java / platform intrinsic paths.
     static final int MIN_BYTES = 256;
     static final int MIN_INTERPRETER_REVERSE_BYTES = 32;
@@ -104,8 +105,30 @@ final class StringZilla {
     }
 
     @ForceInline
+    static boolean usesSerial() {
+        return BACKEND == SERIAL;
+    }
+
+    @ForceInline
     static boolean usesNeon() {
         return BACKEND == NEON;
+    }
+
+    @ForceInline
+    static boolean useForwardUTF16(int count, boolean mixed) {
+        return BACKEND != SERIAL || compilerTier() != C1
+                || (mixed && count == MAX_MIXED_NEEDLE);
+    }
+
+    @ForceInline
+    static boolean useCharUTF16(int length, boolean reverse) {
+        if (BACKEND != SERIAL) {
+            return (BACKEND != HASWELL && BACKEND != NEON)
+                    || !reverse || length >= 256 || compilerTier() != C2;
+        }
+        int tier = compilerTier();
+        return !(reverse && tier == C2)
+                && (!MSVC_SERIAL || tier != C1 || length >= MIN_MSVC_C1_CHAR_UNITS);
     }
 
     @ForceInline
@@ -113,16 +136,17 @@ final class StringZilla {
         if (BACKEND == SERIAL) {
             return compilerTier() != 0;
         }
-        if (BACKEND == SKYLAKE) {
+        if (BACKEND == HASWELL || BACKEND == SKYLAKE || BACKEND == NEON) {
             int tier = compilerTier();
-            return (tier == C1 && count <= 24) || (tier == C2 && count <= 48);
-        }
-        if (BACKEND == HASWELL || BACKEND == NEON) {
-            int tier = compilerTier();
-            return (tier == C1 && count <= 24)
-                    || (tier == C2 && count <= (BACKEND == NEON ? 64 : 48));
+            return (tier == C1 && count <= 24) || (tier == C2 && count <= 64);
         }
         return false;
+    }
+
+    @ForceInline
+    static boolean useMixedRangeIntrinsic(int count) {
+        return count > 48 && count <= MAX_MIXED_NEEDLE
+                && (BACKEND == HASWELL || BACKEND == SKYLAKE) && compilerTier() == C2;
     }
 
     @ForceInline
@@ -222,6 +246,31 @@ final class StringZilla {
         return result < 0 ? -1 : from + (result >> 1);
     }
 
+    // Keep native argument setup out of C1's scalar character loop.
+    @DontInline
+    static int indexOfCharLatin1(byte[] src, int end, int ch, int from) {
+        int result = findCharLatin1(src, from, end - from, ch);
+        if (result == FALLBACK) {
+            result = searchCharLarge(src, from, end - from, ch, false, false);
+        }
+        if (result == FALLBACK) {
+            return FALLBACK;
+        }
+        return result < 0 ? -1 : from + result;
+    }
+
+    @DontInline
+    static int indexOfCharUTF16(byte[] src, int end, int ch, int from) {
+        int result = findCharUTF16(src, from << 1, (end - from) << 1, ch);
+        if (result == FALLBACK) {
+            result = searchCharLarge(src, from << 1, (end - from) << 1, ch, true, false);
+        }
+        if (result == FALLBACK) {
+            return FALLBACK;
+        }
+        return result < 0 ? -1 : from + (result >> 1);
+    }
+
     @DontInline
     static int indexOfUTF16Latin1(byte[] src, int end, byte[] tgt, int count, int from) {
         int result = findUTF16Latin1(src, from << 1, (end - from) << 1, tgt, count);
@@ -301,6 +350,10 @@ final class StringZilla {
     static boolean useReverseUTF16(int length, int count) {
         int tier = compilerTier();
         if (tier == 0) {
+            return true;
+        }
+        if (MSVC_SERIAL && tier == C1 && count > 128 && length - count <= 1
+                && (long)length * count <= MAX_WORK / 4) {
             return true;
         }
         if (MSVC_SERIAL && tier == C2 && count <= 128) {

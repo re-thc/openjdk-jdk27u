@@ -482,6 +482,7 @@ final class StringLatin1 {
 
     // vmIntrinsics::_indexOfL_char
     @IntrinsicCandidate
+    @ForceInline
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
         if (fromIndex < max && value[fromIndex] == c) {
@@ -489,12 +490,9 @@ final class StringLatin1 {
         }
         fromIndex++;
         if (max - fromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
-            int result = StringZilla.findCharLatin1(value, fromIndex, max - fromIndex, ch);
-            if (result == StringZilla.FALLBACK) {
-                result = StringZilla.searchCharLarge(value, fromIndex, max - fromIndex, ch, false, false);
-            }
+            int result = StringZilla.indexOfCharLatin1(value, max, ch, fromIndex);
             if (result != StringZilla.FALLBACK) {
-                return result < 0 ? -1 : fromIndex + result;
+                return result;
             }
         }
         for (int i = fromIndex; i < max; i++) {
@@ -615,7 +613,7 @@ final class StringLatin1 {
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
         int searchLength = fromIndex + tgtCount;
-        if (searchLength >= StringZilla.MIN_INTERPRETER_REVERSE_BYTES && StringZilla.ENABLED) {
+        if (StringZilla.ENABLED) {
             if (tgtCount <= 8) {
                 int index = tgtCount - 1;
                 while (index >= 0 && src[fromIndex + index] == tgt[index]) {
@@ -625,37 +623,39 @@ final class StringLatin1 {
                     return fromIndex;
                 }
             }
-            if (searchLength < StringZilla.MIN_BYTES && StringZilla.compilerTier() != 0) {
-                if (StringZilla.compilerTier() == StringZilla.C2) {
-                    return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
-                }
-            } else {
-                if (!StringZilla.useReverseLatin1(searchLength, tgtCount)) {
-                    if (StringZilla.useReverseLatin1Filter()) {
+            if (searchLength >= StringZilla.MIN_INTERPRETER_REVERSE_BYTES) {
+                if (searchLength < StringZilla.MIN_BYTES && StringZilla.compilerTier() != 0) {
+                    if (StringZilla.compilerTier() == StringZilla.C2) {
                         return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
                     }
-                    return StringZilla.compilerTier() == StringZilla.C2
-                            ? StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex)
-                            : lastIndexOfJava(src, tgt, tgtCount, fromIndex);
-                }
-                if (tgtCount > 256 && fromIndex <= 1) {
-                    int last = tgtCount - 1;
-                    byte tail = tgt[last];
-                    byte beforeTail = tgt[last - 1];
-                    boolean rightPossible = src[fromIndex + last] == tail
-                            && src[fromIndex + last - 1] == beforeTail;
-                    if (!rightPossible && (fromIndex == 0
-                            || src[last] != tail || src[last - 1] != beforeTail)) {
-                        return -1;
+                } else {
+                    if (!StringZilla.useReverseLatin1(searchLength, tgtCount)) {
+                        if (StringZilla.useReverseLatin1Filter()) {
+                            return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
+                        }
+                        return StringZilla.compilerTier() == StringZilla.C2
+                                ? StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex)
+                                : lastIndexOfJava(src, tgt, tgtCount, fromIndex);
                     }
-                }
-                int result = StringZilla.rfindLatin1(src, 0, searchLength,
-                        tgt, tgtCount);
-                if (result == StringZilla.FALLBACK) {
-                    result = StringZilla.searchLarge(src, 0, searchLength, tgt, tgtCount, 0, true);
-                }
-                if (result != StringZilla.FALLBACK) {
-                    return result;
+                    if (tgtCount > 256 && fromIndex <= 1) {
+                        int last = tgtCount - 1;
+                        byte tail = tgt[last];
+                        byte beforeTail = tgt[last - 1];
+                        boolean rightPossible = src[fromIndex + last] == tail
+                                && src[fromIndex + last - 1] == beforeTail;
+                        if (!rightPossible && (fromIndex == 0
+                                || src[last] != tail || src[last - 1] != beforeTail)) {
+                            return -1;
+                        }
+                    }
+                    int result = StringZilla.rfindLatin1(src, 0, searchLength,
+                            tgt, tgtCount);
+                    if (result == StringZilla.FALLBACK) {
+                        result = StringZilla.searchLarge(src, 0, searchLength, tgt, tgtCount, 0, true);
+                    }
+                    if (result != StringZilla.FALLBACK) {
+                        return result;
+                    }
                 }
             }
         }
@@ -748,6 +748,9 @@ final class StringLatin1 {
             return -1;
         }
         int off  = Math.min(fromIndex, value.length - 1);
+        if (off >= 0 && value[off] == (byte)ch) {
+            return off;
+        }
         if (off >= StringZilla.MIN_BYTES - 1 && StringZilla.ENABLED) {
             int stop = off - 8;
             for (; off > stop; off--) {

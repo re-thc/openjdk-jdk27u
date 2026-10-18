@@ -77,14 +77,17 @@ public class TestStringZillaDispatch {
         Method latinFilter = helper.getMethod("latinFilter");
         Method utf16 = helper.getMethod("utf16", int.class, int.class);
         Method search = helper.getMethod("search", String.class, String.class, int.class);
+        Method forwardUTF16 = helper.getMethod("forwardUTF16", int.class, boolean.class);
+        Method charUTF16 = helper.getMethod("charUTF16", int.class, boolean.class);
         Method intrinsic = bridge.getDeclaredMethod("compilerTier");
         if (args.length != 0) {
+            checkForwardAndChar(forwardUTF16, charUTF16, backend, msvcSerial, 0);
             checkNarrowCandidates(search);
             checkShortAndMixed(search);
             return;
         }
         for (int level : new int[]{1, 4}) {
-            for (Method method : new Method[]{tier, latin, latinFilter, utf16, search}) {
+            for (Method method : new Method[]{tier, latin, latinFilter, utf16, search, forwardUTF16, charUTF16}) {
                 WB.deoptimizeMethod(method);
                 if (!WB.enqueueMethodForCompilation(method, level)
                         || !WB.isMethodCompiled(method)
@@ -96,9 +99,11 @@ public class TestStringZillaDispatch {
             if ((int)tier.invoke(null) != expectedTier) {
                 throw new AssertionError("Tier not folded at compilation level " + level);
             }
+            checkForwardAndChar(forwardUTF16, charUTF16, backend, msvcSerial, expectedTier);
             boolean serialC2 = backend == 0 && expectedTier == 4;
             boolean avx2C2 = backend == 1 && expectedTier == 4;
             boolean msvcC2 = msvcSerial && expectedTier == 4;
+            boolean msvcC1 = msvcSerial && expectedTier == 1;
             boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
             boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
             boolean neonC1 = backend == 4 && expectedTier == 1;
@@ -148,8 +153,8 @@ public class TestStringZillaDispatch {
             check(utf16, 512, 129, true);
             check(utf16, 128, 33, !shortUTF16C2);
             check(utf16, 129, 128, !shortUTF16C2);
-            check(utf16, 129, 129, !longUTF16C1 && !shortUTF16C2);
-            check(utf16, 130, 129, !longUTF16C1 && !shortUTF16C2);
+            check(utf16, 129, 129, msvcC1 || (!longUTF16C1 && !shortUTF16C2));
+            check(utf16, 130, 129, msvcC1 || (!longUTF16C1 && !shortUTF16C2));
             check(utf16, 135, 129, !longUTF16C1 && !shortUTF16C2);
             check(utf16, 136, 129, !shortUTF16C2);
             check(utf16, 137, 129, !shortUTF16C2);
@@ -164,6 +169,32 @@ public class TestStringZillaDispatch {
             checkNarrowCandidates(search);
             checkFilteredBlocks(search);
             checkShortAndMixed(search);
+        }
+    }
+
+    private static void checkForwardAndChar(Method forward, Method chars, int backend,
+                                             boolean msvcSerial, int tier) throws Exception {
+        boolean serialC1 = backend == 0 && tier == 1;
+        boolean serialC2 = backend == 0 && tier == 4;
+        boolean avx2OrNeonC2 = (backend == 1 || backend == 4) && tier == 4;
+        boolean msvcC1 = msvcSerial && tier == 1;
+        for (int count : new int[]{1, 4, 8, 9, 31, 32, 63, 64, 65, 128, 129}) {
+            for (boolean mixed : new boolean[]{false, true}) {
+                boolean forwardSearchNative = !serialC1 || (mixed && count == 64);
+                if ((boolean)forward.invoke(null, count, mixed) != forwardSearchNative) {
+                    throw new AssertionError("Forward UTF-16 routing: tier=" + tier
+                            + " count=" + count + " mixed=" + mixed);
+                }
+            }
+        }
+        for (int length : new int[]{0, 127, 128, 129, 255, 256, 257, 4096, 65536}) {
+            boolean forwardNative = !msvcC1 || length >= 256;
+            boolean reverseNative = forwardNative && !serialC2
+                    && (!avx2OrNeonC2 || length >= 256);
+            if ((boolean)chars.invoke(null, length, false) != forwardNative
+                    || (boolean)chars.invoke(null, length, true) != reverseNative) {
+                throw new AssertionError("UTF-16 character routing: tier=" + tier + " length=" + length);
+            }
         }
     }
 
@@ -264,6 +295,20 @@ public class TestStringZillaDispatch {
     }
 
     private static void checkNarrowCandidates(Method search) throws Exception {
+        for (int count : new int[]{128, 129, 130, 511, 512, 513, 1023, 1024, 32767, 32768, 32769}) {
+            String repeated = "\u0401".repeat(count);
+            String prefix = "\u0402" + repeated.substring(1);
+            String suffix = repeated.substring(0, count - 1) + "\u0402";
+            String interior = repeated.substring(0, count - 2) + "\u0501\u0401";
+            for (int from : new int[]{0, 1, Integer.MAX_VALUE}) {
+                checkReverse(search, repeated, repeated, from, 0);
+                checkReverse(search, repeated + "\u0401", repeated, from, Math.min(from, 1));
+                checkReverse(search, repeated + "\u0401", suffix, from, -1);
+                checkReverse(search, repeated + "\u0401", interior, from, -1);
+                checkReverse(search, prefix + "\u0401", prefix, from, 0);
+                checkReverse(search, "\u0401" + prefix, prefix, from, from < 1 ? -1 : 1);
+            }
+        }
         for (int count : new int[]{257, 258, 511}) {
             String repeated = "a".repeat(count);
             String prefix = "b" + repeated.substring(1);

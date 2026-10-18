@@ -65,14 +65,18 @@ SZ_HELPER_INLINE int search_utf16_aligned(const jchar* src, int length, const jc
     jchar candidates[32];
     jchar first = tgt[0], last = tgt[count - 1];
     int inner = reverse ? count - 2 : 1;
-    jchar next = count > lanes ? tgt[inner] : 0;
+    jboolean check_adjacent = count > lanes;
+#if defined(_MSC_VER) && !defined(__clang__)
+    check_adjacent |= reverse && count > 2;
+#endif
+    jchar next = check_adjacent ? tgt[inner] : 0;
     int remaining = length - count + 1;
     int consumed = 0;
     while (remaining >= lanes) {
         int start = reverse ? remaining - lanes : consumed;
         jchar any = 0;
-        // Long repeated needles often reject at the adjacent character.
-        if (count > lanes) {
+        // Reject repeated-prefix candidates before comparing their interiors.
+        if (check_adjacent) {
             for (int j = 0; j < lanes; j++) {
                 candidates[j] = (src[start + j] == first) &
                                 (src[start + j + count - 1] == last) &
@@ -99,7 +103,7 @@ SZ_HELPER_INLINE int search_utf16_aligned(const jchar* src, int length, const jc
     for (int j = 0; j < remaining; j++) {
         int index = reverse ? remaining - 1 - j : consumed + j;
         if (src[index] == first && src[index + count - 1] == last &&
-                (count <= lanes || src[index + inner] == next) &&
+                (!check_adjacent || src[index + inner] == next) &&
                 matches_utf16_aligned(src + index, tgt, count, reverse)) {
             return index * 2;
         }
@@ -191,17 +195,150 @@ static jint search_char_impl(const char* src, jint length, jint ch, jboolean utf
     return search_impl(src, length, (const char*)needle, needle_length, 1, reverse, fn, aligned, NULL);
 }
 
-// Short UTF-16 needles make serial byte-search shifts ineffective. Reuse the
-// aligned batch filter directly; search_impl has already checked the work bound.
+// Probe at most three distinct values that actually rejected a candidate.
+// Reuse the earliest rightmost hit, so later byte searches do not rescan it.
+static sz_cptr_t select_mismatch_candidate(sz_cptr_t src, sz_size_t candidates,
+                                           sz_cptr_t rejected, sz_cptr_t tgt, sz_size_t tgt_bytes,
+                                           sz_find_byte_t byte_search, sz_size_t* pivot) {
+    char tried[3];
+    unsigned int tried_count = 0;
+    sz_size_t best = candidates;
+    sz_cptr_t selected = NULL;
+    *pivot = 0;
+    for (sz_size_t i = 0; i < tgt_bytes && tried_count < 3; i++) {
+        char value = tgt[i];
+        if (rejected[i] == value) continue;
+        jboolean seen = JNI_FALSE;
+        for (unsigned int j = 0; j < tried_count; j++) {
+            seen |= tried[j] == value;
+        }
+        if (seen) continue;
+        tried[tried_count++] = value;
+        sz_cptr_t hit = byte_search(src + i, candidates, &value);
+        if (hit == NULL) return NULL;
+        sz_cptr_t candidate = hit - i;
+        sz_size_t start = candidate - src;
+        if (start < best) {
+            best = start;
+            selected = candidate;
+            *pivot = i;
+        }
+    }
+    // Concurrent writes can erase all mismatches after an earlier rejection.
+    return tried_count == 0 ? byte_search(src, candidates, tgt) : selected;
+}
+
+SZ_HELPER_INLINE sz_bool_t matches_serial_candidate(sz_cptr_t candidate, sz_cptr_t tgt,
+                                                   sz_size_t tgt_bytes) {
+    sz_size_t middle = tgt_bytes / 2, last = tgt_bytes - 1;
+    return candidate[0] == tgt[0] && candidate[middle] == tgt[middle] &&
+           candidate[last] == tgt[last] && candidate[last - 1] == tgt[last - 1] &&
+           sz_equal_serial(candidate, tgt, tgt_bytes);
+}
+
+// The rightmost start has already been rejected. Search earlier starts without
+// rebuilding a long-needle skip table for each repeated suffix.
+static sz_cptr_t rfind_serial_long(sz_cptr_t src, sz_size_t src_bytes,
+                                  sz_cptr_t tgt, sz_size_t tgt_bytes, jboolean utf16) {
+    sz_size_t candidates = src_bytes - tgt_bytes;
+    // An absent first byte rejects the window without scanning the needle.
+    sz_size_t pivot = 0;
+    jboolean selected = JNI_FALSE;
+    sz_cptr_t pending = NULL;
+    while (candidates != 0) {
+        sz_cptr_t candidate = pending;
+        pending = NULL;
+        if (candidate == NULL) {
+            sz_cptr_t hit = sz_rfind_byte_serial(src + pivot, candidates, tgt + pivot);
+            if (hit == NULL) return NULL;
+            candidate = hit - pivot;
+        }
+        // Exclude this hit and all later pivot-free starts; retain overlaps.
+        candidates = candidate - src;
+        if (utf16 && (candidates & 1) != 0) continue;
+        if (matches_serial_candidate(candidate, tgt, tgt_bytes)) return candidate;
+        if (selected) {
+            // Bound failed verifications when the selected byte is common.
+            return candidates == 0 ? NULL
+                    : sz_rfind_serial(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
+        }
+        if (candidates != 0) {
+            pending = select_mismatch_candidate(src, candidates, candidate, tgt, tgt_bytes,
+                                                sz_rfind_byte_serial, &pivot);
+            if (pending == NULL) return NULL;
+            selected = JNI_TRUE;
+        }
+    }
+    return NULL;
+}
+
+static sz_cptr_t rfind_latin1_serial(sz_cptr_t src, sz_size_t src_bytes,
+                                   sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    // Keep the upstream word-at-a-time paths for tiny needles.
+    if (tgt_bytes <= 4) return sz_rfind_serial(src, src_bytes, tgt, tgt_bytes);
+    sz_cptr_t rightmost = src + src_bytes - tgt_bytes;
+    if (matches_serial_candidate(rightmost, tgt, tgt_bytes)) return rightmost;
+    if (src_bytes == tgt_bytes) return NULL;
+    if (tgt_bytes <= 256) return sz_rfind_serial(src, src_bytes - 1, tgt, tgt_bytes);
+    return rfind_serial_long(src, src_bytes, tgt, tgt_bytes, JNI_FALSE);
+}
+
 static sz_cptr_t rfind_utf16_serial(sz_cptr_t src, sz_size_t src_bytes,
                                   sz_cptr_t tgt, sz_size_t tgt_bytes) {
-    if (tgt_bytes > 256 || ((src_bytes | tgt_bytes) & 1) != 0) {
+    if (((src_bytes | tgt_bytes) & 1) != 0) {
         return sz_rfind_serial(src, src_bytes, tgt, tgt_bytes);
     }
+    if (tgt_bytes > 256) {
+        sz_cptr_t rightmost = src + src_bytes - tgt_bytes;
+        if (matches_serial_candidate(rightmost, tgt, tgt_bytes)) return rightmost;
+        if (src_bytes == tgt_bytes) return NULL;
+        return rfind_serial_long(src, src_bytes, tgt, tgt_bytes, JNI_TRUE);
+    }
+    // Short UTF-16 byte-search shifts are ineffective. Keep the aligned filter;
+    // search_impl has already checked the byte and candidate-work limits.
     int result = search_utf16_default((const jchar*)src, (int)(src_bytes / 2),
                                      (const jchar*)tgt, (int)(tgt_bytes / 2), JNI_TRUE);
     return result < 0 ? NULL : src + result;
 }
+
+#if ((defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))) || \
+    ((defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON)
+SZ_HELPER_INLINE sz_bool_t matches_bounded_candidate(sz_cptr_t candidate, sz_cptr_t tgt,
+                                                    sz_size_t tgt_bytes, sz_equal_t equality) {
+    sz_size_t middle = tgt_bytes / 2, last = tgt_bytes - 1;
+    return candidate[0] == tgt[0] && candidate[middle] == tgt[middle] &&
+           candidate[last] == tgt[last] && candidate[last - 1] == tgt[last - 1] &&
+           equality(candidate, tgt, tgt_bytes);
+}
+
+// The rightmost start has already failed equality or a necessary byte sample.
+// Probe at most two earlier aligned starts before resuming the bulk backend.
+static sz_cptr_t rfind_after_mismatch(sz_cptr_t src, sz_size_t src_bytes,
+                                     sz_cptr_t tgt, sz_size_t tgt_bytes, jboolean utf16,
+                                     sz_find_byte_t byte_search, sz_equal_t equality,
+                                     search_fn bulk_search) {
+    sz_size_t candidates = src_bytes - tgt_bytes;
+    if (candidates == 0) return NULL;
+    sz_cptr_t rejected = src + candidates;
+    sz_size_t pivot = 0;
+    sz_cptr_t candidate = select_mismatch_candidate(src, candidates, rejected, tgt, tgt_bytes,
+                                                    byte_search, &pivot);
+    if (candidate == NULL) return NULL;
+    for (int probe = 0; probe < 2 && candidates != 0; probe++) {
+        if (probe != 0) {
+            sz_cptr_t hit = byte_search(src + pivot, candidates, tgt + pivot);
+            if (hit == NULL) return NULL;
+            candidate = hit - pivot;
+        }
+        candidates = candidate - src;
+        // Avoid enumerating odd byte hits in place of SIMD candidate batches.
+        if (utf16 && (candidates & 1) != 0) break;
+        if (matches_bounded_candidate(candidate, tgt, tgt_bytes, equality)) return candidate;
+    }
+    return candidates == 0 ? NULL
+            : bulk_search(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
+}
+#endif
 
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 // Sample without scanning the needle before probing the search window.
@@ -237,10 +374,8 @@ static sz_cptr_t rfind_latin1_haswell(sz_cptr_t src, sz_size_t src_bytes,
             }
             candidates = candidate - src;
             if (span >= 64) {
-                // Only the first candidate is probed before the bulk search.
-                // Exclude it while retaining every earlier overlapping start.
-                return candidates == 0 ? NULL
-                        : sz_rfind_haswell(src, candidates + tgt_bytes - 1, tgt, tgt_bytes);
+                return rfind_after_mismatch(src, candidates + tgt_bytes, tgt, tgt_bytes, JNI_FALSE,
+                                            sz_rfind_byte_haswell, sz_equal_haswell, sz_rfind_haswell);
             }
         }
         return NULL;
@@ -272,6 +407,17 @@ static sz_cptr_t rfind_latin1_skylake(sz_cptr_t src, sz_size_t src_bytes,
     return sz_rfind_skylake(src, src_bytes, tgt, tgt_bytes);
 }
 
+static sz_cptr_t rfind_utf16_skylake(sz_cptr_t src, sz_size_t src_bytes,
+                                    sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    if (tgt_bytes > 256 && src_bytes - tgt_bytes <= 2 && ((src_bytes | tgt_bytes) & 1) == 0) {
+        sz_cptr_t rightmost = src + src_bytes - tgt_bytes;
+        if (sz_equal_skylake(rightmost, tgt, tgt_bytes)) return rightmost;
+        if (src_bytes != tgt_bytes && sz_equal_skylake(src, tgt, tgt_bytes)) return src;
+        return NULL;
+    }
+    return sz_rfind_skylake(src, src_bytes, tgt, tgt_bytes);
+}
+
 static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
                                    sz_cptr_t tgt, sz_size_t tgt_bytes) {
     // Avoid long-needle preprocessing for a single aligned candidate batch.
@@ -280,7 +426,26 @@ static sz_cptr_t rfind_utf16_haswell(sz_cptr_t src, sz_size_t src_bytes,
                                          (const jchar*)tgt, (int)(tgt_bytes / 2), JNI_TRUE);
         return result < 0 ? NULL : src + result;
     }
+    if (tgt_bytes > 256 && src_bytes - tgt_bytes >= 64 && ((src_bytes | tgt_bytes) & 1) == 0) {
+        sz_cptr_t rightmost = src + src_bytes - tgt_bytes;
+        if (matches_bounded_candidate(rightmost, tgt, tgt_bytes, sz_equal_haswell)) return rightmost;
+        return rfind_after_mismatch(src, src_bytes, tgt, tgt_bytes, JNI_TRUE,
+                                    sz_rfind_byte_haswell, sz_equal_haswell, sz_rfind_haswell);
+    }
     return sz_rfind_haswell(src, src_bytes, tgt, tgt_bytes);
+}
+#endif
+
+#if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
+static sz_cptr_t rfind_utf16_neon(sz_cptr_t src, sz_size_t src_bytes,
+                                 sz_cptr_t tgt, sz_size_t tgt_bytes) {
+    if (tgt_bytes > 256 && ((src_bytes | tgt_bytes) & 1) == 0) {
+        sz_cptr_t rightmost = src + src_bytes - tgt_bytes;
+        if (matches_bounded_candidate(rightmost, tgt, tgt_bytes, sz_equal_neon)) return rightmost;
+        return rfind_after_mismatch(src, src_bytes, tgt, tgt_bytes, JNI_TRUE,
+                                    sz_rfind_byte_neon, sz_equal_neon, sz_rfind_neon);
+    }
+    return sz_rfind_neon(src, src_bytes, tgt, tgt_bytes);
 }
 #endif
 
@@ -327,13 +492,13 @@ static const StringZillaKernels tag##_kernels = { \
     tag##_rfind_char_latin1, tag##_rfind_char_utf16, tag##_equal \
 };
 
-DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, sz_rfind_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
+DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_latin1_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
-DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, sz_rfind_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
+DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, rfind_utf16_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
-DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, sz_rfind_neon, sz_rfind_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)
+DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, sz_rfind_neon, rfind_utf16_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)
 #endif
 #undef DEFINE_KERNELS
 

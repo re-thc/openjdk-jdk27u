@@ -14,7 +14,7 @@ HotSpot. No additional shared library is required.
 | --- | --- |
 | Interpreter | x86-64/AArch64 entries poll before forming heap addresses and call bounded native leaves |
 | C1 | Shared LIR calls native leaves; checked equality preserves caller state and handles large arrays in Java |
-| C2 | Reverse-search bridges call native leaves; existing forward, BMP character-search and equality intrinsics remain in use |
+| C2 | Reverse-search bridges call native leaves; existing forward, BMP forward-character and equality intrinsics remain in use |
 | JNI fallback | The same kernels and work limits through JVM entry points |
 
 GCC/Clang x86 selects AVX2 or AVX-512 using HotSpot capabilities and `UseAVX`.
@@ -63,38 +63,47 @@ to a constant. After the compiled source-size gate, native eligibility is:
 `N > 256 && S < 64 && L * N <= 4194304`.
 It combines upstream byte search, sampled character checks and equality for at
 most 64 candidate starts. AVX-512 uses the same filter for these narrow windows.
-Larger AVX2/AVX-512 windows probe one sampled candidate with that backend's byte
-search and equality before bulk search. A rejected candidate is excluded from the
-remaining prefix while every earlier overlapping start remains eligible. This
-avoids long-needle preprocessing on immediate matches and pivot-free misses;
-other wide searches retain the upstream bulk algorithm.
+Wide AVX2 Latin-1 and UTF-16 searches, NEON UTF-16 searches, and long serial
+searches inspect at most three aligned candidates before resuming bulk search
+once. After a rejection, a bounded needle scan probes up to three distinct
+mismatching byte values with upstream byte search. An absent value rejects the
+remaining window; otherwise the selected hit shortens the next search. AVX-512 wide search retains its single sampled probe;
+NEON Latin-1 retains its bulk route. Shortened prefixes preserve every earlier
+overlapping candidate.
 Long Latin-1 needles with one or two candidates first reject impossible two-byte
 tails before entering native code.
 
+MSVC serial C1 also accepts UTF-16 needles longer than 128 with at most two
+candidates when `L * N <= 1048576`; ineligible compiled windows with at most two
+candidates retain Java verification.
+
 MSVC serial C2 needles through 128 UTF-16 code units use the JDK character miss
-filter, then an isolated original Java verification loop. MSVC C1 retains native
-eligibility, probes immediate matches through 128 code units in Java, and uses a
+filter, then an isolated original Java verification loop. Serial C2 and MSVC C1 probe
+immediate matches through 128 code units before filtering. MSVC C1 retains native eligibility and uses a
 bounded native trailing-character search when the rightmost ending character
 mismatches. A successful character search shortens the remaining prefix; a miss
 ends the search. The winning dense native path remains available.
 
 The interpreter has no additional backend activation threshold after its
 32-byte gate. Every native call still observes the independent safety bounds.
-Small same-coder immediate matches are checked before native setup; the
-interpreter's UTF-16 probe uses bounded native equality. Compiled UTF-16 needles
+Same-coder needles through eight code units probe immediate matches before
+backend and size selection; the interpreter's UTF-16 probe uses bounded native equality. Compiled UTF-16 needles
 longer than 128 with at most eight candidates first reject impossible ending
 characters.
 
-Below the compiled size gate, C1 uses the original Java loop and C2 uses the JDK
-character intrinsic to reject misses. Ineligible serial/AVX2/NEON C2 UTF-16 needles
-through 128 use that same miss filter. Serial C2 Latin-1 skips empty 256-byte
+Below the compiled size gate, C1 uses the original Java loop, outlined for serial
+backends to isolate native setup; C2 uses the JDK character intrinsic to reject misses. Ineligible serial/AVX2/NEON C2 UTF-16 needles
+through 128 use that same miss filter. NEON C2 needles from 9 through 128 in
+prefixes of 512 through 1023 code units also use the character miss filter when
+the rightmost ending character mismatches; matching tails retain native search. Serial C2 Latin-1 skips empty 256-byte
 blocks. Other compiled long-needle fallbacks reject first-character mismatches
 before comparing interiors.
 
 Serial native UTF-16 needles through 128 code units use a portable aligned filter.
 AVX2 needles longer than 128 use it for at most 32 candidate positions; larger
-windows use upstream byte search. A single native candidate uses upstream equality
-after the same work guards.
+windows use upstream byte search and bounded mismatch probing. A single native
+candidate uses upstream equality after the same work guards. AVX-512 UTF-16
+windows with exactly two candidate starts use two upstream equality checks.
 
 ### Mixed UTF-16/Latin-1 reverse search
 
@@ -108,7 +117,7 @@ rightmost-candidate probes are:
 | MSVC serial C1 | Java through 63; bounded native verification at 64 |
 | Serial C2 | Backward Java verification |
 | AVX2/AVX-512/NEON C1 | Backward Java verification through 24 |
-| AVX2/AVX-512 C2 | Backward Java verification through 48 |
+| AVX2/AVX-512 C2 | Backward Java verification through 48; existing mixed forward intrinsic for a single candidate from 49 through 64 |
 | NEON C2 | Java through 32; bounded single-candidate native verification from 33 through 64 |
 
 A rejected probe resumes bulk search. MSVC C2 needles through 64 use the JDK
@@ -127,6 +136,24 @@ use this route through 128 code units. Other C2 immediate candidates from 65
 through 128 use the existing mixed forward intrinsic over exactly one candidate.
 A rejection resumes at the preceding start. Compiled immediate candidates longer
 than 128 retain Java verification; native widening remains capped at 64.
+
+### Forward and character search
+
+C1 UTF-16 forward substring searches use Java on serial backends; mixed forward
+search retains native eligibility for 64-code-unit needles. Bounded short
+immediate matches are checked before the native policy. C2 reverse UTF-16
+character searches use Java on serial backends. Other backend/tier choices retain their existing native eligibility. Reverse character
+searches check the rightmost code unit before native setup.
+
+MSVC C1 UTF-16 character search requires 256 remaining code units. C2 reverse
+UTF-16 character search uses Java below 256 units on AVX2 and NEON; AVX-512
+retains its lower native threshold. Other character thresholds are unchanged. Forward BMP search probes one code unit first, so a
+full-range miss enters native code at source length 257; reverse search enters at
+length 256. The qualification manifest includes both boundaries and their
+neighbors. Forward Latin-1 and UTF-16 BMP wrappers remain inline; native address setup and
+chunk fallback use separate bridges. Both coders probe one unit first, so their
+ordinary forward native entry is at 257 bytes or 129 UTF-16 code units;
+the MSVC C1 UTF-16 override enters at 257 code units.
 
 ## Native contract and safepoints
 
@@ -151,7 +178,8 @@ addresses from rooted arrays. Long mixed suffix verification also polls in Java.
 
 Odd-byte UTF-16 occurrences are rejected. A portable C filter verifies aligned
 candidates from the search-direction end; long needles also filter the adjacent
-character. GCC/Clang compile an AVX2 version under the VM capability gate.
+character. MSVC reverse searches apply that check from three code units.
+GCC/Clang compile an AVX2 version under the VM capability gate.
 Search code contains no handwritten SIMD operations. Surrogates retain Java
 code-unit semantics. Checked C1 equality and method handles preserve caller state
 and deoptimization.

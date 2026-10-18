@@ -119,6 +119,42 @@ public class StringZillaSearch {
                 }
             }
         }
+        // Character dispatch counts the searched range after a forward probe
+        // and before the bounded reverse probe. Exercise both exact boundaries.
+        for (int size : new int[]{127, 128, 129, 255, 256, 257, 258}) {
+            for (String unit : new String[]{"a", "\u0401"}) {
+                String marker = unit.equals("a") ? "b" : "\u0402";
+                for (int position : new int[]{0, size / 2, size - 1}) {
+                    String value = unit.repeat(position) + marker + unit.repeat(size - position - 1);
+                    for (int from : new int[]{Integer.MIN_VALUE, -1, 0, 1, 127, 255,
+                                             size - 1, Integer.MAX_VALUE}) {
+                        character(value, marker.charAt(0), from);
+                        character(value, 0x0104, from);
+                    }
+                }
+            }
+        }
+        // Latin-1 chunk results remain absolute after a nonzero starting index.
+        int latinCharChunk = 65536;
+        for (int position : new int[]{latinCharChunk - 1, latinCharChunk, latinCharChunk + 1}) {
+            String value = "a".repeat(position) + "b" + "a".repeat(latinCharChunk + 17);
+            for (int from : new int[]{0, 1, position - 1, position, position + 1, value.length()}) {
+                character(value, 'b', from);
+                character(value, 'z', from);
+            }
+        }
+        // Exercise absolute results and overlapping surrogate pairs after the
+        // bounded native character search resumes through chunked searching.
+        int charChunk = 65536 >> 1;
+        for (String target : new String[]{"\u0402", "\ud83d\ude00"}) {
+            for (int position : new int[]{charChunk - 1, charChunk, charChunk + 1}) {
+                String value = "\u0401".repeat(position) + target + "\u0401".repeat(charChunk + 17);
+                for (int from : new int[]{0, 1, position - 1, position, position + 1, value.length()}) {
+                    character(value, target.codePointAt(0), from);
+                    character(value, 0x0403, from);
+                }
+            }
+        }
         // Distinct arrays with equal contents, early/late mismatch, and coders.
         int[] equalitySizes = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 15, 16, 17, 31, 32, 33,
                                127, 128, 129, 255, 256, 257, 1024, 4096};
