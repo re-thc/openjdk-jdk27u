@@ -224,7 +224,13 @@ public class TestDuplicateVectorBounds {
         expect(IllegalArgumentException.class, () -> storeBetween(new byte[0], null, 0, (byte) 1));
     }
 
+    // An arbitrary entry cursor prevents the separate zero-based induction proof
+    // from satisfying this rule. This must exercise direct duplicate recognition.
     @Test
+    @IR(failOn = {"RangeCheck.*Objects::checkIndex.*ByteVector::fromArray"}, phase = CompilePhase.AFTER_MACRO_EXPANSION,
+        counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "1"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"},
+        applyIf = {"MaxVectorSize", ">=16"})
     public static int copyFrom(byte[] literals, byte[] target, int literalSize, int literal, long[] packed) {
         int wildIn = literals.length - 32;
         for (int i = 0; i < packed.length; i++) {
