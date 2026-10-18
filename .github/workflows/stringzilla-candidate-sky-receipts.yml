@@ -1,0 +1,65 @@
+name: Read saved StringZilla SKY capability receipts
+on:
+  push:
+    branches: [codex/stringzilla-candidate-sky-receipts]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  receipts:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Verify two immutable zero-timing archives and print saved CPU receipts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import hashlib, io, json, pathlib, subprocess, zipfile
+          bindings = json.loads("[{\"run\":39145136082,\"head\":\"f7003b74572a93b774ffb9fe79fcc35a3efcdcb0\",\"job\":117742226277,\"artifact\":12145813889,\"digest\":\"2aafe6191ad321cb8f296aedd4cdb8322060e7d90464a152320f332ef151a3c9\",\"name\":\"stringzilla-candidate-pilot-results-avx512-c2-f7003b74572a93b774ffb9fe79fcc35a3efcdcb0-attempt1\"},{\"run\":39152364859,\"head\":\"5eb741f73bc6cce9478793ba2101d719a40d3fc7\",\"job\":117751315790,\"artifact\":12146211256,\"digest\":\"5bc8096d33a7adefc79a32ff3795b4cdab44b4eb23fbdc2243f32466c9a36efc\",\"name\":\"stringzilla-candidate-losses-avx512-c2-5eb741f73bc6cce9478793ba2101d719a40d3fc7-attempt1\"}]")
+          root = "repos/re-thc/openjdk-jdk27u/"
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", root + path], text=True))
+          out = pathlib.Path("receipt-evidence")
+          out.mkdir()
+          for binding in bindings:
+              artifact = api("actions/artifacts/" + str(binding["artifact"]))
+              job = api("actions/jobs/" + str(binding["job"]))
+              assert artifact["id"] == binding["artifact"] and artifact["name"] == binding["name"]
+              assert artifact["digest"] == "sha256:" + binding["digest"] and not artifact["expired"]
+              assert artifact["workflow_run"]["id"] == binding["run"] and artifact["workflow_run"]["head_sha"] == binding["head"]
+              assert job["id"] == binding["job"] and job["run_id"] == binding["run"] and job["head_sha"] == binding["head"]
+              assert job["conclusion"] == "success" and job["status"] == "completed" and job["run_attempt"] == 1
+              assert "avx512" in job["name"] and "c2" in job["name"]
+              raw = subprocess.check_output(["gh", "api", root + "actions/artifacts/" + str(binding["artifact"]) + "/zip"])
+              assert hashlib.sha256(raw).hexdigest() == binding["digest"]
+              archive = zipfile.ZipFile(io.BytesIO(raw))
+              assert sorted(archive.namelist()) == ["SKIPPED.json", "physical-host.json"]
+              saved = {}
+              for path in archive.namelist():
+                  data = archive.read(path)
+                  assert len(data) < 32768
+                  saved[path] = {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data), "receipt": json.loads(data)}
+              receipt = saved["SKIPPED.json"]["receipt"]
+              assert receipt == saved["physical-host.json"]["receipt"]
+              assert receipt["source"] == "e036e637a5aff1e2506ff82953a3fbd9fdba6a9d"
+              assert receipt["backend"] == "avx512" and receipt["tier"] == "c2"
+              assert receipt["available"] is False and receipt["timed_records"] == 0
+              fields = receipt["physical"]["fields"]
+              flags = set(fields.get("flags", fields.get("Features", "")).split())
+              required = {"avx", "avx2", "bmi1", "bmi2", "f16c", "fma", "movbe", "popcnt", "sse4_1", "sse4_2", "ssse3", "cx16", "avx512f", "avx512bw", "avx512vl"}
+              missing = sorted(required - flags)
+              if not flags.intersection({"abm", "lzcnt"}):
+                  missing.append("lzcnt/abm")
+              assert receipt["physical"]["missing"] == missing
+              assert receipt["machine"] not in ("amd64", "x86_64") or missing
+              evidence = {"schema": 1, "binding": binding, "artifact": artifact, "job": job, "saved": saved, "new_timing_executions": 0}
+              (out / (str(binding["artifact"]) + ".json")).write_text(json.dumps(evidence, indent=2) + "\n")
+              print("STRINGZILLA_ZERO_TIMING_RECEIPT " + json.dumps(evidence, separators=(",", ":")), flush=True)
+          
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-candidate-sky-capability-receipts-${{ github.sha }}
+          path: receipt-evidence
+          if-no-files-found: error
+          retention-days: 30
