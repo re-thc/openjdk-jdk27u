@@ -1,0 +1,62 @@
+name: Validate StringZilla native test fortify bounds
+on:
+  push:
+    branches: [codex/stringzilla-native-fortify-validation]
+    paths: [.github/workflows/stringzilla-native-fortify-validation.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-26.04
+          - arch: arm64
+            runner: ubuntu-26.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    name: GCC16 ${{ matrix.arch }} native fortify and sanitizers
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TEST_ARCH: ${{ matrix.arch }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout exact test-only fixed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: c73d3586b13764f912c52c9f407020866f0e252c
+          persist-credentials: false
+          sparse-checkout: |
+            src/java.base/share/native/libjava
+            src/hotspot/share/include
+            src/hotspot/os/posix/include
+            test/jdk/java/lang/String/libStringZillaKernelsTest.c
+      - name: Checkout exact auxiliary validator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Install GCC16
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16
+          test "$(gcc-16 -dumpversion)" = 16
+      - name: Reproduce actual fortified warning, compile fix, run native contracts
+        run: |
+          python3 -m py_compile driver/.github/scripts/stringzilla-native-fortify-validation.py
+          python3 driver/.github/scripts/stringzilla-native-fortify-validation.py
+      - name: Retain exact commands, headers, logs and receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-native-fortify-${{ matrix.arch }}-${{ github.sha }}
+          path: native-fortify-output
+          if-no-files-found: error
+          retention-days: 30
