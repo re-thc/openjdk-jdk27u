@@ -8,16 +8,18 @@ Run only after complete-batch authority. Native launchd or a container's normal
 --init owns orphan reaping. This runner launches only the supplied Java mains.
 """
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
 import platform
 import signal
 import subprocess
+import sys
 import threading
 import time
+sys.dont_write_bytecode = True
 import matrix as m
+from identity import FrozenInputs, PRODUCT
 
 
 class JavaRuns:
@@ -79,16 +81,21 @@ class JavaRuns:
             m.write_json(self.root / 'commands.json', self.commands)
 
 
-def sha(path):
-    h = hashlib.sha256()
-    with path.open('rb') as stream:
-        for part in iter(lambda: stream.read(4 * 1024**2), b''):
-            h.update(part)
-    return h.hexdigest()
-
-
 def interrupted(*_):
     raise KeyboardInterrupt()
+
+
+def execute(c, frozen):
+    frozen.verify('before')
+    try:
+        c.library_preflight()
+        cold = c.cold()
+        index = c.measurements()
+        return m.adjudicate(index, cold, c.root, c.s)
+    finally:
+        # An identity failure overrides a provisional performance result,
+        # including after a library/measurement failure. Keep both logs.
+        frozen.verify('after')
 
 
 def main():
@@ -96,6 +103,9 @@ def main():
     p.add_argument('--execute', action='store_true')
     for option in ['baseline', 'candidate', 'harness', 'output']:
         p.add_argument('--' + option, type=Path, required=True)
+    p.add_argument('--receipt', type=Path, required=True)
+    p.add_argument('--receipt-sha256', required=True)
+    p.add_argument('--package-revision', required=True)
     a = p.parse_args()
     if not a.execute:
         p.error('measurement requires --execute and complete-batch authority')
@@ -117,6 +127,7 @@ def main():
     c = m.Campaign()
     c.s, c.root, c.repo, c.harness = s, a.output, a.output, a.harness
     c.jdks = dict(baseline=a.baseline, candidate=a.candidate)
+    c.library = a.candidate / ('lib/libhexsimd' + suffix)
     c.env = os.environ.copy()
     for key in ['JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS', 'JAVA_OPTS',
                 'LD_PRELOAD', 'DYLD_INSERT_LIBRARIES']:
@@ -124,25 +135,24 @@ def main():
     manifest = dict(platform=platform.platform(), machine=platform.machine(),
                     java_heap_MiB=512, active_processors=2, deadline_seconds=7200,
                     resource_limits='external OS/container; no aggregate RSS or affinity claim',
-                    images={}, source=json.loads(Path(__file__).with_name('SOURCE.json').read_text()))
-    for name, image in c.jdks.items():
-        paths = ['release', 'bin/java', 'jmods/java.base.jmod', 'lib/modules',
-                 'lib/server/libjvm' + suffix]
-        if name == 'candidate':
-            paths.append('lib/libhexsimd' + suffix)
-        manifest['images'][name] = dict(path=str(image), sha256={x:sha(image/x) for x in paths})
+                    source_pins={'baseline': m.BASE, 'candidate': PRODUCT})
+    manifest.update(receipt=str(a.receipt.resolve()), receipt_sha256=a.receipt_sha256,
+                    package_revision=a.package_revision)
     m.write_json(a.output / 'manifest.json', manifest)
     signal.signal(signal.SIGTERM, interrupted)
     result = dict(status='INCOMPLETE', extra_platform_claims=False)
     code = 4
     try:
-        cold = c.cold()
-        index = c.measurements()
-        report = m.adjudicate(index, cold, a.output, s)
+        frozen = FrozenInputs(a.receipt, a.receipt_sha256, Path(__file__).resolve().parent,
+                a.package_revision, a.baseline, a.candidate, a.harness, a.output,
+                platform.system(), platform.machine())
+        report = execute(c, frozen)
         result.update(status=report['status'], acceptance='acceptance.json')
         code = 0 if report['status']=='LOCAL_GO' else 3 if report['status']=='INCONCLUSIVE_NOISE' else 2
     except (Exception, KeyboardInterrupt) as error:
         result['detail'] = repr(error)
+        if isinstance(error, m.Stop):
+            result['category'] = error.category
     m.write_json(a.output / 'result.json', result)
     print(json.dumps(result, indent=2))
     return code

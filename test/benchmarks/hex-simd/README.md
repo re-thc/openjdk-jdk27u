@@ -54,14 +54,15 @@ container limits if those are required; disk remains the provided filesystem.
 ## Build the two native images normally
 
 Set `HEX_WORK` to an absolute, fresh, space-free directory. Set `BOOT_JDK` and
-`JTREG_HOME` to existing native tools. Use the full benchmark source revision
-from the review handoff as `HEX_REVIEW`. No measurement command below is
-authorized merely by receiving it.
+`JTREG_HOME` to existing native tools. Use the full immutable execution-package
+revision from the review handoff as `HEX_PACKAGE`. The live product head does
+not carry qualification machinery; the package stays reachable in Git history.
+No measurement command below is authorized merely by receiving it.
 
 ```sh
 git clone --branch review/hexformat-simd https://github.com/re-thc/openjdk-jdk27u.git "$HEX_WORK/repo"
-git -C "$HEX_WORK/repo" checkout --detach "$HEX_REVIEW"
-export HEX_HANDOFF="$HEX_WORK/repo/test/benchmarks/hex-simd"
+git -C "$HEX_WORK/repo" worktree add --detach "$HEX_WORK/package" "$HEX_PACKAGE"
+export HEX_HANDOFF="$HEX_WORK/package/test/benchmarks/hex-simd"
 git -C "$HEX_WORK/repo" worktree add --detach "$HEX_WORK/candidate" dfa1a6da1979dcbf40af88e1900175e582aae6cd
 git -C "$HEX_WORK/repo" worktree add --detach "$HEX_WORK/baseline" 89885a6288e7aaabd01678a704a586272c0f96e3
 export RUSTUP_AUTO_INSTALL=0
@@ -116,12 +117,58 @@ Only the unchanged reference class is patched. Production Java and JNI code come
 from the full normal builds. The existing Java sources can also be recovered
 directly with `git show 1c344bde55df568fe4c06e774c87f4446f5ae310:test/benchmarks/hex-simd/NAME.java`.
 
+## Freeze and check identities before timing
+
+Reuse the existing reviewed build receipt when using already prepared images.
+Pass its independently retained SHA-256 explicitly; do not generate a fresh
+receipt around changed artifacts merely to make checks pass. No image rebuild
+is needed to repair or review the execution package.
+
+For a new native ARM build only, immediately after the normal build, native
+correctness and harness compilation above, record those outputs without running
+another build, Java process or measurement:
+
+```sh
+python3 -B "$HEX_HANDOFF/identity.py" --record-receipt "$HEX_WORK/build-receipt.json" \
+  --source-root "$HEX_WORK" --baseline "$HEX_BASE_JDK" --candidate "$HEX_CANDIDATE_JDK" \
+  --harness "$HEX_HARNESS" --package-revision "$HEX_PACKAGE"
+```
+
+Retain the printed SHA-256 with the source/build/correctness records. Set
+`HEX_RECEIPT` and `HEX_RECEIPT_SHA` to the frozen receipt and expected hash before
+authorizing timing. Recording is an identity declaration of the normal build
+steps; it does not retroactively attest the source of arbitrary supplied binaries.
+
+The runner fails closed on a changed receipt, source/package revision, dirty
+checkout, source hash, Cargo lock, release/native build profile, module/JVM/
+native-library hash, CDS archive, compiled Java harness or reference patch.
+The complete harness inventory and baseline reference derivation are verified.
+The declared Java sources must match the build receipt's workload source hashes.
+The configured spec snapshot must match both the receipt and actual output spec.
+
+Before the first timed process, logging checks require the exact candidate
+library path and platform suffix (`.so` or `.dylib`), require empty/tiny calls
+to keep it unloaded, and reject unexpected names/paths or duplicate loads.
+Separate unmeasured first-use checks require the expected baseline/disabled/
+enabled native availability. These checks are not cold timing observations.
+Identity checks run again after execution, including after a run failure; a
+post-run mismatch overrides any provisional performance win. `result.json`
+is authoritative; `acceptance.json` alone is insufficient.
+
+Offline regressions use temporary fixtures and mock all process creation:
+
+```sh
+python3 -B "$HEX_HANDOFF/TestPreflight.py"
+```
+
 ## One complete comparison, only after authority and source review
 
 ```sh
-python3 "$HEX_HANDOFF/compare.py" --execute \
+python3 -B "$HEX_HANDOFF/compare.py" --execute \
   --baseline "$HEX_BASE_JDK" --candidate "$HEX_CANDIDATE_JDK" \
-  --harness "$HEX_HARNESS" --output "$HEX_WORK/arm-results"
+  --harness "$HEX_HARNESS" --output "$HEX_WORK/arm-results" \
+  --receipt "$HEX_RECEIPT" --receipt-sha256 "$HEX_RECEIPT_SHA" \
+  --package-revision "$HEX_PACKAGE"
 ```
 
 The standard subprocess launcher delegates to the unchanged source-derived grid
@@ -134,8 +181,7 @@ JNI costs remain in complete public calls. No UUID work is present.
 
 The launcher bounds measurement work to two hours, uses a fresh output directory
 and preserves stdout/stderr, argv/exit status, raw samples, allocation, process
-wall/call intervals, artifact identities and acceptance.json. Native `.so` and
-`.dylib` load-log names are recognized. The original acceptance/noise/regression
+wall/call intervals, pre/post identities and acceptance.json. The original acceptance/noise/regression
 gates are retained; there is no automatic retry, threshold tuning, extra fork,
 new workload or required x64 campaign. A positive result applies to the actual
 host/backend. A clean gate failure rejects the current optimization there;

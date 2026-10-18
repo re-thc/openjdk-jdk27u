@@ -37,6 +37,28 @@ def require(condition, message):
     if not condition:
         raise Stop('EVIDENCE_OR_CORRECTNESS', message)
 
+def check_library_load(text, expected, should_load):
+    """Require the exact candidate library, with its platform-specific name."""
+    expected = Path(expected)
+    require(expected.name in {'libhexsimd.so', 'libhexsimd.dylib'},
+            'unexpected configured HexFormat library name: ' + str(expected))
+    expected = expected.resolve()
+    observed = []
+    for line in text.splitlines():
+        match = re.search(r'\bLoaded library (.+), handle \S+(?:\s|$)', line)
+        if match is None:
+            require(not ('Loaded library ' in line and 'hexsimd' in line.lower()),
+                    'malformed HexFormat library load record: ' + line)
+            continue
+        actual = Path(match.group(1))
+        if 'hexsimd' in actual.name.lower() or actual.resolve() == expected:
+            require(actual.is_absolute() and actual.resolve() == expected,
+                    'unexpected HexFormat library loaded: ' + str(actual))
+            observed.append(str(actual))
+    require(len(observed) == (1 if should_load else 0),
+            'wrong HexFormat library loading: ' + str(expected))
+    return observed
+
 def read_bench(path, kind, sizes, state):
     text = path.read_text()
     require(f"# nativeAvailable={str(state == 'enabled').lower()}" in text, 'wrong availability: ' + str(path))
@@ -154,7 +176,33 @@ class Campaign:
     def patched(self, state, options, main, *args):
         return [self.java(state), *options, '--patch-module', 'java.base=' + str(self.harness / 'patch'), '--add-exports', 'java.base/jdk.internal.util=ALL-UNNAMED', '-cp', self.harness / 'classes', main, *args]
 
+    def library_preflight(self):
+        records = []
+        for mode in ['empty', 'tiny', 'encode', 'decode']:
+            out, err, _ = self.run('library-' + mode,
+                    [self.java('enabled'), *self.java_opts(heap=128), '-Xcheck:jni',
+                     '-Xlog:library=debug', '-cp', self.harness / 'classes', 'FirstUse', mode],
+                    timeout=15, measurement=False)
+            text = out.read_text() + '\n' + err.read_text()
+            require(not BAD_JNI.search(text), 'JNI warning in library preflight: ' + mode)
+            records.append({'mode': mode, 'loaded': check_library_load(
+                    text, self.library, mode in ['encode', 'decode'])})
+        for state in ['baseline', 'disabled', 'enabled']:
+            opts = self.java_opts() + ['-Xcheck:jni',
+                    '-Dhexsimd.expectNative=' + str(state == 'enabled').lower()]
+            if state == 'disabled':
+                opts.append('-Djdk.hexFormat.useNative=false')
+            out, err, _ = self.run('availability-' + state,
+                    self.patched(state, opts, 'FirstUse', 'race'), timeout=30, measurement=False)
+            text = out.read_text() + '\n' + err.read_text()
+            require('PASS concurrent first use' in text and not BAD_JNI.search(text),
+                    'native availability preflight failed: ' + state)
+        write_json(self.root / 'library-preflight.json', records)
+        self.library_preflight_complete = True
+
     def cold(self):
+        require(getattr(self, 'library_preflight_complete', False),
+                'library preflight required before cold timing')
         rows = []
         for gc in ['G1', 'Serial', 'Z']:
             for round in range(1, 6):
@@ -175,13 +223,11 @@ class Campaign:
                         require(call > 0 and length == expected_length and (not BAD_JNI.search(err.read_text())), 'wrong cold result')
                         rows.append({'gc': gc, 'state': state, 'round': round, 'mode': mode, 'wall_ns': wall, 'call_ns': call, 'length': length})
                         write_json(self.root / 'cold.json', rows)
-        for mode in ['empty', 'tiny', 'encode', 'decode']:
-            out, err, _ = self.run('library-' + mode, [self.java('enabled'), *self.java_opts(heap=128), '-Xlog:library=debug', '-cp', self.harness / 'classes', 'FirstUse', mode])
-            loaded = bool(re.search('Loaded library.*libhexsimd\\.so', out.read_text() + err.read_text()))
-            require(loaded == (mode in ['encode', 'decode']), 'wrong cold library loading: ' + mode)
         return rows
 
     def measurements(self):
+        require(getattr(self, 'library_preflight_complete', False),
+                'library preflight required before throughput timing')
         minimum = 2754 + 10 * 60 + 15 * 60
         if self.s.work_end - time.monotonic() < minimum:
             raise Stop('RESOURCE', 'insufficient total budget for declared measurement batch and cleanup')
