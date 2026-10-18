@@ -1,0 +1,201 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+# No JVM build: only six previously unmeasured ABC triplets and missing primary SKY tiers.
+name: StringZilla missing AVX-512 ABC interpreter and C1 coverage
+on:
+  push:
+    branches: [codex/stringzilla-avx512-missing-tiers]
+    paths: [.github/workflows/stringzilla-avx512-missing-tiers.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-avx512-missing-tiers
+  cancel-in-progress: false
+env:
+  SOURCE: 4592230b14fc2f4b537b162fd7f6b791e882b615
+  GH_TOKEN: ${{ github.token }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+jobs:
+  measure:
+    name: Missing SKY ABC interpreter and C1 controls
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    env:
+      EXPECTED_CONTAINER_IMAGE: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - name: Install native Ubuntu 26 runtime and validation dependencies before checkout
+        shell: bash
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python-is-python3 git gh gcc-16 tar unzip ca-certificates binutils
+          test "$(gcc-16 -dumpversion)" = 16
+      - name: Checkout frozen source and benchmark helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+      - name: Checkout original source identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout original immutable restore driver and collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3
+          path: producer
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout exact frozen external ABC helper application and collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: bef5407df2d4da71cc1414da26a90a5d665f014b
+          path: periodic
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout this isolated missing-tier replay
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Verify all four original zero-timing ZIPs before checking this CPU
+        shell: python
+        run: |
+          import py_compile, subprocess, sys
+          path = 'auxiliary/.github/scripts/stringzilla-avx512-missing-tiers.py'
+          py_compile.compile(path, doraise=True)
+          py_compile.compile('producer/.github/scripts/stringzilla-sharded.py', doraise=True)
+          subprocess.run([sys.executable, path, 'preflight'], check=True)
+      - name: Restore archived complete pair and attest actual SKY runtime and native contracts
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-avx512-missing-tiers.py', 'prepare'], check=True)
+      - name: Measure only six ABC triplets then missing interpreter and C1 projections
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-avx512-missing-tiers.py', 'measure'], check=True)
+      - name: Preserve separate ABC and primary raw results and all original skip receipts
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-avx512-missing-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+  collect:
+    needs: measure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      MEASUREMENT_ARTIFACT_ID: ${{ needs.measure.outputs.artifact-id }}
+      MEASUREMENT_ARTIFACT_DIGEST: ${{ needs.measure.outputs.artifact-digest }}
+    steps:
+      - name: Checkout frozen source and benchmark helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/stringzilla-performance.py
+            doc/stringzilla/native-cases.tsv
+      - name: Checkout original immutable restore driver and collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 8dbbc5a78e113630a5f6e9fa15be19cddd8bc3b3
+          path: producer
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout exact frozen external ABC helper application and collector
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: bef5407df2d4da71cc1414da26a90a5d665f014b
+          path: periodic
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout this isolated missing-tier replay
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: auxiliary
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Checkout original source identity for external ABC validation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+          sparse-checkout: README.md
+      - name: Bind separate ABC and primary logs to the successful actual worker
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, 'auxiliary/.github/scripts/stringzilla-avx512-missing-tiers.py', 'collection'], check=True)
+      - name: Strictly collect 255 unique triplets and every higher enabled mean
+        shell: node {0}
+        run: |
+          const fs = require("fs");
+          const crypto = require("crypto");
+          const collectorBytes = fs.readFileSync("producer/.github/scripts/stringzilla-collector.js");
+          if (crypto.createHash("sha256").update(collectorBytes).digest("hex") !==
+              "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26") throw Error("Strict collector changed");
+          const collect = Function("return (" + fs.readFileSync("producer/.github/scripts/stringzilla-collector.js", "utf8") + ")")();
+          const abcBytes = fs.readFileSync("periodic/.github/scripts/stringzilla-periodic-collector.js");
+          if (crypto.createHash("sha256").update(abcBytes).digest("hex") !==
+              "ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4") throw Error("ABC collector changed");
+          const collectABC = Function("return (" + abcBytes.toString("utf8") + ")")();
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          const expected = new Set(input.expected_physical_keys), seen = new Set(), all = [];
+          const table = [
+            "| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | Higher enabled mean |",
+            "| --- | --- | --- | ---: | ---: | ---: | --- |"
+          ];
+          for (const entry of input.entries) {
+            const collector = entry.kind === "abc" ? collectABC : collect;
+            const result = collector(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+              entry.manifest, entry.source, entry.base, entry.expected);
+            for (const group of result.groups) {
+              const enabled = group.controls.enabled;
+              const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+              const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+              if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate physical configuration: " + key);
+              seen.add(key);
+              const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean);
+              const cells = ["original", "enabled", "disabled"].map(control =>
+                group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+              table.push("| " + [entry.backend, group.tier, group.case, ...cells, higher.join(", ") || "-"].join(" | ") + " |");
+            }
+            all.push(result);
+          }
+          if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
+          if (seen.size !== 255 || all.length !== 3) throw Error("Incomplete missing SKY ABC/interpreter/C1 matrix");
+          fs.writeFileSync("perf-output/qualification.json", JSON.stringify({
+            source: process.env.SOURCE, triplets: seen.size, records: seen.size * 3, shards: all,
+            recovery: input.recovery
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/QUALIFICATION.md",
+            "Only the previously unmeasured six SKY ABC triplets and primary interpreter/C1 projections are accepted; all controls, raw samples and higher enabled means are retained.\n\n" +
+            table.join("\n") + "\n");
+          console.log("Qualified " + seen.size + " unique triplets across " + all.length + " backend/tier shards.");
+      - name: Retain strict missing-tier evidence and all controls
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-avx512-missing-qualified-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
