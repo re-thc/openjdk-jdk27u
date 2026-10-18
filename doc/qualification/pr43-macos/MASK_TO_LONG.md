@@ -78,6 +78,16 @@ summary under `/tmp/pr43-maskpack-final-jtreg`. Its source SHA256 is
 Compiler and generated AD files are identical to the prototype commit above.
 The [focused Mac source recipe](MASK_TO_LONG_MAC.md) uses this corrected pin.
 
+On 2026-10-18 the executor reconnected with the clean product checkout still
+at that pin. No local Java, compiler or make process remained. The temporary
+JTR, ADLC commands/generated files and isolated-index proof under `/tmp` were
+no longer present. The successful pre-disconnect outcomes above were observed
+and recorded before the disconnect; their raw temporary receipts are now lost.
+Published source and these notes survived. No build, measurement or native
+campaign was restarted to recreate the files. The existing ordinary AArch64
+release/debug CI jobs were independently confirmed still building after the
+reconnect; their eventual results remain separate from the earlier local checks.
+
 ## Native gates still pending
 
 `TestByteMaskToLong` has 16 C2 probes, **32 NEON IR assertions** across Before
