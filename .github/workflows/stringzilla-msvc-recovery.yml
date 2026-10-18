@@ -1,0 +1,221 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+# Artifact-only recovery: source and both complete images remain unchanged.
+name: StringZilla archived MSVC validation and primary controls
+on:
+  push:
+    branches: [codex/stringzilla-msvc-recovery]
+    paths: [.github/workflows/stringzilla-msvc-recovery.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-msvc-archived-pair-recovery
+  cancel-in-progress: false
+env:
+  SOURCE: 4592230b14fc2f4b537b162fd7f6b791e882b615
+  GH_TOKEN: ${{ github.token }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+
+jobs:
+  validation:
+    name: msvc archived pair validation
+    runs-on: windows-2025
+    timeout-minutes: 90
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      artifact-digest: ${{ steps.upload.outputs.artifact-digest }}
+      receipt-sha256: ${{ steps.validate.outputs.receipt-sha256 }}
+      original-image-hash: ${{ steps.validate.outputs.original-image-hash }}
+      fork-image-hash: ${{ steps.validate.outputs.fork-image-hash }}
+    env:
+      MSYS2_PATH_TYPE: minimal
+      CHERE_INVOKING: 1
+    steps:
+      - name: Checkout unchanged final runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+      - name: Checkout exact original baseline identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout recovery driver and frozen original driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Check recovery Python syntax
+        shell: python
+        run: |
+          import py_compile
+          for name in ("stringzilla-sharded.py", "stringzilla-msvc-recovery-driver.py", "stringzilla-msvc-recovery.py"):
+              py_compile.compile("driver/.github/scripts/" + name, doraise=True)
+      - name: Get the exact MSYS2 profile shell
+        uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+      - name: Require the matching MSVC 14.44 native-test toolset
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, "driver/.github/scripts/stringzilla-msvc-recovery.py", "toolset"], check=True)
+      - name: Restore exact pair and rerun every validation without rebuilding images
+        id: validate
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, "driver/.github/scripts/stringzilla-msvc-recovery.py", "validate"], check=True)
+      - name: Publish successful separate recovery validation chain
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-msvc-recovery-validation-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve incomplete validation evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-msvc-recovery-validation-failed-${{ github.sha }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
+
+  controls:
+    needs: validation
+    name: msvc-${{ matrix.tier }} recovered controls
+    runs-on: windows-2025
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    env:
+      VALIDATION_ARTIFACT_ID: ${{ needs.validation.outputs.artifact-id }}
+      VALIDATION_ARTIFACT_DIGEST: ${{ needs.validation.outputs.artifact-digest }}
+      TIER: ${{ matrix.tier }}
+    steps:
+      - name: Checkout unchanged final runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+      - name: Checkout exact original baseline identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout recovery driver and frozen original driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Require the matching MSVC 14.44 compiler probe toolset
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, "driver/.github/scripts/stringzilla-msvc-recovery.py", "toolset"], check=True)
+      - name: Measure first archived-pair original enabled disabled triplets
+        shell: python
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, "driver/.github/scripts/stringzilla-msvc-recovery.py",
+                          "measure", "--tier", os.environ["TIER"]], check=True)
+      - name: Preserve all raw controls and recovery provenance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-msvc-recovery-results-${{ matrix.tier }}-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: error
+          retention-days: 30
+
+  collect:
+    if: ${{ !cancelled() && needs.validation.result == 'success' }}
+    needs: [validation, controls]
+    runs-on: ubuntu-24.04
+    env:
+      VALIDATION_ARTIFACT_ID: ${{ needs.validation.outputs.artifact-id }}
+      VALIDATION_ARTIFACT_DIGEST: ${{ needs.validation.outputs.artifact-digest }}
+    steps:
+      - name: Checkout exact expected manifest and helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 4592230b14fc2f4b537b162fd7f6b791e882b615
+          persist-credentials: false
+          sparse-checkout: |
+            doc/stringzilla/native-cases.tsv
+            .github/scripts/stringzilla-performance.py
+      - name: Checkout pinned strict collector and recovery driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Verify live recovery success and exact original three shard projections
+        shell: python
+        run: |
+          import subprocess, sys
+          subprocess.run([sys.executable, "driver/.github/scripts/stringzilla-msvc-recovery.py", "collection"], check=True)
+      - name: Strictly collect all 316 triplets and retain every higher mean
+        shell: node {0}
+        run: |
+          const fs = require("fs");
+          const crypto = require("crypto");
+          const collectorBytes = fs.readFileSync("driver/.github/scripts/stringzilla-collector.js");
+          if (crypto.createHash("sha256").update(collectorBytes).digest("hex") !==
+              "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26") throw Error("Strict collector changed");
+          const collect = Function("return (" + fs.readFileSync("driver/.github/scripts/stringzilla-collector.js", "utf8") + ")")();
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          const expected = new Set(input.expected_physical_keys), seen = new Set(), all = [];
+          const table = [
+            "| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | Higher enabled mean |",
+            "| --- | --- | --- | ---: | ---: | ---: | --- |"
+          ];
+          for (const entry of input.entries) {
+            const result = collect(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+              entry.manifest, entry.source, entry.base, entry.expected);
+            for (const group of result.groups) {
+              const enabled = group.controls.enabled;
+              const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+              const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+              if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate physical configuration: " + key);
+              seen.add(key);
+              const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean);
+              const cells = ["original", "enabled", "disabled"].map(control =>
+                group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+              table.push("| " + [entry.backend, group.tier, group.case, ...cells, higher.join(", ") || "-"].join(" | ") + " |");
+            }
+            all.push(result);
+          }
+          if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
+          if (seen.size !== 316 || all.length !== 3) throw Error("Incomplete recovered Windows primary matrix");
+          fs.writeFileSync("perf-output/qualification.json", JSON.stringify({
+            source: process.env.SOURCE, triplets: seen.size, records: seen.size * 3, shards: all,
+            recovery: input.recovery
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/QUALIFICATION.md",
+            "All accepted triplets retain matched original/enabled/disabled controls and every higher enabled mean.\n\n" +
+            table.join("\n") + "\n");
+          console.log("Qualified " + seen.size + " unique triplets across " + all.length + " backend/tier shards.");
+      - name: Retain complete recovered Windows raw evidence and loss table
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-msvc-recovery-qualification-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
