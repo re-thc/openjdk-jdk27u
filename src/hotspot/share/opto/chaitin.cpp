@@ -40,6 +40,7 @@
 #include "opto/movenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/spillCopySharing.hpp"
 #include "utilities/align.hpp"
 
 #ifndef PRODUCT
@@ -371,6 +372,152 @@ void PhaseChaitin::Register_Allocate() {
   ResourceArea split_arena(mtCompiler, Arena::Tag::tag_regsplit);     // Arena for Split local resources
   ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);     // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
+  // The following pass rebuilds masks, liveness and physical interference.
+  // This first-generation-only optimization declines shapes outside its
+  // explicit origin, edge, mask, graph-size and total-work limits.
+  auto share_reload_copies = [&]() {
+    using Sharing = SpillCopySharing;
+    Sharing::Work work;
+    if (C->method() == nullptr) return; // Runtime stubs are outside this experiment.
+    uint scheduled = 0;
+    uint ranges = _lrg_map.max_lrg_id();
+    if (ranges == 0 || ranges > Sharing::MaxRanges) return;
+    for (uint bi = 0; bi < _cfg.number_of_blocks(); bi++) {
+      uint count = _cfg.get_block(bi)->number_of_nodes();
+      if (count > Sharing::MaxNodes - scheduled || !work.spend()) return;
+      scheduled += count;
+    }
+    // Resolve the whole static forest once: subsequent finds are constant
+    // depth. Charge its linear walks and the one-byte table initialization.
+    if (!work.spend(4 * ranges)) return;
+    for (uint range = 0; range < ranges; range++) _lrg_map.find(range);
+    ResourceArea sharing_arena(mtCompiler, Arena::Tag::tag_regsplit);
+    uint8_t* counts = NEW_ARENA_ARRAY(&sharing_arena, uint8_t, ranges);
+    Sharing::Definitions definitions(counts, ranges);
+    // Include every scheduled projection after end_idx(), and Root itself.
+    auto range = [&](Node* n) { return _lrg_map.find(n); };
+    for (uint bi = 0; bi < _cfg.number_of_blocks(); bi++) {
+      if (!Sharing::count_block(_cfg.get_block(bi), range, definitions, work)) return;
+    }
+    struct OriginAccess {
+      Sharing::Origin kind(Node* n) const {
+        return Sharing::classify_origin(n, [](Node* value) {
+          const Type* type = value->bottom_type();
+          return (value->ideal_reg() == Op_RegI && type->isa_int() != nullptr) ||
+                 (value->ideal_reg() == Op_RegL && type->isa_long() != nullptr);
+        });
+      }
+      Node* copy_source(Node* n) const {
+        uint edge = n->is_Copy();
+        return edge != 0 && edge < n->req() ? n->in(edge) : nullptr;
+      }
+    } origin;
+    auto mask_allowed = [&](const RegMask& mask) {
+      // Offset-zero, bounded-capacity masks bound copies and intersections.
+      return mask.offset_bits() == 0 && mask.rm_size_in_bits() <= Sharing::MaxMaskBits &&
+             work.spend(Sharing::MaskWords);
+    };
+    auto equal_masks = [&](const RegMask& a, const RegMask& b) {
+      if (!mask_allowed(a) || !mask_allowed(b) || !work.spend(2 * Sharing::MaskWords)) return false;
+      RegMask left(a, C->regmask_arena());
+      RegMask right(b, C->regmask_arena());
+      left.subtract(b);
+      right.subtract(a);
+      return left.is_empty() && right.is_empty();
+    };
+    auto plain_reload = [&](Node* n, RegMask& need) {
+      if (!n->is_MachSpillCopy() || !n->as_MachSpillCopy()->is_memory_to_register() ||
+          !definitions.single(_lrg_map.find(n)) || n->req() != 2 ||
+          n->outcnt() == 0 || n->outcnt() > Sharing::MaxUses ||
+          _spilled_once.test(n->_idx) || _spilled_twice.test(n->_idx) ||
+          !Sharing::no_precedence(n, work)) return false;
+      uint ideal = n->ideal_reg();
+      if (ideal != Op_RegI && ideal != Op_RegL) return false;
+      if (!Sharing::ordinary_origin(n->in(1), origin, work) ||
+          !mask_allowed(n->out_RegMask()) || !mask_allowed(n->in_RegMask(1))) return false;
+      need.assignFrom(n->out_RegMask());
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        if (!work.spend()) return false;
+        Node* use = n->fast_out(i);
+        auto accept_mask = [&](const RegMask& use_mask) {
+          if (!mask_allowed(use_mask) || !use_mask.is_UP() ||
+              use_mask.size() <= (uint)RegMask::num_registers(ideal) ||
+              use_mask.is_bound(ideal) || !work.spend(Sharing::MaskWords)) return false;
+          need.and_with(use_mask);
+          return true;
+        };
+        if (!Sharing::ordinary_user(n, use, accept_mask, work)) return false;
+      }
+      return !need.is_empty();
+    };
+    NOT_PRODUCT(uint shared = 0;)
+    for (uint bi = 0; bi < _cfg.number_of_blocks() && !work.exhausted(); bi++) {
+      Block* block = _cfg.get_block(bi);
+      if (block == _cfg.get_root_block()) continue;
+      for (uint ni = 1; ni < block->end_idx() && !work.exhausted(); ni++) {
+        if (!work.spend()) break;
+        ResourceMark masks(C->regmask_arena());
+        RegMask current_need(C->regmask_arena());
+        RegMask previous_need(C->regmask_arena());
+        Node* current = block->get_node(ni);
+        if (!plain_reload(current, current_need)) continue;
+        Node* source = current->in(1);
+        uint source_lrg = _lrg_map.find(source);
+        Block* scan = block;
+        int at = (int)ni;
+        for (uint distance = 0; distance < Sharing::MaxDistance; distance++) {
+          if (!work.spend()) break;
+          if (--at <= 0) {
+            if (scan->num_preds() != 2) break;
+            Block* predecessor = _cfg.get_block_for_node(scan->pred(1));
+            if (predecessor == nullptr || predecessor == _cfg.get_root_block() ||
+                predecessor->_rpo >= scan->_rpo) break;
+            scan = predecessor;
+            at = (int)scan->end_idx();
+          }
+          Node* previous = scan->get_node(at);
+          if (previous == current || previous->is_MachCall()) break;
+          // The retained reload name has a unique definition. Only the
+          // source name needs an intervening-definition check here.
+          if (source_lrg != 0 && _lrg_map.find(previous) == source_lrg) break;
+          if (!plain_reload(previous, previous_need) || previous->in(1) != source ||
+              previous->bottom_type() != current->bottom_type()) continue;
+          Block* dominator = block;
+          for (uint depth = 0; dominator != nullptr && dominator != scan &&
+                               depth < Sharing::MaxDistance; depth++) {
+            if (!work.spend()) { dominator = nullptr; break; }
+            dominator = dominator->_idom;
+          }
+          if (dominator != scan || (scan == block && at >= (int)ni)) break;
+          if (!equal_masks(previous->out_RegMask(), current->out_RegMask()) ||
+              !equal_masks(previous->in_RegMask(1), current->in_RegMask(1)) ||
+              !equal_masks(previous_need, current_need)) break;
+          // Charge mutation walks too: DU replacement, source-edge removal
+          // and the block list shift. Exhaustion leaves this pair untouched.
+          if (!work.spend(current->outcnt() * Sharing::MaxInputs) ||
+              !work.spend(source->outcnt()) ||
+              !work.spend(block->number_of_nodes() - ni)) break;
+          current->replace_by(previous);
+          current->disconnect_inputs(C);
+          _lrg_map.map(current->_idx, 0);
+          block->remove_node(ni);
+          if (ni <= block->_ihrp_index) block->_ihrp_index--;
+          if (ni <= block->_fhrp_index) block->_fhrp_index--;
+          ni--;
+          NOT_PRODUCT(shared++;)
+          break;
+        }
+      }
+    }
+#ifndef PRODUCT
+    if (trace_spilling()) {
+      tty->print("SHARED_RELOAD_SUMMARY ");
+      if (C->method() != nullptr) C->method()->print_short_name(tty);
+      tty->print_cr(" accepted=%u work=%u nodes=%u ranges=%u exhausted=%d",
+                    shared, Sharing::MaxWork - work.left(), scheduled, ranges, work.exhausted());
+    }
+#endif
+  };
 
   // Need live-ness for the IFG; need the IFG for coalescing.  If the
   // liveness is JUST for coalescing, then I can get some mileage by renaming
@@ -496,6 +643,7 @@ void PhaseChaitin::Register_Allocate() {
       return;
     }
     _lrg_map.set_max_lrg_id(new_max_lrg_id);
+    share_reload_copies();
     // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
     // or we failed to split
     C->check_node_count(2*NodeLimitFudgeFactor, "out of nodes after physical split");
