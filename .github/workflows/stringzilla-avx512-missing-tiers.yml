@@ -10,7 +10,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: stringzilla-avx512-missing-tiers-allfour-v1
+  group: stringzilla-avx512-missing-tiers-allfour-headers-v2
   cancel-in-progress: false
 env:
   SOURCE: 4592230b14fc2f4b537b162fd7f6b791e882b615
@@ -86,8 +86,29 @@ jobs:
         if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
         shell: bash
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git gcc-16 tar unzip binutils
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git gcc-16 libc6-dev tar unzip binutils
           test "$(gcc-16 -dumpversion)" = 16
+          gcc-16 -x c -fsanitize=address,undefined,alignment -fno-sanitize-recover=all -o "$RUNNER_TEMP/native-dependencies-smoke" - <<'EOF'
+          #include <sys/stat.h>
+          #include <dirent.h>
+          #include <sys/param.h>
+          #include <unistd.h>
+          #include <stddef.h>
+          #include <stdint.h>
+          #include <sys/types.h>
+          #include <fcntl.h>
+          #include <errno.h>
+          #include <signal.h>
+          #include <sys/socket.h>
+          #include <limits.h>
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
+          #include <cpuid.h>
+          #include <immintrin.h>
+          int main(void) { return 0; }
+          EOF
+          ASAN_OPTIONS=abort_on_error=1:detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 "$RUNNER_TEMP/native-dependencies-smoke"
       - name: Checkout frozen source and benchmark helper
         if: steps.elected.outcome == 'success' && steps.elected.outputs.selected == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

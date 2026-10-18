@@ -219,6 +219,53 @@ def failed_election_proof():
     return receipt
 
 
+def failed_native_replay_proof():
+    run_id, head = 39148008857, "6f3c5c2e0bba80bae235dda8dde7866f1f541590"
+    expected = {117735705133, 117735705318, 117735705335, 117735705362}
+    selected = [job for job in jobs(run_id) if job["id"] in expected]
+    assert {job["id"] for job in selected} == expected and len(selected) == 4
+    restore_name = "Restore archived complete pair and attest actual SKY runtime and native contracts"
+    measure_name = "Measure only six ABC triplets then missing interpreter and C1 projections"
+    for job in selected:
+        assert job["status"] == "completed" and job["run_attempt"] == 1 and job["head_sha"] == head
+        measurement = [step for step in job["steps"] if step["name"] == measure_name]
+        restore = [step for step in job["steps"] if step["name"] == restore_name]
+        assert len(measurement) == len(restore) == 1
+        assert measurement[0]["conclusion"] == "skipped"
+        if job["id"] == 117735705335:
+            assert job["conclusion"] == "failure" and restore[0]["conclusion"] == "failure"
+        else:
+            assert job["conclusion"] == "success" and restore[0]["conclusion"] == "skipped"
+    archive = OUT / "failed-native-replay.zip"
+    digest = "sha256:3dd8cf1c05f502f61a1c94bf554b910426a48742582374c39b72931d6c20426a"
+    artifact = frozen.download(12144543604, digest, run_id, head, archive)
+    assert artifact["name"] == "stringzilla-avx512-missing-" + head + "-attempt1"
+    with zipfile.ZipFile(archive) as bundle:
+        files = bundle.namelist()
+        assert len(files) == len(set(files)) == 46
+        assert all(not name.startswith("/") and ".." not in name.split("/") for name in files)
+        assert not any("experiment.log" in name for name in files)
+        assert "replay-preparation.json" not in files and "replay-complete.json" not in files
+        build_log = bundle.read("restore/native-validation/build.log")
+        assert b"fatal error: sys/stat.h: No such file or directory" in build_log
+        physical = json.loads(bundle.read("physical-host.json"))
+        runtime = json.loads(bundle.read("restore/runtime-attestation.json"))
+        pair = json.loads(bundle.read("restore/pair-receipt.json"))
+        assert physical["available"] is True and physical["source"] == SOURCE
+        assert runtime["available"] is True and runtime["source"] == SOURCE and runtime["backend"] == "avx512"
+        assert type(runtime["timed_records"]) is int and runtime["timed_records"] == 0
+        assert runtime["observations"]["enabled"]["actual"] == "3:2:true"
+        assert runtime["observations"]["disabled"]["actual"] == "3:2:false"
+        assert pair["sources"] == {"original": BASE, "fork": SOURCE}
+    receipt = {"run_id": run_id, "head": head, "workers": sorted(selected, key=lambda job: job["id"]),
+        "artifact": {"id": artifact["id"], "digest": digest}, "files": sorted(files),
+        "native_build_log_sha256": hashlib.sha256(build_log).hexdigest(),
+        "timed_records": 0, "reason": "libc6-dev omitted before native contract compilation"}
+    write(OUT / "failed-native-replay-proof.json", receipt)
+    print("STRINGZILLA_MISSING_FAILED_NATIVE_REPLAY " + json.dumps(receipt, separators=(",", ":")), flush=True)
+    return receipt
+
+
 def unsupported_replay_proof():
     run_id, head, job_id = 39143553914, "4ceded08e61c60d7887b3f62035758feeb28d1af", 117722684020
     matching = [job for job in jobs(run_id) if job["id"] == job_id]
@@ -260,6 +307,7 @@ def preflight():
     failed_replay_proof()
     unsupported_replay_proof()
     failed_election_proof()
+    failed_native_replay_proof()
     try:
         inputs()
     except Exception as error:
@@ -357,6 +405,7 @@ def prepare():
         "failed_replay_proof_sha256": sha(OUT / "failed-replay-proof.json"),
         "unsupported_replay_proof_sha256": sha(OUT / "unsupported-replay-proof.json"),
         "failed_election_proof_sha256": sha(OUT / "failed-election-proof.json"),
+        "failed_native_replay_proof_sha256": sha(OUT / "failed-native-replay-proof.json"),
         "election_binding": json.loads((OUT / "election-binding.json").read_text()),
         "requested_counts": COUNTS, "abc_triplets": 6, "runtime_sky_attested": True, "native_sky_contract_passed": True,
         "container_provenance_sha256": sha(OUT / "container-provenance.json"),
@@ -464,7 +513,8 @@ def collection():
         names = ["replay-preparation.json", "replay-complete.json", "old-skip-proof.json",
                  "physical-host.json", "failed-replay-proof.json", "unsupported-replay-proof.json", "unsupported-replay.zip",
                  "election/eligibility.json", "election/selection.json", "failed-election-proof.json", "failed-election.zip",
-                 "election-binding.json", "restore/pair-receipt.json", "restore/native-validation.json",
+                 "election-binding.json", "failed-native-replay-proof.json", "failed-native-replay.zip",
+                 "restore/pair-receipt.json", "restore/native-validation.json",
                  "restore/native-validation/run.log", "container-provenance.json"]
         names += ["election/fact-" + slot + suffix for slot in ("0", "1", "2", "3") for suffix in (".zip", ".json")]
         names += ["old-skips/" + pin["label"] + ".zip" for pin in PINS]
@@ -499,6 +549,8 @@ def collection():
     assert preparation["runtime_sky_attested"] is True and preparation["native_sky_contract_passed"] is True
     assert json.loads((folder / "restore/native-validation.json").read_text())["passed"] is True
     assert "requested=2 selected=2 executable=1" in (folder / "restore/native-validation/run.log").read_text()
+    assert sha(folder / "failed-native-replay-proof.json") == preparation["failed_native_replay_proof_sha256"]
+    assert json.loads((folder / "failed-native-replay-proof.json").read_text()) == failed_native_replay_proof()
     assert sha(folder / "failed-election-proof.json") == preparation["failed_election_proof_sha256"]
     assert json.loads((folder / "failed-election-proof.json").read_text()) == failed_election_proof()
     assert sha(folder / "unsupported-replay-proof.json") == preparation["unsupported_replay_proof_sha256"]
