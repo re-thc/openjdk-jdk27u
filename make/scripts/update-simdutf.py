@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
