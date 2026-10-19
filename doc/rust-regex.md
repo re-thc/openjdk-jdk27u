@@ -2,9 +2,10 @@
 
 This fork selects Rust at Pattern compilation for a parsed common subset of
 `java.util.regex`. Supported Patterns return matches and captures directly
-from Rust or a narrow short-match specialization. Their Java node fields are
+from Rust or a prepared specialization. Their Java node fields are
 initially empty; measured Java choices share a lazily compiled sibling graph.
-Unsupported syntax compiles with Java. Unsupported inputs/operations permanently
+Unsupported syntax compiles with Java. Per-Matcher Java choices preserve native
+eligibility for other inputs; unresolved input/operation constraints permanently
 promote the affected Pattern to Java.
 
 ## Build and runtime controls
@@ -35,10 +36,13 @@ Supported native flags are UNIX_LINES, ASCII CASE_INSENSITIVE and DOTALL.
 Plain literals and LITERAL mode keep Java's optimized literal path.
 
 Literal-prefix/digit-tail expressions, including ordinary/named captures, get
-a compact specialization containing only the prefix and capture indices. It
+a compact specialization containing the prefix and capture metadata. It
 handles searches of up to 256 characters and checks the first candidate of
-longer searches. Numeric runs return to Rust after 256 characters on short
-inputs or 32 characters on larger inputs.
+longer searches. With at most 256 characters remaining, numeric runs stay in the
+plan. With more input remaining, interpreter/C1 configurations hand runs longer
+than 32 digits to Rust; C2 configurations finish the first candidate's digit run
+in Java. A longer search that needs another candidate still reaches Rust unless
+a prepared literal rejection can establish the miss.
 Digit-only searches skip nondigits directly and read each digit once. Inputs
 shorter than the required prefix plus one digit reject immediately.
 Literal searches respect the region end, including small regions within large Strings.
@@ -53,11 +57,19 @@ also with named captures, has a compact plan for regions of up to 32 characters
 and early candidates. Longer word runs and scans select Rust. Both plans receive
 scalar bounds; capture-array ABI arguments are written only for native calls.
 The uncaptured fixed digit shape `[0-9]{3}-[0-9]{2}-[0-9]{4}` (also using `\\d`)
-uses a C2 scalar plan for regions up to 256 characters and early candidates;
-long scans still select Rust. General Java replay preserves its continuation
-and end flags, including partial failures.
+uses a scalar plan in C1/C2 configurations: complete searches up to 16 characters
+in C1 or 256 in C2, and the first candidate of larger searches. Interpreter
+matching selects Rust once a full-width candidate is possible; unresolved scans
+also select Rust. Its exact end flags avoid general
+Java replay. Failed anchors restore digit-atom progress immediately; failed
+searches defer specialized continuation recovery until a subsequent find() or
+usePattern(). That recovery does not promote the Pattern; reset discards it.
 
-Literal-prefix/digit regions up to eight characters use the Java graph. General
+Literal-prefix/digit regions up to eight characters use the Java graph. For
+uncaptured prefixes of four through fifteen characters, sixteen qualifying
+adapter searches can select that graph in a wider window: sixteen characters
+in a C2 configuration, or min(64, eight times the prefix length) in interpreter/C1
+configurations. Captured prefixes retain the eight-character window. General
 fixed-width regions up to sixteen characters do too in a VM configured for C2;
 their Rust construction is deferred. A short early native hit can select Java
 for repeated operations on the same input, region and operation in C2 for
@@ -83,8 +95,11 @@ such as `[]a~~a]+` cannot enter Rust. Unrecognized/invalid syntax goes to Java
 for its usual syntax diagnostics. Extending the subset requires grammar and
 differential evidence, not additional lexical exceptions.
 
-Compact Latin-1 Strings use backing bytes directly. Other CharSequences are
-snapshotted. The ASCII short plan can answer short searches and early candidates
+Compact Latin-1 Strings use backing bytes directly. Other CharSequences use
+ordinary Java traversal through a cached sibling graph, without requesting a
+whole-input toString() snapshot or promoting the shared Pattern. Resetting to
+an immutable String can use the native backend again. The ASCII short plan can
+answer short searches and early candidates
 directly on Unicode or noncompact Strings, without encoding. Operations that
 need Rust encode noncompact Latin-1 Strings; non-Latin-1 contents promote to
 Java. Regions over 65,536 characters can use the short plan for an early match
@@ -116,6 +131,8 @@ Identical live Patterns can share an immutable engine; weak values do not keep i
 alive after the owners disappear. Unsupported syntax decisions are cached;
 allocation failures remain retryable for newly compiled Patterns. Concurrent
 cold misses can build duplicates, both charged to the budget.
+Capture-name maps are frozen with the validated preparation and shared when
+an expired weak wrapper is reconstructed, without retaining a native engine.
 
 The regex-automata meta engine uses bounded NFA/one-pass construction and
 bounded lazy DFAs. Concurrent Matchers use separately owned pooled caches.
@@ -160,7 +177,7 @@ selection in Pattern and shared Matcher operations cover hidden callers too.
 | Matcher search, anchored matching, captures, replacement, streams | Native primary matching, subject to the fallback rules above. |
 | Pattern split, delimiter split, streams, predicates, match predicates | Shared Matcher path; existing literal shortcuts remain. |
 | String regex helpers | Shared Pattern selection; repeated live expressions can share engines. |
-| Scanner | Mutable snapshots; general streaming end-state queries select Java. |
+| Scanner | Mutable CharSequences use Java traversal; general streaming end-state queries select Java. |
 | Filesystem/ZIP glob matchers | Anchored native matching if translated syntax is eligible. |
 | Swing, joptsimple, compiler and JDK tool helpers | Shared Pattern/Matcher selection. |
 | PrintPattern | Requests Java compilation before inspecting the graph. |

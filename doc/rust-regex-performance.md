@@ -1,145 +1,210 @@
 # Rust regex performance
 
-Rust regex supplies a bounded native backend for `Pattern` and `Matcher`, with
-HotSpot intrinsic entry points and JNI fallback. Unsupported syntax, flags,
-input or allocation selects Java. Captures, Unicode, regions, resets,
-replacements, continuation and end flags remain public compatibility requirements.
+Rust regex supplies a default-on backend for eligible patterns in supported
+builds, through HotSpot intrinsics with JNI fallback. Build/VM opt-outs remain
+available. Unsupported syntax, flags and inputs select Java. Public captures,
+Unicode, regions, resets, replacement, continuation and end flags remain
+compatibility requirements. Native entry is not always the cheapest route.
 
-Validated preparations provide capture numbering and common traversal plans
-without a second Java source parse. Existing native Regex, Cache and Captures
-pools are shared. Managed plans can answer a query without entering Rust;
-end flags come from an exact plan or Java replay. Reset/reuse coverage checks
-native ownership after each operation without querying replay-triggering flags.
-Separate fresh Patterns retain public end-flag comparisons.
+## Qualified source and controls
 
-## Qualified implementation
+Runtime `5adf632a2082e273d72b812dc6f844fa39b9b9dd` freezes capture-name metadata
+once after preparation validation and shares the immutable map when restoring
+a collected weak wrapper. This removes repeated map construction under the
+existing cache monitor without retaining an engine or Java graph strongly.
+Wrapper/WeakReference allocation and the monitor remain. The literal precheck
+examines the first character, then the remainder backwards, finding common
+trailing quantifiers sooner while preserving the leading-class check. It
+visits the same characters and predicate; eligibility is unchanged.
 
-Runtime source `b2131d804980` avoids backend initialization for known Java-only
-flags, leading syntax and plain/wholly quoted literals. It precomputes the first
-mandatory literal character for anchored rejection and removes redundant enabled
-checks in native-owned dispatch. Interpreter/C1 configurations use a larger
-bounded prepared traversal window. The weak compilation-cache slot is restored
-in place under its existing monitor, without additional strong retention.
-The preceding `af8df701f42` repair preserves opaque `CharSequence` traversal and
-lazy access behavior. Public APIs are unchanged.
+Preceding runtime `b2131d804980` avoids backend initialization for known
+Java-only expressions, uses validated capture/traversal metadata instead of a
+second Java source parse, rejects anchored literal mismatches early, expands
+prepared interpreter/C1 traversal and restores weak-cache slots in place.
+Earlier `af8df701f42` preserves opaque `CharSequence` traversal and lazy access.
+Existing Regex/Cache/Captures pools are retained. Public APIs are unchanged.
 
-Source and class hashes bind the measurements to this runtime. Four controls
-use the same healthy executor: this implementation, preceding PR source
-`166630a8509`, this implementation with Rust regex disabled, and original Java
-`Pattern`/`Matcher`. Full 56-module linked images share the GCC 16.2 native VM,
-library hashes, resource/JLI ordering and compression; all six standard CDS
-archives were regenerated. Runtime patching was not used. Original Java shares
-the integration's native VM binary, so this comparison cannot establish the
-footprint of a pristine JDK without Rust support.
+Five controls share the same healthy executor: prior runtime `af8df701f42`
+(header-only publication `166630a8509`), published runtime `b2131d804980`
+(report-only head `d51b49a263d`), current runtime, current with Rust disabled,
+and original Java `Pattern`/`Matcher`. Below, **Prior**, **Published** and
+**Current** distinguish these versions; **Java** means original Java source.
+Full 56-module images share the GCC 16.2 native VM, library hashes, resource/JLI
+ordering and compression; all six standard CDS archives were regenerated.
+All 75 affected class bytes were verified in release and fastdebug images.
+Final comparisons use no runtime module patch. The original-Java control
+shares the integration's native VM, so it cannot establish the binary footprint
+of a pristine JDK without Rust support.
 
-## Measurement protocol
+The unchanged native source is bound to Rust 1.99.0
+(`b940084d7`, 2026-09-28) and the x86-64-v3/AVX2+ build. Other native targets,
+including AArch64, do not acquire local performance qualification from these
+results. HotSpot, Rust and the native ABI are unchanged in this increment.
 
-The fixed comparison retains 5,196 JMH records in 351 phase-labelled rows,
-2,304 fresh-process observations covering 144 cases, and eight paired latency
-runs. All 3,148 commands completed successfully. Every fresh-process public
-state agreed across controls. The complete evidence contains individual samples,
-source/image hashes, commands, rejected candidates and earlier failed attempts.
-Earlier source versions remain separate datasets.
+## Protocol and evidence
 
-Warm cases cover 8, 16, 17, 32, 33, 40, 41, 64 and 4,096 characters, misses
-and early/late hits, captures and requested end flags. Correctness additionally
-checks Unicode and stateful observations. Four balanced
-control orders use CPU 0, one JMH thread, 128/256 MiB heap, two 100 ms warmups
-and three 100 ms measurements. Medians and minimum/maximum JVM scores describe
-these fixed samples; they are not confidence bounds. No sample was removed or
+The final fixed study completed 580 commands: 2,560 JMH records in 136 logical
+rows and 320 fresh-process observations in 16 case/configuration groups.
+Every fresh-process public state agreed across all five controls. Four
+position-balanced orders use CPU 0, one thread and 128/256 MiB heaps.
+Average-time cases use two 100 ms warmups and three 100 ms measurements;
+lifetime cases use three warmups and six single-shot measurements. Each
+command launches its own VM with explicit VM options, using JMH `-f 0` inside
+that process. All four JVM scores and raw samples are retained; medians and
+observed minimum/maximum are not confidence bounds. No sample was removed or
 repeated until passing.
 
 Interpreter, C1 level 1, C2-only, normal tiered and intrinsic-disabled JNI
-configurations are separate. Instrumented compiler/entry proofs verify the
-interpreter intrinsic, compiled C1/C2 intrinsic and JNI routes, independently of
-timings. Normal tiered settings alone do not establish execution tier, and a
-native-owned Pattern does not prove that every call entered Rust.
+configurations are separate. Twenty-seven additional diagnostics verify
+ownership, compiler/entry routes and allocation outside the timing study,
+including interpreter/C1 JNI controls. Compiler logs establish actual compiled
+methods and intrinsic/native entries; configuration alone does not prove tier
+or that each operation entered Rust. C1 callers and adapters were compiled
+before lifetime measurement. C2 later parameter cases also triggered
+recompilation during warmup; those logs remain available.
 
-## Warm results and losses
+`PreparedRegexCost`, `RustRegexCosts`, `RustRegexLifetime` and `RustRegexState`
+provide benchmark sources. The `cache-review` checkpoint directory retains
+source/image hashes, commands, individual samples, all-case CSVs and diagnostic
+logs. Earlier versions and rejected candidates remain separate datasets.
 
-Times below are medians in ns/op. “Prior” means `166630a8509`; Java means the
-original-source control. All-case CSVs retain every workload and spread.
+## Preparation gains and costs
 
-| Workload | Configuration | Prior | Current | Java |
-| --- | --- | ---: | ---: | ---: |
-| Uncaptured prefix, 17-character miss | Interpreter | 1,617 | 796 | 809 |
-| Same | C1 | 51.9 | 32.2 | 32.3 |
-| Same | Normal tiered | 26.7 | 26.7 | 19.9 |
-| Uncaptured prefix, 41-character miss | Interpreter | 1,983 | 1,952 | 1,484 |
-| Uncaptured prefix, 64-character miss | Interpreter | 2,314 | 2,181 | 1,945 |
-| Uncaptured prefix, 4,096-character miss | Interpreter | — | 1,402 | 101,992 |
-| Same | C1 | — | 155 | 5,224 |
-| Captured prefix, anchored 16-character miss | Normal tiered | 17.6 | 7.6 | 27.6 |
-| Captured prefix, anchored full hit | C1 | 72.1 | 77.5 | 119.2 |
-| Captured email, early hit with end flags | Normal tiered | 35.5 | 35.7 | 69.1 |
-| Unsupported leading lookahead, early hit | Normal tiered | 66.8 | 89.3 | 96.5 |
+Times are median ns/op. Constant `RustRegexCosts.cacheLookup` compiles
+`error[0-9]+` with its prepared owner/handle retained by diagnostic setup;
+its context differs from other public-lookup benchmarks.
 
-The 17-character interpreter ranges are current 789–830 and Java 788–847 ns;
-C1 ranges are similarly close. The unsupported early-hit regression retains
-current 62.0–91.0 versus prior 61.7–76.5 ns. Several full captured anchors cost
-5–10% more than prior in explicit C1/C2/JNI configurations despite miss gains.
-The tiered long-prefix rejection can use managed `String.indexOf`; its speedup
-is an integration result, not evidence that every rejection entered Rust.
+| Configuration | Prior | Published | Current |
+| --- | ---: | ---: | ---: |
+| Normal tiered | 19.0 | 29.7 | 21.5 |
+| C1 | 36.0 | 63.1 | 53.2 |
+| C2-only | 19.9 | 36.2 | 23.7 |
+| Interpreter | 671 | 1,955 | 1,444 |
 
-Direct-cost probes remain separate from public semantic comparisons. In C2,
-raw native entry in the MethodHandle probe context costs 53.5 ns, its wrapper
-58.0, managed traversal 12.1 and public facade 21.0. JNI entry/wrapper cost
-59.5/66.9 ns. These different contexts are not additive cost components or pure
-Rust timings. Preparation lookup also regresses: interpreter 674 to 1,936 ns,
-C1 38.0 to 64.2, and normal tiered 18.4 to 28.3. Native entry is not inherently
-the cheapest route for tiny inputs.
+These recover part of the published lookup loss. Leading-class public lookup
+is Published/Current 25.2/24.0 ns in C2, 51.3/51.4 ns in C1 and
+1,299/1,292 ns in the interpreter. Reverse-only scanning was rejected: prototype
+leading-class C2 cost rose 19.3 to 29.0 ns. The selected first-character revision
+repaired that prototype loss. Prototype patch-module measurements select the
+mechanism; these tables use final full images.
 
-## First use, lifetimes and latency
+Forced-weak restoration compiles `(?<word>error)(?<digits>[0-9]+)` after invocation
+setup clears the current weak slot outside timed compilation. The original
+owner stays reachable and restored wrappers remain lazy. This isolates wrapper
+reconstruction, not real GC collection, first Rust compilation or startup.
+
+| Configuration | Prior | Published | Current |
+| --- | ---: | ---: | ---: |
+| Normal tiered | 201.2 | 149.7 | 70.7 |
+| C1 | 359.7 | 330.6 | 137.3 |
+| C2-only | 136.8 | 139.2 | 92.5 |
+| Interpreter | 6,471 | 6,261 | 4,057 |
+
+Separate C2 GC profiling observes named restoration falling 280 to 168 B/op
+and a one-name general shape 216 to 168 B/op. The no-name prefix control stays
+at 168 B/op. These include common reflective invocation setup and do not
+measure heap retention. Ownership probes verify 32 distinct lazy restores and
+correct captures for named/general shapes on all three native source versions.
+Tests verify immutable metadata before and after restoration. No lock-contention
+benefit is claimed.
+
+Retained alternatives that saved a Java graph/reuse counter on preparations
+or used `DontInline` on `CacheEntry.reuse` had mixed instrumented cold-path
+results; the graph added strong retention. They were not adopted as established
+fixes for current cache or shared-lifetime costs.
+
+## Complete calls, lifetimes and first use
+
+Current complete-call examples retain capture/end-flag observation. Prefix
+`matches` cases reset each call, using `(error)([0-9]+)` on 16 characters;
+miss input is 16 exclamation marks. Times are ns/op.
+
+| Case | Configuration | Prior | Published | Current | Disabled | Java |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Prefix miss, no end-flag queries | Normal tiered | 20.9 | 9.8 | 9.7 | 20.1 | 28.8 |
+| Prefix miss, queries both end flags | Normal tiered | 20.3 | 9.0 | 8.8 | 20.0 | 30.3 |
+| Prefix full hit, no end-flag queries | C1 | 75.2 | 80.8 | 82.3 | 128.8 | 122.8 |
+| Email early hit, with end flags | Normal tiered | 30.8 | 29.9 | 30.4 | 74.0 | 69.0 |
+| Unicode early hit, with end flags | Normal tiered | 36.8 | 31.6 | 31.6 | 85.1 | 94.6 |
+| Unsupported leading lookahead, with end flags | Normal tiered | 216.3 | 265.8 | 171.9 | 67.3 | 72.1 |
+| Alternation, 4,096-character late hit, with end flags | Normal tiered | 300 | 309 | 302 | 82,998 | 77,635 |
+
+The C1 full-hit regression against Prior remains. Unsupported-call spreads are
+large: Current 70.8–366.8 ns versus Published 59.2–408.4 and Java 65.9–76.3.
+These samples do not establish a stable unsupported-case gain. Native-owned
+patterns can answer operations through managed plans; these integration gains
+do not prove every call entered Rust.
+
+Lifetime cases include compile/cache lookup and all searches after caller and
+adapter warmup, using shared owners or GC before each cold iteration. They
+cover 16/32 characters, 1/32 calls, misses and a hit on the last *call*, at the
+beginning of that input. Selected gains and losses are in us/op:
+
+| Case | Configuration | Prior | Published | Current | Java |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Shared, 16 chars, 32 misses | C2-only | 1.66 | 1.71 | 1.95 | 3.36 |
+| Same | Normal tiered | 2.56 | 2.39 | 2.80 | 2.30 |
+| GC-cold, 16 chars, one miss | C2-only | 117.9 | 117.6 | 97.5 | 66.4 |
+| GC-cold, 16 chars, 32 misses | C1 | 185.1 | 202.2 | 221.8 | 158.7 |
+| GC-cold, 16 chars, 32 calls, last call hits | Interpreter | 93.7 | 85.2 | 117.2 | 74.4 |
+| GC-cold, 16 chars, one miss | Normal tiered | 172.2 | 137.7 | 174.9 | 82.3 |
+
+Current C2 shared scores range 1.63–2.13 us; C1 cold 32-miss scores range
+172–362 versus Published 184–374 us. Every case/control remains in the all-case
+CSV. Shared lifetimes retain their engine: weak reconstruction is not their
+demonstrated cause. A roughly 10 ns lookup gain per lifetime cannot explain
+microsecond differences. These observations support the bounded allocation/cache
+changes but do not establish a universal lifecycle win.
 
 Fresh-process probes include compile, matcher creation, search, capture strings
-and end flags. For a 16-character early hit, default-tiered internal first use
-costs current/prior/Java 3.67/4.19/8.53 ms for email and 1.02/1.43/5.34 ms for
-alternation. Literal preparation improves 0.615 to 0.296 ms; quoted preparation
-improves 0.535 to 0.362 ms, near Java's 0.366 ms. Captured-prefix first use
-instead rises 0.453 to 0.864 ms (current range 0.458–2.726); uncaptured-prefix
-rises 0.428 to 0.921 ms (0.419–1.463).
+and end flags. Default-tiered Published/Current/Java internal first-use medians
+are email 3.75/3.94/9.64 ms, alternation 1.07/0.71/6.47 ms, literal
+0.440/0.325/0.340 ms and uncaptured prefix 0.459/0.541/6.06 ms. Current email
+ranges 3.31–4.00 ms; uncaptured prefix 0.488–0.579 ms. Email and uncaptured
+first use retain losses against Published. Email process wall medians are
+Current 36.5, Published 38.0, disabled 42.2 and Java 45.0 ms; Current ranges
+35.5–41.9 ms. Wall time includes launcher, VM and helper work; filesystem caches
+were not flushed. This is not pure VM startup or a general startup advantage.
 
-Email process wall medians are current 35.1, prior 34.2, disabled 40.7 and Java
-39.5 ms. These include launcher, VM and helper work; filesystem caches were not
-flushed. The earlier 40.5 versus disabled 23.4 ms email loss did not reproduce
-with matched full images. This does not establish a general startup advantage.
+## Earlier broad qualification and limits
 
-Lifetime measurements include compilation/cache lookup and every search,
-with shared preparations or GC before each cold iteration. The original C1
-cold 16-character/32-miss case costs current 390 versus prior 185 and Java
-153 us. Each current VM's sixth sample includes a 1.37–1.47 ms call;
-separate diagnostics identify synchronous adapter compilation in that sample.
-These original results remain in the evidence. A separately labelled fixed
-comparison warms both caller and adapter routes and verifies compilation before
-measurement: current 186 us (173–192), prior 177 (176–198), Java 153 (150–161).
-It qualifies warmed execution, not first-compilation latency. Cold C2 one-miss
-lifetimes still cost 89.5 us (87.7–129.1), versus prior 103.0 and Java 57.8.
-Shared C2 32-miss lifetimes also regress: 3.91 us versus prior 1.65 and Java 2.77.
+The preceding `b2131d804980` full-image study retains 5,196 JMH records,
+2,304 fresh-process runs and eight paired GC/leaf-latency runs. Sizes span
+8, 16, 17, 32, 33, 40, 41, 64 and 4,096 characters with misses and early/late
+hits. These qualify that earlier source, not the new source. Uncaptured
+17-character misses improved against Prior from 1,617 to 796 ns in the
+interpreter and 51.9 to 32.2 ns in C1, near Java's 809/32.3 ns. Interpreter
+41/64-character misses still cost 1,952/2,181 ns versus Java 1,484/1,945.
+MethodHandle-context C2 direct native entry/wrapper probes cost 53.5/58.0 ns;
+JNI cost 59.5/66.9 ns. Different probe contexts are not additive cost components
+or pure Rust engine timings.
 
-Paired GC/leaf workloads use four workers, 64K inputs, six pattern shapes and
-the same 64 MiB thread stack for every control to accommodate Java recursion.
-Observed explicit-GC wall maxima are intrinsic 16.0, JNI 12.3, disabled 26.9
-and Java 34.8 ms. Observed steady-call maxima are 18.8/16.1/113.2/134.4 ms.
-Peak process RSS is 67–68 MiB for the two enabled routes, versus 154–174 MiB
-disabled and 152–183 MiB Java in these runs. These are workload observations,
-not latency bounds or a general memory advantage; native AArch64 performance
-remains unmeasured locally.
+That study's original C1 cold lifetime included a 1.37–1.47 ms synchronous
+adapter-compilation spike; its warmed-adapter comparison is separate. The old
+C2 shared 32-miss median of 3.91 us remains, including two 26 us raw tails.
+The new fixed study does not replace or explain away those observations.
+The earlier reported email startup loss of 40.5 versus disabled 23.4 ms did
+not reproduce with matched full images.
 
-## Correctness and qualification limits
+Earlier four-worker, 64K-input, six-shape GC/leaf workloads used the same
+64 MiB thread stacks for all controls to accommodate Java recursion.
+Observed explicit-GC wall maxima were intrinsic/JNI/disabled/Java
+16.0/12.3/26.9/34.8 ms; steady-call maxima were 18.8/16.1/113.2/134.4 ms.
+Peak process RSS was 67–68 MiB enabled, 154–174 MiB disabled and 152–183 MiB
+Java. These are observations on the preceding source, not current latency
+bounds, pure engine costs or a general memory advantage.
 
-Release and fastdebug each pass 112 regex/Scanner/String/startup tests.
-Each suite records 5,989 framework invocations: 5,985 successes and four standard
-conditional skips. Enabled main-test configurations compare 408,435 public
-results/states each; disabled compares 408,433. Eight state-sequence variants
-compare 591,624 states each; eight opaque-CharSequence variants make 2,406
-checks each. New preparation-boundary coverage includes 12,960 comparisons.
-All controller-owned children were reaped. Fourteen Rust tests, Clippy and
-format checks passed on the unchanged native source; their retained receipts
-are bound to the current images rather than claimed as newly rerun.
+Current release and fastdebug each pass 112 regex/Scanner/String/startup tests,
+with 5,989 framework invocations: 5,985 successes and four standard conditional
+skips. Main enabled variants compare 408,435 public results/states each;
+disabled compares 408,433. Eight state-sequence variants compare 591,624 states
+each; eight opaque-CharSequence variants make 2,406 checks each. Reset/reuse
+coverage asserts native ownership after every operation without triggering
+end-flag replay; separate fresh Patterns preserve public flag comparisons.
+Fourteen Rust tests, Clippy and formatting retain passing receipts bound to
+the unchanged native source, rather than being claimed as newly rerun.
 
-These results support the specific integration improvements while retaining
-the cold, short-input, hit and preparation losses above. Latest-head GitHub CI
-could not be inspected because metadata requests returned HTTP 403; no earlier
-green run qualifies this source. The original requested historical Library
-artifact also remained inaccessible. The independent source-bound evidence
+Latest-head GitHub CI remains unknown because metadata access returned HTTP
+403; no earlier green run qualifies this source. The historical Library
+version was also inaccessible. This independent source-bound qualification
 does not rely on that artifact's reported results.
