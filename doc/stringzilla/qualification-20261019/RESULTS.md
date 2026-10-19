@@ -225,14 +225,19 @@ The shipped current Windows and ARM `StringLatin1` instruction listings match
 the measured Linux image, including the final range guard. No duplicate native
 run or additional performance campaign is needed.
 
-Ordinary CI's Prepare and all four release/fastdebug builds on x64 and ARM
-pass. The [build receipt](ci7048-builds-verified.json) binds their checkout,
+Ordinary CI's Prepare and all four Linux release/fastdebug builds on x64 and
+ARM pass. The [build receipt](ci7048-builds-verified.json) binds their checkout,
 bundle/profile checks and complete retained logs. The
-[tier1 receipt](ci7048-test-summary.json) records the current observation and
-collected test counts, retaining skipped descriptions as well as passes.
-Four of the twenty-four groups pass at this observation; the remaining groups
-are pending in the same run. Those existing tier1 jobs are the only unfinished
-qualification gate. The live run link provides subsequent status.
+[tier1 receipt](ci7048-test-summary.json) records six passing Linux groups and
+eighteen queued at its current observation, retaining skipped descriptions.
+
+The [full workflow scope](ci7048-workflow-scope.json) corrects earlier wording
+that described only the Linux phase. Prepare's empty platform selector includes
+all four platforms. The accepted workflow plans eight builds and forty-eight
+tier1 groups: Linux x64/ARM first, then macOS ARM and Windows x64 after both
+Linux test matrices succeed. Those deferred jobs are not counted as created or
+passed. The same existing run remains the unfinished qualification gate;
+no duplicate is dispatched. The live run link provides subsequent status.
 
 ## Decision
 
