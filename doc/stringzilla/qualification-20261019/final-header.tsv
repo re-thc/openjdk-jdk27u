@@ -1,0 +1,14 @@
+id	benchmark	length	coder	position	needleLength	shape	backends	tiers
+latin-vm-end-9	StringZillaSearch.lastIndexOf	4096	LATIN1	END	9	-	serial	c2
+immediate-utf16	StringZillaSearch.lastIndexOf	128	UTF16	END	4	-	serial	c2
+threshold-utf16-127	StringZillaSearch.lastIndexOf	127	UTF16	MISS	4	-	serial	c1
+final-latin-word-prefix-end-32	StringZillaSearch.lastIndexOf	4096	LATIN1	END	32	-	serial	c2
+mixed-miss-64	StringZillaSearch.lastIndexOf	4096	MIXED	MISS	64	-	serial	c2
+equal-latin1-4096	StringZillaSearch.equals	4096	LATIN1	EQUAL	4	-	serial	interpreter
+bulk-latin1	StringZillaSearch.lastIndexOf	4096	LATIN1	MISS	4	-	serial	interpreter
+bulk-utf16	StringZillaSearch.lastIndexOf	4096	UTF16	MISS	4	-	serial	c1
+overlap-min-utf16	StringZillaLongNeedle.lastIndexOf	0	-	-	129	OVERLAP	serial	c2
+final-avx2-reverse-char-utf16-129-end	StringZillaSearch.lastIndexOfChar	129	UTF16	END	4	-	avx2	c2
+final-avx2-reverse-char-utf16-255-miss	StringZillaSearch.lastIndexOfChar	255	UTF16	MISS	4	-	avx2	c2
+final-avx2-reverse-char-utf16-256-miss	StringZillaSearch.lastIndexOfChar	256	UTF16	MISS	4	-	avx2	c2
+final-avx2-reverse-char-utf16-257-miss	StringZillaSearch.lastIndexOfChar	257	UTF16	MISS	4	-	avx2	c2

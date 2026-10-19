@@ -1,0 +1,962 @@
+#
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Configured Mon Oct 19 14:14:57 UTC 2026 to build
+# for target system windows-x86_64
+#   (called x86_64-pc-mingw64 by autoconf)
+# on build system windows-x86_64
+#   (called x86_64-pc-mingw64 by autoconf)
+# using 'configure --disable-desktop --enable-headless-only --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --with-extra-cflags=-arch:AVX2 --with-extra-cxxflags=-arch:AVX2 --with-conf-name=perf --with-debug-level=release --with-boot-jdk=/d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk --with-version-opt=stringzilla-benchmark --with-source-date=1792195200 --with-native-debug-symbols=none --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1'
+
+# The command line given to configure.
+CONFIGURE_COMMAND_LINE := --disable-desktop --enable-headless-only --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --with-extra-cflags=-arch:AVX2 --with-extra-cxxflags=-arch:AVX2 --with-conf-name=perf --with-debug-level=release --with-boot-jdk=/d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk --with-version-opt=stringzilla-benchmark --with-source-date=1792195200 --with-native-debug-symbols=none --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1
+# The current directory when configure was run
+CONFIGURE_START_DIR := /d/a/openjdk-jdk27u/openjdk-jdk27u
+
+# How configure was originally called, if not called directly
+REAL_CONFIGURE_COMMAND_EXEC_SHORT := 
+REAL_CONFIGURE_COMMAND_EXEC_FULL := 
+REAL_CONFIGURE_COMMAND_LINE := 
+
+# A self-referential reference to this file.
+SPEC := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/spec.gmk
+
+# Path to autoconf if overridden by the user, to be used by "make reconfigure"
+AUTOCONF := /usr/bin/autoconf
+
+# SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
+# some definitions here, and are needed if MakeBase.gmk is not included before
+# this file.
+X :=
+SPACE := $(X) $(X)
+COMMA := ,
+
+# What make to use for main processing, after bootstrapping top-level Makefile.
+MAKE := /usr/bin/make
+
+# Make sure all shell commands are executed with a proper locale
+export LC_ALL := C.UTF-8
+
+# Make sure we override any local CLASSPATH variable
+export CLASSPATH := 
+
+# The default make arguments
+MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
+    MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" $(MAKE_LOG_VARS)
+
+OUTPUT_SYNC_SUPPORTED := true
+OUTPUT_SYNC := none
+
+# Override the shell with bash
+BASH := /usr/bin/bash
+BASH_ARGS :=  -o pipefail -e
+SHELL := $(BASH) $(BASH_ARGS)
+
+# The "human readable" name of this configuration
+CONF_NAME := perf
+
+# The built jdk will run in this target system.
+OPENJDK_TARGET_OS := windows
+OPENJDK_TARGET_OS_TYPE := windows
+OPENJDK_TARGET_OS_ENV := windows.msys2
+OPENJDK_TARGET_OS_UPPERCASE := WINDOWS
+
+OPENJDK_TARGET_CPU := x86_64
+OPENJDK_TARGET_CPU_ARCH := x86
+OPENJDK_TARGET_CPU_BITS := 64
+OPENJDK_TARGET_CPU_ENDIAN := little
+
+OPENJDK_TARGET_LIBC := default
+
+COMPILE_TYPE := native
+
+# Legacy support
+OPENJDK_TARGET_CPU_LEGACY := amd64
+OPENJDK_TARGET_CPU_LEGACY_LIB := amd64
+OPENJDK_TARGET_CPU_OSARCH := amd64
+OPENJDK_TARGET_OS_INCLUDE_SUBDIR := win32
+
+HOTSPOT_TARGET_OS := windows
+HOTSPOT_TARGET_OS_TYPE := windows
+
+HOTSPOT_TARGET_CPU := x86_64
+HOTSPOT_TARGET_CPU_ARCH := x86
+HOTSPOT_TARGET_CPU_DEFINE := AMD64
+
+HOTSPOT_TARGET_LIBC := default
+
+OPENJDK_TARGET_BUNDLE_PLATFORM := windows-x64
+JDK_ARCH_ABI_PROP_NAME := 
+
+# We are building on this build system.
+# When not cross-compiling, it is the same as the target.
+OPENJDK_BUILD_OS := windows
+OPENJDK_BUILD_OS_TYPE := windows
+OPENJDK_BUILD_OS_ENV := windows.msys2
+
+OPENJDK_BUILD_CPU := x86_64
+OPENJDK_BUILD_CPU_ARCH := x86
+OPENJDK_BUILD_CPU_BITS := 64
+OPENJDK_BUILD_CPU_ENDIAN := little
+
+OPENJDK_BUILD_LIBC := default
+
+OPENJDK_BUILD_OS_INCLUDE_SUBDIR := win32
+
+# Target platform value in ModuleTarget class file attribute.
+OPENJDK_MODULE_TARGET_PLATFORM := windows-amd64
+
+# OS_* properties in release file
+RELEASE_FILE_OS_NAME := Windows
+RELEASE_FILE_OS_ARCH := x86_64
+RELEASE_FILE_LIBC := default
+
+SOURCE_DATE := 1792195200
+ISO_8601_FORMAT_STRING := %Y-%m-%dT%H:%M:%SZ
+
+ifneq ($(SOURCE_DATE), updated)
+  # For "updated" source date value, these are set in InitSupport.gmk
+  export SOURCE_DATE_EPOCH := $(SOURCE_DATE)
+  SOURCE_DATE_ISO_8601 := 2026-10-17T00:00:00Z
+endif
+
+LIBM := 
+LIBDL := 
+LIBPTHREAD := 
+
+WINENV_ROOT := C:\msys64
+WINENV_PREFIX := 
+
+ifneq ($(findstring windows.wsl, windows.msys2), )
+  # Tell WSL to convert PATH between linux and windows
+  export WSLENV := PATH/l
+else ifeq (windows.msys2, windows.msys2)
+  # Prohibit msys2 from attempting any path wrangling
+  export MSYS2_ARG_CONV_EXCL := "*"
+endif
+
+# Save the original path before replacing it with the Visual Studio tools
+ORIGINAL_PATH := /mingw64/bin:/usr/local/bin:/usr/bin:/bin:/c/Windows/System32:/c/Windows:/c/Windows/System32/Wbem:/c/Windows/System32/WindowsPowerShell/v1.0/:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+
+ifeq (microsoft, microsoft)
+  # The Visual Studio toolchain needs the PATH to be adjusted to include
+  # Visual Studio tools.
+  export PATH := :/c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64:/c/progra~1/micros~2/18/enterprise/common7/ide/vc/vcpackages:/c/progra~1/micros~2/18/enterprise/common7/ide/commonextensions/microsoft/testwindow:/c/progra~1/micros~2/18/enterp~1/common7/ide/common~1/micros~1/teamfo~1/teamex~1:/c/progra~1/micros~2/18/enterprise/msbuild/current/bin/roslyn:/c/progra~2/micros~3/windows/v10.0a/bin/netfx4~1.1to/x64/:/c/progra~2/htmlhe~1:/c/progra~1/micros~2/18/enterprise/common7/ide/commonextensions/microsoft/fsharp/tools:/c/progra~1/micros~2/18/enterp~1/teamto~1/diagno~1/collec~1:/c/progra~1/micros~2/18/enterprise/common7/ide/extensions/microsoft/codecoverage.console:/c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64:/c/progra~2/wi3cf2~1/10/bin/x64:/c/progra~1/micros~2/18/enterprise/msbuild/current/bin/amd64:/c/windows/microsoft.net/framework64/v4.0.30319:/c/progra~1/micros~2/18/enterprise/common7/ide/:/c/progra~1/micros~2/18/enterprise/common7/tools/:/c/progra~1/micros~2/18/enterprise/vc/tools/llvm/x64/bin:/c/progra~1/micros~2/18/enterprise/common7/ide/commonextensions/microsoft/cmake/cmake/bin:/c/progra~1/micros~2/18/enterprise/common7/ide/commonextensions/microsoft/cmake/ninja:/c/progra~1/micros~2/18/enterprise/common7/ide/vc/linux/bin/connectionmanagerexe:/c/progra~1/micros~2/18/enterprise/vc/vcpkg:$(PATH)
+endif
+
+SYSROOT_CFLAGS :=  -I/c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/include -I/c/progra~1/micros~2/18/enterprise/vc/auxiliary/vs/include -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/ucrt -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/um -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/shared -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/winrt -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/cppwinrt -I/c/progra~2/wi3cf2~1/netfxsdk/48d70e~1.1/include/um
+SYSROOT_LDFLAGS :=  -libpath:/c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/lib/x64 -libpath:/c/progra~2/wi3cf2~1/netfxsdk/48d70e~1.1/lib/um/x64 -libpath:/c/progra~2/wi3cf2~1/10/lib/100261~1.0/ucrt/x64 -libpath:/c/progra~2/wi3cf2~1/10/lib/100261~1.0/um/x64
+
+# The top-level directory of the source repository
+TOPDIR := /d/a/openjdk-jdk27u/openjdk-jdk27u
+# Usually the top level directory, but could be something else if a custom
+# root is defined.
+WORKSPACE_ROOT := /d/a/openjdk-jdk27u/openjdk-jdk27u
+IMPORT_MODULES_CLASSES := 
+IMPORT_MODULES_CMDS := 
+IMPORT_MODULES_LIBS := 
+IMPORT_MODULES_CONF := 
+IMPORT_MODULES_LEGAL := 
+IMPORT_MODULES_MAN := 
+IMPORT_MODULES_SRC := 
+IMPORT_MODULES_MAKE := 
+
+COPYRIGHT_YEAR := 2026
+HOTSPOT_BUILD_TIME := 2026-10-17T00:00:00Z
+
+# Platform naming variables
+LAUNCHER_NAME := openjdk
+PRODUCT_NAME := OpenJDK
+PRODUCT_SUFFIX := Runtime Environment
+JDK_RC_PLATFORM_NAME := Platform
+JDK_RC_NAME := OpenJDK Platform
+JDK_RC_COMPANY_NAME := N/A
+COMPANY_NAME := N/A
+HOTSPOT_VM_DISTRO := OpenJDK
+MACOSX_BUNDLE_NAME_BASE := OpenJDK
+MACOSX_BUNDLE_ID_BASE := net.java.openjdk-internal
+MACOSX_BUNDLE_BUILD_VERSION := 0
+USERNAME := runneradmin
+VENDOR_URL := https://openjdk.org/
+VENDOR_URL_BUG := https://bugreport.java.com/bugreport/
+VENDOR_URL_VM_BUG := https://bugreport.java.com/bugreport/crash.jsp
+
+# New (JEP-223) version information
+
+## Building blocks of the version string
+# First three version numbers, with well-specified meanings (numerical)
+VERSION_FEATURE := 27
+VERSION_INTERIM := 0
+VERSION_UPDATE := 2
+VERSION_PATCH := 0
+VERSION_EXTRA1 := 0
+VERSION_EXTRA2 := 0
+VERSION_EXTRA3 := 0
+# The pre-release identifier (string)
+VERSION_PRE := internal
+# The build number (numerical)
+VERSION_BUILD := 
+# Optional build information (string)
+VERSION_OPT := stringzilla-benchmark
+
+## Composite variables
+# The version number as a dot separated sequence of numbers, e.g. 9.0.1
+VERSION_NUMBER := 27.0.2
+# VERSION_NUMBER but always with exactly 4 positions, with 0 for empty positions.
+VERSION_NUMBER_FOUR_POSITIONS := 27.0.2.0
+# The complete version string, with additional build information
+VERSION_STRING := 27.0.2-internal-stringzilla-benchmark
+# The short version string, without trailing zeroes and just PRE, if present.
+VERSION_SHORT := 27.0.2-internal
+# The Java specification version. It usually equals the feature version number.
+VERSION_SPECIFICATION := 27
+# A GA version is defined by the PRE string being empty. Rather than testing for
+# that, this variable defines it with true/false.
+VERSION_IS_GA := false
+
+# Version date
+VERSION_DATE := 2027-01-19
+
+# Vendor version string
+VENDOR_VERSION_STRING := 
+
+# Class-file version
+VERSION_CLASSFILE_MAJOR := 71
+VERSION_CLASSFILE_MINOR := 0
+
+# Version for API docs "new-since" feature
+VERSION_DOCS_API_SINCE := 11
+
+JDK_SOURCE_TARGET_VERSION := 27
+
+# Convenience CFLAGS settings for passing version information into native programs.
+VERSION_CFLAGS = \
+    -DVERSION_FEATURE=$(VERSION_FEATURE) \
+    -DVERSION_INTERIM=$(VERSION_INTERIM) \
+    -DVERSION_UPDATE=$(VERSION_UPDATE) \
+    -DVERSION_PATCH=$(VERSION_PATCH) \
+    -DVERSION_EXTRA1=$(VERSION_EXTRA1) \
+    -DVERSION_EXTRA2=$(VERSION_EXTRA2) \
+    -DVERSION_EXTRA3=$(VERSION_EXTRA3) \
+    -DVERSION_PRE='"$(VERSION_PRE)"' \
+    -DVERSION_BUILD=$(VERSION_BUILD) \
+    -DVERSION_OPT='"$(VERSION_OPT)"' \
+    -DVERSION_NUMBER='"$(VERSION_NUMBER)"' \
+    -DVERSION_STRING='"$(VERSION_STRING)"' \
+    -DVERSION_SHORT='"$(VERSION_SHORT)"' \
+    -DVERSION_SPECIFICATION='"$(VERSION_SPECIFICATION)"' \
+    -DVERSION_DATE='"$(VERSION_DATE)"' \
+    -DVENDOR_VERSION_STRING='"$(VENDOR_VERSION_STRING)"' \
+    -DVERSION_CLASSFILE_MAJOR=$(VERSION_CLASSFILE_MAJOR) \
+    -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
+    #
+
+ifneq ($(COMPANY_NAME), )
+  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
+  # but can be customized with the '--with-vendor-name' configure option.
+  # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
+  # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
+  # and "java.vm.vendor" properties is hard-coded into the source code (i.e. in
+  # VersionProps.java.template in the jdk for "java.vendor" and
+  # vm_version.cpp in the VM for "java.vm.vendor")
+  ifneq ($(COMPANY_NAME), N/A)
+    VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"'
+  endif
+endif
+
+# Only export VENDOR_URL, VENDOR_URL_BUG and VENDOR_VM_URL_BUG to the build if
+# they are not empty. Otherwise, default values which are defined in the sources
+# will be used.
+ifneq ($(VENDOR_URL), )
+  VERSION_CFLAGS += -DVENDOR_URL='"$(VENDOR_URL)"'
+endif
+ifneq ($(VENDOR_URL_BUG), )
+  VERSION_CFLAGS += -DVENDOR_URL_BUG='"$(VENDOR_URL_BUG)"'
+endif
+ifneq ($(VENDOR_URL_VM_BUG), )
+  VERSION_CFLAGS += -DVENDOR_URL_VM_BUG='"$(VENDOR_URL_VM_BUG)"'
+endif
+
+# Different naming strings generated from the above information.
+RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)
+
+# How to compile the code: release, fastdebug or slowdebug
+DEBUG_LEVEL := release
+HOTSPOT_DEBUG_LEVEL := product
+
+# Which JVM variants to build (space-separated list)
+JVM_VARIANTS := server
+JVM_VARIANT_MAIN := server
+
+# Lists of features per variant. Only relevant for the variants listed in
+# JVM_VARIANTS.
+JVM_FEATURES_server := cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc
+JVM_FEATURES_client := 
+JVM_FEATURES_core := 
+JVM_FEATURES_minimal := 
+JVM_FEATURES_zero := 
+JVM_FEATURES_custom := 
+
+# Used for make-time verifications
+VALID_JVM_FEATURES := cds compiler1 compiler2 dtrace epsilongc g1gc jfr jni-check jvmti link-time-opt management minimal opt-size parallelgc serialgc services shenandoahgc vm-structs zero zgc
+VALID_JVM_VARIANTS := server client minimal core zero custom
+
+# Allow overriding the default hotspot library path
+HOTSPOT_OVERRIDE_LIBPATH := 
+
+# Control use of precompiled header in hotspot libjvm build
+USE_PRECOMPILED_HEADER := true
+
+# Only build headless support or not
+ENABLE_HEADLESS_ONLY := true
+ENABLE_DESKTOP := false
+
+ENABLE_LINKTIME_GC := false
+
+# Ship debug symbols (e.g. pdbs on Windows)
+SHIP_DEBUG_SYMBOLS := 
+
+ENABLE_FULL_DOCS := false
+
+# JDK_OUTPUTDIR specifies where a working jvm is built.
+# You can run $(JDK_OUTPUTDIR)/bin/java
+
+OUTPUTDIR := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf
+# Colon left out to be able to override IMAGES_OUTPUTDIR for bootcycle-images
+SUPPORT_OUTPUTDIR = $(OUTPUTDIR)/support
+BUILDTOOLS_OUTPUTDIR = $(OUTPUTDIR)/buildtools
+
+HOTSPOT_OUTPUTDIR = $(OUTPUTDIR)/hotspot
+JDK_OUTPUTDIR = $(OUTPUTDIR)/jdk
+IMAGES_OUTPUTDIR = $(OUTPUTDIR)/images
+BUNDLES_OUTPUTDIR = $(OUTPUTDIR)/bundles
+TESTMAKE_OUTPUTDIR = $(OUTPUTDIR)/test-make
+MAKESUPPORT_OUTPUTDIR = $(OUTPUTDIR)/make-support
+
+JAVA_TMP_DIR = $(SUPPORT_OUTPUTDIR)/javatmp
+
+# This does not get overridden in a bootcycle build
+CONFIGURESUPPORT_OUTPUTDIR := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/configure-support
+BUILDJDK_OUTPUTDIR = $(OUTPUTDIR)/buildjdk
+
+BUILD_FAILURE_HANDLER := false
+
+BUILD_JTREG_TEST_THREAD_FACTORY := false
+
+ENABLE_GENERATE_CLASSLIST := true
+
+EXCLUDE_TRANSLATIONS := 
+
+BUILD_CDS_ARCHIVE := true
+BUILD_CDS_ARCHIVE_NOCOH := true
+
+ENABLE_COMPATIBLE_CDS_ALIGNMENT := false
+
+ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := false
+
+HSDIS_BACKEND := none
+ENABLE_HSDIS_BUNDLING := false
+HSDIS_CFLAGS := 
+HSDIS_LDFLAGS := 
+HSDIS_LIBS := 
+CAPSTONE_ARCH_AARCH64_NAME := 
+DEFAULT_PRINT_ASSEMBLY_OPTIONS := 
+
+# The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
+# it in sync.
+BOOT_JDK := /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk
+
+EXTERNAL_BUILDJDK_PATH := 
+
+ifneq ($(EXTERNAL_BUILDJDK_PATH), )
+  EXTERNAL_BUILDJDK := true
+  CREATE_BUILDJDK := false
+  BUILD_JDK := $(EXTERNAL_BUILDJDK_PATH)
+else
+  EXTERNAL_BUILDJDK := false
+  ifeq ($(COMPILE_TYPE), cross)
+    CREATE_BUILDJDK := true
+    BUILD_JDK := $(BUILDJDK_OUTPUTDIR)/jdk
+  else
+    CREATE_BUILDJDK := false
+    BUILD_JDK := $(JDK_OUTPUTDIR)
+  endif
+endif
+
+# Whether the boot jdk jar supports --date=TIMESTAMP
+BOOT_JDK_JAR_SUPPORTS_DATE := true
+
+# The oldest supported boot jdk version
+OLDEST_BOOT_JDK_VERSION := 26
+
+# Information about the build system
+NUM_CORES := 4
+MEMORY_SIZE := 16378
+ENABLE_JAVAC_SERVER := true
+# Store javac server synchronization files here, and
+# the javac server log files.
+JAVAC_SERVER_DIR = $(MAKESUPPORT_OUTPUTDIR)/javacservers
+
+# Number of parallel jobs to use for compilation
+JOBS ?= 4
+TEST_JOBS ?= 0
+
+# Default make target
+DEFAULT_MAKE_TARGET := exploded-image
+DEFAULT_LOG := 
+
+# Fallback linker
+ENABLE_FALLBACK_LINKER := false
+
+FREETYPE_TO_USE := disabled
+FREETYPE_LIBS := 
+FREETYPE_CFLAGS := 
+FONTCONFIG_CFLAGS := 
+CUPS_CFLAGS := 
+ALSA_LIBS := 
+ALSA_CFLAGS := 
+LIBFFI_LIBS := 
+LIBFFI_CFLAGS := 
+ENABLE_LIBFFI_BUNDLING := false
+LIBFFI_LIB_FILE := 
+ICONV_CFLAGS := 
+ICONV_LDFLAGS := 
+ICONV_LIBS := 
+FILE_MACRO_CFLAGS := -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\Tools\MSVC\14.44.35207\include"=vsi -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\auxiliary\VS\include"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8.1\Include\um"=vsi
+REPRODUCIBLE_CFLAGS := -experimental:deterministic
+
+JMH_CORE_JAR := 
+JMH_GENERATOR_JAR := 
+JMH_JOPT_SIMPLE_JAR := 
+JMH_COMMONS_MATH_JAR := 
+JMH_VERSION := 
+
+GTEST_FRAMEWORK_SRC := 
+
+# Source file for cacerts
+CACERTS_FILE := 
+# Source folder for user provided cacerts PEM files
+CACERTS_SRC := 
+
+# Enable unlimited crypto policy
+UNLIMITED_CRYPTO := true
+
+GCOV_ENABLED := false
+JCOV_ENABLED := false
+JCOV_HOME := 
+JCOV_INPUT_JDK := 
+JCOV_FILTERS := 
+JCOV_MODULES := 
+
+# AddressSanitizer
+ASAN_ENABLED := false
+
+# LeakSanitizer
+LSAN_ENABLED := false
+
+# UndefinedBehaviorSanitizer
+UBSAN_ENABLED := false
+UBSAN_CFLAGS := 
+UBSAN_LDFLAGS := 
+
+# Necessary additional compiler flags to compile X11
+X_CFLAGS := 
+X_LIBS := 
+
+# The lowest required version of macosx
+MACOSX_VERSION_MIN := 
+# The highest allowed version of macosx
+MACOSX_VERSION_MAX := 
+
+# The macosx code signing configuration
+MACOSX_CODESIGN_MODE := disabled
+MACOSX_CODESIGN_IDENTITY := 
+
+# The code signing hook configuration
+SIGNING_HOOK := 
+
+# Toolchain type: gcc, clang, microsoft...
+TOOLCHAIN_TYPE := microsoft
+TOOLCHAIN_VERSION := 2026
+CC_VERSION_NUMBER := 19.44.35229
+CXX_VERSION_NUMBER := 19.44.35229
+
+# Legacy support
+HOTSPOT_TOOLCHAIN_TYPE := visCPP
+
+AS_NON_ASM_EXTENSION_OPTION := -Ta
+
+# Flags used for overriding the default opt setting for a C/C++ source file.
+C_O_FLAG_HIGHEST_JVM := -O2 -Oy-
+C_O_FLAG_HIGHEST := -O2
+C_O_FLAG_HI := -O1
+C_O_FLAG_NORM := -O1
+C_O_FLAG_NONE := -Od
+C_O_FLAG_SIZE := -O1
+C_O_FLAG_LTO := -GL
+CXX_O_FLAG_HIGHEST_JVM := -O2 -Oy-
+CXX_O_FLAG_HIGHEST := -O2
+CXX_O_FLAG_HI := -O1
+CXX_O_FLAG_NORM := -O1
+CXX_O_FLAG_NONE := -Od
+CXX_O_FLAG_SIZE := -O1
+CXX_O_FLAG_LTO  := -GL
+
+GENDEPS_FLAGS := 
+
+DISABLE_WARNING_PREFIX := -wd
+CFLAGS_WARNINGS_ARE_ERRORS := -WX
+DISABLED_WARNINGS := 4800 5105
+DISABLED_WARNINGS_C := 
+DISABLED_WARNINGS_CXX := 
+CFLAGS_CONVERSION_WARNINGS := 
+
+# A global flag (true or false) determining if native warnings are considered errors.
+WARNINGS_AS_ERRORS := true
+JAVA_WARNINGS_AS_ERRORS := true
+
+CFLAGS_CCACHE := 
+ADLC_LANGSTD_CXXFLAGS := -std:c++17
+ADLC_LDFLAGS := 
+
+# Tools that potentially need to be cross compilation aware.
+CC :=   /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+
+# CFLAGS used to compile the jdk native libraries (C-code)
+CFLAGS_JDKLIB := -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602         -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DIAL -nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t- -utf-8 -validate-charset        -DLIBC=default  -DWINDOWS -DNDEBUG               -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\Tools\MSVC\14.44.35207\include"=vsi -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\auxiliary\VS\include"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8.1\Include\um"=vsi -experimental:deterministic  -std:c11         -W3   -arch:AVX2 -D_LITTLE_ENDIAN -DARCH='"amd64"'       -Damd64 -D_LP64=1 -D_AMD64_ -Damd64           
+CXXFLAGS_JDKLIB := -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602         -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DIAL -nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t- -utf-8 -validate-charset        -DLIBC=default  -DWINDOWS -DNDEBUG               -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\Tools\MSVC\14.44.35207\include"=vsi -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\auxiliary\VS\include"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8.1\Include\um"=vsi -experimental:deterministic          -std:c++17              -W3    -arch:AVX2 -D_LITTLE_ENDIAN -DARCH='"amd64"'       -Damd64 -D_LP64=1 -D_AMD64_ -Damd64           
+
+# CFLAGS used to compile the jdk native launchers (C-code)
+CFLAGS_JDKEXE := -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602         -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DIAL -nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t- -utf-8 -validate-charset        -DLIBC=default  -DWINDOWS -DNDEBUG               -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\Tools\MSVC\14.44.35207\include"=vsi -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\auxiliary\VS\include"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8.1\Include\um"=vsi -experimental:deterministic  -std:c11         -W3   -arch:AVX2 -D_LITTLE_ENDIAN -DARCH='"amd64"'       -Damd64 -D_LP64=1 -D_AMD64_ -Damd64    
+CXXFLAGS_JDKEXE := -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602         -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DWIN32 -DIAL -nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -Zc:wchar_t- -utf-8 -validate-charset        -DLIBC=default  -DWINDOWS -DNDEBUG               -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\Tools\MSVC\14.44.35207\include"=vsi -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\auxiliary\VS\include"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8.1\Include\um"=vsi -experimental:deterministic          -std:c++17              -W3    -arch:AVX2 -D_LITTLE_ENDIAN -DARCH='"amd64"'       -Damd64 -D_LP64=1 -D_AMD64_ -Damd64    
+
+FDLIBM_CFLAGS := 
+JVM_CFLAGS := -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602         -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DNOMINMAX       -nologo -MD -Zc:preprocessor -Zc:inline -Zc:throwingNew -permissive- -MP -utf-8 -validate-charset -std:c++17         -DLIBC=default  -D_WINDOWS -DWIN32 -D_JNI_IMPLEMENTATION_        -W3     -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\Tools\MSVC\14.44.35207\include"=vsi -pathmap:"C:\Program Files\Microsoft Visual Studio\18\enterprise\VC\auxiliary\VS\include"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt"=vsi -pathmap:"C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8.1\Include\um"=vsi       -experimental:deterministic  -DVM_LITTLE_ENDIAN -D_LP64=1      -arch:AVX2
+JVM_LDFLAGS := -opt:ref -pdbaltpath:%_PDB% -opt:icf,8 -subsystem:windows                           -experimental:deterministic -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s
+JVM_ASFLAGS :=   -arch:AVX2
+JVM_LIBS :=  kernel32.lib user32.lib gdi32.lib winspool.lib         comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib         ws2_32.lib winmm.lib version.lib psapi.lib 
+
+BASIC_ASFLAGS := -nologo -c
+
+MACHINE_FLAG := 
+
+# These flags might contain variables set by a custom extension that is included later.
+EXTRA_CFLAGS :=  -arch:AVX2
+EXTRA_CXXFLAGS :=  -arch:AVX2
+EXTRA_LDFLAGS :=  
+EXTRA_ASFLAGS := 
+
+CXX :=   /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+
+CPP := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+
+# The linker can be gcc or ld on unix systems, or link.exe on windows systems.
+LD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+
+SYSROOT := 
+
+# LDFLAGS used to link the jdk native libraries (C-code)
+LDFLAGS_JDKLIB := -opt:ref -pdbaltpath:%_PDB% -incremental:no                 -dll -experimental:deterministic -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s
+
+# LDFLAGS used to link the jdk native launchers (C-code)
+LDFLAGS_JDKEXE := -opt:ref -pdbaltpath:%_PDB% -incremental:no                  -stack:1048576 -experimental:deterministic -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s
+
+# LDFLAGS used to link the static jdk library
+LDFLAGS_STATIC_JDK := -opt:ref -pdbaltpath:%_PDB%          -experimental:deterministic -pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s
+
+# LDFLAGS specific to C++ linking.
+LDFLAGS_CXX_JDK := 
+
+# LDFLAGS specific to partial linking.
+LDFLAGS_CXX_PARTIAL_LINKING := 
+
+# LDFLAGS specific to link time optimization
+LDFLAGS_LTO := -LTCG:INCREMENTAL
+
+# Sometimes a different linker is needed for c++ libs
+LDCXX := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+# The flags for linking libstdc++ linker.
+LIBCXX := 
+
+# BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
+# build platform.
+BUILD_CC :=  /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+BUILD_CXX :=  /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+BUILD_LD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+BUILD_LDCXX := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+BUILD_AS := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/ml64.exe
+BUILD_AR := 
+BUILD_NM := 
+BUILD_OBJCOPY := 
+BUILD_STRIP := 
+BUILD_SYSROOT_CFLAGS :=  -I/c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/include -I/c/progra~1/micros~2/18/enterprise/vc/auxiliary/vs/include -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/ucrt -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/um -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/shared -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/winrt -I/c/progra~2/wi3cf2~1/10/include/100261~1.0/cppwinrt -I/c/progra~2/wi3cf2~1/netfxsdk/48d70e~1.1/include/um
+BUILD_SYSROOT_LDFLAGS :=  -libpath:/c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/lib/x64 -libpath:/c/progra~2/wi3cf2~1/netfxsdk/48d70e~1.1/lib/um/x64 -libpath:/c/progra~2/wi3cf2~1/10/lib/100261~1.0/ucrt/x64 -libpath:/c/progra~2/wi3cf2~1/10/lib/100261~1.0/um/x64
+
+AS := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/ml64.exe
+
+AR := 
+ARFLAGS := 
+LIB := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/lib.exe
+LIBFLAGS := -nodefaultlib:msvcrt
+NM := 
+NMFLAGS := 
+STRIP := 
+OBJDUMP := 
+CXXFILT := 
+
+LIPO := 
+INSTALL_NAME_TOOL := 
+METAL := 
+METALLIB := 
+
+#
+# Options for generating debug symbols
+COMPILE_WITH_DEBUG_SYMBOLS := false
+COPY_DEBUG_SYMBOLS := false
+ZIP_EXTERNAL_DEBUG_SYMBOLS := false
+OBJCOPY_COMPRESS_FLAGS := 
+
+CFLAGS_DEBUG_SYMBOLS := -Z7
+ASFLAGS_DEBUG_SYMBOLS := 
+
+#
+# Compress (or not) jars
+COMPRESS_JARS := false
+
+SHARED_LIBRARY_FLAGS := -dll
+
+LIBRARY_PREFIX := 
+SHARED_LIBRARY_SUFFIX := .dll
+STATIC_LIBRARY_SUFFIX := .lib
+EXECUTABLE_SUFFIX := .exe
+OBJ_SUFFIX := .obj
+
+STRIPFLAGS := 
+
+JAVA_FLAGS_TMPDIR := -Djava.io.tmpdir=$(JAVA_TMP_DIR)
+JAVA_FLAGS :=  -Duser.language=en -Duser.country=US -Xlog:all=off:stdout -Xlog:all=warning:stderr  $(JAVA_FLAGS_TMPDIR)
+JAVA_FLAGS_BIG :=  -Xms64M -Xmx2048M
+JAVA_FLAGS_SMALL :=  -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+BUILD_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+JAVA_TOOL_FLAGS_SMALL :=  -J-Xms32M -J-Xmx512M -J-XX:TieredStopAtLevel=1
+
+# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk
+# for bootcycle-images build. Make sure to keep them in sync. Do not use the *_CMD
+# versions of the variables directly.
+JAVA_CMD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk/bin/java.exe
+JAVAC_CMD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk/bin/javac.exe
+JAVADOC_CMD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk/bin/javadoc.exe
+JAR_CMD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk/bin/jar.exe
+JLINK_CMD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(BUILD_JDK)/bin/jlink
+JMOD_CMD := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(BUILD_JDK)/bin/jmod
+# These variables are meant to be used. They are defined with = instead of := to make
+# it possible to override only the *_CMD variables.
+JAVA = $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+JAVA_SMALL = $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+JAVAC = $(JAVAC_CMD)
+JAVADOC = $(JAVADOC_CMD)
+JAR = $(JAR_CMD)
+JLINK = $(JLINK_CMD)
+JMOD = $(JMOD_CMD)
+
+JTREG_JDK := /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk
+JTREG_JAVA = /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(JTREG_JDK)/bin/java $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+
+BUILD_JAVA_FLAGS := -Xms64M -Xmx2048M
+BUILD_JAVA = /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
+BUILD_JAVA_SMALL = /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS_SMALL)
+BUILD_JAVAC = /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(BUILD_JDK)/bin/javac
+BUILD_JAR = /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec $(BUILD_JDK)/bin/jar
+
+DOCS_REFERENCE_JAVADOC := 
+
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
+
+# Interim langtools modules and arguments
+INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.internal.md jdk.javadoc
+INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
+INTERIM_LANGTOOLS_ADD_EXPORTS := \
+    --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
+    --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=java.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim \
+    #
+INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
+    $(INTERIM_LANGTOOLS_MODULES))))
+INTERIM_LANGTOOLS_ARGS := \
+    --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
+    --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
+    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
+    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
+    $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
+    #
+JAVAC_MAIN_CLASS := -m jdk.compiler.interim/com.sun.tools.javac.Main
+JAVADOC_MAIN_CLASS := -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
+
+# You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
+# Use = assignment to be able to override in bootcycle-spec.gmk
+NEW_JAVAC = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
+NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
+
+JMOD_COMPRESS := zip-1
+JLINK_KEEP_PACKAGED_MODULES := true
+JLINK_PRODUCE_LINKABLE_RUNTIME := false
+JLINK_USER_EXTRA_FLAGS := 
+
+RCFLAGS := -nologo -DNDEBUG
+
+# Tools adhering to a minimal and common standard of posix compliance.
+AWK := /usr/bin/gawk
+BASENAME := /usr/bin/basename
+CAT := /usr/bin/cat
+CCACHE := 
+# CD is going away, but remains to cater for legacy makefiles.
+CD := cd
+CHMOD := /usr/bin/chmod
+CMAKE := 
+CODESIGN := 
+CP := /usr/bin/cp
+CUT := /usr/bin/cut
+DATE := /usr/bin/date
+IS_GNU_DATE := yes
+DIFF := /usr/bin/diff
+DIRNAME := /usr/bin/dirname
+DSYMUTIL := 
+FIND := /usr/bin/find
+FIND_DELETE := -delete
+FLOCK := /usr/bin/flock
+ECHO := echo
+EGREP := /usr/bin/grep -E
+FGREP := /usr/bin/grep -F
+GREP := /usr/bin/grep
+GZIP := /usr/bin/gzip
+HEAD := /usr/bin/head
+LS := /usr/bin/ls
+LN := /usr/bin/ln
+MIG := 
+MKDIR := /usr/bin/mkdir
+MV := /usr/bin/mv
+NICE := /usr/bin/nice
+PANDOC := 
+TIDY := 
+PATCH := 
+PRINTF := printf
+READLINK := /usr/bin/readlink
+RM := /usr/bin/rm -f
+RMDIR := /usr/bin/rmdir
+SED := /usr/bin/sed
+SH := /usr/bin/sh
+SORT := /usr/bin/sort
+TAR := /usr/bin/tar
+TAIL := /usr/bin/tail
+TEE := /usr/bin/tee
+TIME := time
+IS_GNU_TIME := yes
+TR := /usr/bin/tr
+TOUCH := /usr/bin/touch
+WC := /usr/bin/wc
+XARGS := /usr/bin/xargs
+ZIPEXE := /usr/bin/zip
+UNZIP := /usr/bin/unzip
+MT := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/mt.exe
+RC := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/rc.exe
+DUMPBIN := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/dumpbin.exe
+PATHTOOL := /usr/bin/cygpath
+WSLPATH := @WSLPATH@
+LDD := /usr/bin/ldd
+OTOOL := 
+READELF := 
+EXPR := /usr/bin/expr
+FILE := /usr/bin/file
+DOT := 
+GIT := 
+OBJCOPY := 
+SETFILE := 
+XATTR := 
+JT_HOME := 
+JIB_HOME := 
+DTRACE := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/windows/system32/dtrace.exe
+FIXPATH := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec
+FIXPATH_BASE := /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath
+ULIMIT := 
+
+TAR_TYPE := gnu
+TAR_INCLUDE_PARAM := T
+TAR_SUPPORTS_TRANSFORM := true
+
+# Build setup
+USE_EXTERNAL_LIBJPEG := false
+LIBJPEG_CFLAGS := 
+LIBJPEG_LIBS := 
+USE_EXTERNAL_LIBGIF := false
+GIFLIB_CFLAGS := 
+GIFLIB_LIBS := 
+USE_EXTERNAL_LIBZ := false
+LIBZ_CFLAGS :=  -I/d/a/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libzip/zlib
+LIBZ_LIBS := 
+LIBZIP_CAN_USE_MMAP := true
+MSVCR_DLL := /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/vcruntime140.dll
+VCRUNTIME_1_DLL := /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/vcruntime140_1.dll
+MSVCP_DLL := /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/msvcp140.dll
+UCRT_DLL_DIR := /c/progra~2/wi3cf2~1/10//redist/ucrt/dlls/x64
+ENABLE_PANDOC := false
+PANDOC_MARKDOWN_FLAG := 
+
+# Libraries
+USE_EXTERNAL_LCMS := false
+LCMS_CFLAGS := 
+LCMS_LIBS := 
+
+USE_EXTERNAL_HARFBUZZ := false
+HARFBUZZ_CFLAGS := 
+HARFBUZZ_LIBS := 
+
+USE_EXTERNAL_LIBPNG := false
+PNG_LIBS := 
+PNG_CFLAGS := 
+
+# Misc
+INCLUDE_SA := false
+INCLUDE_COMPILER2 := true
+
+OS_VERSION_MAJOR := 3
+OS_VERSION_MINOR := 6
+OS_VERSION_MICRO := 10
+
+# Arm SVE
+SVE_CFLAGS := 
+
+# Images directory definitions
+JDK_IMAGE_SUBDIR := jdk
+JRE_IMAGE_SUBDIR := jre
+JCOV_IMAGE_SUBDIR := jdk-jcov
+STATIC_JDK_IMAGE_SUBDIR := static-jdk
+
+# Colon left out to be able to override output dir for bootcycle-images
+JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
+JRE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
+STATIC_JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(STATIC_JDK_IMAGE_SUBDIR)
+JCOV_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JCOV_IMAGE_SUBDIR)
+
+# Test image, as above
+TEST_IMAGE_SUBDIR := test
+TEST_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(TEST_IMAGE_SUBDIR)
+
+# Symbols image
+SYMBOLS_IMAGE_SUBDIR := symbols
+SYMBOLS_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
+
+# Interim image
+INTERIM_JMODS_DIR := $(SUPPORT_OUTPUTDIR)/interim-jmods
+INTERIM_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/interim-image
+
+# Docs image
+DOCS_JDK_IMAGE_SUBDIR := docs
+DOCS_JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_JDK_IMAGE_SUBDIR)
+DOCS_JAVASE_IMAGE_SUBDIR := docs-javase
+DOCS_JAVASE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_JAVASE_IMAGE_SUBDIR)
+DOCS_REFERENCE_IMAGE_SUBDIR := docs-reference
+DOCS_REFERENCE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_REFERENCE_IMAGE_SUBDIR)
+# Output docs directly into image
+DOCS_OUTPUTDIR := $(DOCS_JDK_IMAGE_DIR)
+
+# Static libs image
+STATIC_LIBS_IMAGE_SUBDIR := static-libs
+STATIC_LIBS_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(STATIC_LIBS_IMAGE_SUBDIR)
+
+# Macosx bundles directory definitions
+JDK_MACOSX_BUNDLE_SUBDIR := jdk-bundle
+JRE_MACOSX_BUNDLE_SUBDIR := jre-bundle
+JDK_MACOSX_BUNDLE_SUBDIR_SIGNED := jdk-bundle-signed
+JRE_MACOSX_BUNDLE_SUBDIR_SIGNED := jre-bundle-signed
+JDK_MACOSX_BUNDLE_DIR = $(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR)
+JRE_MACOSX_BUNDLE_DIR = $(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR)
+JDK_MACOSX_BUNDLE_DIR_SIGNED = $(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR_SIGNED)
+JRE_MACOSX_BUNDLE_DIR_SIGNED = $(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR_SIGNED)
+JDK_MACOSX_BUNDLE_TOP_SUBDIR = jdk-$(VERSION_NUMBER).jdk
+JRE_MACOSX_BUNDLE_TOP_SUBDIR = jre-$(VERSION_NUMBER).jre
+JDK_MACOSX_CONTENTS_SUBDIR = $(JDK_MACOSX_BUNDLE_TOP_SUBDIR)/Contents
+JRE_MACOSX_CONTENTS_SUBDIR = $(JRE_MACOSX_BUNDLE_TOP_SUBDIR)/Contents
+JDK_MACOSX_CONTENTS_DIR = $(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_CONTENTS_SUBDIR)
+JRE_MACOSX_CONTENTS_DIR = $(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_CONTENTS_SUBDIR)
+JDK_MACOSX_BUNDLE_TOP_DIR = $(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_BUNDLE_TOP_SUBDIR)
+JRE_MACOSX_BUNDLE_TOP_DIR = $(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_BUNDLE_TOP_SUBDIR)
+
+# Bundle names
+ifneq ($(VERSION_BUILD), )
+  BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+else
+  BASE_NAME := $(VERSION_SHORT)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+endif
+
+ifeq ($(DEBUG_LEVEL), fastdebug)
+  DEBUG_PART := -debug
+else ifneq ($(DEBUG_LEVEL), release)
+  DEBUG_PART := -$(DEBUG_LEVEL)
+endif
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  JDK_BUNDLE_EXTENSION := zip
+else
+  JDK_BUNDLE_EXTENSION := tar.gz
+endif
+JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+JRE_BUNDLE_NAME := jre-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+JDK_SYMBOLS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
+TEST_DEMOS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz
+TEST_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests$(DEBUG_PART).tar.gz
+DOCS_JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+DOCS_JAVASE_BUNDLE_NAME := javase-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+DOCS_REFERENCE_BUNDLE_NAME := jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
+STATIC_LIBS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
+STATIC_JDK_BUNDLE_NAME := static-jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+JCOV_BUNDLE_NAME := jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
+
+JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_BUNDLE_NAME)
+JRE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JRE_BUNDLE_NAME)
+JDK_SYMBOLS_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_SYMBOLS_BUNDLE_NAME)
+TEST_DEMOS_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(TEST_DEMOS_BUNDLE_NAME)
+TEST_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(TEST_BUNDLE_NAME)
+DOCS_JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_JDK_BUNDLE_NAME)
+DOCS_JAVASE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_JAVASE_BUNDLE_NAME)
+DOCS_REFERENCE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_REFERENCE_BUNDLE_NAME)
+STATIC_JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(STATIC_JDK_BUNDLE_NAME)
+JCOV_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JCOV_BUNDLE_NAME)
+
+# This macro is called to allow inclusion of closed source counterparts.
+# Unless overridden in closed sources, it expands to nothing.
+# Usage: This function is called in an open makefile, with the following
+# argument:
+# $1 the name of the makefile
+define IncludeCustomExtension
+endef
+
+# Include the custom-spec.gmk file if it exists
+-include $(dir /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/spec.gmk)/custom-spec.gmk

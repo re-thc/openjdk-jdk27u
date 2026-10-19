@@ -1,0 +1,527 @@
+#Test Results (version 2)
+#Mon Oct 19 14:33:08 UTC 2026
+#-----testdescription-----
+$file=D\:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java
+$root=D\:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk
+keywords=othervm
+run=USER_SPECIFIED main/othervm -Xint StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xbatch -XX\:TieredStopAtLevel\=1 StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-TieredCompilation StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xcomp -XX\:-TieredCompilation StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-CompactStrings StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:DisableIntrinsic\=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:DisableIntrinsic\=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch\r\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-UseStringZillaIntrinsics StringZillaSearch\r\n
+source=StringZillaSearch.java
+title=StringZilla search\: encodings, ranges, builder capacity, and Unicode boundaries
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/D\:/a/openjdk-jdk27u/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java
+elapsed=72095 0\:01\:12.095
+end=Mon Oct 19 14\:33\:08 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=runnervm0xl3a.i2fimncelz3enfilsb3lthbmgc.jx.internal.cloudapp.net
+javatestOS=Windows Server 2025 10.0 (amd64)
+javatestVersion=6.0-ea+b24-2026-10-09-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.2.1 dev 0
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main build main build main build main build main build main build main build main
+start=Mon Oct 19 14\:31\:56 UTC 2026
+test=java/lang/String/StringZillaSearch.java
+testJDK=D\:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork
+testJDK_OS=[name\:Windows Server 2025,arch\:amd64,version\:10.0,family\:windows,simple_arch\:x64,simple_version\:10.0,processors\:4,maxMemory\:17174360064,maxSwap\:20261367808]
+testJDK_os.arch=amd64
+testJDK_os.name=Windows Server 2025
+testJDK_os.version=10.0
+totalTime=72096
+user.name=runneradmin
+work=D\:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String
+
+#section:script_messages
+----------messages:(4/279)*----------
+JDK under test: D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+
+#section:build
+----------messages:(7/239)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:31:56.255 UTC 2026
+Test directory:
+  compile: StringZillaSearch
+finished: Mon Oct 19 14:31:56.822 UTC 2026
+elapsed time (seconds): 0.567
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/313)*----------
+command: compile D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 14:31:56.256 UTC 2026
+Mode: othervm
+Process id: 5584
+finished: Mon Oct 19 14:31:56.821 UTC 2026
+elapsed time (seconds): 0.565
+----------configuration:(5/339)*----------
+javac compilation environment
+  source path: D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String
+  class path:  D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String
+               D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d
+
+----------rerun:(26/5068)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\javac' \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -J-Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -J-Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -J-Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -J-Dtest.main.class=StringZillaSearch \\
+        -J-Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -J-Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -J-Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -J-Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -d 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -sourcepath 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -classpath 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java'
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/285)----------
+command: main -Xint StringZillaSearch
+reason: User specified action: run main/othervm -Xint StringZillaSearch 
+started: Mon Oct 19 14:31:56.822 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 7692
+finished: Mon Oct 19 14:32:02.918 UTC 2026
+elapsed time (seconds): 6.096
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(27/5085)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xint \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.0.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/190)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:02.918 UTC 2026
+finished: Mon Oct 19 14:32:02.918 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/337)----------
+command: main -Xbatch -XX:TieredStopAtLevel=1 StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:TieredStopAtLevel=1 StringZillaSearch 
+started: Mon Oct 19 14:32:02.918 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 6292
+finished: Mon Oct 19 14:32:05.383 UTC 2026
+elapsed time (seconds): 2.465
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(28/5123)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbatch \\
+        -XX:TieredStopAtLevel=1 \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.1.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/190)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:05.384 UTC 2026
+finished: Mon Oct 19 14:32:05.384 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/335)----------
+command: main -Xbatch -XX:-TieredCompilation StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:-TieredCompilation StringZillaSearch 
+started: Mon Oct 19 14:32:05.384 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 2160
+finished: Mon Oct 19 14:32:14.012 UTC 2026
+elapsed time (seconds): 8.628
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(28/5122)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbatch \\
+        -XX:-TieredCompilation \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.2.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/190)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:14.012 UTC 2026
+finished: Mon Oct 19 14:32:14.012 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/334)----------
+command: main -Xcomp -XX:-TieredCompilation StringZillaSearch
+reason: User specified action: run main/othervm -Xcomp -XX:-TieredCompilation StringZillaSearch 
+started: Mon Oct 19 14:32:14.012 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 8876
+finished: Mon Oct 19 14:32:37.579 UTC 2026
+elapsed time (seconds): 23.567
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(28/5121)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xcomp \\
+        -XX:-TieredCompilation \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.3.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/190)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:37.580 UTC 2026
+finished: Mon Oct 19 14:32:37.580 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/328)----------
+command: main -Xbatch -XX:-CompactStrings StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:-CompactStrings StringZillaSearch 
+started: Mon Oct 19 14:32:37.580 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 7524
+finished: Mon Oct 19 14:32:42.720 UTC 2026
+elapsed time (seconds): 5.14
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(28/5119)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbatch \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.4.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/190)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:42.720 UTC 2026
+finished: Mon Oct 19 14:32:42.720 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/903)----------
+command: main -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch 
+started: Mon Oct 19 14:32:42.720 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 2596
+finished: Mon Oct 19 14:32:49.088 UTC 2026
+elapsed time (seconds): 6.368
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(29/5418)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.5.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/190)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:49.088 UTC 2026
+finished: Mon Oct 19 14:32:49.088 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/1115)----------
+command: main -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch 
+started: Mon Oct 19 14:32:49.088 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 8972
+finished: Mon Oct 19 14:32:58.753 UTC 2026
+elapsed time (seconds): 9.665
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(29/5524)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.6.jta'
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/192)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 14:32:58.753 UTC 2026
+finished: Mon Oct 19 14:32:58.754 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/349)----------
+command: main -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch 
+started: Mon Oct 19 14:32:58.754 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 2404
+finished: Mon Oct 19 14:33:08.348 UTC 2026
+elapsed time (seconds): 9.594
+----------configuration:(0/0)----------
+----------System.out:(1/34)----------
+StringZilla search checks passed
+----------System.err:(1/16)----------
+STATUS:Passed.
+----------rerun:(28/5129)*----------
+cd 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\scratch' && \\
+PATH='C:\\msys64/usr/bin;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;D:\\a\\_temp\\setup-msys2;C:\\Program Files\\MongoDB\\Server\\7.0\\bin;C:\\vcpkg;C:\\tools\\zstd;C:\\hostedtoolcache\\windows\\stack\\3.11.1\\x64;C:\\cabal\\bin;C:\\\\ghcup\\bin;C:\\mingw64\\bin;C:\\Program Files\\dotnet;C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin;C:\\Program Files\\R\\R-4.6.1\\bin\\x64;C:\\SeleniumWebDrivers\\GeckoDriver;C:\\SeleniumWebDrivers\\EdgeDriver\\;C:\\SeleniumWebDrivers\\ChromeDriver;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files (x86)\\GitHub CLI;C:\\Program Files\\Git\\bin;C:\\Program Files (x86)\\pipx_bin;C:\\npm\\prefix;C:\\hostedtoolcache\\windows\\go\\1.24.13\\x64\\bin;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64\\Scripts;C:\\hostedtoolcache\\windows\\Python\\3.12.10\\x64;C:\\hostedtoolcache\\windows\\Ruby\\3.3.12\\x64\\bin;C:\\Program Files\\OpenSSL\\bin;C:\\tools\\kotlinc\\bin;C:\\hostedtoolcache\\windows\\Java_Temurin-Hotspot_jdk\\17.0.20-101\\x64\\bin;C:\\Program Files\\ImageMagick-7.1.2-Q16-HDRI;C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin;C:\\ProgramData\\kind;C:\\ProgramData\\Chocolatey\\bin;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\Program Files\\WSL\\;C:\\Program Files\\PowerShell\\7\\;C:\\Program Files\\Microsoft\\Web Platform Installer\\;C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files (x86)\\WiX Toolset v3.14\\bin;C:\\Program Files\\Microsoft SQL Server\\130\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\150\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\160\\DTS\\Binn\\;C:\\Program Files\\Microsoft SQL Server\\170\\DTS\\Binn\\;C:\\ProgramData\\chocolatey\\lib\\pulumi\\tools\\Pulumi\\bin;C:\\Program Files\\CMake\\bin;C:\\Strawberry\\c\\bin;C:\\Strawberry\\perl\\site\\bin;C:\\Strawberry\\perl\\bin;C:\\ProgramData\\chocolatey\\lib\\maven\\apache-maven-3.9.16\\bin;C:\\Program Files\\Microsoft Service Fabric\\bin\\Fabric\\Fabric.Code;C:\\Program Files\\Microsoft SDKs\\Service Fabric\\Tools\\ServiceFabricLocalClusterManager;C:\\Program Files\\nodejs\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Git\\ucrt64\\bin;C:\\Program Files\\Git\\usr\\bin;C:\\Program Files\\GitHub CLI\\;c:\\tools\\php;C:\\Program Files (x86)\\sbt\\bin;C:\\Program Files\\Amazon\\AWSCLIV2\\;C:\\Program Files\\Amazon\\SessionManagerPlugin\\bin\\;C:\\Program Files\\Amazon\\AWSSAMCLI\\bin\\;C:\\Program Files\\Microsoft SQL Server\\130\\Tools\\Binn\\;C:\\Program Files\\mongosh\\;C:\\Program Files\\LLVM\\bin;C:\\Program Files (x86)\\LLVM\\bin;C:\\Users\\runneradmin\\.dotnet\\tools;C:\\Users\\runneradmin\\.cargo\\bin;C:\\Users\\runneradmin\\AppData\\Local\\Microsoft\\WindowsApps' \\
+SystemDrive=C: \\
+SystemRoot='C:\\Windows' \\
+TEMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+TMP='C:\\Users\\RUNNER~1\\AppData\\Local\\Temp' \\
+windir='C:\\Windows' \\
+CLASSPATH='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\javatest.jar;D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg\\installed\\lib\\jtreg.jar' \\
+    'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java' \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dcompile.jdk='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork' \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk' \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\StringZillaSearch.java' \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.src.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String' \\
+        -Dtest.classes='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -Dtest.class.path='D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\classes\\java\\lang\\String\\StringZillaSearch.d' \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbatch \\
+        -XX:-UseStringZillaIntrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper 'D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\jtreg-evidence\\work\\test_jdk\\java\\lang\\String\\StringZillaSearch.d\\main.7.jta'
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

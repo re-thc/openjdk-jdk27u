@@ -1,0 +1,4 @@
+@echo off
+call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\vc\auxiliary\build\vcvars64.bat" -vcvars_ver=14.44
+if errorlevel 1 exit /b %errorlevel%
+cl.exe /nologo /std:c11 /O2 /LD /ID:\a\openjdk-jdk27u\openjdk-jdk27u\pair\fork\include /ID:\a\openjdk-jdk27u\openjdk-jdk27u\pair\fork\include\win32 /ID:\a\openjdk-jdk27u\openjdk-jdk27u\src\hotspot\share\include /ID:\a\openjdk-jdk27u\openjdk-jdk27u\src\hotspot\os\windows\include /ID:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.base\share\native\libjava /ID:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.base\share\native\libjava\stringzilla D:\a\openjdk-jdk27u\openjdk-jdk27u\test\jdk\java\lang\String\libStringZillaKernelsTest.c /FoD:\a\openjdk-jdk27u\openjdk-jdk27u\validation\kernels.obj /FeD:\a\openjdk-jdk27u\openjdk-jdk27u\validation\StringZillaKernelsTest.dll

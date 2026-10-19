@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\original\\bin\\java.exe",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=0",
+            "-Xint"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "UTF16",
+            "length" : "128",
+            "needleLength" : "4",
+            "position" : "END"
+        },
+        "primaryMetric" : {
+            "score" : 486.87909216523076,
+            "scoreError" : 69.70773480401867,
+            "scoreConfidence" : [
+                417.1713573612121,
+                556.5868269692494
+            ],
+            "scorePercentiles" : {
+                "0.0" : 462.4010831692278,
+                "50.0" : 481.36615332803103,
+                "90.0" : 506.8587352751187,
+                "95.0" : 506.8587352751187,
+                "99.0" : 506.8587352751187,
+                "99.9" : 506.8587352751187,
+                "99.99" : 506.8587352751187,
+                "99.999" : 506.8587352751187,
+                "99.9999" : 506.8587352751187,
+                "100.0" : 506.8587352751187
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    506.8587352751187,
+                    481.36615332803103,
+                    502.65488858820544,
+                    462.4010831692278,
+                    481.1146004655705
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

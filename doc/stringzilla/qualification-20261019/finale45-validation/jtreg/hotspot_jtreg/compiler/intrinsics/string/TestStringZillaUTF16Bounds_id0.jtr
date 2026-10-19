@@ -1,0 +1,615 @@
+#Test Results (version 2)
+#Mon Oct 19 14:53:50 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java
+$root=/workspace/openjdk-jdk27u/test/hotspot/jtreg
+id=id0
+keywords=othervm driver
+library=/test/lib
+modules=java.base/java.lang\:open
+requires=(vm.compiler1.enabled & vm.compiler2.enabled) & ((os.arch \=\= "amd64" | os.arch \=\= "x86_64" | os.arch \=\= "aarch64"))
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI TestStringZillaUTF16Bounds 0\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:TieredStopAtLevel\=1 -XX\:CompileCommand\=dontinline,TestStringZillaUTF16Bounds\:\:probe TestStringZillaUTF16Bounds 1\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:-TieredCompilation -XX\:CompileCommand\=dontinline,TestStringZillaUTF16Bounds\:\:probe TestStringZillaUTF16Bounds 4\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:TieredStopAtLevel\=1 -XX\:-UseStringZillaIntrinsics -XX\:CompileCommand\=dontinline,TestStringZillaUTF16Bounds\:\:probe TestStringZillaUTF16Bounds 1\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:-TieredCompilation -XX\:-UseStringZillaIntrinsics -XX\:CompileCommand\=dontinline,TestStringZillaUTF16Bounds\:\:probe TestStringZillaUTF16Bounds 4\n
+source=TestStringZillaUTF16Bounds.java
+title=UTF-16 reverse search checks physical source bounds before intrinsic reads
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java\#id0
+elapsed=3323 0\:00\:03.323
+end=Mon Oct 19 14\:53\:50 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=c6d7b613d422
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver build compile main build main build main build main build main
+start=Mon Oct 19 14\:53\:47 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java\#id0
+testJDK=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=3323
+user.name=agent
+work=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/543)----------
+JDK under test: /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/openjdk-jdk27u/test/lib
+   class directory: /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 14:53:47.550 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Mon Oct 19 14:53:48.443 UTC 2026
+elapsed time (seconds): 0.893
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/340)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 14:53:47.551 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 286250
+finished: Mon Oct 19 14:53:48.443 UTC 2026
+elapsed time (seconds): 0.892
+----------configuration:(6/417)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d
+               /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib
+
+----------rerun:(28/2471)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -J-Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -sourcepath /workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib /workspace/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Mon Oct 19 14:53:48.443 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Mon Oct 19 14:53:49.025 UTC 2026
+elapsed time (seconds): 0.582
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/353)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 14:53:48.443 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 286301
+finished: Mon Oct 19 14:53:49.025 UTC 2026
+elapsed time (seconds): 0.582
+----------configuration:(6/417)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d
+               /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib
+
+----------rerun:(28/2484)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -J-Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -sourcepath /workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/443)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 14:53:49.025 UTC 2026
+Mode: othervm
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 286341
+finished: Mon Oct 19 14:53:49.136 UTC 2026
+elapsed time (seconds): 0.111
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2764)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/driver.0.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/250)----------
+command: build TestStringZillaUTF16Bounds
+reason: Named class compiled on demand
+started: Mon Oct 19 14:53:49.137 UTC 2026
+Test directory:
+  compile: TestStringZillaUTF16Bounds
+finished: Mon Oct 19 14:53:49.790 UTC 2026
+elapsed time (seconds): 0.653
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/377)----------
+command: compile /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 14:53:49.137 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 286363
+finished: Mon Oct 19 14:53:49.790 UTC 2026
+elapsed time (seconds): 0.653
+----------configuration:(8/591)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d
+               /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib
+
+----------rerun:(28/2643)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -J-Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -sourcepath /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/540)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaUTF16Bounds 0
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaUTF16Bounds 0 
+started: Mon Oct 19 14:53:49.790 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 286390
+finished: Mon Oct 19 14:53:49.903 UTC 2026
+elapsed time (seconds): 0.113
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(34/2855)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/main.1.jta 0
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/196)----------
+command: build TestStringZillaUTF16Bounds
+reason: Named class compiled on demand
+started: Mon Oct 19 14:53:49.903 UTC 2026
+finished: Mon Oct 19 14:53:49.904 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/720)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1 
+started: Mon Oct 19 14:53:49.904 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 286409
+finished: Mon Oct 19 14:53:50.097 UTC 2026
+elapsed time (seconds): 0.193
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(1/83)----------
+CompileCommand: dontinline TestStringZillaUTF16Bounds.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(36/2967)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:TieredStopAtLevel=1 \\
+        -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/main.2.jta 1
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/194)----------
+command: build TestStringZillaUTF16Bounds
+reason: Named class compiled on demand
+started: Mon Oct 19 14:53:50.098 UTC 2026
+finished: Mon Oct 19 14:53:50.098 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/718)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4 
+started: Mon Oct 19 14:53:50.098 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 286429
+finished: Mon Oct 19 14:53:50.446 UTC 2026
+elapsed time (seconds): 0.348
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(1/83)----------
+CompileCommand: dontinline TestStringZillaUTF16Bounds.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(36/2966)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:-TieredCompilation \\
+        -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/main.3.jta 4
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/196)----------
+command: build TestStringZillaUTF16Bounds
+reason: Named class compiled on demand
+started: Mon Oct 19 14:53:50.446 UTC 2026
+finished: Mon Oct 19 14:53:50.447 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/780)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1 
+started: Mon Oct 19 14:53:50.447 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 286468
+finished: Mon Oct 19 14:53:50.629 UTC 2026
+elapsed time (seconds): 0.182
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(1/83)----------
+CompileCommand: dontinline TestStringZillaUTF16Bounds.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3008)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:TieredStopAtLevel=1 \\
+        -XX:-UseStringZillaIntrinsics \\
+        -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/main.4.jta 1
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/194)----------
+command: build TestStringZillaUTF16Bounds
+reason: Named class compiled on demand
+started: Mon Oct 19 14:53:50.629 UTC 2026
+finished: Mon Oct 19 14:53:50.629 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/778)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4 
+started: Mon Oct 19 14:53:50.629 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 286491
+finished: Mon Oct 19 14:53:50.871 UTC 2026
+elapsed time (seconds): 0.242
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(1/83)----------
+CompileCommand: dontinline TestStringZillaUTF16Bounds.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3007)*----------
+cd /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0 \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java \\
+        -Dtest.main.class=TestStringZillaUTF16Bounds \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d:/workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:-TieredCompilation \\
+        -XX:-UseStringZillaIntrinsics \\
+        -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/finale45-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.d/main.5.jta 4
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

@@ -1,0 +1,2125 @@
+Compiled from "StringZilla.java"
+final class java.lang.StringZilla {
+  private static final int ENABLED_BIT = 8;
+    descriptor: I
+
+  private static final int MSVC_BIT = 16;
+    descriptor: I
+
+  private static final int BACKEND_MASK = 7;
+    descriptor: I
+
+  private static final int CONFIGURATION;
+    descriptor: I
+
+  static final boolean ENABLED;
+    descriptor: Z
+
+  private static final int BACKEND;
+    descriptor: I
+
+  private static final int SERIAL = 0;
+    descriptor: I
+
+  private static final int HASWELL = 1;
+    descriptor: I
+
+  private static final int SKYLAKE = 2;
+    descriptor: I
+
+  private static final int NEON = 4;
+    descriptor: I
+
+  static final boolean MSVC_SERIAL;
+    descriptor: Z
+
+  static final int UNRESOLVED_TIER = -1;
+    descriptor: I
+
+  static final int C1 = 1;
+    descriptor: I
+
+  static final int C2 = 4;
+    descriptor: I
+
+  static final int MIN_BYTES = 256;
+    descriptor: I
+
+  static final int REVERSE_CHAR_PROBE_LENGTH = 8;
+    descriptor: I
+
+  static final int MIN_INTERPRETER_REVERSE_BYTES = 32;
+    descriptor: I
+
+  static final int MAX_BYTES = 65536;
+    descriptor: I
+
+  static final int MAX_WORK = 4194304;
+    descriptor: I
+
+  static final int FALLBACK = -2;
+    descriptor: I
+
+  static final int MAX_MIXED_NEEDLE = 64;
+    descriptor: I
+
+  static boolean matches(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: iconst_0
+         1: istore        4
+         3: iload         4
+         5: iload_3
+         6: if_icmpge     30
+         9: aload_0
+        10: iload_1
+        11: iload         4
+        13: iadd
+        14: baload
+        15: aload_2
+        16: iload         4
+        18: baload
+        19: if_icmpeq     24
+        22: iconst_0
+        23: ireturn
+        24: iinc          4, 1
+        27: goto          3
+        30: iconst_1
+        31: ireturn
+
+  static int mismatchReverseC2(byte[], long, byte[], int);
+    descriptor: ([BJ[BI)I
+    Code:
+         0: aload_0
+         1: lload_1
+         2: aload_3
+         3: iload         4
+         5: iload         4
+         7: bipush        32
+         9: if_icmplt     16
+        12: iconst_1
+        13: goto          17
+        16: iconst_0
+        17: invokestatic  #1                  // Method mismatchReverseC2:([BJ[BIZ)I
+        20: ireturn
+
+  static int mismatchReverseC2(byte[], long, byte[], int, boolean);
+    descriptor: ([BJ[BIZ)I
+    Code:
+         0: iload         5
+         2: ifeq          10
+         5: bipush        16
+         7: goto          12
+        10: bipush        8
+        12: istore        6
+        14: iload         4
+        16: iload         6
+        18: isub
+        19: istore        7
+        21: iload         4
+        23: iflt          44
+        26: lload_1
+        27: lconst_0
+        28: lcmp
+        29: iflt          44
+        32: lload_1
+        33: aload_0
+        34: arraylength
+        35: i2l
+        36: iload         4
+        38: i2l
+        39: lsub
+        40: lcmp
+        41: ifle          55
+        44: lload_1
+        45: iload         4
+        47: i2l
+        48: aload_0
+        49: arraylength
+        50: i2l
+        51: invokestatic  #9                  // Method java/util/Objects.checkFromIndexSize:(JJJ)J
+        54: pop2
+        55: iload         7
+        57: iflt          67
+        60: iload         4
+        62: aload_3
+        63: arraylength
+        64: if_icmple     77
+        67: iload         7
+        69: iload         6
+        71: aload_3
+        72: arraylength
+        73: invokestatic  #15                 // Method java/util/Objects.checkFromIndexSize:(III)I
+        76: pop
+        77: invokestatic  #18                 // Method jdk/internal/misc/Unsafe.getUnsafe:()Ljdk/internal/misc/Unsafe;
+        80: astore        8
+        82: getstatic     #24                 // Field jdk/internal/misc/Unsafe.ARRAY_BYTE_BASE_OFFSET:J
+        85: lstore        9
+        87: iload         4
+        89: bipush        8
+        91: isub
+        92: istore        11
+        94: iload         11
+        96: iload         7
+        98: if_icmplt     179
+       101: aload         8
+       103: aload_0
+       104: lload         9
+       106: lload_1
+       107: ladd
+       108: iload         11
+       110: i2l
+       111: ladd
+       112: invokevirtual #28                 // Method jdk/internal/misc/Unsafe.getLongUnaligned:(Ljava/lang/Object;J)J
+       115: aload         8
+       117: aload_3
+       118: lload         9
+       120: iload         11
+       122: i2l
+       123: ladd
+       124: invokevirtual #28                 // Method jdk/internal/misc/Unsafe.getLongUnaligned:(Ljava/lang/Object;J)J
+       127: lxor
+       128: lstore        12
+       130: lload         12
+       132: lconst_0
+       133: lcmp
+       134: ifeq          173
+       137: aload         8
+       139: invokevirtual #32                 // Method jdk/internal/misc/Unsafe.isBigEndian:()Z
+       142: ifeq          153
+       145: lload         12
+       147: invokestatic  #36                 // Method java/lang/Long.numberOfTrailingZeros:(J)I
+       150: goto          158
+       153: lload         12
+       155: invokestatic  #40                 // Method java/lang/Long.numberOfLeadingZeros:(J)I
+       158: istore        14
+       160: iload         11
+       162: bipush        8
+       164: iadd
+       165: iconst_1
+       166: isub
+       167: iload         14
+       169: iconst_3
+       170: ishr
+       171: isub
+       172: ireturn
+       173: iinc          11, -8
+       176: goto          94
+       179: iload         7
+       181: bipush        16
+       183: if_icmpgt     271
+       186: iconst_0
+       187: istore        11
+       189: iload         11
+       191: iload         7
+       193: if_icmpge     269
+       196: aload         8
+       198: aload_0
+       199: lload         9
+       201: lload_1
+       202: ladd
+       203: iload         11
+       205: i2l
+       206: ladd
+       207: invokevirtual #28                 // Method jdk/internal/misc/Unsafe.getLongUnaligned:(Ljava/lang/Object;J)J
+       210: aload         8
+       212: aload_3
+       213: lload         9
+       215: iload         11
+       217: i2l
+       218: ladd
+       219: invokevirtual #28                 // Method jdk/internal/misc/Unsafe.getLongUnaligned:(Ljava/lang/Object;J)J
+       222: lxor
+       223: lstore        12
+       225: lload         12
+       227: lconst_0
+       228: lcmp
+       229: ifeq          263
+       232: aload         8
+       234: invokevirtual #32                 // Method jdk/internal/misc/Unsafe.isBigEndian:()Z
+       237: ifeq          248
+       240: lload         12
+       242: invokestatic  #40                 // Method java/lang/Long.numberOfLeadingZeros:(J)I
+       245: goto          253
+       248: lload         12
+       250: invokestatic  #36                 // Method java/lang/Long.numberOfTrailingZeros:(J)I
+       253: istore        14
+       255: iload         11
+       257: iload         14
+       259: iconst_3
+       260: ishr
+       261: iadd
+       262: ireturn
+       263: iinc          11, 8
+       266: goto          189
+       269: iconst_m1
+       270: ireturn
+       271: aload_0
+       272: lload_1
+       273: l2i
+       274: aload_3
+       275: iconst_0
+       276: iload         7
+       278: invokestatic  #43                 // Method jdk/internal/util/ArraysSupport.mismatch:([BI[BII)I
+       281: ireturn
+
+  static boolean matchesUTF16(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: iload_3
+         4: invokestatic  #49                 // Method compilerTier:()I
+         7: invokestatic  #53                 // Method matchesUTF16:([BI[BII)Z
+        10: ireturn
+
+  static boolean matchesUTF16(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)Z
+    Code:
+         0: iload         4
+         2: ifne          37
+         5: aload_0
+         6: iload_1
+         7: iconst_1
+         8: ishl
+         9: iload_3
+        10: iconst_1
+        11: ishl
+        12: aload_2
+        13: iconst_0
+        14: invokestatic  #57                 // Method equalsRange:([BII[BI)I
+        17: istore        5
+        19: iload         5
+        21: bipush        -2
+        23: if_icmpeq     37
+        26: iload         5
+        28: ifeq          35
+        31: iconst_1
+        32: goto          36
+        35: iconst_0
+        36: ireturn
+        37: iload         4
+        39: iconst_4
+        40: if_icmpne     89
+        43: iload_3
+        44: iconst_4
+        45: if_icmpne     89
+        48: invokestatic  #18                 // Method jdk/internal/misc/Unsafe.getUnsafe:()Ljdk/internal/misc/Unsafe;
+        51: astore        5
+        53: getstatic     #24                 // Field jdk/internal/misc/Unsafe.ARRAY_BYTE_BASE_OFFSET:J
+        56: lstore        6
+        58: aload         5
+        60: aload_0
+        61: lload         6
+        63: iload_1
+        64: i2l
+        65: iconst_1
+        66: lshl
+        67: ladd
+        68: invokevirtual #28                 // Method jdk/internal/misc/Unsafe.getLongUnaligned:(Ljava/lang/Object;J)J
+        71: aload         5
+        73: aload_2
+        74: lload         6
+        76: invokevirtual #28                 // Method jdk/internal/misc/Unsafe.getLongUnaligned:(Ljava/lang/Object;J)J
+        79: lcmp
+        80: ifne          87
+        83: iconst_1
+        84: goto          88
+        87: iconst_0
+        88: ireturn
+        89: iload_3
+        90: iconst_1
+        91: isub
+        92: istore        5
+        94: iload         5
+        96: ifge          101
+        99: iconst_1
+       100: ireturn
+       101: iload_1
+       102: iload         5
+       104: iadd
+       105: istore        6
+       107: aload_0
+       108: iload         6
+       110: iinc          6, -1
+       113: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+       116: aload_2
+       117: iload         5
+       119: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+       122: if_icmpeq     127
+       125: iconst_0
+       126: ireturn
+       127: iload_1
+       128: iconst_1
+       129: isub
+       130: istore        7
+       132: iload         5
+       134: iconst_1
+       135: isub
+       136: istore        8
+       138: iload         6
+       140: iload         7
+       142: if_icmple     168
+       145: aload_0
+       146: iload         6
+       148: iinc          6, -1
+       151: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+       154: aload_2
+       155: iload         8
+       157: iinc          8, -1
+       160: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+       163: if_icmpeq     138
+       166: iconst_0
+       167: ireturn
+       168: iconst_1
+       169: ireturn
+
+  static boolean matchesUTF16C2(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: ifne          53
+         6: iload_3
+         7: bipush        8
+         9: if_icmple     53
+        12: iload_3
+        13: sipush        256
+        16: if_icmpgt     53
+        19: getstatic     #71                 // Field MSVC_SERIAL:Z
+        22: ifeq          32
+        25: iload_3
+        26: sipush        128
+        29: if_icmple     53
+        32: aload_0
+        33: iload_1
+        34: i2l
+        35: iconst_1
+        36: lshl
+        37: aload_2
+        38: iload_3
+        39: iconst_1
+        40: ishl
+        41: invokestatic  #75                 // Method mismatchReverseC2:([BJ[BI)I
+        44: ifge          51
+        47: iconst_1
+        48: goto          52
+        51: iconst_0
+        52: ireturn
+        53: aload_0
+        54: iload_1
+        55: aload_2
+        56: iload_3
+        57: invokestatic  #78                 // Method matchesUTF16:([BI[BI)Z
+        60: ireturn
+
+  static boolean matchesUTF16Latin1(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: iconst_0
+         1: istore        4
+         3: iload         4
+         5: iload_3
+         6: if_icmpge     36
+         9: aload_0
+        10: iload_1
+        11: iload         4
+        13: iadd
+        14: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        17: aload_2
+        18: iload         4
+        20: baload
+        21: sipush        255
+        24: iand
+        25: if_icmpeq     30
+        28: iconst_0
+        29: ireturn
+        30: iinc          4, 1
+        33: goto          3
+        36: iconst_1
+        37: ireturn
+
+  static boolean usesSerial();
+    descriptor: ()Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: ifne          10
+         6: iconst_1
+         7: goto          11
+        10: iconst_0
+        11: ireturn
+
+  static boolean usesNeon();
+    descriptor: ()Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: iconst_4
+         4: if_icmpne     11
+         7: iconst_1
+         8: goto          12
+        11: iconst_0
+        12: ireturn
+
+  static boolean useForwardUTF16(int, boolean);
+    descriptor: (IZ)Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: ifne          23
+         6: invokestatic  #49                 // Method compilerTier:()I
+         9: iconst_1
+        10: if_icmpne     23
+        13: iload_1
+        14: ifeq          27
+        17: iload_0
+        18: bipush        64
+        20: if_icmpne     27
+        23: iconst_1
+        24: goto          28
+        27: iconst_0
+        28: ireturn
+
+  static boolean useCharUTF16(int, boolean);
+    descriptor: (IZ)Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: ifeq          57
+         6: getstatic     #67                 // Field BACKEND:I
+         9: iconst_1
+        10: if_icmpeq     20
+        13: getstatic     #67                 // Field BACKEND:I
+        16: iconst_4
+        17: if_icmpne     51
+        20: iload_1
+        21: ifeq          51
+        24: iload_0
+        25: getstatic     #67                 // Field BACKEND:I
+        28: iconst_4
+        29: if_icmpne     38
+        32: sipush        768
+        35: goto          41
+        38: sipush        256
+        41: if_icmpge     51
+        44: invokestatic  #49                 // Method compilerTier:()I
+        47: iconst_4
+        48: if_icmpeq     55
+        51: iconst_1
+        52: goto          56
+        55: iconst_0
+        56: ireturn
+        57: invokestatic  #49                 // Method compilerTier:()I
+        60: istore_2
+        61: iload_1
+        62: ifeq          70
+        65: iload_2
+        66: iconst_4
+        67: if_icmpeq     85
+        70: getstatic     #71                 // Field MSVC_SERIAL:Z
+        73: ifeq          81
+        76: iload_2
+        77: iconst_1
+        78: if_icmpeq     85
+        81: iconst_1
+        82: goto          86
+        85: iconst_0
+        86: ireturn
+
+  static boolean probeMixedImmediate(int);
+    descriptor: (I)Z
+    Code:
+         0: iload_0
+         1: invokestatic  #49                 // Method compilerTier:()I
+         4: invokestatic  #81                 // Method probeMixedImmediate:(II)Z
+         7: ireturn
+
+  static boolean probeMixedImmediate(int, int);
+    descriptor: (II)Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: ifne          16
+         6: iload_1
+         7: ifeq          14
+        10: iconst_1
+        11: goto          15
+        14: iconst_0
+        15: ireturn
+        16: getstatic     #67                 // Field BACKEND:I
+        19: iconst_1
+        20: if_icmpeq     37
+        23: getstatic     #67                 // Field BACKEND:I
+        26: iconst_2
+        27: if_icmpeq     37
+        30: getstatic     #67                 // Field BACKEND:I
+        33: iconst_4
+        34: if_icmpne     65
+        37: iload_1
+        38: iconst_1
+        39: if_icmpne     48
+        42: iload_0
+        43: bipush        24
+        45: if_icmple     59
+        48: iload_1
+        49: iconst_4
+        50: if_icmpne     63
+        53: iload_0
+        54: bipush        64
+        56: if_icmpgt     63
+        59: iconst_1
+        60: goto          64
+        63: iconst_0
+        64: ireturn
+        65: iconst_0
+        66: ireturn
+
+  static boolean useMixedRangeIntrinsic(int);
+    descriptor: (I)Z
+    Code:
+         0: iload_0
+         1: invokestatic  #49                 // Method compilerTier:()I
+         4: invokestatic  #85                 // Method useMixedRangeIntrinsic:(II)Z
+         7: ireturn
+
+  static boolean useMixedRangeIntrinsic(int, int);
+    descriptor: (II)Z
+    Code:
+         0: iload_0
+         1: getstatic     #67                 // Field BACKEND:I
+         4: iconst_2
+         5: if_icmpne     13
+         8: bipush        16
+        10: goto          15
+        13: bipush        48
+        15: if_icmplt     47
+        18: iload_0
+        19: bipush        64
+        21: if_icmpgt     47
+        24: getstatic     #67                 // Field BACKEND:I
+        27: iconst_1
+        28: if_icmpeq     38
+        31: getstatic     #67                 // Field BACKEND:I
+        34: iconst_2
+        35: if_icmpne     47
+        38: iload_1
+        39: iconst_4
+        40: if_icmpne     47
+        43: iconst_1
+        44: goto          48
+        47: iconst_0
+        48: ireturn
+
+  static boolean matchesUTF16Latin1Reverse(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: iload_3
+         4: invokestatic  #49                 // Method compilerTier:()I
+         7: invokestatic  #88                 // Method matchesUTF16Latin1Reverse:([BI[BII)Z
+        10: ireturn
+
+  static boolean matchesUTF16Latin1Reverse(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)Z
+    Code:
+         0: iload         4
+         2: iconst_1
+         3: if_icmpne     65
+         6: getstatic     #71                 // Field MSVC_SERIAL:Z
+         9: ifne          65
+        12: iload_3
+        13: bipush        8
+        15: if_icmple     65
+        18: iload_3
+        19: bipush        32
+        21: if_icmpge     65
+        24: iload_3
+        25: iconst_1
+        26: isub
+        27: istore        5
+        29: aload_0
+        30: iload_1
+        31: iload         5
+        33: iadd
+        34: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        37: aload_2
+        38: iload         5
+        40: baload
+        41: sipush        255
+        44: iand
+        45: if_icmpne     63
+        48: aload_0
+        49: iload_1
+        50: aload_2
+        51: iload         5
+        53: invokestatic  #91                 // Method matchesUTF16Latin1C1Prefix:([BI[BI)Z
+        56: ifeq          63
+        59: iconst_1
+        60: goto          64
+        63: iconst_0
+        64: ireturn
+        65: iload_3
+        66: getstatic     #71                 // Field MSVC_SERIAL:Z
+        69: ifeq          77
+        72: bipush        64
+        74: goto          79
+        77: bipush        32
+        79: if_icmplt     88
+        82: iload         4
+        84: iconst_1
+        85: if_icmpeq     107
+        88: iload_3
+        89: bipush        31
+        91: if_icmplt     147
+        94: iload         4
+        96: iconst_4
+        97: if_icmpne     147
+       100: getstatic     #67                 // Field BACKEND:I
+       103: iconst_4
+       104: if_icmpne     147
+       107: iload_3
+       108: iconst_1
+       109: isub
+       110: istore        5
+       112: aload_0
+       113: iload_1
+       114: iload         5
+       116: iadd
+       117: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+       120: aload_2
+       121: iload         5
+       123: baload
+       124: sipush        255
+       127: iand
+       128: if_icmpne     145
+       131: aload_0
+       132: iload_1
+       133: aload_2
+       134: iload_3
+       135: invokestatic  #94                 // Method matchesUTF16Latin1Native:([BI[BI)Z
+       138: ifeq          145
+       141: iconst_1
+       142: goto          146
+       145: iconst_0
+       146: ireturn
+       147: aload_0
+       148: iload_1
+       149: aload_2
+       150: iload_3
+       151: invokestatic  #97                 // Method matchesUTF16Latin1JavaReverse:([BI[BI)Z
+       154: ireturn
+
+  private static boolean matchesUTF16Latin1Native(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: aload_0
+         1: iload_1
+         2: iconst_1
+         3: ishl
+         4: iload_3
+         5: iconst_1
+         6: ishl
+         7: aload_2
+         8: iload_3
+         9: invokestatic  #100                // Method rfindUTF16Latin1:([BII[BI)I
+        12: istore        4
+        14: iload         4
+        16: bipush        -2
+        18: if_icmpne     31
+        21: aload_0
+        22: iload_1
+        23: aload_2
+        24: iload_3
+        25: invokestatic  #97                 // Method matchesUTF16Latin1JavaReverse:([BI[BI)Z
+        28: goto          41
+        31: iload         4
+        33: ifne          40
+        36: iconst_1
+        37: goto          41
+        40: iconst_0
+        41: ireturn
+
+  private static boolean matchesUTF16Latin1C1Prefix(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: iload_3
+         4: invokestatic  #97                 // Method matchesUTF16Latin1JavaReverse:([BI[BI)Z
+         7: ireturn
+
+  private static boolean matchesUTF16Latin1JavaReverse(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: iload_3
+         1: iconst_1
+         2: isub
+         3: istore        4
+         5: iload         4
+         7: ifge          12
+        10: iconst_1
+        11: ireturn
+        12: iload_1
+        13: iload         4
+        15: iadd
+        16: istore        5
+        18: aload_0
+        19: iload         5
+        21: iinc          5, -1
+        24: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        27: aload_2
+        28: iload         4
+        30: baload
+        31: sipush        255
+        34: iand
+        35: if_icmpeq     40
+        38: iconst_0
+        39: ireturn
+        40: iload_1
+        41: iconst_1
+        42: isub
+        43: istore        6
+        45: iload         4
+        47: iconst_1
+        48: isub
+        49: istore        7
+        51: iload         5
+        53: iload         6
+        55: if_icmple     83
+        58: aload_0
+        59: iload         5
+        61: iinc          5, -1
+        64: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        67: aload_2
+        68: iload         7
+        70: iinc          7, -1
+        73: baload
+        74: sipush        255
+        77: iand
+        78: if_icmpeq     51
+        81: iconst_0
+        82: ireturn
+        83: iconst_1
+        84: ireturn
+
+  static boolean matchesLongUTF16Latin1(byte[], int, byte[], int);
+    descriptor: ([BI[BI)Z
+    Code:
+         0: iload_1
+         1: iload_3
+         2: aload_0
+         3: arraylength
+         4: iconst_1
+         5: ishr
+         6: invokestatic  #15                 // Method java/util/Objects.checkFromIndexSize:(III)I
+         9: pop
+        10: iload_3
+        11: iconst_2
+        12: isub
+        13: istore        4
+        15: iload         4
+        17: bipush        64
+        19: if_icmplt     49
+        22: aload_0
+        23: iload_1
+        24: iload         4
+        26: iadd
+        27: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        30: aload_2
+        31: iload         4
+        33: baload
+        34: sipush        255
+        37: iand
+        38: if_icmpeq     43
+        41: iconst_0
+        42: ireturn
+        43: iinc          4, -1
+        46: goto          15
+        49: aload_0
+        50: iload_1
+        51: iconst_1
+        52: ishl
+        53: sipush        128
+        56: aload_2
+        57: bipush        64
+        59: invokestatic  #100                // Method rfindUTF16Latin1:([BII[BI)I
+        62: istore        4
+        64: iload         4
+        66: bipush        -2
+        68: if_icmpeq     82
+        71: iload         4
+        73: ifne          80
+        76: iconst_1
+        77: goto          81
+        80: iconst_0
+        81: ireturn
+        82: bipush        63
+        84: istore        5
+        86: iload         5
+        88: iflt          118
+        91: aload_0
+        92: iload_1
+        93: iload         5
+        95: iadd
+        96: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        99: aload_2
+       100: iload         5
+       102: baload
+       103: sipush        255
+       106: iand
+       107: if_icmpeq     112
+       110: iconst_0
+       111: ireturn
+       112: iinc          5, -1
+       115: goto          86
+       118: iconst_1
+       119: ireturn
+
+  static int lastMixedCandidate(byte[], byte[], int, int);
+    descriptor: ([B[BII)I
+    Code:
+         0: iload_2
+         1: iconst_1
+         2: isub
+         3: istore        4
+         5: aload_1
+         6: iload         4
+         8: baload
+         9: sipush        255
+        12: iand
+        13: istore        5
+        15: aload_0
+        16: iload         4
+        18: iconst_1
+        19: ishl
+        20: iload_3
+        21: iconst_1
+        22: iadd
+        23: iconst_1
+        24: ishl
+        25: iload         5
+        27: invokestatic  #103                // Method rfindCharUTF16:([BIII)I
+        30: istore        6
+        32: iload         6
+        34: bipush        -2
+        36: if_icmpne     41
+        39: iload_3
+        40: ireturn
+        41: iload         6
+        43: ifge          50
+        46: iconst_m1
+        47: goto          54
+        50: iload         6
+        52: iconst_1
+        53: ishr
+        54: ireturn
+
+  static int indexOfLatin1(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)I
+    Code:
+         0: aload_0
+         1: iload         4
+         3: iload_1
+         4: iload         4
+         6: isub
+         7: aload_2
+         8: iload_3
+         9: invokestatic  #107                // Method findLatin1:([BII[BI)I
+        12: istore        5
+        14: iload         5
+        16: bipush        -2
+        18: if_icmpne     37
+        21: aload_0
+        22: iload         4
+        24: iload_1
+        25: iload         4
+        27: isub
+        28: aload_2
+        29: iload_3
+        30: iconst_0
+        31: iconst_0
+        32: invokestatic  #110                // Method searchLarge:([BII[BIIZ)I
+        35: istore        5
+        37: iload         5
+        39: bipush        -2
+        41: if_icmpne     47
+        44: bipush        -2
+        46: ireturn
+        47: iload         5
+        49: ifge          56
+        52: iconst_m1
+        53: goto          61
+        56: iload         4
+        58: iload         5
+        60: iadd
+        61: ireturn
+
+  static int indexOfUTF16(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)I
+    Code:
+         0: aload_0
+         1: iload         4
+         3: iconst_1
+         4: ishl
+         5: iload_1
+         6: iload         4
+         8: isub
+         9: iconst_1
+        10: ishl
+        11: aload_2
+        12: iload_3
+        13: iconst_1
+        14: ishl
+        15: invokestatic  #114                // Method findUTF16:([BII[BI)I
+        18: istore        5
+        20: iload         5
+        22: bipush        -2
+        24: if_icmpne     49
+        27: aload_0
+        28: iload         4
+        30: iconst_1
+        31: ishl
+        32: iload_1
+        33: iload         4
+        35: isub
+        36: iconst_1
+        37: ishl
+        38: aload_2
+        39: iload_3
+        40: iconst_1
+        41: ishl
+        42: iconst_1
+        43: iconst_0
+        44: invokestatic  #110                // Method searchLarge:([BII[BIIZ)I
+        47: istore        5
+        49: iload         5
+        51: bipush        -2
+        53: if_icmpne     59
+        56: bipush        -2
+        58: ireturn
+        59: iload         5
+        61: ifge          68
+        64: iconst_m1
+        65: goto          75
+        68: iload         4
+        70: iload         5
+        72: iconst_1
+        73: ishr
+        74: iadd
+        75: ireturn
+
+  static int indexOfCharLatin1(byte[], int, int, int);
+    descriptor: ([BIII)I
+    Code:
+         0: aload_0
+         1: iload_3
+         2: iload_1
+         3: iload_3
+         4: isub
+         5: iload_2
+         6: invokestatic  #117                // Method findCharLatin1:([BIII)I
+         9: istore        4
+        11: iload         4
+        13: bipush        -2
+        15: if_icmpne     31
+        18: aload_0
+        19: iload_3
+        20: iload_1
+        21: iload_3
+        22: isub
+        23: iload_2
+        24: iconst_0
+        25: iconst_0
+        26: invokestatic  #120                // Method searchCharLarge:([BIIIZZ)I
+        29: istore        4
+        31: iload         4
+        33: bipush        -2
+        35: if_icmpne     41
+        38: bipush        -2
+        40: ireturn
+        41: iload         4
+        43: ifge          50
+        46: iconst_m1
+        47: goto          54
+        50: iload_3
+        51: iload         4
+        53: iadd
+        54: ireturn
+
+  static int indexOfCharUTF16(byte[], int, int, int);
+    descriptor: ([BIII)I
+    Code:
+         0: aload_0
+         1: iload_3
+         2: iconst_1
+         3: ishl
+         4: iload_1
+         5: iload_3
+         6: isub
+         7: iconst_1
+         8: ishl
+         9: iload_2
+        10: invokestatic  #124                // Method findCharUTF16:([BIII)I
+        13: istore        4
+        15: iload         4
+        17: bipush        -2
+        19: if_icmpne     39
+        22: aload_0
+        23: iload_3
+        24: iconst_1
+        25: ishl
+        26: iload_1
+        27: iload_3
+        28: isub
+        29: iconst_1
+        30: ishl
+        31: iload_2
+        32: iconst_1
+        33: iconst_0
+        34: invokestatic  #120                // Method searchCharLarge:([BIIIZZ)I
+        37: istore        4
+        39: iload         4
+        41: bipush        -2
+        43: if_icmpne     49
+        46: bipush        -2
+        48: ireturn
+        49: iload         4
+        51: ifge          58
+        54: iconst_m1
+        55: goto          64
+        58: iload_3
+        59: iload         4
+        61: iconst_1
+        62: ishr
+        63: iadd
+        64: ireturn
+
+  static int lastIndexOfCharLatin1(byte[], int, int);
+    descriptor: ([BII)I
+    Code:
+         0: aload_0
+         1: iconst_0
+         2: iload_1
+         3: iload_2
+         4: invokestatic  #127                // Method rfindCharLatin1:([BIII)I
+         7: istore_3
+         8: iload_3
+         9: bipush        -2
+        11: if_icmpne     24
+        14: aload_0
+        15: iconst_0
+        16: iload_1
+        17: iload_2
+        18: iconst_0
+        19: iconst_1
+        20: invokestatic  #120                // Method searchCharLarge:([BIIIZZ)I
+        23: istore_3
+        24: iload_3
+        25: ireturn
+
+  static int lastIndexOfCharUTF16(byte[], int, int);
+    descriptor: ([BII)I
+    Code:
+         0: aload_0
+         1: iconst_0
+         2: iload_1
+         3: iconst_1
+         4: ishl
+         5: iload_2
+         6: invokestatic  #103                // Method rfindCharUTF16:([BIII)I
+         9: istore_3
+        10: iload_3
+        11: bipush        -2
+        13: if_icmpne     28
+        16: aload_0
+        17: iconst_0
+        18: iload_1
+        19: iconst_1
+        20: ishl
+        21: iload_2
+        22: iconst_1
+        23: iconst_1
+        24: invokestatic  #120                // Method searchCharLarge:([BIIIZZ)I
+        27: istore_3
+        28: iload_3
+        29: bipush        -2
+        31: if_icmpne     39
+        34: bipush        -2
+        36: goto          50
+        39: iload_3
+        40: ifge          47
+        43: iconst_m1
+        44: goto          50
+        47: iload_3
+        48: iconst_1
+        49: ishr
+        50: ireturn
+
+  static int indexOfUTF16Latin1(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)I
+    Code:
+         0: aload_0
+         1: iload         4
+         3: iconst_1
+         4: ishl
+         5: iload_1
+         6: iload         4
+         8: isub
+         9: iconst_1
+        10: ishl
+        11: aload_2
+        12: iload_3
+        13: invokestatic  #130                // Method findUTF16Latin1:([BII[BI)I
+        16: istore        5
+        18: iload         5
+        20: bipush        -2
+        22: if_icmpne     45
+        25: aload_0
+        26: iload         4
+        28: iconst_1
+        29: ishl
+        30: iload_1
+        31: iload         4
+        33: isub
+        34: iconst_1
+        35: ishl
+        36: aload_2
+        37: iload_3
+        38: iconst_2
+        39: iconst_0
+        40: invokestatic  #110                // Method searchLarge:([BII[BIIZ)I
+        43: istore        5
+        45: iload         5
+        47: bipush        -2
+        49: if_icmpne     55
+        52: bipush        -2
+        54: ireturn
+        55: iload         5
+        57: ifge          64
+        60: iconst_m1
+        61: goto          71
+        64: iload         4
+        66: iload         5
+        68: iconst_1
+        69: ishr
+        70: iadd
+        71: ireturn
+
+  static int lastIndexOfLatin1C1(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)I
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: iload_3
+         4: iload         4
+         6: iconst_1
+         7: invokestatic  #133                // Method java/lang/StringLatin1.lastIndexOf:([BI[BIII)I
+        10: ireturn
+
+  static int lastIndexOfUTF16C1(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)I
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: iload_3
+         4: iload         4
+         6: iconst_1
+         7: invokestatic  #139                // Method java/lang/StringUTF16.lastIndexOf:([BI[BIII)I
+        10: ireturn
+
+  static int lastIndexOfUTF16Latin1C1(byte[], int, byte[], int, int);
+    descriptor: ([BI[BII)I
+    Code:
+         0: aload_0
+         1: iload_1
+         2: aload_2
+         3: iload_3
+         4: iload         4
+         6: iconst_1
+         7: invokestatic  #140                // Method java/lang/StringUTF16.lastIndexOfLatin1:([BI[BIII)I
+        10: ireturn
+
+  private java.lang.StringZilla();
+    descriptor: ()V
+    Code:
+         0: aload_0
+         1: invokespecial #143                // Method java/lang/Object."<init>":()V
+         4: return
+
+  private static native int initialize();
+    descriptor: ()I
+
+  static int compilerTier();
+    descriptor: ()I
+    Code:
+         0: iconst_0
+         1: ireturn
+
+  static boolean useReverseLatin1(int, int);
+    descriptor: (II)Z
+    Code:
+         0: iload_0
+         1: iload_1
+         2: invokestatic  #49                 // Method compilerTier:()I
+         5: invokestatic  #149                // Method useReverseLatin1:(III)Z
+         8: ireturn
+
+  static boolean useReverseLatin1(int, int, int);
+    descriptor: (III)Z
+    Code:
+         0: iload_2
+         1: ifne          6
+         4: iconst_1
+         5: ireturn
+         6: getstatic     #67                 // Field BACKEND:I
+         9: iconst_4
+        10: if_icmpne     74
+        13: iload_1
+        14: sipush        256
+        17: if_icmple     74
+        20: iload_2
+        21: iconst_1
+        22: if_icmpne     43
+        25: iload_0
+        26: iload_1
+        27: invokestatic  #153                // Method reverseWork:(II)J
+        30: ldc2_w        #157                // long 1024l
+        33: lcmp
+        34: iflt          41
+        37: iconst_1
+        38: goto          42
+        41: iconst_0
+        42: ireturn
+        43: iload_2
+        44: iconst_4
+        45: if_icmpne     74
+        48: iload_0
+        49: iload_1
+        50: isub
+        51: bipush        16
+        53: if_icmplt     72
+        56: iload_0
+        57: iload_1
+        58: invokestatic  #153                // Method reverseWork:(II)J
+        61: ldc2_w        #159                // long 4096l
+        64: lcmp
+        65: iflt          72
+        68: iconst_1
+        69: goto          73
+        72: iconst_0
+        73: ireturn
+        74: getstatic     #67                 // Field BACKEND:I
+        77: ifeq          89
+        80: getstatic     #67                 // Field BACKEND:I
+        83: iconst_1
+        84: if_icmpeq     89
+        87: iconst_1
+        88: ireturn
+        89: iload_2
+        90: iconst_1
+        91: if_icmpne     146
+        94: iload_1
+        95: sipush        256
+        98: if_icmple     140
+       101: getstatic     #67                 // Field BACKEND:I
+       104: iconst_1
+       105: if_icmpne     128
+       108: iload_0
+       109: iload_1
+       110: isub
+       111: bipush        64
+       113: if_icmpge     128
+       116: iload_0
+       117: i2l
+       118: iload_1
+       119: i2l
+       120: lmul
+       121: ldc2_w        #161                // long 4194304l
+       124: lcmp
+       125: ifle          140
+       128: iload_0
+       129: iload_1
+       130: invokestatic  #153                // Method reverseWork:(II)J
+       133: ldc2_w        #157                // long 1024l
+       136: lcmp
+       137: iflt          144
+       140: iconst_1
+       141: goto          145
+       144: iconst_0
+       145: ireturn
+       146: iload_1
+       147: sipush        256
+       150: if_icmple     213
+       153: getstatic     #67                 // Field BACKEND:I
+       156: iconst_1
+       157: if_icmpne     180
+       160: iload_0
+       161: iload_1
+       162: isub
+       163: bipush        64
+       165: if_icmpge     180
+       168: iload_0
+       169: i2l
+       170: iload_1
+       171: i2l
+       172: lmul
+       173: ldc2_w        #161                // long 4194304l
+       176: lcmp
+       177: ifle          207
+       180: getstatic     #67                 // Field BACKEND:I
+       183: iconst_1
+       184: if_icmpne     195
+       187: iload_0
+       188: iload_1
+       189: isub
+       190: bipush        32
+       192: if_icmplt     211
+       195: iload_0
+       196: iload_1
+       197: invokestatic  #153                // Method reverseWork:(II)J
+       200: ldc2_w        #159                // long 4096l
+       203: lcmp
+       204: iflt          211
+       207: iconst_1
+       208: goto          212
+       211: iconst_0
+       212: ireturn
+       213: getstatic     #67                 // Field BACKEND:I
+       216: ifne          240
+       219: iload_1
+       220: bipush        32
+       222: if_icmplt     236
+       225: iload_0
+       226: sipush        1024
+       229: if_icmplt     236
+       232: iconst_1
+       233: goto          264
+       236: iconst_0
+       237: goto          264
+       240: iload_1
+       241: sipush        128
+       244: if_icmple     259
+       247: iload_0
+       248: iload_1
+       249: invokestatic  #153                // Method reverseWork:(II)J
+       252: ldc2_w        #157                // long 1024l
+       255: lcmp
+       256: iflt          263
+       259: iconst_1
+       260: goto          264
+       263: iconst_0
+       264: ireturn
+
+  static boolean useReverseLatin1Filter();
+    descriptor: ()Z
+    Code:
+         0: invokestatic  #49                 // Method compilerTier:()I
+         3: invokestatic  #163                // Method useReverseLatin1Filter:(I)Z
+         6: ireturn
+
+  static boolean useReverseLatin1Filter(int);
+    descriptor: (I)Z
+    Code:
+         0: getstatic     #67                 // Field BACKEND:I
+         3: ifne          15
+         6: iload_0
+         7: iconst_4
+         8: if_icmpne     15
+        11: iconst_1
+        12: goto          16
+        15: iconst_0
+        16: ireturn
+
+  static int lastIndexOfLatin1JavaC2(byte[], byte[], int, int);
+    descriptor: ([B[BII)I
+    Code:
+         0: iload_3
+         1: iload_2
+         2: aload_0
+         3: arraylength
+         4: invokestatic  #15                 // Method java/util/Objects.checkFromIndexSize:(III)I
+         7: pop
+         8: iconst_0
+         9: iload_2
+        10: aload_1
+        11: arraylength
+        12: invokestatic  #15                 // Method java/util/Objects.checkFromIndexSize:(III)I
+        15: pop
+        16: iload_2
+        17: sipush        256
+        20: if_icmple     33
+        23: aload_0
+        24: aload_1
+        25: iload_2
+        26: iload_3
+        27: invokestatic  #167                // Method java/lang/StringLatin1.lastIndexOfJavaLong:([B[BII)I
+        30: goto          40
+        33: aload_0
+        34: aload_1
+        35: iload_2
+        36: iload_3
+        37: invokestatic  #171                // Method java/lang/StringLatin1.lastIndexOfJava:([B[BII)I
+        40: ireturn
+
+  static boolean useReverseUTF16(int, int);
+    descriptor: (II)Z
+    Code:
+         0: iload_0
+         1: iload_1
+         2: invokestatic  #49                 // Method compilerTier:()I
+         5: invokestatic  #174                // Method useReverseUTF16:(III)Z
+         8: ireturn
+
+  static boolean useReverseUTF16(int, int, int);
+    descriptor: (III)Z
+    Code:
+         0: iload_2
+         1: ifne          6
+         4: iconst_1
+         5: ireturn
+         6: getstatic     #71                 // Field MSVC_SERIAL:Z
+         9: ifeq          45
+        12: iload_2
+        13: iconst_1
+        14: if_icmpne     45
+        17: iload_1
+        18: sipush        128
+        21: if_icmple     45
+        24: iload_0
+        25: iload_1
+        26: isub
+        27: iconst_1
+        28: if_icmpgt     45
+        31: iload_0
+        32: i2l
+        33: iload_1
+        34: i2l
+        35: lmul
+        36: ldc2_w        #177                // long 1048576l
+        39: lcmp
+        40: ifgt          45
+        43: iconst_1
+        44: ireturn
+        45: getstatic     #71                 // Field MSVC_SERIAL:Z
+        48: ifeq          65
+        51: iload_2
+        52: iconst_4
+        53: if_icmpne     65
+        56: iload_1
+        57: sipush        128
+        60: if_icmpgt     65
+        63: iconst_0
+        64: ireturn
+        65: getstatic     #67                 // Field BACKEND:I
+        68: iconst_4
+        69: if_icmpne     167
+        72: iload_2
+        73: iconst_1
+        74: if_icmpne     102
+        77: iload_1
+        78: sipush        128
+        81: if_icmple     102
+        84: iload_0
+        85: iload_1
+        86: invokestatic  #153                // Method reverseWork:(II)J
+        89: ldc2_w        #157                // long 1024l
+        92: lcmp
+        93: iflt          100
+        96: iconst_1
+        97: goto          101
+       100: iconst_0
+       101: ireturn
+       102: iload_2
+       103: iconst_4
+       104: if_icmpne     167
+       107: iload_1
+       108: sipush        128
+       111: if_icmple     142
+       114: iload_0
+       115: iload_1
+       116: isub
+       117: bipush        8
+       119: if_icmplt     138
+       122: iload_0
+       123: iload_1
+       124: invokestatic  #153                // Method reverseWork:(II)J
+       127: ldc2_w        #179                // long 2048l
+       130: lcmp
+       131: iflt          138
+       134: iconst_1
+       135: goto          166
+       138: iconst_0
+       139: goto          166
+       142: iload_0
+       143: iload_1
+       144: bipush        8
+       146: if_icmpgt     155
+       149: sipush        1024
+       152: goto          158
+       155: sipush        512
+       158: if_icmplt     165
+       161: iconst_1
+       162: goto          166
+       165: iconst_0
+       166: ireturn
+       167: getstatic     #67                 // Field BACKEND:I
+       170: ifeq          180
+       173: getstatic     #67                 // Field BACKEND:I
+       176: iconst_1
+       177: if_icmpne     210
+       180: iload_2
+       181: iconst_1
+       182: if_icmpne     210
+       185: iload_1
+       186: sipush        128
+       189: if_icmple     204
+       192: iload_0
+       193: iload_1
+       194: invokestatic  #153                // Method reverseWork:(II)J
+       197: ldc2_w        #157                // long 1024l
+       200: lcmp
+       201: iflt          208
+       204: iconst_1
+       205: goto          209
+       208: iconst_0
+       209: ireturn
+       210: iload_2
+       211: iconst_4
+       212: if_icmpne     272
+       215: getstatic     #67                 // Field BACKEND:I
+       218: ifeq          228
+       221: getstatic     #67                 // Field BACKEND:I
+       224: iconst_1
+       225: if_icmpne     272
+       228: iload_1
+       229: sipush        128
+       232: if_icmple     265
+       235: getstatic     #67                 // Field BACKEND:I
+       238: iconst_1
+       239: if_icmpne     250
+       242: iload_0
+       243: iload_1
+       244: isub
+       245: bipush        16
+       247: if_icmplt     276
+       250: iload_0
+       251: iload_1
+       252: invokestatic  #153                // Method reverseWork:(II)J
+       255: ldc2_w        #179                // long 2048l
+       258: lcmp
+       259: iflt          276
+       262: goto          272
+       265: iload_0
+       266: sipush        512
+       269: if_icmplt     276
+       272: iconst_1
+       273: goto          277
+       276: iconst_0
+       277: ireturn
+
+  static boolean useReverseUTF16Filter(int);
+    descriptor: (I)Z
+    Code:
+         0: iload_0
+         1: sipush        128
+         4: if_icmpgt     31
+         7: getstatic     #67                 // Field BACKEND:I
+        10: ifeq          27
+        13: getstatic     #67                 // Field BACKEND:I
+        16: iconst_1
+        17: if_icmpeq     27
+        20: getstatic     #67                 // Field BACKEND:I
+        23: iconst_4
+        24: if_icmpne     31
+        27: iconst_1
+        28: goto          32
+        31: iconst_0
+        32: ireturn
+
+  private static long reverseWork(int, int);
+    descriptor: (II)J
+    Code:
+         0: iload_0
+         1: i2l
+         2: iload_1
+         3: i2l
+         4: lsub
+         5: lconst_1
+         6: ladd
+         7: iload_1
+         8: i2l
+         9: lmul
+        10: lreturn
+
+  static int rfindUTF16C1(byte[], int, byte[], int);
+    descriptor: ([BI[BI)I
+    Code:
+         0: getstatic     #71                 // Field MSVC_SERIAL:Z
+         3: ifeq          77
+         6: iload_3
+         7: sipush        128
+        10: if_icmpgt     77
+        13: iload_3
+        14: iconst_1
+        15: isub
+        16: istore        4
+        18: aload_2
+        19: iload         4
+        21: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        24: istore        5
+        26: aload_0
+        27: iload_1
+        28: iconst_1
+        29: isub
+        30: invokestatic  #61                 // Method java/lang/StringUTF16.getChar:([BI)C
+        33: iload         5
+        35: if_icmpeq     77
+        38: aload_0
+        39: iload         4
+        41: iconst_1
+        42: ishl
+        43: iload_1
+        44: iload         4
+        46: isub
+        47: iconst_1
+        48: ishl
+        49: iload         5
+        51: invokestatic  #103                // Method rfindCharUTF16:([BIII)I
+        54: istore        6
+        56: iload         6
+        58: bipush        -2
+        60: if_icmpeq     77
+        63: iload         6
+        65: ifge          70
+        68: iconst_m1
+        69: ireturn
+        70: iload         6
+        72: iconst_1
+        73: ishr
+        74: iload_3
+        75: iadd
+        76: istore_1
+        77: aload_0
+        78: iconst_0
+        79: iload_1
+        80: iconst_1
+        81: ishl
+        82: aload_2
+        83: iload_3
+        84: iconst_1
+        85: ishl
+        86: invokestatic  #181                // Method rfindUTF16:([BII[BI)I
+        89: ireturn
+
+  static int searchLarge(byte[], int, int, byte[], int, int, boolean);
+    descriptor: ([BII[BIIZ)I
+    Code:
+         0: iload         5
+         2: ifne          9
+         5: iconst_1
+         6: goto          10
+         9: iconst_2
+        10: istore        7
+        12: iload         5
+        14: iconst_2
+        15: if_icmpne     28
+        18: iload         4
+        20: bipush        64
+        22: if_icmple     28
+        25: bipush        -2
+        27: ireturn
+        28: iload         5
+        30: iconst_2
+        31: if_icmpne     41
+        34: iload         4
+        36: iconst_2
+        37: imul
+        38: goto          43
+        41: iload         4
+        43: istore        8
+        45: iload         8
+        47: ifne          61
+        50: iload         6
+        52: ifeq          59
+        55: iload_2
+        56: goto          60
+        59: iconst_0
+        60: ireturn
+        61: ldc           #184                // int 65536
+        63: ldc           #185                // int 4194304
+        65: iload         8
+        67: idiv
+        68: invokestatic  #186                // Method java/lang/Math.min:(II)I
+        71: iload         7
+        73: ineg
+        74: iand
+        75: istore        9
+        77: iload         8
+        79: iload         9
+        81: iconst_2
+        82: idiv
+        83: if_icmple     89
+        86: bipush        -2
+        88: ireturn
+        89: iload_1
+        90: iload_2
+        91: iadd
+        92: istore        10
+        94: iload         6
+        96: ifeq          104
+        99: iload         10
+       101: goto          105
+       104: iload_1
+       105: istore        11
+       107: iload         6
+       109: ifeq          119
+       112: iload         11
+       114: iload_1
+       115: isub
+       116: goto          124
+       119: iload         10
+       121: iload         11
+       123: isub
+       124: iload         8
+       126: if_icmplt     337
+       129: iload         9
+       131: iload         6
+       133: ifeq          143
+       136: iload         11
+       138: iload_1
+       139: isub
+       140: goto          148
+       143: iload         10
+       145: iload         11
+       147: isub
+       148: invokestatic  #186                // Method java/lang/Math.min:(II)I
+       151: istore        12
+       153: iload         6
+       155: ifeq          166
+       158: iload         11
+       160: iload         12
+       162: isub
+       163: goto          168
+       166: iload         11
+       168: istore        13
+       170: iload         5
+       172: ifne          210
+       175: iload         6
+       177: ifeq          194
+       180: aload_0
+       181: iload         13
+       183: iload         12
+       185: aload_3
+       186: iload         4
+       188: invokestatic  #192                // Method rfindLatin1:([BII[BI)I
+       191: goto          205
+       194: aload_0
+       195: iload         13
+       197: iload         12
+       199: aload_3
+       200: iload         4
+       202: invokestatic  #107                // Method findLatin1:([BII[BI)I
+       205: istore        14
+       207: goto          283
+       210: iload         5
+       212: iconst_1
+       213: if_icmpne     251
+       216: iload         6
+       218: ifeq          235
+       221: aload_0
+       222: iload         13
+       224: iload         12
+       226: aload_3
+       227: iload         4
+       229: invokestatic  #181                // Method rfindUTF16:([BII[BI)I
+       232: goto          246
+       235: aload_0
+       236: iload         13
+       238: iload         12
+       240: aload_3
+       241: iload         4
+       243: invokestatic  #114                // Method findUTF16:([BII[BI)I
+       246: istore        14
+       248: goto          283
+       251: iload         6
+       253: ifeq          270
+       256: aload_0
+       257: iload         13
+       259: iload         12
+       261: aload_3
+       262: iload         4
+       264: invokestatic  #100                // Method rfindUTF16Latin1:([BII[BI)I
+       267: goto          281
+       270: aload_0
+       271: iload         13
+       273: iload         12
+       275: aload_3
+       276: iload         4
+       278: invokestatic  #130                // Method findUTF16Latin1:([BII[BI)I
+       281: istore        14
+       283: iload         14
+       285: bipush        -2
+       287: if_icmpne     293
+       290: bipush        -2
+       292: ireturn
+       293: iload         14
+       295: iflt          306
+       298: iload         13
+       300: iload_1
+       301: isub
+       302: iload         14
+       304: iadd
+       305: ireturn
+       306: iload         12
+       308: iload         8
+       310: isub
+       311: iload         7
+       313: iadd
+       314: istore        15
+       316: iload         11
+       318: iload         6
+       320: ifeq          329
+       323: iload         15
+       325: ineg
+       326: goto          331
+       329: iload         15
+       331: iadd
+       332: istore        11
+       334: goto          107
+       337: iconst_m1
+       338: ireturn
+
+  static int searchCharLarge(byte[], int, int, int, boolean, boolean);
+    descriptor: ([BIIIZZ)I
+    Code:
+         0: iload         4
+         2: ifeq          9
+         5: iconst_2
+         6: goto          10
+         9: iconst_1
+        10: istore        6
+        12: iload         4
+        14: ifeq          27
+        17: iload_3
+        18: ldc           #184                // int 65536
+        20: if_icmplt     27
+        23: iconst_4
+        24: goto          29
+        27: iload         6
+        29: istore        7
+        31: iload_1
+        32: iload_2
+        33: iadd
+        34: istore        8
+        36: iload         5
+        38: ifeq          46
+        41: iload         8
+        43: goto          47
+        46: iload_1
+        47: istore        9
+        49: iload         5
+        51: ifeq          61
+        54: iload         9
+        56: iload_1
+        57: isub
+        58: goto          66
+        61: iload         8
+        63: iload         9
+        65: isub
+        66: iload         7
+        68: if_icmplt     230
+        71: ldc           #184                // int 65536
+        73: iload         5
+        75: ifeq          85
+        78: iload         9
+        80: iload_1
+        81: isub
+        82: goto          90
+        85: iload         8
+        87: iload         9
+        89: isub
+        90: invokestatic  #186                // Method java/lang/Math.min:(II)I
+        93: istore        10
+        95: iload         5
+        97: ifeq          108
+       100: iload         9
+       102: iload         10
+       104: isub
+       105: goto          110
+       108: iload         9
+       110: istore        11
+       112: iload         4
+       114: ifeq          148
+       117: iload         5
+       119: ifeq          134
+       122: aload_0
+       123: iload         11
+       125: iload         10
+       127: iload_3
+       128: invokestatic  #103                // Method rfindCharUTF16:([BIII)I
+       131: goto          143
+       134: aload_0
+       135: iload         11
+       137: iload         10
+       139: iload_3
+       140: invokestatic  #124                // Method findCharUTF16:([BIII)I
+       143: istore        12
+       145: goto          176
+       148: iload         5
+       150: ifeq          165
+       153: aload_0
+       154: iload         11
+       156: iload         10
+       158: iload_3
+       159: invokestatic  #127                // Method rfindCharLatin1:([BIII)I
+       162: goto          174
+       165: aload_0
+       166: iload         11
+       168: iload         10
+       170: iload_3
+       171: invokestatic  #117                // Method findCharLatin1:([BIII)I
+       174: istore        12
+       176: iload         12
+       178: bipush        -2
+       180: if_icmpne     186
+       183: bipush        -2
+       185: ireturn
+       186: iload         12
+       188: iflt          199
+       191: iload         11
+       193: iload_1
+       194: isub
+       195: iload         12
+       197: iadd
+       198: ireturn
+       199: iload         10
+       201: iload         7
+       203: isub
+       204: iload         6
+       206: iadd
+       207: istore        13
+       209: iload         9
+       211: iload         5
+       213: ifeq          222
+       216: iload         13
+       218: ineg
+       219: goto          224
+       222: iload         13
+       224: iadd
+       225: istore        9
+       227: goto          49
+       230: iconst_m1
+       231: ireturn
+
+  static boolean equalsLarge(byte[], byte[]);
+    descriptor: ([B[B)Z
+    Code:
+         0: aload_0
+         1: arraylength
+         2: aload_1
+         3: arraylength
+         4: if_icmpeq     9
+         7: iconst_0
+         8: ireturn
+         9: iconst_0
+        10: istore_2
+        11: iload_2
+        12: aload_0
+        13: arraylength
+        14: if_icmpge     64
+        17: ldc           #184                // int 65536
+        19: aload_0
+        20: arraylength
+        21: iload_2
+        22: isub
+        23: invokestatic  #186                // Method java/lang/Math.min:(II)I
+        26: istore_3
+        27: aload_0
+        28: iload_2
+        29: iload_3
+        30: aload_1
+        31: iload_2
+        32: invokestatic  #57                 // Method equalsRange:([BII[BI)I
+        35: istore        4
+        37: iload         4
+        39: bipush        -2
+        41: if_icmpne     50
+        44: aload_0
+        45: aload_1
+        46: invokestatic  #197                // Method java/lang/StringLatin1.equalsJava:([B[B)Z
+        49: ireturn
+        50: iload         4
+        52: ifne          57
+        55: iconst_0
+        56: ireturn
+        57: iload_2
+        58: iload_3
+        59: iadd
+        60: istore_2
+        61: goto          11
+        64: iconst_1
+        65: ireturn
+
+  static native int equalsRange(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static native int findUTF16Latin1(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static native int rfindUTF16Latin1(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static native int findCharLatin1(byte[], int, int, int);
+    descriptor: ([BIII)I
+
+  static native int findCharUTF16(byte[], int, int, int);
+    descriptor: ([BIII)I
+
+  static native int rfindCharLatin1(byte[], int, int, int);
+    descriptor: ([BIII)I
+
+  static native int rfindCharUTF16(byte[], int, int, int);
+    descriptor: ([BIII)I
+
+  static native int findLatin1(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static native int findUTF16(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static native int rfindLatin1(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static native int rfindUTF16(byte[], int, int, byte[], int);
+    descriptor: ([BII[BI)I
+
+  static {};
+    descriptor: ()V
+    Code:
+         0: invokestatic  #201                // Method initialize:()I
+         3: putstatic     #204                // Field CONFIGURATION:I
+         6: getstatic     #204                // Field CONFIGURATION:I
+         9: bipush        8
+        11: iand
+        12: ifeq          19
+        15: iconst_1
+        16: goto          20
+        19: iconst_0
+        20: putstatic     #207                // Field ENABLED:Z
+        23: getstatic     #204                // Field CONFIGURATION:I
+        26: bipush        7
+        28: iand
+        29: putstatic     #67                 // Field BACKEND:I
+        32: getstatic     #204                // Field CONFIGURATION:I
+        35: bipush        16
+        37: iand
+        38: ifeq          51
+        41: getstatic     #67                 // Field BACKEND:I
+        44: ifne          51
+        47: iconst_1
+        48: goto          52
+        51: iconst_0
+        52: putstatic     #71                 // Field MSVC_SERIAL:Z
+        55: return
+}

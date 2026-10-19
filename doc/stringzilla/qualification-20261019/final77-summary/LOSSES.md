@@ -1,6 +1,6 @@
 # Repeated paired complete-image comparisons
 
-49 rows have a paired-ratio, control-median or pooled-mean loss against at least one control.
+71 rows have a paired-ratio, control-median or pooled-mean loss against at least one control.
 
 All values are ns/op. Control columns show medians of round medians.
 Ratios are control/enabled: above one favors enabled. Brackets retain the minimum and maximum paired round ratios.
@@ -31,6 +31,28 @@ Loss marks distinguish paired-ratio medians below one, higher enabled control me
 | avx512/c2 | supp-char-forward-utf16-bulk | 119.697 | 119.963 | 115.581 | 0.9597 [0.8711, 1.0789] | 0.8968 [0.8342, 1.1168] | original,disabled; original,disabled; original,disabled |
 | avx512/c2 | tiny-utf16 | 2.894 | 2.923 | 2.808 | 0.9826 [0.8787, 0.9946] | 0.9322 [0.8525, 0.9870] | original,disabled; original,disabled; original,disabled |
 | avx512/interpreter | tiny-utf16 | 438.494 | 481.030 | 454.161 | 0.9116 [0.8938, 0.9357] | 0.9429 [0.9079, 0.9668] | original,disabled; original,disabled; original,disabled |
+| msvc/c1 | immediate-utf16 | 6.468 | 7.628 | 6.778 | 0.8594 [0.8366, 0.8663] | 0.8767 [0.8439, 0.9574] | original,disabled; original,disabled; original,disabled |
+| msvc/c1 | mixed-probe-end-31 | 22.633 | 22.222 | 21.780 | 1.0185 [1.0011, 1.0312] | 0.9801 [0.9715, 1.0486] | disabled; disabled; - |
+| msvc/c1 | msvc-utf16-boundary-127-end | 69.505 | 72.817 | 72.152 | 0.9546 [0.9545, 0.9854] | 0.9689 [0.9661, 1.0423] | original,disabled; original,disabled; original,disabled |
+| msvc/c1 | msvc-utf16-boundary-128-end | 70.775 | 70.892 | 71.571 | 0.9902 [0.9465, 1.0604] | 0.9899 [0.9572, 1.0291] | original,disabled; original; disabled |
+| msvc/c1 | msvc-utf16-end-128-16 | 12.738 | 13.512 | 12.278 | 0.9402 [0.9343, 0.9427] | 0.9155 [0.9028, 0.9171] | original,disabled; original,disabled; disabled |
+| msvc/c1 | msvc-utf16-end-4096-9 | 9.593 | 10.477 | 9.517 | 0.9218 [0.7869, 0.9320] | 0.9048 [0.8044, 0.9084] | original,disabled; original,disabled; original,disabled |
+| msvc/c1 | short-latin-c1-32-miss | 18.513 | 18.495 | 18.867 | 0.9861 [0.9401, 1.0027] | 0.9873 [0.9429, 1.0202] | original,disabled; -; original |
+| msvc/c1 | supp-forward-utf16-bulk | 1111.329 | 1288.385 | 1259.445 | 0.8616 [0.8480, 0.9249] | 0.9775 [0.9254, 1.0187] | original,disabled; original,disabled; original,disabled |
+| msvc/c1 | tiny-utf16 | 4.524 | 4.263 | 4.003 | 1.0203 [1.0074, 1.1027] | 0.9168 [0.8913, 0.9466] | disabled; disabled; disabled |
+| msvc/c2 | equal-latin1-4096 | 85.066 | 83.022 | 84.334 | 1.0228 [0.9226, 1.0989] | 0.9774 [0.9147, 1.0424] | disabled; -; original,disabled |
+| msvc/c2 | equal-utf16-4096 | 157.666 | 159.198 | 158.847 | 0.9904 [0.9656, 1.0542] | 0.9841 [0.9806, 1.0329] | original,disabled; original,disabled; original,disabled |
+| msvc/c2 | final-latin-word-prefix-end-25 | 9.946 | 9.570 | 10.142 | 1.0367 [0.9098, 1.0446] | 1.0484 [0.9703, 1.0652] | -; -; disabled |
+| msvc/c2 | latin-vm-end-31 | 11.304 | 10.468 | 10.979 | 1.0708 [0.8222, 1.1603] | 1.0970 [0.7863, 1.1142] | -; -; original,disabled |
+| msvc/c2 | latin-vm-end-9 | 5.663 | 5.020 | 5.439 | 1.1280 [0.9618, 1.1960] | 1.0646 [0.9860, 1.0834] | -; -; disabled |
+| msvc/c2 | mixed-end-64 | 18.473 | 17.517 | 16.108 | 1.0546 [0.9094, 1.0562] | 0.9195 [0.9066, 0.9432] | disabled; disabled; original,disabled |
+| msvc/c2 | msvc-utf16-boundary-127-end | 31.502 | 29.125 | 25.753 | 1.0843 [1.0590, 1.0921] | 0.8794 [0.8383, 0.8928] | disabled; disabled; disabled |
+| msvc/c2 | msvc-utf16-boundary-128-end | 33.372 | 28.768 | 25.198 | 1.1560 [1.1321, 1.1600] | 0.8732 [0.8378, 0.8759] | disabled; disabled; disabled |
+| msvc/c2 | msvc-utf16-end-128-16 | 9.823 | 10.091 | 7.946 | 0.9784 [0.9256, 0.9865] | 0.7809 [0.7594, 0.8097] | original,disabled; original,disabled; original,disabled |
+| msvc/c2 | msvc-utf16-end-4096-9 | 5.641 | 8.464 | 5.694 | 0.6626 [0.6310, 0.6749] | 0.6812 [0.6480, 1.2799] | original,disabled; original,disabled; original |
+| msvc/c2 | supp-builder-mixed | 518.902 | 540.994 | 524.831 | 1.0028 [0.9223, 1.0053] | 0.9632 [0.9624, 1.0388] | disabled; original,disabled; original,disabled |
+| msvc/c2 | supp-char-forward-utf16-bulk | 155.550 | 157.687 | 157.638 | 0.9998 [0.9401, 1.0402] | 0.9997 [0.9709, 1.0549] | original,disabled; original,disabled; original |
+| msvc/interpreter | tiny-utf16 | 309.419 | 302.799 | 286.911 | 1.0354 [1.0184, 1.0699] | 0.9940 [0.9443, 0.9962] | disabled; disabled; disabled |
 | neon/c1 | overlap-min-latin | 643.461 | 646.836 | 644.966 | 0.9950 [0.9945, 0.9959] | 0.9973 [0.9947, 0.9977] | original,disabled; original,disabled; original,disabled |
 | neon/c1 | short-latin-c1-32-miss | 28.477 | 29.147 | 29.158 | 0.9770 [0.9732, 0.9796] | 1.0007 [0.9853, 1.0007] | original; original; original,disabled |
 | neon/c1 | threshold-utf16-127 | 88.144 | 101.022 | 84.717 | 0.8715 [0.8642, 0.8791] | 0.8370 [0.8306, 0.8453] | original,disabled; original,disabled; original,disabled |

@@ -1,0 +1,356 @@
+{
+  "sources": {
+    "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "fork": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d"
+  },
+  "source_trees": {
+    "fork": {
+      "revision": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d",
+      "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree 67aaa17a60a10ef0394220e6b63a3b2cf6ec1cd7\tsrc\n040000 tree 52d90114b461a353db29cb29fc4ca4cb0ab1d0aa\ttest"
+    },
+    "original": {
+      "revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"
+    }
+  },
+  "backend": "msvc",
+  "spec": {
+    "SOURCE_DATE": "1792195200",
+    "VERSION_OPT": "stringzilla-benchmark",
+    "VERSION_STRING": "27.0.2-internal-stringzilla-benchmark",
+    "DEBUG_LEVEL": "release",
+    "JVM_VARIANTS": "server",
+    "JVM_FEATURES_server": "cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc",
+    "TOOLCHAIN_TYPE": "microsoft",
+    "TOOLCHAIN_VERSION": "2026",
+    "CC_VERSION_NUMBER": "19.44.35229",
+    "CXX_VERSION_NUMBER": "19.44.35229",
+    "EXTRA_CFLAGS": "-arch:AVX2",
+    "EXTRA_CXXFLAGS": "-arch:AVX2",
+    "EXTRA_LDFLAGS": ""
+  },
+  "helper_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+  "parent_manifest_sha256": "d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d",
+  "image_hashes": {
+    "original": {
+      "tree_sha256": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202"
+    },
+    "fork": {
+      "tree_sha256": "a2b07626d604328a563e57f99a3905e50a5cdefa98a7eec663eac5c49eda1735"
+    }
+  },
+  "release": {
+    "original": {
+      "SOURCE": "",
+      "embedded_revision_available": false,
+      "expected_full_revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda"
+    },
+    "fork": {
+      "SOURCE": "",
+      "embedded_revision_available": false,
+      "expected_full_revision": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d"
+    }
+  },
+  "producer_run": "39204049909",
+  "producer_head": "a677a179522428c24b85cf76dbf0895f3aa1825f",
+  "original_reuse": {
+    "producer_job": {
+      "id": 117789053344,
+      "run_id": 39164738566,
+      "workflow_name": "StringZilla final complete-image qualification",
+      "head_branch": "codex/stringzilla-final-qualification-916ba895",
+      "run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/runs/39164738566",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOU4oQ1c8AAAAbbMZRoA",
+      "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+      "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/jobs/117789053344",
+      "html_url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39164738566/job/117789053344",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-18T21:02:29Z",
+      "started_at": "2026-10-18T21:24:06Z",
+      "completed_at": "2026-10-18T21:56:24Z",
+      "name": "msvc_pair / msvc validated pair",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-18T21:24:06Z",
+          "completed_at": "2026-10-18T21:24:07Z"
+        },
+        {
+          "name": "Checkout candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-18T21:24:07Z",
+          "completed_at": "2026-10-18T21:25:06Z"
+        },
+        {
+          "name": "Checkout baseline identity",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-18T21:25:06Z",
+          "completed_at": "2026-10-18T21:26:05Z"
+        },
+        {
+          "name": "Checkout auxiliary driver",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-18T21:26:05Z",
+          "completed_at": "2026-10-18T21:26:11Z"
+        },
+        {
+          "name": "Restore only the verified original image",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-18T21:26:11Z",
+          "completed_at": "2026-10-18T21:26:36Z"
+        },
+        {
+          "name": "Get MSYS2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-18T21:26:36Z",
+          "completed_at": "2026-10-18T21:26:55Z"
+        },
+        {
+          "name": "Get boot JDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-18T21:26:55Z",
+          "completed_at": "2026-10-18T21:28:09Z"
+        },
+        {
+          "name": "Get JTReg",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-18T21:28:09Z",
+          "completed_at": "2026-10-18T21:28:11Z"
+        },
+        {
+          "name": "Verify vendoring",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-18T21:28:11Z",
+          "completed_at": "2026-10-18T21:28:11Z"
+        },
+        {
+          "name": "Install GCC 16",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-10-18T21:28:11Z",
+          "completed_at": "2026-10-18T21:28:11Z"
+        },
+        {
+          "name": "Check MSVC 14.44 toolset",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-18T21:28:11Z",
+          "completed_at": "2026-10-18T21:28:15Z"
+        },
+        {
+          "name": "Install MSVC 14.44 toolset",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 12,
+          "started_at": "2026-10-18T21:28:15Z",
+          "completed_at": "2026-10-18T21:28:15Z"
+        },
+        {
+          "name": "Build complete Linux fork",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 13,
+          "started_at": "2026-10-18T21:28:15Z",
+          "completed_at": "2026-10-18T21:28:15Z"
+        },
+        {
+          "name": "Build complete MSVC fork",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-10-18T21:28:15Z",
+          "completed_at": "2026-10-18T21:51:05Z"
+        },
+        {
+          "name": "Verify and archive matched complete pair",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-18T21:51:05Z",
+          "completed_at": "2026-10-18T21:51:56Z"
+        },
+        {
+          "name": "Publish complete images before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-10-18T21:51:56Z",
+          "completed_at": "2026-10-18T21:52:09Z"
+        },
+        {
+          "name": "Run profiles, jtreg and native contract checks",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-10-18T21:52:09Z",
+          "completed_at": "2026-10-18T21:56:13Z"
+        },
+        {
+          "name": "Retain all build and validation evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-10-18T21:56:13Z",
+          "completed_at": "2026-10-18T21:56:14Z"
+        },
+        {
+          "name": "Post Get JTReg",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 32,
+          "started_at": "2026-10-18T21:56:14Z",
+          "completed_at": "2026-10-18T21:56:14Z"
+        },
+        {
+          "name": "Post Get boot JDK",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 33,
+          "started_at": "2026-10-18T21:56:14Z",
+          "completed_at": "2026-10-18T21:56:15Z"
+        },
+        {
+          "name": "Post Checkout auxiliary driver",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 34,
+          "started_at": "2026-10-18T21:56:15Z",
+          "completed_at": "2026-10-18T21:56:17Z"
+        },
+        {
+          "name": "Post Checkout baseline identity",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 35,
+          "started_at": "2026-10-18T21:56:17Z",
+          "completed_at": "2026-10-18T21:56:20Z"
+        },
+        {
+          "name": "Post Checkout candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 36,
+          "started_at": "2026-10-18T21:56:20Z",
+          "completed_at": "2026-10-18T21:56:22Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 37,
+          "started_at": "2026-10-18T21:56:22Z",
+          "completed_at": "2026-10-18T21:56:23Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/check-runs/117789053344",
+      "labels": [
+        "windows-2025"
+      ],
+      "runner_id": 1000019833,
+      "runner_name": "GitHub Actions 1000019833",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    "artifact": {
+      "id": 12151927587,
+      "node_id": "MDg6QXJ0aWZhY3QxMjE1MTkyNzU4Nw==",
+      "name": "stringzilla-final-pair-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+      "size_in_bytes": 384452812,
+      "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12151927587",
+      "archive_download_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12151927587/zip",
+      "expired": false,
+      "digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+      "created_at": "2026-10-18T21:52:09Z",
+      "updated_at": "2026-10-18T21:52:09Z",
+      "expires_at": "2026-11-17T21:51:56Z",
+      "workflow_run": {
+        "id": 39164738566,
+        "repository_id": 1401557205,
+        "head_repository_id": 1401557205,
+        "head_branch": "codex/stringzilla-final-qualification-916ba895",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+      }
+    },
+    "producer_run": {
+      "id": 39164738566,
+      "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    "validation_artifact": {
+      "id": 12151219729,
+      "node_id": "MDg6QXJ0aWZhY3QxMjE1MTIxOTcyOQ==",
+      "name": "stringzilla-final-build-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+      "size_in_bytes": 1092285,
+      "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12151219729",
+      "archive_download_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12151219729/zip",
+      "expired": false,
+      "digest": "sha256:e6040cc6a244f91e1bc8d6dd9f619903787327bd8d0a40f6ede5416c030da948",
+      "created_at": "2026-10-18T21:56:14Z",
+      "updated_at": "2026-10-18T21:56:14Z",
+      "expires_at": "2026-11-17T21:56:13Z",
+      "workflow_run": {
+        "id": 39164738566,
+        "repository_id": 1401557205,
+        "head_repository_id": 1401557205,
+        "head_branch": "codex/stringzilla-final-qualification-916ba895",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+      }
+    },
+    "required_validation_steps": [
+      "Verify and archive matched complete pair",
+      "Publish complete images before tests",
+      "Run profiles, jtreg and native contract checks"
+    ],
+    "downloaded_zip_sha256": "570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+    "parent_pair_receipt_sha256": "8fc1bb687c570ea8c51100fc519d439f96d73509b794d67fd98687b17c4bda00",
+    "parent_pair_inventories_sha256": "9b1e61c8210c5d5add99605c2756b1e55d8b8428d55b596755e94c65e0c1f51c",
+    "original_tar_sha256": "41025e0289cca97d14b8cf23cecb3e79ac2e118702326cf5e0852c97d55bd6c0",
+    "original_spec_sha256": "f0494aeedfc821f88db1d30e5316825ee4cc3dab05ea45232270151ba558cb8f",
+    "original_image_tree_sha256": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+    "release": {
+      "SOURCE": "",
+      "embedded_revision_available": false,
+      "expected_full_revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda"
+    },
+    "restored_source_record": {
+      "revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"
+    },
+    "replacement_source_records": {
+      "original": {
+        "revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"
+      },
+      "fork": {
+        "revision": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d",
+        "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree 67aaa17a60a10ef0394220e6b63a3b2cf6ec1cd7\tsrc\n040000 tree 52d90114b461a353db29cb29fc4ca4cb0ab1d0aa\ttest"
+      }
+    },
+    "historical_fork_reused": false,
+    "discarded_fork_revision": "916ba895e834378e3f7eac7f030fc4abff641d33"
+  }
+}

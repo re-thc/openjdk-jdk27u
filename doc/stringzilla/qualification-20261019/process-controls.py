@@ -42,7 +42,8 @@ for workload in ('startup','javac'):
                 cmd=[str(image/('bin/javac'+exe)),*['-J'+v for v in flag],'-proc:none','-d',str(classes),*[str(s) for s in sources]]
             with (a.output/(prefix+'.log')).open('w') as log:
                 start=time.perf_counter_ns()
-                subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=60)
+                # This Python 3.12 runtime polls on timed waits, adding observation delay.
+                subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,check=True)
                 elapsed=time.perf_counter_ns()-start
             if workload=='javac':
                 observed={str(f.relative_to(classes)):support.sha(f) for f in sorted(classes.rglob('*.class'))}
@@ -58,7 +59,7 @@ for workload in ('startup','javac'):
 assert all(support.image(root)['files']==inventories[n]['files'] for n,root in images.items())
 receipt={'sources':json.loads((a.pair/'pair-receipt.json').read_text())['sources'],
     'image_hashes':{n:i['tree_sha256'] for n,i in inventories.items()},'affinity':affinity,
-    'method':'one untimed full round, six paired rounds in balanced rotating order; ordinary JVM defaults including CDS; wall time includes process launch',
+    'method':'one untimed full round, six paired rounds in balanced rotating order; ordinary JVM defaults including CDS; process wall time uses blocking wait without timeout polling',
     'script_sha256':support.sha(Path(__file__)),'source_hashes':{s.name:support.sha(s) for s in sources},'results':results}
 (a.output/'RESULTS.json').write_text(json.dumps(receipt,indent=2)+'\n')
 print(json.dumps({r['workload']:{'medians_ms':r['control_median_ms'],'paired_median_speedup':r['paired_median_speedup'],'all_round_ratios':r['speedup']} for r in results}))

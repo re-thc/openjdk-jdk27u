@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=0",
+            "-XX:-TieredCompilation",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096",
+            "needleLength" : "65",
+            "shape" : "LATIN_FIFTH_FROM_END_MISS"
+        },
+        "primaryMetric" : {
+            "score" : 9490.46434638497,
+            "scoreError" : 2072.9733520133536,
+            "scoreConfidence" : [
+                7417.490994371616,
+                11563.437698398324
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9019.3976345725,
+                "50.0" : 9292.02097344124,
+                "90.0" : 10258.678748728991,
+                "95.0" : 10258.678748728991,
+                "99.0" : 10258.678748728991,
+                "99.9" : 10258.678748728991,
+                "99.99" : 10258.678748728991,
+                "99.999" : 10258.678748728991,
+                "99.9999" : 10258.678748728991,
+                "100.0" : 10258.678748728991
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    10258.678748728991,
+                    9051.91342089586,
+                    9830.310954286255,
+                    9292.02097344124,
+                    9019.3976345725
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

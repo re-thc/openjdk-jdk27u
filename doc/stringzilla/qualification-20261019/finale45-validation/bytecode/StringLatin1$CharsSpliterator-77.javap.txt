@@ -1,0 +1,212 @@
+Compiled from "StringLatin1.java"
+class java.lang.StringLatin1$CharsSpliterator implements java.util.Spliterator$OfInt {
+  private final byte[] array;
+    descriptor: [B
+
+  private int index;
+    descriptor: I
+
+  private final int fence;
+    descriptor: I
+
+  private final int cs;
+    descriptor: I
+
+  java.lang.StringLatin1$CharsSpliterator(byte[], int);
+    descriptor: ([BI)V
+    Code:
+         0: aload_0
+         1: aload_1
+         2: iconst_0
+         3: aload_1
+         4: arraylength
+         5: iload_2
+         6: invokespecial #1                  // Method "<init>":([BIII)V
+         9: return
+
+  java.lang.StringLatin1$CharsSpliterator(byte[], int, int, int);
+    descriptor: ([BIII)V
+    Code:
+         0: aload_0
+         1: invokespecial #7                  // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #12                 // Field array:[B
+         9: aload_0
+        10: iload_2
+        11: putfield      #16                 // Field index:I
+        14: aload_0
+        15: iload_3
+        16: putfield      #20                 // Field fence:I
+        19: aload_0
+        20: iload         4
+        22: bipush        16
+        24: ior
+        25: bipush        64
+        27: ior
+        28: sipush        16384
+        31: ior
+        32: putfield      #25                 // Field cs:I
+        35: return
+
+  public java.util.Spliterator$OfInt trySplit();
+    descriptor: ()Ljava/util/Spliterator$OfInt;
+    Code:
+         0: aload_0
+         1: getfield      #16                 // Field index:I
+         4: istore_1
+         5: iload_1
+         6: aload_0
+         7: getfield      #20                 // Field fence:I
+        10: iadd
+        11: iconst_1
+        12: iushr
+        13: istore_2
+        14: iload_1
+        15: iload_2
+        16: if_icmplt     23
+        19: aconst_null
+        20: goto          45
+        23: new           #2                  // class java/lang/StringLatin1$CharsSpliterator
+        26: dup
+        27: aload_0
+        28: getfield      #12                 // Field array:[B
+        31: iload_1
+        32: aload_0
+        33: iload_2
+        34: dup_x1
+        35: putfield      #16                 // Field index:I
+        38: aload_0
+        39: getfield      #25                 // Field cs:I
+        42: invokespecial #1                  // Method "<init>":([BIII)V
+        45: areturn
+
+  public void forEachRemaining(java.util.function.IntConsumer);
+    descriptor: (Ljava/util/function/IntConsumer;)V
+    Code:
+         0: aload_1
+         1: ifnonnull     12
+         4: new           #28                 // class java/lang/NullPointerException
+         7: dup
+         8: invokespecial #30                 // Method java/lang/NullPointerException."<init>":()V
+        11: athrow
+        12: aload_0
+        13: getfield      #12                 // Field array:[B
+        16: dup
+        17: astore_2
+        18: arraylength
+        19: aload_0
+        20: getfield      #20                 // Field fence:I
+        23: dup
+        24: istore        4
+        26: if_icmplt     71
+        29: aload_0
+        30: getfield      #16                 // Field index:I
+        33: dup
+        34: istore_3
+        35: iflt          71
+        38: iload_3
+        39: aload_0
+        40: iload         4
+        42: dup_x1
+        43: putfield      #16                 // Field index:I
+        46: if_icmpge     71
+        49: aload_1
+        50: aload_2
+        51: iload_3
+        52: baload
+        53: sipush        255
+        56: iand
+        57: invokeinterface #31,  2           // InterfaceMethod java/util/function/IntConsumer.accept:(I)V
+        62: iinc          3, 1
+        65: iload_3
+        66: iload         4
+        68: if_icmplt     49
+        71: return
+
+  public boolean tryAdvance(java.util.function.IntConsumer);
+    descriptor: (Ljava/util/function/IntConsumer;)Z
+    Code:
+         0: aload_1
+         1: ifnonnull     12
+         4: new           #28                 // class java/lang/NullPointerException
+         7: dup
+         8: invokespecial #30                 // Method java/lang/NullPointerException."<init>":()V
+        11: athrow
+        12: aload_0
+        13: getfield      #16                 // Field index:I
+        16: iflt          58
+        19: aload_0
+        20: getfield      #16                 // Field index:I
+        23: aload_0
+        24: getfield      #20                 // Field fence:I
+        27: if_icmpge     58
+        30: aload_1
+        31: aload_0
+        32: getfield      #12                 // Field array:[B
+        35: aload_0
+        36: dup
+        37: getfield      #16                 // Field index:I
+        40: dup_x1
+        41: iconst_1
+        42: iadd
+        43: putfield      #16                 // Field index:I
+        46: baload
+        47: sipush        255
+        50: iand
+        51: invokeinterface #31,  2           // InterfaceMethod java/util/function/IntConsumer.accept:(I)V
+        56: iconst_1
+        57: ireturn
+        58: iconst_0
+        59: ireturn
+
+  public long estimateSize();
+    descriptor: ()J
+    Code:
+         0: aload_0
+         1: getfield      #20                 // Field fence:I
+         4: aload_0
+         5: getfield      #16                 // Field index:I
+         8: isub
+         9: i2l
+        10: lreturn
+
+  public int characteristics();
+    descriptor: ()I
+    Code:
+         0: aload_0
+         1: getfield      #25                 // Field cs:I
+         4: ireturn
+
+  public void forEachRemaining(java.lang.Object);
+    descriptor: (Ljava/lang/Object;)V
+    Code:
+         0: aload_0
+         1: aload_1
+         2: checkcast     #32                 // class java/util/function/IntConsumer
+         5: invokevirtual #37                 // Method forEachRemaining:(Ljava/util/function/IntConsumer;)V
+         8: return
+
+  public boolean tryAdvance(java.lang.Object);
+    descriptor: (Ljava/lang/Object;)Z
+    Code:
+         0: aload_0
+         1: aload_1
+         2: checkcast     #32                 // class java/util/function/IntConsumer
+         5: invokevirtual #41                 // Method tryAdvance:(Ljava/util/function/IntConsumer;)Z
+         8: ireturn
+
+  public java.util.Spliterator$OfPrimitive trySplit();
+    descriptor: ()Ljava/util/Spliterator$OfPrimitive;
+    Code:
+         0: aload_0
+         1: invokevirtual #45                 // Method trySplit:()Ljava/util/Spliterator$OfInt;
+         4: areturn
+
+  public java.util.Spliterator trySplit();
+    descriptor: ()Ljava/util/Spliterator;
+    Code:
+         0: aload_0
+         1: invokevirtual #45                 // Method trySplit:()Ljava/util/Spliterator$OfInt;
+         4: areturn
+}

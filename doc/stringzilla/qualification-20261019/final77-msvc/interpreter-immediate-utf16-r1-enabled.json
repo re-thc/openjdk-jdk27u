@@ -1,0 +1,67 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=0",
+            "-Xint",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "UTF16",
+            "length" : "128",
+            "needleLength" : "4",
+            "position" : "END"
+        },
+        "primaryMetric" : {
+            "score" : 286.8883958822008,
+            "scoreError" : 54.80958734186113,
+            "scoreConfidence" : [
+                232.0788085403397,
+                341.69798322406194
+            ],
+            "scorePercentiles" : {
+                "0.0" : 270.22563213565013,
+                "50.0" : 296.24000765200066,
+                "90.0" : 298.053676510503,
+                "95.0" : 298.053676510503,
+                "99.0" : 298.053676510503,
+                "99.9" : 298.053676510503,
+                "99.99" : 298.053676510503,
+                "99.999" : 298.053676510503,
+                "99.9999" : 298.053676510503,
+                "100.0" : 298.053676510503
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    298.053676510503,
+                    297.47576112546216,
+                    272.44690198738823,
+                    296.24000765200066,
+                    270.22563213565013
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

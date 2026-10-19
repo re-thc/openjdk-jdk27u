@@ -1,0 +1,233 @@
+{
+  "java": [
+    {
+      "name": "interpreter",
+      "test": "StringZillaSearch",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xint",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaSearch"
+      ],
+      "passed": true
+    },
+    {
+      "name": "interpreter",
+      "test": "StringZillaBounded",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xint",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaBounded"
+      ],
+      "passed": true
+    },
+    {
+      "name": "c1",
+      "test": "StringZillaSearch",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:TieredStopAtLevel=1",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaSearch"
+      ],
+      "passed": true
+    },
+    {
+      "name": "c1",
+      "test": "StringZillaBounded",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:TieredStopAtLevel=1",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaBounded"
+      ],
+      "passed": true
+    },
+    {
+      "name": "c2",
+      "test": "StringZillaSearch",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaSearch"
+      ],
+      "passed": true
+    },
+    {
+      "name": "c2",
+      "test": "StringZillaBounded",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:-TieredCompilation",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaBounded"
+      ],
+      "passed": true
+    },
+    {
+      "name": "jni",
+      "test": "StringZillaSearch",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaSearch"
+      ],
+      "passed": true
+    },
+    {
+      "name": "jni",
+      "test": "StringZillaBounded",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaBounded"
+      ],
+      "passed": true
+    },
+    {
+      "name": "disabled",
+      "test": "StringZillaSearch",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:-UseStringZillaIntrinsics",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaSearch"
+      ],
+      "passed": true
+    },
+    {
+      "name": "disabled",
+      "test": "StringZillaBounded",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:-UseStringZillaIntrinsics",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaBounded"
+      ],
+      "passed": true
+    },
+    {
+      "name": "noncompact",
+      "test": "StringZillaSearch",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:-CompactStrings",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaSearch"
+      ],
+      "passed": true
+    },
+    {
+      "name": "noncompact",
+      "test": "StringZillaBounded",
+      "command": [
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "-XX:ActiveProcessorCount=2",
+        "-Xshare:off",
+        "-Xbatch",
+        "-XX:-CompactStrings",
+        "-cp",
+        "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\classes",
+        "StringZillaBounded"
+      ],
+      "passed": true
+    }
+  ],
+  "native": {
+    "passed": true,
+    "compiler_args": [
+      "cl.exe",
+      "/nologo",
+      "/std:c11",
+      "/O2",
+      "/LD",
+      "/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\include",
+      "/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\include\\win32",
+      "/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\src\\hotspot\\share\\include",
+      "/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\src\\hotspot\\os\\windows\\include",
+      "/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\src\\java.base\\share\\native\\libjava",
+      "/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\src\\java.base\\share\\native\\libjava\\stringzilla",
+      "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\test\\jdk\\java\\lang\\String\\libStringZillaKernelsTest.c",
+      "/FoD:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\kernels.obj",
+      "/FeD:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\StringZillaKernelsTest.dll"
+    ]
+  },
+  "hashes": {
+    "c1-StringZillaBounded.log": "e70ede9a36114d0d721ca5f6cd795ca96c89ab98978c8d0864b26ed5efb0a8ba",
+    "c1-StringZillaSearch.log": "3095cea25911a476341f6b32352f139a28ac41822f9918505eccc46e86394bca",
+    "c2-StringZillaBounded.log": "e70ede9a36114d0d721ca5f6cd795ca96c89ab98978c8d0864b26ed5efb0a8ba",
+    "c2-StringZillaSearch.log": "3095cea25911a476341f6b32352f139a28ac41822f9918505eccc46e86394bca",
+    "compile.cmd": "1932f7fc763c16669121ac8d66660dfad433dbd9c09756be688ed278515b3ef2",
+    "disabled-StringZillaBounded.log": "e70ede9a36114d0d721ca5f6cd795ca96c89ab98978c8d0864b26ed5efb0a8ba",
+    "disabled-StringZillaSearch.log": "3095cea25911a476341f6b32352f139a28ac41822f9918505eccc46e86394bca",
+    "interpreter-StringZillaBounded.log": "e70ede9a36114d0d721ca5f6cd795ca96c89ab98978c8d0864b26ed5efb0a8ba",
+    "interpreter-StringZillaSearch.log": "3095cea25911a476341f6b32352f139a28ac41822f9918505eccc46e86394bca",
+    "jni-StringZillaBounded.log": "e70ede9a36114d0d721ca5f6cd795ca96c89ab98978c8d0864b26ed5efb0a8ba",
+    "jni-StringZillaSearch.log": "3095cea25911a476341f6b32352f139a28ac41822f9918505eccc46e86394bca",
+    "kernels.obj": "577acebc5e4d5e2488bacf3cc77b8d97939b88a4314b1dfcadbaa90d5c55a2f8",
+    "native-build.log": "d7491a275737dd579cdeb490b4aad99d3a2e4fdfd5311cafb4bcdbc83e445ad8",
+    "noncompact-StringZillaBounded.log": "e70ede9a36114d0d721ca5f6cd795ca96c89ab98978c8d0864b26ed5efb0a8ba",
+    "noncompact-StringZillaSearch.log": "3095cea25911a476341f6b32352f139a28ac41822f9918505eccc46e86394bca",
+    "StringZillaKernelsTest.dll": "17acc669bf8744e09841b2ec0da9c91b2c7297ee3fee797792539a325e42dfdd",
+    "StringZillaKernelsTest.exp": "f915170238dbcb3c78e9d8d09fa6d1337c476343a72c1245537a81f4e652a327",
+    "StringZillaKernelsTest.lib": "0122e5d39410ecd4638188b8cda49c7c920ad5ae723da887b3fe8b3e9ca3acee",
+    "classes\\StringZillaBounded.class": "9d2647b3a42827110d0faf4178ef4a0316587d08f528f61a30c65b249379f5a1",
+    "classes\\StringZillaKernelsTest.class": "8c9f25a63608d9dcce91531d2100f6a8a32522b95c8d50b4c15be58833eed91e",
+    "classes\\StringZillaSearch.class": "049e9acb322812e572bc28c64f579e066e002674536f35992590d8eb11be6a27",
+    "msvc-baseline\\build-probe.cmd": "468f9e4d58018c67726791277f90cf009fb4b5efa9fab96dde518613656950b1",
+    "msvc-baseline\\build.log": "18dac1aade244ae81cc2cc38049b9e66b9f1d1a2551f830c0f59554db9f00c3b",
+    "msvc-baseline\\receipt.json": "ef121ed1decc91d08520dfe17d6874b35ae412d7182500dcd97ad7711165b66a",
+    "msvc-baseline\\SerialProbe.asm": "b2a1e7764c2ef8b974c6e5c3fa9b668af35dff873088cb6d040529567ff3d150",
+    "msvc-baseline\\SerialProbe.c": "1264337fcc5a71d1d4ed2dd4a55f923afdab076e81e1848f4918604af3a1dc66",
+    "msvc-baseline\\SerialProbe.exe": "099e48437b6ab832473032ef7f628a11dd0e40639aacee6e99019cf9714a9cff",
+    "msvc-baseline\\SerialProbe.obj": "7bf48795c897b3dfd223309ef6f3d95c170cbe508f6a333a86c58913ffff0f14"
+  }
+}

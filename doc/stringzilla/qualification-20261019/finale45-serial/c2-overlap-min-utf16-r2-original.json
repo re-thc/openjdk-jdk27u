@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=0",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "0",
+            "needleLength" : "129",
+            "shape" : "OVERLAP"
+        },
+        "primaryMetric" : {
+            "score" : 127.23592765782209,
+            "scoreError" : 97.03274804306389,
+            "scoreConfidence" : [
+                30.2031796147582,
+                224.26867570088598
+            ],
+            "scorePercentiles" : {
+                "0.0" : 101.92001750563068,
+                "50.0" : 126.69374547861092,
+                "90.0" : 163.6888224203662,
+                "95.0" : 163.6888224203662,
+                "99.0" : 163.6888224203662,
+                "99.9" : 163.6888224203662,
+                "99.99" : 163.6888224203662,
+                "99.999" : 163.6888224203662,
+                "99.9999" : 163.6888224203662,
+                "100.0" : 163.6888224203662
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    101.92001750563068,
+                    105.90964409306055,
+                    126.69374547861092,
+                    163.6888224203662,
+                    137.9674087914421
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

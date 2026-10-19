@@ -1,0 +1,1 @@
+class BackendProbe { public static void main(String[] a) throws Exception {Class<?> c=Class.forName("java.lang.StringZilla"); for(String n:new String[]{"BACKEND","ENABLED"}) { var f=c.getDeclaredField(n);f.setAccessible(true); System.out.println(n+"="+f.get(null)); } } }
