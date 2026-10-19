@@ -309,9 +309,7 @@ public abstract class Charset
 
             @ForceInline
             public void setStringCodingWide(Charset charset, int value) {
-                assert value == 1 || value == 2;
-                assert charset.stringCodingWide == 0 || charset.stringCodingWide == value;
-                charset.stringCodingWide = (byte)value;
+                charset.cacheStringCodingWide(value);
             }
         });
     }
@@ -675,6 +673,14 @@ public abstract class Charset
     private final String name;
     @Stable
     private byte stringCodingWide;
+
+    @ForceInline
+    private void cacheStringCodingWide(int value) {
+        assert value == 1 || value == 2;
+        assert stringCodingWide == 0 || stringCodingWide == value;
+        stringCodingWide = (byte)value;
+    }
+
     @Stable
     private final String[] aliases;
     @Stable
