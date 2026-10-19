@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Verify simultaneous native long sorts, moving GC, deoptimization and native-decline cleanup
+ * @summary Verify simultaneous native long sorts, GC, deoptimization and native-decline cleanup
  * @requires (os.family == "linux" & os.arch == "amd64") & vm.jvmti & !vm.asan
  * @library /test/lib
  * @build NativePrimitiveSort NativePrimitiveSortSupport jdk.test.whitebox.WhiteBox

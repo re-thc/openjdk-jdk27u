@@ -34,7 +34,7 @@ final class PrimitiveSort {
     static final int MIN_SIZE = 4096;
     static final int MAX_SIZE = 1 << 20;
 
-    // This class is initialized only for ranges within the admission bounds.
+    // Ranges at least MIN_SIZE may initialize this class, even above MAX_SIZE.
     static final boolean ENABLED = StaticProperty.osName().equals("Linux")
             && StaticProperty.osArch().equals("amd64")
             && !Boolean.getBoolean("jdk.util.Arrays.disableNativeSort");

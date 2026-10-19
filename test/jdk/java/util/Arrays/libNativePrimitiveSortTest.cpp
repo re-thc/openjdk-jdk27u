@@ -108,7 +108,7 @@ static jboolean JNICALL exception_check(JNIEnv* env) {
     if (!pending && in_sort && first_region && fail_copy) {
         // Fail the product's checked-copy path after malloc, without leaving
         // a Java exception pending. Its real RAII cleanup must run before
-        // Java continues at the already-scanned partitioning path.
+        // Java enters the original sorter with unchanged input and depth.
         fail_copy = false; copy_declines.fetch_add(1); return JNI_TRUE;
     }
     return pending;
@@ -155,8 +155,29 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char*, void*) {
             || jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr) != JVMTI_ERROR_NONE) return JNI_ERR;
     return JNI_OK;
 }
-extern "C" JNIEXPORT jboolean JNICALL Java_NativePrimitiveSortSupport_hasInstrumentation(JNIEnv*, jclass) {
-    __builtin_cpu_init(); return __builtin_cpu_supports("avx2") != 0;
+extern "C" JNIEXPORT jboolean JNICALL Java_NativePrimitiveSortSupport_hasInstrumentation(
+        JNIEnv* env, jclass, jstring library) {
+    const char* path = env->GetStringUTFChars(library, nullptr);
+    if (path == nullptr) return JNI_FALSE;
+    void* handle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+    env->ReleaseStringUTFChars(library, path);
+    void* symbol = handle == nullptr ? nullptr
+            : dlsym(handle, "Java_java_util_PrimitiveSort_supported");
+    if (symbol == nullptr) {
+        const char* message = handle == nullptr ? "Cannot load supported-build native sort component"
+                : "Missing native sort availability hook";
+        if (handle != nullptr) dlclose(handle);
+        jclass error = env->FindClass("java/lang/AssertionError");
+        if (error != nullptr) env->ThrowNew(error, message);
+        return JNI_FALSE;
+    }
+    // Reuse the production decision, including Highway's entire AVX2 feature
+    // group and OS state requirements. Missing libraries/exports fail above;
+    // missing public activation still fails the separate native-call witness.
+    using Supported = jboolean (JNICALL *)(JNIEnv*, jclass);
+    jboolean supported = reinterpret_cast<Supported>(symbol)(env, nullptr);
+    dlclose(handle);
+    return supported;
 }
 extern "C" JNIEXPORT void JNICALL Java_NativePrimitiveSortSupport_arm(JNIEnv* env, jclass, jint mode) {
     if (active.load() != 0) fail(env, "Arming while a sort is active");
@@ -174,5 +195,5 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_NativePrimitiveSortSupport_stats(JN
     env->SetLongArrayRegion(result, 0, 8, values); return result;
 }
 #else
-extern "C" JNIEXPORT jboolean JNICALL Java_NativePrimitiveSortSupport_hasInstrumentation(JNIEnv*, jclass) { return JNI_FALSE; }
+extern "C" JNIEXPORT jboolean JNICALL Java_NativePrimitiveSortSupport_hasInstrumentation(JNIEnv*, jclass, jstring) { return JNI_FALSE; }
 #endif

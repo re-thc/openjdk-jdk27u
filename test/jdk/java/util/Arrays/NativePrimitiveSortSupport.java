@@ -51,8 +51,8 @@ class NativePrimitiveSortSupport {
         Path library = Path.of(System.getProperty("test.jdk"), "lib", "libprimitivesort.so");
         if (!Files.isRegularFile(library)) throw new AssertionError("Missing supported-build component: " + library);
         load();
-        if (!hasInstrumentation()) {
-            System.out.println("SKIP native witness: AVX2/glibc test instrumentation unavailable");
+        if (!hasInstrumentation(library.toString())) {
+            System.out.println("SKIP native witness: production CPU/OS requirements or glibc instrumentation unavailable");
             return false;
         }
         return true;
@@ -89,7 +89,7 @@ class NativePrimitiveSortSupport {
     // calls, active, peak_active, live_bytes, peak_bytes, malloc_failures,
     // post-copy declines, calls held inside the original C++ copy.
     static native long[] stats();
-    static native boolean hasInstrumentation();
+    static native boolean hasInstrumentation(String library);
     static native void arm(int mode);
     static native void release();
 }
