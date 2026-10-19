@@ -21,9 +21,6 @@
  * questions.
  */
 
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
-
 /*
  * @test
  * @summary Optional AlgorithmId parameters preserve live provider selection and failures

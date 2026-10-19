@@ -21,9 +21,6 @@
  * questions.
  */
 
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
-
 /*
  * @test
  * @summary External provider aliases cannot bypass weak certificate algorithm policy
