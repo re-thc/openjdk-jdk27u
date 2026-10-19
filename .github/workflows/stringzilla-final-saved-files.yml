@@ -1,65 +1,59 @@
-name: Preserve exact final StringZilla benchmark files
+name: Preserve completed normal StringZilla benchmark files
 on:
   push:
-    branches: [codex/stringzilla-final-saved-files]
+    branches: [codex/stringzilla-final-saved-next]
   workflow_dispatch:
 permissions:
   contents: read
   actions: read
 jobs:
-  bindings:
+  export:
+    name: Preserve 1500 completed normal comparisons
     runs-on: ubuntu-26.04
-    permissions:
-      contents: read
-      actions: write
-    outputs:
-      matrix: ${{ steps.proof.outputs.matrix }}
-      copy_needed: ${{ steps.stop.outputs.copy_needed }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           sparse-checkout: .github/scripts
-      - id: stop
-        name: Preserve completed exports and stop only the two queued readers
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 .github/scripts/stringzilla-final-saved-predecessor.py
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        if: always()
-        with:
-          name: stringzilla-final-saved-predecessor-${{ github.sha }}
-          path: saved-predecessor.json
-          if-no-files-found: error
-          retention-days: 30
       - name: Check saved-byte transport without a JVM
         run: |
           python3 -m py_compile .github/scripts/stringzilla-final-saved-files.py .github/scripts/stringzilla-final-saved-files-test.py .github/scripts/stringzilla-raw-jmh.py .github/scripts/stringzilla-final-sky-election.py .github/scripts/single-host-validation/stringzilla-single-sky.py .github/scripts/single-host-validation/stringzilla-final.py
           python3 .github/scripts/stringzilla-final-saved-files-test.py .github/scripts/stringzilla-final-saved-files.py
       - id: proof
-        name: Verify immutable projections and only the selected completed archives
+        name: Verify twelve disjoint completed archive bindings
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/scripts/stringzilla-final-saved-files.py proof
-  export:
-    needs: bindings
-    if: needs.bindings.outputs.copy_needed == 'true'
-    runs-on: ubuntu-26.04
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.bindings.outputs.matrix) }}
-    name: Preserve original ${{ matrix.id }} JSON files
-    steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          sparse-checkout: .github/scripts
-      - name: Authenticate and copy existing saved files
+      - name: Authenticate and copy each archive once
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 .github/scripts/stringzilla-final-saved-files.py read --index ${{ matrix.index }}
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          root = Path.cwd()
+          script = root / ".github/scripts/stringzilla-final-saved-files.py"
+          pins = json.loads((script.parent / "stringzilla-final-saved-cases.json").read_bytes())
+          cases = pins["cases"]
+          assert len(cases) == 12
+          assert {case["backend"] for case in cases} == {"serial", "avx2", "neon", "msvc"}
+          assert {case["tier"] for case in cases} == {"interpreter", "c1", "c2"}
+          assert len({(case["backend"], case["tier"]) for case in cases}) == 12
+          assert sum(case["strict_validation"]["triplets"] for case in cases) == 1500
+          folder = root / "saved-files"
+          folder.mkdir()
+          for index, case in enumerate(cases):
+              destination = folder / case["id"]
+              destination.mkdir()
+              subprocess.run([sys.executable, str(script), "read", "--index", str(index)],
+                             cwd=destination, check=True)
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
-          name: stringzilla-final-saved-files-${{ matrix.id }}-${{ github.sha }}
-          path: evidence-output
+          name: stringzilla-final-saved-normal-${{ github.sha }}
+          path: saved-files
           if-no-files-found: error
           retention-days: 30

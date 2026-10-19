@@ -8,15 +8,279 @@
   "expected_records": 5658,
   "cases": [
     {
-      "id": "avx512-c2",
-      "backend": "avx512",
+      "id": "neon-c1",
+      "backend": "neon",
+      "tier": "c1",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "32b45b9e26ce2ae7c4a9d50a6537b0a986e0f3d825346d99d0a52cea7ed5d8bb"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151936751,
+        "digest": "sha256:674d6a986ee2856c3975dab979546c0237ef595740e46cd43ea45669108b55f2",
+        "artifact_name": "stringzilla-final-pair-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053159,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053159,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "neon_pair / neon validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12159948918,
+        "digest": "sha256:60809f7e467974c9a55506b9f77ad207b4068b9320747938bebdec201063bafd",
+        "artifact_name": "stringzilla-final-results-neon-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837167,
+        "job_name": "neon_controls (c1) / neon-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837167,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "neon_controls (c1) / neon-c1 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T01:55:14Z",
+          "completed_at": "2026-10-19T02:49:26Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "e390ab4bc580f6674e458b04859a5f51bf4de9d5",
+        "triplets": 110,
+        "records": 330,
+        "physical_keys_sha256": "a5bc2bb27eea7457b532c164da4d8555f3d3e716baecff0a005352e061536b0f"
+      }
+    },
+    {
+      "id": "serial-c1",
+      "backend": "serial",
+      "tier": "c1",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151758260,
+        "digest": "sha256:4eb4aec81c2905af9ff8fe867d431b65c9b6cbf24821cbfbe4cf2aaefb334e36",
+        "artifact_name": "stringzilla-final-pair-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053116,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053116,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "serial_pair / serial validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12160497682,
+        "digest": "sha256:ac5940c753bb7fbfaa3aefc0d3f569bf7ce578f50f5873bf201fc1817f9e9d60",
+        "artifact_name": "stringzilla-final-results-serial-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837127,
+        "job_name": "serial_controls (c1) / serial-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837127,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "serial_controls (c1) / serial-c1 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:12:04Z",
+          "completed_at": "2026-10-19T02:58:49Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "12933cdf5552a9693a34c927bcdb8ae81b8e1d9a",
+        "triplets": 92,
+        "records": 276,
+        "physical_keys_sha256": "a981ad873761e70ec1e69fcf3b7f788979353c9a9bdb912a894e37d20d0a0dca"
+      }
+    },
+    {
+      "id": "msvc-c1",
+      "backend": "msvc",
+      "tier": "c1",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "566a352f3f88ff6c49ed7523d79220e1f4e95611c21b3bd8c0d70d0969127173"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151927587,
+        "digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+        "artifact_name": "stringzilla-final-pair-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053344,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053344,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "msvc_pair / msvc validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12161922489,
+        "digest": "sha256:ec0aa910ab205192ffe962e135815c3ab570a9267615275509bda2d306ab3ab2",
+        "artifact_name": "stringzilla-final-results-msvc-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837223,
+        "job_name": "msvc_controls (c1) / msvc-c1 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837223,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "msvc_controls (c1) / msvc-c1 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:38:06Z",
+          "completed_at": "2026-10-19T03:42:09Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "0d58a09698f20178d220fa241d74b951d09e9f78",
+        "triplets": 126,
+        "records": 378,
+        "physical_keys_sha256": "7b9dd39aec021d74003fe5dac939cb6726f2dd0206edee34b87e141201b4bbb4"
+      }
+    },
+    {
+      "id": "msvc-c2",
+      "backend": "msvc",
       "tier": "c2",
       "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
       "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
       "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
       "workflow": {
-        "run_id": 39174300598,
-        "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "566a352f3f88ff6c49ed7523d79220e1f4e95611c21b3bd8c0d70d0969127173"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151927587,
+        "digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+        "artifact_name": "stringzilla-final-pair-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053344,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053344,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "msvc_pair / msvc validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12161726194,
+        "digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+        "artifact_name": "stringzilla-final-results-msvc-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837218,
+        "job_name": "msvc_controls (c2) / msvc-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837218,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "msvc_controls (c2) / msvc-c2 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:08:39Z",
+          "completed_at": "2026-10-19T03:34:12Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "31e1ae52ef56896a114f145ac284ed664ec27f4a",
+        "triplets": 149,
+        "records": 447,
+        "physical_keys_sha256": "1f632d101f715a254c9fc52be75c29028f0fab1ae9bd2534ebe3ad0c547d0a9c"
+      }
+    },
+    {
+      "id": "avx2-c1",
+      "backend": "avx2",
+      "tier": "c1",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
       },
       "image_hashes": {
         "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
@@ -47,30 +311,492 @@
         "pair_receipt_binding": "computed-from-authenticated-result-zip"
       },
       "artifact": {
-        "artifact_id": 12159124281,
-        "digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
-        "artifact_name": "stringzilla-final-results-avx512-c2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1-attempt1",
-        "job_id": 117820226854,
-        "job_name": "avx512_controls (c2) / Final SKY c2 slot 3 on ubuntu-26.04",
+        "artifact_id": 12161251890,
+        "digest": "sha256:31d018c197d52930659c2abdf0af8f46d3488275fe7d9ed9c53eec940abd1947",
+        "artifact_name": "stringzilla-final-results-avx2-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837039,
+        "job_name": "avx2_controls (c1) / avx2-c1 controls",
         "attempt": 1,
         "job_snapshot": {
-          "id": 117820226854,
-          "run_id": 39174300598,
-          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
-          "name": "avx512_controls (c2) / Final SKY c2 slot 3 on ubuntu-26.04",
+          "id": 117847837039,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "avx2_controls (c1) / avx2-c1 controls",
           "run_attempt": 1,
           "status": "completed",
           "conclusion": "success",
-          "created_at": "2026-10-18T23:26:28Z",
-          "started_at": "2026-10-19T01:24:25Z",
-          "completed_at": "2026-10-19T02:24:47Z"
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:24:12Z",
+          "completed_at": "2026-10-19T03:26:43Z"
         }
       },
       "strict_validation": {
-        "blob": "7ff7b4364ae89e989471e38fc712cd56e5609f33",
+        "blob": "4fff82f4d91c7269418b2309340f8e3acbad6bf4",
+        "triplets": 126,
+        "records": 378,
+        "physical_keys_sha256": "f44664aced792606f51d4af113ffa50e73d4308204fa445fd70246a35e7b3a9b"
+      }
+    },
+    {
+      "id": "msvc-interpreter",
+      "backend": "msvc",
+      "tier": "interpreter",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+        "fork": "566a352f3f88ff6c49ed7523d79220e1f4e95611c21b3bd8c0d70d0969127173"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151927587,
+        "digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+        "artifact_name": "stringzilla-final-pair-msvc-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053344,
+        "job_name": "msvc_pair / msvc validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053344,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "msvc_pair / msvc validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12160783629,
+        "digest": "sha256:cc9c972507576b9e018613e9a80c34d9c0b7ae1a05c871b8bba0ee0b1e005de6",
+        "artifact_name": "stringzilla-final-results-msvc-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837243,
+        "job_name": "msvc_controls (interpreter) / msvc-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837243,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "msvc_controls (interpreter) / msvc-interpreter controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:35:46Z",
+          "completed_at": "2026-10-19T03:29:41Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "3edcbdf3a03d26c61b2c20745d9aa36484b60bcf",
+        "triplets": 103,
+        "records": 309,
+        "physical_keys_sha256": "a1d82793db77250e1ffbed6823e9bd5acab7bb30b73239fad2cd836032c45a1d"
+      }
+    },
+    {
+      "id": "serial-interpreter",
+      "backend": "serial",
+      "tier": "interpreter",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151758260,
+        "digest": "sha256:4eb4aec81c2905af9ff8fe867d431b65c9b6cbf24821cbfbe4cf2aaefb334e36",
+        "artifact_name": "stringzilla-final-pair-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053116,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053116,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "serial_pair / serial validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12161164138,
+        "digest": "sha256:03fd6c258cff0d5b61c758b8a7f8eb925d7d3ee8edb75a9abe057e0d49f173ea",
+        "artifact_name": "stringzilla-final-results-serial-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837154,
+        "job_name": "serial_controls (interpreter) / serial-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837154,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "serial_controls (interpreter) / serial-interpreter controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:54:22Z",
+          "completed_at": "2026-10-19T03:45:51Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "9bb4ea843ab21e941203e3fb1e7df134ffe0570a",
+        "triplets": 103,
+        "records": 309,
+        "physical_keys_sha256": "4d5ed2eebd057ea90a08e0d3c9cdbfb38ca700f9b1fd31a44adfc53e485c2c18"
+      }
+    },
+    {
+      "id": "neon-interpreter",
+      "backend": "neon",
+      "tier": "interpreter",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "32b45b9e26ce2ae7c4a9d50a6537b0a986e0f3d825346d99d0a52cea7ed5d8bb"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151936751,
+        "digest": "sha256:674d6a986ee2856c3975dab979546c0237ef595740e46cd43ea45669108b55f2",
+        "artifact_name": "stringzilla-final-pair-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053159,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053159,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "neon_pair / neon validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12162696031,
+        "digest": "sha256:b56db8596c00fc4adf03c393763137da722114b7a65a84e5d6ce000c840b40f3",
+        "artifact_name": "stringzilla-final-results-neon-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837281,
+        "job_name": "neon_controls (interpreter) / neon-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837281,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "neon_controls (interpreter) / neon-interpreter controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T03:04:20Z",
+          "completed_at": "2026-10-19T04:01:08Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "a86fe0248106565e4fc8f0644236c6f00faeeef5",
+        "triplets": 118,
+        "records": 354,
+        "physical_keys_sha256": "ba17c64ea790cbc89193af227bbe330db203d1fe3f17f751c946f36a2538be27"
+      }
+    },
+    {
+      "id": "serial-c2",
+      "backend": "serial",
+      "tier": "c2",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151758260,
+        "digest": "sha256:4eb4aec81c2905af9ff8fe867d431b65c9b6cbf24821cbfbe4cf2aaefb334e36",
+        "artifact_name": "stringzilla-final-pair-serial-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053116,
+        "job_name": "serial_pair / serial validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053116,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "serial_pair / serial validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12163055881,
+        "digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+        "artifact_name": "stringzilla-final-results-serial-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837156,
+        "job_name": "serial_controls (c2) / serial-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837156,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "serial_controls (c2) / serial-c2 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T02:43:08Z",
+          "completed_at": "2026-10-19T04:09:27Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "f44023a106140e72102e13d1a54068e020cb3053",
+        "triplets": 170,
+        "records": 510,
+        "physical_keys_sha256": "1fa3884c5bfd187526efc68aef3f7e1b894849a85b4b74ed72b1f7f49b968d5f"
+      }
+    },
+    {
+      "id": "neon-c2",
+      "backend": "neon",
+      "tier": "c2",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+        "fork": "32b45b9e26ce2ae7c4a9d50a6537b0a986e0f3d825346d99d0a52cea7ed5d8bb"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151936751,
+        "digest": "sha256:674d6a986ee2856c3975dab979546c0237ef595740e46cd43ea45669108b55f2",
+        "artifact_name": "stringzilla-final-pair-neon-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053159,
+        "job_name": "neon_pair / neon validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053159,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "neon_pair / neon validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12163325138,
+        "digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+        "artifact_name": "stringzilla-final-results-neon-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837245,
+        "job_name": "neon_controls (c2) / neon-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837245,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "neon_controls (c2) / neon-c2 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T03:02:03Z",
+          "completed_at": "2026-10-19T04:13:02Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "6e76446fa44cd5584db92550f32aecbeb05898a0",
+        "triplets": 143,
+        "records": 429,
+        "physical_keys_sha256": "820bcde4d6bb45622091dab4aa5609c685e56dbc711747f5f4f070853b854303"
+      }
+    },
+    {
+      "id": "avx2-c2",
+      "backend": "avx2",
+      "tier": "c2",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151804060,
+        "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f",
+        "artifact_name": "stringzilla-final-pair-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053163,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053163,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "avx2_pair / avx2 validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12162394322,
+        "digest": "sha256:b82daef57744108587b80391d88cd6ce09929a55e068739d0044eaac8df505c2",
+        "artifact_name": "stringzilla-final-results-avx2-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837116,
+        "job_name": "avx2_controls (c2) / avx2-c2 controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837116,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "avx2_controls (c2) / avx2-c2 controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T03:11:21Z",
+          "completed_at": "2026-10-19T04:14:36Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "ebc97929ecc431621e4db2ececdc552680bd16f8",
         "triplets": 124,
         "records": 372,
-        "physical_keys_sha256": "c7b948ac34851eb770c86ae837ab7e836a0ca7413663454bf850f11b960eeadf"
+        "physical_keys_sha256": "6956bffbe410a24e393a98194803b5acf15d2c3c04396255017124750b5de3db"
+      }
+    },
+    {
+      "id": "avx2-interpreter",
+      "backend": "avx2",
+      "tier": "interpreter",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176"
+      },
+      "image_hashes": {
+        "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+        "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e"
+      },
+      "producer": {
+        "workflow": {
+          "run_id": 39164738566,
+          "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        },
+        "artifact_id": 12151804060,
+        "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f",
+        "artifact_name": "stringzilla-final-pair-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "job_id": 117789053163,
+        "job_name": "avx2_pair / avx2 validated pair",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117789053163,
+          "run_id": 39164738566,
+          "run_attempt": 1,
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+          "name": "avx2_pair / avx2 validated pair",
+          "created_at": "2026-10-18T21:02:29Z",
+          "started_at": "2026-10-18T21:02:29Z",
+          "status": "queued",
+          "conclusion": null
+        },
+        "pair_receipt_binding": "computed-from-authenticated-result-zip"
+      },
+      "artifact": {
+        "artifact_id": 12162922626,
+        "digest": "sha256:c4bd35f2cc004db66ccf1d78ba6074762048c907374002b5c5fcd2bf0c9d9ad2",
+        "artifact_name": "stringzilla-final-results-avx2-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "job_id": 117847837124,
+        "job_name": "avx2_controls (interpreter) / avx2-interpreter controls",
+        "attempt": 1,
+        "job_snapshot": {
+          "id": 117847837124,
+          "run_id": 39182567318,
+          "head_sha": "57d209684d4887100690410e326377759df13176",
+          "name": "avx2_controls (interpreter) / avx2-interpreter controls",
+          "run_attempt": 1,
+          "status": "completed",
+          "conclusion": "success",
+          "created_at": "2026-10-19T01:32:07Z",
+          "started_at": "2026-10-19T03:12:24Z",
+          "completed_at": "2026-10-19T04:18:39Z"
+        }
+      },
+      "strict_validation": {
+        "blob": "4d362ac27ada612724edc275652e1cab0d4857ed",
+        "triplets": 136,
+        "records": 408,
+        "physical_keys_sha256": "7893da031eac746efb3ef6cf8bfb4323a6261f19dc9ef23b892ea7ab9cbd0ffa"
       }
     }
   ]
