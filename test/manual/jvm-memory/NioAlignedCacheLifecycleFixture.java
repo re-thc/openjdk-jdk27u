@@ -1,4 +1,4 @@
-/* Copyright (c) 2026, Harry Chan. SPDX-License-Identifier: GPL-2.0-only */
+/* Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved. SPDX-License-Identifier: GPL-2.0-only */
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
