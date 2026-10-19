@@ -430,7 +430,8 @@ DEFAULT_LOG := @DEFAULT_LOG@
 # Fallback linker
 ENABLE_FALLBACK_LINKER := @ENABLE_FALLBACK_LINKER@
 
-# Optional library-backed HexFormat implementation. Cargo builds offline.
+# Optional library-backed HexFormat implementation. Cargo uses the lockfile
+# and permits normal dependency fetching.
 ENABLE_HEX_SIMD := @ENABLE_HEX_SIMD@
 CARGO := @CARGO@
 RUSTC := @RUSTC@
