@@ -39,12 +39,16 @@ VALIDATION_DIGEST = "sha256:29ae506c6ccb65a087f78e30fcf3a74adfce710e8201e2743266
 PRIOR_ZERO_RUN = 39187437768
 PRIOR_ZERO_HEAD = "4176f25bfc42a553d9192328d726b233c23b552f"
 PRIOR_ZERO_SHA256 = "7f44243c287516b68d63770e70c8847c53504e19b4c0f08e6a3201231c249040"
+SUPERSEDED_QUEUED_RUN = 39196718293
+SUPERSEDED_QUEUED_HEAD = "63f17c05909ef7f3cba6d428ef57ff5ae79960c3"
+SUPERSEDED_QUEUED_JOB = 117880968412
+RETRY_REF = "refs/heads/codex/stringzilla-single-sky-missing-916ba895-retry1"
 WORKER = "Single host missing SKY controls"
 HERE = Path(__file__).resolve().parent
 ROOT = Path.cwd()
 FOLDER = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-single-sky"
 COUNTS = {"interpreter": 136, "c1": 126, "c2": 124}
-GUARD_TEST_HASH = "1bfb0128872decb5218c8cf9dd935e7ccb84a0dce8826e56604e3c8fa578edab"
+GUARD_TEST_HASH = "f7e6d24a283c9be1c752c88a76ebf8d41ed70635a5a191e4871340e81d69e6fe"
 MODEL_HASH = "02f3e3d64d5f19e036e98959b4ec576cc20fb614aa3967af801c421af603f7f5"
 COLLECTOR_TEST_HASH = "a0ee651404f0f9b44dccc5e117fddff86657f4a6fa6fcdcb5bd958470e1b90ae"
 
@@ -323,6 +327,31 @@ def verify_host(proof):
     assert current["libc_sha256"] == proof["libc_sha256"]
 
 
+def verify_superseded_queued_attempt():
+    assert context()["run_id"] != SUPERSEDED_QUEUED_RUN
+    run = api("actions/runs/" + str(SUPERSEDED_QUEUED_RUN))
+    assert run["id"] == SUPERSEDED_QUEUED_RUN and run["head_sha"] == SUPERSEDED_QUEUED_HEAD
+    assert run["run_attempt"] == 1 and run["head_branch"] == RETRY_REF.removeprefix("refs/heads/")
+    assert run["status"] == "completed" and run["conclusion"] == "cancelled"
+    payload = api("actions/runs/" + str(SUPERSEDED_QUEUED_RUN) + "/jobs?filter=all&per_page=100")
+    assert payload["total_count"] == len(payload["jobs"]) == 1
+    job = payload["jobs"][0]
+    assert job["id"] == SUPERSEDED_QUEUED_JOB and job["name"] == "Authenticate exact missing-only scope and original complete pair"
+    assert job["run_id"] == SUPERSEDED_QUEUED_RUN and job["head_sha"] == SUPERSEDED_QUEUED_HEAD and job["run_attempt"] == 1
+    assert job["status"] == "completed" and job["conclusion"] in ("cancelled", "skipped")
+    steps = [{key: step[key] for key in ("name", "number", "status", "conclusion")} for step in job["steps"]]
+    assert all(step["status"] == "completed" and step["conclusion"] in ("cancelled", "skipped") for step in steps)
+    payload = api("actions/runs/" + str(SUPERSEDED_QUEUED_RUN) + "/artifacts?per_page=100")
+    assert payload["total_count"] == len(payload["artifacts"]) == 0
+    return {"schema": "stringzilla-single-sky-queued-zero-v1", "source": SOURCE, "base": BASE,
+        "run_id": SUPERSEDED_QUEUED_RUN, "head": SUPERSEDED_QUEUED_HEAD, "attempt": 1,
+        "head_branch": RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled",
+        "configuration": {"id": job["id"], "name": job["name"], "status": job["status"],
+            "conclusion": job["conclusion"], "steps": steps},
+        "worker_jobs": 0, "artifacts": [], "timed_records": 0, "images_restored": False,
+        "missing_tiers": ["interpreter", "c1"], "triplets": 262, "records": 786}
+
+
 def verify_inputs(value, ctx):
     assert value["run_id"] == ctx["run_id"] and value["head"] == ctx["head"] and value["attempt"] == 1
     assert value["schema"] == "stringzilla-single-sky-preparation-v1"
@@ -335,6 +364,14 @@ def verify_inputs(value, ctx):
     assert value["pair_artifact_id"] == PAIR_ID and value["pair_artifact_digest"] == PAIR_DIGEST
     assert re.fullmatch(r"[a-f0-9]{64}", value["driver_sha256"])
     assert value["independent_scope_model_passed"] is True
+    assert value["superseded_queued_zero_sha256"] == raw_sha((json.dumps(value["superseded_queued_zero"], indent=2) + "\n").encode())
+    queued = value["superseded_queued_zero"]
+    assert queued["schema"] == "stringzilla-single-sky-queued-zero-v1"
+    assert queued["source"] == SOURCE and queued["base"] == BASE
+    assert queued["run_id"] == SUPERSEDED_QUEUED_RUN and queued["head"] == SUPERSEDED_QUEUED_HEAD and queued["attempt"] == 1
+    assert queued["status"] == "completed" and queued["conclusion"] == "cancelled"
+    assert queued["worker_jobs"] == queued["timed_records"] == 0 and queued["artifacts"] == []
+    assert queued["images_restored"] is False
     assert value["prior_attempt_zero_sha256"] == PRIOR_ZERO_SHA256
     assert raw_sha((json.dumps(value["prior_attempt_zero"], indent=2) + "\n").encode()) == PRIOR_ZERO_SHA256
     assert set(value["image_hashes"]) == {"original", "fork"}
@@ -396,6 +433,7 @@ def probe():
     FOLDER.mkdir()
     prep, binding = preparation(FOLDER)
     verify_prior_attempt_zero(prep["prior_attempt_zero"])
+    assert verify_superseded_queued_attempt() == prep["superseded_queued_zero"]
     job = current_job(ctx)
     assert job["status"] == "in_progress" and job["runner_name"] == os.environ["RUNNER_NAME"]
     proof = {**ctx, "schema": "stringzilla-single-host-fact-v1", "mode": "single-host-v1",
@@ -504,7 +542,7 @@ def verify_saved(tier, phase, folder):
 
 def prepare():
     assert os.environ["SOURCE"] == SOURCE and os.environ["SOURCE_TREE"] == SOURCE_TREE
-    assert os.environ["GITHUB_REF"] == "refs/heads/codex/stringzilla-single-sky-missing-916ba895"
+    assert os.environ["GITHUB_REF"] == RETRY_REF
     ctx = context()
     assert ctx["run_id"] not in (PAIR_RUN, MISSING_RUN)
     tests = HERE / "stringzilla-single-sky-test.py"
@@ -517,6 +555,8 @@ def prepare():
     prior_raw = (HERE / "stringzilla-single-sky-prior-attempt-zero.json").read_bytes()
     assert raw_sha(prior_raw) == PRIOR_ZERO_SHA256
     prior = verify_prior_attempt_zero(json.loads(prior_raw))
+    queued_zero = verify_superseded_queued_attempt()
+    write(folder / "superseded-queued-attempt-zero.json", queued_zero)
     proof = verify_missing(folder)
     model = HERE / "stringzilla-single-sky-model.js"
     collector_test = HERE / "stringzilla-single-sky-collector-test.js"
@@ -573,7 +613,8 @@ def prepare():
         "validation_receipt_sha256": raw_sha(raw), "image_hashes": images, "physical_keys": selected,
         "triplets": len(selected), "records": len(selected) * 3, "python_auth_tests_passed": True,
         "independent_scope_model_passed": True, "prior_attempt_zero_sha256": PRIOR_ZERO_SHA256,
-        "prior_attempt_zero": prior, **ctx}
+        "prior_attempt_zero": prior, "superseded_queued_zero": queued_zero,
+        "superseded_queued_zero_sha256": raw_sha((json.dumps(queued_zero, indent=2) + "\n").encode()), **ctx}
     verify_missing(folder)
     write(folder / "preparation.json", value)
     archive.unlink()

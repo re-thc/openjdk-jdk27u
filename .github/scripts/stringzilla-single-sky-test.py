@@ -68,13 +68,22 @@ class SingleHostTests(unittest.TestCase):
                     "Measure missing SKY interpreter controls",
                     "Retain completed SKY interpreter raw results"), 1)]}
         self.prior = json.loads((MODULE_PATH.parent / "stringzilla-single-sky-prior-attempt-zero.json").read_text())
+        self.queued_zero = {"schema": "stringzilla-single-sky-queued-zero-v1", "source": m.SOURCE, "base": m.BASE,
+            "run_id": m.SUPERSEDED_QUEUED_RUN, "head": m.SUPERSEDED_QUEUED_HEAD, "attempt": 1,
+            "head_branch": m.RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled",
+            "configuration": {"id": m.SUPERSEDED_QUEUED_JOB,
+                "name": "Authenticate exact missing-only scope and original complete pair",
+                "status": "completed", "conclusion": "cancelled", "steps": []},
+            "worker_jobs": 0, "artifacts": [], "timed_records": 0, "images_restored": False,
+            "missing_tiers": ["interpreter", "c1"], "triplets": 262, "records": 786}
         self.inputs = {"schema": "stringzilla-single-sky-preparation-v1", **self.ctx,
             "source": m.SOURCE, "source_tree": m.SOURCE_TREE, "base": m.BASE,
             "module_sha256": m.sha(MODULE_PATH), "tiers": ["interpreter"],
             "missing_proof_sha256": m.MISSING_PROOF_HASH, "helper_sha256": m.HELPER_HASH,
             "manifest_sha256": m.MANIFEST_HASH, "python_auth_tests_passed": True,
             "independent_scope_model_passed": True, "prior_attempt_zero_sha256": m.PRIOR_ZERO_SHA256,
-            "prior_attempt_zero": self.prior, "producer_run": m.PAIR_RUN,
+            "prior_attempt_zero": self.prior, "superseded_queued_zero": self.queued_zero,
+            "superseded_queued_zero_sha256": m.raw_sha(raw(self.queued_zero)), "producer_run": m.PAIR_RUN,
             "producer_head": m.PAIR_HEAD, "pair_artifact_id": m.PAIR_ID,
             "pair_artifact_digest": m.PAIR_DIGEST, "driver_sha256": m.sha(self.driver),
             "image_hashes": {"original": "1" * 64, "fork": "2" * 64}}
@@ -543,6 +552,76 @@ class SingleHostTests(unittest.TestCase):
             second.assert_called_once()
             (self.folder / proof["proofs"]["c1"]["path"]).write_text("{}\n")
             self.reject(m.verify_missing, self.folder)
+
+
+    def test_exact_retry_ref_reaches_first_offline_test_before_any_api(self):
+        class FirstOfflineTestReached(BaseException):
+            pass
+        with mock.patch.dict(os.environ, SOURCE=m.SOURCE, SOURCE_TREE=m.SOURCE_TREE, GITHUB_REF=m.RETRY_REF), \
+             mock.patch.object(m, "HERE", new=MODULE_PATH.parent), \
+             mock.patch.object(m.subprocess, "run", side_effect=FirstOfflineTestReached) as child, \
+             mock.patch.object(m, "api") as api:
+            with self.assertRaises(FirstOfflineTestReached):
+                m.prepare()
+            self.assertEqual(child.call_count, 1)
+            self.assertEqual(Path(child.call_args.args[0][1]).name, "stringzilla-single-sky-test.py")
+            api.assert_not_called()
+            child.reset_mock()
+            for wrong in ("refs/heads/codex/stringzilla-single-sky-missing-916ba895",
+                          m.RETRY_REF + "-other", "refs/tags/retry1", ""):
+                with mock.patch.dict(os.environ, GITHUB_REF=wrong):
+                    with self.assertRaises(AssertionError):
+                        m.prepare()
+                child.assert_not_called()
+                api.assert_not_called()
+
+    def test_superseded_queued_attempt_requires_cancelled_exact_zero(self):
+        root = "actions/runs/" + str(m.SUPERSEDED_QUEUED_RUN)
+        run = {"id": m.SUPERSEDED_QUEUED_RUN, "head_sha": m.SUPERSEDED_QUEUED_HEAD, "run_attempt": 1,
+            "head_branch": m.RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled"}
+        job = {"id": m.SUPERSEDED_QUEUED_JOB, "name": self.queued_zero["configuration"]["name"],
+            "run_id": m.SUPERSEDED_QUEUED_RUN, "head_sha": m.SUPERSEDED_QUEUED_HEAD, "run_attempt": 1,
+            "status": "completed", "conclusion": "cancelled", "steps": []}
+        jobs = {"total_count": 1, "jobs": [job]}
+        artifacts = {"total_count": 0, "artifacts": []}
+        self.api_objects.update({root: run, root + "/jobs?filter=all&per_page=100": jobs,
+                                 root + "/artifacts?per_page=100": artifacts})
+        self.assertEqual(m.verify_superseded_queued_attempt(), self.queued_zero)
+        for target, field, value in ((run, "head_sha", "0" * 40), (run, "status", "queued"),
+                (run, "conclusion", "success"), (run, "run_attempt", 2),
+                (job, "id", 999), (job, "status", "in_progress"), (job, "conclusion", "success"),
+                (job, "name", m.WORKER), (jobs, "total_count", 2), (artifacts, "total_count", 1)):
+            previous = target[field]
+            target[field] = value
+            self.reject(m.verify_superseded_queued_attempt)
+            target[field] = previous
+        job["steps"] = [{"name": "Execute guards", "number": 1, "status": "completed", "conclusion": "success"}]
+        self.reject(m.verify_superseded_queued_attempt)
+        job["steps"] = []
+        artifacts["artifacts"] = [{"id": 123, "name": "unexpected"}]
+        self.reject(m.verify_superseded_queued_attempt)
+        artifacts["artifacts"] = []
+        bad = copy.deepcopy(self.inputs)
+        bad["superseded_queued_zero"]["conclusion"] = "success"
+        bad["superseded_queued_zero_sha256"] = m.raw_sha(raw(bad["superseded_queued_zero"]))
+        self.reject(m.verify_inputs, bad, self.ctx)
+
+    def test_probe_rechecks_superseded_cancelled_zero_before_worker_or_cpu(self):
+        class SupersededChecked(BaseException):
+            pass
+        target = self.folder / "new-probe"
+        with mock.patch.object(m, "FOLDER", new=target), \
+             mock.patch.dict(os.environ, SOURCE=m.SOURCE, SOURCE_TREE=m.SOURCE_TREE), \
+             mock.patch.object(m, "preparation", return_value=(self.inputs, {})), \
+             mock.patch.object(m, "verify_prior_attempt_zero", return_value=self.prior) as prior, \
+             mock.patch.object(m, "verify_superseded_queued_attempt", side_effect=SupersededChecked) as queued, \
+             mock.patch.object(m, "current_job") as current, mock.patch.object(m, "host") as host:
+            with self.assertRaises(SupersededChecked):
+                m.probe()
+            prior.assert_called_once_with(self.prior)
+            queued.assert_called_once_with()
+            current.assert_not_called()
+            host.assert_not_called()
 
 
 if __name__ == "__main__":
