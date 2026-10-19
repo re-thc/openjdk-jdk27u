@@ -1,0 +1,345 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Qualify proven missing SKY tiers on one physical host
+on:
+  push:
+    branches: [codex/stringzilla-single-sky-missing-916ba895]
+    paths:
+      - .github/workflows/stringzilla-single-sky-missing.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-single-sky-missing-916ba895
+  cancel-in-progress: false
+env:
+  SOURCE: 916ba895e834378e3f7eac7f030fc4abff641d33
+  SOURCE_TREE: d3de6a4fcf40e5b45b58d7e0874ed2ab34fe2e01
+  STRINGZILLA_SKY_AUTHORIZATION: single-host-v1
+  GH_TOKEN: ${{ github.token }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+
+jobs:
+  configuration:
+    name: Authenticate exact missing-only scope and original complete pair
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      tiers: ${{ steps.prepare.outputs.tiers }}
+      artifact-id: ${{ steps.preparation.outputs.artifact-id }}
+      artifact-digest: ${{ steps.preparation.outputs.artifact-digest }}
+      original-hash: ${{ steps.prepare.outputs.original-hash }}
+      fork-hash: ${{ steps.prepare.outputs.fork-hash }}
+    steps:
+      - name: Checkout unchanged candidate runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.SOURCE }}
+          persist-credentials: false
+      - name: Checkout original source identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout exact auxiliary guards and projections
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - name: Execute offline guard tests and revalidate actual terminal zero proof
+        id: prepare
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py prepare
+      - name: Retain authenticated source input and missing scope receipts
+        id: preparation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-single-sky-preparation-${{ github.sha }}
+          path: perf-output
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+
+  worker:
+    name: Single host missing SKY controls
+    needs: configuration
+    outputs:
+      available: ${{ steps.physical.outputs.available }}
+      has-completed-tier: ${{ steps.interpreter.outputs.complete == 'true' || steps.c1.outputs.complete == 'true' || steps.c2.outputs.complete == 'true' }}
+    runs-on: ubuntu-26.04
+    container:
+      image: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    timeout-minutes: 360
+    env:
+      EXPECTED_CONTAINER_IMAGE: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+      PREPARATION_ID: ${{ needs.configuration.outputs.artifact-id }}
+      PREPARATION_DIGEST: ${{ needs.configuration.outputs.artifact-digest }}
+      ORIGINAL_HASH: ${{ needs.configuration.outputs.original-hash }}
+      FORK_HASH: ${{ needs.configuration.outputs.fork-hash }}
+    steps:
+      - name: Install only physical eligibility and artifact API dependencies
+        shell: bash
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python-is-python3 gh ca-certificates libstdc++6 libc6
+      - name: Authenticate actual physical worker before compiler or image restoration
+        id: physical
+        shell: python
+        run: |
+          import base64, hashlib, json, os, subprocess, sys
+          from pathlib import Path
+          path = '.github/scripts/stringzilla-single-sky.py'
+          payload = json.loads(subprocess.check_output(['gh', 'api',
+              'repos/re-thc/openjdk-jdk27u/contents/' + path + '?ref=' + os.environ['GITHUB_SHA']], text=True, timeout=30))
+          assert payload['type'] == 'file' and payload['path'] == path and payload['encoding'] == 'base64'
+          data = base64.b64decode(payload['content'])
+          assert hashlib.sha1(('blob ' + str(len(data)) + '\0').encode() + data).hexdigest() == payload['sha']
+          target = Path(os.environ['RUNNER_TEMP']) / 'stringzilla-single-sky.py'
+          target.write_bytes(data)
+          print('STRINGZILLA_SINGLE_HOST_ALGORITHM ' + json.dumps({'head': os.environ['GITHUB_SHA'],
+              'git_blob': payload['sha'], 'sha256': hashlib.sha256(data).hexdigest()}), flush=True)
+          subprocess.run([sys.executable, target, 'probe'], check=True)
+      - name: Publish immutable single-host CPU fact
+        id: fact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-single-sky-fact-${{ github.sha }}
+          path: ${{ steps.physical.outputs.folder }}/lease.json
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Eligible worker installs exact native prerequisites
+        if: steps.physical.outputs.available == 'true'
+        shell: bash
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git gcc-16 libc6-dev tar unzip binutils
+          test "$(gcc-16 -dumpversion)" = 16
+          gcc-16 -x c -fsanitize=address,undefined,alignment -fno-sanitize-recover=all -o "$RUNNER_TEMP/native-dependencies-smoke" - <<'EOF'
+          #include <sys/stat.h>
+          #include <dirent.h>
+          #include <sys/param.h>
+          #include <unistd.h>
+          #include <stddef.h>
+          #include <stdint.h>
+          #include <sys/types.h>
+          #include <fcntl.h>
+          #include <errno.h>
+          #include <signal.h>
+          #include <sys/socket.h>
+          #include <limits.h>
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
+          #include <cpuid.h>
+          #include <immintrin.h>
+          int main(void) { return 0; }
+          EOF
+          ASAN_OPTIONS=abort_on_error=1:detect_leaks=1:strict_string_checks=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 "$RUNNER_TEMP/native-dependencies-smoke"
+      - name: Checkout unchanged candidate runtime and frozen harness
+        if: steps.physical.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.SOURCE }}
+          persist-credentials: false
+      - name: Checkout original source identity
+        if: steps.physical.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+      - name: Checkout exact auxiliary guards and projections
+        if: steps.physical.outputs.available == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - name: Persist exact checkout ownership exceptions for container subprocesses
+        if: steps.physical.outputs.available == 'true'
+        shell: python
+        run: |
+          import subprocess
+          from pathlib import Path
+          for root in (Path.cwd(), Path.cwd() / 'baseline', Path.cwd() / 'driver'):
+              subprocess.run(['git', 'config', '--global', '--add', 'safe.directory', str(root.resolve())], check=True)
+              subprocess.run(['git', '-C', str(root), 'rev-parse', 'HEAD'], check=True)
+      - name: Measure missing SKY interpreter controls
+        id: interpreter
+        if: ${{ success() && steps.physical.outputs.available == 'true' && contains(fromJSON(needs.configuration.outputs.tiers), 'interpreter') && env.SINGLE_STOP != 'true' }}
+        env:
+          FACT_ARTIFACT_ID: ${{ steps.fact.outputs.artifact-id }}
+          FACT_ARTIFACT_DIGEST: ${{ steps.fact.outputs.artifact-digest }}
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py run-tier interpreter
+      - name: Retain completed SKY interpreter raw results
+        id: upload_interpreter
+        if: ${{ success() && steps.interpreter.outputs.complete == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-final-results-avx512-interpreter-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Release interpreter scratch only after durable per-tier retention
+        if: ${{ success() && steps.upload_interpreter.outcome == 'success' }}
+        env:
+          RESULT_ARTIFACT_ID: ${{ steps.upload_interpreter.outputs.artifact-id }}
+          RESULT_ARTIFACT_DIGEST: ${{ steps.upload_interpreter.outputs.artifact-digest }}
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py retained interpreter
+      - name: Measure missing SKY c1 controls
+        id: c1
+        if: ${{ success() && steps.physical.outputs.available == 'true' && contains(fromJSON(needs.configuration.outputs.tiers), 'c1') && env.SINGLE_STOP != 'true' }}
+        env:
+          FACT_ARTIFACT_ID: ${{ steps.fact.outputs.artifact-id }}
+          FACT_ARTIFACT_DIGEST: ${{ steps.fact.outputs.artifact-digest }}
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py run-tier c1
+      - name: Retain completed SKY c1 raw results
+        id: upload_c1
+        if: ${{ success() && steps.c1.outputs.complete == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-final-results-avx512-c1-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Release c1 scratch only after durable per-tier retention
+        if: ${{ success() && steps.upload_c1.outcome == 'success' }}
+        env:
+          RESULT_ARTIFACT_ID: ${{ steps.upload_c1.outputs.artifact-id }}
+          RESULT_ARTIFACT_DIGEST: ${{ steps.upload_c1.outputs.artifact-digest }}
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py retained c1
+      - name: Measure missing SKY c2 controls
+        id: c2
+        if: ${{ success() && steps.physical.outputs.available == 'true' && contains(fromJSON(needs.configuration.outputs.tiers), 'c2') && env.SINGLE_STOP != 'true' }}
+        env:
+          FACT_ARTIFACT_ID: ${{ steps.fact.outputs.artifact-id }}
+          FACT_ARTIFACT_DIGEST: ${{ steps.fact.outputs.artifact-digest }}
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py run-tier c2
+      - name: Retain completed SKY c2 raw results
+        id: upload_c2
+        if: ${{ success() && steps.c2.outputs.complete == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-final-results-avx512-c2-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          overwrite: false
+          if-no-files-found: error
+          retention-days: 30
+      - name: Release c2 scratch only after durable per-tier retention
+        if: ${{ success() && steps.upload_c2.outcome == 'success' }}
+        env:
+          RESULT_ARTIFACT_ID: ${{ steps.upload_c2.outputs.artifact-id }}
+          RESULT_ARTIFACT_DIGEST: ${{ steps.upload_c2.outputs.artifact-digest }}
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-single-sky.py retained c2
+      - name: Retain physical unavailable, infrastructure and partial evidence without retry
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-single-sky-worker-evidence-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/stringzilla-single-sky
+            perf-output
+            perf-retained
+          overwrite: false
+          if-no-files-found: warn
+          retention-days: 30
+
+  collect:
+    name: Qualify exact completed missing SKY controls and preserve failed parent status
+    if: ${{ always() && needs.configuration.result == 'success' && needs.worker.outputs.available == 'true' && needs.worker.outputs.has-completed-tier == 'true' }}
+    needs: [configuration, worker]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EXPECTED_TIERS: ${{ needs.configuration.outputs.tiers }}
+      PAIR_AVX2: '{"original-image-hash":"${{ needs.configuration.outputs.original-hash }}","fork-image-hash":"${{ needs.configuration.outputs.fork-hash }}"}'
+    steps:
+      - name: Checkout unchanged runtime and frozen harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ env.SOURCE }}
+          persist-credentials: false
+      - name: Checkout exact auxiliary projections and collectors
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - name: Authenticate actual per-tier artifacts and successful GitHub API steps
+        shell: bash
+        run: python3 driver/.github/scripts/stringzilla-final.py collection --source "$SOURCE"
+      - name: Strictly qualify unchanged raw statistics against missing-only physical keys
+        shell: node {0}
+        run: |
+          const fs=require('fs'),crypto=require('crypto');
+          function core(path,hash){
+            const text=fs.readFileSync(path,'utf8');
+            if(crypto.createHash('sha256').update(text).digest('hex')!==hash)throw Error('Wrong frozen collector: '+path);
+            return Function('return ('+text+')')();
+          }
+          const normal=core('driver/.github/scripts/stringzilla-collector.js','058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26');
+          const periodic=core('driver/.github/scripts/stringzilla-periodic-collector.js','ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4');
+          const input=JSON.parse(fs.readFileSync('perf-output/collection-input.json','utf8'));
+          const tiers=JSON.parse(process.env.EXPECTED_TIERS),expectedCounts={interpreter:136,c1:126,c2:124};
+          function qualify(entries,keys,collect){
+            const expected=new Set(keys),seen=new Set(),shards=[];
+            if(expected.size!==keys.length||entries.length!==tiers.length)throw Error('Invalid missing-only matrix');
+            for(const entry of entries){
+              if(entry.backend!=='avx512'||entry.execution_kind!=='github-step'||entry.job!==entry.parent_job&&
+                  JSON.stringify(entry.job)!==JSON.stringify(entry.parent_job))throw Error('Wrong actual parent context');
+              const real=entry.parent_job.steps.filter(s=>s.name===entry.execution.name&&s.number===entry.execution.number);
+              if(real.length!==1||JSON.stringify(real[0])!==JSON.stringify(entry.execution)||
+                  entry.execution.status!=='completed'||entry.execution.conclusion!=='success')throw Error('Not an actual successful API step');
+              const value=collect(fs.readFileSync(entry.log_path,'utf8'),entry.backend,entry.execution,
+                entry.manifest,entry.source,entry.base,entry.expected);
+              for(const group of value.groups){
+                const enabled=group.controls.enabled;
+                const params=Object.fromEntries(Object.entries(enabled.params).sort(([a],[b])=>a.localeCompare(b)));
+                const key=JSON.stringify([entry.backend,group.tier,enabled.benchmark,params]);
+                if(!tiers.includes(group.tier)||!expected.has(key)||seen.has(key))throw Error('Unexpected or repeated physical key');
+                seen.add(key);
+              }
+              shards.push({...value,job:entry.parent_job,parent_job:entry.parent_job,
+                execution_kind:'github-step',execution:entry.execution});
+            }
+            if(seen.size!==expected.size||[...expected].some(key=>!seen.has(key)))throw Error('Incomplete physical matrix');
+            return {triplets:seen.size,records:seen.size*3,shards};
+          }
+          const stock=qualify(input.entries,input.expected_physical_keys,normal);
+          const abc=qualify(input.periodic_entries,input.periodic_expected_physical_keys,periodic);
+          if(input.utf16_probe_entries.length||input.utf16_probe_expected_physical_keys.length||
+              input.expected_physical_keys.some(k=>input.periodic_expected_physical_keys.includes(k))||
+              abc.triplets!==tiers.length*2)throw Error('Unexpected/overlapping external probe scope');
+          const triplets=stock.triplets+abc.triplets;
+          if(triplets!==tiers.reduce((n,t)=>n+expectedCounts[t],0))throw Error('Wrong explicit missing tuple total');
+          fs.writeFileSync('perf-output/qualification.json',JSON.stringify({
+            schema:'stringzilla-single-host-qualification-v1',source:process.env.SOURCE,backend:'avx512',tiers,
+            triplets,records:triplets*3,normal:stock,periodic:abc,
+            note:'Actual parent jobs and real successful GitHub steps retained separately; every higher enabled mean retained.'
+          },null,2)+'\n');
+          console.log('Qualified '+triplets+' previously missing SKY triplets on one authenticated physical host.');
+      - name: Retain all completed, incomplete and higher-mean evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-single-sky-qualification-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          overwrite: false
+          if-no-files-found: warn
+          retention-days: 30

@@ -743,10 +743,26 @@ def sky_election(tier):
     return module
 
 
+def single_sky():
+    path = DRIVER / ".github/scripts/stringzilla-single-sky.py"
+    spec = importlib.util.spec_from_file_location("single_sky_authorization", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def sky_authorization(tier, phase):
+    mode = os.environ.get("STRINGZILLA_SKY_AUTHORIZATION", "allfour-v1")
+    if mode == "allfour-v1":
+        module = sky_election(tier)
+        return module.verify_saved(module.FOLDER)
+    assert mode == "single-host-v1", "Unknown SKY authorization mode"
+    return single_sky().verify_saved(tier, phase, OUT)
+
+
 def restore(args):
     if args.backend == "avx512":
-        module = sky_election(args.tier)
-        module.verify_saved(module.FOLDER)
+        sky_authorization(args.tier, "restore")
     producer = "avx2" if args.backend == "avx512" else args.backend
     archive = ROOT / "candidate-pair.zip"
     metadata = download(args.artifact_id, args.artifact_digest, QUALIFIED_RUN,
@@ -836,8 +852,7 @@ def runtime_host(args):
 
 def measure(args):
     if args.backend == "avx512":
-        module = sky_election(args.tier)
-        module.verify_saved(module.FOLDER)
+        sky_authorization(args.tier, "measure")
     receipt = json.loads((OUT / "shard-receipt.json").read_text())
     assert sha(OUT / "shard-cases.tsv") == receipt["manifest_sha256"] and sha(HELPER) == args.helper_hash
     for name, expected_hash in (("original", args.original_hash), ("fork", args.fork_hash)):
@@ -861,8 +876,7 @@ def measure(args):
 
 def periodic(args):
     if args.backend == "avx512":
-        module = sky_election(args.tier)
-        module.verify_saved(module.FOLDER)
+        sky_authorization(args.tier, "periodic")
     receipt = json.loads((OUT / "shard-receipt.json").read_text())
     assert receipt["source"] == args.source and receipt["backend"] == args.backend and receipt["tier"] == args.tier
     folder = OUT / "periodic"
@@ -896,8 +910,7 @@ def periodic(args):
 
 def utf16_probe(args):
     if args.backend == "avx512":
-        module = sky_election(args.tier)
-        module.verify_saved(module.FOLDER)
+        sky_authorization(args.tier, "utf16-probe")
     receipt = json.loads((OUT / "shard-receipt.json").read_text())
     assert receipt["source"] == args.source and receipt["backend"] == args.backend and receipt["tier"] == args.tier
     folder = OUT / "utf16-probe"
@@ -940,20 +953,31 @@ def collection(args):
     periodic_expected, periodic_counts = expected_keys(periodic_rows()[0])
     probe_expected, probe_counts = expected_keys(utf16_probe_rows()[0])
     require_previous_controls(expected + periodic_expected + probe_expected)
-    allowed = {(backend, tier) for backend in BACKENDS for tier in TIERS
-               if backend != "avx512" or tier in RECOVERY_SKY_TIERS}
+    single_mode = os.environ.get("STRINGZILLA_SKY_AUTHORIZATION", "allfour-v1") == "single-host-v1"
+    allowed = ({("avx512", tier) for tier in single_sky().selected_tiers()} if single_mode else
+               {(backend, tier) for backend in BACKENDS for tier in TIERS
+                if backend != "avx512" or tier in RECOVERY_SKY_TIERS})
     expected = [key for key in expected if tuple(json.loads(key)[:2]) in allowed]
     periodic_expected = [key for key in periodic_expected if tuple(json.loads(key)[:2]) in allowed]
     probe_expected = [key for key in probe_expected if tuple(json.loads(key)[:2]) in allowed]
     for phase_counts in (counts, periodic_counts, probe_counts):
-        for tier in TIERS:
-            if tier not in RECOVERY_SKY_TIERS:
-                phase_counts["avx512"][tier] = 0
+        if single_mode:
+            for backend in BACKENDS:
+                for tier in TIERS:
+                    if (backend, tier) not in allowed:
+                        phase_counts[backend][tier] = 0
+        else:
+            for tier in TIERS:
+                if tier not in RECOVERY_SKY_TIERS:
+                    phase_counts["avx512"][tier] = 0
     artifacts = api("actions/runs/" + os.environ["GITHUB_RUN_ID"] + "/artifacts?per_page=100")["artifacts"]
     jobs = api("actions/runs/" + os.environ["GITHUB_RUN_ID"] + "/jobs?per_page=100&filter=all")["jobs"]
-    producers = {name: json.loads(os.environ["PAIR_" + name.upper()]) for name in ("serial", "avx2", "neon", "msvc")}
+    producers = {name: json.loads(os.environ["PAIR_" + name.upper()]) for name in
+                 (("avx2",) if single_mode else ("serial", "avx2", "neon", "msvc"))}
     entries, periodic_entries, probe_entries = [], [], []
     for backend in BACKENDS:
+        if not any((backend, tier) in allowed for tier in TIERS):
+            continue
         producer = producers["avx2" if backend == "avx512" else backend]
         for tier in TIERS:
             if (backend, tier) not in allowed:
@@ -963,7 +987,11 @@ def collection(args):
             assert 1 <= len(matches) <= 2, "Missing result or exceeded one unsupported-host retry: " + prefix
             label = backend + "-" + tier + " controls"
             matching_jobs = [job for job in jobs if job["name"] == label or job["name"].endswith("/ " + label)]
-            if backend == "avx512":
+            if backend == "avx512" and single_mode:
+                matching_jobs = [job for job in jobs if job["name"] == single_sky().WORKER and
+                    any(step["name"] == "Measure missing SKY " + tier + " controls" and step["conclusion"] == "success"
+                        for step in job["steps"])]
+            elif backend == "avx512":
                 prefix_name = "avx512_controls (" + tier + ") / Final SKY " + tier + " slot "
                 candidates = [job for job in jobs if job["name"].startswith(prefix_name)]
                 assert len(candidates) == 4 and all(job["run_attempt"] == 1 for job in candidates)
@@ -973,7 +1001,18 @@ def collection(args):
             assert matching_jobs, label
             latest_attempt = max(job["run_attempt"] for job in matching_jobs)
             matching_jobs = [job for job in matching_jobs if job["run_attempt"] == latest_attempt]
-            assert len(matching_jobs) == 1 and matching_jobs[0]["conclusion"] == "success", label
+            assert len(matching_jobs) == 1, label
+            if single_mode:
+                assert matching_jobs[0]["status"] == "completed", label
+            else:
+                assert matching_jobs[0]["conclusion"] == "success", label
+            execution_context = {}
+            if single_mode:
+                measured = [step for step in matching_jobs[0]["steps"] if
+                            step["name"] == "Measure missing SKY " + tier + " controls"]
+                assert len(measured) == 1 and measured[0]["status"] == "completed" and measured[0]["conclusion"] == "success"
+                execution_context = {"execution_kind": "github-step", "execution": measured[0],
+                                     "parent_job": matching_jobs[0]}
             timed, skipped_attempts = [], []
             for artifact in matches:
                 attempt = artifact["name"][len(prefix):]
@@ -985,7 +1024,11 @@ def collection(args):
                     names = set(bundle.namelist())
                     if "experiment.log" in names:
                         unpack_files(archive, ["experiment.log", "shard-cases.tsv", "shard-receipt.json"], folder)
-                        if backend == "avx512":
+                        if backend == "avx512" and single_mode:
+                            binding = single_sky().verify_tier_artifact(bundle, tier, matching_jobs[0])
+                            for name in ("single-host-binding.json", "single-host-fact.json", "tier-console.log"):
+                                (folder / name).write_bytes(bundle.read(name))
+                        elif backend == "avx512":
                             election_folder = folder / "sky-election"
                             election_folder.mkdir()
                             required = ["eligibility.json", "selection.json"] + [
@@ -1062,7 +1105,7 @@ def collection(args):
             assert (folder / "shard-cases.tsv").read_bytes() == text.encode()
             receipt = {"manifest_sha256": hashlib.sha256(text.encode()).hexdigest(), "runner_sha256": sha(HELPER),
                        "producer_image_hashes": {"original": producer["original-image-hash"], "fork": producer["fork-image-hash"]}}
-            entries.append({"backend": backend, "job": matching_jobs[0], "source": args.source, "base": BASE,
+            entries.append({"backend": backend, "job": matching_jobs[0], **execution_context, "source": args.source, "base": BASE,
                             "manifest": text, "log_path": str(folder / "experiment.log"), "expected": receipt})
             text = periodic_projection(backend, tier)
             periodic_folder = folder / "periodic"
@@ -1074,7 +1117,7 @@ def collection(args):
                 "producer_image_hashes": {"original": {"tree_sha256": producer["original-image-hash"]},
                                           "fork": {"tree_sha256": producer["fork-image-hash"]}}}
             assert json.loads((periodic_folder / "shard-receipt.json").read_text()) == periodic_receipt
-            periodic_entries.append({"backend": backend, "job": matching_jobs[0], "source": args.source, "base": BASE,
+            periodic_entries.append({"backend": backend, "job": matching_jobs[0], **execution_context, "source": args.source, "base": BASE,
                 "manifest": text, "log_path": str(periodic_folder / "experiment.log"),
                 "expected": {name: periodic_receipt[name] for name in ("manifest_sha256", "runner_sha256",
                     "producer_image_hashes", "extra_benchmark_source_sha256")}})
@@ -1089,7 +1132,7 @@ def collection(args):
                     "producer_image_hashes": {"original": {"tree_sha256": producer["original-image-hash"]},
                                               "fork": {"tree_sha256": producer["fork-image-hash"]}}}
                 assert json.loads((probe_folder / "shard-receipt.json").read_text()) == probe_receipt
-                probe_entries.append({"backend": backend, "job": matching_jobs[0], "source": args.source, "base": BASE,
+                probe_entries.append({"backend": backend, "job": matching_jobs[0], **execution_context, "source": args.source, "base": BASE,
                     "manifest": text, "log_path": str(probe_folder / "experiment.log"),
                     "expected": {name: probe_receipt[name] for name in ("manifest_sha256", "runner_sha256",
                         "producer_image_hashes", "extra_benchmark_source_sha256")}})
