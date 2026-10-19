@@ -65,6 +65,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/khashTable.inline.hpp"
 
 ArchiveBuilder* ArchiveBuilder::_current = nullptr;
 
@@ -166,6 +167,9 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
   _ptrmap.iterate(&relocator, start, end);
 }
 
+// Values are copied out on lookup; entries never escape or get iterated.
+class ArchiveBuilder::BufferedToSrcTable : public KHashTable<address, mtClassShared> {};
+
 ArchiveBuilder::ArchiveBuilder() :
   _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
@@ -186,7 +190,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _rw_src_objs(),
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
+  _buffered_to_src_table(new (mtClassShared) BufferedToSrcTable()),
   _total_heap_region_size(0)
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
@@ -214,6 +218,7 @@ ArchiveBuilder::~ArchiveBuilder() {
   }
 
   AOTArtifactFinder::dispose();
+  delete _buffered_to_src_table;
 }
 
 // Returns a deterministic sequence of pseudo random numbers. The main purpose is NOT
@@ -656,12 +661,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   }
 
   {
-    bool created;
-    _buffered_to_src_table.put_if_absent((address)dest, src, &created);
+    bool created = _buffered_to_src_table->put_if_absent((uintptr_t)dest, src);
     assert(created, "must be");
-    if (_buffered_to_src_table.maybe_grow()) {
-      log_info(aot, hashtables)("Expanded _buffered_to_src_table table to %d", _buffered_to_src_table.table_size());
-    }
   }
 
   intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->type(), (address)dest);
@@ -731,9 +732,10 @@ address ArchiveBuilder::get_buffered_addr(address src_addr) const {
 
 address ArchiveBuilder::get_source_addr(address buffered_addr) const {
   assert(is_in_buffer_space(buffered_addr), "must be");
-  address* src_p = _buffered_to_src_table.get(buffered_addr);
-  assert(src_p != nullptr && *src_p != nullptr, "must be");
-  return *src_p;
+  address src = nullptr;
+  bool found = _buffered_to_src_table->get((uintptr_t)buffered_addr, &src);
+  assert(found && src != nullptr, "must be");
+  return src;
 }
 
 void ArchiveBuilder::relocate_embedded_pointers(ArchiveBuilder::SourceObjList* src_objs) {

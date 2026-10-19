@@ -232,7 +232,8 @@ private:
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
   ResizeableHashTable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
-  ResizeableHashTable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
+  class BufferedToSrcTable;
+  BufferedToSrcTable* _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   unsigned int _entropy_seed;
