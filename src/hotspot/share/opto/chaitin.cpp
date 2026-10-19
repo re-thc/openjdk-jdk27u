@@ -1121,17 +1121,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // AggressiveCoalesce.  This effectively pre-virtual-splits
         // around uncommon uses of common defs.
         const RegMask &rm_in = n->in_RegMask(k);
-#ifndef PRODUCT
-        if (trace_spilling() && n->is_MachCall()) {
-          tty->print("CCMASK after_aggressive=%d call=N%d input=%u def=N%d L%u B%u freq=%.6g kind=%s before=",
-                     after_aggressive, n->_idx, k, n->in(k)->_idx, vreg_in,
-                     block->_pre_order, block->_freq,
-                     k < n->as_MachCall()->tf()->domain()->cnt() ? "argument" : "debug");
-          lrg_in.mask().dump();
-          tty->print(" use=");
-          rm_in.dump();
-        }
-#endif
         if (!after_aggressive && _cfg.get_block_for_node(n->in(k))->_freq > 1000 * block->_freq) {
           // Since we are BEFORE aggressive coalesce, leave the register
           // mask untrimmed by the call.  This encourages more coalescing.
@@ -1140,13 +1129,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         } else {
           lrg_in.and_with(rm_in);
         }
-#ifndef PRODUCT
-        if (trace_spilling() && n->is_MachCall()) {
-          tty->print(" result=");
-          lrg_in.mask().dump();
-          tty->cr();
-        }
-#endif
 
         // Check for bound register masks
         const RegMask &lrgmask_in = lrg_in.mask();

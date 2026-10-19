@@ -57,9 +57,6 @@ coloring. Phi reconciliation, two-address constraints and retries remain
 ordinary allocator work. Forwarded base-oop homes remain live for GC and
 Java-state reconstruction. Debug-home reuse can apply on later Split attempts.
 
-The independent scoped nonnull-diagnostic backport in `javaThread.inline.hpp`
-preserves its handler and assertion without suppressing warnings globally.
-
 ## Regression coverage
 
 - `TestColdCallSpillPolicy` and its native helper check production costs, masks,
@@ -74,38 +71,3 @@ preserves its handler and assertion without suppressing warnings globally.
   oracle requires base-oop forwarding in compilation 2 at the unique machine
   trap for the exercised BCI/reason, plus a WhiteBox trap-count increment.
   Nonactivation or an ambiguous site fails.
-
-## Bounded Linux x64 results
-
-Measurements used pinned `jzstd@7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6` on
-one AMD Linux x64 VM. Four independent balanced off/on pairs per case used six
-seconds of warmup and five 700 ms windows per fork; each fork contributes one
-median. All 72 forks across nine cases were retained. Normal tiered decoding
-had these median paired changes:
-
-| Native-zstd frame | Enabled versus disabled |
-|---|---:|
-| Source, level 1 | +3.6% |
-| Source, level 3 | +3.0% |
-| JSON, level 3 | +2.1% |
-| DNA, level 3 | +11.9% |
-
-C2-only source decoding gained 2.4%; raw/RLE, generic-reader and ordinary encoder
-controls had no observed regression. Four pairs on one host do not establish
-general Java performance or cross-machine confidence.
-
-Separate source-trained tiered captures reduced main code from 7,584 to 6,824
-bytes, frame reservation from 272 to 256 bytes, and static stack reads/writes
-in the call-free packed-load loop region from 56/30 to 46/19. Register moves
-increased from 19 to 24, and cold materialization remains. DNA's normal-decoder
-compilation elapsed median rose from 12.5 to 14 ms with an extra allocator
-retry. The result supports a net transport/code/throughput improvement with a
-compilation tradeoff, rather than removal of every spill or compensating move.
-
-Correctness passed for 57 fixed native-zstd-1.5.7 frames over 32 rounds, the four
-focused tests and nine existing allocator/spilling tests. A newly built
-current-source fastdebug VM also passed actual-default startup with DEFAULT
-origin/product metadata, opt-out without diagnostic unlock, and the focused
-GC/deoptimization controls. Full ordinary CI remains a separate check.
-The [pinned workload and probe sources](https://github.com/re-thc/openjdk-jdk27u/tree/26a75f6755204efee764452ad02a0fe3d273dffa/doc/cold-call-qualification)
-are retained outside the product change.

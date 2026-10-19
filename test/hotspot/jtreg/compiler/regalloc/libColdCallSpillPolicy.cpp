@@ -74,27 +74,25 @@ Java_compiler_regalloc_TestColdCallSpillPolicy_verify(JNIEnv* env, jclass) {
   ColdCallSpillPolicy::add_constraint(frequency, last_node, 200, 100.0);
   CHECK(!ColdCallSpillPolicy::should_defer(true, true, 100.0, frequency));
 
-  // Model the two successive joins seen for llEntry, ofEntry and mlEntry
-  // (bytecode indices 360, 373 and 386) in the retained decoder trace. These
-  // are predecessor execution frequencies, not summed alternatives executed
-  // in one iteration. The first join must propagate an UP deferred value to
-  // the second join instead of materializing it on its hot incoming edges.
+  // Three scalar ranges cross two successive hot joins. Costs use predecessor
+  // execution frequencies, not alternatives summed within one iteration.
+  // The first join must propagate its deferred UP value to the second join.
   ColdCallSpillPolicy::PhiCosts packed_first[3];
   ColdCallSpillPolicy::PhiCosts packed_second[3];
   ColdCallSpillPolicy::PhiCosts packed_uncoordinated[3];
   for (unsigned int range = 0; range < 3; range++) {
     auto& first = packed_first[range];
-    first.add_input(true, true, true, 2140.33);  // B124: hot scalar definition
-    first.add_input(true, true, true, 1.82001);  // B121: cold UP sibling
-    first.add_input(true, false, false, 1.81997); // B119: returning call, DOWN
+    first.add_input(true, true, true, 2140.33);  // hot scalar definition
+    first.add_input(true, true, true, 1.82001);  // cold UP sibling
+    first.add_input(true, false, false, 1.81997); // returning call, DOWN
     CHECK(first.up_frequency() == 2140.33 + 1.82001);
     CHECK(first.down_frequency() == 1.81997);
     CHECK(first.should_keep_up(1.82001));
 
     auto& second = packed_second[range];
-    second.add_input(true, first.should_keep_up(1.82001), true, 2143.97); // B120
-    second.add_input(true, true, true, 4536.68); // B125: hot UP sibling
-    second.add_input(true, true, true, 0.13977); // B79: rare UP sibling
+    second.add_input(true, first.should_keep_up(1.82001), true, 2143.97);
+    second.add_input(true, true, true, 4536.68); // hot UP sibling
+    second.add_input(true, true, true, 0.13977); // rare UP sibling
     CHECK(second.up_frequency() == 2143.97 + 4536.68 + 0.13977);
     CHECK(second.down_frequency() == 0.0);
     CHECK(second.should_keep_up(1.82001));
@@ -108,16 +106,15 @@ Java_compiler_regalloc_TestColdCallSpillPolicy_verify(JNIEnv* env, jclass) {
     CHECK(!uncoordinated.should_keep_up(1.82001));
   }
 
-  // The original Java integration fixture used calls at 1/64 and 1/128.
-  // Its first join cannot satisfy the actual whole-range weighted guard:
+  // Calls at 1/64 and 1/128 leave insufficient whole-range cost margin:
   // 126/128 is below 10 * (2 * 2/128 + 3 * 3/128) == 130/128.
-  ColdCallSpillPolicy::PhiCosts old_fixture;
-  old_fixture.add_input(true, true, true, 126.0 / 128.0);
-  old_fixture.add_input(true, false, false, 2.0 / 128.0);
-  CHECK(!old_fixture.should_keep_up(3.0 / 128.0));
+  ColdCallSpillPolicy::PhiCosts insufficient_margin;
+  insufficient_margin.add_input(true, true, true, 126.0 / 128.0);
+  insufficient_margin.add_input(true, false, false, 2.0 / 128.0);
+  CHECK(!insufficient_margin.should_keep_up(3.0 / 128.0));
 
-  // The standalone fixture uses calls at 1/256 and 1/512, and requires
-  // both actual joins plus a pressure boundary on each of the three chains.
+  // Calls at 1/256 and 1/512 give both joins in the Java integration fixture
+  // enough margin to retain an UP value through their pressure boundaries.
   const double fixture_constraints = 3.0 / 512.0;
   CHECK(ColdCallSpillPolicy::should_defer(true, true, 1.0, fixture_constraints));
   ColdCallSpillPolicy::PhiCosts fixture_first;

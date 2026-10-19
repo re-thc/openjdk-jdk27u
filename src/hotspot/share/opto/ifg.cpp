@@ -757,20 +757,6 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
       }
     }
 
-#ifndef PRODUCT
-    if (trace_spilling() &&
-        (interfering_lrg.not_free() || old_size != (uint)interfering_lrg.mask_size())) {
-      tty->print("CCBOUND def=N%d fat=%d affected=L%u empty=%d before=",
-                 lrg.is_singledef() ? lrg._def->_idx : 0, lrg._fat_proj,
-                 l, interfering_lrg.not_free());
-      old.dump();
-      tty->print(" kill=");
-      mask.dump();
-      tty->print(" after=");
-      interfering_lrg.mask().dump();
-      tty->cr();
-    }
-#endif
     // If 'l' goes completely dry, it must spill.
     if (interfering_lrg.not_free()) {
       // Give 'l' some kind of reasonable mask, so it picks up
