@@ -1,0 +1,515 @@
+{
+  "schema": "stringzilla-final-normal-missing-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "run_id": 39174300598,
+  "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+  "attempt": 1,
+  "scope_sha256": "c98c6f722e1d2533191f3f03bc12bf2b2b63f5b3dd5d41a3442fa93d3b4f2abb",
+  "logical_groups": 12,
+  "triplets": 1500,
+  "timed_records": 0,
+  "normal_result_artifacts": 0,
+  "barrier_job_id": 117820226709,
+  "api_shape": "four-unexpanded-parents",
+  "normal_job_ids": {
+    "serial": 117837201556,
+    "neon": 117837200965,
+    "msvc": 117837201207,
+    "avx2": 117837201363
+  },
+  "normal_job_names": {
+    "serial": "serial_controls",
+    "neon": "neon_controls",
+    "msvc": "msvc_controls",
+    "avx2": "avx2_controls"
+  },
+  "observed_at_utc": "2026-10-19 00:46:40 UTC",
+  "actual_run_status": "queued",
+  "barrier_failure": {
+    "job": {
+      "id": 117820226709,
+      "run_id": 39174300598,
+      "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+      "run_attempt": 1,
+      "name": "sky_fact_barrier",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-10-18T23:26:28Z",
+      "started_at": "2026-10-18T23:39:38Z",
+      "completed_at": "2026-10-19T00:45:41Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-18T23:39:39Z",
+          "completed_at": "2026-10-18T23:39:39Z"
+        },
+        {
+          "name": "Checkout the exact auxiliary election algorithm",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-18T23:39:39Z",
+          "completed_at": "2026-10-18T23:39:41Z"
+        },
+        {
+          "name": "Authenticate all twelve missing SKY facts before releasing normal timing workers",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 3,
+          "started_at": "2026-10-18T23:39:41Z",
+          "completed_at": "2026-10-19T00:45:38Z"
+        },
+        {
+          "name": "Retain the authenticated fact barrier",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-19T00:45:38Z",
+          "completed_at": "2026-10-19T00:45:39Z"
+        },
+        {
+          "name": "Post Checkout the exact auxiliary election algorithm",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-19T00:45:39Z",
+          "completed_at": "2026-10-19T00:45:39Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-19T00:45:39Z",
+          "completed_at": "2026-10-19T00:45:39Z"
+        }
+      ]
+    },
+    "decoded_log_sha256": "80795f154c7df6c7daaad30853ec3373da022bdde5dfe559aa9311cc3fabb0b1",
+    "reason": "All four workers unsupported: zero timings",
+    "phase": "interpreter ALLFOUR eligibility; no normal worker released"
+  },
+  "normal_jobs": [
+    {
+      "id": 117837200965,
+      "run_id": 39174300598,
+      "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+      "run_attempt": 1,
+      "name": "neon_controls",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-19T00:45:41Z",
+      "started_at": "2026-10-19T00:45:41Z",
+      "completed_at": "2026-10-19T00:45:41Z",
+      "steps": []
+    },
+    {
+      "id": 117837201207,
+      "run_id": 39174300598,
+      "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+      "run_attempt": 1,
+      "name": "msvc_controls",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-19T00:45:41Z",
+      "started_at": "2026-10-19T00:45:41Z",
+      "completed_at": "2026-10-19T00:45:41Z",
+      "steps": []
+    },
+    {
+      "id": 117837201363,
+      "run_id": 39174300598,
+      "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+      "run_attempt": 1,
+      "name": "avx2_controls",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-19T00:45:41Z",
+      "started_at": "2026-10-19T00:45:41Z",
+      "completed_at": "2026-10-19T00:45:41Z",
+      "steps": []
+    },
+    {
+      "id": 117837201556,
+      "run_id": 39174300598,
+      "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+      "run_attempt": 1,
+      "name": "serial_controls",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-10-19T00:45:41Z",
+      "started_at": "2026-10-19T00:45:41Z",
+      "completed_at": "2026-10-19T00:45:41Z",
+      "steps": []
+    }
+  ],
+  "normal_specific_artifact_prefixes_checked": [
+    "stringzilla-final-results-serial-",
+    "stringzilla-final-results-neon-",
+    "stringzilla-final-results-msvc-",
+    "stringzilla-final-results-avx2-"
+  ],
+  "artifact_index": {
+    "total_count": 21,
+    "artifacts": [
+      {
+        "id": 12156717220,
+        "name": "stringzilla-final-sky-fact-39174300598-c2-2-attempt1",
+        "digest": "sha256:981347d623c6b0fe1fdfba54918dbdc563250fbc5303b5a1b7f9faf8e963de02",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12156662421,
+        "name": "stringzilla-final-sky-eligibility-interpreter-2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:43591d5b66c7eaff180359027f8f44452d30ff7276e13971cc39cdaef8a914fb",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12156486860,
+        "name": "stringzilla-final-sky-eligibility-c2-2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:93695abb98f2d6d8c05dc95c896ad0df2ddedbc7d738fd214708058fc97974cd",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12156253837,
+        "name": "stringzilla-final-sky-barrier-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:fede0b2256f59ce8869b3016bcc9c8bdf58eafe86577288829298e5b35075d40",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12156174254,
+        "name": "stringzilla-final-sky-fact-39174300598-interpreter-2-attempt1",
+        "digest": "sha256:09d921f38188638e30cb2813e8a9a03ae4e2335dc16f97dca7513fe6e8715ba2",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155845248,
+        "name": "stringzilla-final-sky-fact-39174300598-c1-2-attempt1",
+        "digest": "sha256:48c003aa72e5057fd66055cd0c0be4f2a273302b47917af5151bb48eb010ee9e",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155290977,
+        "name": "stringzilla-final-sky-eligibility-interpreter-0-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:ef79d816c92a357f312b1a580c243cebb87535fc734aff5c14271e2c9cfbf3b3",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155210298,
+        "name": "stringzilla-final-sky-eligibility-c1-1-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:2fcfa37b0abbd8f919924cafd88d42961a87deb8ea3e50fd4d5784162b42e74f",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155192571,
+        "name": "stringzilla-final-sky-fact-39174300598-c1-0-attempt1",
+        "digest": "sha256:9b619a975074aa9416aa161191aa01384e42fc5200a84bcc2793b9c83b870bd0",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155162624,
+        "name": "stringzilla-final-sky-eligibility-c1-0-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:a15d7ab715b5a3465d901476f7ff63caa3b728c93f780b67bbbc7dec424f7156",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155033275,
+        "name": "stringzilla-final-sky-fact-39174300598-interpreter-1-attempt1",
+        "digest": "sha256:0f71c0dba8ab578dc3bafd292ef730594f3b5e2400f072c097fb09da21574bf2",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12155023446,
+        "name": "stringzilla-final-sky-fact-39174300598-interpreter-3-attempt1",
+        "digest": "sha256:2db5f1c7c08d825dd3713dd248eeb447259154583b5966329fcad19018a96546",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154988594,
+        "name": "stringzilla-final-sky-eligibility-interpreter-3-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:fcb685374e041d41395cc38d73cc25fcffe2004e1efdfcb55095c63773da7126",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154970079,
+        "name": "stringzilla-final-recovery-preparation-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:84a57aac5d85225462059da2a4e6e6c909c1abdddb49466619da0b6a10382524",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154819383,
+        "name": "stringzilla-final-sky-eligibility-interpreter-1-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:430ab5cf721a8a1979161fa84ed2c18eda29e03b3c3fbe248c8f14db64de9307",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154811125,
+        "name": "stringzilla-final-sky-eligibility-c2-0-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:d6803111cc2cfe839d429f8c9a6717d156be814602cd7e8a7371c86cb261ebe2",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154811120,
+        "name": "stringzilla-final-sky-fact-39174300598-c2-0-attempt1",
+        "digest": "sha256:b75fb4c35fbaf2d928dfd24bfc27d91b166c7c75f7c3d728beda34fa07c88d60",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154763643,
+        "name": "stringzilla-final-sky-fact-39174300598-interpreter-0-attempt1",
+        "digest": "sha256:60cce2730da8967b2e682691f66f62d16b783a0f43e224bcbb63db02b1a63c23",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154734272,
+        "name": "stringzilla-final-sky-eligibility-c2-1-99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "digest": "sha256:04edc3de7e5fb33465ec2c174ef402a862fed74207092944093c77a7f3e9873e",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154679688,
+        "name": "stringzilla-final-sky-fact-39174300598-c2-1-attempt1",
+        "digest": "sha256:fbbc6cc62adf85aa8ee973585070cbafe740c6227affd9438b20ca24372e185b",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      },
+      {
+        "id": 12154374644,
+        "name": "stringzilla-final-sky-fact-39174300598-c1-1-attempt1",
+        "digest": "sha256:0c15141cf44671a09bf548d35b3b153ee7f76c2a390587797014337a45d50344",
+        "expired": false,
+        "workflow_run": {
+          "id": 39174300598,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-recovery-916ba895",
+          "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"
+        }
+      }
+    ]
+  },
+  "sky_scope": {
+    "cancelled": false,
+    "replayed": false,
+    "excluded_triplets": 386,
+    "current_jobs": [
+      {
+        "id": 117820226821,
+        "name": "avx512_controls (c1) / Final SKY c1 slot 1 on ubuntu-24.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226823,
+        "name": "avx512_controls (interpreter) / Final SKY interpreter slot 3 on ubuntu-26.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226835,
+        "name": "avx512_controls (c2) / Final SKY c2 slot 0 on ubuntu-22.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226841,
+        "name": "avx512_controls (c1) / Final SKY c1 slot 2 on ubuntu-26.04",
+        "status": "in_progress",
+        "conclusion": null,
+        "active_step": "Verify ALLFOUR facts then choose MIN eligible slot on INTEL(R) XEON(R) PLATINUM 8573C"
+      },
+      {
+        "id": 117820226854,
+        "name": "avx512_controls (c2) / Final SKY c2 slot 3 on ubuntu-26.04",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 117820226856,
+        "name": "avx512_controls (interpreter) / Final SKY interpreter slot 2 on ubuntu-26.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226871,
+        "name": "avx512_controls (c1) / Final SKY c1 slot 3 on ubuntu-26.04",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 117820226872,
+        "name": "avx512_controls (c2) / Final SKY c2 slot 2 on ubuntu-26.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226879,
+        "name": "avx512_controls (interpreter) / Final SKY interpreter slot 0 on ubuntu-22.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226904,
+        "name": "avx512_controls (c1) / Final SKY c1 slot 0 on ubuntu-22.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226916,
+        "name": "avx512_controls (interpreter) / Final SKY interpreter slot 1 on ubuntu-24.04",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 117820226922,
+        "name": "avx512_controls (c2) / Final SKY c2 slot 1 on ubuntu-24.04",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "meaning": "Only normal SERIAL/AVX2/NEON/MSVC interpreter/C1/C2 configurations are proven missing. Current SKY jobs and any SKY results remain outside this zero proof."
+}
