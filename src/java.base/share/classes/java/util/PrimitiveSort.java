@@ -39,7 +39,7 @@ final class PrimitiveSort {
             && StaticProperty.osArch().equals("amd64")
             && !Boolean.getBoolean("jdk.util.Arrays.disableNativeSort");
 
-    // The caller retains structured and repeated-pivot inputs in Java.
+    // Constant and long-first-run inputs retain the original Java path.
     private static final class Native {
         static final boolean SUPPORTED = initializeNative();
     }
@@ -56,11 +56,29 @@ final class PrimitiveSort {
     }
 
     @DontInline
-    static boolean trySort(long[] a, int low, int size) {
-        // The caller has already declined run merging and sorted its pivot
-        // sample. Failure leaves that permutation intact and falls through
-        // to the original partition with unchanged recursion-depth accounting.
+    static boolean trySort(long[] a, int low, int high) {
+        int size = high - low;
+        if (size > MAX_SIZE || !ENABLED || !shortFirstRun(a, low)) {
+            return false;
+        }
+        // A short first run makes the original run scanner decline. This
+        // read-only preflight does not reverse it or allocate a run index.
+        // Native failure therefore enters the unmodified Java path once,
+        // with its original depth accounting and original input permutation.
         return Native.SUPPORTED && sortLongs(a, low, size);
+    }
+
+    private static boolean shortFirstRun(long[] a, int low) {
+        int limit = low + DualPivotQuicksort.MIN_FIRST_RUN_SIZE;
+        int k = low + 1;
+        if (a[low] < a[k]) {
+            while (++k < limit && a[k - 1] <= a[k]);
+        } else if (a[low] > a[k]) {
+            while (++k < limit && a[k - 1] >= a[k]);
+        } else {
+            return false;
+        }
+        return k < limit;
     }
 
     private static native boolean supported();

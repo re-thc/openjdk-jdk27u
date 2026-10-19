@@ -137,6 +137,9 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
+        if (a.length >= PrimitiveSort.MIN_SIZE && PrimitiveSort.trySort(a, 0, a.length)) {
+            return;
+        }
         DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
@@ -164,6 +167,10 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
+        if (toIndex - fromIndex >= PrimitiveSort.MIN_SIZE
+                && PrimitiveSort.trySort(a, fromIndex, toIndex)) {
+            return;
+        }
         DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 

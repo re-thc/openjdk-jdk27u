@@ -81,7 +81,7 @@ final class DualPivotQuicksort {
     /**
      * Min size of the first run to continue with scanning.
      */
-    private static final int MIN_FIRST_RUN_SIZE = 16;
+    static final int MIN_FIRST_RUN_SIZE = 16;
 
     /**
      * Min factor for the first runs to continue scanning.
@@ -1149,15 +1149,6 @@ final class DualPivotQuicksort {
              * Partitioning with 2 pivots in case of different elements.
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
-                // Reuse the existing distinct-pivot test for native admission.
-                // The run scan and depth increment have already happened;
-                // decline continues through this same partitioning path.
-                if (bits == DELTA && sorter == null
-                        && size >= PrimitiveSort.MIN_SIZE && size <= PrimitiveSort.MAX_SIZE
-                        && PrimitiveSort.ENABLED && PrimitiveSort.trySort(a, low, size)) {
-                    return;
-                }
 
                 /*
                  * Use the first and fifth of the five sorted elements as
