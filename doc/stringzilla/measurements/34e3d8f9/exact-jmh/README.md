@@ -1,7 +1,7 @@
 # Original JMH files
 
-This partial collection preserves 124 matched original/enabled/disabled comparisons:
-372 unchanged JMH JSON files and 3,720 measured samples. The planned complete
+This partial collection preserves 1,624 matched original/enabled/disabled comparisons:
+4,872 unchanged JMH JSON files and 48,720 measured samples. The planned complete
 campaign contains 1,886 comparisons. Complete images were built from
 `916ba895e834378e3f7eac7f030fc4abff641d33`; its production code matches runtime
 `34e3d8f99b053eec3f8f7e0d4c458de662a7d977`. The original image is
@@ -15,7 +15,10 @@ Copying these saved files ran no JVM and collected no new measurements.
 [INDEX.json](INDEX.json) records each gzip bundle's source artifact, size and
 SHA-256 hashes. Each bundle's `raw_jmh` entries contain the original file bytes
 encoded as base64. Parts retain complete original/enabled/disabled triplets.
-Targeted compilation excerpts in the bundles are untimed evidence.
+Targeted compilation excerpts are untimed evidence. Four bundles omit 36 hosted-path
+context lines; their original transport hashes and exact omissions are recorded.
+Every original JMH file remains unchanged. The RAW-FILES manifests map all filenames
+to their verified SHA-256 hashes.
 
 From a repository checkout containing this evidence, this Python standard-library
 example verifies both layers of hashes and extracts the original files. The

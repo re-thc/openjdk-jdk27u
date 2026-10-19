@@ -3,36 +3,38 @@
   "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
   "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
   "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
-  "logical_groups": 1,
-  "triplets": 124,
-  "original_files": 372,
-  "samples": 3720,
+  "logical_groups": 13,
+  "triplets": 1624,
+  "original_files": 4872,
+  "samples": 48720,
   "complete_final_scope": false,
-  "physical_key_digest": "c7b948ac34851eb770c86ae837ab7e836a0ca7413663454bf850f11b960eeadf",
-  "higher_mean_rows": 35,
-  "nonoverlap_any_control": 9,
-  "nonoverlap_both_controls": 4,
+  "physical_key_digest": "716bf7d446400d59fdf6a480fd496a131cb9e062faf09c364572c019c989afc9",
+  "higher_mean_rows": 453,
+  "nonoverlap_any_control": 220,
+  "nonoverlap_both_controls": 103,
   "scope": "partial",
   "expected_final_triplets": 1886,
   "expected_final_files": 5658,
-  "source_artifacts": [
+  "exporters": [
     {
-      "id": 12159124281,
-      "digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
-      "workflow": {
-        "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
-        "run_id": 39174300598
-      },
-      "job_id": 117820226854
+      "run_id": 39192036169,
+      "head": "0ccd1b18496bcbb8f5a6c338a052c821ca18e5d9",
+      "job_id": 117879685030,
+      "artifact_id": 12162699175,
+      "artifact_digest": "sha256:76f1c6c47d15abf82545c82590c6a3582310e6562b3fb3a4ba4395dacf9638dc",
+      "triplets": 124,
+      "records": 372
+    },
+    {
+      "run_id": 39200365334,
+      "head": "da3265795f4a80e7655791a3a921167b8be036cd",
+      "job_id": 117891885961,
+      "artifact_id": 12165021710,
+      "artifact_digest": "sha256:d578fad7948010af3c96ff4885e91e792e19b3a5f4f939ab1cb1e3925f7c6db5",
+      "triplets": 1500,
+      "records": 4500
     }
   ],
-  "export": {
-    "run_id": 39192036169,
-    "head": "0ccd1b18496bcbb8f5a6c338a052c821ca18e5d9",
-    "job_id": 117879685030,
-    "reader_blob": "ab7de74d9b298e02dc768fef23e50dbb2428b2e7",
-    "extractor_blob": "d6b19797a09cee0007e63e7d9b7075a758dfa67f"
-  },
   "files": [
     {
       "id": "avx512-c2-part-00",
@@ -49,9 +51,844 @@
         "run_id": 39174300598
       },
       "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/avx512-c2-part-00.json.gz",
-      "git_blob": "db85177a3f7d023375afa3d89a620f7806ef1d4d"
+      "git_blob": "db85177a3f7d023375afa3d89a620f7806ef1d4d",
+      "transport_receipt": {
+        "artifact_digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
+        "artifact_id": 12159124281,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "avx512-c2-part-00",
+        "chunk_characters": 24576,
+        "chunks": 12,
+        "compressed_bytes": 219102,
+        "compressed_sha256": "c2a6051905da3ffac4d3f20e8c4376855a9b879dc5c3f1e473bdbaffe766fcdb",
+        "encoding": "gzip+base64",
+        "logical_case_id": "avx512-c2",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 122
+        },
+        "records": 372,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1913796,
+        "uncompressed_sha256": "9873f7ffbb931d514a1bbb06eaad1470b794730657d6bce99faf66a6392132d7",
+        "whole_records": 372,
+        "workflow": {
+          "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+          "run_id": 39174300598
+        }
+      }
+    },
+    {
+      "id": "neon-c1-part-00",
+      "logical_group": "neon-c1",
+      "bytes": 166149,
+      "sha256": "d3ccd45aa90a092925f652f821f1c30e78714d4b357e5f1fe4f33e60e0844a06",
+      "uncompressed_bytes": 1416265,
+      "uncompressed_sha256": "ea60a23d147b54aa91f712ff01bd5bf092efe372ef36524de367ff98d684e48e",
+      "original_files": 330,
+      "source_artifact_id": 12159948918,
+      "source_artifact_digest": "sha256:60809f7e467974c9a55506b9f77ad207b4068b9320747938bebdec201063bafd",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/neon-c1-part-00.json.gz",
+      "git_blob": "618ca73d1c5e1fe8c22495f56dc1acb6f185c3da",
+      "transport_receipt": {
+        "artifact_digest": "sha256:60809f7e467974c9a55506b9f77ad207b4068b9320747938bebdec201063bafd",
+        "artifact_id": 12159948918,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "neon-c1-part-00",
+        "chunk_characters": 24576,
+        "chunks": 10,
+        "compressed_bytes": 166149,
+        "compressed_sha256": "d3ccd45aa90a092925f652f821f1c30e78714d4b357e5f1fe4f33e60e0844a06",
+        "encoding": "gzip+base64",
+        "logical_case_id": "neon-c1",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 108
+        },
+        "records": 330,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1416265,
+        "uncompressed_sha256": "ea60a23d147b54aa91f712ff01bd5bf092efe372ef36524de367ff98d684e48e",
+        "whole_records": 330,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "serial-c1-part-00",
+      "logical_group": "serial-c1",
+      "bytes": 142956,
+      "sha256": "9ecfab2239a85b6235949e1cc2bb41df4eb6beb5c9a21cb59bca9909e071360a",
+      "uncompressed_bytes": 1202724,
+      "uncompressed_sha256": "c0e563d78dd6fcf593b4ae83acb556ee5b66ebce07d1b71004e878174bf8d25d",
+      "original_files": 276,
+      "source_artifact_id": 12160497682,
+      "source_artifact_digest": "sha256:ac5940c753bb7fbfaa3aefc0d3f569bf7ce578f50f5873bf201fc1817f9e9d60",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/serial-c1-part-00.json.gz",
+      "git_blob": "bbdda02a8387f3a257d18343daa251389f0965b1",
+      "transport_receipt": {
+        "artifact_digest": "sha256:ac5940c753bb7fbfaa3aefc0d3f569bf7ce578f50f5873bf201fc1817f9e9d60",
+        "artifact_id": 12160497682,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "serial-c1-part-00",
+        "chunk_characters": 24576,
+        "chunks": 8,
+        "compressed_bytes": 142956,
+        "compressed_sha256": "9ecfab2239a85b6235949e1cc2bb41df4eb6beb5c9a21cb59bca9909e071360a",
+        "encoding": "gzip+base64",
+        "logical_case_id": "serial-c1",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 90
+        },
+        "records": 276,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1202724,
+        "uncompressed_sha256": "c0e563d78dd6fcf593b4ae83acb556ee5b66ebce07d1b71004e878174bf8d25d",
+        "whole_records": 276,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "msvc-c1-part-00",
+      "logical_group": "msvc-c1",
+      "bytes": 191923,
+      "sha256": "0a2a37336d8b081f12a59b6a605c8c7d320bd0a7e816df40c68780847a20b56e",
+      "uncompressed_bytes": 1633045,
+      "uncompressed_sha256": "eabd75716c0df61cf81032ae0182baf2c2a39290d23e0039aa78f9c8ed06dbe4",
+      "original_files": 378,
+      "source_artifact_id": 12161922489,
+      "source_artifact_digest": "sha256:ec0aa910ab205192ffe962e135815c3ab570a9267615275509bda2d306ab3ab2",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/msvc-c1-part-00.json.gz",
+      "git_blob": "6251674a997cae78a4e97668f29f3b5f59c3510a",
+      "transport_receipt": {
+        "artifact_digest": "sha256:ec0aa910ab205192ffe962e135815c3ab570a9267615275509bda2d306ab3ab2",
+        "artifact_id": 12161922489,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "msvc-c1-part-00",
+        "chunk_characters": 24576,
+        "chunks": 11,
+        "compressed_bytes": 191923,
+        "compressed_sha256": "0a2a37336d8b081f12a59b6a605c8c7d320bd0a7e816df40c68780847a20b56e",
+        "encoding": "gzip+base64",
+        "logical_case_id": "msvc-c1",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 124
+        },
+        "records": 378,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1633045,
+        "uncompressed_sha256": "eabd75716c0df61cf81032ae0182baf2c2a39290d23e0039aa78f9c8ed06dbe4",
+        "whole_records": 378,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "msvc-c2-part-00",
+      "logical_group": "msvc-c2",
+      "bytes": 153346,
+      "sha256": "aa5cf5d2169510ed42b9d65b2e99351bd400e46c53cc985a3b46733e05604b76",
+      "uncompressed_bytes": 1302630,
+      "uncompressed_sha256": "603d2368ffd3479c9e930f03a107cc14bc58b6a2bf5aa6cd7b956bd074caed95",
+      "original_files": 222,
+      "source_artifact_id": 12161726194,
+      "source_artifact_digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/msvc-c2-part-00.json.gz",
+      "git_blob": "6ff128e832b2bbc58a0011625545f8d4d6599557",
+      "publication_transform": {
+        "omitted_context_lines": 9,
+        "operation": "omit_host_path_context_lines",
+        "original_jmh_bytes_unchanged": true,
+        "schema": 1,
+        "source_transport_compressed_sha256": "36843eec514a59a37a7e5ebebdb36ee654b2b179d09c0e5e036eaec855671a7e",
+        "source_transport_uncompressed_sha256": "269a061e8e12d4f99101caea31690960555d1f495d3d3cf5e7455aac7447bf8f"
+      },
+      "transport_receipt": {
+        "artifact_digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+        "artifact_id": 12161726194,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "msvc-c2-part-00",
+        "chunk_characters": 24576,
+        "chunks": 9,
+        "compressed_bytes": 153186,
+        "compressed_sha256": "36843eec514a59a37a7e5ebebdb36ee654b2b179d09c0e5e036eaec855671a7e",
+        "encoding": "gzip+base64",
+        "logical_case_id": "msvc-c2",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 2,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 72,
+          "utf16-probe": 0
+        },
+        "records": 222,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1302433,
+        "uncompressed_sha256": "269a061e8e12d4f99101caea31690960555d1f495d3d3cf5e7455aac7447bf8f",
+        "whole_records": 447,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "msvc-c2-part-01",
+      "logical_group": "msvc-c2",
+      "bytes": 120513,
+      "sha256": "5886b8bb9a1bec42038eba856fcea14b3e6095cf4920b4afc9d973ad4df5366d",
+      "uncompressed_bytes": 1006491,
+      "uncompressed_sha256": "12060b959acfc2ceacb10d1840530f834f6711ee22a1134f33a071fc4e444e9d",
+      "original_files": 225,
+      "source_artifact_id": 12161726194,
+      "source_artifact_digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/msvc-c2-part-01.json.gz",
+      "git_blob": "9689b92da21c91f4be5a3807b7249b845252d8f7",
+      "transport_receipt": {
+        "artifact_digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+        "artifact_id": 12161726194,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "msvc-c2-part-01",
+        "chunk_characters": 24576,
+        "chunks": 7,
+        "compressed_bytes": 120513,
+        "compressed_sha256": "5886b8bb9a1bec42038eba856fcea14b3e6095cf4920b4afc9d973ad4df5366d",
+        "encoding": "gzip+base64",
+        "logical_case_id": "msvc-c2",
+        "new_timing_executions": 0,
+        "part_index": 1,
+        "parts": 2,
+        "phase_triplets": {
+          "periodic": 0,
+          "stock": 71,
+          "utf16-probe": 4
+        },
+        "records": 225,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1006491,
+        "uncompressed_sha256": "12060b959acfc2ceacb10d1840530f834f6711ee22a1134f33a071fc4e444e9d",
+        "whole_records": 447,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "avx2-c1-part-00",
+      "logical_group": "avx2-c1",
+      "bytes": 189519,
+      "sha256": "e4f305bb8263b70e565f9028968b436c1cc81d13ad8950c89799d5056af779f1",
+      "uncompressed_bytes": 1630100,
+      "uncompressed_sha256": "a16c4c53f4e2816e6806c25a9b508cc683bb56238c94c276f62340841dd594ca",
+      "original_files": 378,
+      "source_artifact_id": 12161251890,
+      "source_artifact_digest": "sha256:31d018c197d52930659c2abdf0af8f46d3488275fe7d9ed9c53eec940abd1947",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/avx2-c1-part-00.json.gz",
+      "git_blob": "f091ad8638a6810c4cca58354cd520c6d0c5c10c",
+      "transport_receipt": {
+        "artifact_digest": "sha256:31d018c197d52930659c2abdf0af8f46d3488275fe7d9ed9c53eec940abd1947",
+        "artifact_id": 12161251890,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "avx2-c1-part-00",
+        "chunk_characters": 24576,
+        "chunks": 11,
+        "compressed_bytes": 189519,
+        "compressed_sha256": "e4f305bb8263b70e565f9028968b436c1cc81d13ad8950c89799d5056af779f1",
+        "encoding": "gzip+base64",
+        "logical_case_id": "avx2-c1",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 124
+        },
+        "records": 378,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1630100,
+        "uncompressed_sha256": "a16c4c53f4e2816e6806c25a9b508cc683bb56238c94c276f62340841dd594ca",
+        "whole_records": 378,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "msvc-interpreter-part-00",
+      "logical_group": "msvc-interpreter",
+      "bytes": 160545,
+      "sha256": "ca044d68bdce3803fef79bee5fb43acbf577a5ecfdced46c3ffc3e26f6102e82",
+      "uncompressed_bytes": 1344648,
+      "uncompressed_sha256": "28b2bcbf956ffc3c226b47710d8bc5bb31af444fd7a65dcdf642da7cdc15f379",
+      "original_files": 309,
+      "source_artifact_id": 12160783629,
+      "source_artifact_digest": "sha256:cc9c972507576b9e018613e9a80c34d9c0b7ae1a05c871b8bba0ee0b1e005de6",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/msvc-interpreter-part-00.json.gz",
+      "git_blob": "f282e7177f494a0f6eb967d38e50ea2116734dec",
+      "transport_receipt": {
+        "artifact_digest": "sha256:cc9c972507576b9e018613e9a80c34d9c0b7ae1a05c871b8bba0ee0b1e005de6",
+        "artifact_id": 12160783629,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "msvc-interpreter-part-00",
+        "chunk_characters": 24576,
+        "chunks": 9,
+        "compressed_bytes": 160545,
+        "compressed_sha256": "ca044d68bdce3803fef79bee5fb43acbf577a5ecfdced46c3ffc3e26f6102e82",
+        "encoding": "gzip+base64",
+        "logical_case_id": "msvc-interpreter",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 101
+        },
+        "records": 309,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1344648,
+        "uncompressed_sha256": "28b2bcbf956ffc3c226b47710d8bc5bb31af444fd7a65dcdf642da7cdc15f379",
+        "whole_records": 309,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "serial-interpreter-part-00",
+      "logical_group": "serial-interpreter",
+      "bytes": 160305,
+      "sha256": "d87d82144c457fe72f9a5d33c04feec89caa70a51790fb77f7b549d61525abd9",
+      "uncompressed_bytes": 1346510,
+      "uncompressed_sha256": "0956f4b0883df9780048a6069b3153a1a87a65cfe408159d1954b4d68ede15fe",
+      "original_files": 309,
+      "source_artifact_id": 12161164138,
+      "source_artifact_digest": "sha256:03fd6c258cff0d5b61c758b8a7f8eb925d7d3ee8edb75a9abe057e0d49f173ea",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/serial-interpreter-part-00.json.gz",
+      "git_blob": "5e4a61f2aeaa72d83533428439b4db8b167fde6a",
+      "transport_receipt": {
+        "artifact_digest": "sha256:03fd6c258cff0d5b61c758b8a7f8eb925d7d3ee8edb75a9abe057e0d49f173ea",
+        "artifact_id": 12161164138,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "serial-interpreter-part-00",
+        "chunk_characters": 24576,
+        "chunks": 9,
+        "compressed_bytes": 160305,
+        "compressed_sha256": "d87d82144c457fe72f9a5d33c04feec89caa70a51790fb77f7b549d61525abd9",
+        "encoding": "gzip+base64",
+        "logical_case_id": "serial-interpreter",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 101
+        },
+        "records": 309,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1346510,
+        "uncompressed_sha256": "0956f4b0883df9780048a6069b3153a1a87a65cfe408159d1954b4d68ede15fe",
+        "whole_records": 309,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "neon-interpreter-part-00",
+      "logical_group": "neon-interpreter",
+      "bytes": 180491,
+      "sha256": "db38329dd2c520868006fbc995d15c002ded5c54c07cccc7ecd0a5e826b53c8e",
+      "uncompressed_bytes": 1523467,
+      "uncompressed_sha256": "0d4ff08d3617ffdcfe5afc6f6e4810494496e52de3dcd30002e6801273f15631",
+      "original_files": 354,
+      "source_artifact_id": 12162696031,
+      "source_artifact_digest": "sha256:b56db8596c00fc4adf03c393763137da722114b7a65a84e5d6ce000c840b40f3",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/neon-interpreter-part-00.json.gz",
+      "git_blob": "439e435d95933fc9f92441afe16c19fcb9a307bc",
+      "transport_receipt": {
+        "artifact_digest": "sha256:b56db8596c00fc4adf03c393763137da722114b7a65a84e5d6ce000c840b40f3",
+        "artifact_id": 12162696031,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "neon-interpreter-part-00",
+        "chunk_characters": 24576,
+        "chunks": 10,
+        "compressed_bytes": 180491,
+        "compressed_sha256": "db38329dd2c520868006fbc995d15c002ded5c54c07cccc7ecd0a5e826b53c8e",
+        "encoding": "gzip+base64",
+        "logical_case_id": "neon-interpreter",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 116
+        },
+        "records": 354,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1523467,
+        "uncompressed_sha256": "0d4ff08d3617ffdcfe5afc6f6e4810494496e52de3dcd30002e6801273f15631",
+        "whole_records": 354,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "serial-c2-part-00",
+      "logical_group": "serial-c2",
+      "bytes": 168026,
+      "sha256": "3ba5bcda4f90808b6ded90e1736627b55014300e84b59e72722533e8e24e1b62",
+      "uncompressed_bytes": 1457507,
+      "uncompressed_sha256": "b2fd4b4756d8891c89cb10651af0661e77a24de2b56bf9d8b041926ff16b1bf6",
+      "original_files": 255,
+      "source_artifact_id": 12163055881,
+      "source_artifact_digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/serial-c2-part-00.json.gz",
+      "git_blob": "865f94fdda41abdb8a44c4f8d5c630b063871d85",
+      "publication_transform": {
+        "omitted_context_lines": 9,
+        "operation": "omit_host_path_context_lines",
+        "original_jmh_bytes_unchanged": true,
+        "schema": 1,
+        "source_transport_compressed_sha256": "71f1560c97593c92ce89061d6ae13fe492f1817d325e698ddb69bdbbe19567f9",
+        "source_transport_uncompressed_sha256": "ea5ecf7daf0ad6c5a192e85e98b4e32260a915576a4615a82fcb7caf27404a88"
+      },
+      "transport_receipt": {
+        "artifact_digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+        "artifact_id": 12163055881,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "serial-c2-part-00",
+        "chunk_characters": 24576,
+        "chunks": 10,
+        "compressed_bytes": 167797,
+        "compressed_sha256": "71f1560c97593c92ce89061d6ae13fe492f1817d325e698ddb69bdbbe19567f9",
+        "encoding": "gzip+base64",
+        "logical_case_id": "serial-c2",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 2,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 83,
+          "utf16-probe": 0
+        },
+        "records": 255,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1457328,
+        "uncompressed_sha256": "ea5ecf7daf0ad6c5a192e85e98b4e32260a915576a4615a82fcb7caf27404a88",
+        "whole_records": 510,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "serial-c2-part-01",
+      "logical_group": "serial-c2",
+      "bytes": 132426,
+      "sha256": "1fc017137653bfcc6013c320f579b9e2334e07212bd8f87c0b0cc6881b729bdb",
+      "uncompressed_bytes": 1147016,
+      "uncompressed_sha256": "81bf9274c33a1a1b94d5c873a6450ed8d96c9c6f2aeeef331ff1f8da8bf81c5a",
+      "original_files": 255,
+      "source_artifact_id": 12163055881,
+      "source_artifact_digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/serial-c2-part-01.json.gz",
+      "git_blob": "6622c7444241cb63f993a8cfbee62049afafdcf4",
+      "transport_receipt": {
+        "artifact_digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+        "artifact_id": 12163055881,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "serial-c2-part-01",
+        "chunk_characters": 24576,
+        "chunks": 8,
+        "compressed_bytes": 132426,
+        "compressed_sha256": "1fc017137653bfcc6013c320f579b9e2334e07212bd8f87c0b0cc6881b729bdb",
+        "encoding": "gzip+base64",
+        "logical_case_id": "serial-c2",
+        "new_timing_executions": 0,
+        "part_index": 1,
+        "parts": 2,
+        "phase_triplets": {
+          "periodic": 0,
+          "stock": 65,
+          "utf16-probe": 20
+        },
+        "records": 255,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1147016,
+        "uncompressed_sha256": "81bf9274c33a1a1b94d5c873a6450ed8d96c9c6f2aeeef331ff1f8da8bf81c5a",
+        "whole_records": 510,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "neon-c2-part-00",
+      "logical_group": "neon-c2",
+      "bytes": 144771,
+      "sha256": "c24d47362101a262bb056a0e4b331a14cc3f88ec3658ddb68977c899b90681cf",
+      "uncompressed_bytes": 1258011,
+      "uncompressed_sha256": "65fe9b0b9fffd730635ac5c0fd37c254e026e946c40f676be300128c8d9fa522",
+      "original_files": 213,
+      "source_artifact_id": 12163325138,
+      "source_artifact_digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/neon-c2-part-00.json.gz",
+      "git_blob": "aa5c85ab2c3f2dcbb3d1766eec3e92e07f9b85f3",
+      "publication_transform": {
+        "omitted_context_lines": 9,
+        "operation": "omit_host_path_context_lines",
+        "original_jmh_bytes_unchanged": true,
+        "schema": 1,
+        "source_transport_compressed_sha256": "9cfb4a021b771b9cbcbafce70c7d1c51d65b9356d6a16541a4a5e7a14883b171",
+        "source_transport_uncompressed_sha256": "d45a9f1b78f3ee589cf5a413751f1262ad46bdc105ec77c6421465e7bb0cfac2"
+      },
+      "transport_receipt": {
+        "artifact_digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+        "artifact_id": 12163325138,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "neon-c2-part-00",
+        "chunk_characters": 24576,
+        "chunks": 8,
+        "compressed_bytes": 144529,
+        "compressed_sha256": "9cfb4a021b771b9cbcbafce70c7d1c51d65b9356d6a16541a4a5e7a14883b171",
+        "encoding": "gzip+base64",
+        "logical_case_id": "neon-c2",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 2,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 69,
+          "utf16-probe": 0
+        },
+        "records": 213,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1257832,
+        "uncompressed_sha256": "d45a9f1b78f3ee589cf5a413751f1262ad46bdc105ec77c6421465e7bb0cfac2",
+        "whole_records": 429,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "neon-c2-part-01",
+      "logical_group": "neon-c2",
+      "bytes": 114846,
+      "sha256": "84a2083ac80135c5f6069be349ebe854b321f3478c8a550a565d413fd4f2a5a1",
+      "uncompressed_bytes": 958395,
+      "uncompressed_sha256": "5403859760075ce95e291dd4657d8ae17bd9fd00302e3b48bc234e5f9beb733b",
+      "original_files": 216,
+      "source_artifact_id": 12163325138,
+      "source_artifact_digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/neon-c2-part-01.json.gz",
+      "git_blob": "9c65debf7c9cd3a61ea61d5dd8dff15802cc264d",
+      "transport_receipt": {
+        "artifact_digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+        "artifact_id": 12163325138,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "neon-c2-part-01",
+        "chunk_characters": 24576,
+        "chunks": 7,
+        "compressed_bytes": 114846,
+        "compressed_sha256": "84a2083ac80135c5f6069be349ebe854b321f3478c8a550a565d413fd4f2a5a1",
+        "encoding": "gzip+base64",
+        "logical_case_id": "neon-c2",
+        "new_timing_executions": 0,
+        "part_index": 1,
+        "parts": 2,
+        "phase_triplets": {
+          "periodic": 0,
+          "stock": 68,
+          "utf16-probe": 4
+        },
+        "records": 216,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 958395,
+        "uncompressed_sha256": "5403859760075ce95e291dd4657d8ae17bd9fd00302e3b48bc234e5f9beb733b",
+        "whole_records": 429,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "avx2-c2-part-00",
+      "logical_group": "avx2-c2",
+      "bytes": 217526,
+      "sha256": "cd281b49bd7170f47b78645656f1a690f2e87fe17d2347cb8e5f96ca0be5308f",
+      "uncompressed_bytes": 1917122,
+      "uncompressed_sha256": "d5636d1427589b9bddfb8f1db5f705cf8ee1b7024449beac93e37aa40d9ddb73",
+      "original_files": 372,
+      "source_artifact_id": 12162394322,
+      "source_artifact_digest": "sha256:b82daef57744108587b80391d88cd6ce09929a55e068739d0044eaac8df505c2",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/avx2-c2-part-00.json.gz",
+      "git_blob": "0d5c460f1e4e38002217416617e16128321796c5",
+      "publication_transform": {
+        "omitted_context_lines": 9,
+        "operation": "omit_host_path_context_lines",
+        "original_jmh_bytes_unchanged": true,
+        "schema": 1,
+        "source_transport_compressed_sha256": "f8c4c93dfd7c060c3fe54b5a9335fc46bfc2c171eda4c1bdb978605f4e7adaaa",
+        "source_transport_uncompressed_sha256": "424ff67404a22d054aa8b795c57a90391f9782538d41466c57a2ee6d35c8ec02"
+      },
+      "transport_receipt": {
+        "artifact_digest": "sha256:b82daef57744108587b80391d88cd6ce09929a55e068739d0044eaac8df505c2",
+        "artifact_id": 12162394322,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "avx2-c2-part-00",
+        "chunk_characters": 24576,
+        "chunks": 12,
+        "compressed_bytes": 217303,
+        "compressed_sha256": "f8c4c93dfd7c060c3fe54b5a9335fc46bfc2c171eda4c1bdb978605f4e7adaaa",
+        "encoding": "gzip+base64",
+        "logical_case_id": "avx2-c2",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 122
+        },
+        "records": 372,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1916943,
+        "uncompressed_sha256": "424ff67404a22d054aa8b795c57a90391f9782538d41466c57a2ee6d35c8ec02",
+        "whole_records": 372,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
+    },
+    {
+      "id": "avx2-interpreter-part-00",
+      "logical_group": "avx2-interpreter",
+      "bytes": 206009,
+      "sha256": "648f64c8157452665a281cf1e885ae6387f229de3714615e2e884b677276cb6f",
+      "uncompressed_bytes": 1761935,
+      "uncompressed_sha256": "2b3fe53969025f6bb155ef581f15a85978e5256468e8286435c4f539c5ac1caa",
+      "original_files": 408,
+      "source_artifact_id": 12162922626,
+      "source_artifact_digest": "sha256:c4bd35f2cc004db66ccf1d78ba6074762048c907374002b5c5fcd2bf0c9d9ad2",
+      "source_workflow": {
+        "head": "57d209684d4887100690410e326377759df13176",
+        "run_id": 39182567318
+      },
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/avx2-interpreter-part-00.json.gz",
+      "git_blob": "82062fea3b0d5dd096279f038dcf55ce55909a66",
+      "transport_receipt": {
+        "artifact_digest": "sha256:c4bd35f2cc004db66ccf1d78ba6074762048c907374002b5c5fcd2bf0c9d9ad2",
+        "artifact_id": 12162922626,
+        "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "case_id": "avx2-interpreter-part-00",
+        "chunk_characters": 24576,
+        "chunks": 12,
+        "compressed_bytes": 206009,
+        "compressed_sha256": "648f64c8157452665a281cf1e885ae6387f229de3714615e2e884b677276cb6f",
+        "encoding": "gzip+base64",
+        "logical_case_id": "avx2-interpreter",
+        "new_timing_executions": 0,
+        "part_index": 0,
+        "parts": 1,
+        "phase_triplets": {
+          "periodic": 2,
+          "stock": 134
+        },
+        "records": 408,
+        "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+        "schema": 2,
+        "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+        "uncompressed_bytes": 1761935,
+        "uncompressed_sha256": "2b3fe53969025f6bb155ef581f15a85978e5256468e8286435c4f539c5ac1caa",
+        "whole_records": 408,
+        "workflow": {
+          "head": "57d209684d4887100690410e326377759df13176",
+          "run_id": 39182567318
+        }
+      }
     }
   ],
+  "raw_file_manifests": [
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/RAW-FILES-01.json",
+      "sha": "dfba30a747728b0fdf5f964ac3355dd28a4c8901",
+      "bytes": 389937,
+      "sha256": "03e1abd833a13721feae67f4dfbed1216f0b1b163a38e6ec1d54b63aec8c7cbf",
+      "records": 2895
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/exact-jmh/RAW-FILES-02.json",
+      "sha": "a959cedae7d12a9d1927a668eb6174ac00d33f2c",
+      "bytes": 277848,
+      "sha256": "83f0a4684bdba11efc937aa31f95f2cac994c568cb93d05aeb2b4a4153d6e8c4",
+      "records": 1977
+    }
+  ],
+  "publication_transform": {
+    "schema": 1,
+    "sanitizer_blob": "50df704dc3ac8e064e986330dfc3b290e4e3836a",
+    "compressor_blob": "2535eafcc30cfc6bf138e8861723cdb8fd491a80",
+    "compressor_source": "https://github.com/nodeca/pako/blob/3c06216518c259b569a5168dee867e6dabbe5160/dist/pako.min.js",
+    "compressor_sha256": "ede2693a4a6a5126b9d35669062b358ecab6ae7b9b86a1cf302feb45a8514907",
+    "license_notices_blob": "fa44c3d52c1473ab5329aa3fd851d3655e97120a",
+    "affected_parts": [
+      {
+        "id": "msvc-c2-part-00",
+        "omitted": 9,
+        "files": 222,
+        "compressed": 153346,
+        "sha256": "aa5cf5d2169510ed42b9d65b2e99351bd400e46c53cc985a3b46733e05604b76",
+        "source_sha256": "36843eec514a59a37a7e5ebebdb36ee654b2b179d09c0e5e036eaec855671a7e"
+      },
+      {
+        "id": "serial-c2-part-00",
+        "omitted": 9,
+        "files": 255,
+        "compressed": 168026,
+        "sha256": "3ba5bcda4f90808b6ded90e1736627b55014300e84b59e72722533e8e24e1b62",
+        "source_sha256": "71f1560c97593c92ce89061d6ae13fe492f1817d325e698ddb69bdbbe19567f9"
+      },
+      {
+        "id": "neon-c2-part-00",
+        "omitted": 9,
+        "files": 213,
+        "compressed": 144771,
+        "sha256": "c24d47362101a262bb056a0e4b331a14cc3f88ec3658ddb68977c899b90681cf",
+        "source_sha256": "9cfb4a021b771b9cbcbafce70c7d1c51d65b9356d6a16541a4a5e7a14883b171"
+      },
+      {
+        "id": "avx2-c2-part-00",
+        "omitted": 9,
+        "files": 372,
+        "compressed": 217526,
+        "sha256": "cd281b49bd7170f47b78645656f1a690f2e87fe17d2347cb8e5f96ca0be5308f",
+        "source_sha256": "f8c4c93dfd7c060c3fe54b5a9335fc46bfc2c171eda4c1bdb978605f4e7adaaa"
+      }
+    ],
+    "omitted_nonbenchmark_hosted_context_lines": 36,
+    "all_original_jmh_bytes_unchanged": true,
+    "original_transport_hashes_retained": true,
+    "source_reviewed_by_independent_agent": true
+  },
   "new_jvm_executions": 0,
   "new_timing_executions": 0
 }
