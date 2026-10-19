@@ -284,10 +284,7 @@ private:
   // !UseCompressedOops only: used to relocate pointers to the archived objects
   static ptrdiff_t _runtime_delta;
 
-  typedef ResizeableHashTable<oop, bool,
-      AnyObj::C_HEAP,
-      mtClassShared,
-      HeapShared::oop_address_hash> SeenObjectsTable;
+  class SeenObjectsTable;
 
   static SeenObjectsTable *_seen_objects_table;
 
@@ -304,15 +301,8 @@ private:
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static MetaspaceObjToOopHandleTable* _scratch_objects_table;
 
-  static void init_seen_objects_table() {
-    assert(_seen_objects_table == nullptr, "must be");
-    _seen_objects_table = new (mtClass)SeenObjectsTable(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE);
-  }
-  static void delete_seen_objects_table() {
-    assert(_seen_objects_table != nullptr, "must be");
-    delete _seen_objects_table;
-    _seen_objects_table = nullptr;
-  }
+  static void init_seen_objects_table();
+  static void delete_seen_objects_table();
 
   // Statistics (for one round of start_recording_subgraph ... done_recording_subgraph)
   static size_t _num_new_walked_objs;

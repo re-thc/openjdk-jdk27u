@@ -76,6 +76,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/khashTable.inline.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
@@ -2021,6 +2022,21 @@ void HeapShared::check_special_subgraph_classes() {
   }
 }
 
+// These raw oop addresses live only during a safepoint/no-GC subgraph walk.
+// No iterator or pointer into the table escapes.
+class HeapShared::SeenObjectsTable : public KHashTable<char, mtClassShared, false> {};
+
+void HeapShared::init_seen_objects_table() {
+  assert(_seen_objects_table == nullptr, "must be");
+  _seen_objects_table = new (mtClass) SeenObjectsTable();
+}
+
+void HeapShared::delete_seen_objects_table() {
+  assert(_seen_objects_table != nullptr, "must be");
+  delete _seen_objects_table;
+  _seen_objects_table = nullptr;
+}
+
 HeapShared::SeenObjectsTable* HeapShared::_seen_objects_table = nullptr;
 HeapShared::PendingOop HeapShared::_object_being_archived;
 size_t HeapShared::_num_new_walked_objs;
@@ -2034,13 +2050,15 @@ size_t HeapShared::_num_total_recorded_klasses = 0;
 size_t HeapShared::_num_total_verifications = 0;
 
 bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
-  return _seen_objects_table->get(obj) != nullptr;
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         JavaThread::current()->is_in_no_safepoint_scope(), "sanity");
+  return _seen_objects_table->contains(cast_from_oop<uintptr_t>(obj));
 }
 
 void HeapShared::set_has_been_seen_during_subgraph_recording(oop obj) {
   assert(!has_been_seen_during_subgraph_recording(obj), "sanity");
-  _seen_objects_table->put_when_absent(obj, true);
-  _seen_objects_table->maybe_grow();
+  bool created = _seen_objects_table->put_if_absent(cast_from_oop<uintptr_t>(obj), 0);
+  assert(created, "sanity");
   ++ _num_new_walked_objs;
 }
 
