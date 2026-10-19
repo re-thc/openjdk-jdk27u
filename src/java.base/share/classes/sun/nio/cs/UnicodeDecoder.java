@@ -67,7 +67,12 @@ abstract class UnicodeDecoder extends CharsetDecoder {
     }
 
     protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
-        if (SimdUTF.isEligible(src.remaining())) {
+        int remaining = src.remaining();
+        // Whole-array conversion needs complete, aligned UTF-16 units.
+        // Preserve staging when either buffer lacks an accessible array.
+        if (SimdUTF.isEligible(remaining)
+                && (!src.hasArray() || !dst.hasArray()
+                    || (((src.arrayOffset() + src.position()) | remaining) & 1) == 0)) {
             decodeLoopBulk(src, dst);
         }
         int mark = src.position();
