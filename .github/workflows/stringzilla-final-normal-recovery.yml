@@ -1,0 +1,270 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Qualify one pinned source using matched complete-image controls.
+name: StringZilla final normal-only missing-work recovery
+on:
+  push:
+    branches: [codex/stringzilla-final-normal-recovery-916ba895]
+    paths: [.github/workflows/stringzilla-final-normal-recovery.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-final-normal-recovery-916ba895
+  cancel-in-progress: false
+
+jobs:
+  configuration:
+    runs-on: ubuntu-24.04
+    outputs:
+      source: ${{ steps.pin.outputs.source }}
+      source-tree: ${{ steps.pin.outputs.source-tree }}
+      helper-hash: ${{ steps.proof.outputs.helper-sha256 }}
+      parent-manifest-hash: ${{ steps.proof.outputs.parent-manifest-sha256 }}
+      pairs: ${{ steps.proof.outputs.pairs }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Pin the fully reviewed candidate
+        id: pin
+        shell: python
+        run: |
+          import json, os, re, subprocess
+          source = "916ba895e834378e3f7eac7f030fc4abff641d33"
+          assert re.fullmatch(r"[0-9a-f]{40}", source) and source != "0" * 40
+          status = subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/actions/runs/39073742791",
+                                           "--jq", ".status"], text=True).strip()
+          assert status == "completed", "The archived original-image campaign must be complete"
+          source_tree = json.loads(subprocess.check_output(["gh", "api", "repos/re-thc/openjdk-jdk27u/git/commits/" + source], text=True))["tree"]["sha"]
+          assert source_tree == "d3de6a4fcf40e5b45b58d7e0874ed2ab34fe2e01"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as stream:
+              stream.write("source=" + source + "\nsource-tree=" + source_tree + "\n")
+      - name: Checkout pinned runtime identity and frozen helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pin.outputs.source }}
+          persist-credentials: false
+          sparse-checkout: |
+            doc/stringzilla/native-cases.tsv
+            .github/scripts/stringzilla-performance.py
+      - name: Checkout complete original source identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: baseline
+          persist-credentials: false
+          sparse-checkout: .github
+      - name: Checkout pinned auxiliary driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Prove the projected matrix has no duplicates or omissions
+        id: proof
+        shell: python
+        env:
+          SOURCE: ${{ steps.pin.outputs.source }}
+          SOURCE_TREE: ${{ steps.pin.outputs.source-tree }}
+        run: |
+          import os, py_compile, subprocess
+          path = "driver/.github/scripts/stringzilla-final.py"
+          py_compile.compile(path, doraise=True)
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final-normal-recovery.py", "configuration"], check=True)
+      - name: Retain the complete matrix proof
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-final-normal-recovery-preparation-${{ github.sha }}
+          path: perf-output
+          retention-days: 30
+
+  serial_controls:
+    needs: configuration
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-final-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: serial
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04
+      artifact-id: ${{ fromJSON(needs.configuration.outputs.pairs).serial['artifact-id'] }}
+      artifact-digest: ${{ fromJSON(needs.configuration.outputs.pairs).serial['artifact-digest'] }}
+      original-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).serial['original-image-hash'] }}
+      fork-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).serial['fork-image-hash'] }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  avx2_controls:
+    needs: configuration
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-final-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: avx2
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04
+      artifact-id: ${{ fromJSON(needs.configuration.outputs.pairs).avx2['artifact-id'] }}
+      artifact-digest: ${{ fromJSON(needs.configuration.outputs.pairs).avx2['artifact-digest'] }}
+      original-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).avx2['original-image-hash'] }}
+      fork-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).avx2['fork-image-hash'] }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  neon_controls:
+    needs: configuration
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-final-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: neon
+      tier: ${{ matrix.tier }}
+      runner: ubuntu-26.04-arm
+      artifact-id: ${{ fromJSON(needs.configuration.outputs.pairs).neon['artifact-id'] }}
+      artifact-digest: ${{ fromJSON(needs.configuration.outputs.pairs).neon['artifact-digest'] }}
+      original-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).neon['original-image-hash'] }}
+      fork-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).neon['fork-image-hash'] }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  msvc_controls:
+    needs: configuration
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [interpreter, c1, c2]
+    uses: ./.github/workflows/stringzilla-final-measure.yml
+    with:
+      source: ${{ needs.configuration.outputs.source }}
+      backend: msvc
+      tier: ${{ matrix.tier }}
+      runner: windows-2025
+      artifact-id: ${{ fromJSON(needs.configuration.outputs.pairs).msvc['artifact-id'] }}
+      artifact-digest: ${{ fromJSON(needs.configuration.outputs.pairs).msvc['artifact-digest'] }}
+      original-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).msvc['original-image-hash'] }}
+      fork-image-hash: ${{ fromJSON(needs.configuration.outputs.pairs).msvc['fork-image-hash'] }}
+      helper-hash: ${{ needs.configuration.outputs.helper-hash }}
+      parent-manifest-hash: ${{ needs.configuration.outputs.parent-manifest-hash }}
+
+  collect:
+    if: ${{ !cancelled() && needs.configuration.result == 'success' }}
+    needs: [configuration, serial_controls, avx2_controls, neon_controls, msvc_controls]
+    runs-on: ubuntu-24.04
+    env:
+      SOURCE: ${{ needs.configuration.outputs.source }}
+      SOURCE_TREE: ${{ needs.configuration.outputs.source-tree }}
+      GH_TOKEN: ${{ github.token }}
+      PAIR_SERIAL: ${{ toJSON(fromJSON(needs.configuration.outputs.pairs).serial) }}
+      PAIR_AVX2: ${{ toJSON(fromJSON(needs.configuration.outputs.pairs).avx2) }}
+      PAIR_NEON: ${{ toJSON(fromJSON(needs.configuration.outputs.pairs).neon) }}
+      PAIR_MSVC: ${{ toJSON(fromJSON(needs.configuration.outputs.pairs).msvc) }}
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - name: Checkout runtime identity and frozen helper
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.configuration.outputs.source }}
+          persist-credentials: false
+          sparse-checkout: |
+            doc/stringzilla/native-cases.tsv
+            .github/scripts/stringzilla-performance.py
+      - name: Checkout pinned strict collector and driver
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Verify result artifacts and recreate each exact shard manifest
+        shell: python
+        run: |
+          import os, subprocess
+          subprocess.run(["python", "driver/.github/scripts/stringzilla-final.py", "collection",
+                          "--source", os.environ["SOURCE"]], check=True)
+      - name: Strictly validate all triplets and their exact matrix union
+        shell: node {0}
+        run: |
+          const fs = require("fs"), crypto = require("crypto");
+          function collector(path, expectedHash) {
+            const source = fs.readFileSync(path, "utf8");
+            if (crypto.createHash("sha256").update(source).digest("hex") !== expectedHash) throw Error("Wrong collector: " + path);
+            return Function("return (" + source + ")")();
+          }
+          const normal = collector("driver/.github/scripts/stringzilla-collector.js", "058cbd0a291a2ba95f0d8e8bbe93a900a91d2a7709e4b0d0640278f208b28b26");
+          const periodic = collector("driver/.github/scripts/stringzilla-periodic-collector.js", "ad8109d2ee00b16111c70d56dca6dbcbab4a436d195f9dde3e38ce1c45b188c4");
+          const utf16Probe = collector("driver/.github/scripts/stringzilla-utf16-probe-collector.js", "9e32812135573ff1ea9ba202a3f41016bec7a0e3c2536e3d5890574e2fe8c23c");
+          const input = JSON.parse(fs.readFileSync("perf-output/collection-input.json", "utf8"));
+          function qualify(entries, physicalKeys, collect, shardCount = 12) {
+            const expected = new Set(physicalKeys), seen = new Set(), shards = [];
+            if (expected.size !== physicalKeys.length || entries.length !== shardCount) throw Error("Invalid expected matrix");
+            const table = [
+              "| Backend | Tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | O/E | D/E | Higher enabled mean |",
+              "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |"
+            ];
+            for (const entry of entries) {
+              const result = collect(fs.readFileSync(entry.log_path, "utf8"), entry.backend, entry.job,
+                entry.manifest, entry.source, entry.base, entry.expected);
+              for (const group of result.groups) {
+                const enabled = group.controls.enabled;
+                const params = Object.fromEntries(Object.entries(enabled.params).sort(([a], [b]) => a.localeCompare(b)));
+                const key = JSON.stringify([entry.backend, group.tier, enabled.benchmark, params]);
+                if (!expected.has(key) || seen.has(key)) throw Error("Unexpected or duplicate physical configuration: " + key);
+                seen.add(key);
+                const higher = ["original", "disabled"].filter(control => group.comparisons[control].slower_mean)
+                  .map(control => control + (group.comparisons[control].intervals_overlap ? "" : "!"));
+                const cells = ["original", "enabled", "disabled"].map(control =>
+                  group.controls[control].score.toFixed(3) + " +/- " + group.controls[control].error.toFixed(3));
+                const ratios = ["original", "disabled"].map(control => group.comparisons[control].speedup.toFixed(3));
+                table.push("| " + [entry.backend, group.tier, group.case, ...cells, ...ratios, higher.join(", ") || "-"].join(" | ") + " |");
+              }
+              shards.push(result);
+            }
+            if (seen.size !== expected.size || [...expected].some(key => !seen.has(key))) throw Error("Incomplete physical matrix");
+            return {triplets: seen.size, records: seen.size * 3, shards, markdown: table.join("\n")};
+          }
+          const normalResult = qualify(input.entries, input.expected_physical_keys, normal);
+          const periodicResult = qualify(input.periodic_entries, input.periodic_expected_physical_keys, periodic);
+          if (periodicResult.triplets !== 24 || input.expected_physical_keys.some(key =>
+              input.periodic_expected_physical_keys.includes(key))) throw Error("Wrong or overlapping periodic matrix");
+          const probeResult = qualify(input.utf16_probe_entries, input.utf16_probe_expected_physical_keys, utf16Probe, 3);
+          if (probeResult.triplets !== 28 || input.utf16_probe_expected_physical_keys.some(key =>
+              input.expected_physical_keys.includes(key) || input.periodic_expected_physical_keys.includes(key))) {
+            throw Error("Wrong or overlapping UTF-16 probe matrix");
+          }
+          const triplets = normalResult.triplets + periodicResult.triplets + probeResult.triplets;
+          fs.writeFileSync("perf-output/qualification.json", JSON.stringify({
+            source: process.env.SOURCE, triplets, records: triplets * 3,
+            normal: {...normalResult, markdown: undefined}, periodic: {...periodicResult, markdown: undefined},
+            utf16_probe: {...probeResult, markdown: undefined}
+          }, null, 2) + "\n");
+          fs.writeFileSync("perf-output/QUALIFICATION.md",
+            "Matched complete original/enabled/disabled images; every higher enabled mean is retained. " +
+            "A ! marks nonoverlapping reported intervals. Compilation traces are separate from timing evidence.\n\n" +
+            "Normal frozen e073 harness: " + normalResult.triplets + " triplets.\n\n" + normalResult.markdown + "\n\n" +
+            "Separate frozen external ABC fixture: " + periodicResult.triplets + " triplets.\n\n" + periodicResult.markdown + "\n\n" +
+            "Separate external UTF-16 negative probes: " + probeResult.triplets + " triplets.\n\n" + probeResult.markdown + "\n");
+          console.log("Qualified " + normalResult.triplets + " normal and " + periodicResult.triplets +
+            " external ABC and " + probeResult.triplets + " UTF-16 probe triplets across 12 matched recovered normal backend/tier jobs.");
+      - name: Retain full evidence and every measured loss
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stringzilla-final-normal-recovery-qualification-${{ github.sha }}-attempt${{ github.run_attempt }}
+          path: perf-output
+          if-no-files-found: warn
+          retention-days: 30
