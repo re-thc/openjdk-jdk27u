@@ -108,8 +108,10 @@ public class TestSharedSpillSharingState {
                 if (payload[13] != (byte) bits) throw new AssertionError("damaged root payload");
             }
         }
-        static void barrier() {
-            if (mode != 0) {
+        static void barrier(int stage) {
+            // Moving GC precedes the shared uses in mode 1. Both deoptimization
+            // modes collect after those uses, preserving their computed result.
+            if (mode != 0 && stage == (mode == 1 ? 0 : 1)) {
                 long[] before = Arrays.stream(watched).mapToLong(WB::getObjectAddress).toArray();
                 WB.fullGC();
                 gcCalls++;
@@ -155,10 +157,12 @@ public class TestSharedSpillSharingState {
             long p22 = values[22];
             long p23 = values[23];
             int index = (int) (p0 ^ p1 ^ p2 ^ p3 ^ p4 ^ p5 ^ p6 ^ p7 ^ p8 ^ p9 ^ p10 ^ p11 ^ p12 ^ p13 ^ p14 ^ p15 ^ p16 ^ p17 ^ p18 ^ p19 ^ p20 ^ p21 ^ p22 ^ p23) & 1023;
-            barrier();
+            barrier(0);
             long result = a[index];
             output[index] = (int) result ^ 0x5a5a5a5a;
             result += (long) b[index] + c[index] + d[index];
+            barrier(1);
+            result ^= output[index];
             result += Long.rotateLeft(p0, 1);
             result += Long.rotateLeft(p1, 2);
             result += Long.rotateLeft(p2, 3);
@@ -194,6 +198,7 @@ public class TestSharedSpillSharingState {
             long result = a[index];
             output[index] = (int) result ^ 0x5a5a5a5a;
             result += (long) b[index] + c[index] + d[index];
+            result ^= output[index];
             for (int i = 0; i < values.length; i++) {
                 result += (values[i] << (i + 1)) | (values[i] >>> (63 - i));
             }
