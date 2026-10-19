@@ -750,7 +750,7 @@ final class DualPivotQuicksort {
      * @param size the array size
      * @return true if finally sorted, false otherwise
      */
-    private static boolean tryMergeRuns(Sorter sorter, int[] a, int low, int size) {
+    static boolean tryMergeRuns(Sorter sorter, int[] a, int low, int size) {
 
         /*
          * The run array is constructed only if initial runs are
@@ -1552,7 +1552,7 @@ final class DualPivotQuicksort {
      * @param size the array size
      * @return true if finally sorted, false otherwise
      */
-    private static boolean tryMergeRuns(Sorter sorter, long[] a, int low, int size) {
+    static boolean tryMergeRuns(Sorter sorter, long[] a, int low, int size) {
 
         /*
          * The run array is constructed only if initial runs are
