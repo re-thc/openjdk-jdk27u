@@ -1,0 +1,111 @@
+{
+  "schema": "stringzilla-accepted-complete-image-coverage-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "planned_triplets": 1886,
+  "accepted_triplets": 326,
+  "accepted_records": 978,
+  "raw_samples": 9780,
+  "higher_mean_groups": 92,
+  "nonoverlap_loss_groups": 49,
+  "qualification_complete": false,
+  "cohorts": [
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39174300598,
+        "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "job_id": 117820226854,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12159124281,
+        "name": "stringzilla-final-results-avx512-c2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1-attempt1",
+        "digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
+        "size": 9879679
+      },
+      "triplets": 124,
+      "records": 372,
+      "raw_samples": 3720,
+      "higher_mean_groups": 35,
+      "nonoverlap_loss_groups": 9
+    },
+    {
+      "backend": "neon",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837167,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12159948918,
+        "name": "stringzilla-final-results-neon-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:60809f7e467974c9a55506b9f77ad207b4068b9320747938bebdec201063bafd",
+        "size": 8720697
+      },
+      "triplets": 110,
+      "records": 330,
+      "raw_samples": 3300,
+      "higher_mean_groups": 29,
+      "nonoverlap_loss_groups": 25
+    },
+    {
+      "backend": "serial",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837127,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12160497682,
+        "name": "stringzilla-final-results-serial-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:ac5940c753bb7fbfaa3aefc0d3f569bf7ce578f50f5873bf201fc1817f9e9d60",
+        "size": 8601122
+      },
+      "triplets": 92,
+      "records": 276,
+      "raw_samples": 2760,
+      "higher_mean_groups": 28,
+      "nonoverlap_loss_groups": 15
+    }
+  ],
+  "root_peer_checks": [
+    {
+      "result": "PASS10fileSHA372record/source/image/flags/rawscorebindings",
+      "triplets": 124,
+      "records": 372,
+      "rawSamples": 3720,
+      "higher": 35,
+      "nonoverlap": 9
+    },
+    {
+      "backend": "neon",
+      "tier": "c1",
+      "triplets": 110,
+      "records": 330,
+      "rawSamples": 3300,
+      "higher": 29,
+      "nonoverlap": 25,
+      "result": "PASS file SHA256, source/image/flags/raw score and O/E/D key bindings"
+    },
+    {
+      "backend": "serial",
+      "tier": "c1",
+      "triplets": 92,
+      "records": 276,
+      "rawSamples": 2760,
+      "higher": 28,
+      "nonoverlap": 15,
+      "result": "PASS file SHA256, source/image/flags/raw score and O/E/D key bindings"
+    }
+  ]
+}

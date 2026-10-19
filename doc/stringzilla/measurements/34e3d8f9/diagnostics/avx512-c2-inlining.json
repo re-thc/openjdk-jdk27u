@@ -1,0 +1,259 @@
+{
+  "schema": 1,
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "backend": "avx512",
+  "tier": "c2",
+  "workflow": {
+    "run_id": 39174300598,
+    "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+    "job_id": 117820226854,
+    "attempt": 1,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "id": 12159124281,
+    "name": "stringzilla-final-results-avx512-c2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1-attempt1",
+    "digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
+    "size": 9879679
+  },
+  "timing_evidence": false,
+  "mixed64_c2_proxy_only": [
+    {
+      "case": "mixed64",
+      "tier": "c2",
+      "control": "enabled",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "log_sha256": "cdfab19f0c07e2a48caa97c7cbdbcc2288509cc946f33804538221c36675ce4d",
+      "selected_lines": [
+        "                            @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                              @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                                  @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "                                  @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "269  233             java.lang.String::lastIndexOf (10 bytes)   made not entrant: uncommon trap",
+        "                            @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                              @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                                @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "                                @ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation",
+        "                                  @ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation",
+        "                                @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "                            @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                              @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                                  @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "                                  @ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation",
+        "                                    @ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation",
+        "                                  @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                    @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                                      @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "                                      @ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation",
+        "                                        @ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation",
+        "                                      @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "                            @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "                            @ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation",
+        "                              @ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation",
+        "                            @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)   inline (hot)",
+        "                                    @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation   force inline by annotation",
+        "                                      @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)   (intrinsic)",
+        "                                      @ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation   force inline by annotation",
+        "                                        @ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation   force inline by annotation",
+        "                                      @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation   failed to inline: don't inline by annotation",
+        "                            @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "                              @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                                @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                  @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                                    @ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "                                    @ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation",
+        "                                      @ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation",
+        "                                    @ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "                            @ 7   java.lang.StringZilla::rfindUTF16Latin1 (0 bytes)   (intrinsic)"
+      ],
+      "omitted_matching_lines": 0,
+      "printed_methods": []
+    },
+    {
+      "case": "mixed64",
+      "tier": "c2",
+      "control": "disabled",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "log_sha256": "bfb6f7ee3d460ad81d2d1efef8e920d9a169edff51abb4cbb07833f82a72d513",
+      "selected_lines": [
+        "                            @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                    @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                            @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                              @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                            @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                              @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                            @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "                              @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                                @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                  @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "                                    @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)   inline (hot)",
+        "                                    @ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation   force inline by annotation"
+      ],
+      "omitted_matching_lines": 0,
+      "printed_methods": []
+    },
+    {
+      "case": "mixed64",
+      "tier": "c2",
+      "control": "original",
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "params": {
+        "length": "4096",
+        "coder": "MIXED",
+        "position": "END",
+        "needleLength": "64"
+      },
+      "log_sha256": "21bc48c5c333e41ea159e71a8d7d227cf90b682bdc280a3842542aaaf842cb0d",
+      "selected_lines": [
+        "                            @ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)",
+        "                              @ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)",
+        "                                @ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)",
+        "                            @ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)",
+        "                              @ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   inline (hot)",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)",
+        "                                  @ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)",
+        "                                    @ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)",
+        "                            @ 8   java.lang.String::lastIndexOf (10 bytes)   inline (hot)",
+        "                              @ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)",
+        "                                @ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)",
+        "                                  @ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   inline (hot)   inline (hot)",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)   inline (hot)",
+        "                                  @ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)   inline (hot)",
+        "                                    @ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)   inline (hot)",
+        "                            @ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)"
+      ],
+      "omitted_matching_lines": 0,
+      "printed_methods": []
+    }
+  ],
+  "latin1_4096_4_end": [
+    {
+      "case": "latin1-4096-4-end",
+      "control": "original",
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "params": {
+        "length": "4096",
+        "needleLength": "4",
+        "coder": "LATIN1",
+        "position": "END"
+      },
+      "sha256": "138dc01a240e38b200dbb19659a1aa73a2316b44f8dff001bf6d86910d53ec3e",
+      "path": "positive-search-diagnostics/original-latin1-4096-4-end.log",
+      "selected_lines": [
+        "                            @ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   inline (hot)   inline (hot)",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)   inline (hot)",
+        "                                  @ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)   inline (hot)",
+        "                                    @ 68   java.lang.StringLatin1::lastIndexOf (125 bytes)   inline (hot)   inline (hot)",
+        "823  250 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap",
+        "Iteration   1: 1342  251             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)   made not entrant: uncommon trap"
+      ],
+      "printed_methods": [
+        "Compiled method (c2) 268  195             java.lang.StringLatin1::lastIndexOf (40 bytes)",
+        "Compiled method (c2) 326  243             java.lang.StringLatin1::lastIndexOf (125 bytes)",
+        "Compiled method (c2) 336  244             java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 344  245             java.lang.String::lastIndexOf (18 bytes)",
+        "Compiled method (c2) 351  246             java.lang.String::lastIndexOf (104 bytes)",
+        "Compiled method (c2) 363  250 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "Compiled method (c2) 380  251             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)"
+      ]
+    },
+    {
+      "case": "latin1-4096-4-end",
+      "control": "enabled",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "params": {
+        "length": "4096",
+        "needleLength": "4",
+        "coder": "LATIN1",
+        "position": "END"
+      },
+      "sha256": "412fc352362db761714b9d7b8582fa93ddb9830a1d999c434d3ab941c8602ad7",
+      "path": "positive-search-diagnostics/enabled-latin1-4096-4-end.log",
+      "selected_lines": [
+        "                            @ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)   inline (hot)",
+        "                                    @ 98   java.lang.StringLatin1::lastIndexOf (520 bytes)   force inline by annotation   force inline by annotation",
+        "822  248 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap",
+        "Iteration   1: 1337  249             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)   made not entrant: uncommon trap"
+      ],
+      "printed_methods": [
+        "Compiled method (c2) 262  193             java.lang.StringLatin1::lastIndexOf (133 bytes)",
+        "Compiled method (c2) 325  241             java.lang.StringLatin1::lastIndexOf (520 bytes)",
+        "Compiled method (c2) 335  242             java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 345  243             java.lang.String::lastIndexOf (18 bytes)",
+        "Compiled method (c2) 352  244             java.lang.String::lastIndexOf (163 bytes)",
+        "Compiled method (c2) 366  248 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "Compiled method (c2) 384  249             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)"
+      ]
+    },
+    {
+      "case": "latin1-4096-4-end",
+      "control": "disabled",
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "params": {
+        "length": "4096",
+        "needleLength": "4",
+        "coder": "LATIN1",
+        "position": "END"
+      },
+      "sha256": "95b6a80c20c11607396916d9cb25d2e1e93e53632cf0c21002f707c5ffc15eea",
+      "path": "positive-search-diagnostics/disabled-latin1-4096-4-end.log",
+      "selected_lines": [
+        "                            @ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand",
+        "                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation",
+        "                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation",
+        "                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)   inline (hot)",
+        "                                    @ 98   java.lang.StringLatin1::lastIndexOf (520 bytes)   force inline by annotation   force inline by annotation",
+        "                                      @ 180   java.lang.StringLatin1::lastIndexOfJava (124 bytes)   inline (hot)   inline (hot)",
+        "838  251 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap",
+        "Iteration   1: 1358  252             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)   made not entrant: uncommon trap"
+      ],
+      "printed_methods": [
+        "Compiled method (c2) 273  195             java.lang.StringLatin1::lastIndexOf (133 bytes)",
+        "Compiled method (c2) 345  244             java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 355  245             java.lang.String::lastIndexOf (18 bytes)",
+        "Compiled method (c2) 364  246             java.lang.String::lastIndexOf (163 bytes)",
+        "Compiled method (c2) 371  247             java.lang.StringLatin1::lastIndexOf (520 bytes)",
+        "Compiled method (c2) 384  251 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "Compiled method (c2) 402  252             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)"
+      ]
+    }
+  ],
+  "limits": "MIXED64 is a different-input proxy, not evidence for N31/N32. No exact forward-char or reverse-char END diagnostic is present. Latin N4 positive diagnostics are exact-input evidence."
+}

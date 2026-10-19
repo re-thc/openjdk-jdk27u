@@ -1,0 +1,454 @@
+{
+  "schema": "stringzilla-final-reproducibility-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "source_tree": "d3de6a4fcf40e5b45b58d7e0874ed2ab34fe2e01",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "final_pr_head": "c73d3586b13764f912c52c9f407020866f0e252c",
+  "pr_head_binding": "The qualification images use916. c73 changes only a native test range guard; production and microbenchmark source trees are unchanged.",
+  "source_equivalence_proof_blob": "a99ecf20c682f8cdaa2fa491c7f26aed95ea5b3b",
+  "physical_triplets": 1886,
+  "control_records": 5658,
+  "raw_samples_per_record": 10,
+  "physical_keys_sha256": "dd8faf0112a66103aa8d6b6a958d7ec3c813e1b4b7b5fd7ea0f85004231a434e",
+  "phases": {
+    "stock": 1828,
+    "periodic": 30,
+    "utf16-probe": 28
+  },
+  "protocol": {
+    "controls": [
+      "original",
+      "enabled",
+      "disabled"
+    ],
+    "forks": 2,
+    "warmup_iterations": 3,
+    "measurement_iterations": 5,
+    "iteration_duration": "500ms",
+    "gc": "Serial",
+    "cds": "off",
+    "active_processors": 1,
+    "cpu_affinity": "one selected CPU",
+    "control_order": "rotate by workload",
+    "same_complete_fork_image_for_enabled_and_disabled": true,
+    "patched_classes": false,
+    "build_profiles": {
+      "linux_x64": "-march=x86-64-v3 -mtune=generic",
+      "linux_arm64": "-march=armv8.2-a -mtune=generic",
+      "windows_msvc": "/arch:AVX2"
+    },
+    "serial_backend_note": "serial identifies the StringZilla library backend; it does not imply absence of compiler-generated SIMD."
+  },
+  "files": [
+    {
+      "path": ".github/scripts/stringzilla-performance.py",
+      "blob": "52c1221ec64bd1c0a5bbb50fb4c2a9dc06cd6517",
+      "sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+      "bytes": 25395,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-performance.py"
+    },
+    {
+      "path": ".github/scripts/stringzilla-performance-extra.py",
+      "blob": "672f1c68a41b08aa06bb32023215035c7067e1a8",
+      "sha256": "74ed5c71dd487e08d0ef017ead2f59172acbca9a7edad9b51ad976e54e80e532",
+      "bytes": 26042,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-performance-extra.py"
+    },
+    {
+      "path": ".github/scripts/stringzilla-final-cases.tsv",
+      "blob": "5f68ee37398498f9eaa37b11cee08b5a48ebe844",
+      "sha256": "d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d",
+      "bytes": 34813,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-final-cases.tsv"
+    },
+    {
+      "path": ".github/scripts/stringzilla-periodic-cases.tsv",
+      "blob": "259dcf5fb6812cc553072f3e9e6ada2ddc1c138c",
+      "sha256": "02e48d06c5d3fdec8fb897fdff26dc1e0b5231ad2001397cb0f08313048938c2",
+      "bytes": 371,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-periodic-cases.tsv"
+    },
+    {
+      "path": ".github/scripts/StringZillaPeriodicSearch.java",
+      "blob": "fc03c361a3df4e177cd815426fd2eaecb93ff0e9",
+      "sha256": "fead0e50103b20ca4bb1f3eeb47a71b1fc79f52fd91d0c7bb9007a502f7de44b",
+      "bytes": 3503,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/StringZillaPeriodicSearch.java"
+    },
+    {
+      "path": ".github/scripts/stringzilla-utf16-probe-cases.tsv",
+      "blob": "64b1ddda5c6979aafad7ff3fbf5bf4c0f8c3a51e",
+      "sha256": "06dc833fa691489a1869628aa94715ab3b3ff4ba550b3b936d590c6dee4ef834",
+      "bytes": 2277,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-utf16-probe-cases.tsv"
+    },
+    {
+      "path": ".github/scripts/StringZillaUTF16Probe.java",
+      "blob": "69a5619176d8a05f3ed1f3f8e69eefcaf29fc27d",
+      "sha256": "1ac9e865b12f3ecf87bef52789ade1a0709ddec569a896c0d4796c5583d6f1f7",
+      "bytes": 3178,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/StringZillaUTF16Probe.java"
+    },
+    {
+      "path": ".github/scripts/stringzilla-final-planned-matrix.json",
+      "blob": "433a7dfe065f1812c4e1477568e869ab94f42cf4",
+      "sha256": "9cc4746a74edc1d5e8e83f3dafd82416ecd05e9cbf359117d3d4ec756b8977e1",
+      "bytes": 9308,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-final-planned-matrix.json"
+    },
+    {
+      "path": ".github/scripts/stringzilla-final-planned-stock-keys.json",
+      "blob": "42a03ebdbcc536a4f950a3d9b8ece4a7247cb975",
+      "sha256": "c0cc847862701e551c55d4d5ffd53fc10abf450daa483c9e7371d25a898b95ca",
+      "bytes": 311741,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-final-planned-stock-keys.json"
+    },
+    {
+      "path": ".github/scripts/stringzilla-final-planned-periodic-keys.json",
+      "blob": "7d970438d7f8f546e6c7c41ec21ac367037989a6",
+      "sha256": "d9c4b7ce0439de7e35731800a8d0db00a8e17d494a5141377b56167a1548c30c",
+      "bytes": 5559,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-final-planned-periodic-keys.json"
+    },
+    {
+      "path": ".github/scripts/stringzilla-final-planned-utf16-probe-keys.json",
+      "blob": "487307134bc60dd7da6b9347f56188c7fb4e4b99",
+      "sha256": "420006ee88b0ecd19fc8e1dfd6f2e970dca10d24c467a46aa9f9002877698c84",
+      "bytes": 4758,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-final-planned-utf16-probe-keys.json"
+    },
+    {
+      "path": ".github/scripts/stringzilla-final-required-e036.json",
+      "blob": "030f9256cae168658c4d51aa11e15ff048e3caf0",
+      "sha256": "c8c130babfc745a5a81c2a2f9ef487535361f58bce1d4582c24621c0c0d31277",
+      "bytes": 107971,
+      "commit": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/4176f25bfc42a553d9192328d726b233c23b552f/.github/scripts/stringzilla-final-required-e036.json"
+    },
+    {
+      "path": "test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java",
+      "blob": "fb746ed87b22616d0fe227bb77df14ba4b23129e",
+      "size": 6235,
+      "sha256": "1571fccf2d9828ad77ca31b6a16eb1e0d1c4a3715e5e8f9169159e253ad6d5c2",
+      "bytes": 6235,
+      "commit": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/916ba895e834378e3f7eac7f030fc4abff641d33/test/micro/org/openjdk/bench/java/lang/StringZillaSearch.java"
+    },
+    {
+      "path": "test/micro/org/openjdk/bench/java/lang/StringZillaLongNeedle.java",
+      "blob": "e3374c54e40f23a8bd6eff11c08a25d249705241",
+      "size": 4938,
+      "sha256": "f44f78512a3a45e441adc10e04d6e5e1b1ded3fab74859debebd239703f97931",
+      "bytes": 4938,
+      "commit": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/916ba895e834378e3f7eac7f030fc4abff641d33/test/micro/org/openjdk/bench/java/lang/StringZillaLongNeedle.java"
+    },
+    {
+      "path": "test/micro/org/openjdk/bench/java/lang/StringZillaTailSearch.java",
+      "blob": "58a2de288ac4464bcb3b4ad85c53aa17d28043ff",
+      "size": 7031,
+      "sha256": "cbbd82c9a4664bb2bdd1061353445d83823ba3afbce42c12d8079337cd15fc45",
+      "bytes": 7031,
+      "commit": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "url": "https://github.com/re-thc/openjdk-jdk27u/blob/916ba895e834378e3f7eac7f030fc4abff641d33/test/micro/org/openjdk/bench/java/lang/StringZillaTailSearch.java"
+    }
+  ],
+  "models": [
+    {
+      "backend": "serial",
+      "blob": "79ac5f753fb5a080da1efa7bee02804510433f81",
+      "sha256": "ea86271400a94d5bf2b281768dc655a44b88237a31b9fcc1ffccb45e11ece3fd",
+      "triplets": 365,
+      "bytes": 103938,
+      "projections": {
+        "interpreter": {
+          "stock": {
+            "triplets": 101,
+            "manifest_sha256": "849cd78ea12d4b893c52a90c3eeaf916c60e5ea001cfaa84262897659206de4a"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "8cf638200670921eb66bc8958113a635fc71afc8a492980bdf21391ccb24b98e"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c1": {
+          "stock": {
+            "triplets": 90,
+            "manifest_sha256": "748d6c26d692abadf00a65824fea755456a33eee5d253787e666f50d1db1cfd9"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "dd4c7e76d1b2a823cc9d125501eeb01034a71b893717757f987667eb6bafaa3a"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c2": {
+          "stock": {
+            "triplets": 148,
+            "manifest_sha256": "e474dbc228ae3e24df007442e9679b91241e97c97beb41d5f373120790652652"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "7227cb351975ed4e03fc4c94fc44d4a8f40488a49c52f659b48776758dbfd6cf"
+          },
+          "utf16-probe": {
+            "triplets": 20,
+            "manifest_sha256": "9c774b34236fac2380afc2842ff473dfb2de4fc50e2549b747fba69c9b820b05"
+          }
+        }
+      },
+      "archived_path": "model-serial.json",
+      "blob_api": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/blobs/79ac5f753fb5a080da1efa7bee02804510433f81"
+    },
+    {
+      "backend": "avx2",
+      "blob": "413a487e440852da6fd286c96e8edbde588b6954",
+      "sha256": "5a07f6bca0b42e0376f8294c2668a05032d8ce1a69ad7d1d08b0c916df68e305",
+      "triplets": 386,
+      "bytes": 106395,
+      "projections": {
+        "interpreter": {
+          "stock": {
+            "triplets": 134,
+            "manifest_sha256": "1ab2149b6a504902f59989c6e514dc19f07359a47ae61b9fb36f5c8a56e26177"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "58e26818a2a3d95ba2c4b37f80c52565ce8b759804cdb139701aada143f48099"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c1": {
+          "stock": {
+            "triplets": 124,
+            "manifest_sha256": "4fb82d81da1582926f9d69ab629ab3b7b576b9b89517ed6e54bcfe2c81f0e496"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "d22b89ebc4763d68dd920211a92a2c5c3d329fd6a3e45410ec81f89f234e97a8"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c2": {
+          "stock": {
+            "triplets": 122,
+            "manifest_sha256": "241e337bd8123d9a3bd5f9cc1c3a7049f618c1f28ef73969b739128f565560fa"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "fdbeb9bf5c434080f67b2d348c6bda82fc2bc4fbdac8af819de17d0d26aabd2d"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        }
+      },
+      "archived_path": "model-avx2.json",
+      "blob_api": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/blobs/413a487e440852da6fd286c96e8edbde588b6954"
+    },
+    {
+      "backend": "neon",
+      "blob": "6543c0dcac011447336d0e91902ef3a448bbca34",
+      "sha256": "4a04743d3bfcdecc1b42c7eac34e2c49cb21a968db7bd90e96ff82a9ee0bb38e",
+      "triplets": 371,
+      "bytes": 102369,
+      "projections": {
+        "interpreter": {
+          "stock": {
+            "triplets": 116,
+            "manifest_sha256": "cd50c7d445c69f415fc682eee6873e8684d5bd18243a58019f69eaf8bac2adf2"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "78e9325ee6db8e6ac2669c2d5e5c5cdc0d226eacc24b808293125fd5b5ecdeaa"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c1": {
+          "stock": {
+            "triplets": 108,
+            "manifest_sha256": "4350b4d68b258ab5701b2fd6e29b8a82d7b6e84502dcca19f98b3f829ac8cd52"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "048b3f3a20df743fcafbfce84aedd1adc4f71762c775dba3bf362735439bd761"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c2": {
+          "stock": {
+            "triplets": 137,
+            "manifest_sha256": "ed3765c80314f71b9fa09bc0a1d5faa8ca79090835b0ff71a2c78f33851c5331"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "dfcbb2f983dad4f563c4b641b683444c5e9660029b4156a112440f3ba9d7a4ec"
+          },
+          "utf16-probe": {
+            "triplets": 4,
+            "manifest_sha256": "6ba7e69945e8a0be9d7f92ea29805a1a2f1e22a5de39c3f610aa9786dea83747"
+          }
+        }
+      },
+      "archived_path": "model-neon.json",
+      "blob_api": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/blobs/6543c0dcac011447336d0e91902ef3a448bbca34"
+    },
+    {
+      "backend": "msvc",
+      "blob": "812ddbba90f07676175ef28582335d8143a4a28e",
+      "sha256": "c56ca647b0e1d0dbe58df0a442d5379b422a1b730539febf6c454baea0f23f62",
+      "triplets": 378,
+      "bytes": 104494,
+      "projections": {
+        "interpreter": {
+          "stock": {
+            "triplets": 101,
+            "manifest_sha256": "f41539bf8dd3834f2eca6d23bfcb0219c9966c9a1cc93dc4ad772d0c16ebf972"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "9ca12a0b784c9cab80c63dcaf3c0e91e3eb90753089efe21874bd5cafe9e0875"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c1": {
+          "stock": {
+            "triplets": 124,
+            "manifest_sha256": "67c27329303c921e967569542640dd9fc4d5c05e9f59fdab68ddb727bd104d52"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "adef109d7512ec14849df3e9bd5f68ac28bdc6cbc97a37fd692567ee1a398e5e"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c2": {
+          "stock": {
+            "triplets": 143,
+            "manifest_sha256": "bf794916e8d4eb87ae36db697ba7486d425291e1e7c723631c3adb926c2be1e1"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "5ed463f13eeb091284e69433459117debab38ab63349504585f1428e4734b998"
+          },
+          "utf16-probe": {
+            "triplets": 4,
+            "manifest_sha256": "8c119dcc1fcba9b6945beb5d1d81be72291f1c72815d18094a5adfe71cdc5731"
+          }
+        }
+      },
+      "archived_path": "model-msvc.json",
+      "blob_api": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/blobs/812ddbba90f07676175ef28582335d8143a4a28e"
+    },
+    {
+      "backend": "avx512",
+      "blob": "adc45d01c20031c8f8fffe9e3b0c308eb6639d1c",
+      "sha256": "af6857f40774f209b8cae6fedeec083ce6f644ccc4266a6c26acbd164ddd6720",
+      "triplets": 386,
+      "bytes": 107169,
+      "projections": {
+        "interpreter": {
+          "stock": {
+            "triplets": 134,
+            "manifest_sha256": "1ab2149b6a504902f59989c6e514dc19f07359a47ae61b9fb36f5c8a56e26177"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "58e26818a2a3d95ba2c4b37f80c52565ce8b759804cdb139701aada143f48099"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c1": {
+          "stock": {
+            "triplets": 124,
+            "manifest_sha256": "4fb82d81da1582926f9d69ab629ab3b7b576b9b89517ed6e54bcfe2c81f0e496"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "d22b89ebc4763d68dd920211a92a2c5c3d329fd6a3e45410ec81f89f234e97a8"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        },
+        "c2": {
+          "stock": {
+            "triplets": 122,
+            "manifest_sha256": "241e337bd8123d9a3bd5f9cc1c3a7049f618c1f28ef73969b739128f565560fa"
+          },
+          "periodic": {
+            "triplets": 2,
+            "manifest_sha256": "fdbeb9bf5c434080f67b2d348c6bda82fc2bc4fbdac8af819de17d0d26aabd2d"
+          },
+          "utf16-probe": {
+            "triplets": 0,
+            "manifest_sha256": "5be036ce1cc21c0789df88b5de1b01554b88798866ec930b205b85ad7dcdc985"
+          }
+        }
+      },
+      "archived_path": "model-avx512.json",
+      "blob_api": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/blobs/adc45d01c20031c8f8fffe9e3b0c308eb6639d1c"
+    }
+  ],
+  "consumer_contexts": {
+    "normal": {
+      "run": 39182567318,
+      "head": "57d209684d4887100690410e326377759df13176",
+      "scope": 1500
+    },
+    "sky_c2": {
+      "run": 39174300598,
+      "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+      "scope": 124
+    },
+    "sky_interpreter_c1": {
+      "run": 39187437768,
+      "head": "4176f25bfc42a553d9192328d726b233c23b552f",
+      "scope": 262
+    }
+  },
+  "timing_evidence": false,
+  "scope_note": "This index pins the executable protocol and expected workload set. Completed result receipts and unchanged original JMH files establish measured coverage separately."
+}
