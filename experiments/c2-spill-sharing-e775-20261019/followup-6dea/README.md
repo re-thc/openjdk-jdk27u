@@ -23,6 +23,15 @@ All original whole-JVM stock-v5 measurements, including adverse estimates and
 startup RSS +2.65 MiB, remain in the parent report. This targeted experiment is
 separate from that qualification, not a replacement or favorable resample.
 
+## Final published source
+
+Final published head is `8f3bbc83d961c0182fc6a4c884fc49bac52d2431`. The native GCC16 qualification and
+staged Java fixture were tested at `6deaa92f1f63e239bee76a7d5a5f688c920c9f77`. The sole subsequent
+change removes one empty line after the Java class closing brace; a byte
+comparison verifies that exact delta, with all preceding source bytes and
+the entire VM implementation unchanged. No behavioral rerun is claimed
+for this formatting commit. The measured release libjvm remains identical.
+
 ## Same-method activation and state proof
 
 `TestSharedSpillSharingState` loads 24 arbitrary long values, computes an integer
@@ -242,8 +251,7 @@ separate branches, never in the focused product diff.
 
 ## CI status
 
-Current-head [GitHub workflow39193137827](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39193137827) has completed Prepare successfully. Its four Linux x64/aarch64 debug/release build jobs remain queued without assigned runners. This platform matrix is not passed or complete. The earlier repository queue snapshot recorded16queued workflows and none running, with an older run waiting over six hours; official GitHub documentation confirms the requested Ubuntu26.04 labels are supported. No other work was cancelled and no unsupported workflow/settings change was made. The native GCC14/GCC16 current-source checks above are complete; hosted platform execution still awaits runners.
-
+Current-head [GitHub workflow39201171519](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39201171519) is waiting for a runner for Prepare. Snapshot: 2026-10-19 04:49:40 UTC. This hosted platform matrix is not passed or complete. The preceding semantic-head run39193137827 completed Prepare successfully but its four unstarted x64/aarch64 debug/release builds were automatically cancelled by the final formatting-only push. No hosted build result is claimed. The repository queue snapshot recorded16queued workflows and none running, with an older run waiting over six hours; official GitHub documentation confirms Ubuntu26.04 runner labels are supported. No unrelated work was cancelled and no workflow/settings change was made. Native GCC14/GCC16 qualification is complete as described above; hosted execution still awaits runners.
 
 ## Reproduction
 

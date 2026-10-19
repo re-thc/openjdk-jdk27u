@@ -1,4 +1,4 @@
-> Follow-through: current product/test head is **6deaa92**. The new fixture
+> Follow-through: current product/test head is **8f3bbc8**. The new fixture
 > requires **120 same-nmethod activation-backed state checks**, including moving
 > GC before shared uses and active deoptimization after computed results.
 > [Follow-through report, tested policies, same-image controls, null control and
