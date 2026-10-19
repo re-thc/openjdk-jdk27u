@@ -1,0 +1,40 @@
+{
+  "sources": {
+    "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "fork": "7048d6f2c74e25737850789812da063900ec18c0"
+  },
+  "backend": "neon",
+  "spec": {
+    "SOURCE_DATE": "1792195200",
+    "VERSION_OPT": "stringzilla-benchmark",
+    "VERSION_STRING": "27.0.2-internal-stringzilla-benchmark",
+    "DEBUG_LEVEL": "release",
+    "JVM_VARIANTS": "server",
+    "JVM_FEATURES_server": "cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc",
+    "TOOLCHAIN_TYPE": "gcc",
+    "TOOLCHAIN_VERSION": "",
+    "CC_VERSION_NUMBER": "16.0.1",
+    "CXX_VERSION_NUMBER": "16.0.1",
+    "EXTRA_CFLAGS": "-march=armv8.2-a -mtune=generic",
+    "EXTRA_CXXFLAGS": "-march=armv8.2-a -mtune=generic",
+    "EXTRA_LDFLAGS": ""
+  },
+  "parent_receipt_sha256": "0330931ae404c369d05050536020c32291b60941032f270f07b714acf876c957",
+  "image_hashes": {
+    "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+    "fork": "8a232841a47ee287edf546853a0f2c64dad6d6fea43f4114e360483f920b079f"
+  },
+  "release": {
+    "original": "IMPLEMENTOR=\"N/A\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-stringzilla-benchmark\"\nJAVA_VERSION=\"27.0.2\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.xml java.prefs java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.internal.ed jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jstatd jdk.localedata jdk.management jdk.management.agent jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:416d7db3ec3c\"\n",
+    "fork": "IMPLEMENTOR=\"N/A\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-stringzilla-benchmark\"\nJAVA_VERSION=\"27.0.2\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.xml java.prefs java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.internal.ed jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jstatd jdk.localedata jdk.management jdk.management.agent jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.xml.dom\"\nOS_ARCH=\"aarch64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:7048d6f2c74e\"\n"
+  },
+  "rebuild": {
+    "source": "7048d6f2c74e25737850789812da063900ec18c0",
+    "kernel_compile_command": "/usr/bin/gcc-16 -MMD -MF /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/perf/support/native/java.base/libjava/StringZillaKernels.d.tmp -fvisibility=hidden -pipe -fstack-protector -finput-charset=utf-8 -DLIBC=gnu -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 -DLINUX -DNDEBUG -fmacro-prefix-map=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/= -std=c11 -fno-strict-aliasing -Wall -Wextra -Wformat=2 -Winvalid-pch -Wpointer-arith -Wreturn-type -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized -Wunused-const-variable=1 -Wunused-function -Wunused-result -Wunused-value -march=armv8.2-a -mtune=generic -D_LITTLE_ENDIAN -DARCH='\"aarch64\"' -Daarch64 -D_LP64=1 -Wno-psabi -fno-omit-frame-pointer -fno-lifetime-dse -fPIC -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/linux/native/libjava -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/libjava -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/perf/support/headers/java.base -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/share/include -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/hotspot/os/posix/include -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/perf/support/modules_include/java.base -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/unix/native/include -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/include -Wno-unused-parameter -Werror -O3 -I/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla -Wno-unknown-pragmas -c -o /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/build/perf/support/native/java.base/libjava/StringZillaKernels.o /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/src/java.base/share/native/libjava/StringZillaKernels.c -frandom-seed=\"StringZillaKernels.c\"\n",
+    "source_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree e313fd658439aa5616cb682b6b2604d2acbbde23\tmake\n040000 tree 0d7fc4330438d73eeec4c4e1854b6730bece5bbe\tsrc\n040000 tree 325af6d98e3b9ba128077d0a59fc975bdb538783\ttest\n",
+    "embedded_revision_available": true,
+    "shipped_class_sha256": "cab00997c4afcad70b7247f21eab4e57b141b2f385fa56b6ed96cbf66afa9aa8",
+    "shipped_class_matches_build_output": true,
+    "checkout_clean": true
+  }
+}

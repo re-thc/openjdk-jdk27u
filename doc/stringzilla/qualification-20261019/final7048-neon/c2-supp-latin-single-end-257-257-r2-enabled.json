@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:-TieredCompilation",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "LATIN1",
+            "length" : "257",
+            "needleLength" : "257",
+            "position" : "END"
+        },
+        "primaryMetric" : {
+            "score" : 23.209911230869945,
+            "scoreError" : 0.14016201562731181,
+            "scoreConfidence" : [
+                23.069749215242634,
+                23.350073246497256
+            ],
+            "scorePercentiles" : {
+                "0.0" : 23.170765555910318,
+                "50.0" : 23.1935221234515,
+                "90.0" : 23.25830425550839,
+                "95.0" : 23.25830425550839,
+                "99.0" : 23.25830425550839,
+                "99.9" : 23.25830425550839,
+                "99.99" : 23.25830425550839,
+                "99.999" : 23.25830425550839,
+                "99.9999" : 23.25830425550839,
+                "100.0" : 23.25830425550839
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    23.237266121852944,
+                    23.1935221234515,
+                    23.18969809762657,
+                    23.25830425550839,
+                    23.170765555910318
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

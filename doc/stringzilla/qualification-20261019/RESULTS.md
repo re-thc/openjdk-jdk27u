@@ -3,14 +3,13 @@
 Product: [`7048d6f2c74e25737850789812da063900ec18c0`](https://github.com/re-thc/openjdk-jdk27u/commit/7048d6f2c74e25737850789812da063900ec18c0).
 Independent original: `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`.
 
-**Do not merge yet.** The source corrections and fourteen local targeted test
-descriptions pass. Final measurements complete 84 triplets on serial, AVX2,
-AVX-512 and MSVC, with all fourteen loss-table rows retained. Windows completes
-26 comparisons, native contracts and thirteen targeted bounds/safepoint test
-descriptions. The fourteen ARM triplets and ordinary CI await runners. This is
-incomplete qualification, not evidence
-that the implementation failed. Preceding measurements retain their original
-revisions.
+**Performance and native qualification are complete; ordinary CI is pending.**
+Final measurements complete all 98 planned triplets on serial, AVX2, AVX-512,
+NEON and MSVC, with all seventeen loss-table rows retained. Fourteen local,
+thirteen Windows and ten ARM targeted test descriptions pass. Both native jobs
+finish successfully. Retain the corrected implementation and its documented
+tradeoffs; keep PR4 in draft until the existing ordinary exact-head CI finishes.
+Preceding measurements retain their original revisions.
 
 ## Implementation and correctness
 
@@ -59,7 +58,7 @@ its perturbed timing is excluded from the comparisons.
 | [First correction pilot](diagnostic-b963d752/COMPARISONS.md) | `b963d752` | Three triplets; UTF-16 improves, Latin-1 still loses |
 | [Focused five-backend campaign](final77-summary/COMPARISONS.md) | `77a60d0f` | 290 triplets, 2,610 JMH files, 13,050 samples; all 71 loss-table rows retained |
 | [Copyright-only complete-image pass](finale45-summary/COMPARISONS.md) | `e45ff201` | 13 triplets, 117 JMH files, 585 samples; two loss-table rows |
-| [Final physical-range guard, four backends](final7048-summary/COMPARISONS.md) | `7048d6f2` | 84 of 98 planned triplets, 756 JMH files, 3,780 samples; all fourteen loss-table rows |
+| [Final physical-range guard, five backends](final7048-summary/COMPARISONS.md) | `7048d6f2` | 98 of 98 planned triplets, 882 JMH files, 4,410 samples; all seventeen loss-table rows |
 
 The historical AVX-512 interpreter/C1 deficit stays 262 triplets in its original
 campaign. Later focused work does not retroactively fill it. Both diagnostic
@@ -91,6 +90,11 @@ are reused only through authenticated artifact digests and full-image receipts;
 the candidates are rebuilt. Serial identifies the selected StringZilla backend:
 the compiler may still vectorize portable loops under its architecture baseline.
 
+The [ARM compiler/boot comparison](neon7048-compiler-comparison.json) checks the
+full current and independent-original producer banners, including Ubuntu package
+`16-20260322-1ubuntu1`, GCC trunk revision and boot JDK build. Matching numeric
+compiler versions alone were not treated as proof.
+
 Three paired rounds rotate original/enabled/disabled order so every control
 occupies each position. Each control/round uses one JMH fork, three 300 ms
 warmups and five 300 ms measurements, sequentially on one pinned CPU with Serial
@@ -107,7 +111,7 @@ diagnostic workload selection.
 ## Gains, losses and practical scope
 
 The [final-head comparisons](final7048-summary/COMPARISONS.md) and
-[all fourteen loss rows](final7048-summary/LOSSES.md) retain 84 triplets. Selected
+[all seventeen loss rows](final7048-summary/LOSSES.md) retain 98 triplets. Selected
 final-head values below show control medians in ns/op and paired original/enabled
 ratios, rather than ratios of those control medians:
 
@@ -121,10 +125,13 @@ ratios, rather than ratios of those control medians:
 | AVX2 C1 short Latin-1 miss | 30.249 | 32.262 | 30.724 | 0.9758 [0.9082, 1.0122] |
 | AVX-512 C1 short Latin-1 miss | 31.038 | 36.048 | 35.691 | 0.8589 [0.7958, 1.0412] |
 | Serial C2 dense-suffix miss, needle 65 | 15,608.586 | 16,187.882 | 15,406.619 | 0.9210 [0.9088, 1.0545] |
+| NEON C1 Latin-1 bulk miss | 3,172.471 | 332.446 | 3,168.187 | 9.5447 [9.5354, 9.5674] |
+| NEON interpreter Latin-1 bulk miss | 40,638.583 | 764.836 | 43,116.873 | 53.2952 [51.4689, 54.5807] |
+| NEON C2 UTF-16 end match, needle 4 | 5.493 | 2.726 | 5.622 | 2.0159 [2.0129, 2.0181] |
 
 The final losses also include the scalar C1 minimum-overlap case and variable
-equality controls. Twelve rows lose by paired-ratio median, eleven by control
-median and thirteen by pooled mean; their union contains fourteen rows. These counts
+equality controls. Fifteen rows lose by paired-ratio median, fourteen by control
+median and sixteen by pooled mean; their union contains seventeen rows. These counts
 are distinct measures. In particular, the AVX-512 short C1 loss against original
 has disabled/enabled paired median 1.0017, whereas AVX2's corresponding value is
 0.9653. Neither an enabled/disabled comparison nor a single summary statistic
@@ -139,6 +146,14 @@ without a threshold. The MSVC C1 minimum-overlap case improves over original
 visible. The raw Windows JMH file bytes were checked against the artifact and
 per-file digests before acceptance.
 
+ARM adds three retained losses. Its short C1 miss is 28.428 to 29.646 ns,
+O/E 0.9587 [0.9556, 0.9589]; minimum-overlap C1 is 642.817 to 647.377 ns,
+0.9930 [0.9929, 0.9962]. Both lose against both controls in every round. The
+interpreted immediate match is 351.127 to 379.873 ns, O/E 0.9268
+[0.9243, 0.9368], although disabled is slower at 426.511 ns. The independent
+original exposes that cost. Small but consistent losses remain in the table,
+alongside the large bulk gains; they are not removed as noise.
+
 The completed preceding campaign establishes large interpreter/C1 and selected
 bulk reverse-search gains. Examples include C1 equality on 4,096 Latin-1 bytes:
 AVX-512 3,786 to 71 ns and NEON 2,955 to 162 ns; MSVC C1 UTF-16 bulk reverse
@@ -152,7 +167,8 @@ original/enabled 0.6626), AVX2 C2 mixed-coder end match at width 17 (11.908 to
 14.052 ns; 0.8474) and NEON C1 UTF-16 miss just below its threshold (88.144 to
 101.022 ns; 0.8715). Its scalar dense-suffix loss is larger and variable. All
 [preceding losses](final77-summary/LOSSES.md) remain visible. Their absolute cost
-and workload shape matter alongside their ratios.
+and workload shape matter alongside their ratios. This report does not claim
+that the later Latin-1 guard eliminated those UTF-16 or mixed-coder losses.
 
 Ordinary-process checks use JVM defaults including CDS, fixed work, two
 independent six-round balanced blocks and complete-process wall time. Startup
@@ -192,29 +208,35 @@ bounded native jobs. The [ordinary exact-head CI](https://github.com/re-thc/open
 also records `7048d6f2`. Neither preceding green builds nor queued jobs are
 counted as successful checks of this head. No duplicate jobs are dispatched.
 
-The checked [scope receipt](scope7048.json) identifies every pending native case.
-The first retained status snapshot has no assigned runners. Windows subsequently
-completed its build, compiler-command check, contracts, thirteen targeted tests
-and 26 paired comparisons; its [job snapshots](native7048-latest-jobs.json),
-[raw validation](final7048-msvc/validation) and
-[retained complete image](native7048-artifacts.json) record that progress. ARM
-and CI's Prepare job still have `runner_id: 0` and empty steps. The queued actions
-were accepted; none was denied. Its shipped `StringLatin1` has identical
-[instruction listings](final7048-cross-platform-bytecode/receipt.json) to the
-measured Linux image, including the final range guard. Rerunning completed
-Windows work or queued ARM work would duplicate scope.
+The checked [scope receipt](scope7048.json) has no missing cases. The
+[terminal native run](native7048-final-run.json) and
+[job conclusions](native7048-final-jobs.json) confirm success for both jobs.
+[Windows validation](final7048-msvc/validation) and
+[ARM validation](final7048-neon/validation) retain all applicable targeted tests.
+Windows also passes twelve Java contract executions and the production-source
+native fixture at `/O2`. The [complete-image artifacts](native7048-artifacts.json)
+are retained, and their inventories were independently checked after download.
+The shipped current Windows and ARM `StringLatin1` instruction listings match
+the measured Linux image, including the final range guard. No duplicate native
+run or additional performance campaign is needed.
+
+Ordinary CI's Prepare job passes. Its four Linux build jobs are now queued; a
+passing Prepare stage is not a passing build or test suite. Those existing
+jobs remain the only unfinished qualification gate.
 
 ## Decision
 
-Retain the corrected implementation and the measured x64 tradeoff. Bulk and
-interpreter/C1 improvements survive the required range guard, while real short
-and dense-suffix losses remain. The present results do not call for another
-unbounded tuning campaign, a universal performance claim or a zero-loss gate.
+Retain the corrected implementation and the measured five-backend tradeoff.
+Bulk and interpreter/C1 improvements survive the required range guard, while
+real short, immediate-match and dense-suffix losses remain. The independent
+source/evidence recovery review also supports retaining this approach and finds
+no concrete source defect requiring another change. The recorded gains support
+adoption for this fork with the known costs documented; they do not establish a
+universal application speedup. No zero-loss gate or new tuning campaign is used.
 
 **PR4 remains draft and is not ready to merge.** The concrete remaining blocker
-is completion and review of the existing exact-head native jobs and ordinary CI,
-including ARM physical-bounds tests and the fourteen pending paired comparisons.
-A green preceding revision does not satisfy that requirement. If those jobs
-complete, add their original artifacts and losses to this report and assess
-their actual result; do not automatically promote the PR. No merge or upstream
-push has been performed.
+is completion and review of the existing ordinary exact-head CI. Native
+correctness and all planned comparisons have completed. A green preceding
+revision does not satisfy the remaining requirement, and a future green stage
+must be assessed with the retained losses rather than replacing that assessment.
+No merge or upstream push has been performed.

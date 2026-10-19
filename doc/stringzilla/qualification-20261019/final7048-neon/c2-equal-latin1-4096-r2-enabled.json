@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:-TieredCompilation",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "LATIN1",
+            "length" : "4096",
+            "needleLength" : "4",
+            "position" : "EQUAL"
+        },
+        "primaryMetric" : {
+            "score" : 255.18654672587883,
+            "scoreError" : 1.5828215672639143,
+            "scoreConfidence" : [
+                253.6037251586149,
+                256.76936829314275
+            ],
+            "scorePercentiles" : {
+                "0.0" : 254.79082037701053,
+                "50.0" : 254.94709386392816,
+                "90.0" : 255.66302970849648,
+                "95.0" : 255.66302970849648,
+                "99.0" : 255.66302970849648,
+                "99.9" : 255.66302970849648,
+                "99.99" : 255.66302970849648,
+                "99.999" : 255.66302970849648,
+                "99.9999" : 255.66302970849648,
+                "100.0" : 255.66302970849648
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    255.5992830486256,
+                    254.93250663133347,
+                    255.66302970849648,
+                    254.94709386392816,
+                    254.79082037701053
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

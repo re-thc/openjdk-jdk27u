@@ -1,0 +1,57 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/paired-results/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-stringzilla-benchmark
+# VM invoker: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/original/bin/java
+# VM options: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -Xshare:off -XX:-TieredCompilation
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 300 ms each
+# Measurement: 5 iterations, 300 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf
+# Parameters: (length = 0, needleLength = 257, shape = OVERLAP_LATIN1)
+
+# Run progress: 0.00% complete, ETA 00:00:02
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/paired-results/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 260.762 ns/op
+# Warmup Iteration   2: 246.868 ns/op
+# Warmup Iteration   3: 233.166 ns/op
+Iteration   1: 230.350 ns/op
+Iteration   2: 231.158 ns/op
+Iteration   3: 230.211 ns/op
+Iteration   4: 230.336 ns/op
+Iteration   5: 230.071 ns/op
+
+
+Result "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf":
+  230.425 ±(99.9%) 1.636 ns/op [Average]
+  (min, avg, max) = (230.071, 230.425, 231.158), stdev = 0.425
+  CI (99.9%): [228.789, 232.061] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:02
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                          (length)  (needleLength)         (shape)  Mode  Cnt    Score   Error  Units
+StringZillaLongNeedle.lastIndexOf         0             257  OVERLAP_LATIN1  avgt    5  230.425 ± 1.636  ns/op
+
+Benchmark result is saved to paired-results/c2-overlap-min-latin-r2-original.json

@@ -1,12 +1,12 @@
 {
   "source": "7048d6f2c74e25737850789812da063900ec18c0",
   "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
-  "recorded_at": "2026-10-19T16:49:58.538558+00:00",
+  "recorded_at": "2026-10-19T20:05:51.241968+00:00",
   "manifest_sha256": "34329fe98513f1cbf5ccce72496de43b16eee94b2e878e980b454754f2d6cd1f",
   "planned_triplets": 98,
-  "completed_triplets": 84,
-  "controls": 756,
-  "samples": 3780,
+  "completed_triplets": 98,
+  "controls": 882,
+  "samples": 4410,
   "planned_by_backend": {
     "avx2": 16,
     "avx512": 16,
@@ -18,80 +18,9 @@
     "avx2": 16,
     "avx512": 16,
     "msvc": 26,
-    "neon": 0,
+    "neon": 14,
     "serial": 26
   },
-  "missing": [
-    {
-      "backend": "neon",
-      "tier": "c1",
-      "case": "bulk-latin1"
-    },
-    {
-      "backend": "neon",
-      "tier": "c1",
-      "case": "immediate-latin"
-    },
-    {
-      "backend": "neon",
-      "tier": "c1",
-      "case": "overlap-min-latin"
-    },
-    {
-      "backend": "neon",
-      "tier": "c1",
-      "case": "short-latin-c1-32-miss"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "bulk-latin1"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "equal-latin1-4096"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "immediate-latin"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "immediate-utf16"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "long-latin-head-candidate-miss"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "overlap-min-latin"
-    },
-    {
-      "backend": "neon",
-      "tier": "c2",
-      "case": "supp-latin-single-end-257-257"
-    },
-    {
-      "backend": "neon",
-      "tier": "interpreter",
-      "case": "bulk-latin1"
-    },
-    {
-      "backend": "neon",
-      "tier": "interpreter",
-      "case": "immediate-latin"
-    },
-    {
-      "backend": "neon",
-      "tier": "interpreter",
-      "case": "overlap-min-latin"
-    }
-  ],
-  "status": "Windows26 comparisons, contracts and13 targeted tests complete; local58 complete. ARM14 and ordinary CI still queued. Do not duplicate completed scope."
+  "missing": [],
+  "status": "All98 planned triplets and targeted native contracts complete. Ordinary exact-head CI remains live; no duplicate or new performance campaign is needed."
 }

@@ -1,6 +1,6 @@
 # Repeated paired complete-image comparisons
 
-14 rows have a paired-ratio, control-median or pooled-mean loss against at least one control.
+17 rows have a paired-ratio, control-median or pooled-mean loss against at least one control.
 
 All values are ns/op. Control columns show medians of round medians.
 Ratios are control/enabled: above one favors enabled. Brackets retain the minimum and maximum paired round ratios.
@@ -19,6 +19,9 @@ Loss marks distinguish paired-ratio medians below one, higher enabled control me
 | msvc/c2 | final-latin-word-prefix-end-25 | 10.953 | 11.279 | 11.319 | 0.9945 [0.9711, 1.0052] | 1.0058 [1.0035, 1.0174] | original; original; original |
 | msvc/c2 | latin-vm-end-33 | 10.902 | 9.771 | 13.608 | 1.1158 [1.0022, 1.1423] | 1.4397 [1.1088, 1.4885] | -; -; original,disabled |
 | msvc/c2 | latin-vm-end-9 | 5.206 | 5.208 | 5.544 | 0.9997 [0.9013, 1.0553] | 1.0032 [0.9720, 1.1118] | original; original; original |
+| neon/c1 | overlap-min-latin | 642.817 | 647.377 | 643.600 | 0.9930 [0.9929, 0.9962] | 0.9942 [0.9932, 0.9943] | original,disabled; original,disabled; original,disabled |
+| neon/c1 | short-latin-c1-32-miss | 28.428 | 29.646 | 28.874 | 0.9587 [0.9556, 0.9589] | 0.9740 [0.9723, 0.9757] | original,disabled; original,disabled; original,disabled |
+| neon/interpreter | immediate-latin | 351.127 | 379.873 | 426.511 | 0.9268 [0.9243, 0.9368] | 1.0899 [1.0574, 1.1963] | original; original; original |
 | serial/c1 | overlap-min-latin | 739.351 | 778.505 | 747.110 | 0.9354 [0.8493, 0.9895] | 0.9965 [0.9548, 1.1086] | original,disabled; original,disabled; original |
 | serial/c1 | short-latin-c1-32-miss | 37.244 | 39.239 | 39.085 | 0.9351 [0.9039, 1.1089] | 0.9673 [0.9485, 1.0556] | original,disabled; original,disabled; original,disabled |
 | serial/c2 | equal-latin1-4096 | 115.665 | 109.109 | 110.170 | 1.0427 [0.9967, 1.0917] | 0.9972 [0.9829, 1.0310] | disabled; -; - |

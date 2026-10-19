@@ -1,0 +1,424 @@
+#Test Results (version 2)
+#Mon Oct 19 19:49:38 UTC 2026
+#-----testdescription-----
+$file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java
+$root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg
+keywords=othervm driver
+library=/test/lib
+requires=(vm.compiler1.enabled & vm.compiler2.enabled) & ((os.arch \=\= "amd64" | os.arch \=\= "x86_64" | os.arch \=\= "aarch64"))
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:CompileCommand\=dontinline,TestStringZillaEquality\:\:probe TestStringZillaEquality\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:-UseCompactObjectHeaders -XX\:-CompactStrings -XX\:CompileCommand\=dontinline,TestStringZillaEquality\:\:probe TestStringZillaEquality\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:-UseStringZillaIntrinsics -XX\:CompileCommand\=dontinline,TestStringZillaEquality\:\:probe TestStringZillaEquality\n
+source=TestStringZillaEquality.java
+title=String equality boundaries and live values across C1/C2 intrinsics
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java
+elapsed=2290 0\:00\:02.290
+end=Mon Oct 19 19\:49\:38 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=runnervmp8q7d.ysjj5tgastrurovmykocr2kqbf.ex.internal.cloudapp.net
+javatestOS=Linux 7.0.0-1017-azure (aarch64)
+javatestVersion=6.0-ea+b24-2026-10-09-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.2.1 dev 0
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver build compile main build main build main
+start=Mon Oct 19 19\:49\:36 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaEquality.java
+testJDK=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork
+testJDK_OS=[name\:Linux,arch\:aarch64,version\:7.0.0-1017-azure,family\:linux,simple_arch\:aarch64,simple_version\:7.0,processors\:4,maxMemory\:16715337728,maxSwap\:3221221376]
+testJDK_os.arch=aarch64
+testJDK_os.name=Linux
+testJDK_os.version=7.0.0-1017-azure
+totalTime=2384
+user.name=runner
+work=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/569)----------
+JDK under test: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+   class directory: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 19:49:36.627 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Mon Oct 19 19:49:37.304 UTC 2026
+elapsed time (seconds): 0.677
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/303)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 19:49:36.628 UTC 2026
+Mode: othervm
+Process id: 50254
+finished: Mon Oct 19 19:49:37.303 UTC 2026
+elapsed time (seconds): 0.675
+----------configuration:(5/428)----------
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib
+
+----------rerun:(25/2498)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -J-Dtest.main.class=TestStringZillaEquality \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Mon Oct 19 19:49:37.304 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Mon Oct 19 19:49:37.828 UTC 2026
+elapsed time (seconds): 0.524
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/316)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 19:49:37.304 UTC 2026
+Mode: othervm
+Process id: 50282
+finished: Mon Oct 19 19:49:37.828 UTC 2026
+elapsed time (seconds): 0.524
+----------configuration:(5/428)----------
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib
+
+----------rerun:(25/2511)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -J-Dtest.main.class=TestStringZillaEquality \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(7/340)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 19:49:37.828 UTC 2026
+Mode: othervm
+Process id: 50310
+finished: Mon Oct 19 19:49:37.892 UTC 2026
+elapsed time (seconds): 0.064
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(25/2700)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.main.class=TestStringZillaEquality \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -XX:ActiveProcessorCount=2 \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaEquality.d/driver.0.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/244)----------
+command: build TestStringZillaEquality
+reason: Named class compiled on demand
+started: Mon Oct 19 19:49:37.893 UTC 2026
+Test directory:
+  compile: TestStringZillaEquality
+finished: Mon Oct 19 19:49:38.428 UTC 2026
+elapsed time (seconds): 0.535
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/337)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 19:49:37.893 UTC 2026
+Mode: othervm
+Process id: 50333
+finished: Mon Oct 19 19:49:38.428 UTC 2026
+elapsed time (seconds): 0.535
+----------configuration:(7/646)----------
+javac compilation environment
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib
+
+----------rerun:(25/2711)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -J-Dtest.main.class=TestStringZillaEquality \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -d /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -sourcepath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -classpath /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/553)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=dontinline,TestStringZillaEquality::probe TestStringZillaEquality
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=dontinline,TestStringZillaEquality::probe TestStringZillaEquality 
+started: Mon Oct 19 19:49:38.428 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 50360
+finished: Mon Oct 19 19:49:38.575 UTC 2026
+elapsed time (seconds): 0.147
+----------configuration:(0/0)----------
+----------System.out:(1/80)----------
+CompileCommand: dontinline TestStringZillaEquality.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2863)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.main.class=TestStringZillaEquality \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:CompileCommand=dontinline,TestStringZillaEquality::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaEquality.d/main.1.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaEquality
+reason: Named class compiled on demand
+started: Mon Oct 19 19:49:38.575 UTC 2026
+finished: Mon Oct 19 19:49:38.575 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/651)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompactObjectHeaders -XX:-CompactStrings -XX:CompileCommand=dontinline,TestStringZillaEquality::probe TestStringZillaEquality
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompactObjectHeaders -XX:-CompactStrings -XX:CompileCommand=dontinline,TestStringZillaEquality::probe TestStringZillaEquality 
+started: Mon Oct 19 19:49:38.575 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 50384
+finished: Mon Oct 19 19:49:38.770 UTC 2026
+elapsed time (seconds): 0.195
+----------configuration:(0/0)----------
+----------System.out:(1/80)----------
+CompileCommand: dontinline TestStringZillaEquality.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(32/2934)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.main.class=TestStringZillaEquality \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:-UseCompactObjectHeaders \\
+        -XX:-CompactStrings \\
+        -XX:CompileCommand=dontinline,TestStringZillaEquality::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaEquality.d/main.2.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/193)----------
+command: build TestStringZillaEquality
+reason: Named class compiled on demand
+started: Mon Oct 19 19:49:38.770 UTC 2026
+finished: Mon Oct 19 19:49:38.771 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/613)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaEquality::probe TestStringZillaEquality
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaEquality::probe TestStringZillaEquality 
+started: Mon Oct 19 19:49:38.771 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 50407
+finished: Mon Oct 19 19:49:38.914 UTC 2026
+elapsed time (seconds): 0.143
+----------configuration:(0/0)----------
+----------System.out:(1/80)----------
+CompileCommand: dontinline TestStringZillaEquality.probe bool dontinline = true
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(31/2904)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaEquality.java \\
+        -Dtest.main.class=TestStringZillaEquality \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaEquality.d/test/lib \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:-UseStringZillaIntrinsics \\
+        -XX:CompileCommand=dontinline,TestStringZillaEquality::probe \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaEquality.d/main.3.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

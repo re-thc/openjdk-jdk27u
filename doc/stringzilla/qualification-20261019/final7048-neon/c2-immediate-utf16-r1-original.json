@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/original/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "UTF16",
+            "length" : "128",
+            "needleLength" : "4",
+            "position" : "END"
+        },
+        "primaryMetric" : {
+            "score" : 5.505420912057586,
+            "scoreError" : 0.08037184669556383,
+            "scoreConfidence" : [
+                5.425049065362022,
+                5.58579275875315
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.490007320021575,
+                "50.0" : 5.493105242746001,
+                "90.0" : 5.53948166104543,
+                "95.0" : 5.53948166104543,
+                "99.0" : 5.53948166104543,
+                "99.9" : 5.53948166104543,
+                "99.99" : 5.53948166104543,
+                "99.999" : 5.53948166104543,
+                "99.9999" : 5.53948166104543,
+                "100.0" : 5.53948166104543
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.511560565586497,
+                    5.53948166104543,
+                    5.493105242746001,
+                    5.492949770888422,
+                    5.490007320021575
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+
