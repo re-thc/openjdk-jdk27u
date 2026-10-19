@@ -77,14 +77,23 @@ jobs:
         id: jtreg
       - uses: ./.github/actions/get-gtest
         id: gtest
+      - name: Verify exact clean source with normal Git PATH
+        shell: pwsh
+        run: |
+          $actualSource = & git -C source rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $actualSource.Trim() -ne '${{ matrix.source }}') {
+            throw 'Pinned source identity does not match'
+          }
+          $sourceChanges = @(& git -C source status --porcelain)
+          if ($LASTEXITCODE -ne 0 -or $sourceChanges.Count -ne 0) {
+            throw 'Pinned source is not clean'
+          }
       - name: Configure exact clean source
         shell: env /usr/bin/bash --login -eo pipefail {0}
         env:
           PATH: ''
         run: |
           cd source
-          test "$(git rev-parse HEAD)" = '${{ matrix.source }}'
-          test -z "$(git status --porcelain)"
           bash bin/configure-dev \
             --with-conf-name=windows-x64 \
             --with-debug-level=${{ matrix.debug }} \
