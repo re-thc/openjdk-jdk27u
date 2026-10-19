@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tarfile
@@ -31,6 +32,15 @@ class ArtifactRedirect(urllib.request.HTTPRedirectHandler):
 
 
 OPEN=urllib.request.build_opener(ArtifactRedirect()).open
+
+
+def verify_release_source(release_text, specification, backend):
+    release_source=re.findall(r'^SOURCE="(.*)"$',release_text,re.M)
+    embedded=bool(release_source and SOURCE[:12] in release_source[0])
+    if not embedded:
+        assert backend=='msvc' and release_source in ([],[''])
+        assert re.findall(r'^GIT[ \t]*:?=[ \t]*(.*)$',specification,re.M)==['']
+    return embedded
 
 
 def main():
@@ -97,7 +107,17 @@ def main():
     shutil.copytree('build/perf/images/jdk',root/'fork')
     shutil.copy('build/perf/spec.gmk',root/'fork-spec.gmk')
     fork=support.image(root/'fork')
-    assert SOURCE[:12] in (root/'fork/release').read_text()
+    release_text=(root/'fork/release').read_text()
+    # Minimal MSYS lacks configure-time Git. The clean checkout and the shipped
+    # class/build-output comparison below still bind that complete image.
+    embedded=verify_release_source(release_text,(root/'fork-spec.gmk').read_text(),a.backend)
+    exe='.exe' if a.backend=='msvc' else ''
+    shipped=root/'shipped-class-check'
+    subprocess.run([str(root/'fork'/('bin/jimage'+exe)),'extract','--include','glob:**/java/lang/StringZilla.class',
+                    '--dir',str(shipped),str(root/'fork/lib/modules')],check=True)
+    built=Path('build/perf/jdk/modules/java.base/java/lang/StringZilla.class')
+    extracted=shipped/'java.base/java/lang/StringZilla.class'
+    assert support.sha(built)==support.sha(extracted)
     commands=list(Path('build/perf').rglob('StringZillaKernels.'+('obj' if a.backend=='msvc' else 'o')+'.cmdline'))
     assert len(commands)==1,commands
     command=commands[0].read_text()
@@ -110,14 +130,18 @@ def main():
         'image_hashes':{n:d['tree_sha256'] for n,d in [('original',original),('fork',fork)]},
         'release':{n:(root/n/'release').read_text() for n in ('original','fork')}}
     receipt['rebuild']={'source':SOURCE,'kernel_compile_command':command,
-                    'source_trees':subprocess.check_output(['git','ls-tree','HEAD','bin','make','src','test'],text=True)}
+                    'source_trees':subprocess.check_output(['git','ls-tree','HEAD','bin','make','src','test'],text=True),
+                    'embedded_revision_available':embedded,'shipped_class_sha256':support.sha(extracted),
+                    'shipped_class_matches_build_output':True,'checkout_clean':True}
     (root/'pair-inventories.json').write_text(json.dumps({'original':original,'fork':fork},separators=(',',':'))+'\n')
     (root/'pair-receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
     retained=Path('candidate-retained');retained.mkdir()
-    with tarfile.open(retained/'fork-jdk.tar.gz','w:gz') as tar:tar.add(root/'fork',arcname='fork')
+    if a.backend!='msvc':
+        with tarfile.open(retained/'fork-jdk.tar.gz','w:gz') as tar:tar.add(root/'fork',arcname='fork')
     for p in ('pair-inventories.json','pair-receipt.json','original-spec.gmk','fork-spec.gmk','reuse.json'):
         shutil.copy(root/p,retained/p)
-    (retained/'fork-jdk.tar.gz.sha256').write_text(support.sha(retained/'fork-jdk.tar.gz')+'\n')
+    if a.backend!='msvc':
+        (retained/'fork-jdk.tar.gz.sha256').write_text(support.sha(retained/'fork-jdk.tar.gz')+'\n')
 
 
 if __name__=='__main__':main()

@@ -1,8 +1,8 @@
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 name: StringZilla final paired native checks
-# Run 39255767694 had two queued jobs and no executed steps. This run builds
-# the corrected shared verifier and retains the same independent originals.
+# Windows-only recovery: run 39258134598 built Windows but rejected its absent
+# embedded revision before tests/timings. That run's ARM measurements continue.
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -17,6 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   neon:
+    if: ${{ false }}
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 90
     steps:
@@ -150,10 +151,13 @@ jobs:
           import subprocess
           subprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py','seal','--backend','msvc'],check=True)
       - name: Retain complete Windows candidate before tests
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: stringzilla-paired-candidate-msvc-${{ github.sha }}
-          path: candidate-retained
+          path: |
+            candidate-retained
+            build/perf/images/jdk
           retention-days: 30
           if-no-files-found: error
       - name: Check native contracts, tiers, opt-out and forced JNI
