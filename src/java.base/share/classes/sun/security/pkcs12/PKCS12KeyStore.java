@@ -88,9 +88,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static final int DEFAULT_KEY_PBE_ITERATION_COUNT = 10000;
     private static final int DEFAULT_MAC_ITERATION_COUNT = 10000;
 
-    private static final String PBE_WITH_MD5_AND_DES_OID =
-            "1.2.840.113549.1.5.3";
-
     public static final int VERSION_3 = 3;
 
     private static final int MAX_ITERATION_COUNT = 5000000;
@@ -377,10 +374,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         byte[] keyBytes = in.getOctetString();
                         if (keyAlgo.equals(KnownOIDs.OIW_DES_CBC.stdName())) {
                             keyAlgo = "DES";
-                        } else if (keyAlgo.equals(PBE_WITH_MD5_AND_DES_OID)) {
-                            // passwords stored by keytool -importpass in
-                            // older releases; the key only holds a password
-                            keyAlgo = "PBEWithSHA1AndDESede";
                         }
                         SecretKeySpec secretKeySpec =
                                 new SecretKeySpec(keyBytes, keyAlgo);

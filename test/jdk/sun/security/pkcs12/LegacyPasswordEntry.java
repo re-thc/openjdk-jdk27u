@@ -27,18 +27,20 @@
 
 import jdk.test.lib.Asserts;
 
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Base64;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 public class LegacyPasswordEntry {
 
     // "keytool -importpass -alias pass -storepass changeit" with password
-    // "secret4u", created by a release where "PBE" meant PBEWithMD5AndDES
+    // "secret4u", created by an older release using PBEWithMD5AndDES
     private static final String LEGACY = String.join("",
             "MIIBeQIBAzCCASMGCSqGSIb3DQEHAaCCARQEggEQMIIBDDCCAQgGCSqGSIb3DQEH",
             "AaCB+gSB9zCB9DCB8QYLKoZIhvcNAQwKAQWggaMwgaAGCyqGSIb3DQEMCgECoIGQ",
@@ -52,13 +54,20 @@ public class LegacyPasswordEntry {
     private static final char[] STOREPASS = "changeit".toCharArray();
 
     public static void main(String[] args) throws Exception {
+        Provider provider = Security.getProvider("SunJCE");
+        Asserts.assertEQ(provider.getService("SecretKeyFactory", "PBE").getAlgorithm(),
+                "PBEWithMD5AndDES");
+        Asserts.assertNull(provider.getService("Cipher", "PBE"));
+        Asserts.assertNull(provider.getService("AlgorithmParameters", "PBE"));
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(
                 Base64.getDecoder().decode(LEGACY)), STOREPASS);
+        Asserts.assertEQ(ks.getKey("pass", STOREPASS).getAlgorithm(), "PBEWithMD5AndDES");
         Asserts.assertEQ(password(ks.getKey("pass", STOREPASS)), "secret4u");
 
         SecretKey key = SecretKeyFactory.getInstance("PBE")
                 .generateSecret(new PBEKeySpec("newpass".toCharArray()));
+        Asserts.assertEQ(key.getAlgorithm(), "PBEWithMD5AndDES");
         ks.setEntry("new", new KeyStore.SecretKeyEntry(key),
                 new KeyStore.PasswordProtection(STOREPASS));
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -67,6 +76,8 @@ public class LegacyPasswordEntry {
         KeyStore ks2 = KeyStore.getInstance("PKCS12");
         ks2.load(new ByteArrayInputStream(bout.toByteArray()), STOREPASS);
         Asserts.assertEQ(password(ks2.getKey("pass", STOREPASS)), "secret4u");
+        Asserts.assertEQ(ks2.getKey("pass", STOREPASS).getAlgorithm(), "PBEWithMD5AndDES");
+        Asserts.assertEQ(ks2.getKey("new", STOREPASS).getAlgorithm(), "PBEWithMD5AndDES");
         Asserts.assertEQ(password(ks2.getKey("new", STOREPASS)), "newpass");
     }
 

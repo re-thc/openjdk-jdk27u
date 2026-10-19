@@ -58,7 +58,8 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
 
     static {
         validTypes = new HashSet<String>(
-                Set.of("PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH),
+                Set.of("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH),
+                "PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA1AndAES_128".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA224AndAES_128".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA256AndAES_128".toUpperCase(Locale.ENGLISH),
@@ -73,6 +74,12 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
                 "PBEWithHmacSHA512AndAES_256".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA512/224AndAES_256".toUpperCase(Locale.ENGLISH),
                 "PBEWithHmacSHA512/256AndAES_256".toUpperCase(Locale.ENGLISH)));
+    }
+
+    public static final class PBEWithMD5AndDES extends PBEKeyFactory {
+        public PBEWithMD5AndDES() {
+            super("PBEWithMD5AndDES");
+        }
     }
 
     public static final class PBEWithSHA1AndDESede extends PBEKeyFactory {

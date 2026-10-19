@@ -517,10 +517,13 @@ public final class SunJCE extends Provider {
         psA("SecretKeyFactory", "DESede",
                 "com.sun.crypto.provider.DESedeKeyFactory", null);
 
+        // Preserve password-key identities used by keytool and PKCS12.
+        psA("SecretKeyFactory", "PBEWithMD5AndDES",
+                "com.sun.crypto.provider.PBEKeyFactory$PBEWithMD5AndDES", null);
+
         psA("SecretKeyFactory", "PBEWithSHA1AndDESede",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithSHA1AndDESede",
                 null);
-
 
         ps("SecretKeyFactory", "PBEWithHmacSHA1AndAES_128",
                 "com.sun.crypto.provider.PBEKeyFactory$PBEWithHmacSHA1AndAES_128");

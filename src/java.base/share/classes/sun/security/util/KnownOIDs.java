@@ -204,6 +204,7 @@ public enum KnownOIDs {
     DiffieHellman("1.2.840.113549.1.3.1", "DiffieHellman", "DH"),
 
     // PKCS5 1.2.840.113549.1.5.*
+    PBEWithMD5AndDES("1.2.840.113549.1.5.3"),
     PBKDF2("1.2.840.113549.1.5.12", "PBKDF2WithHmacSHA1"),
     PBES2("1.2.840.113549.1.5.13"),
     PBMAC1("1.2.840.113549.1.5.14"),
