@@ -2368,6 +2368,26 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   return iff;
 }
 
+// Compare array bounds without changing the casts that carry their control dependencies.
+// Restrict this to identical array lengths and offsets; in particular, do not infer any
+// relationship between different arrays or between different arithmetic expressions.
+static bool same_array_bound(Node* bound, Node* other) {
+  if (bound->Opcode() != Op_AddI || other->Opcode() != Op_AddI ||
+      bound->in(2)->Opcode() != Op_ConI || bound->in(2) != other->in(2)) {
+    return false;
+  }
+  bound = bound->in(1);
+  other = other->in(1);
+  // Bound the work even for unusually long cast chains.
+  for (int i = 0; i < 8 && bound->is_CastII(); i++) {
+    bound = bound->in(1);
+  }
+  for (int i = 0; i < 8 && other->is_CastII(); i++) {
+    other = other->in(1);
+  }
+  return bound->Opcode() == Op_LoadRange && bound == other;
+}
+
 Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* res = Ideal_common(phase, can_reshape);
   if (res != NodeSentinel) {
@@ -2375,6 +2395,44 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   PhaseIterGVN *igvn = phase->is_IterGVN();
+
+  // An explicit unsigned bounds test can precede an intrinsic range check whose
+  // bound differs only by CastII dependencies (e.g. length - (vector_length - 1)).
+  // Recognize the duplicate here, rather than removing casts during value numbering.
+  Node* bol = in(1);
+  if (bol->is_Bool() && bol->in(1)->Opcode() == Op_CmpU &&
+      bol->in(1)->in(2)->Opcode() == Op_AddI) {
+    Node* cmp = bol->in(1);
+    Node* prev = this;
+    Node* dom = in(0);
+    for (int dist = 0; dist < 16 && dom != nullptr && dom != this; dist++) {
+      // Only search a short, linear control chain. Do not cross loop headers or merges.
+      if (dom->is_Region()) {
+        break;
+      }
+      if ((dom->Opcode() == Op_If || dom->Opcode() == Op_RangeCheck) &&
+          prev->is_IfProj() && prev->in(0) == dom && dom->in(1)->is_Bool()) {
+        Node* dom_bol = dom->in(1);
+        Node* dom_cmp = dom_bol->in(1);
+        if (dom_bol->as_Bool()->_test._test == bol->as_Bool()->_test._test &&
+            dom_cmp->Opcode() == Op_CmpU && dom_cmp->in(1) == cmp->in(1) &&
+            same_array_bound(cmp->in(2), dom_cmp->in(2))) {
+          bool outcome = prev->Opcode() == Op_IfTrue;
+          // A cast may depend on a guard between dom and this check. Moreover, an
+          // unsigned test against length - k alone does not establish length >= k.
+          // Pin before changing the test: depends_only_on_test() is dynamic. The
+          // constant If cleanup then retains the original immediate control for all
+          // surviving users, including loads, rather than hoisting them to dom.
+          proj_out(outcome)->as_IfProj()->pin_dependent_nodes(igvn);
+          igvn->replace_input_of(this, 1, igvn->intcon(outcome));
+          return this;
+        }
+      }
+      prev = dom;
+      dom = up_one_dom(dom, true);
+    }
+  }
+
   // Setup to scan up the CFG looking for a dominating test
   Node* prev_dom = this;
 
