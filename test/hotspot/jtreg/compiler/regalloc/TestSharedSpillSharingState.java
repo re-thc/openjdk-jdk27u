@@ -43,6 +43,11 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestSharedSpillSharingState {
     public static void main(String[] args) throws Exception {
+        check("-XX:-UseFPUForSpilling");
+        check("-XX:+UseFPUForSpilling");
+    }
+
+    static void check(String spilling) throws Exception {
         OutputAnalyzer output = ProcessTools.executeTestJava(
             "-Xbootclasspath/a:.", "-Xbatch", "-Xshare:off",
             "-XX:-UseOnStackReplacement", "-XX:+UnlockDiagnosticVMOptions",
@@ -50,7 +55,7 @@ public class TestSharedSpillSharingState {
             "-XX:+VerifyRegisterAllocator", "-XX:+VerifyOops",
             "-XX:+VerifyBeforeGC", "-XX:+VerifyAfterGC",
             "-XX:-OmitStackTraceInFastThrow", "-XX:+UseBMI2Instructions",
-            "-XX:+UseFPUForSpilling",
+            spilling,
             "-XX:CompileCommand=compileonly,TestSharedSpillSharingState$Worker::kernel",
             "-XX:CompileCommand=dontinline,TestSharedSpillSharingState$Worker::barrier",
             "-XX:CompileCommand=TraceSpilling,TestSharedSpillSharingState$Worker::kernel",
@@ -75,7 +80,8 @@ public class TestSharedSpillSharingState {
             checks++;
         }
         if (checks != 60) throw new AssertionError("Missing exercised compilations: " + checks);
-        System.out.println("Activation-backed C2 state checks=" + checks + " compilation IDs=" + activated);
+        System.out.println("Activation-backed C2 state checks=" + checks + " " + spilling
+                + " compilation IDs=" + activated);
     }
 
     public static class Worker {
