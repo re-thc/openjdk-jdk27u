@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.*;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.util.*;
 
 
@@ -161,18 +162,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
     protected void decodeParams() throws IOException {
         String algidName = getName();
         try {
-            algParams = AlgorithmParameters.getInstance(algidName);
+            algParams = SharedSecrets.getJavaSecurityAlgorithmParametersAccess()
+                    .getInstanceOrNull(algidName);
         } catch (NoSuchAlgorithmException e) {
-            /*
-             * This algorithm parameter type is not supported, so we cannot
-             * parse the parameters.
-             */
+            // An advertised service could not be constructed.
             algParams = null;
             return;
         }
 
         // Decode (parse) the parameters
-        algParams.init(encodedParams.clone());
+        if (algParams != null) {
+            algParams.init(encodedParams.clone());
+        }
     }
 
     /**
