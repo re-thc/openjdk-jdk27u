@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,29 +295,32 @@ class ResourceBundleGenerator implements BundleGenerator {
 
             if (CLDRConverter.isBaseModule) {
                 out.printf("""
-                        private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
                         private static final Map<String, String> languageAliasMap = HashMap.newHashMap(%d);
                         static final boolean nonlikelyScript = %s; // package access from CLDRLocaleProviderAdapter
 
-                        static {
+                        // Common parent results are cached by CLDRLocaleProviderAdapter.
+                        private static class ParentLocalesHolder {
+                            private static final Map<Locale, String[]> parentLocalesMap = HashMap.newHashMap(%d);
+
+                            static {
                     """.formatted(
-                        metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count(),
                         CLDRConverter.handlerSupplMeta.getLanguageAliasData().size(),
-                        Boolean.valueOf(CLDRConverter.nonlikelyScript)));
+                        Boolean.valueOf(CLDRConverter.nonlikelyScript),
+                        metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count()));
 
                 for (String key : metaInfo.keySet()) {
                     if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
                         String parentTag = key.substring(CLDRConverter.PARENT_LOCALE_PREFIX.length());
                         if ("root".equals(parentTag)) {
-                            out.printf("        parentLocalesMap.put(Locale.ROOT,\n");
+                            out.printf("            parentLocalesMap.put(Locale.ROOT,\n");
                         } else {
-                            out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
+                            out.printf("            parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
                                     CLDRConverter.escape(parentTag));
                         }
                         generateStringArray(metaInfo.get(key), out);
                     }
                 }
-                out.println();
+                out.printf("        }%n    }%n%n    static {%n");
 
                 // for languageAliasMap
                 CLDRConverter.handlerSupplMeta.getLanguageAliasData().forEach((key, value) -> {
@@ -328,13 +332,11 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                 // Delayed initialization section
                 out.printf("""
-                               private static class CLDRMapHolder {
+                               private static class TZCanonicalIDHolder {
                                    private static final Map<String, String> tzCanonicalIDMap = HashMap.newHashMap(%d);
-                                   private static final Map<String, String> likelyScriptMap = HashMap.newHashMap(%d);
 
                                    static {
-                           """, CLDRConverter.handlerTimeZone.getData().size(),
-                                metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)).count());
+                           """, CLDRConverter.handlerTimeZone.getData().size());
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {
                         String[] ids = ((String)e.getValue()).split("\\s");
@@ -345,7 +347,13 @@ class ResourceBundleGenerator implements BundleGenerator {
                                 CLDRConverter.escape(ids[0]));
                         }
                     });
-                out.println();
+                out.printf("        }%n    }%n%n");
+                out.printf("""
+                        private static class LikelyScriptHolder {
+                            private static final Map<String, String> likelyScriptMap = HashMap.newHashMap(%d);
+
+                            static {
+                    """, metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.LIKELY_SCRIPT_PREFIX)).count());
 
                 // for likelyScript map
                 for (String key : metaInfo.keySet()) {
@@ -384,16 +392,16 @@ class ResourceBundleGenerator implements BundleGenerator {
 
                     @Override
                     public Map<String, String> tzCanonicalIDs() {
-                        return CLDRMapHolder.tzCanonicalIDMap;
+                        return TZCanonicalIDHolder.tzCanonicalIDMap;
                     }
 
                     public Map<Locale, String[]> parentLocales() {
-                        return parentLocalesMap;
+                        return ParentLocalesHolder.parentLocalesMap;
                     }
 
                     // package access from CLDRLocaleProviderAdapter
                     Map<String, String> likelyScriptMap() {
-                        return CLDRMapHolder.likelyScriptMap;
+                        return LikelyScriptHolder.likelyScriptMap;
                     }
                 """);
             }
@@ -404,19 +412,19 @@ class ResourceBundleGenerator implements BundleGenerator {
     private static void generateStringArray(SortedSet<String> set, PrintWriter out) throws IOException {
         String[] children = toLocaleList(set, true).split(" ");
         Arrays.sort(children);
-        out.printf("            new String[] {\n" +
-                "                ");
+        out.printf("                new String[] {\n" +
+                "                    ");
         int count = 0;
         for (int i = 0; i < children.length; i++) {
             String child = children[i];
             out.printf("\"%s\", ", CLDRConverter.escape(child));
             count += child.length() + 4;
             if (i != children.length - 1 && count > 64) {
-                out.printf("\n                ");
+                out.printf("\n                    ");
                 count = 0;
             }
         }
-        out.printf("\n            });\n");
+        out.printf("\n                });\n");
     }
 
     private static final Locale.Builder LOCALE_BUILDER = new Locale.Builder();

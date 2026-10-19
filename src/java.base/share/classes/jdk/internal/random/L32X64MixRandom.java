@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,10 +105,17 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
 
     /* ---------------- static fields ---------------- */
 
+    static {
+        // Preserve the secureRandomSeed property snapshot at class initialization.
+        RandomSupport.ensureInitialized();
+    }
+
     /**
      * The seed generator for default constructors.
      */
-    private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
+    private static class DefaultGenHolder {
+        static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
+    }
 
     /*
      * Multiplier used in the LCG portion of the algorithm.
@@ -191,7 +199,7 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
      */
     public L32X64MixRandom() {
         // Using GOLDEN_RATIO_64 here gives us a good Weyl sequence of values.
-        this(defaultGen.getAndAdd(RandomSupport.GOLDEN_RATIO_64));
+        this(DefaultGenHolder.defaultGen.getAndAdd(RandomSupport.GOLDEN_RATIO_64));
     }
 
     /**
