@@ -45,6 +45,8 @@ runs:
       with:
         name: bundles-jtreg-${{ steps.version.outputs.value }}
         path: jtreg/installed
+        github-token: ${{ github.token }}
+        run-id: 39169278668
 
     - name: 'Export path to where JTReg is installed'
       id: path-name

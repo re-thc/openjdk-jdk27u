@@ -30,6 +30,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: pr51-windows-${{ github.ref }}
@@ -40,14 +41,7 @@ env:
   CHERE_INVOKING: 1
 
 jobs:
-  prepare:
-    runs-on: ubuntu-26.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ./.github/actions/build-jtreg
-
   build:
-    needs: prepare
     runs-on: windows-2025
     timeout-minutes: 120
     strategy:
@@ -142,7 +136,7 @@ jobs:
           compression-level: 1
 
   probe:
-    needs: [prepare, build]
+    needs: build
     runs-on: windows-2025
     timeout-minutes: 90
     steps:
