@@ -32,9 +32,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 
 import jdk.internal.util.StaticProperty;
 
@@ -75,7 +75,7 @@ public final class SunEntries {
     public static final String DEF_SECURE_RANDOM_ALGO;
 
     SunEntries(Provider p) {
-        services = new LinkedHashSet<>(50, 0.9f);
+        services = new ArrayList<>(50);
 
         // start populating content using the specified provider
 
@@ -251,7 +251,7 @@ public final class SunEntries {
             getAliases(algo), attrs));
     }
 
-    private final LinkedHashSet<Provider.Service> services;
+    private final ArrayList<Provider.Service> services;
 
     // name of the *System* property, takes precedence over PROP_RNDSOURCE
     private static final String PROP_EGD = "java.security.egd";

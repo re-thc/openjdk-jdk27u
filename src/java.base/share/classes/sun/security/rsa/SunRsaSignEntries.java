@@ -48,10 +48,9 @@ public final class SunRsaSignEntries {
              getAliases(algo), attrs));
     }
 
-    // extend LinkedHashSet for consistency with SunEntries
-    // used by sun.security.provider.VerificationProvider
+    // Also used by sun.security.provider.VerificationProvider.
     public SunRsaSignEntries(Provider p) {
-        services = new LinkedHashSet<>(20, 0.9f);
+        services = new ArrayList<>(20);
 
         // start populating content using the specified provider
         // common attribute map
@@ -103,5 +102,5 @@ public final class SunRsaSignEntries {
         return services.iterator();
     }
 
-    private final LinkedHashSet<Provider.Service> services;
+    private final ArrayList<Provider.Service> services;
 }
