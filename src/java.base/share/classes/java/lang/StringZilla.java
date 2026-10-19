@@ -81,8 +81,13 @@ final class StringZilla {
     static int mismatchReverseC2(byte[] src, long offset, byte[] tgt, int length, boolean wideSuffix) {
         int suffix = wideSuffix ? 2 * Long.BYTES : Long.BYTES;
         int prefix = length - suffix;
-        Objects.checkFromIndexSize(offset, length, src.length);
-        Objects.checkFromIndexSize(prefix, suffix, tgt.length);
+        // Keep valid bounds inline even when C2 has not profiled the JDK helpers.
+        if (length < 0 || offset < 0 || offset > (long)src.length - length) {
+            Objects.checkFromIndexSize(offset, length, src.length);
+        }
+        if (prefix < 0 || length > tgt.length) {
+            Objects.checkFromIndexSize(prefix, suffix, tgt.length);
+        }
         Unsafe unsafe = Unsafe.getUnsafe();
         long base = Unsafe.ARRAY_BYTE_BASE_OFFSET;
         for (int index = length - Long.BYTES; index >= prefix; index -= Long.BYTES) {
@@ -94,6 +99,21 @@ final class StringZilla {
                         : Long.numberOfLeadingZeros(difference);
                 return index + Long.BYTES - 1 - (equalBits >> 3);
             }
+        }
+        if (prefix <= 2 * Long.BYTES) {
+            // These word windows overlap the suffix already proven equal.
+            // Every load remains within the checked complete needle range.
+            for (int index = 0; index < prefix; index += Long.BYTES) {
+                long difference = unsafe.getLongUnaligned(src, base + offset + index)
+                        ^ unsafe.getLongUnaligned(tgt, base + index);
+                if (difference != 0) {
+                    int equalBits = unsafe.isBigEndian()
+                            ? Long.numberOfLeadingZeros(difference)
+                            : Long.numberOfTrailingZeros(difference);
+                    return index + (equalBits >> 3);
+                }
+            }
+            return -1;
         }
         return ArraysSupport.mismatch(src, (int)offset, tgt, 0, prefix);
     }

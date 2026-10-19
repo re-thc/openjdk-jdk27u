@@ -346,7 +346,7 @@ public class TestStringZillaDispatch {
     private static void checkReverseSuffixes(Method search) throws Exception {
         for (int base : new int[]{'a', 0x0401}) {
             String unit = String.valueOf((char)base);
-            for (int count : new int[]{4, 9, 16, 31, 32, 64, 128, 129, 256, 257, 512}) {
+            for (int count : new int[]{4, 9, 12, 13, 15, 16, 17, 24, 25, 31, 32, 33, 64, 128, 129, 256, 257, 512}) {
                 String repeated = unit.repeat(count);
                 for (int change : base > 0xff ? new int[]{1, 0x100} : new int[]{1}) {
                     for (int distance = 1; distance <= Math.min(count, 17); distance++) {

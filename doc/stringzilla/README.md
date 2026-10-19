@@ -74,8 +74,9 @@ dispatch; interpreted UTF-16 uses bounded native equality. C1 UTF-16 prefixes
 below 128 code units use the original Java loop without this probe. Long Latin-1 needles
 with at most two candidates reject impossible two-byte tails first. Serial C2
 Latin-1 also probes widths 9 through 128 with checked unaligned word loads:
-an eight-byte suffix below width 32 and a sixteen-byte suffix otherwise,
-followed by the existing JDK prefix-mismatch intrinsic. Failed bulk probes
+an eight-byte suffix below width 32 and a sixteen-byte suffix otherwise.
+Prefixes through sixteen bytes use bounded overlapping word comparisons;
+larger prefixes use the existing JDK mismatch intrinsic. Failed bulk probes
 resume Java for widths below 32 and late suffix mismatches: bytes five through
 eight from the end on GCC/Clang, or the right half before the final four bytes
 on MSVC. Other eligible bulk searches retain StringZilla.
