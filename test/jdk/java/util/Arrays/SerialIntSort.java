@@ -20,13 +20,16 @@
 /*
  * @test
  * @summary Check serial int sorting and its Java fallback against an independent radix oracle
+ * @modules java.base/java.util:open
  * @run main/othervm SerialIntSort
+ * @run main/othervm -Djdk.util.Arrays.useWholeIntSort=false SerialIntSort disabled
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition SerialIntSort
  * @run main/othervm -XX:TieredStopAtLevel=1 SerialIntSort
  */
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Properties;
 
 public class SerialIntSort {
     private static final String[] PATTERNS = {
@@ -34,7 +37,32 @@ public class SerialIntSort {
         "organpipe", "sawtooth", "alternating", "prefix", "extremes", "killer"
     };
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        // Sorting must not consult application-controlled Properties instances.
+        Properties properties = System.getProperties();
+        try {
+            System.setProperties(new Properties(properties) {
+                @Override
+                public String getProperty(String key) {
+                    if (key.equals("jdk.util.Arrays.useWholeIntSort")) {
+                        throw new AssertionError("Application property lookup during sorting");
+                    }
+                    return super.getProperty(key);
+                }
+            });
+            int[] a = create(4097, "random", 0);
+            int[] expected = radix(a);
+            Arrays.sort(a);
+            if (!Arrays.equals(a, expected)) throw new AssertionError("property isolation");
+        } finally {
+            System.setProperties(properties);
+        }
+        if (args.length > 0 && args[0].equals("disabled")) {
+            var field = Class.forName("java.util.DualPivotQuicksort$WholeIntSortConfig")
+                    .getDeclaredField("ENABLED");
+            field.setAccessible(true);
+            if (field.getBoolean(null)) throw new AssertionError("startup opt-out ignored");
+        }
         if (args.length == 0 || !args[0].equals("cold")) {
             int[] seed = create(4097, "random", 0), work = seed.clone();
             for (int i = 0; i < 20000; i++) {
@@ -42,7 +70,7 @@ public class SerialIntSort {
                 Arrays.sort(work);
             }
         }
-        int[] sizes = {0, 1, 2, 43, 44, 65, 512, 4095, 4096, 4097, 65536,
+        int[] sizes = {0, 1, 2, 43, 44, 65, 512, 4095, 4096, 4097, 65535, 65536, 65537,
                        (1 << 20) - 1, 1 << 20, (1 << 20) + 1};
         int checks = 0;
         for (int size : sizes) {
