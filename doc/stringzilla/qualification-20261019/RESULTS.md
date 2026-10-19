@@ -8,7 +8,7 @@ Final measurements complete all 98 planned triplets on serial, AVX2, AVX-512,
 NEON and MSVC, with all seventeen loss-table rows retained. Fourteen local,
 thirteen Windows and ten ARM targeted test descriptions pass. Both native jobs
 finish successfully. Retain the corrected implementation and its documented
-tradeoffs; keep PR4 in draft until the existing ordinary exact-head CI finishes.
+tradeoffs; keep PR4 in draft until the existing ordinary PR integration CI finishes.
 Preceding measurements retain their original revisions.
 
 ## Implementation and correctness
@@ -204,9 +204,14 @@ difference to the flag.
 
 The [native follow-on](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39281225979)
 pins product `7048d6f2` from evidence producer `3b318ed7`. It has exactly two
-bounded native jobs. The [ordinary exact-head CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39280914015)
-also records `7048d6f2`. Neither preceding green builds nor queued jobs are
-counted as successful checks of this head. No duplicate jobs are dispatched.
+bounded native jobs. The [ordinary PR CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39280914015)
+was triggered for the same head and checks GitHub's merge `7223ef03` with fork
+master `70c91df3`. Its completed build log confirms that checkout. The
+[source binding](ci7048-source-provenance.json) lists eleven additional files
+from other merged PRs; no StringZilla file differs. This is merge-integration
+qualification, separate from the exact `7048d6f2` complete-image measurements.
+Neither preceding green builds nor queued jobs are counted as successful
+checks. No duplicate jobs are dispatched.
 
 The checked [scope receipt](scope7048.json) has no missing cases. The
 [terminal native run](native7048-final-run.json) and
@@ -220,9 +225,9 @@ The shipped current Windows and ARM `StringLatin1` instruction listings match
 the measured Linux image, including the final range guard. No duplicate native
 run or additional performance campaign is needed.
 
-Ordinary CI's Prepare job passes. Its four Linux build jobs are now queued; a
-passing Prepare stage is not a passing build or test suite. Those existing
-jobs remain the only unfinished qualification gate.
+Ordinary CI's Prepare and both x64 builds pass. ARM release is compiling,
+ARM debug awaits a runner, and the twelve x64 tier1 jobs are queued. Those
+existing jobs remain the only unfinished qualification gate.
 
 ## Decision
 
@@ -235,7 +240,7 @@ adoption for this fork with the known costs documented; they do not establish a
 universal application speedup. No zero-loss gate or new tuning campaign is used.
 
 **PR4 remains draft and is not ready to merge.** The concrete remaining blocker
-is completion and review of the existing ordinary exact-head CI. Native
+is completion and review of the existing ordinary PR integration CI. Native
 correctness and all planned comparisons have completed. A green preceding
 revision does not satisfy the remaining requirement, and a future green stage
 must be assessed with the retained losses rather than replacing that assessment.
