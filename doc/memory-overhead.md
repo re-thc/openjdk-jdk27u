@@ -1,145 +1,75 @@
-# Reduce JVM memory overhead
+# Reduce JVM allocation and retention overhead
 
-This source integration combines small allocation/lifetime repairs. It does not
-change heap defaults, metadata formats, cache eviction, collector selection or
-public APIs. Performance qualification is a separate outstanding check; the
-optional NIO scheduling observer lives on `review/nio-cache-lifetime` and is not
-part of this integration.
+This integration repairs allocation sizes, resource lifetimes and temporary
+buffer ownership, reclaims dead code earlier, and shares privately owned locale
+symbol arrays. It does not change heap defaults, the fork's object-header mode,
+collector selection or public APIs.
 
-## Changes and evidence
+## Components
 
-| Change | Benefit | Evidence and limits |
+| Component | Mechanism and evidence boundary |
+| --- | --- |
+| Code-cache reclamation | Finish Serial/G1 marking before unloading so freshly not-entrant methods can be reclaimed one GC earlier. The current fixed dead/live-method diagnostic observes earlier reuse and 49,152 bytes of paired code-heap used-capacity difference. Commit/reservation do not fall. Parallel source is imported but excluded by this fork's normal profile; ZGC is an unchanged control. |
+| ParkEvent | Preserve immortal recycling and `mtInternal` while removing the obsolete 256-byte allocation padding/alignment. Current native layout is 160 bytes/alignment 8; NMT requests fall from 416 to 160 bytes per new event. The fixed 64-to-192 platform-thread high-water diagnostic observes 65,536 fewer requested bytes; same-high-water reuse adds no events. This is not a per-virtual-thread or OS-returned-memory claim. |
+| NIO temporary buffers | Pin carrier-local cache accesses and free the buffer replaced for stricter alignment. Current complete-image diagnostics exercise all 32 misaligned replacements, reconcile 2,224,128 retained requested bytes on baseline and zero on candidate after worker exit, and validate disabled-cache/threshold controls. Scalar/scatter-gather platform and virtual-thread semantics are tested separately. |
+| C2 interface scratch | Scope union/intersection result lists with ResourceMark. `TypeInterfaces::make` copies members to the independent type arena before hash-consing. Release/fastdebug WhiteBox cases require level-4 compilations and correct shared/disjoint/null/array-merge results. No measured helper peak-byte or C2 sanitizer claim is made. |
+| C-heap metadata Array | Convert words to bytes once instead of multiplying by BytesPerWord twice. The common native regression records actual requests for twelve type/length cases: candidate requests one-eighth of baseline on this LP64 build, while preserving tag, zeroing and access. Its current production use is AOT training dependency snapshots, not generic heap arrays. |
+| DateFormatSymbols | Share six arrays owned by private locale templates; retain defensive public copies and conservative subclass/deserialization handling. Trusted clones copy immutable private snapshots without the source monitor; serialization invalidates snapshots and detaches arrays before stream callbacks. Current probes include snapshot storage and the eight-byte ZGC instance increase; runtime/contention and serialization costs are measured separately. |
+
+These mechanisms have different units and lifetimes. Their requested native
+bytes, reachable Java-array bytes and code-heap used capacity must not be added
+together as an RSS/PSS improvement. See the [current validation record](memory-overhead-validation.md)
+for exact source/image identities, collector-dependent layouts, costs, controls
+and limitations.
+
+## Provenance
+
+Logical donor commits and authorship/legal headers are preserved. The local
+integration originally forked master at `89885a6288e7aaabd01678a704a586272c0f96e3`;
+current testing uses a candidate containing the chosen newer baseline.
+
+| Work | Imported source | Author |
 | --- | --- | --- |
-| Earlier nmethod reclamation | Reusable code-cache used capacity becomes available one GC earlier for Serial, Parallel and G1 | Historical matched Linux x64 release diagnostics: all 18 pairs reclaim 64 dead methods/49,152 code-heap bytes at the first GC and reuse 64 addresses; live controls remain. Commit/reservation stay 8 MiB/32 MiB. No uncommit or RSS claim. |
-| Remove obsolete ParkEvent 256-byte alignment |256 fewer requested bytes per newly materialized event,512 per additional high-water platform JavaThread | Historical NMT detail:416 → 160 bytes/event;64 → 192 workers saves 65,536 requested bytes. Immortal recycling and this fork's `mtInternal` allocation tag are retained. Not per virtual thread or OS-returned memory. |
-| Repair NIO temporary-buffer replacement and carrier cache access | Do not lose the allocation replaced for stricter alignment; pin carrier-local accesses | Historical complete-three-class Java overlay, identical native image and fixture classes: 32 misaligned replacements retain 2,224,128 requested bytes on baseline and zero on candidate after worker exit. Cache-disabled and threshold controls plus platform/virtual scalar/scatter-gather checks passed. No throughput/RSS claim. |
-| Scope C2 interface-set GrowableArray scratch | Release temporary result-list storage at the end of each union/intersection, rather than later in the compilation | Two upstream ResourceMarks. `TypeInterfaces::make` copies the members into the independent type arena before hash-consing. The integration builds and the WhiteBox C2 semantic regression passes. Helper-entry coverage, peak-byte and speed results remain unmeasured. This does not claim compiler ResourceAreas persist across compilations. |
-| Fix metadata Array C-heap word/byte conversion | Allocate the required byte size once, instead of multiplying by BytesPerWord twice | Source proof: if required size is B bytes, old allocation requestsB×BytesPerWord; fixed requestsB. Thus87.5% fewer requested bytes for this particular allocation on LP64, 75% on 32-bit. Not a measured process saving. Current production caller is `TrainingData::DepList<T>::prepare`, so the effect is limited to AOT training dependency-list snapshots. |
+| JDK-8387742, earlier nmethod reclamation | `3e2366e7f5d29be03c8d5ddb4f62e5e1f7185550` | Albert Mingkun Yang |
+| JDK-8388169, concurrent-mark test follow-up | `433cfb96238a2f554295e3630336c61f070d2244` | Albert Mingkun Yang |
+| JDK-8393648, ParkEvent alignment | reviewed PR33344 source `99f94aaa8faad75bbf26f5cdab0b8b50974c639c` | Fredrik Bredberg |
+| JDK-8392951, carrier cache access | `46d5c4cde130da57ace0f12aededc6f4b18bf06f` | Alan Bateman |
+| JDK-8391643, interface-set ResourceMarks | `df031428ec274f6abcc0fc76e5b7e02c85b74163` | Quan Anh Mai |
+| Metadata Array conversion and native regression | local `3bedfa3519ed67306892af89fa4b0017c416f174` and follow-ups | Harry Chan |
+| DateFormatSymbols sharing/serialization | clean component `df0eeea79e4b568ed16051974d66485421ea5dd9`, imported separately as `34e34b7a31c233a19988228ddde5b89b4275a1b2` | Harry Chan |
 
-Historical native baseline/candidate source identities are
-`758f41576fc79d35a62a3896dbe5ab97c448c436` and
-`8574ec20e1e16eb3cee240ac2ee764bb522d5049`. NIO overlays were isolated on the
-latter native image. GCC/G++ 16.2.0, boot/fixture JDK 27+35-2325, resulting JDK
-27.0.2-internal-memory-qualification, Make 4.4.1, Linux x64/Xeon Platinum 8573C,
-four-CPU quota and fixed 0–3 affinity were used. Those image identities are not
-rewritten to this new integration. The historical core candidate passed 18 selected
-jtreg IDs; NIO passed a fresh default pair plus 16 cases, including four jtreg runs.
-The integration at source 770f5cd0ef89bceae11a5f66c014815bfa3b4b73 now builds and passes 13 focused jtreg IDs on Linux x64 release; see `memory-overhead-validation.md`. The two focused gtests now pass, and a separately compiled old-header Array control fails exactly the twelve requested-size assertions. Historical requested-byte measurements remain historical, rather than being relabeled as measurements of this image.
+The ParkEvent import adapted a reviewed, then-unintegrated upstream PR; it was
+not an already-integrated ancestor at import time. Its size-only allocation
+override intentionally retains this fork's `mtInternal` tag. Immortal deletion
+and recycling are unchanged. Test adaptations omit unsupported Shenandoah and
+StressVerifyMeetJoin coverage; supported WhiteBox semantics do not imply those
+stress modes were exercised.
 
-No RSS/PSS, startup, representative throughput or pause-tail improvement is
-established. Original balanced timing controls were noisy; some slower point
-estimates and worse G1 young-pause tails remain in the evidence. They are not a
-pass and cannot be attributed conclusively to a change. Material open risks are
-NIO carrier pin/unpin overhead and contention, ParkEvent cache-line placement,
-earlier code coldness/unloading/recompilation behavior, C2 scratch lifetime and
-rollback cost, and AOT snapshot correctness with the smaller native allocation.
-The requested universal/no-more-than-minor speed-regression bound is unresolved.
-The [native combined decision protocol](memory-overhead-native-decision.md)
-defines a separate, not-yet-authorized Linux ARM64/macOS benefit-and-cost
-attempt using matched normal images, supported collectors and fixed controls.
+## Build, test and compare
 
-## Provenance and integration review
+Use the ordinary repository [build](building.md) and [test](testing.md)
+instructions and normal installed/managed dependencies. No private image,
+Library packet, host report or binary handoff is needed. The [comparison guide](memory-overhead-native-decision.md)
+explains matched full images, native receipts, carrier/ownership checks,
+attributable memory diagnostics and practical interleaved costs.
 
-Base: fork master `89885a6288e7aaabd01678a704a586272c0f96e3`.
-Refreshed rolling upstream: `93376e455d8d321648994c9f91ea1c7cc55c513a`.
-All five donors below are ancestors of that upstream snapshot.
+Run exact Array/ParkEvent `_vm` selections with NMT enabled and XML receipts.
+The Array size-only negative control must be compiled against the baseline
+inline allocator; swapping only libjvm does not reproduce it. Empty/skipped
+selections are not passes. Record actual AOT record/create/replay actions with
+training-data verification. Candidate-only early-reclamation and array-sharing
+assertions must not be imposed on the unmodified baseline.
 
-| Work | Integrated donor | Author |
-| --- | --- | --- |
-| JDK-8387742 | `3e2366e7f5d29be03c8d5ddb4f62e5e1f7185550` | Albert Mingkun Yang |
-| JDK-8388169 test follow-up | `433cfb96238a2f554295e3630336c61f070d2244` | Albert Mingkun Yang |
-| JDK-8393648 | `3f4d498e737d53c72242646c0cd2b8558f7c0270` | Fredrik Bredberg |
-| JDK-8392951 | `46d5c4cde130da57ace0f12aededc6f4b18bf06f` | Alan Bateman |
-| JDK-8391643 | `df031428ec274f6abcc0fc76e5b7e02c85b74163` | Quan Anh Mai |
+The normal fork profile supports Serial/G1/ZGC and excludes Parallel, Epsilon,
+Shenandoah and desktop modules. Linux x64 performance results do not establish
+performance on another architecture or OS. Earlier measurements retain their
+original images and methodology; they are not relabeled as current evidence.
 
-Donor authorship/legal headers and logical commits are preserved. ParkEvent's
-size-only allocation override is the intentional fork-tag adaptation. The old
-problem-list deletion is already satisfied by this fork. Test-only adaptations
-omit the out-of-scope Shenandoah invocation and replace unsupported
-StressVerifyMeetJoin/IgnoreUnrecognizedVMOptions coverage with a supported,
-WhiteBox-confirmed C2 semantic regression; no stress coverage is implied.
+## Scope
 
-The collector changes here are limited to code-cache marking-cycle completion;
-broader GC/runtime correctness changes are separate. Method/stub optimization,
-parser tables and generated-class/linkage changes are outside this integration.
-Shared compiler/runtime effects still need integrated tests; separate source
-paths alone do not prove compatibility.
-
-## Regression coverage and reproduction
-
-Use the repository's ordinary dependency/build instructions (`building.md`) and
-normal managed jtreg/GoogleTest sources. GoogleTest must include both googletest
-and googlemock, version 1.14 or newer. No private packet, image, observer, binary
-or host report is a required build input. For a release/server example:
-
-```sh
-bash configure --with-conf-name=memory-review --with-debug-level=release \
-  --with-boot-jdk="$BOOT_JDK" --with-jtreg="$JTREG_HOME" \
-  --with-gtest="$GTEST_SOURCE"
-make CONF=memory-review images test-image
-make CONF=memory-review test TEST="test/hotspot/jtreg/gc/TestCodeCacheUnload.java#serial test/hotspot/jtreg/gc/TestCodeCacheUnload.java#parallel test/hotspot/jtreg/gc/TestCodeCacheUnload.java#g1 test/hotspot/jtreg/gc/TestCodeCacheUnload.java#z test/hotspot/jtreg/gc/g1/TestCodeCacheUnloadDuringConcurrentMark.java test/hotspot/jtreg/compiler/types/TestInterfaceSetScratch.java test/hotspot/jtreg/compiler/stringopts/TestLongStringConcat.java"
-make CONF=memory-review test TEST="test/jdk/sun/nio/ch/TemporaryBufferCarrier.java test/jdk/sun/nio/ch/TempBuffer.java test/jdk/java/nio/channels/FileChannel/TempDirectBuffersReclamation.java"
-```
-
-`TestInterfaceSetScratch` requires regular level 4 C2 compilations and checks
-shared/disjoint interface, null and array-merge results before/after compilation.
-It does not certify natural entry into both native helpers or a memory delta.
-`TemporaryBufferCarrier` retains the qualified 32-task/eight-round input and exact
-byte/size checks, now with a checksum assertion and separate platform/virtual
-jtreg invocations. ParkEvent's gtest checks natural alignment, unique concurrently
-held events, unpark permits and safe immortal recycling, allowing legitimate
-stale/spurious unparks. It never blocks or deletes an event.
-
-Run the exact C-heap Array test with NMT enabled (TEST_VM adds `_vm`):
-
-```sh
-JDK="$PWD/build/memory-review/images/jdk"
-GTEST="$PWD/build/memory-review/images/test/hotspot/gtest/server/gtestLauncher"
-"$GTEST" -jdk "$JDK" --gtest_filter=Array.c_heap_allocation_size_vm \
-  --gtest_output=xml:array.xml -XX:NativeMemoryTracking=summary -Xmx256m
-"$GTEST" -jdk "$JDK" --gtest_filter=ParkEvent.natural_alignment_and_recycled_events_vm \
-  --gtest_output=xml:park.xml -Xmx256m
-```
-
-Require exactly one executed, unskipped case in each XML, with no failures; empty
-selection and NMT-disabled skips are not passes. Array checks actual NMT requested
-size/tag plus zero initialization and access for three element types and lengths
-0/1/7/1000. Its negative control requires a separately compiled old-header gtest
-binary: the allocator is inline, so merely swapping libjvm does not reproduce the
-old allocation. Expect only the 12 size assertions to fail. Also run
-`runtime/cds/appcds/aotCode/AOTCodeTest.java#g1` using normal jtreg dependencies
-and actual AOT training/compile/replay, with `AOTVerifyTrainingData` enabled;
-unsupported or unexercised routes leave AOT qualification pending. That functional
-route passed here; it complements the now-passing exact-byte gtest.
-
-For the manual aligned-buffer accounting fixture, compile
-`test/manual/jvm-memory/NioAlignedCacheLifecycleFixture.java` once with
-`--add-exports java.base/sun.nio.ch=ALL-UNNAMED`, reuse those class bytes for both
-images, and run with NMTdetail, `-Xshare:off`, the same export and argument`leak`.
-At READY take `jcmd PID VM.native_memory baseline` and a detailed `scale=1`
-snapshot; send Enter once. At POST_EXIT take detail.diff/detail snapshots; send
-Enter to exit. Reconcile the complete Othermalloc category/count rather than a
-selected frame; baseline allocation must be zero before work. All32 misaligned
-paths must execute. An allocator that does not supply them makes the diagnostic
-inconclusive; do not search or rerun for favorable addresses. Use argument`control`
-with maxCachedBufferSize 0 and separate 65536/69631/69632 threshold cases. These
-manual instructions create no default test or benchmark workload.
-
-A newly built matched baseline and this integration, with the same compiler,
-flags, class files and supported platform, are needed to qualify this branch.
-The corresponding build and13 focused jtreg IDs were executed after source
-integration; exact current-image results and limits are in
-`memory-overhead-validation.md`. No new performance run, observer compilation,
-installation, CI dispatch or runner provisioning was performed. Shenandoah and built-in HTTP/2 remain outside scope.
-
-## Scope limits
-
-The larger FromCardCache redesign, mark-stat caps, Metachunk counter changes,
-IndexSet reductions and compiler presizing remain outside this integration;
-their memory, concurrency or throughput effects are unqualified. The C2 scratch
-and Array unit repairs do not imply generic ResourceArea retention or an
-allocator redesign.
-
-No compressed-pointer/layout redesign, hot Method/subtype contract, eviction,
-slab unmapping, JFR constant-only laziness, global default tuning or HTTP/2/
-Shenandoah work is introduced to enlarge the result.
+This change does not include broader GC/runtime correctness fixes, Method/stub
+optimization, generated-class/linkage changes, cache eviction/slab unmapping,
+metadata-format or compressed-pointer redesign, global tuning, HTTP/2 work,
+FromCardCache/mark-stat/Metachunk/IndexSet redesign or compiler presizing. Source
+path separation alone does not prove compatibility; current combined-image
+checks and normal CI remain necessary.
