@@ -6734,6 +6734,12 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 
 static constexpr int aarch64_mismatch_bulk_minimum_bytes = 512;
 
+static bool aarch64_mismatch_java_range(const TypeInt* length, int scale) {
+  return length->_hi < (aarch64_mismatch_bulk_minimum_bytes >> scale) &&
+         (!length->is_con() || length->get_con() != (128 >> scale));
+}
+
+
 Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
   const TypeInt* scale = _gvn.type(argument(7))->isa_int();
   if (scale == nullptr || !scale->is_con() || scale->get_con() < 0 || scale->get_con() > 3) {
@@ -6748,6 +6754,12 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
   if (AARCH64_ONLY(true) NOT_AARCH64(false) && !native_access) {
     // Keep larger heap scans in their typed Java caller, with its polls.
     maximum = (2 * K) >> scale->get_con();
+  }
+  if (AARCH64_ONLY(true) NOT_AARCH64(false) && native_access &&
+      aarch64_mismatch_java_range(_gvn.type(argument(6))->is_int(), scale->get_con())) {
+    Node* slow_control = control();
+    set_control(top());
+    return slow_control;
   }
   // The unsigned range also excludes empty/negative inputs.
   Node* adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum)));
@@ -6812,9 +6824,8 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     intrinsic_limit = (native_access ? 64 * K : 2 * K) >> scale_type->get_con();
     const TypeInt* length_type = _gvn.type(length)->is_int();
     int minimum = 128 >> scale_type->get_con();
-    int bulk_minimum = aarch64_mismatch_bulk_minimum_bytes >> scale_type->get_con();
     if (length_type->_lo > intrinsic_limit || length_type->_hi < minimum ||
-        (aarch64_mismatch && native_access && length_type->_lo > minimum && length_type->_hi < bulk_minimum)) {
+        (aarch64_mismatch && native_access && aarch64_mismatch_java_range(length_type, scale_type->get_con()))) {
       return false;
     }
     C->set_has_unsafe_access(true);

@@ -435,7 +435,7 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw] 
     private static final int APPEND_BUF_SIZE = 1024;
-    private static final byte LATIN1_CODER = 0;
+    private static final byte UTF16_CODER = 1;
 
     // Shorter strings are put char by char: staging them for the bulk copy
     // costs an allocation and, for swapped byte order, a native call.
@@ -472,20 +472,17 @@ class Direct$Type$Buffer$RW$$BO$
     public $Type$Buffer put(String src, int start, int end) {
         Objects.checkFromIndexSize(start, end - start, src.length());
 #if[rw]
+        int length = end - start;
+        if (length < PUT_STRING_BULK_MINIMUM ||
+                (length < PUT_STRING_UTF16_BULK_MINIMUM &&
+                 SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER)) {
+            return super.put(src, start, end);
+        }
         int pos = position();
         int lim = limit();
         int rem = (pos <= lim) ? lim - pos : 0;
-        int length = end - start;
         if (length > rem)
             throw new BufferOverflowException();
-
-        if (length < PUT_STRING_BULK_MINIMUM ||
-                (length < PUT_STRING_UTF16_BULK_MINIMUM &&
-                 SharedSecrets.getJavaLangAccess().stringCoder(src) != LATIN1_CODER)) {
-            for (int i = start; i < end; i++)
-                put(src.charAt(i));
-            return this;
-        }
 
         putChars(pos, src, start, end);
 

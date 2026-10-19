@@ -223,7 +223,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #if[rw]
     private static final int PUT_STRING_BUF_SIZE = 1024;
-    private static final byte LATIN1_CODER = 0;
+    private static final byte UTF16_CODER = 1;
 
     // Shorter strings are put char by char: staging them for the bulk copy
     // costs an allocation and, for swapped byte order, a native call.
@@ -236,20 +236,17 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put(String src, int start, int end) {
         Objects.checkFromIndexSize(start, end - start, src.length());
 #if[rw]
+        int length = end - start;
+        // Retain the superclass loop for UTF-16 and short copies.
+        if (length < PUT_STRING_BULK_MINIMUM ||
+                SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
+            return super.put(src, start, end);
+        }
         int pos = position();
         int lim = limit();
         int rem = (pos <= lim) ? lim - pos : 0;
-        int length = end - start;
         if (length > rem)
             throw new BufferOverflowException();
-
-        // UTF-16 views retain the Java copy loop without an intermediate array.
-        if (length < PUT_STRING_BULK_MINIMUM ||
-                SharedSecrets.getJavaLangAccess().stringCoder(src) != LATIN1_CODER) {
-            for (int i = start; i < end; i++)
-                put(src.charAt(i));
-            return this;
-        }
 
         // Stage through a bounded array for the bulk copy.
         char[] buf = new char[Math.min(PUT_STRING_BUF_SIZE, length)];

@@ -243,6 +243,12 @@ public class NativeVectorizedMismatchTest {
     }
 
     @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {LEAF}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeShortMasked(long a, long b, int length) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, length & 511, 0);
+    }
+
+    @Test
     @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeAtBulkMinimum(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, BULK_MINIMUM, 0);
@@ -416,7 +422,7 @@ public class NativeVectorizedMismatchTest {
                  "nativeZero", "nativeShort", "nativeBelowMinimum", "nativeAtMinimum",
                  "nativeChars", "nativeInts", "nativeLongs",
                  "nativeIntermediate", "nativeCharsIntermediate", "nativeIntsIntermediate", "nativeLongsIntermediate",
-                 "nativeAtBulkMinimum", "nativeCharsAtBulkMinimum", "nativeIntsAtBulkMinimum", "nativeLongsAtBulkMinimum",
+                 "nativeShortMasked", "nativeAtBulkMinimum", "nativeCharsAtBulkMinimum", "nativeIntsAtBulkMinimum", "nativeLongsAtBulkMinimum",
                  "nativeCharsBelowMinimum", "nativeIntsBelowMinimum", "nativeLongsBelowMinimum", "nativeSmallInts",
                  "nativeCharsAtLimit", "nativeIntsAtLimit", "nativeLongsAtLimit",
                  "nativeCharsAboveLimit", "nativeIntsAboveLimit", "nativeLongsAboveLimit",
@@ -461,6 +467,7 @@ public class NativeVectorizedMismatchTest {
         nativeChars(a, b);
         nativeInts(a, b);
         nativeLongs(a, b);
+        nativeShortMasked(a, b, i);
         nativeIntermediate(a, b);
         nativeCharsIntermediate(a, b);
         nativeIntsIntermediate(a, b);
@@ -568,6 +575,9 @@ public class NativeVectorizedMismatchTest {
         checkConstant(0, LIMIT + 1, () -> nativeAboveLimit(a, b));
         checkConstant(0, 64, () -> nativeShort(a, b));
         checkConstant(0, 0, () -> nativeZero(a, b));
+        for (int size : new int[] {0, 127, 128, 129, 255, 256, 511}) {
+            checkConstant(0, size, () -> nativeShortMasked(a, b, size));
+        }
         checkConstant(0, 256, () -> nativeIntermediate(a, b));
         checkConstant(1, (256 >> 1), () -> nativeCharsIntermediate(a, b));
         checkConstant(2, (256 >> 2), () -> nativeIntsIntermediate(a, b));

@@ -40,6 +40,7 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -232,10 +233,10 @@ public final class ScopedMemoryAccess {
                 bSession.checkValidStateRaw();
             }
             if ((a == null || b == null) && log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
-                int minimum = 128 >> log2ArrayIndexScale;
+                int minimum = (Architecture.isAARCH64() ? 512 : 128) >> log2ArrayIndexScale;
                 if (length >= 0 && length < minimum) {
-                    // C2 calls the stub from 128 bytes. A length it can bound
-                    // below that compiles to the Java loop without the stub path.
+                    // Bound short native ranges so C2 retains the Java loop
+                    // without constructing the bulk dispatch and chunk loop.
                     return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length & (minimum - 1),
                             log2ArrayIndexScale);
                 }
@@ -305,9 +306,10 @@ public final class ScopedMemoryAccess {
             if (bSession != null) {
                 bSession.checkValidStateRaw();
             }
-            if (length >= 0 && length < 128 && (a == null || b == null)) {
+            int javaLimit = Architecture.isAARCH64() ? 512 : 128;
+            if (length >= 0 && length < javaLimit && (a == null || b == null)) {
                 // As in vectorizedMismatchInternal.
-                return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, (int) length & 127,
+                return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, (int) length & (javaLimit - 1),
                         ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
             }
             long offset = 0;
