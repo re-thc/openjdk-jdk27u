@@ -86,6 +86,18 @@ public class SimdUTFWide {
     }
 
     @State(Scope.Thread)
+    public static class UnalignedStrings extends Corpus {
+        byte[] shifted;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            setupCorpus();
+            shifted = new byte[bytes.length + 1];
+            System.arraycopy(bytes, 0, shifted, 1, bytes.length);
+        }
+    }
+
+    @State(Scope.Thread)
     public static class Buffers extends Corpus {
         @Param({"HEAP", "DIRECT", "READ_ONLY", "SEGMENT"})
         public String sourceKind;
@@ -251,6 +263,9 @@ public class SimdUTFWide {
     }
 
     @Benchmark public String constructString(Strings s) { return new String(s.bytes, s.charset); }
+    @Benchmark public String constructUnalignedString(UnalignedStrings s) {
+        return new String(s.shifted, 1, s.bytes.length, s.charset);
+    }
     @Benchmark public byte[] getBytes(Strings s) { return s.text.getBytes(s.charset); }
     @Benchmark public String fallbackConstructString(Fallback s) { return new String(s.bytes, s.charset); }
     @Benchmark public byte[] fallbackGetBytes(Fallback s) { return s.text.getBytes(s.charset); }
