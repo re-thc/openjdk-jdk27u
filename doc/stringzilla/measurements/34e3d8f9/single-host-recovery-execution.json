@@ -1,0 +1,78 @@
+{
+  "schema": "stringzilla-single-sky-configuration-execution-v1",
+  "repository": "re-thc/openjdk-jdk27u",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "workflow": {
+    "run_id": 39187437768,
+    "head": "4176f25bfc42a553d9192328d726b233c23b552f",
+    "job_id": 117852718658,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-10-19T02:10:48Z",
+    "completed_at": "2026-10-19T02:12:16Z"
+  },
+  "decoded_log_sha256": "87e6a456b4058330df24b30c91e528ed7ecbd2c1c577f99972760d0ad6a47148",
+  "artifact": {
+    "id": 12159505454,
+    "name": "stringzilla-single-sky-preparation-4176f25bfc42a553d9192328d726b233c23b552f",
+    "digest": "sha256:33a7fbe383613d531a633a41dfa24179f2d0fd60f14e1631212b60614b028353",
+    "size_in_bytes": 58020
+  },
+  "scope": {
+    "backend": "avx512",
+    "tiers": [
+      "interpreter",
+      "c1"
+    ],
+    "triplets": 262,
+    "records": 786,
+    "physical_keys_sha256": "b2e6a576ffc40b443c969d01bad51dedb224b095c1339c3c54f00a0d61dca000",
+    "excluded_normal_triplets": 1500,
+    "excluded_live_c2_triplets": 124
+  },
+  "actual_checks": {
+    "single_host_auth_tests": {
+      "tests": 13,
+      "elapsed_seconds": 0.074,
+      "conclusion": "pass",
+      "blob": "66b1fefe307d88db86515ff83412a2b550f616c2"
+    },
+    "prior_election_auth_tests": {
+      "tests": 17,
+      "elapsed_seconds": 0.047,
+      "conclusion": "pass"
+    },
+    "scope_model": {
+      "malformed_cases_rejected": 6,
+      "conclusion": "pass"
+    },
+    "collector_auth_model": {
+      "positive_contexts": 2,
+      "malformed_contexts_rejected": 35,
+      "real_api_step_identity": true,
+      "parent_failure_preserved": true,
+      "conclusion": "pass"
+    },
+    "terminal_missing_proofs_reauthenticated": true,
+    "validated_original_pair_reauthenticated": true
+  },
+  "proofs": {
+    "interpreter_blob": "f393eff3012ce3eac7af23210e3e3c8126a93978",
+    "c1_blob": "2faaf3200d3a5ab0097d0c44be716cc3548e49a9",
+    "tuple_blob": "510e374be8a5bd95cde8934de6d73597fe30e48b",
+    "tuple_sha256": "03185f6624eadfe76f6bcad584d5f3a79d594370005ae9042b99c504b687a94c"
+  },
+  "pair": {
+    "producer_run": 39164738566,
+    "producer_head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+    "producer_job_id": 117789053163,
+    "artifact_id": 12151804060,
+    "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f"
+  },
+  "timing_evidence": false,
+  "new_timed_records": 0,
+  "measurement_note": "This configuration executes offline authentication tests and source/image/proof gates. Synthetic markers emitted by its unit tests are not benchmark executions. Actual measurements belong to the separate native worker, which was queued when this receipt was prepared."
+}
