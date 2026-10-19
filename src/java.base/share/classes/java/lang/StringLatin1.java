@@ -622,6 +622,13 @@ final class StringLatin1 {
         int searchLength = fromIndex + tgtCount;
         if (tier == StringZilla.UNRESOLVED_TIER) {
             if (StringZilla.ENABLED) {
+                // Check physical ranges once before native searches or word probes.
+                if (fromIndex < 0 || tgtCount < 0 || fromIndex > src.length - tgtCount) {
+                    String.checkBoundsOffCount(fromIndex, tgtCount, src.length);
+                }
+                if (tgtCount > tgt.length) {
+                    String.checkBoundsOffCount(0, tgtCount, tgt.length);
+                }
                 if (tgtCount <= 8) {
                     if (tgtCount == 4) {
                         if (src[fromIndex + 3] == tgt[3]

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary UTF-16 reverse search checks physical source bounds before intrinsic reads
+ * @summary Reverse search checks physical source bounds before intrinsic reads
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
  * @library /test/lib
@@ -31,23 +31,23 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaUTF16Bounds 0
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe* TestStringZillaUTF16Bounds 1
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe* TestStringZillaUTF16Bounds 4
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:TieredStopAtLevel=1 -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe* TestStringZillaUTF16Bounds 1
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:-UseStringZillaIntrinsics -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe* TestStringZillaUTF16Bounds 4
  */
 
 /*
  * @test id=serial
- * @summary UTF-16 physical bounds precede serial reverse-search probes
+ * @summary Physical bounds precede serial reverse-search probes
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires (os.arch == "amd64" | os.arch == "x86_64")
  * @library /test/lib
  * @modules java.base/java.lang:open
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 1
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe TestStringZillaUTF16Bounds 4
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:TieredStopAtLevel=1 -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe* TestStringZillaUTF16Bounds 1
+ * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestStringZillaUTF16Bounds::probe* TestStringZillaUTF16Bounds 4
  */
 
 import java.lang.invoke.MethodHandle;
@@ -82,6 +82,10 @@ public class TestStringZillaUTF16Bounds {
         return (int)LAST_INDEX_OF.invokeExact(value, (byte)1, count, needle, from);
     }
 
+    public static int probeLatin1(byte[] value, int count, String needle, int from) throws Throwable {
+        return (int)LAST_INDEX_OF.invokeExact(value, (byte)0, count, needle, from);
+    }
+
     private static Case fixture(int length, int count, boolean mixed) {
         char unit = mixed ? 'a' : '\u0401';
         ByteBuffer bytes = ByteBuffer.allocate(length * 2).order(ByteOrder.nativeOrder());
@@ -103,9 +107,19 @@ public class TestStringZillaUTF16Bounds {
         }
     }
 
+    private static void checkLatin1(Case test) throws Throwable {
+        byte[] stale = Arrays.copyOf(test.value, test.value.length - 1);
+        try {
+            probeLatin1(stale, test.logicalCount, test.needle, test.from);
+            throw new AssertionError("Missing Latin-1 physical bounds check");
+        } catch (IndexOutOfBoundsException expected) {
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
         int level = Integer.parseInt(args[0]);
         List<Case> cases = new ArrayList<>();
+        List<Case> latin1 = new ArrayList<>();
         for (int length : new int[]{4, 15, 16, 17, 31}) {
             cases.add(fixture(length, 4, false));
         }
@@ -114,10 +128,21 @@ public class TestStringZillaUTF16Bounds {
             cases.add(fixture(Math.max(16, count + 8), count, true));
             cases.add(fixture(256, count, true));
         }
+        for (int count : new int[]{4, 9, 16, 32, 64, 129, 257}) {
+            for (int length : new int[]{count, Math.max(256, count + 8), 4096}) {
+                byte[] value = new byte[length];
+                Arrays.fill(value, (byte)'a');
+                latin1.add(new Case(value, length, "a".repeat(count), length - count));
+            }
+        }
         for (int i = 0; i < (level == 0 ? cases.size() : 10_000); i++) {
             Case test = cases.get(i % cases.size());
             if (probe(test.value, test.logicalCount, test.needle, test.from) != test.from) {
                 throw new AssertionError("Valid UTF-16 fixture");
+            }
+            Case latin = latin1.get(i % latin1.size());
+            if (probeLatin1(latin.value, latin.logicalCount, latin.needle, latin.from) != latin.from) {
+                throw new AssertionError("Valid Latin-1 fixture");
             }
         }
         if (level != 0) {
@@ -126,6 +151,10 @@ public class TestStringZillaUTF16Bounds {
             Method[] methods = {
                 TestStringZillaUTF16Bounds.class.getMethod("probe",
                         byte[].class, int.class, String.class, int.class),
+                TestStringZillaUTF16Bounds.class.getMethod("probeLatin1",
+                        byte[].class, int.class, String.class, int.class),
+                Class.forName("java.lang.StringLatin1").getDeclaredMethod("lastIndexOf",
+                        byte[].class, int.class, byte[].class, int.class, int.class),
                 utf16.getDeclaredMethod("lastIndexOf",
                         byte[].class, int.class, byte[].class, int.class, int.class),
                 utf16.getDeclaredMethod("lastIndexOfJava",
@@ -142,5 +171,6 @@ public class TestStringZillaUTF16Bounds {
             }
         }
         for (Case test : cases) check(test);
+        for (Case test : latin1) checkLatin1(test);
     }
 }
