@@ -542,58 +542,75 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     hashes[i] = hash_symbol(names[i], lengths[i], _alt_hash);
     syms[i] = nullptr;
   }
-  auto lookup_dynamic_batch = [&](int count) {
-    SymbolTableBatchLookup lookups(names, lengths, hashes);
-    SymbolTableBatchFound found(syms);
+  auto lookup_dynamic_batch = [&](int start, int count) {
+    SymbolTableBatchLookup lookups(names + start, lengths + start, hashes + start);
+    SymbolTableBatchFound found(syms + start);
     bool rehash_warning = false;
     _local_table->get_batch(current, lookups, count, found, &rehash_warning);
     update_needs_rehash(rehash_warning);
   };
+  auto store_hits = [&](int count, bool shared_hits) {
+    int pending = 0;
+    for (int i = 0; i < count; i++) {
+      Symbol* sym = syms[i];
+      if (sym != nullptr) {
+        cp->symbol_at_put(cp_indices[i], sym);
+        if (shared_hits) {
+          _lookup_shared_first = true;
+        }
+      } else {
+        names[pending] = names[i];
+        lengths[pending] = lengths[i];
+        cp_indices[pending] = cp_indices[i];
+        hashes[pending] = hashes[i];
+        syms[pending] = nullptr;
+        pending++;
+      }
+    }
+    return pending;
+  };
   if (shared_first) {
     lookup_shared(names_count, names, lengths, hashes, syms);
   } else {
-    lookup_dynamic_batch(names_count);
+    lookup_dynamic_batch(0, names_count);
   }
-
-  int count = 0;
-  for (int i = 0; i < names_count; i++) {
-    Symbol* sym = syms[i];
-    if (sym != nullptr) {
-      cp->symbol_at_put(cp_indices[i], sym);
-    } else {
-      names[count] = names[i];
-      lengths[count] = lengths[i];
-      cp_indices[count] = cp_indices[i];
-      hashes[count] = hashes[i];
-      syms[count] = nullptr;
-      count++;
-    }
-  }
+  int count = store_hits(names_count, false);
   if (count == 0) {
     return;
   }
 
   if (shared_first) {
     _lookup_shared_first = false;
-    lookup_dynamic_batch(count);
+    lookup_dynamic_batch(0, count);
   } else {
     lookup_shared(count, names, lengths, hashes, syms);
   }
-  for (int i = 0; i < count; i++) {
-    Symbol* sym = syms[i];
-    if (sym == nullptr) {
-      assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
-      // The name may have been inserted since the batch lookup, by this batch
-      // or another thread. Avoid allocating a candidate that is already obsolete.
-      sym = do_lookup(names[i], lengths[i], hashes[i]);
-      if (sym == nullptr) {
-        sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
-      }
-    } else if (!shared_first) {
-      _lookup_shared_first = true;
+  count = store_hits(count, !shared_first);
+
+  const bool recheck_each = is_permanent || CDSConfig::is_dumping_static_archive();
+  const int group_size = 16;
+  for (int start = 0; start < count; start += group_size) {
+    const int end = MIN2(start + group_size, count);
+    // Refresh ordinary misses close to insertion, amortizing the read-side
+    // critical section. Recheck permanent/CDS misses individually to avoid
+    // candidates whose storage cannot reliably be reclaimed.
+    if (!recheck_each) {
+      lookup_dynamic_batch(start, end - start);
     }
-    assert(sym->refcount() != 0, "lookup should have incremented the count");
-    cp->symbol_at_put(cp_indices[i], sym);
+    for (int i = start; i < end; i++) {
+      Symbol* sym = syms[i];
+      if (sym == nullptr) {
+        assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
+        if (recheck_each) {
+          sym = do_lookup(names[i], lengths[i], hashes[i]);
+        }
+        if (sym == nullptr) {
+          sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
+        }
+      }
+      assert(sym->refcount() != 0, "lookup should have incremented the count");
+      cp->symbol_at_put(cp_indices[i], sym);
+    }
   }
 }
 

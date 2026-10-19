@@ -73,6 +73,40 @@ public:
     EXPECT_EQ(warmed, SymbolTable::arena()->used());
   }
 
+  static void check_cold_duplicates(int count) {
+    JavaThread* THREAD = JavaThread::current();
+    ThreadInVMfromNative tiv(THREAD);
+    HandleMark hm(THREAD);
+    ResourceMark rm(THREAD);
+    ClassLoaderData* cld = ClassLoaderData::class_loader_data(SystemDictionary::java_system_loader());
+    ASSERT_NE(cld, nullptr);
+    ConstantPool* pool = ConstantPool::allocate(cld, count + 1, THREAD);
+    ASSERT_FALSE(HAS_PENDING_EXCEPTION);
+    constantPoolHandle cp(THREAD, pool);
+    char name[80];
+    os::snprintf_checked(name, sizeof(name), "test_symbol_batch_cold_regular_%d", count);
+    const char** names = NEW_RESOURCE_ARRAY(const char*, count);
+    int* lengths = NEW_RESOURCE_ARRAY(int, count);
+    int* indices = NEW_RESOURCE_ARRAY(int, count);
+    for (int i = 0; i < count; i++) {
+      names[i] = name;
+      lengths[i] = (int)strlen(name);
+      indices[i] = i + 1;
+    }
+    batch(cld, cp, count, names, lengths, indices);
+    Symbol* symbol = cp->symbol_at(1);
+    EXPECT_FALSE(symbol->is_permanent());
+    EXPECT_EQ(count, symbol->refcount());
+    for (int i = 1; i < count; i++) {
+      EXPECT_EQ(symbol, cp->symbol_at(i + 1));
+    }
+    TempNewSymbol anchor = SymbolTable::new_symbol(name);
+    EXPECT_EQ(symbol, anchor);
+    EXPECT_EQ(count + 1, symbol->refcount());
+    MetadataFactory::free_metadata(cld, pool);
+    EXPECT_EQ(1, anchor->refcount());
+  }
+
   static void check(int count, int layout) {
     JavaThread* THREAD = JavaThread::current();
     ThreadInVMfromNative tiv(THREAD);
@@ -176,5 +210,12 @@ TEST_VM(SymbolTable, batch_reference_ownership_alt_hash) {
     for (int layout = 0; layout < 3; layout++) {
       SymbolTableTest::check(count, layout);
     }
+  }
+}
+
+TEST_VM(SymbolTable, batch_cold_duplicate_references) {
+  const int counts[] = {1, 15, 16, 17, 257};
+  for (int count : counts) {
+    SymbolTableTest::check_cold_duplicates(count);
   }
 }
