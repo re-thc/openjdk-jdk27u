@@ -112,7 +112,12 @@ final class StringZilla {
             }
         }
         if (tier == C2 && length == Long.BYTES / 2) {
-            return mismatchReverseC2(src, (long)offset << 1, tgt, Long.BYTES) < 0;
+            // StringUTF16.lastIndexOf has checked both physical array ends.
+            // This exact-width probe has no remaining prefix to compare.
+            Unsafe unsafe = Unsafe.getUnsafe();
+            long base = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+            return unsafe.getLongUnaligned(src, base + ((long)offset << 1))
+                    == unsafe.getLongUnaligned(tgt, base);
         }
         int last = length - 1;
         if (last < 0) {
