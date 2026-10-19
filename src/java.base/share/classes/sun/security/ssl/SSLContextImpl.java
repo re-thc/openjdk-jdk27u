@@ -101,7 +101,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         }
         trustManager = chooseTrustManager(tm);
 
-        secureRandom = Objects.requireNonNullElseGet(sr, SecureRandom::new);
+        secureRandom = (sr == null) ? new SecureRandom() : sr;
 
         /*
          * The initial delay of seeding the random number generator
