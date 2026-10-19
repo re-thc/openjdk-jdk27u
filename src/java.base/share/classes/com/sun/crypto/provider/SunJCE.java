@@ -270,7 +270,7 @@ public final class SunJCE extends Provider {
                 "com.sun.crypto.provider.GaloisCounterMode$AES256",
                 attrs);
 
-        // used by SASL DIGEST-MD5 and Kerberos rc4-hmac
+        // used by SASL DIGEST-MD5
         attrs.clear();
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING");
