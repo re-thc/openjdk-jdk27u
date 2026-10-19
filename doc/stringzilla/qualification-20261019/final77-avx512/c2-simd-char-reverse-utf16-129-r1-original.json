@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=3",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "UTF16",
+            "length" : "129",
+            "needleLength" : "4",
+            "position" : "MISS"
+        },
+        "primaryMetric" : {
+            "score" : 26.730335628183592,
+            "scoreError" : 1.6750386814003884,
+            "scoreConfidence" : [
+                25.055296946783205,
+                28.40537430958398
+            ],
+            "scorePercentiles" : {
+                "0.0" : 25.959246303270934,
+                "50.0" : 26.896856089989466,
+                "90.0" : 27.00426233452645,
+                "95.0" : 27.00426233452645,
+                "99.0" : 27.00426233452645,
+                "99.9" : 27.00426233452645,
+                "99.99" : 27.00426233452645,
+                "99.999" : 27.00426233452645,
+                "99.9999" : 27.00426233452645,
+                "100.0" : 27.00426233452645
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    26.896856089989466,
+                    27.00426233452645,
+                    26.846149243489922,
+                    25.959246303270934,
+                    26.945164169641217
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

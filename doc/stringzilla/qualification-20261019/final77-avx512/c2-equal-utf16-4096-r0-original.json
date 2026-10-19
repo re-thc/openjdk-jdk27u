@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=3",
+            "-XX:-TieredCompilation"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "UTF16",
+            "length" : "4096",
+            "needleLength" : "4",
+            "position" : "EQUAL"
+        },
+        "primaryMetric" : {
+            "score" : 159.55196852359035,
+            "scoreError" : 24.170122604208125,
+            "scoreConfidence" : [
+                135.38184591938222,
+                183.72209112779848
+            ],
+            "scorePercentiles" : {
+                "0.0" : 150.61581957473797,
+                "50.0" : 158.41307750100418,
+                "90.0" : 166.97621606430656,
+                "95.0" : 166.97621606430656,
+                "99.0" : 166.97621606430656,
+                "99.9" : 166.97621606430656,
+                "99.99" : 166.97621606430656,
+                "99.999" : 166.97621606430656,
+                "99.9999" : 166.97621606430656,
+                "100.0" : 166.97621606430656
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    166.97621606430656,
+                    163.8617798374639,
+                    150.61581957473797,
+                    157.89294964043913,
+                    158.41307750100418
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

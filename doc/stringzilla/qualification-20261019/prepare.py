@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026, re-thc. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 """Restore digest-bound independent originals and seal rebuilt candidates."""
 import argparse

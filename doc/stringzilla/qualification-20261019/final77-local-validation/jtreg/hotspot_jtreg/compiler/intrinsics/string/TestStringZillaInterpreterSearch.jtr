@@ -1,0 +1,367 @@
+#Test Results (version 2)
+#Mon Oct 19 13:08:55 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+$root=/workspace/openjdk-jdk27u/test/hotspot/jtreg
+keywords=othervm
+requires=(os.arch \=\= "amd64" | os.arch \=\= "x86_64" | os.arch \=\= "aarch64")
+run=USER_SPECIFIED main/othervm -Xint TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:DisableIntrinsic\=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockExperimentalVMOptions -XX\:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockExperimentalVMOptions -XX\:-UseCompactObjectHeaders TestStringZillaInterpreterSearch\n
+source=TestStringZillaInterpreterSearch.java
+title=Interpreter forward search preserves coder semantics, small inputs and bounded Java fallback
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+elapsed=9411 0\:00\:09.411
+end=Mon Oct 19 13\:08\:55 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=c6d7b613d422
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main build main build main build main build main
+start=Mon Oct 19 13\:08\:46 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+testJDK=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=9411
+user.name=agent
+work=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(4/288)----------
+JDK under test: /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+
+#section:build
+----------messages:(7/262)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:46.125 UTC 2026
+Test directory:
+  compile: TestStringZillaInterpreterSearch
+finished: Mon Oct 19 13:08:46.683 UTC 2026
+elapsed time (seconds): 0.558
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/325)----------
+command: compile /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:08:46.125 UTC 2026
+Mode: othervm
+Process id: 153685
+finished: Mon Oct 19 13:08:46.683 UTC 2026
+elapsed time (seconds): 0.558
+----------configuration:(5/357)----------
+javac compilation environment
+  source path: /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+  class path:  /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d
+
+----------rerun:(26/2218)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -J-Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -d /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -sourcepath /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -classpath /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/310)----------
+command: main -Xint TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint TestStringZillaInterpreterSearch 
+started: Mon Oct 19 13:08:46.683 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 153742
+finished: Mon Oct 19 13:08:48.314 UTC 2026
+elapsed time (seconds): 1.631
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(28/2268)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.0.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:48.315 UTC 2026
+finished: Mon Oct 19 13:08:48.315 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/370)----------
+command: main -Xint -XX:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch 
+started: Mon Oct 19 13:08:48.315 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 153858
+finished: Mon Oct 19 13:08:50.576 UTC 2026
+elapsed time (seconds): 2.261
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(29/2309)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        -XX:-UseStringZillaIntrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.1.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/202)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:50.576 UTC 2026
+finished: Mon Oct 19 13:08:50.577 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/622)----------
+command: main -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch 
+started: Mon Oct 19 13:08:50.577 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 154037
+finished: Mon Oct 19 13:08:52.154 UTC 2026
+elapsed time (seconds): 1.577
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2446)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.2.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:52.154 UTC 2026
+finished: Mon Oct 19 13:08:52.154 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/436)----------
+command: main -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch 
+started: Mon Oct 19 13:08:52.155 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 154153
+finished: Mon Oct 19 13:08:53.928 UTC 2026
+elapsed time (seconds): 1.773
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2353)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockExperimentalVMOptions \\
+        -XX:-UseFourByteObjectHeaders \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.3.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:53.928 UTC 2026
+finished: Mon Oct 19 13:08:53.928 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/434)----------
+command: main -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders TestStringZillaInterpreterSearch 
+started: Mon Oct 19 13:08:53.928 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 154271
+finished: Mon Oct 19 13:08:55.533 UTC 2026
+elapsed time (seconds): 1.605
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2352)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockExperimentalVMOptions \\
+        -XX:-UseCompactObjectHeaders \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.4.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

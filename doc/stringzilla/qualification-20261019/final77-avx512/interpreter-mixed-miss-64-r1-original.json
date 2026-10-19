@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=3",
+            "-Xint"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "MIXED",
+            "length" : "4096",
+            "needleLength" : "64",
+            "position" : "MISS"
+        },
+        "primaryMetric" : {
+            "score" : 160636.54538853146,
+            "scoreError" : 67094.31759599285,
+            "scoreConfidence" : [
+                93542.22779253862,
+                227730.8629845243
+            ],
+            "scorePercentiles" : {
+                "0.0" : 146052.38637469587,
+                "50.0" : 157461.6188992731,
+                "90.0" : 188180.56857855362,
+                "95.0" : 188180.56857855362,
+                "99.0" : 188180.56857855362,
+                "99.9" : 188180.56857855362,
+                "99.99" : 188180.56857855362,
+                "99.999" : 188180.56857855362,
+                "99.9999" : 188180.56857855362,
+                "100.0" : 188180.56857855362
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    165363.97246696035,
+                    157461.6188992731,
+                    188180.56857855362,
+                    146124.1806231743,
+                    146052.38637469587
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

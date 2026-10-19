@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=3",
+            "-XX:-TieredCompilation",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "15",
+            "needleLength" : "129",
+            "shape" : "OVERLAP"
+        },
+        "primaryMetric" : {
+            "score" : 23.846454500761983,
+            "scoreError" : 6.561324335643585,
+            "scoreConfidence" : [
+                17.285130165118396,
+                30.40777883640557
+            ],
+            "scorePercentiles" : {
+                "0.0" : 22.080645566776422,
+                "50.0" : 23.48940304127879,
+                "90.0" : 26.46965927020839,
+                "95.0" : 26.46965927020839,
+                "99.0" : 26.46965927020839,
+                "99.9" : 26.46965927020839,
+                "99.99" : 26.46965927020839,
+                "99.999" : 26.46965927020839,
+                "99.9999" : 26.46965927020839,
+                "100.0" : 26.46965927020839
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    24.42148210617687,
+                    22.080645566776422,
+                    23.48940304127879,
+                    26.46965927020839,
+                    22.771082519369447
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

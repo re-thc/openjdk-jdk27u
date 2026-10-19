@@ -1,0 +1,675 @@
+#Test Results (version 2)
+#Mon Oct 19 13:08:46 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+$root=/workspace/openjdk-jdk27u/test/hotspot/jtreg
+id=limitedAVX
+keywords=othervm driver
+library=/test/lib
+modules=java.base/java.lang\:open
+requires=(vm.compiler1.enabled & vm.compiler2.enabled) & ((os.arch \=\= "amd64" | os.arch \=\= "x86_64"))
+run=USER_SPECIFIED compile/module\=java.base java/lang/StringZillaDispatchHelper.java\nUSER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=0 TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=2 TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=0 -XX\:DisableIntrinsic\=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=0 TestStringZillaDispatch interpreted\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=2 TestStringZillaDispatch interpreted\n
+source=TestStringZillaDispatch.java
+title=Reverse-search boundaries in serial and AVX2 dispatch
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java\#limitedAVX
+elapsed=12611 0\:00\:12.611
+end=Mon Oct 19 13\:08\:46 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=c6d7b613d422
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages compile build compile build compile driver build compile main build main build main build main build main
+start=Mon Oct 19 13\:08\:33 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaDispatch.java\#limitedAVX
+testJDK=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=12611
+user.name=agent
+work=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/546)----------
+JDK under test: /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/openjdk-jdk27u/test/lib
+   class directory: /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib
+
+#section:compile
+----------messages:(8/448)----------
+command: compile /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/java.base/java/lang/StringZillaDispatchHelper.java
+reason: User specified action: run compile/module=java.base java/lang/StringZillaDispatchHelper.java 
+started: Mon Oct 19 13:08:33.511 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 153058
+finished: Mon Oct 19 13:08:34.048 UTC 2026
+elapsed time (seconds): 0.537
+----------configuration:(8/636)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  class path:  /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/java.base 
+               /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+  patch:       java.base /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/java.base
+                         /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(26/2042)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/compile.0.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 13:08:34.048 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Mon Oct 19 13:08:34.992 UTC 2026
+elapsed time (seconds): 0.944
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/340)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:08:34.049 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 153091
+finished: Mon Oct 19 13:08:34.991 UTC 2026
+elapsed time (seconds): 0.942
+----------configuration:(8/646)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/openjdk-jdk27u/test/lib 
+  class path:  /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+               /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib 
+  patch:       java.base /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(26/2042)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/compile.1.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:34.992 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Mon Oct 19 13:08:35.667 UTC 2026
+elapsed time (seconds): 0.675
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/353)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:08:34.992 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 153167
+finished: Mon Oct 19 13:08:35.666 UTC 2026
+elapsed time (seconds): 0.674
+----------configuration:(8/646)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/openjdk-jdk27u/test/lib 
+  class path:  /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+               /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib 
+  patch:       java.base /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(26/2042)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/compile.2.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/487)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 13:08:35.667 UTC 2026
+Mode: othervm [test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 153221
+finished: Mon Oct 19 13:08:35.823 UTC 2026
+elapsed time (seconds): 0.156
+----------configuration:(5/287)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(32/3002)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/driver.3.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/244)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:35.823 UTC 2026
+Test directory:
+  compile: TestStringZillaDispatch
+finished: Mon Oct 19 13:08:36.490 UTC 2026
+elapsed time (seconds): 0.667
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/374)----------
+command: compile /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:08:35.824 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 153243
+finished: Mon Oct 19 13:08:36.490 UTC 2026
+elapsed time (seconds): 0.666
+----------configuration:(10/822)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/openjdk-jdk27u/test/lib 
+  class path:  /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+               /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib 
+  patch:       java.base /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(26/2042)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/compile.4.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/603)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch 
+started: Mon Oct 19 13:08:36.490 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 153293
+finished: Mon Oct 19 13:08:39.428 UTC 2026
+elapsed time (seconds): 2.938
+----------configuration:(5/287)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3117)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=0 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.5.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:39.428 UTC 2026
+finished: Mon Oct 19 13:08:39.428 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/603)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch 
+started: Mon Oct 19 13:08:39.428 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 153362
+finished: Mon Oct 19 13:08:41.204 UTC 2026
+elapsed time (seconds): 1.776
+----------configuration:(5/287)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3117)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=2 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.6.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:41.204 UTC 2026
+finished: Mon Oct 19 13:08:41.204 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/797)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch 
+started: Mon Oct 19 13:08:41.204 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 153427
+finished: Mon Oct 19 13:08:44.273 UTC 2026
+elapsed time (seconds): 3.069
+----------configuration:(5/287)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/3225)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=0 \\
+        -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.7.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:44.274 UTC 2026
+finished: Mon Oct 19 13:08:44.274 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/623)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch interpreted 
+started: Mon Oct 19 13:08:44.274 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 153499
+finished: Mon Oct 19 13:08:45.231 UTC 2026
+elapsed time (seconds): 0.957
+----------configuration:(5/287)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3127)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=0 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.8.jta interpreted
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:08:45.231 UTC 2026
+finished: Mon Oct 19 13:08:45.231 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/623)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch interpreted 
+started: Mon Oct 19 13:08:45.231 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 153589
+finished: Mon Oct 19 13:08:46.114 UTC 2026
+elapsed time (seconds): 0.883
+----------configuration:(5/287)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3127)*----------
+cd /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=2 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/final77-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.9.jta interpreted
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful
