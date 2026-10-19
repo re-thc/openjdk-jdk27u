@@ -196,9 +196,6 @@ public final class SimdUTF {
                 && !validUTF16Start(src, sp, len)) {
             return -1;
         }
-        if (operation == COUNT_CODE_POINTS && !validUTF16Edges(src, sp, len)) {
-            return -1;
-        }
         return len <= MAX_CHUNK ? process0(src, sp, len, dst, dp, capacity, operation)
                                : processChunks(src, sp, len, dst, dp, capacity, operation);
     }
@@ -333,16 +330,6 @@ public final class SimdUTF {
         }
         return Character.isHighSurrogate(first) && len > 1 && Character.isLowSurrogate(
                 src instanceof char[] chars ? chars[sp + 1] : byteChar((byte[])src, (sp + 1) << 1, BIG_ENDIAN));
-    }
-
-    @ForceInline
-    private static boolean validUTF16Edges(Object src, int sp, int len) {
-        if (!validUTF16Start(src, sp, len)) return false;
-        int end = sp + len - 1;
-        char last = src instanceof char[] chars ? chars[end] : byteChar((byte[])src, end << 1, BIG_ENDIAN);
-        if (!Character.isSurrogate(last)) return true;
-        return Character.isLowSurrogate(last) && len > 1 && Character.isHighSurrogate(
-                src instanceof char[] chars ? chars[end - 1] : byteChar((byte[])src, (end - 1) << 1, BIG_ENDIAN));
     }
 
     // Keep operation constants visible to C2, including its preferred existing stubs.

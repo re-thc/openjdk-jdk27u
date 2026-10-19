@@ -134,6 +134,19 @@ static char32_t simdutf_swap32(char32_t value) {
          ((value << 8) & 0xff0000) | (value << 24);
 }
 
+// Java counts every isolated surrogate, and each adjacent high/low pair, as
+// one code point. Such pairs cannot overlap, so this reduction handles both
+// well-formed and malformed UTF-16 without validation and a second pass.
+static jint simdutf_count_java_code_points(const char16_t* input, jint len) {
+  jint pairs = 0;
+  for (jint i = 1; i < len; i++) {
+    jint high = (input[i - 1] & 0xfc00) == 0xd800;
+    jint low = (input[i] & 0xfc00) == 0xdc00;
+    pairs += high & low;
+  }
+  return len - pairs;
+}
+
 static jint simdutf_representable_prefix(const char16_t* input, jint len, char16_t maximum) {
   for (jint off = 0; off < len; off += 256) {
     jint end = MIN2(off + 256, len);
@@ -351,10 +364,7 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
     case VALIDATE_UTF16:
       return simdutf::validate_utf16(input16, len) ? 1 : 0;
     case COUNT_CODE_POINTS:
-      // Java counts isolated surrogates as code points. Use its original loop
-      // for that dialect; simdutf's count requires a valid scalar sequence.
-      return simdutf::validate_utf16(input16, len)
-          ? checked_cast<jint>(simdutf::count_utf16(input16, len)) : -1;
+      return simdutf_count_java_code_points(input16, len);
     case VALIDATE_ASCII:
       return simdutf::validate_utf16_as_ascii(input16, len) ? 1 : 0;
     case VALIDATE_LATIN1:

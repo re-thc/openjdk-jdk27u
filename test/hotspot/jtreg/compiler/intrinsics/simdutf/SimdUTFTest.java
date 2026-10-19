@@ -316,8 +316,10 @@ public class SimdUTFTest {
                 for (int i = 0; i < chars.length; i++) {
                     putUnit(bytes, i * 2, chars[i], 2, ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
                 }
-                check(SimdUTF.countCodePoints(chars, 3, length) == -1, "invalid count edge in char storage");
-                check(SimdUTF.countCodePoints(bytes, 3, length) == -1, "invalid count edge in byte storage");
+                if (accelerationAvailable) {
+                    check(SimdUTF.countCodePoints(chars, 3, length) == length, "isolated count edge in char storage");
+                    check(SimdUTF.countCodePoints(bytes, 3, length) == length, "isolated count edge in byte storage");
+                }
                 check(Character.codePointCount(chars, 3, length) == length, "isolated count edge fallback");
                 chars[3 + edge] = '\u6f22';
                 int pair = edge == 0 ? 3 : length + 1;
