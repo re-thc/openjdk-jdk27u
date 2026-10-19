@@ -624,7 +624,7 @@ sun.security.krb5.maxReferrals=5
 #   jdk.certpath.disabledAlgorithms=MD5, DSA, RSA keySize < 2048
 #
 #
-jdk.certpath.disabledAlgorithms=MD5, SHA1 jdkCA & usage TLSServer, \
+jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
     RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
     SHA1 usage SignedJAR & denyAfter 2019-01-01
 
@@ -645,7 +645,7 @@ jdk.certpath.disabledAlgorithms=MD5, SHA1 jdkCA & usage TLSServer, \
 
 jdk.security.legacyAlgorithms=SHA1, \
     RSA keySize < 2048, DSA keySize < 2048, \
-    DES, DESede, MD5, ARCFOUR
+    DES, DESede, MD5, RC2, ARCFOUR
 
 #
 # Algorithm restrictions for signed JAR files
@@ -688,7 +688,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 #
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
-jdk.jar.disabledAlgorithms=MD5, RSA keySize < 1024, \
+jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
       DSA keySize < 1024, SHA1 denyAfter 2019-01-01
 
 #
@@ -756,9 +756,10 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, TLSv1.2, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, x448, TLS_DHE_*
-jdk.tls.disabledAlgorithms=DH keySize < 1024, EC keySize < 224, \
-    rsa_pkcs1_sha1 usage HandshakeSignature, \
-    ecdsa_sha1 usage HandshakeSignature
+jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
+    MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
+    ECDH, TLS_RSA_*, rsa_pkcs1_sha1 usage HandshakeSignature, \
+    ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
 
 #
 # Algorithm restrictions for Java Crypto API services
@@ -866,7 +867,7 @@ jdk.tls.disabledAlgorithms=DH keySize < 1024, EC keySize < 224, \
 #   jdk.tls.legacyAlgorithms=DHE_RSA, AES_128_CBC, \
 #       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
 #
-jdk.tls.legacyAlgorithms=
+jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 
 #
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)
