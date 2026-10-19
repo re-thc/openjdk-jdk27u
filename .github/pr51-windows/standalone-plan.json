@@ -1,0 +1,426 @@
+{
+  "kind": "PR51 repository-only Windows x64 qualification",
+  "retained_run_id": 39291419273,
+  "retained_workflow_sha": "cec689479bec9750bc1260f5b334a1e4d8c39e80",
+  "candidate_source": "b7898b9d0010e1436b873b95c59f5261092fb3f1",
+  "images": {
+    "baseline-release": {
+      "artifact_id": 12214446423,
+      "archive_sha256": "7550a64498d97b39c3114ae0ad844e24c7dcdb5d173e39997dc55ee37fb1e143",
+      "name": "pr51-windows-baseline-release",
+      "source": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+      "debug": "release",
+      "jvm_sha256": "4f9d45f52b4c85faa4dbe2c660a449bbe71730d90a3d9514beeb906695d6b95b",
+      "java_sha256": "bf67a69ee527915cbb207669ecd99cff645262c6a247e52f8070d2303a206ec1",
+      "compiler": "19.44.35229",
+      "configuration": "bin/configure-dev; Windows x64; AVX2; toolchain 2026; toolset 14.44",
+      "runner_image": "20261007.264.1",
+      "workflow_sha": "cec689479bec9750bc1260f5b334a1e4d8c39e80"
+    },
+    "candidate-release": {
+      "artifact_id": 12212432914,
+      "archive_sha256": "95844b058ebee1fd1148cf41a3e29148994ce1b0ec347361a45038d67cf037cf",
+      "name": "pr51-windows-candidate-release",
+      "source": "b7898b9d0010e1436b873b95c59f5261092fb3f1",
+      "debug": "release",
+      "jvm_sha256": "db09f0e007b64223601a38b379da9c6d12d2fba6aa938d7097f44308d47572b0",
+      "java_sha256": "bd5b1e9f24c91cf4196d75b07316dc8a4dd8d096103461f8aa560a94ff486647",
+      "compiler": "19.44.35229",
+      "configuration": "bin/configure-dev; Windows x64; AVX2; toolchain 2026; toolset 14.44",
+      "runner_image": "20261007.264.1",
+      "workflow_sha": "cec689479bec9750bc1260f5b334a1e4d8c39e80"
+    },
+    "candidate-fastdebug": {
+      "artifact_id": 12218827151,
+      "archive_sha256": "64e40bc104dfb373d71cacd8c5ff18b1511146f45e80e775d199fbe5b788292c",
+      "name": "pr51-windows-candidate-fastdebug",
+      "source": "b7898b9d0010e1436b873b95c59f5261092fb3f1",
+      "debug": "fastdebug",
+      "jvm_sha256": "5fa8b802a9b98312d41c5349c4b1abcc71819aff003f5a0d08e3d97858ac7e0f",
+      "java_sha256": "a810e108fd28e21ddc726b11e30b9944f425fa1321418f1a705c6456f6773ee5",
+      "compiler": "19.44.35229",
+      "configuration": "bin/configure-dev; Windows x64; AVX2; toolchain 2026; toolset 14.44",
+      "runner_image": "20261007.264.1",
+      "workflow_sha": "cec689479bec9750bc1260f5b334a1e4d8c39e80"
+    }
+  },
+  "job_execution_cap_seconds": 3000,
+  "controller_cap_seconds": 2580,
+  "total_timing_forks": 54,
+  "cases": [
+    "cold",
+    "joins",
+    "hot"
+  ],
+  "blocks": 6,
+  "warmup_seconds": 6,
+  "samples": 5,
+  "sample_ms": 700,
+  "untimed_activation_forks": 6,
+  "source_sha256": {
+    "test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPlacement.java": "dfb108e5933e05978ae63499ca5799159ac338a32b3003f2651966185d582ea8",
+    "test/hotspot/jtreg/compiler/regalloc/TestColdCallDebugHome.java": "a0455fc4ea859534cecc932ba43723f9542b2693c142ffee030c86538a1a2df9",
+    "test/hotspot/jtreg/compiler/regalloc/TestColdCallDerivedPointers.java": "3dbd00c2aa87534d556ffca21866f7ad08a0e89e94a2422d8f4e00cc45dc66c0",
+    "test/hotspot/jtreg/compiler/regalloc/TestColdCallSpillPolicy.java": "1c34e97dcb1c85869328b06a97f6ef727963ce2177a99e486f641309ddc7c0f0",
+    "test/hotspot/jtreg/compiler/regalloc/libColdCallSpillPolicy.cpp": "bde225dabc2ea1703a6d6bba39632b051fb3c6dc8d6bdfe8f8ad81f20c1de634",
+    "test/lib/jdk/test/whitebox/WhiteBox.java": "15572219989fea7a1192ea103639288b59ef4e92a1360dd7525d9eb46f2eaa45",
+    "test/lib/jdk/test/whitebox/parser/DiagnosticCommand.java": "6bab712b79e5af6094825648c520cb8911869d8aae0c0145ebd3e1465672a259"
+  },
+  "probe_sha256": "b1f0423abd9f733164d97c69674f105fbe6c541befb66d319029c6f5e2251c96",
+  "common_flags": [
+    "-Xshare:off",
+    "-Xms128m",
+    "-Xmx128m",
+    "-XX:+UseSerialGC",
+    "-XX:+UnlockDiagnosticVMOptions",
+    "-XX:+WhiteBoxAPI",
+    "-Xbatch",
+    "-XX:-TieredCompilation",
+    "-XX:-UseOnStackReplacement",
+    "-XX:CompileThreshold=1000000",
+    "-XX:-UseSuperWord",
+    "-XX:LoopMaxUnroll=0",
+    "-XX:-UseFPUForSpilling",
+    "-XX:-PreserveFramePointer",
+    "-XX:CompileCommand=compileonly,StandaloneColdCallProbe::test*",
+    "-XX:CompileCommand=compileonly,StandaloneColdCallProbe::helper*",
+    "-XX:CompileCommand=compileonly,StandaloneColdCallProbe::invoke",
+    "-XX:CompileCommand=compileonly,StandaloneColdCallProbe::sample",
+    "-XX:CompileCommand=dontinline,StandaloneColdCallProbe::test*",
+    "-XX:CompileCommand=inline,StandaloneColdCallProbe::kernel",
+    "-XX:CompileCommand=dontinline,StandaloneColdCallProbe::helper*"
+  ],
+  "schedule": [
+    {
+      "sequence": 1,
+      "block": 0,
+      "case": "cold",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 2,
+      "block": 0,
+      "case": "cold",
+      "variant": "off"
+    },
+    {
+      "sequence": 3,
+      "block": 0,
+      "case": "cold",
+      "variant": "on"
+    },
+    {
+      "sequence": 4,
+      "block": 0,
+      "case": "joins",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 5,
+      "block": 0,
+      "case": "joins",
+      "variant": "off"
+    },
+    {
+      "sequence": 6,
+      "block": 0,
+      "case": "joins",
+      "variant": "on"
+    },
+    {
+      "sequence": 7,
+      "block": 0,
+      "case": "hot",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 8,
+      "block": 0,
+      "case": "hot",
+      "variant": "off"
+    },
+    {
+      "sequence": 9,
+      "block": 0,
+      "case": "hot",
+      "variant": "on"
+    },
+    {
+      "sequence": 10,
+      "block": 1,
+      "case": "joins",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 11,
+      "block": 1,
+      "case": "joins",
+      "variant": "on"
+    },
+    {
+      "sequence": 12,
+      "block": 1,
+      "case": "joins",
+      "variant": "off"
+    },
+    {
+      "sequence": 13,
+      "block": 1,
+      "case": "hot",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 14,
+      "block": 1,
+      "case": "hot",
+      "variant": "on"
+    },
+    {
+      "sequence": 15,
+      "block": 1,
+      "case": "hot",
+      "variant": "off"
+    },
+    {
+      "sequence": 16,
+      "block": 1,
+      "case": "cold",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 17,
+      "block": 1,
+      "case": "cold",
+      "variant": "on"
+    },
+    {
+      "sequence": 18,
+      "block": 1,
+      "case": "cold",
+      "variant": "off"
+    },
+    {
+      "sequence": 19,
+      "block": 2,
+      "case": "hot",
+      "variant": "off"
+    },
+    {
+      "sequence": 20,
+      "block": 2,
+      "case": "hot",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 21,
+      "block": 2,
+      "case": "hot",
+      "variant": "on"
+    },
+    {
+      "sequence": 22,
+      "block": 2,
+      "case": "cold",
+      "variant": "off"
+    },
+    {
+      "sequence": 23,
+      "block": 2,
+      "case": "cold",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 24,
+      "block": 2,
+      "case": "cold",
+      "variant": "on"
+    },
+    {
+      "sequence": 25,
+      "block": 2,
+      "case": "joins",
+      "variant": "off"
+    },
+    {
+      "sequence": 26,
+      "block": 2,
+      "case": "joins",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 27,
+      "block": 2,
+      "case": "joins",
+      "variant": "on"
+    },
+    {
+      "sequence": 28,
+      "block": 3,
+      "case": "cold",
+      "variant": "off"
+    },
+    {
+      "sequence": 29,
+      "block": 3,
+      "case": "cold",
+      "variant": "on"
+    },
+    {
+      "sequence": 30,
+      "block": 3,
+      "case": "cold",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 31,
+      "block": 3,
+      "case": "joins",
+      "variant": "off"
+    },
+    {
+      "sequence": 32,
+      "block": 3,
+      "case": "joins",
+      "variant": "on"
+    },
+    {
+      "sequence": 33,
+      "block": 3,
+      "case": "joins",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 34,
+      "block": 3,
+      "case": "hot",
+      "variant": "off"
+    },
+    {
+      "sequence": 35,
+      "block": 3,
+      "case": "hot",
+      "variant": "on"
+    },
+    {
+      "sequence": 36,
+      "block": 3,
+      "case": "hot",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 37,
+      "block": 4,
+      "case": "joins",
+      "variant": "on"
+    },
+    {
+      "sequence": 38,
+      "block": 4,
+      "case": "joins",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 39,
+      "block": 4,
+      "case": "joins",
+      "variant": "off"
+    },
+    {
+      "sequence": 40,
+      "block": 4,
+      "case": "hot",
+      "variant": "on"
+    },
+    {
+      "sequence": 41,
+      "block": 4,
+      "case": "hot",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 42,
+      "block": 4,
+      "case": "hot",
+      "variant": "off"
+    },
+    {
+      "sequence": 43,
+      "block": 4,
+      "case": "cold",
+      "variant": "on"
+    },
+    {
+      "sequence": 44,
+      "block": 4,
+      "case": "cold",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 45,
+      "block": 4,
+      "case": "cold",
+      "variant": "off"
+    },
+    {
+      "sequence": 46,
+      "block": 5,
+      "case": "hot",
+      "variant": "on"
+    },
+    {
+      "sequence": 47,
+      "block": 5,
+      "case": "hot",
+      "variant": "off"
+    },
+    {
+      "sequence": 48,
+      "block": 5,
+      "case": "hot",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 49,
+      "block": 5,
+      "case": "cold",
+      "variant": "on"
+    },
+    {
+      "sequence": 50,
+      "block": 5,
+      "case": "cold",
+      "variant": "off"
+    },
+    {
+      "sequence": 51,
+      "block": 5,
+      "case": "cold",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 52,
+      "block": 5,
+      "case": "joins",
+      "variant": "on"
+    },
+    {
+      "sequence": 53,
+      "block": 5,
+      "case": "joins",
+      "variant": "off"
+    },
+    {
+      "sequence": 54,
+      "block": 5,
+      "case": "joins",
+      "variant": "baseline"
+    }
+  ],
+  "measurement": "Per-fork median ns/op; paired speed gain = 100*(off/on-1); baseline comparison secondary. All six block pairs retained. This is a pressure proxy and does not reproduce historical decoder throughput.",
+  "case_extra_flags": {
+    "joins": [
+      "-XX:-PartialPeelLoop",
+      "-XX:LoopPeeling=0"
+    ]
+  }
+}
