@@ -145,6 +145,13 @@ be new. `SORT_EXPERIMENT=e10 python3 src/ancillary-summary.py evidence/e10-ancil
 Keep fixed thresholds/inputs and record any source revision as a new experiment;
 all losses and failed-initialization diagnostics belong in the retained evidence.
 
-Product implementation and review: https://github.com/re-thc/openjdk-jdk27u/pull/57
+For a separate allocator-retention diagnostic, build the trace companion and
+run `NativeMemory` with `-DtrimAllocator=true`. This adds an explicit
+`malloc_trim(0)` only in the test process, after the ordinary after-GC snapshot.
+The product does not trim the allocator. Compare paired RSS deltas separately
+from the library-owned requested/live byte counters; neither measurement alone
+attributes all process residency.
+
+Product implementation: https://github.com/re-thc/openjdk-jdk27u/pull/57
 Final product source: fd19ce8f58945e0b86afb2935598d358353b0182.
 Use that source/image in a separate checkout; this harness branch starts from the original baseline.

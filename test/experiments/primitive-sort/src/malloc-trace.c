@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdatomic.h>
 #include <jni.h>
+#include <malloc.h>
 extern void* __libc_malloc(size_t);
 extern void __libc_free(void*);
 static atomic_flag lock=ATOMIC_FLAG_INIT;
@@ -43,3 +44,5 @@ JNIEXPORT jlongArray JNICALL Java_NativeMemory_stats(JNIEnv* env,jclass ignored)
     acquire();jlong values[4]={(jlong)calls,(jlong)total,(jlong)live,(jlong)peak};release();
     jlongArray result=(*env)->NewLongArray(env,4);(*env)->SetLongArrayRegion(env,result,0,4,values);return result;
 }
+
+JNIEXPORT void JNICALL Java_NativeMemory_trimAllocator(JNIEnv* env,jclass ignored) { malloc_trim(0); }
