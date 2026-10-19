@@ -134,7 +134,8 @@ final class StringCodingWide {
 
     private static String decodeUTF32(Kind kind, byte[] src, int off, int len) {
         boolean big = kind.big;
-        int first = unit(src, null, off, 4, true);
+        int first = SimdUTF.useUTF32WordReads() ? utf32Word(src, off, true)
+                : unit(src, null, off, 4, true);
         if (first == 0xfeff && kind.expectedOrder != -1) {
             big = true;
             off += 4;
