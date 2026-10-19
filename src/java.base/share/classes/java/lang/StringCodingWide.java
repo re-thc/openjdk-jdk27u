@@ -29,15 +29,19 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import jdk.internal.access.JavaNioCharsetAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.cs.*;
 
 /** Valid-input specializations; null requests the existing charset fallback. */
 final class StringCodingWide {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final JavaNioCharsetAccess CHARSET_ACCESS = SharedSecrets.getJavaNioCharsetAccess();
 
     private StringCodingWide() { }
 
@@ -71,7 +75,15 @@ final class StringCodingWide {
 
     @ForceInline
     static boolean supportsCharset(Charset cs) {
-        return kind(cs) != null;
+        int cached = CHARSET_ACCESS.getStringCodingWide(cs);
+        return cached == 0 ? cacheCharset(cs) : cached == 2;
+    }
+
+    @DontInline
+    private static boolean cacheCharset(Charset cs) {
+        int cached = kind(cs) == null ? 1 : 2;
+        CHARSET_ACCESS.setStringCodingWide(cs, cached);
+        return cached == 2;
     }
 
     @ForceInline
@@ -93,67 +105,104 @@ final class StringCodingWide {
         if (src == null) {
             return segment.get(big ? SegmentLayouts.CHAR_BE : SegmentLayouts.CHAR_LE, offset);
         }
-        int off = (int)offset;
         if (width == 2) {
-            return big ? (src[off] & 255) << 8 | src[off + 1] & 255
-                    : (src[off + 1] & 255) << 8 | src[off] & 255;
+            return UNSAFE.getCharUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big);
         }
-        return big ? src[off] << 24 | (src[off + 1] & 255) << 16
-                        | (src[off + 2] & 255) << 8 | src[off + 3] & 255
-                : src[off + 3] << 24 | (src[off + 2] & 255) << 16
-                        | (src[off + 1] & 255) << 8 | src[off] & 255;
+        return UNSAFE.getIntUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big);
     }
 
     static String decode(Charset cs, byte[] src, int off, int len) {
-        return decode(cs, src, null, off, len);
+        if (!SimdUTF.isEligible(len)) return null;
+        Kind kind = kind(cs);
+        if (kind == null || (len & (kind.unit - 1)) != 0) return null;
+        return kind.unit == 4 ? decodeUTF32(kind, src, off, len)
+                : decodeUTF16(kind, src, null, off, len);
     }
 
     static String decodeSegment(MemorySegment segment, long off, int len, Charset cs) {
         if (!SimdUTF.isEligible(len) || segment.isMapped()) return null;
         Kind kind = kind(cs);
         // Leave UTF-32 length discovery to the array decoder.
-        if (kind == null || kind.unit == 4) return null;
-        return decode(cs, null, segment, off, len);
+        if (kind == null || kind.unit == 4 || (len & 1) != 0) return null;
+        return decodeUTF16(kind, null, segment, off, len);
     }
 
-    private static String decode(Charset cs, byte[] src, MemorySegment segment, long off, int len) {
-        if (!SimdUTF.isEligible(len)) return null;
-        Kind kind = kind(cs);
-        if (kind == null || (len & (kind.unit - 1)) != 0) return null;
+    private static String decodeUTF32(Kind kind, byte[] src, int off, int len) {
         boolean big = kind.big;
-        int first = unit(src, segment, off, kind.unit, true);
-        if (kind.unit == 2 && kind.expectedOrder == 0) {
+        int first = unit(src, null, off, 4, true);
+        if (first == 0xfeff && kind.expectedOrder != -1) {
+            big = true;
+            off += 4;
+            len -= 4;
+        } else if (first == 0xfffe0000 && kind.expectedOrder != 1) {
+            big = false;
+            off += 4;
+            len -= 4;
+        }
+        return decodeUTF32(src, off, len, big);
+    }
+
+    private static String decodeUTF32(byte[] src, int off, int len, boolean big) {
+        int words = len >> 2;
+        if ((off & 3) != 0 && !SimdUTF.useScalarUTF32StringDecoding(len)) {
+            if (!String.COMPACT_STRINGS) return null;
+            for (int i = 0; i < words; i++) {
+                if ((unit(src, null, off + ((long)i << 2), 4, big) & ~255) != 0) return null;
+            }
+            return decodeLatin1UTF32(src, off, words, big);
+        }
+        int units = words;
+        boolean latin1 = String.COMPACT_STRINGS;
+        int nonLatinIndex = -1;
+        for (int i = 0; i < words; i++) {
+            int cp = unit(src, null, off + ((long)i << 2), 4, big);
+            // Java accepts surrogate-valued UTF-32 through its decoder.
+            if (!Character.isValidCodePoint(cp) || cp >= 0xd800 && cp <= 0xdfff) return null;
+            if (latin1 && cp > 255) {
+                nonLatinIndex = i;
+                latin1 = false;
+            }
+            if (cp >= 0x10000) units++;
+        }
+        if (latin1) return decodeLatin1UTF32(src, off, words, big);
+        if (len == 0) return "";
+        if (!SimdUTF.isEligibleUTF32Decoding(len)) return null;
+        byte[] value = StringUTF16.newBytesFor(units);
+        if (SimdUTF.useScalarUTF32StringDecoding(len)) {
+            return decodeShortUTF32(src, off, len, value, units, nonLatinIndex, big);
+        }
+        int written = SimdUTF.decodeUTF32Bytes(src, off, len, value, 0, units, big);
+        return written == units ? newUTF16String(value, nonLatinIndex) : null;
+    }
+
+    private static String decodeLatin1UTF32(byte[] src, int off, int words, boolean big) {
+        byte[] value = new byte[words];
+        for (int i = 0; i < words; i++) {
+            value[i] = (byte)unit(src, null, off + ((long)i << 2), 4, big);
+        }
+        return new String(value, String.LATIN1);
+    }
+
+    private static String decodeUTF16(Kind kind, byte[] src, MemorySegment segment, long off, int len) {
+        boolean big = kind.big;
+        int first = unit(src, segment, off, 2, true);
+        if (kind.expectedOrder == 0) {
             if (first == 0xfeff || first == 0xfffe) {
                 big = first == 0xfeff;
                 off += 2;
                 len -= 2;
             }
-        } else if (kind.unit == 4) {
-            if (first == 0xfeff && kind.expectedOrder != -1) {
-                big = true;
-                off += 4;
-                len -= 4;
-            } else if (first == 0xfffe0000 && kind.expectedOrder != 1) {
-                big = false;
-                off += 4;
-                len -= 4;
-            }
         }
-        int units = len / kind.unit;
+        int units = len >> 1;
         boolean latin1 = String.COMPACT_STRINGS;
         int nonLatinIndex = -1;
-        for (int i = 0; i < len; i += kind.unit) {
-            int cp = unit(src, segment, off + i, kind.unit, big);
-            if (latin1 && (cp < 0 || cp > 255)) {
-                nonLatinIndex = i / kind.unit + units - len / kind.unit;
+        for (int i = 0; i < len; i += 2) {
+            int cp = unit(src, segment, off + i, 2, big);
+            if (latin1 && cp > 255) {
+                nonLatinIndex = i >> 1;
                 latin1 = false;
             }
-            if (kind.unit == 4) {
-                // Java's UTF-32 decoder accepts surrogate-valued code points.
-                // Leave that dialect, and malformed input, to its decoder.
-                if (!Character.isValidCodePoint(cp) || cp >= 0xd800 && cp <= 0xdfff) return null;
-                if (cp >= 0x10000) units++;
-            } else if (!latin1) {
+            if (!latin1) {
                 // Native UTF-16 validation checks the remainder before publishing.
                 break;
             }
@@ -161,21 +210,15 @@ final class StringCodingWide {
         if (latin1) {
             byte[] value = new byte[units];
             for (int i = 0; i < units; i++) {
-                value[i] = (byte)unit(src, segment, off + (long)i * kind.unit, kind.unit, big);
+                value[i] = (byte)unit(src, segment, off + ((long)i << 1), 2, big);
             }
             return new String(value, String.LATIN1);
         }
         if (len == 0) return "";
-        if (src != null && !(kind.unit == 4
-                ? SimdUTF.isEligibleUTF32Decoding(len) : SimdUTF.isEligible(len))) return null;
+        if (src != null && ((off & 1) != 0 || !SimdUTF.isEligible(len))) return null;
         byte[] value = StringUTF16.newBytesFor(units);
         if (src != null) {
-            if (kind.unit == 4 && SimdUTF.useScalarUTF32StringDecoding(len)) {
-                return decodeShortUTF32(src, (int)off, len, value, units, nonLatinIndex, big);
-            }
-            int written = kind.unit == 2
-                    ? SimdUTF.decodeUTF16Bytes(src, (int)off, len, value, 0, units, big)
-                    : SimdUTF.decodeUTF32Bytes(src, (int)off, len, value, 0, units, big);
+            int written = SimdUTF.decodeUTF16Bytes(src, (int)off, len, value, 0, units, big);
             return written == units ? newUTF16String(value, nonLatinIndex) : null;
         }
         byte[] bytes = new byte[Math.min(len, 8192)];
@@ -184,7 +227,7 @@ final class StringCodingWide {
         while (consumed < len) {
             int size = Math.min(bytes.length, len - consumed);
             MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, off + consumed, bytes, 0, size);
-            if (kind.unit == 2 && consumed + size < len
+            if (consumed + size < len
                     && Character.isHighSurrogate((char)unit(bytes, null, size - 2, 2, big))) {
                 size -= 2;
             }
