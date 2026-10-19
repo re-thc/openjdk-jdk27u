@@ -72,6 +72,7 @@ public class DateFormatSymbolsSharingTest {
         checkSubclass();
         checkZones();
         checkFormatParse();
+        checkRegionOverride();
         checkConcurrentCache();
     }
 
@@ -192,8 +193,24 @@ public class DateFormatSymbolsSharingTest {
         check(original.format(epoch).equals(text), "formatter clone isolation");
     }
 
+    private static void checkRegionOverride() throws Exception {
+        DateFormatSymbols original = new DateFormatSymbols(Locale.forLanguageTag("fr-CA-u-rg-frzzzz"));
+        for (Symbol symbol : SYMBOLS) {
+            DateFormatSymbols clone = (DateFormatSymbols) original.clone();
+            String[] expected = symbol.get(original);
+            check(Arrays.equals(expected, symbol.get(clone)), symbol + " region-override clone");
+            check(symbol.internal(original) == symbol.internal(clone), symbol + " region-override sharing");
+            String[] changed = expected.clone();
+            changed[0] = "region-override local change";
+            symbol.set(clone, changed);
+            check(Arrays.equals(expected, symbol.get(original)), symbol + " region-override isolation");
+        }
+    }
+
     private static void checkConcurrentCache() throws Exception {
-        Locale locale = Locale.forLanguageTag("fr-CA-u-rg-frzzzz");
+        // Exercise cache publication without also racing the inherited shared
+        // region-override Locale.Builder. That path is covered sequentially.
+        Locale locale = Locale.CANADA_FRENCH;
         String[] expected = new DateFormatSymbols(locale).getMonths();
         var cacheField = DateFormatSymbols.class.getDeclaredField("cachedInstances");
         cacheField.setAccessible(true);
