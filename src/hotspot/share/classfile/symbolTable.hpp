@@ -77,14 +77,15 @@ class SymbolTable : public AllStatic {
   static Symbol* do_lookup(const char* name, int len, uintx hash);
   static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent);
 
-  // lookup only, won't add. Also calculate hash. Used by the ClassfileParser.
+  // Lookup only, without adding. Also calculate the hash.
   static Symbol* lookup_only(const char* name, int len, unsigned int& hash);
   static Symbol* lookup_only_unicode(const jchar* name, int len, unsigned int& hash);
 
   // Adding elements
   static void new_symbols(ClassLoaderData* loader_data,
                           const constantPoolHandle& cp, int names_count,
-                          const char** names, int* lengths, int* cp_indices);
+                          const char** names, int* lengths, int* cp_indices,
+                          const unsigned int* precomputed_hashes = nullptr);
 
   static Symbol* lookup_shared(const char* name, int len, unsigned int hash) NOT_CDS_RETURN_(nullptr);
   // Sets syms[i] to the shared symbol of each name that has one.

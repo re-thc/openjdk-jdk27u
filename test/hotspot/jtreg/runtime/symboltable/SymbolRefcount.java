@@ -70,6 +70,7 @@ public class SymbolRefcount {
 
     public static void main(String[] args) throws Exception {
         testDuplicateNames(0);
+        testDuplicateNames(6000);
         testDuplicateNames(8192);
         testParsingLimitsAndErrors();
         testConcurrentNames();

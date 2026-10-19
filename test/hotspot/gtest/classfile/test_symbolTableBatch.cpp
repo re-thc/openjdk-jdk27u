@@ -73,7 +73,7 @@ public:
     EXPECT_EQ(warmed, SymbolTable::arena()->used());
   }
 
-  static void check_cold_duplicates(int count) {
+  static void check_cold_duplicates(int count, bool precomputed = false) {
     JavaThread* THREAD = JavaThread::current();
     ThreadInVMfromNative tiv(THREAD);
     HandleMark hm(THREAD);
@@ -84,7 +84,7 @@ public:
     ASSERT_FALSE(HAS_PENDING_EXCEPTION);
     constantPoolHandle cp(THREAD, pool);
     char name[80];
-    os::snprintf_checked(name, sizeof(name), "test_symbol_batch_cold_regular_%d", count);
+    os::snprintf_checked(name, sizeof(name), "test_symbol_batch_cold_regular_%d_%d", count, precomputed);
     const char** names = NEW_RESOURCE_ARRAY(const char*, count);
     int* lengths = NEW_RESOURCE_ARRAY(int, count);
     int* indices = NEW_RESOURCE_ARRAY(int, count);
@@ -93,7 +93,14 @@ public:
       lengths[i] = (int)strlen(name);
       indices[i] = i + 1;
     }
-    batch(cld, cp, count, names, lengths, indices);
+    unsigned int* hashes = nullptr;
+    if (precomputed) {
+      hashes = NEW_RESOURCE_ARRAY(unsigned int, count);
+      for (int i = 0; i < count; i++) {
+        EXPECT_EQ(nullptr, SymbolTable::lookup_only(name, lengths[i], hashes[i]));
+      }
+    }
+    SymbolTable::new_symbols(cld, cp, count, names, lengths, indices, hashes);
     Symbol* symbol = cp->symbol_at(1);
     EXPECT_FALSE(symbol->is_permanent());
     EXPECT_EQ(count, symbol->refcount());
@@ -218,4 +225,5 @@ TEST_VM(SymbolTable, batch_cold_duplicate_references) {
   for (int count : counts) {
     SymbolTableTest::check_cold_duplicates(count);
   }
+  SymbolTableTest::check_cold_duplicates(20, true);
 }
