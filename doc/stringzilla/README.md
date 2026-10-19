@@ -30,6 +30,8 @@ GCC/Clang x86 selects AVX2 or AVX-512 using HotSpot capabilities and `UseAVX`.
 Both require AVX2/BMI1/BMI2/LZCNT; AVX-512 also requires VL/BW capabilities.
 AArch64 uses NEON; MSVC x64, Zero and other ports use serial kernels.
 GCC/Clang use portable scalar loads for unaligned byte-array offsets.
+MSVC compiles the kernel file with `HIGHEST` optimization: `/O2` in release and
+fastdebug, while slowdebug retains `/Od`.
 
 ## Search dispatch
 
