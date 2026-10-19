@@ -1,0 +1,1002 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/stringzilla-recovery/serial-c2/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-stringzilla-benchmark
+# VM invoker: /workspace/stringzilla-recovery/images/fork/bin/java
+# VM options: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -Xshare:off -XX:UseAVX=0 -XX:-TieredCompilation -XX:+UseStringZillaIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:+PrintCompilation -XX:+PrintIntrinsics -XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 300 ms each
+# Measurement: 1 iterations, 300 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf
+# Parameters: (coder = UTF16, length = 128, needleLength = 4, position = END)
+
+# Run progress: 0.00% complete, ETA 00:00:01
+# Fork: 1 of 1
+CompileCommand: print org/openjdk/bench/java/lang/StringZillaSearch.lastIndexOf intx print = 1111
+25    1             java.lang.Byte::toUnsignedInt (6 bytes)
+26    2 %           jdk.internal.util.ArraysSupport::unsignedHashCode @ 8 (36 bytes)
+28    4     n       java.lang.System::arraycopy (native)   (static)
+29    6     n       jdk.internal.misc.Unsafe::getReferenceVolatile (native)   
+                            @ 23   java.lang.Byte::toUnsignedInt (6 bytes)   inline (hot)
+30    3             java.lang.module.ModuleDescriptor::name (5 bytes)
+30    5             java.lang.module.ModuleReference::descriptor (5 bytes)
+31    7     n       jdk.internal.misc.Unsafe::compareAndSetLong (native)   
+31    8     n       jdk.internal.misc.Unsafe::compareAndSetReference (native)   
+31    9             java.util.KeyValueHolder::getKey (5 bytes)
+32   10             java.util.KeyValueHolder::getValue (5 bytes)
+32   11     n       java.lang.Object::hashCode (native)   
+33   12             jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)
+35   15     n       java.lang.Module::addExports0 (native)   (static)
+35   17     n       java.lang.Module::addExportsToAll0 (native)   (static)
+                            @ 23   java.lang.Byte::toUnsignedInt (6 bytes)   inline (hot)
+36   14             java.lang.module.ModuleDescriptor$Exports::source (5 bytes)
+36   13             java.lang.module.ResolvedModule::reference (5 bytes)
+36   16             java.lang.module.ModuleDescriptor::isAutomatic (5 bytes)
+36   19             java.util.ImmutableCollections$Set12::isEmpty (2 bytes)
+36   18             java.lang.module.ModuleDescriptor$Exports::targets (5 bytes)
+36   20     n       jdk.internal.vm.Continuation::enterSpecial (native)   (static)
+36   21     n       jdk.internal.vm.Continuation::doYield (native)   (static)
+37   22             java.lang.AbstractStringBuilder::length (5 bytes)
+43   23     n       jdk.internal.misc.Unsafe::getByte (native)   
+43   24     n       jdk.internal.misc.Unsafe::getShort (native)   
+44   25     n       jdk.internal.misc.Unsafe::getInt (native)   
+44   26             java.util.zip.ZipCoder$UTF8ZipCoder::isUTF8 (2 bytes)
+45   27             jdk.internal.util.Preconditions::checkIndex (18 bytes)
+55   28     n       jdk.internal.misc.Unsafe::getLong (native)   
+56   29             java.lang.Class::isPrimitive (5 bytes)
+57   30             java.lang.Object::<init> (1 bytes)
+60   31     n       jdk.internal.misc.Unsafe::putReferenceVolatile (native)   
+60   32 %           java.util.Properties$LineReader::readLine @ 224 (584 bytes)
+61   33     n       java.lang.Object::getClass (native)   
+67   34     n       java.lang.invoke.MethodHandle::linkToSpecial(LL)V (native)   (static)
+69   36     n       java.lang.invoke.MethodHandle::invokeBasic()L (native)   
+69   37     n       java.lang.invoke.MethodHandle::linkToSpecial(LL)L (native)   (static)
+70   38     n       java.lang.invoke.MethodHandle::linkToStatic(LLIL)I (native)   (static)
+70   40     n       java.lang.invoke.MethodHandle::linkToStatic(LLLLL)I (native)   (static)
+71   43     n       java.lang.invoke.MethodHandle::linkToStatic(LLIIL)V (native)   (static)
+72   44     n       java.lang.invoke.MethodHandle::linkToStatic(LLLLLLL)L (native)   (static)
+72   45     n       java.lang.Object::clone (native)   
+72   47     n       java.lang.invoke.MethodHandle::linkToSpecial(LLIL)V (native)   (static)
+                            @ 274   java.io.InputStream::read (9 bytes)   inline (hot)   callee changed to  java.util.Properties$LineReader::readLine (584 bytes)    \-> TypeProfile (2/2 counts) = sun/nio/ch/ChannelInputStream
+              s               @ 5   sun.nio.ch.ChannelInputStream::read (84 bytes)   failed to inline: too big
+                            @ 479   java.io.InputStream::read (9 bytes)   failed to inline: virtual call
+73   39             jdk.internal.util.StrongReferenceKey::get (5 bytes)
+73   41             java.lang.invoke.MethodType::returnType (5 bytes)
+73   35             java.lang.Enum::ordinal (5 bytes)
+73   42             java.lang.invoke.MethodType::ptypes (5 bytes)
+73   46             java.lang.Class::getClassLoader (5 bytes)
+80   48             jdk.internal.classfile.impl.AbstractPoolEntry::index (5 bytes)
+85   49     n       java.lang.invoke.MethodHandle::invokeBasic(LLLLLL)L (native)   
+87   50     n       java.lang.invoke.MethodHandle::linkToStatic(LLL)L (native)   (static)
+87   51     n       java.lang.invoke.MethodHandle::linkToStatic(LLLL)L (native)   (static)
+88   52             java.lang.invoke.MemberName::getDeclaringClass (5 bytes)
+88   53             jdk.internal.classfile.impl.AbstractPoolEntry::width (2 bytes)
+94   54     n       java.lang.Class::desiredAssertionStatus0 (native)   (static)
+96   55             java.lang.AbstractStringBuilder::getValue (5 bytes)
+96   56             java.nio.Buffer::limit (5 bytes)
+97   57             java.util.Objects::requireNonNull (14 bytes)
+97   58             java.lang.String::isLatin1 (19 bytes)
+97   59             jdk.internal.misc.Unsafe::pickPos (14 bytes)
+98   60             jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)
+98   61 %           java.lang.StringCoding::countPositives0 @ 7 (33 bytes)
+100   62             java.lang.StringCoding::countPositives0 (33 bytes)
+103   63             jdk.internal.misc.Unsafe::convEndian (16 bytes)
+                            @ 12   java.lang.Short::reverseBytes (14 bytes)   (intrinsic)
+103   65             jdk.internal.misc.Unsafe::getShortUnaligned (12 bytes)
+                            @ 5   jdk.internal.misc.Unsafe::getShortUnaligned (33 bytes)   (intrinsic)
+                            @ 8   jdk.internal.misc.Unsafe::convEndian (16 bytes)   inline (hot)
+                              @ 12   java.lang.Short::reverseBytes (14 bytes)   (intrinsic)
+103   64             java.util.zip.ZipUtils::get16 (40 bytes)
+                            @ 6   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 18   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 33   jdk.internal.misc.Unsafe::getShortUnaligned (12 bytes)   inline (hot)
+                              @ 5   jdk.internal.misc.Unsafe::getShortUnaligned (33 bytes)   (intrinsic)
+                              @ 8   jdk.internal.misc.Unsafe::convEndian (16 bytes)   inline (hot)
+                            @ 36   java.lang.Short::toUnsignedInt (5 bytes)   inline (hot)
+104   66             jdk.internal.misc.Unsafe::getShortUnaligned (33 bytes)
+                            @ 11   jdk.internal.misc.Unsafe::getShort (0 bytes)   (intrinsic)
+                            @ 18   jdk.internal.misc.Unsafe::getByte (0 bytes)   (intrinsic)
+                            @ 26   jdk.internal.misc.Unsafe::getByte (0 bytes)   (intrinsic)
+                            @ 29   jdk.internal.misc.Unsafe::makeShort (26 bytes)   inline (hot)
+                              @ 1   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 7   jdk.internal.misc.Unsafe::pickPos (14 bytes)   inline (hot)
+                              @ 12   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 19   jdk.internal.misc.Unsafe::pickPos (14 bytes)   inline (hot)
+104   67             java.lang.Short::toUnsignedInt (5 bytes)
+105   68             jdk.internal.misc.Unsafe::getIntUnaligned (83 bytes)
+                            @ 13   jdk.internal.misc.Unsafe::getInt (0 bytes)   (intrinsic)
+                            @ 28   jdk.internal.misc.Unsafe::getShort (0 bytes)   (intrinsic)
+                            @ 38   jdk.internal.misc.Unsafe::getShort (0 bytes)   (intrinsic)
+                            @ 41   jdk.internal.misc.Unsafe::makeInt (25 bytes)   inline (hot)
+                              @ 1   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 7   jdk.internal.misc.Unsafe::pickPos (14 bytes)   failed to inline: low call site frequency
+                              @ 12   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 19   jdk.internal.misc.Unsafe::pickPos (14 bytes)   failed to inline: low call site frequency
+                            @ 48   jdk.internal.misc.Unsafe::getByte (0 bytes)   (intrinsic)
+                            @ 56   jdk.internal.misc.Unsafe::getByte (0 bytes)   (intrinsic)
+                            @ 66   jdk.internal.misc.Unsafe::getByte (0 bytes)   (intrinsic)
+                            @ 76   jdk.internal.misc.Unsafe::getByte (0 bytes)   (intrinsic)
+                            @ 79   jdk.internal.misc.Unsafe::makeInt (51 bytes)   inline (hot)
+                              @ 1   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 7   jdk.internal.misc.Unsafe::pickPos (14 bytes)   inline (hot)
+                              @ 12   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 19   jdk.internal.misc.Unsafe::pickPos (14 bytes)   inline (hot)
+                              @ 25   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 32   jdk.internal.misc.Unsafe::pickPos (14 bytes)   inline (hot)
+                              @ 38   jdk.internal.misc.Unsafe::toUnsignedInt (6 bytes)   inline (hot)
+                              @ 45   jdk.internal.misc.Unsafe::pickPos (14 bytes)   inline (hot)
+106   69             java.util.zip.ZipUtils::get32 (40 bytes)
+107   70     n       java.lang.invoke.MethodHandle::linkToStatic(LL)L (native)   (static)
+                            @ 6   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 18   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 33   jdk.internal.misc.Unsafe::getIntUnaligned (12 bytes)   inline (hot)
+                              @ 5   jdk.internal.misc.Unsafe::getIntUnaligned (83 bytes)   (intrinsic)
+                              @ 8   jdk.internal.misc.Unsafe::convEndian (16 bytes)   inline (hot)
+                            @ 36   java.lang.Integer::toUnsignedLong (7 bytes)   inline (hot)
+110   71     n       java.lang.invoke.MethodHandle::linkToSpecial(LLLLL)L (native)   (static)
+110   72             jdk.internal.classfile.impl.SplitConstantPool::size (5 bytes)
+110   73     n       java.lang.invoke.MethodHandle::linkToSpecial(LLL)V (native)   (static)
+110   74     n       java.lang.invoke.MethodHandle::invokeBasic(L)L (native)   
+110   75             jdk.internal.util.WeakReferenceKey::hashCode (5 bytes)
+110   76     n       java.lang.invoke.MethodHandle::linkToSpecial(LLL)L (native)   (static)
+111   77             jdk.internal.classfile.impl.AbstractPoolEntry::constantPool (5 bytes)
+114   78             java.lang.String::coder (15 bytes)
+116   79             java.lang.invoke.MethodType::form (5 bytes)
+117   80             java.lang.String::value (5 bytes)
+117   81             jdk.internal.constant.ClassOrInterfaceDescImpl::descriptorString (5 bytes)
+117   82             jdk.internal.classfile.impl.BufWriterImpl::size (5 bytes)
+121   83     n       java.lang.invoke.MethodHandle::linkToSpecial(LLLL)V (native)   (static)
+121   84     n       java.lang.Class::isHidden (native)   
+121   85             jdk.internal.classfile.impl.AbstractDirectBuilder::constantPool (5 bytes)
+121   86     n       java.lang.invoke.MethodHandle::invokeBasic(LL)L (native)   
+121   87     n       java.lang.invoke.MethodHandle::linkToSpecial(LLLL)L (native)   (static)
+122   88             jdk.internal.classfile.impl.AbstractPoolEntry::hashCode (5 bytes)
+123   89             jdk.internal.constant.ClassOrInterfaceDescImpl::isClassOrInterface (2 bytes)
+123   90             jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::tag (2 bytes)
+123   91             java.lang.Class::getComponentType (5 bytes)
+123   92             jdk.internal.classfile.impl.AbstractPoolEntry$ClassEntryImpl::tag (3 bytes)
+123   93             jdk.internal.classfile.impl.AbstractDirectBuilder::setOriginal (6 bytes)
+124   94             java.util.ArrayList::size (5 bytes)
+124   95             java.lang.classfile.Opcode::bytecode (5 bytes)
+125   96             java.lang.String::length (11 bytes)
+                            @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+125   97             java.lang.invoke.MethodTypeForm::parameterSlotCount (5 bytes)
+125   98     n       java.lang.invoke.MethodHandleNatives::resolve (native)   (static)
+126   99     n       java.lang.reflect.Array::newArray (native)   (static)
+126  100             jdk.internal.classfile.impl.LabelImpl::labelContext (5 bytes)
+127  101             jdk.internal.classfile.impl.LabelImpl::getBCI (5 bytes)
+128  102             java.lang.reflect.Method::getName (5 bytes)
+129  103     n       java.lang.invoke.MethodHandle::linkToStatic(LLLLL)L (native)   (static)
+129  104     n       java.lang.invoke.MethodHandle::invokeBasic(LLLL)L (native)   
+130  105             jdk.internal.classfile.impl.RawBytecodeHelper::bci (5 bytes)
+130  106     n       java.lang.Class::isAssignableFrom (native)   
+130  107             jdk.internal.classfile.impl.DirectMethodBuilder::methodFlags (5 bytes)
+131  108             java.lang.String::charAt (25 bytes)
+                            @ 1   java.lang.String::isLatin1 (19 bytes)   inline (hot)
+                            @ 12   java.lang.StringLatin1::charAt (15 bytes)   inline (hot)
+                              @ 3   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+134  109             java.lang.Module::getDescriptor (5 bytes)
+138  110             java.lang.Class::getModule (5 bytes)
+140  111             java.lang.invoke.MethodHandles$Lookup::lookupClass (5 bytes)
+140  113     n       java.lang.invoke.MethodHandle::linkToStatic(LLJJL)I (native)   (static)
+140  112             java.lang.invoke.MethodTypeForm::erasedType (5 bytes)
+140  114     n       java.lang.String::intern (native)   
+140  115     n       java.lang.invoke.MethodHandle::linkToStatic(LLLLLL)L (native)   (static)
+141  116     n       java.lang.invoke.MethodHandle::invokeBasic(LLLLL)L (native)   
+141  117     n       java.lang.invoke.MethodHandle::linkToSpecial(LLLLLLL)L (native)   (static)
+142  118             jdk.internal.classfile.impl.UnboundAttribute::attributeMapper (5 bytes)
+143  119     n       java.lang.Class::isInstance (native)   
+143  120             jdk.internal.classfile.impl.AbstractPoolEntry$NameAndTypeEntryImpl::tag (3 bytes)
+143  121     n       java.lang.invoke.MethodHandle::linkToSpecial(LILL)L (native)   (static)
+143  122     n       java.lang.invoke.MethodHandle::invokeBasic(LIL)L (native)   
+143  123     n       java.lang.invoke.MethodHandle::linkToSpecial(LLILL)L (native)   (static)
+144  124             jdk.internal.constant.PrimitiveClassDescImpl::descriptorString (5 bytes)
+144  125     n       java.lang.invoke.MethodHandle::invokeBasic(IL)L (native)   
+145  126     n       java.lang.invoke.MethodHandle::invokeBasic()J (native)   
+145  127     n       java.lang.invoke.MethodHandle::linkToSpecial(LL)J (native)   (static)
+147  128     n       java.lang.invoke.MethodHandle::linkToStatic(LLIJL)V (native)   (static)
+160  129     n       java.lang.invoke.MethodHandle::linkToStatic(LLIL)J (native)   (static)
+161  130     n       java.lang.Class::initClassName (native)   
+162  131             java.lang.invoke.MethodHandle::type (5 bytes)
+163  132             java.io.File::getPath (5 bytes)
+164  133             java.util.zip.Inflater$InflaterZStreamRef::address (5 bytes)
+164  134             java.security.ProtectionDomain::getCodeSource (5 bytes)
+165  135 %           java.lang.StringLatin1::indexOfChar0 @ 59 (85 bytes)
+165  136     n       java.lang.ClassLoader::findLoadedClass0 (native)   
+167  138             java.io.ObjectStreamField::getName (5 bytes)
+167  139             java.lang.reflect.Field::getName (5 bytes)
+167  140             java.io.ObjectStreamField::getField (5 bytes)
+167  137             java.net.URL::getProtocol (5 bytes)
+168  141     n       java.lang.invoke.MethodHandle::invokeBasic(LL)V (native)   
+169  142             jdk.internal.classfile.impl.AbstractAttributeMapper::allowMultiple (5 bytes)
+170  143             java.lang.classfile.Opcode::kind (5 bytes)
+170  144             jdk.internal.classfile.impl.DirectMethodBuilder::methodType (5 bytes)
+171  145             java.lang.reflect.Field::getType (5 bytes)
+172  146             java.lang.StringLatin1::indexOfChar0 (85 bytes)
+172  147     n       java.lang.Class::getSuperclass (native)   
+176  149             java.lang.reflect.Field::getModifiers (5 bytes)
+177  148             java.io.ObjectStreamField::setOffset (6 bytes)
+177  150             java.lang.invoke.MethodTypeForm::basicType (5 bytes)
+177  151             java.net.URL::getAuthority (5 bytes)
+177  152             java.net.URL::getPath (5 bytes)
+179  153     n       java.io.RandomAccessFile::readBytes0 (native)   
+180  154             java.security.CodeSource::getLocationNoFragString (5 bytes)
+180  155             java.lang.String::hashCode (60 bytes)
+                            @ 17   java.lang.String::isLatin1 (19 bytes)   inline (hot)
+                            @ 27   java.lang.StringLatin1::hashCode (9 bytes)   inline (hot)
+                              @ 5   jdk.internal.util.ArraysSupport::hashCodeOfUnsigned (55 bytes)   failed to inline: too big
+194  156     n       java.lang.Throwable::fillInStackTrace (native)   
+195  157     n       java.io.RandomAccessFile::seek0 (native)   
+197  158     n       java.lang.ClassLoader::findBootstrapClass (native)   (static)
+197  159             java.util.jar.Attributes$Name::hashCode (5 bytes)
+197  160             java.net.URL::getFile (5 bytes)
+198  161             java.lang.String::equals (56 bytes)
+                            @ 44   java.lang.StringLatin1::equals (16 bytes)   inline (hot)
+                              @ 1   java.util.Objects::requireNonNull (14 bytes)   force inline by annotation
+                              @ 6   java.util.Objects::requireNonNull (14 bytes)   force inline by annotation
+                              @ 12   java.lang.StringLatin1::equals0 (33 bytes)   (intrinsic)
+199  163             java.io.ObjectStreamField::getOffset (5 bytes)
+199  164             sun.invoke.util.Wrapper::basicTypeString (5 bytes)
+199  162             java.io.ObjectStreamField::isUnshared (5 bytes)
+201  165     n       jdk.internal.misc.Unsafe::objectFieldOffset0 (native)   
+201  166     n       jdk.internal.misc.Unsafe::compareAndSetInt (native)   
+203  167     n       java.lang.invoke.MethodHandle::linkToStatic(LL)I (native)   (static)
+204  168     n       java.lang.invoke.MethodHandle::linkToStatic(IL)L (native)   (static)
+206  169             java.lang.constant.ClassDesc::isPrimitive (2 bytes)
+206  170     n       java.lang.invoke.MethodHandle::invokeBasic(LLL)L (native)   
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/stringzilla-recovery/serial-c2/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+209  171             java.io.ObjectInputStream$BlockDataInputStream::getBlockDataMode (5 bytes)
+210  172             jdk.internal.misc.Unsafe::getIntUnaligned (12 bytes)
+                            @ 5   jdk.internal.misc.Unsafe::getIntUnaligned (83 bytes)   (intrinsic)
+                            @ 8   jdk.internal.misc.Unsafe::convEndian (16 bytes)   inline (hot)
+                              @ 12   java.lang.Integer::reverseBytes (28 bytes)   (intrinsic)
+211  173 %           java.io.ObjectStreamClass::matchFields @ 43 (247 bytes)
+214  176     n       jdk.internal.misc.Unsafe::putBoolean (native)   
+219  182     n       java.lang.Double::doubleToRawLongBits (native)   (static)
+220  183     n       java.lang.ref.Reference::refersTo0 (native)   
+                            @ 58   java.io.ObjectStreamField::getName (5 bytes)   accessor
+                            @ 63   java.io.ObjectStreamField::getName (5 bytes)   accessor
+                            @ 66   java.lang.String::equals (56 bytes)   inline (hot)
+                              @ 44   java.lang.StringLatin1::equals (16 bytes)   inline (hot)
+                                @ 1   java.util.Objects::requireNonNull (14 bytes)   force inline by annotation
+                                @ 6   java.util.Objects::requireNonNull (14 bytes)   force inline by annotation
+                                @ 12   java.lang.StringLatin1::equals0 (33 bytes)   (intrinsic)
+                            @ 74   java.io.ObjectStreamField::isPrimitive (23 bytes)   inline (hot)
+                              @ 1   java.io.ObjectStreamField::getTypeCode (9 bytes)   failed to inline: low call site frequency
+                            @ 82   java.io.ObjectStreamField::isPrimitive (23 bytes)   inline (hot)
+                              @ 1   java.io.ObjectStreamField::getTypeCode (9 bytes)   failed to inline: low call site frequency
+                            @ 90   java.io.ObjectStreamField::getTypeCode (9 bytes)   inline (hot)
+                              @ 1   java.io.ObjectStreamField::getSignature (39 bytes)   inline (hot)
+                              @ 5   java.lang.String::charAt (25 bytes)   inline (hot)
+                                @ 1   java.lang.String::isLatin1 (19 bytes)   inline (hot)
+                                @ 12   java.lang.StringLatin1::charAt (15 bytes)   inline (hot)
+                                  @ 3   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                    @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 95   java.io.ObjectStreamField::getTypeCode (9 bytes)   inline (hot)
+                              @ 1   java.io.ObjectStreamField::getSignature (39 bytes)   inline (hot)
+                              @ 5   java.lang.String::charAt (25 bytes)   inline (hot)
+                                @ 1   java.lang.String::isLatin1 (19 bytes)   inline (hot)
+                                @ 12   java.lang.StringLatin1::charAt (15 bytes)   inline (hot)
+                                  @ 3   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                    @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 139   java.io.ObjectStreamField::getField (5 bytes)   accessor
+                            @ 151   java.io.ObjectStreamField::getField (5 bytes)   accessor
+                            @ 156   java.io.ObjectStreamField::isUnshared (5 bytes)   accessor
+                            @ 160   java.io.ObjectStreamField::<init> (64 bytes)   inline (hot)
+                              @ 1   java.lang.Object::<init> (1 bytes)   inline (hot)
+                              @ 16   java.lang.reflect.Field::getName (5 bytes)   accessor
+                              @ 23   java.lang.reflect.Field::getType (5 bytes)   accessor
+                              @ 35   java.lang.Class::isPrimitive (5 bytes)   accessor
+                              @ 54   java.lang.Class::descriptorString (137 bytes)   failed to inline: too big
+                              @ 57   java.lang.String::intern (0 bytes)   failed to inline: native method
+                            @ 227   java.io.ObjectStreamField::getOffset (5 bytes)   accessor
+                            @ 230   java.io.ObjectStreamField::setOffset (6 bytes)   accessor
+220  181             java.security.CodeSource::getLocation (5 bytes)
+220  179             java.net.URL::getQuery (5 bytes)
+220  180             java.net.URL::getRef (5 bytes)
+220  174             java.io.ObjectInputStream$PeekInputStream::getBytesRead (5 bytes)
+220  175             jdk.internal.event.DeserializationEvent::shouldCommit (2 bytes)
+220  178             java.lang.ClassValue$ClassValueMap::getCache (5 bytes)
+221  177             java.lang.reflect.Method::getSharedParameterTypes (5 bytes)
+221  184             java.lang.NamedPackage::module (5 bytes)
+221  185             java.lang.Integer::intValue (5 bytes)
+226  186             java.lang.StringLatin1::lastIndexOf (126 bytes)
+227  189     n       java.io.UnixFileSystem::getBooleanAttributes0 (native)   
+                            @ 1   java.lang.StringLatin1::canEncode (17 bytes)   inline (hot)
+                            @ 14   java.lang.Math::min (11 bytes)   (intrinsic)
+228  187             java.net.URL::getHost (5 bytes)
+228  188             jdk.internal.loader.URLClassPath$Loader::getBaseURL (5 bytes)
+229  190             java.net.URL::getUserInfo (5 bytes)
+229  191             java.net.URL::getPort (5 bytes)
+230  192     n       java.lang.ref.PhantomReference::clear0 (native)   
+231  193             jdk.internal.loader.URLClassPath$Loader::mayContain (2 bytes)
+232  194             java.lang.reflect.Field::getDeclaringClass (5 bytes)
+233  195             jdk.internal.classfile.impl.LabelImpl::setBCI (6 bytes)
+233  196     n       java.lang.ClassLoader::defineClass1 (native)   (static)
+233  197             jdk.internal.loader.Resource::getByteBuffer (2 bytes)
+235  198             java.util.zip.Inflater::hasPendingOutput (5 bytes)
+235  199     n       java.util.zip.Inflater::inflateBytesBytes (native)   
+235  200     n       java.util.zip.Inflater::reset (native)   (static)
+235  201             jdk.internal.misc.Unsafe::getReferenceAcquire (7 bytes)
+                            @ 3   jdk.internal.misc.Unsafe::getReferenceVolatile (0 bytes)   (intrinsic)
+235  202             java.util.concurrent.ConcurrentHashMap::tabAt (21 bytes)
+                            @ 14   jdk.internal.misc.Unsafe::getReferenceAcquire (7 bytes)   (intrinsic)
+237  203     n       java.lang.invoke.MethodHandle::linkToStatic(L)L (native)   (static)
+239  204             java.lang.Enum::name (5 bytes)
+241  205             sun.util.locale.BaseLocale::getLanguage (5 bytes)
+242  206             java.util.HashMap$Node::getKey (5 bytes)
+242  207             java.util.HashMap$Node::getValue (5 bytes)
+242  208             java.util.LinkedHashMap::removeEldestEntry (2 bytes)
+242  209             java.lang.Math::min (11 bytes)
+244  210             java.security.Provider$Service::getType (5 bytes)
+244  211             java.security.Provider$Service::getAlgorithm (5 bytes)
+244  212             java.security.Provider$Service::getAliases (5 bytes)
+245  213     n       jdk.internal.misc.Unsafe::putByte (native)   
+245  214             java.io.ClassCache$CacheRef::getStrong (5 bytes)
+245  215     n       java.lang.System::identityHashCode (native)   (static)
+245  216             java.lang.StringCoding::countNonZeroAsciiLatin1 (33 bytes)
+246  217     n       jdk.internal.misc.Unsafe::putShort (native)   
+247  218     n       jdk.internal.misc.Unsafe::getBoolean (native)   
+249  219     n       jdk.internal.misc.Unsafe::getBooleanVolatile (native)   
+249  220 %           java.lang.Class::searchFields @ 8 (43 bytes)
+                            @ 22   java.lang.reflect.Field::getName (5 bytes)   accessor
+                            @ 26   java.lang.String::equals (56 bytes)   inline (hot)
+                              @ 44   java.lang.StringLatin1::equals (16 bytes)   inline (hot)
+                                @ 1   java.util.Objects::requireNonNull (14 bytes)   force inline by annotation
+                                @ 6   java.util.Objects::requireNonNull (14 bytes)   force inline by annotation
+                                @ 12   java.lang.StringLatin1::equals0 (33 bytes)   (intrinsic)
+256  222             java.lang.invoke.LambdaForm$Name::index (5 bytes)
+256  223             jdk.internal.classfile.impl.AbstractPoolEntry$MethodRefEntryImpl::tag (3 bytes)
+256  221             java.util.zip.ZipEntry::getSize (5 bytes)
+263  224             java.lang.invoke.LambdaForm$BasicType::basicTypeKind (5 bytes)
+# Warmup Iteration   1: 263  225             java.lang.invoke.LambdaForm$BasicType::basicTypeClass (5 bytes)
+265  226     n       java.lang.invoke.MethodHandle::invokeBasic(L)I (native)   
+265  227     n       java.lang.invoke.MethodHandle::linkToSpecial(LLL)I (native)   (static)
+265  229     n       java.lang.invoke.MethodHandle::invokeBasic(LI)V (native)   
+266  228             sun.invoke.util.Wrapper::basicTypeChar (5 bytes)
+266  230             java.lang.invoke.LambdaForm$Name::type (5 bytes)
+268  231             java.util.concurrent.atomic.AtomicLong::get (5 bytes)
+268   58             java.lang.String::isLatin1 (19 bytes)   made not entrant: uncommon trap
+268  232             java.lang.String::checkIndex (10 bytes)
+                            @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+269  233             java.lang.StringZilla::compilerTier (2 bytes)
+269  234             java.util.jar.Manifest::getEntries (5 bytes)
+269  235             java.util.jar.Manifest::getMainAttributes (5 bytes)
+270  236             java.lang.StringUTF16::length (5 bytes)
+271  237             java.lang.StringUTF16::checkIndex (9 bytes)
+                            @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                            @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                              @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+272  238             java.lang.String::lastIndexOf (10 bytes)
+                            @ 3   java.lang.String::length (11 bytes)   inline (hot)
+                              @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                            @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation
+                              @ 5   java.lang.String::coder (15 bytes)   inline (hot)
+                              @ 9   java.lang.String::length (11 bytes)   inline (hot)
+                                @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                              @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)
+                                @ 7   java.lang.String::coder (15 bytes)   inline (hot)
+                                @ 13   java.lang.String::length (11 bytes)   inline (hot)
+                                  @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                @ 140   java.lang.StringUTF16::lastIndexOf (1219 bytes)   force inline by annotation
+                                  @ 69   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                    @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                    @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                      @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                                  @ 79   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                    @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                    @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                      @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                                  @ 94   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)
+                                  @ 131   java.lang.StringZilla::matchesUTF16 (149 bytes)   force inline by annotation
+                                    @ 56   java.lang.StringZilla::mismatchReverseC2 (21 bytes)   force inline by annotation
+                                      @ 17   java.lang.StringZilla::mismatchReverseC2 (155 bytes)   force inline by annotation
+                                        @ 28   java.util.Objects::checkFromIndexSize (9 bytes)   failed to inline: never executed
+                                        @ 38   java.util.Objects::checkFromIndexSize (8 bytes)   failed to inline: low call site frequency
+                                        @ 42   jdk.internal.misc.Unsafe::getUnsafe (4 bytes)   inline (hot)
+                                        @ 77   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                        @ 89   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                        @ 104   jdk.internal.misc.Unsafe::isBigEndian (4 bytes)   inline (hot)
+                                        @ 120   java.lang.Long::numberOfLeadingZeros (26 bytes)   (intrinsic)
+                                        @ 151   jdk.internal.util.ArraysSupport::mismatch (103 bytes)   failed to inline: too big
+                                    @ 92   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                    @ 98   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                    @ 130   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                    @ 139   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+277  241             java.lang.StringUTF16::lastIndexOf (1219 bytes)
+                            @ 69   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                              @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                              @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 79   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                              @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                              @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                            @ 94   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)
+                            @ 131   java.lang.StringZilla::matchesUTF16 (149 bytes)   force inline by annotation
+                              @ 56   java.lang.StringZilla::mismatchReverseC2 (21 bytes)   force inline by annotation
+                                @ 17   java.lang.StringZilla::mismatchReverseC2 (155 bytes)   force inline by annotation
+                                  @ 28   java.util.Objects::checkFromIndexSize (9 bytes)   failed to inline: low call site frequency
+                                  @ 38   java.util.Objects::checkFromIndexSize (8 bytes)   failed to inline: low call site frequency
+                                  @ 42   jdk.internal.misc.Unsafe::getUnsafe (4 bytes)   inline (hot)
+                                  @ 77   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                  @ 89   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                  @ 104   jdk.internal.misc.Unsafe::isBigEndian (4 bytes)   inline (hot)
+                                  @ 120   java.lang.Long::numberOfLeadingZeros (26 bytes)   (intrinsic)
+                                  @ 151   jdk.internal.util.ArraysSupport::mismatch (103 bytes)   failed to inline: too big
+                              @ 92   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                              @ 98   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                              @ 130   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                              @ 139   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+281  245             org.openjdk.jmh.infra.Blackhole::consumeCompiler (1 bytes)
+281  243             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)
+
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+[0.287s][warning][os] Loading hsdis library failed
+
+Compiled method (c2) 286  243             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)
+ total in heap  [0x00007efc3c2de688,0x00007efc3c2decf0] = 1640
+ main code      [0x00007efc3c2de780,0x00007efc3c2deca8] = 1320
+ stub code      [0x00007efc3c2deca8,0x00007efc3c2dece0] = 56
+ oops           [0x00007efc3c2dece0,0x00007efc3c2decf0] = 16
+ mutable data [0x00007efc04297610,0x00007efc04297700] = 240
+ relocation     [0x00007efc04297610,0x00007efc04297688] = 120
+ metadata       [0x00007efc04297688,0x00007efc04297700] = 120
+ immutable data [0x00007efc042971a0,0x00007efc04297604] = 1124
+ dependencies   [0x00007efc042971a0,0x00007efc042971c0] = 32
+ nul chk table  [0x00007efc042971c0,0x00007efc042971e8] = 40
+ handler table  [0x00007efc042971e8,0x00007efc04297230] = 72
+ scopes pcs     [0x00007efc04297230,0x00007efc04297360] = 304
+ scopes data    [0x00007efc04297360,0x00007efc04297600] = 672
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Instructions begin]
+  0x00007efc3c2de780: 0f1f 8400 | 0000 0000 | 0f1f 8000 | 0000 0044 | 8b16 41c1 | ea0d 443b 
+
+  0x00007efc3c2de798: ;   {runtime_call ic_miss_blob (shared runtime)}
+  0x00007efc3c2de798: 5008 0f85 | c0cf f6ff 
+[Verified Entry Point]
+  0x00007efc3c2de7a0: 8984 2400 | c0fe ff55 | 4883 ec40 | 4181 7f20 | 0100 0000 | 0f85 df04 | 0000 448b | 5e1c 448b 
+  0x00007efc3c2de7c0: 4618 478b | 54c4 0c44 | 8914 2447 | 8b54 d404 
+
+  0x00007efc3c2de7d0: ; implicit exception: dispatches to 0x00007efc3c2dec44
+  0x00007efc3c2de7d0: 438b 4cdc | 0c89 4c24 | 0441 8b74 | cc04 470f | be4c dc08 | 430f be5c | c408 448b | de41 8bc9 
+  0x00007efc3c2de7f0: 41d3 fb45 | 8bc2 8bcb | 41d3 f845 | 8be8 452b | eb45 3bc5 | 0f8e fe02 | 0000 4585 | ed0f 8c7d 
+  0x00007efc3c2de810: 0300 0045 | 85db 0f84 | 8c03 0000 | 413b d90f | 8517 0300 | 0085 db0f | 8497 0300 | 0041 83f8 
+  0x00007efc3c2de830: 100f 8c35 | 0300 008b | ded1 fb41 | 8bcb ffc9 | 3bcb 0f83 | 6c02 0000 | 458b ca41 | d1f9 418b 
+  0x00007efc3c2de850: e8ff cd41 | 3be9 0f83 | 8402 0000 | 4183 fb08 | 0f8f 8603 | 0000 4963 | f88b 1c24 | 498d 2cdc 
+  0x00007efc3c2de870: 448b 4c24 | 044b 8d14 | cc49 63db | 4c8b cf4c | 2bcb 4183 | fb04 0f84 | 4201 0000 | 85c9 7c34 
+  0x00007efc3c2de890: 0fb7 4c5a | 0644 0fb7 
+
+  0x00007efc3c2de898: ;   {other}
+  0x00007efc3c2de898: 547d 0644 | 3bd1 0f85 | ed01 0000 | 418b f083 | c6fe 418b | cdff c93b | f17e 1141 | 8bfb 412b 
+  0x00007efc3c2de8b8: f841 8bd8 | 83c3 fd44 | 8bd6 eb17 | 418b c548 | 83c4 405d 
+
+  0x00007efc3c2de8cc: ;   {poll_return}
+  0x00007efc3c2de8cc: 493b 6728 | 0f87 ad03 | 0000 c390 | 418b f20f | b744 7508 | 4403 d746 | 0fb7 5452 | 0841 3bc2 
+  0x00007efc3c2de8ec: 0f85 9f01 | 0000 448b | d641 ffca | 443b d37f | db49 83c1 | 02bb ffff | ff7f 4981 | f9ff ffff 
+  0x00007efc3c2de90c: 7f4c 0f4f | cb41 8bc1 | 443b d00f | 8ef3 0200 | 00ff ceeb | 120f 1f84 | 0000 0000 | 000f 1f80 
+  0x00007efc3c2de92c: 0000 0000 | 448b d644 | 0fb7 4c75 | 0844 03d7 | 420f b75c | 5208 443b | cb0f 8546 | 0100 0044 
+  0x00007efc3c2de94c: 0fb7 5475 | 0644 8bcf | 4403 ce42 | 0fb7 5c4a | 0644 3bd3 | 0f85 2b01 | 0000 440f | b754 7504 
+  0x00007efc3c2de96c: 4183 c1fe | 420f b75c | 4a08 443b | d30f 8512 | 0100 0046 | 0fb7 4c4a | 0644 0fb7 | 5475 0245 
+  0x00007efc3c2de98c: 3bd1 0f85 | fd00 0000 | 83c6 fc3b | f07f 953b | f10f 8e21 | ffff ff44 | 8bce eb03 | 418b f146 
+  0x00007efc3c2de9ac: 0fb7 544d | 0803 f70f | b75c 7208 | 443b d30f | 85d0 0000 | 0041 ffc9 | 443b c97f 
+
+  0x00007efc3c2de9c8: ;   {other}
+  0x00007efc3c2de9c8: dfe9 f6fe | ffff 4889 | 5424 2048 | 896c 2418 | 4489 6c24 | 1044 8944 | 240c 4489 | 5c24 088b 
+  0x00007efc3c2de9e8: ee49 63ca | 49d1 e14c | 894c 2428 | ba08 0000 | 0049 8bf1 
+
+  0x00007efc3c2de9fc: ;   {static_call}
+  0x00007efc3c2de9fc: 6666 90e8 
+
+  0x00007efc3c2dea00: ; ImmutableOopMap {[0]=NarrowOop [4]=NarrowOop [24]=Oop [32]=Oop }
+                      ;*invokestatic checkFromIndexSize {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.StringZilla::mismatchReverseC2@28 (line 84)
+                      ; - java.lang.StringZilla::mismatchReverseC2@17 (line 77)
+                      ; - java.lang.StringZilla::matchesUTF16@56 (line 115)
+                      ; - java.lang.StringUTF16::lastIndexOf@131 (line 1214)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dea00: a402 0000 
+
+  0x00007efc3c2dea04: ;   {post_call_nop}
+  0x00007efc3c2dea04: 0f1f 8400 | 7c03 0000 | ba08 0000 | 0033 f68b 
+
+  0x00007efc3c2dea14: ;   {static_call}
+  0x00007efc3c2dea14: cd66 90e8 
+
+  0x00007efc3c2dea18: ; ImmutableOopMap {[0]=NarrowOop [4]=NarrowOop [24]=Oop [32]=Oop }
+                      ;*invokestatic checkFromIndexSize {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.StringZilla::mismatchReverseC2@38 (line 85)
+                      ; - java.lang.StringZilla::mismatchReverseC2@17 (line 77)
+                      ; - java.lang.StringZilla::matchesUTF16@56 (line 115)
+                      ; - java.lang.StringUTF16::lastIndexOf@131 (line 1214)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dea18: 9b02 0000 
+
+  0x00007efc3c2dea1c: ;   {post_call_nop}
+  0x00007efc3c2dea1c: 0f1f 8400 | 9403 0001 | 4c8b 5c24 | 184c 8b44 | 2428 4f8b | 5403 088b | 4c24 044d | 3354 cc08 
+  0x00007efc3c2dea3c: 741f f34d | 0fbd da41 | c1fb 03b8 | 0700 0000 | 412b c385 | c07d 2f44 | 8b6c 2410 | e967 feff 
+  0x00007efc3c2dea5c: ff41 8bd0 | 488b 6c24 | 2049 8bf3 | 488b cd45 | 33c0 4533 
+
+  0x00007efc3c2dea70: ;   {static_call}
+  0x00007efc3c2dea70: c966 90e8 
+
+  0x00007efc3c2dea74: ; ImmutableOopMap {rbp=Oop [0]=NarrowOop [4]=NarrowOop }
+                      ;*invokestatic mismatch {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.StringZilla::mismatchReverseC2@151 (line 98)
+                      ; - java.lang.StringZilla::mismatchReverseC2@17 (line 77)
+                      ; - java.lang.StringZilla::matchesUTF16@56 (line 115)
+                      ; - java.lang.StringUTF16::lastIndexOf@131 (line 1214)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dea74: 4e02 0000 
+
+  0x00007efc3c2dea78: ;   {post_call_nop}
+  0x00007efc3c2dea78: 0f1f 8400 | f003 0002 | ebcd 448b | 5c24 0844 | 8b44 240c | 448b 6c24 | 10be 45ff | ffff 8b2c 
+  0x00007efc3c2dea98: 2444 8904 | 2444 895c | 2408 4489 
+
+  0x00007efc3c2deaa4: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2deaa4: 6c24 0ce8 
+
+  0x00007efc3c2deaa8: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.StringUTF16::lastIndexOf@134 (line 1214)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2deaa8: b402 faff 
+
+  0x00007efc3c2deaac: ;   {post_call_nop}
+  0x00007efc3c2deaac: 0f1f 8400 | 2404 0003 | bee4 ffff | ff8b 2c24 | 4489 0424 | 4489 5c24 | 0844 896c | 240c 894c 
+  0x00007efc3c2deacc: 2410 895c 
+
+  0x00007efc3c2dead0: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2dead0: 2414 90e8 
+
+  0x00007efc3c2dead4: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*invokestatic checkIndex {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.String::checkIndex@5 (line 5290)
+                      ; - java.lang.StringUTF16::checkIndex@5 (line 2558)
+                      ; - java.lang.StringUTF16::lastIndexOf@69 (line 1205)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dead4: 8802 faff 
+
+  0x00007efc3c2dead8: ;   {post_call_nop}
+  0x00007efc3c2dead8: 0f1f 8400 | 5004 0004 | bee4 ffff | ff44 8944 | 2408 4489 | 5c24 0c44 | 896c 2410 | 4489 4c24 
+  0x00007efc3c2deaf8: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2deaf8: 1466 90e8 
+
+  0x00007efc3c2deafc: ; ImmutableOopMap {[0]=NarrowOop [4]=NarrowOop }
+                      ;*invokestatic checkIndex {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.String::checkIndex@5 (line 5290)
+                      ; - java.lang.StringUTF16::checkIndex@5 (line 2558)
+                      ; - java.lang.StringUTF16::lastIndexOf@79 (line 1206)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2deafc: 6002 faff 
+
+  0x00007efc3c2deb00: ;   {post_call_nop}
+  0x00007efc3c2deb00: 0f1f 8400 | 7804 0005 | be45 ffff | ff8b 2c24 | 891c 2444 | 8944 240c | 4489 4c24 | 1044 895c 
+  0x00007efc3c2deb20: 2414 4489 | 4424 1844 | 896c 241c 
+
+  0x00007efc3c2deb2c: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2deb2c: 6666 90e8 
+
+  0x00007efc3c2deb30: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*if_icmple {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@28 (line 3211)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2deb30: 2c02 faff 
+
+  0x00007efc3c2deb34: ;   {post_call_nop}
+  0x00007efc3c2deb34: 0f1f 8400 | ac04 0006 | be45 ffff | ff8b 2c24 | 4489 4424 | 0844 896c | 240c 4489 | 5c24 1089 
+  0x00007efc3c2deb54: 5c24 1444 | 894c 2418 
+
+  0x00007efc3c2deb5c: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2deb5c: 6666 90e8 
+
+  0x00007efc3c2deb60: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*if_icmpne {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@53 (line 3221)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2deb60: fc01 faff 
+
+  0x00007efc3c2deb64: ;   {post_call_nop}
+  0x00007efc3c2deb64: 0f1f 8400 | dc04 0007 | be45 ffff | ff8b 2c24 | 4489 6c24 | 0844 895c | 240c 4489 
+
+  0x00007efc3c2deb80: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2deb80: 4424 10e8 
+
+  0x00007efc3c2deb84: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*if_icmplt {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@105 (line 3229)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2deb84: d801 faff 
+
+  0x00007efc3c2deb88: ;   {post_call_nop}
+  0x00007efc3c2deb88: 0f1f 8400 | 0005 0008 | be45 ffff | ff41 8bed 
+
+  0x00007efc3c2deb98: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2deb98: 6666 90e8 
+
+  0x00007efc3c2deb9c: ; ImmutableOopMap {}
+                      ;*ifge {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@37 (line 3214)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2deb9c: c001 faff 
+
+  0x00007efc3c2deba0: ;   {post_call_nop}
+  0x00007efc3c2deba0: 0f1f 8400 | 1805 0009 | be45 ffff | ff41 8bed | 4489 1c24 
+
+  0x00007efc3c2debb4: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2debb4: 6666 90e8 
+
+  0x00007efc3c2debb8: ; ImmutableOopMap {}
+                      ;*ifne {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@44 (line 3218)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2debb8: a401 faff 
+
+  0x00007efc3c2debbc: ;   {post_call_nop}
+  0x00007efc3c2debbc: 0f1f 8400 | 3405 000a | be45 ffff | ff8b 2c24 | 4489 0424 | 4489 6c24 | 0844 895c | 240c 895c 
+  0x00007efc3c2debdc: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2debdc: 2410 90e8 
+
+  0x00007efc3c2debe0: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*ifne {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@57 (line 3222)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2debe0: 7c01 faff 
+
+  0x00007efc3c2debe4: ;   {post_call_nop}
+  0x00007efc3c2debe4: 0f1f 8400 | 5c05 000b | be45 ffff | ff8b 2c24 | 4489 0424 | 4489 6c24 | 0c44 895c 
+
+  0x00007efc3c2dec00: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2dec00: 2410 90e8 
+
+  0x00007efc3c2dec04: ; ImmutableOopMap {rbp=NarrowOop [4]=NarrowOop }
+                      ;*if_icmpgt {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.StringUTF16::lastIndexOf@85 (line 1208)
+                      ; - java.lang.String::lastIndexOf@140 (line 3231)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dec04: 5801 faff 
+
+  0x00007efc3c2dec08: ;   {post_call_nop}
+  0x00007efc3c2dec08: 0f1f 8400 | 8005 000c | 418b f2e9 | 83fd ffff | bef6 ffff | ff41 8beb 
+
+  0x00007efc3c2dec20: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2dec20: 6666 90e8 
+
+  0x00007efc3c2dec24: ; ImmutableOopMap {rbp=NarrowOop }
+                      ;*invokevirtual lastIndexOf {reexecute=0 rethrow=0 return_oop=0}
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dec24: 3801 faff 
+
+  0x00007efc3c2dec28: ;   {post_call_nop}
+  0x00007efc3c2dec28: 0f1f 8400 | a005 000d | bef6 ffff 
+
+  0x00007efc3c2dec34: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2dec34: ff66 90e8 
+
+  0x00007efc3c2dec38: ; ImmutableOopMap {}
+                      ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.String::length@4 (line 1802)
+                      ; - java.lang.String::lastIndexOf@3 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dec38: 2401 faff 
+
+  0x00007efc3c2dec3c: ;   {post_call_nop}
+  0x00007efc3c2dec3c: 0f1f 8400 | b405 000e | bef6 ffff 
+
+  0x00007efc3c2dec48: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2dec48: ff66 90e8 
+
+  0x00007efc3c2dec4c: ; ImmutableOopMap {}
+                      ;*getfield value {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) java.lang.String::lastIndexOf@1 (line 3203)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dec4c: 1001 faff 
+
+  0x00007efc3c2dec50: ;   {post_call_nop}
+  0x00007efc3c2dec50: 0f1f 8400 | c805 000f | bef6 ffff 
+
+  0x00007efc3c2dec5c: ;   {runtime_call UncommonTrapBlob}
+  0x00007efc3c2dec5c: ff66 90e8 
+
+  0x00007efc3c2dec60: ; ImmutableOopMap {}
+                      ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                      ; - java.lang.String::length@4 (line 1802)
+                      ; - java.lang.String::lastIndexOf@13 (line 3205)
+                      ; - java.lang.String::lastIndexOf@14 (line 3187)
+                      ; - java.lang.String::lastIndexOf@6 (line 3165)
+                      ; - org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf@8 (line 130)
+  0x00007efc3c2dec60: fc00 faff 
+
+  0x00007efc3c2dec64: ;   {post_call_nop}
+  0x00007efc3c2dec64: 0f1f 8400 | dc05 0010 | 488b f0eb | 0848 8bf0 | eb03 488b | f048 83c4 
+
+  0x00007efc3c2dec7c: ;   {runtime_call rethrow_blob (C2 runtime)}
+  0x00007efc3c2dec7c: 405d e95d 
+
+  0x00007efc3c2dec80: ;   {internal_word}
+  0x00007efc3c2dec80: 68fa ff49 | bacc e82d | 3cfc 7e00 | 004d 8997 | 1005 0000 
+
+  0x00007efc3c2dec94: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007efc3c2dec94: e9c7 eaf6 
+
+  0x00007efc3c2dec98: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007efc3c2dec98: ffe8 427d | f5ff e917 | fbff fff4 | f4f4 f4f4 
+[Stub Code]
+  0x00007efc3c2deca8: ;   {static_stub}
+  0x00007efc3c2deca8: 48bb b0d1 | 1628 fc7e 
+
+  0x00007efc3c2decb0: ;   {runtime_call I2C/C2I adapters}
+  0x00007efc3c2decb0: 0000 e986 
+
+  0x00007efc3c2decb4: ;   {static_stub}
+  0x00007efc3c2decb4: 5cf4 ff48 | bb50 cf16 | 28fc 7e00 
+
+  0x00007efc3c2decc0: ;   {runtime_call I2C/C2I adapters}
+  0x00007efc3c2decc0: 00e9 742c 
+
+  0x00007efc3c2decc4: ;   {static_stub}
+  0x00007efc3c2decc4: f5ff 48bb | 28b0 1c28 | fc7e 0000 
+
+  0x00007efc3c2decd0: ;   {runtime_call I2C/C2I adapters}
+  0x00007efc3c2decd0: e96f 3bf5 
+
+  0x00007efc3c2decd4: ;   {runtime_call DeoptimizationBlob}
+  0x00007efc3c2decd4: ffe8 86ed | f6ff ebf9 | f4f4 f4f4 
+[/MachCode]
+                            @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation
+                              @ 3   java.lang.String::length (11 bytes)   inline (hot)
+                                @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                              @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation
+                                @ 5   java.lang.String::coder (15 bytes)   inline (hot)
+                                @ 9   java.lang.String::length (11 bytes)   inline (hot)
+                                  @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)
+                                  @ 7   java.lang.String::coder (15 bytes)   inline (hot)
+                                  @ 13   java.lang.String::length (11 bytes)   inline (hot)
+                                    @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                  @ 140   java.lang.StringUTF16::lastIndexOf (1219 bytes)   force inline by annotation
+                                    @ 69   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                      @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                      @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                        @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                                    @ 79   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                      @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                      @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                        @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                                    @ 94   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)
+                                    @ 131   java.lang.StringZilla::matchesUTF16 (149 bytes)   force inline by annotation
+                                      @ 56   java.lang.StringZilla::mismatchReverseC2 (21 bytes)   force inline by annotation
+                                        @ 17   java.lang.StringZilla::mismatchReverseC2 (155 bytes)   force inline by annotation
+                                          @ 28   java.util.Objects::checkFromIndexSize (9 bytes)   failed to inline: low call site frequency
+                                          @ 38   java.util.Objects::checkFromIndexSize (8 bytes)   failed to inline: low call site frequency
+                                          @ 42   jdk.internal.misc.Unsafe::getUnsafe (4 bytes)   inline (hot)
+                                          @ 77   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                          @ 89   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                          @ 104   jdk.internal.misc.Unsafe::isBigEndian (4 bytes)   inline (hot)
+                                          @ 120   java.lang.Long::numberOfLeadingZeros (26 bytes)   (intrinsic)
+                                          @ 151   jdk.internal.util.ArraysSupport::mismatch (103 bytes)   failed to inline: too big
+                                      @ 92   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                      @ 98   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                      @ 130   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                      @ 139   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+288  247             jdk.internal.util.ArraysSupport::mismatch (103 bytes)
+                            @ 48   jdk.internal.util.ArraysSupport::vectorizedMismatch (268 bytes)   (intrinsic)
+291  251 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)
+                            @ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand
+                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation
+                                @ 3   java.lang.String::length (11 bytes)   inline (hot)
+                                  @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation
+                                  @ 5   java.lang.String::coder (15 bytes)   inline (hot)
+                                  @ 9   java.lang.String::length (11 bytes)   inline (hot)
+                                    @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)
+                                    @ 7   java.lang.String::coder (15 bytes)   inline (hot)
+                                    @ 13   java.lang.String::length (11 bytes)   inline (hot)
+                                      @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                    @ 140   java.lang.StringUTF16::lastIndexOf (1219 bytes)   force inline by annotation
+                                      @ 69   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                        @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                        @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                          @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                                      @ 79   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                        @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                        @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                          @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                                      @ 94   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)
+                                      @ 131   java.lang.StringZilla::matchesUTF16 (149 bytes)   force inline by annotation
+                                        @ 56   java.lang.StringZilla::mismatchReverseC2 (21 bytes)   force inline by annotation
+                                          @ 17   java.lang.StringZilla::mismatchReverseC2 (155 bytes)   force inline by annotation
+                                            @ 28   java.util.Objects::checkFromIndexSize (9 bytes)   failed to inline: low call site frequency
+                                            @ 38   java.util.Objects::checkFromIndexSize (8 bytes)   failed to inline: low call site frequency
+                                            @ 42   jdk.internal.misc.Unsafe::getUnsafe (4 bytes)   inline (hot)
+                                            @ 77   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                            @ 89   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                            @ 104   jdk.internal.misc.Unsafe::isBigEndian (4 bytes)   inline (hot)
+                                            @ 120   java.lang.Long::numberOfLeadingZeros (26 bytes)   (intrinsic)
+                                            @ 151   jdk.internal.util.ArraysSupport::mismatch (103 bytes)   failed to inline: already compiled into a medium method
+                                        @ 92   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                        @ 98   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                        @ 130   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                        @ 139   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                            @ 20   org.openjdk.jmh.infra.Blackhole::consume (19 bytes)   force inline by CompileCommand
+                              @ 7   org.openjdk.jmh.infra.Blackhole::consumeCompiler (1 bytes)   (intrinsic)
+302  240             java.lang.String::lastIndexOf (163 bytes)
+                            @ 7   java.lang.String::coder (15 bytes)   inline (hot)
+                            @ 13   java.lang.String::length (11 bytes)   inline (hot)
+                              @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                            @ 140   java.lang.StringUTF16::lastIndexOf (1219 bytes)   force inline by annotation
+                              @ 69   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                  @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                              @ 79   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)
+                                @ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)
+                                @ 5   java.lang.String::checkIndex (10 bytes)   inline (hot)
+                                  @ 5   jdk.internal.util.Preconditions::checkIndex (18 bytes)   (intrinsic)
+                              @ 94   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)
+                              @ 131   java.lang.StringZilla::matchesUTF16 (149 bytes)   force inline by annotation
+                                @ 56   java.lang.StringZilla::mismatchReverseC2 (21 bytes)   force inline by annotation
+                                  @ 17   java.lang.StringZilla::mismatchReverseC2 (155 bytes)   force inline by annotation
+                                    @ 28   java.util.Objects::checkFromIndexSize (9 bytes)   failed to inline: low call site frequency
+                                    @ 38   java.util.Objects::checkFromIndexSize (8 bytes)   failed to inline: low call site frequency
+                                    @ 42   jdk.internal.misc.Unsafe::getUnsafe (4 bytes)   inline (hot)
+                                    @ 77   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                    @ 89   jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)   (intrinsic)
+                                    @ 104   jdk.internal.misc.Unsafe::isBigEndian (4 bytes)   inline (hot)
+                                    @ 120   java.lang.Long::numberOfLeadingZeros (26 bytes)   (intrinsic)
+                                    @ 151   jdk.internal.util.ArraysSupport::mismatch (103 bytes)   failed to inline: already compiled into a medium method
+                                @ 92   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                @ 98   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                @ 130   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+                                @ 139   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)
+307  246             jdk.internal.util.Preconditions::checkFromIndexSize (25 bytes)
+307  248             java.util.Objects::checkFromIndexSize (8 bytes)
+                            @ 4   jdk.internal.util.Preconditions::checkFromIndexSize (25 bytes)   inline (hot)
+308  249             java.util.Objects::checkFromIndexSize (9 bytes)
+                            @ 5   jdk.internal.util.Preconditions::checkFromIndexSize (32 bytes)   inline (hot)
+308  250             jdk.internal.util.Preconditions::checkFromIndexSize (32 bytes)
+309  244             org.openjdk.jmh.infra.Blackhole::consume (19 bytes)
+                            @ 7   org.openjdk.jmh.infra.Blackhole::consumeCompiler (1 bytes)   (intrinsic)
+309  239             java.lang.String::lastIndexOf (18 bytes)
+                            @ 5   java.lang.String::coder (15 bytes)   inline (hot)
+                            @ 9   java.lang.String::length (11 bytes)   inline (hot)
+                              @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                            @ 14   java.lang.String::lastIndexOf (163 bytes)   failed to inline: already compiled into a big method
+309  242             java.lang.StringZilla::matchesUTF16 (149 bytes)
+                            @ 14   java.lang.StringZilla::equalsRange (0 bytes)   (intrinsic)
+569  251 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap
+572  252     n       java.lang.invoke.MethodHandle::linkToStatic(LLIIL)I (native)   (static)
+572  253     n       java.lang.invoke.MethodHandle::linkToStatic(LLIL)V (native)   (static)
+573  254 %           java.lang.StringLatin1::replace @ 78 (197 bytes)
+573  255     n       jdk.internal.misc.Unsafe::shouldBeInitialized0 (native)   
+575  258     n       jdk.internal.reflect.Reflection::getCallerClass (native)   (static)
+                            @ 122   java.lang.String::<init> (15 bytes)   inline (hot)
+                              @ 1   java.lang.Object::<init> (1 bytes)   inline (hot)
+578  259 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)
+                            @ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand
+                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation
+                                @ 3   java.lang.String::length (11 bytes)   inline (hot)
+                                  @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation
+                                  @ 5   java.lang.String::coder (15 bytes)   inline (hot)
+                                  @ 9   java.lang.String::length (11 bytes)   inline (hot)
+                                    @ 6   java.lang.String::coder (15 bytes)   inline (hot)
+                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   failed to inline: already compiled into a big method
+                            @ 20   org.openjdk.jmh.infra.Blackhole::consume (19 bytes)   force inline by CompileCommand
+                              @ 7   org.openjdk.jmh.infra.Blackhole::consumeCompiler (1 bytes)   (intrinsic)
+                            @ 37   java.lang.System::nanoTime (0 bytes)   (intrinsic)
+585  256             java.lang.invoke.MethodType::rtype (5 bytes)
+585  257             java.lang.invoke.MethodHandleImpl::isCompileConstant (2 bytes)
+12.540 ns/op
+# Warmup Iteration   2: 876  260             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)
+12.132 ns/op
+# Warmup Iteration   3:                             @ 7   java.lang.System::nanoTime (0 bytes)   (intrinsic)
+                            @ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand
+                              @ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation
+                                @ 3   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)
+                                  @ 6   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)
+                                @ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation
+                                  @ 5   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)
+                                  @ 9   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)
+                                    @ 6   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)
+                                  @ 14   java.lang.String::lastIndexOf (163 bytes)   failed to inline: already compiled into a big method   failed to inline: already compiled into a big method
+                            @ 20   org.openjdk.jmh.infra.Blackhole::consume (19 bytes)   force inline by CompileCommand   force inline by CompileCommand
+                              @ 7   org.openjdk.jmh.infra.Blackhole::consumeCompiler (1 bytes)   (intrinsic)   (intrinsic)
+                            @ 37   java.lang.System::nanoTime (0 bytes)   (intrinsic)
+1177  261             java.util.concurrent.locks.AbstractQueuedSynchronizer::getState (5 bytes)
+1177  262             java.io.ObjectStreamClass::getPrimDataSize (5 bytes)
+1178  263             java.io.ObjectStreamClass::getNumObjFields (5 bytes)
+1178  264             java.util.concurrent.locks.AbstractOwnableSynchronizer::setExclusiveOwnerThread (6 bytes)
+11.252 ns/op
+Iteration   1: 10.483 ns/op
+------------------------------------------------------------------------
+org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf()I
+  interpreter_invocation_count:       51091
+  invocation_counter:                 51091
+  backedge_counter:                       0
+  decompile_count:                        0
+  mdo size: 280 bytes
+
+   0 fast_aaccess_0
+   1 fast_agetfield 96 <org/openjdk/bench/java/lang/StringZillaSearch.value:Ljava/lang/String;> 
+   4 fast_aaccess_0
+   5 fast_agetfield 47 <org/openjdk/bench/java/lang/StringZillaSearch.needle:Ljava/lang/String;> 
+   8 invokevirtual 145 <java/lang/String.lastIndexOf(Ljava/lang/String;)I> 
+  0    bci: 8    VirtualCallData    count(49428) entries(0)
+  11 ireturn
+------------------------------------------------------------------------
+Total MDO size: 280 bytes
+
+
+Result "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf":
+  10.483 ns/op
+
+
+# Run complete. Total time: 00:00:01
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                      (coder)  (length)  (needleLength)  (position)  Mode  Cnt   Score   Error  Units
+StringZillaSearch.lastIndexOf    UTF16       128               4         END  avgt       10.483          ns/op
+
+Benchmark result is saved to /workspace/stringzilla-recovery/current-jit/enabled.json

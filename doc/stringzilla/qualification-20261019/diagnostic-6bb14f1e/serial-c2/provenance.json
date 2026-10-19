@@ -1,0 +1,453 @@
+{
+  "pair_receipt": {
+    "sources": {
+      "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "fork": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d"
+    },
+    "source_trees": {
+      "fork": {
+        "revision": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d",
+        "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree 67aaa17a60a10ef0394220e6b63a3b2cf6ec1cd7\tsrc\n040000 tree 52d90114b461a353db29cb29fc4ca4cb0ab1d0aa\ttest"
+      },
+      "original": {
+        "revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"
+      }
+    },
+    "backend": "avx2",
+    "spec": {
+      "SOURCE_DATE": "1792195200",
+      "VERSION_OPT": "stringzilla-benchmark",
+      "VERSION_STRING": "27.0.2-internal-stringzilla-benchmark",
+      "DEBUG_LEVEL": "release",
+      "JVM_VARIANTS": "server",
+      "JVM_FEATURES_server": "cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc",
+      "TOOLCHAIN_TYPE": "gcc",
+      "TOOLCHAIN_VERSION": "",
+      "CC_VERSION_NUMBER": "16.0.1",
+      "CXX_VERSION_NUMBER": "16.0.1",
+      "EXTRA_CFLAGS": "-m64 -march=x86-64-v3 -mtune=generic",
+      "EXTRA_CXXFLAGS": "-m64 -march=x86-64-v3 -mtune=generic",
+      "EXTRA_LDFLAGS": "-m64 "
+    },
+    "helper_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+    "parent_manifest_sha256": "d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d",
+    "image_hashes": {
+      "original": {
+        "tree_sha256": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9"
+      },
+      "fork": {
+        "tree_sha256": "3ebe20c13c1484643d78ee6d758e8e78f7fb8f78883e9ba24c10996c96efd980"
+      }
+    },
+    "release": {
+      "original": {
+        "SOURCE": ".:git:416d7db3ec3c",
+        "embedded_revision_available": true,
+        "expected_full_revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda"
+      },
+      "fork": {
+        "SOURCE": ".:git:6bb14f1ebb5a+ baseline:git:416d7db3ec3c driver:git:a677a1795224+",
+        "embedded_revision_available": true,
+        "expected_full_revision": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d"
+      }
+    },
+    "producer_run": "39204049909",
+    "producer_head": "a677a179522428c24b85cf76dbf0895f3aa1825f",
+    "original_reuse": {
+      "producer_job": {
+        "id": 117789053163,
+        "run_id": 39164738566,
+        "workflow_name": "StringZilla final complete-image qualification",
+        "head_branch": "codex/stringzilla-final-qualification-916ba895",
+        "run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/runs/39164738566",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOU4oQ1c8AAAAbbMZQ6w",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/jobs/117789053163",
+        "html_url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39164738566/job/117789053163",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-10-18T21:02:29Z",
+        "started_at": "2026-10-18T21:50:14Z",
+        "completed_at": "2026-10-18T22:03:04Z",
+        "name": "avx2_pair / avx2 validated pair",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-10-18T21:50:15Z",
+            "completed_at": "2026-10-18T21:50:15Z"
+          },
+          {
+            "name": "Checkout candidate",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-10-18T21:50:15Z",
+            "completed_at": "2026-10-18T21:50:47Z"
+          },
+          {
+            "name": "Checkout baseline identity",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-10-18T21:50:47Z",
+            "completed_at": "2026-10-18T21:51:19Z"
+          },
+          {
+            "name": "Checkout auxiliary driver",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-10-18T21:51:19Z",
+            "completed_at": "2026-10-18T21:51:20Z"
+          },
+          {
+            "name": "Restore only the verified original image",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-10-18T21:51:20Z",
+            "completed_at": "2026-10-18T21:51:33Z"
+          },
+          {
+            "name": "Get MSYS2",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 6,
+            "started_at": "2026-10-18T21:51:33Z",
+            "completed_at": "2026-10-18T21:51:33Z"
+          },
+          {
+            "name": "Get boot JDK",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-10-18T21:51:33Z",
+            "completed_at": "2026-10-18T21:51:36Z"
+          },
+          {
+            "name": "Get JTReg",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-10-18T21:51:36Z",
+            "completed_at": "2026-10-18T21:51:38Z"
+          },
+          {
+            "name": "Verify vendoring",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-18T21:51:38Z",
+            "completed_at": "2026-10-18T21:51:38Z"
+          },
+          {
+            "name": "Install GCC 16",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10,
+            "started_at": "2026-10-18T21:51:38Z",
+            "completed_at": "2026-10-18T21:51:54Z"
+          },
+          {
+            "name": "Check MSVC 14.44 toolset",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 11,
+            "started_at": "2026-10-18T21:51:54Z",
+            "completed_at": "2026-10-18T21:51:54Z"
+          },
+          {
+            "name": "Install MSVC 14.44 toolset",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 12,
+            "started_at": "2026-10-18T21:51:54Z",
+            "completed_at": "2026-10-18T21:51:54Z"
+          },
+          {
+            "name": "Build complete Linux fork",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13,
+            "started_at": "2026-10-18T21:51:54Z",
+            "completed_at": "2026-10-18T22:00:36Z"
+          },
+          {
+            "name": "Build complete MSVC fork",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 14,
+            "started_at": "2026-10-18T22:00:36Z",
+            "completed_at": "2026-10-18T22:00:36Z"
+          },
+          {
+            "name": "Verify and archive matched complete pair",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-10-18T22:00:36Z",
+            "completed_at": "2026-10-18T22:01:05Z"
+          },
+          {
+            "name": "Publish complete images before tests",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-10-18T22:01:05Z",
+            "completed_at": "2026-10-18T22:01:15Z"
+          },
+          {
+            "name": "Run profiles, jtreg and native contract checks",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-10-18T22:01:15Z",
+            "completed_at": "2026-10-18T22:02:59Z"
+          },
+          {
+            "name": "Retain all build and validation evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18,
+            "started_at": "2026-10-18T22:02:59Z",
+            "completed_at": "2026-10-18T22:03:01Z"
+          },
+          {
+            "name": "Post Get JTReg",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 32,
+            "started_at": "2026-10-18T22:03:01Z",
+            "completed_at": "2026-10-18T22:03:01Z"
+          },
+          {
+            "name": "Post Get boot JDK",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33,
+            "started_at": "2026-10-18T22:03:01Z",
+            "completed_at": "2026-10-18T22:03:01Z"
+          },
+          {
+            "name": "Post Checkout auxiliary driver",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 34,
+            "started_at": "2026-10-18T22:03:01Z",
+            "completed_at": "2026-10-18T22:03:01Z"
+          },
+          {
+            "name": "Post Checkout baseline identity",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 35,
+            "started_at": "2026-10-18T22:03:01Z",
+            "completed_at": "2026-10-18T22:03:01Z"
+          },
+          {
+            "name": "Post Checkout candidate",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 36,
+            "started_at": "2026-10-18T22:03:01Z",
+            "completed_at": "2026-10-18T22:03:02Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 37,
+            "started_at": "2026-10-18T22:03:02Z",
+            "completed_at": "2026-10-18T22:03:02Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/check-runs/117789053163",
+        "labels": [
+          "ubuntu-26.04"
+        ],
+        "runner_id": 1000019878,
+        "runner_name": "GitHub Actions 1000019878",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      },
+      "artifact": {
+        "id": 12151804060,
+        "node_id": "MDg6QXJ0aWZhY3QxMjE1MTgwNDA2MA==",
+        "name": "stringzilla-final-pair-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "size_in_bytes": 399053461,
+        "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12151804060",
+        "archive_download_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12151804060/zip",
+        "expired": false,
+        "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f",
+        "created_at": "2026-10-18T22:01:14Z",
+        "updated_at": "2026-10-18T22:01:14Z",
+        "expires_at": "2026-11-17T22:01:05Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "producer_run": {
+        "id": 39164738566,
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "status": "completed",
+        "conclusion": "cancelled"
+      },
+      "validation_artifact": {
+        "id": 12152835042,
+        "node_id": "MDg6QXJ0aWZhY3QxMjE1MjgzNTA0Mg==",
+        "name": "stringzilla-final-build-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "size_in_bytes": 1241175,
+        "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12152835042",
+        "archive_download_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/12152835042/zip",
+        "expired": false,
+        "digest": "sha256:29ae506c6ccb65a087f78e30fcf3a74adfce710e8201e274326655ade01bef56",
+        "created_at": "2026-10-18T22:03:01Z",
+        "updated_at": "2026-10-18T22:03:01Z",
+        "expires_at": "2026-11-17T22:03:00Z",
+        "workflow_run": {
+          "id": 39164738566,
+          "repository_id": 1401557205,
+          "head_repository_id": 1401557205,
+          "head_branch": "codex/stringzilla-final-qualification-916ba895",
+          "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e"
+        }
+      },
+      "required_validation_steps": [
+        "Verify and archive matched complete pair",
+        "Publish complete images before tests",
+        "Run profiles, jtreg and native contract checks"
+      ],
+      "downloaded_zip_sha256": "6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f",
+      "parent_pair_receipt_sha256": "0d48ea5db591c76ee481030e7fad16cd23177130952da99580c6d2ac1a68666a",
+      "parent_pair_inventories_sha256": "a6b80fd07acb98d0a2662ad633345e9f5c72c60e6d868f2569c0043a0c1fb08c",
+      "original_tar_sha256": "2b9b979efde5fc66371f0b4e8b91a6be7a52d6386d4f12ae7b8896897bc999bc",
+      "original_spec_sha256": "be96c6670db9d1acc11c1c0efb4783cf7cb629c9c0880236f973a742de8ecdd4",
+      "original_image_tree_sha256": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+      "release": {
+        "SOURCE": ".:git:416d7db3ec3c",
+        "embedded_revision_available": true,
+        "expected_full_revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda"
+      },
+      "restored_source_record": {
+        "revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+        "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"
+      },
+      "replacement_source_records": {
+        "original": {
+          "revision": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"
+        },
+        "fork": {
+          "revision": "6bb14f1ebb5a7b7c3669a85b3e6e5dec5551044d",
+          "runtime_trees": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree 67aaa17a60a10ef0394220e6b63a3b2cf6ec1cd7\tsrc\n040000 tree 52d90114b461a353db29cb29fc4ca4cb0ab1d0aa\ttest"
+        }
+      },
+      "historical_fork_reused": false,
+      "discarded_fork_revision": "916ba895e834378e3f7eac7f030fc4abff641d33"
+    }
+  },
+  "backend": "serial",
+  "affinity": {
+    "method": "sched_setaffinity",
+    "cpu": 0
+  },
+  "machine": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "cpu": "processor\t: 0\nvendor_id\t: AuthenticAMD\ncpu family\t: 25\nmodel\t\t: 17\nmodel name\t: AMD EPYC 9V74 80-Core Processor\nstepping\t: 1\nmicrocode\t: 0x1000065\ncpu MHz\t\t: 2596.142\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 5\ncore id\t\t: 0\ncpu cores\t: 5\napicid\t\t: 0\ninitial apicid\t: 0\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 28\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm arch_capabilities\nbugs\t\t: sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user tsa\nbogomips\t: 5192.28\nTLB size\t: 3584 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 46 bits physical, 48 bits virtual\npower management:",
+  "manifest_sha256": "70dcbc56dc9d4976ba1b8ce2febf0b1b82a1b43733b34acd93eb4895892790ce",
+  "runner_sha256": "5ed476a6060bb0734f5168d801a736a2793cfcb9e4a3854a6428048516d3d82e",
+  "helper_sha256": "e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea",
+  "benchmark_sources": {
+    "StringZillaSearch.java": "1571fccf2d9828ad77ca31b6a16eb1e0d1c4a3715e5e8f9169159e253ad6d5c2",
+    "StringZillaLongNeedle.java": "f44f78512a3a45e441adc10e04d6e5e1b1ded3fab74859debebd239703f97931",
+    "StringZillaTailSearch.java": "23c6e0464516d44533df2df8c9274796058819dc51e560cac141273e0c107813"
+  },
+  "harness": {
+    "classes/BackendProbe.class": "7dd9479e6200980d8c2c4265fb56e526fcba78848238a5e019297a23baf84c5c",
+    "classes/META-INF/BenchmarkList": "571c7dbb5fecf6b61e1e4fe4cbe0e4468cd041388736ee15052fa4c4c463cc0d",
+    "classes/META-INF/CompilerHints": "b346b6a785cca41e69f6248e3cdc058e6906389be31d41172a3cad9f4faf5210",
+    "classes/org/openjdk/bench/java/lang/StringZillaLongNeedle.class": "cc83782b088ea2fe833371f819fd273a182baaa4c3f9073ef2c5ec490ef66435",
+    "classes/org/openjdk/bench/java/lang/StringZillaSearch.class": "c99ac19340c3a69b04430772007186712d68cc23b969816a7001018516b2ffb3",
+    "classes/org/openjdk/bench/java/lang/StringZillaTailSearch.class": "18ae1ca611418693d25cbd3cdb5e3b4963d9624e359a2177e6f437efcd5f95ad",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_indexOf_jmhTest.class": "cfc7a59e9c89b8a50ce75f8985f7f720b776cb2a813df1193279d39733da8f3b",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_indexOf_jmhTest.java": "d980127bc9b7df84e97d4e9c36ca4ec1b8c72b8acfd081aa65822acb4e22bd2a",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType.class": "ec20c715cc352bffcaa10e206ee3ed2fcf5cf41df7c6a2cae73b12507d2954ad",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType.java": "58e2541678fa45c4ed627920f2331963fc1c99f5f785e25b90241339689c0250",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B1.class": "13afef7e771a932b25ffcb4fcef6b5b06fab4800fbcbe40a83eb1020e4d3e173",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B1.java": "5f22bbd924539d979bb136be4aad65a2ffb112d26718e8651c81fd5edb90cc19",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B2.class": "e336416d0725c10236307dda5a517bd76c4920fc17fc980398f6e77d050b6bbb",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B2.java": "ec2faac5165f5ae35bcb6f83fd8c8dccceae288855407375c9c5b13a4e200720",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B3.class": "a13c7c1cc5646b85623763b8934b5fb27b2812b1f417e7d05a8415705d7f3a7a",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_jmhType_B3.java": "bdd9ba5e1cd2475d525ad996c081f5bc99470e2f049bcd0dbe69a84291ab825f",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_lastIndexOf_jmhTest.class": "3323d74724f39627d3888ba54b09950a95b2c9c0b425095d0218a3835eac845c",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaLongNeedle_lastIndexOf_jmhTest.java": "8f6c7581efca0f45ad7de8bfc25c54a20272a10f325fa3b88ef9b82de7c51f64",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_bufferIndexOf_jmhTest.class": "b7a061a1db263e257e1c9e4ad205c7a7f3b65191566df9707378e301be7adfc5",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_bufferIndexOf_jmhTest.java": "88424e0e27d29fa27f8cfc804a47c77a9304a2708a25fd2c8d1638a9f54184f3",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_builderIndexOf_jmhTest.class": "248ba3839d2e5c5adcfb14a826821643426465c51e3432f9ae3294028916860c",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_builderIndexOf_jmhTest.java": "3d837e0a31c7543930fea0f79e3dd77b9a5369c49f205b375212908f92b16130",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_contains_jmhTest.class": "5c2d115f8b650db07d9f8a419be0edebd228dc2212ed0473e63bdc84d0332cbb",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_contains_jmhTest.java": "83156df48535665ff5623baee003de2a936aa42971053cff9cd4b752337cb3f0",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_equals_jmhTest.class": "03b765a1d965e5c356c0dd8491c3aa363a52436df3447df7c53258154a2e88e1",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_equals_jmhTest.java": "e36f4c35739b87d6aaa1387d0d5878a0d16d9740998d3dac8c17f408ca43850b",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_indexOfChar_jmhTest.class": "0712897596196270b4974a058c3e8c61722a38b67797d50a1096f7ee80e21611",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_indexOfChar_jmhTest.java": "3f87745b1f0d872529a651d876c4b1cd7509becf2c21dd942749cd7460d1d965",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_indexOf_jmhTest.class": "381be918c32f2bc6623bf784cb5da4e1f6d36c48f730f00b2f9d28b7a01f43c2",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_indexOf_jmhTest.java": "298ebc50042ba5e4d18647ccea3d966903e53b373e24753fbb836972bd6ce636",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType.class": "e511eb80949cf16998d9a3fe0c285750bf7ef4b091b44659f2112897bed45d47",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType.java": "15cefeb1295d1610a9b8c478174efa3ad28d56b5ed6ca50345c093105971311b",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType_B1.class": "b00a4b0712865c98cd537dad80ba3c9ee9be363963db9141a2092676157a947a",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType_B1.java": "5715f64b4ce2c3d0c5f1b431b425c59f85d45e81b40ac46c1e5fc198c68a9c6a",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType_B2.class": "f84e7d1d16b63f3c0207809ff03574c30b7e3568663756f2ad03307a151dfb58",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType_B2.java": "852362dba21dcac9d37b2d6c7970bfe0944f7afb12f85b55fe60e2bff262f7ef",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType_B3.class": "613dc12f9135a4d516d2761999ec42a98079771fe9cd7997ee73eecf8d204bb0",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_jmhType_B3.java": "7fc15f913a0446087223201a544eb4fa0c0729025786ed43966dae4bbd32aa70",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_lastIndexOfChar_jmhTest.class": "50ad34812eb29b61e9afff0c796f8972f0f4f2033102018c0c315a45a688dee5",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_lastIndexOfChar_jmhTest.java": "fa620e8460ba3258c2423d885e0c197499cfe382f3471f4823f124a6a2a168d8",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_lastIndexOf_jmhTest.class": "bb94de6abc87c898ce83e3b6674fd60ca401f3217ec756896ad0f9181dbb70db",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_lastIndexOf_jmhTest.java": "26510251307f4ff14cb485bf667a0e58aa5a77c1ff4492f77022e305745c117f",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_replace_jmhTest.class": "298955add0ae42b02e58d093fcac4f5ac8087aae4e7250cb641a16e39ad8ed40",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaSearch_replace_jmhTest.java": "b67a35377b90d71555eefd3f6d8cf5f9eebefd3ac49edd25757b48575946712f",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType.class": "26992be9ac5fd8cfc6e3b8445043a0a5c90263a56c62dfdc822cd85d047aee46",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType.java": "c1a6c435788e4fb644de3279be8c25e4142034c914f430c9a5365f2687d72da6",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType_B1.class": "02686baf8d43f124306053e440cfa1086fe13e9e79e58070d2a3cf85a9958842",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType_B1.java": "21d20719e50d2804456a0a3a1d18e94bafc6ff4938f0dc193c18c7df9c1523e9",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType_B2.class": "9c17285e8a579948a07ab1fad3405cfb66fc325e4705c6c99a115ab394e397c4",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType_B2.java": "343a4d00a0b26d59ff509f43fc30820fbc6a7e3ece1dd1290d8c54d28ea2224c",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType_B3.class": "682ab6703fc593541fa8cc65dff45ddaa787aeb422418989bf9495188f9261f4",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_jmhType_B3.java": "5717f73e6a03ddc561cfea5e3b8f7e7312ac87f83aab729e504dc9be0a72cc62",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_lastIndexOf_jmhTest.class": "fa28973b3d4ca1622302572f91f548ef7cb89bf91a278308e439f8fd9abb6d9f",
+    "classes/org/openjdk/bench/java/lang/jmh_generated/StringZillaTailSearch_lastIndexOf_jmhTest.java": "ef15a8e1c76f0f025bf7c74975c8ca7bcac099c199d681824638781b8a5926ee",
+    "jmh/commons-math3-3.6.1.jar": "1e56d7b058d28b65abd256b8458e3885b674c1d588fa43cd7d1cbb9c7ef2b308",
+    "jmh/jmh-core-1.37.jar": "dc0eaf2bbf0036a70b60798c785d6e03a9daf06b68b8edb0f1ba9eb3421baeb3",
+    "jmh/jmh-generator-annprocess-1.37.jar": "6a5604b5b804e0daca1145df1077609321687734a8b49387e49f10557c186c77",
+    "jmh/jopt-simple-5.0.4.jar": "df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28"
+  },
+  "images": {
+    "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+    "fork": "3ebe20c13c1484643d78ee6d758e8e78f7fb8f78883e9ba24c10996c96efd980"
+  },
+  "attestation": {
+    "enabled": "BACKEND=0\nENABLED=true",
+    "disabled": "BACKEND=0\nENABLED=false"
+  },
+  "method": {
+    "rounds": 3,
+    "forks_per_control_per_round": 1,
+    "warmup": "3 x 300ms",
+    "measurement": "5 x 300ms",
+    "summary": "median of paired round medians; all rounds and samples retained",
+    "order": "rotating Latin square",
+    "gc": "Serial",
+    "cds": "off"
+  },
+  "triplets": 19,
+  "started": 1792411639.02705
+}
