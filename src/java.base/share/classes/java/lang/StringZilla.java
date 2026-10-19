@@ -27,6 +27,7 @@ package java.lang;
 
 import java.util.Objects;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
@@ -70,15 +71,31 @@ final class StringZilla {
         return true;
     }
 
+    // Reject a bounded reverse suffix before C2's existing prefix mismatch intrinsic.
     @ForceInline
-    static boolean matchesLatin1C2(byte[] src, int offset, byte[] tgt, int length) {
-        int prefix = length - 4;
-        for (int index = length - 1; index >= prefix; index--) {
-            if (src[offset + index] != tgt[index]) {
-                return false;
+    static int mismatchReverseC2(byte[] src, long offset, byte[] tgt, int length) {
+        return mismatchReverseC2(src, offset, tgt, length, length >= 32);
+    }
+
+    @ForceInline
+    static int mismatchReverseC2(byte[] src, long offset, byte[] tgt, int length, boolean wideSuffix) {
+        int suffix = wideSuffix ? 2 * Long.BYTES : Long.BYTES;
+        int prefix = length - suffix;
+        Objects.checkFromIndexSize(offset, length, src.length);
+        Objects.checkFromIndexSize(prefix, suffix, tgt.length);
+        Unsafe unsafe = Unsafe.getUnsafe();
+        long base = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        for (int index = length - Long.BYTES; index >= prefix; index -= Long.BYTES) {
+            long difference = unsafe.getLongUnaligned(src, base + offset + index)
+                    ^ unsafe.getLongUnaligned(tgt, base + index);
+            if (difference != 0) {
+                int equalBits = unsafe.isBigEndian()
+                        ? Long.numberOfTrailingZeros(difference)
+                        : Long.numberOfLeadingZeros(difference);
+                return index + Long.BYTES - 1 - (equalBits >> 3);
             }
         }
-        return ArraysSupport.mismatch(src, offset, tgt, 0, prefix) < 0;
+        return ArraysSupport.mismatch(src, (int)offset, tgt, 0, prefix);
     }
 
     @ForceInline
@@ -93,6 +110,9 @@ final class StringZilla {
             if (result != FALLBACK) {
                 return result != 0;
             }
+        }
+        if (tier == C2 && length == Long.BYTES / 2) {
+            return mismatchReverseC2(src, (long)offset << 1, tgt, Long.BYTES) < 0;
         }
         int last = length - 1;
         if (last < 0) {
@@ -114,14 +134,9 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16C2(byte[] src, int offset, byte[] tgt, int length) {
-        if (!MSVC_SERIAL && BACKEND == SERIAL && length >= 32 && length <= 256) {
-            int prefix = length - 4;
-            for (int index = length - 1; index >= prefix; index--) {
-                if (StringUTF16.getChar(src, offset + index) != StringUTF16.getChar(tgt, index)) {
-                    return false;
-                }
-            }
-            return ArraysSupport.mismatch(src, offset << 1, tgt, 0, prefix << 1) < 0;
+        if (BACKEND == SERIAL && length > 8 && length <= 256
+                && (!MSVC_SERIAL || length > 128)) {
+            return mismatchReverseC2(src, (long)offset << 1, tgt, length << 1) < 0;
         }
         return matchesUTF16(src, offset, tgt, length);
     }
@@ -197,6 +212,11 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count, int tier) {
+        if (tier == C1 && !MSVC_SERIAL && count > 8 && count < 32) {
+            int last = count - 1;
+            return StringUTF16.getChar(src, offset + last) == (tgt[last] & 0xff)
+                    && matchesUTF16Latin1C1Prefix(src, offset, tgt, last);
+        }
         if ((count >= (MSVC_SERIAL ? 64 : 32) && tier == C1)
                 || (count >= 31 && tier == C2 && BACKEND == NEON)) {
             int last = count - 1;
@@ -210,6 +230,11 @@ final class StringZilla {
     private static boolean matchesUTF16Latin1Native(byte[] src, int offset, byte[] tgt, int count) {
         int result = rfindUTF16Latin1(src, offset << 1, count << 1, tgt, count);
         return result == FALLBACK ? matchesUTF16Latin1JavaReverse(src, offset, tgt, count) : result == 0;
+    }
+
+    @DontInline
+    private static boolean matchesUTF16Latin1C1Prefix(byte[] src, int offset, byte[] tgt, int count) {
+        return matchesUTF16Latin1JavaReverse(src, offset, tgt, count);
     }
 
     @ForceInline

@@ -1230,7 +1230,6 @@ final class StringUTF16 {
                             tgtCount <= 8 ? fromIndex - 1 : fromIndex);
                 }
                 if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()
-                        && !StringZilla.MSVC_SERIAL
                         && getChar(src, fromIndex) == getChar(tgt, 0)
                         && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount, tier)) {
                     return fromIndex;
@@ -1248,6 +1247,13 @@ final class StringUTF16 {
 
         if (tgtCount > 128 && fromIndex < 8 && StringZilla.ENABLED
                 && tier != 0) {
+            if (fromIndex <= 1 && tier == StringZilla.C2 && tgtCount <= 256
+                    && !StringZilla.useReverseUTF16(fromIndex + tgtCount, tgtCount, tier)) {
+                if (StringZilla.mismatchReverseC2(src, (long)fromIndex << 1, tgt, tgtCount << 1) < 0) {
+                    return fromIndex;
+                }
+                return fromIndex == 1 && StringZilla.mismatchReverseC2(src, 0, tgt, tgtCount << 1) < 0 ? 0 : -1;
+            }
             if (fromIndex <= 1
                     && (((StringZilla.MSVC_SERIAL || StringZilla.usesNeon())
                             && tier == StringZilla.C2)
@@ -1273,6 +1279,10 @@ final class StringUTF16 {
                         return StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount) ? fromIndex : -1;
                     }
                     if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()) {
+                        if (StringZilla.MSVC_SERIAL
+                                && getChar(src, fromIndex + tgtCount - 1) == getChar(tgt, tgtCount - 1)) {
+                            return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+                        }
                         if (StringZilla.matchesUTF16C2(src, fromIndex, tgt, tgtCount)) {
                             return fromIndex;
                         }
@@ -1292,15 +1302,16 @@ final class StringUTF16 {
                 // Probe the rightmost candidate before selecting a search backend.
                 if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()) {
                     if (tier == StringZilla.C2) {
+                        if (StringZilla.MSVC_SERIAL
+                                && getChar(src, fromIndex + tgtCount - 1) == getChar(tgt, tgtCount - 1)) {
+                            return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+                        }
                         if (StringZilla.matchesUTF16C2(src, fromIndex, tgt, tgtCount)) {
                             return fromIndex;
                         }
                         if (fromIndex == 0) {
                             return -1;
                         }
-                    } else if (StringZilla.MSVC_SERIAL && tier == StringZilla.C1
-                            && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
-                        return fromIndex;
                     }
                 }
                 if (StringZilla.usesNeon() && tgtCount > 8 && tgtCount <= 128
@@ -1316,7 +1327,8 @@ final class StringUTF16 {
                         probeFrom--;
                     }
                     if (tgtCount <= 32 && getChar(src, probeFrom + last) == lastChar
-                            && StringZilla.matchesUTF16(src, probeFrom, tgt, tgtCount)) {
+                            && StringZilla.mismatchReverseC2(src, (long)probeFrom << 1,
+                                    tgt, tgtCount << 1, true) < 0) {
                         return probeFrom;
                     }
                 }

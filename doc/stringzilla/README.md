@@ -71,23 +71,28 @@ Same-coder widths through eight probe the rightmost candidate before bulk
 dispatch; interpreted UTF-16 uses bounded native equality. C1 UTF-16 prefixes
 below 128 code units use the original Java loop without this probe. Long Latin-1 needles
 with at most two candidates reject impossible two-byte tails first. Serial C2
-Latin-1 also probes widths 9 through 128, checking the last four bytes backward
-and the remaining prefix with `ArraysSupport.mismatch` (at most 124 bytes).
+Latin-1 also probes widths 9 through 128 with checked unaligned word loads:
+an eight-byte suffix below width 32 and a sixteen-byte suffix otherwise,
+followed by the existing JDK prefix-mismatch intrinsic. Failed bulk probes
+resume Java for widths below 32 and late suffix mismatches: bytes five through
+eight from the end on GCC/Clang, or the right half before the final four bytes
+on MSVC. Other eligible bulk searches retain StringZilla.
 
-GCC/Clang serial C1 probes UTF-16 widths 9 through 128 before entering its
-bridge, checking the first code unit before backward verification. Serial C2
-and MSVC C1 UTF-16 probe immediate matches through 128 code units.
-Non-MSVC serial C2 verifies widths 32 through 128 with four backward code-unit
-checks and `ArraysSupport.mismatch`. Already native-eligible widths 129 through
-256 use the same bounded verification, with at most 504 prefix bytes.
+Serial C1 probes UTF-16 widths 9 through 128 before entering its bridge,
+checking the first code unit before backward verification. Non-MSVC serial C2
+uses the checked word verifier through width 256. MSVC C2 widths 9 through 128
+resume the existing Java search when the rightmost ending character matches;
+absent ending characters retain the JDK character filter.
 A failed complete verification with no earlier candidate returns immediately.
-Non-serial C2 single-candidate prefixes below 128 code units use the existing
-backward Java verifier directly.
+C2 four-code-unit probes use one checked eight-byte comparison. Other
+non-serial C2 single-candidate prefixes below 128 code units use the existing
+backward Java verifier.
 
 NEON C2 UTF-16 widths 9 through 128 with `512 <= L < 1024` use the JDK
 character miss filter when the rightmost ending character differs. Widths through
 32 probe the rightmost candidate, or its predecessor after proving the rightmost
-ending character impossible. The native window remains unchanged.
+ending character impossible, using a sixteen-byte suffix before the JDK prefix
+comparison. The native window remains unchanged.
 MSVC C1 uses bounded native ending-character filtering inside its bridge and
 shortens the prefix after a successful filter.
 
@@ -102,14 +107,13 @@ serial/AVX2/NEON C2 UTF-16 widths through 128 use that filter, followed by Java
 verification. Serial C2 Latin-1 skips empty 256-byte blocks. Compiled long-needle
 fallbacks filter first-character mismatches before comparing interiors.
 
-Compiled UTF-16 needles over 128 with fewer than eight candidate starts first
-reject impossible ending characters. Ineligible windows with at most two
-candidates use the original Java loop; MSVC and NEON C2 use that loop directly in
-these narrow windows. Ineligible C1 long-needle windows with at most two
-candidates use the original loop when the rightmost first character matches;
-otherwise they retain the first-character filter. Ineligible C2 Latin-1 windows over 256 with at most two
-candidates use the original Java loop when the rightmost first character matches;
-otherwise they retain the first-character filter.
+Ineligible C2 windows with at most two candidates use checked word comparisons
+for Latin-1 widths 257 through 512 and UTF-16 widths 129 through 256. Each
+comparison covers at most 512 bytes. Native-eligible windows keep their backend
+route. Longer narrow UTF-16 windows reject impossible ending characters first.
+Ineligible C1 long-needle windows with at most two candidates use the original
+loop when the rightmost first character matches; otherwise they retain the
+first-character filter.
 
 ### Mixed UTF-16/Latin-1 reverse search
 
@@ -127,7 +131,9 @@ For widths 9 through 64, additional rightmost-candidate verification is:
 | AVX-512 C2 | Backward Java through 15; existing mixed forward intrinsic over one candidate from 16 through 64 |
 | NEON C2 | Backward Java through 30; bounded native verification from 31 through 64 |
 
-C1 runs its eligible probe before entering a bridge. Widths through 64 then
+C1 runs its eligible probe before entering a bridge. Non-MSVC widths 9 through
+31 check the ending character inline and outline the remaining Java comparison.
+Widths through 64 then
 call the existing native continuation directly; widths over 128 with a matching
 rightmost ending character resume the existing scalar loop.
 Rejected probes resume bulk search. MSVC C2 widths through 64 use the JDK
@@ -149,7 +155,9 @@ eligibility at width 64. Short same-coder immediate matches precede this policy.
 SIMD backends retain native eligibility; C2 retains its forward intrinsics.
 
 Reverse character wrappers probe eight positions before feature/backend selection.
-Eligibility uses the original prefix; native search skips the checked positions.
+Latin-1 prefixes below the native size gate use the original scalar loop after
+the first probe. Eligibility uses the original prefix; native search skips the
+checked positions.
 Native setup and chunk fallback are separate helpers. BMP forward search probes
 one position first.
 

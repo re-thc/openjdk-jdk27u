@@ -87,6 +87,7 @@ public class TestStringZillaDispatch {
             checkNarrowCandidates(search);
             checkShortAndMixed(search);
             checkIntermediateUTF16(search);
+            checkReverseSuffixes(search);
             checkLongUTF16Filters(search);
             return;
         }
@@ -174,6 +175,7 @@ public class TestStringZillaDispatch {
             checkFilteredBlocks(search);
             checkShortAndMixed(search);
             checkIntermediateUTF16(search);
+            checkReverseSuffixes(search);
             checkLongUTF16Filters(search);
         }
     }
@@ -335,6 +337,33 @@ public class TestStringZillaDispatch {
                     for (int from : new int[]{position - 1, position, length - count,
                                              Integer.MAX_VALUE}) {
                         checkReverse(search, dense, denseNeedle, from, from < position ? -1 : position);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void checkReverseSuffixes(Method search) throws Exception {
+        for (int base : new int[]{'a', 0x0401}) {
+            String unit = String.valueOf((char)base);
+            for (int count : new int[]{4, 9, 16, 31, 32, 64, 128, 129, 256, 257, 512}) {
+                String repeated = unit.repeat(count);
+                for (int change : base > 0xff ? new int[]{1, 0x100} : new int[]{1}) {
+                    for (int distance = 1; distance <= Math.min(count, 17); distance++) {
+                        int index = count - distance;
+                        String needle = repeated.substring(0, index) + (char)(base + change)
+                                + repeated.substring(index + 1);
+                        checkReverse(search, needle, needle, Integer.MAX_VALUE, 0);
+                        checkReverse(search, repeated + unit, needle, Integer.MAX_VALUE, -1);
+                        checkReverse(search, needle + unit, needle, Integer.MAX_VALUE, 0);
+                        checkReverse(search, unit + needle, needle, Integer.MAX_VALUE, 1);
+                        if (count <= 128) {
+                            checkReverse(search, unit.repeat(512), needle, Integer.MAX_VALUE, -1);
+                            checkReverse(search, unit.repeat(512 - count) + needle,
+                                    needle, Integer.MAX_VALUE, 512 - count);
+                            checkReverse(search, unit.repeat(511 - count) + needle + unit,
+                                    needle, Integer.MAX_VALUE, 511 - count);
+                        }
                     }
                 }
             }

@@ -622,12 +622,21 @@ final class StringLatin1 {
         if (tier == StringZilla.UNRESOLVED_TIER) {
             if (StringZilla.ENABLED) {
                 if (tgtCount <= 8) {
-                    int index = tgtCount - 1;
-                    while (index >= 0 && src[fromIndex + index] == tgt[index]) {
-                        index--;
-                    }
-                    if (index < 0) {
-                        return fromIndex;
+                    if (tgtCount == 4) {
+                        if (src[fromIndex + 3] == tgt[3]
+                                && src[fromIndex + 2] == tgt[2]
+                                && src[fromIndex + 1] == tgt[1]
+                                && src[fromIndex] == tgt[0]) {
+                            return fromIndex;
+                        }
+                    } else {
+                        int index = tgtCount - 1;
+                        while (index >= 0 && src[fromIndex + index] == tgt[index]) {
+                            index--;
+                        }
+                        if (index < 0) {
+                            return fromIndex;
+                        }
                     }
                 } else if (tgtCount > 256 && fromIndex <= 1) {
                     int last = tgtCount - 1;
@@ -661,11 +670,18 @@ final class StringLatin1 {
         if (StringZilla.ENABLED) {
             if (tier == StringZilla.C2 && StringZilla.usesSerial()
                     && tgtCount > 8 && tgtCount <= 128) {
-                if (StringZilla.matchesLatin1C2(src, fromIndex, tgt, tgtCount)) {
+                int mismatch = StringZilla.mismatchReverseC2(src, fromIndex, tgt, tgtCount);
+                if (mismatch < 0) {
                     return fromIndex;
                 }
                 if (fromIndex == 0) {
                     return -1;
+                }
+                if ((tgtCount < 32 && mismatch < tgtCount - 1)
+                        || (mismatch < tgtCount - Integer.BYTES
+                            && (StringZilla.MSVC_SERIAL ? mismatch > (tgtCount >> 1)
+                                                       : mismatch >= tgtCount - Long.BYTES))) {
+                    return lastIndexOfJava(src, tgt, tgtCount, fromIndex - 1);
                 }
             }
             if (searchLength >= StringZilla.MIN_INTERPRETER_REVERSE_BYTES) {
@@ -679,6 +695,14 @@ final class StringLatin1 {
                 } else {
                     if (!StringZilla.useReverseLatin1(searchLength, tgtCount, tier)) {
                         if (tgtCount > 256 && fromIndex <= 1 && tier == StringZilla.C2) {
+                            if (tgtCount <= 512) {
+                                if (src[fromIndex] == tgt[0]
+                                        && StringZilla.mismatchReverseC2(src, fromIndex, tgt, tgtCount) < 0) {
+                                    return fromIndex;
+                                }
+                                return fromIndex == 1 && src[0] == tgt[0]
+                                        && StringZilla.mismatchReverseC2(src, 0, tgt, tgtCount) < 0 ? 0 : -1;
+                            }
                             return src[fromIndex] == tgt[0]
                                     ? lastIndexOfJava(src, tgt, tgtCount, fromIndex)
                                     : lastIndexOfJavaLong(src, tgt, tgtCount, fromIndex);
@@ -795,20 +819,23 @@ final class StringLatin1 {
             if (value[off] == (byte)ch) {
                 return off;
             }
-            int stop = off >= StringZilla.REVERSE_CHAR_PROBE_LENGTH
-                    ? off - (StringZilla.REVERSE_CHAR_PROBE_LENGTH - 1) : 0;
-            for (off--; off >= stop; off--) {
-                if (value[off] == (byte)ch) {
-                    return off;
+            if (off >= StringZilla.MIN_BYTES - 1) {
+                int stop = off - (StringZilla.REVERSE_CHAR_PROBE_LENGTH - 1);
+                do {
+                    --off;
+                    if (value[off] == (byte)ch) {
+                        return off;
+                    }
+                } while (off > stop);
+                --off;
+                if (StringZilla.ENABLED) {
+                    int result = StringZilla.lastIndexOfCharLatin1(value, off + 1, ch);
+                    if (result != StringZilla.FALLBACK) {
+                        return result;
+                    }
                 }
-            }
-        }
-        // The checked characters still count toward the dispatch length.
-        if (off >= StringZilla.MIN_BYTES - 1 - StringZilla.REVERSE_CHAR_PROBE_LENGTH
-                && StringZilla.ENABLED) {
-            int result = StringZilla.lastIndexOfCharLatin1(value, off + 1, ch);
-            if (result != StringZilla.FALLBACK) {
-                return result;
+            } else {
+                --off;
             }
         }
         if (off >= 0) {
