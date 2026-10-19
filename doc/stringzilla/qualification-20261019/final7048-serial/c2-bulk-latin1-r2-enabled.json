@@ -1,0 +1,67 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=0",
+            "-XX:-TieredCompilation",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "LATIN1",
+            "length" : "4096",
+            "needleLength" : "4",
+            "position" : "MISS"
+        },
+        "primaryMetric" : {
+            "score" : 207.59367729177228,
+            "scoreError" : 11.41143611804197,
+            "scoreConfidence" : [
+                196.18224117373032,
+                219.00511340981424
+            ],
+            "scorePercentiles" : {
+                "0.0" : 204.15215717482536,
+                "50.0" : 206.5425309597257,
+                "90.0" : 211.55883538646316,
+                "95.0" : 211.55883538646316,
+                "99.0" : 211.55883538646316,
+                "99.9" : 211.55883538646316,
+                "99.99" : 211.55883538646316,
+                "99.999" : 211.55883538646316,
+                "99.9999" : 211.55883538646316,
+                "100.0" : 211.55883538646316
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    209.6349400807848,
+                    211.55883538646316,
+                    204.15215717482536,
+                    206.07992285706243,
+                    206.5425309597257
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

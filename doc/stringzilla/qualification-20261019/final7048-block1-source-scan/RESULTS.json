@@ -1,0 +1,304 @@
+{
+  "sources": {
+    "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "fork": "7048d6f2c74e25737850789812da063900ec18c0"
+  },
+  "image_hashes": {
+    "original": "9b633c468b0c2924fd5b686f6232e4c7e42554badeab7ea7a0135c7ee9c3b9a5",
+    "fork": "aa3b5d34879bbc42a40483c02f755cb9f0de7ead4095cb9b7feecc3d45569ac9"
+  },
+  "affinity": {
+    "method": "sched_setaffinity",
+    "cpu": 0
+  },
+  "machine": "Linux c6d7b613d422 6.18.55 #1 SMP Wed Oct 14 19:45:18 UTC 2026 x86_64 GNU/Linux",
+  "default_backend_attestation": {
+    "enabled": "BACKEND=2\nENABLED=true",
+    "disabled": "BACKEND=2\nENABLED=false"
+  },
+  "method": "One untimed full round, six paired rounds in balanced rotating order; default-tiered JVM defaults including CDS; complete process wall time uses blocking wait without timeout polling; fixed 128 passes",
+  "scope": "Token occurrence indexing, reverse token/brace lookup and line classification over the eight original JDK String*.java source files; one application task, not a general application suite",
+  "corpus": {
+    "src/java.base/share/classes/java/lang/String.java": "c20524edeff53a041bf70be754330362f46fe8d09366884087000242a71fe6b3",
+    "src/java.base/share/classes/java/lang/StringBuffer.java": "7529c9e7e4ab52e14da5db941fba69cec75ea78d8f96e311d05290a0394c0e88",
+    "src/java.base/share/classes/java/lang/StringBuilder.java": "f5ab69c237054fb5226cc1261bcf53bd4de86b19b53e52d37ca557083eaf32a7",
+    "src/java.base/share/classes/java/lang/StringCoding.java": "699ada72d4f855076a4abd3ab01f42b801a769f1d01bdab0dcf507ae0089bfe0",
+    "src/java.base/share/classes/java/lang/StringConcatHelper.java": "683a94b83f138e545f8bea60c55fdbe4621f8e1d53f692291efd3f0079240455",
+    "src/java.base/share/classes/java/lang/StringIndexOutOfBoundsException.java": "64b36de2a18deb64d0b407124a0cd0030b13fecc022165af8d9401ac4516ef68",
+    "src/java.base/share/classes/java/lang/StringLatin1.java": "962c37b0376c62c1207878aea5e2f553f69a31d368da2eb393607be82db51d0e",
+    "src/java.base/share/classes/java/lang/StringUTF16.java": "719d7f4015187b722d85c0f84952876b3131c46a0d149637f26cd7fc9c617299"
+  },
+  "script_sha256": "7f5d3766ef9d73aeaf827d13e5c59a46f2c06a2e4fee130d512f5b16f86eee89",
+  "application_sha256": "3dc6feb7464bee7774e2a503d2717a0fe4c17f867a3cac3a06da2b1a274e53d8",
+  "class_sha256": "2dcd03b745a87c262be238969b88b0bdf7569d8c2f5ffb5b809054b4802bb2a1",
+  "checksum": "28030212480",
+  "rounds": [
+    {
+      "original": {
+        "milliseconds": 712.139787,
+        "command": [
+          "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "enabled": {
+        "milliseconds": 651.94864,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:+UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "disabled": {
+        "milliseconds": 776.556206,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:-UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      }
+    },
+    {
+      "enabled": {
+        "milliseconds": 709.633368,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:+UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "disabled": {
+        "milliseconds": 686.173432,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:-UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "original": {
+        "milliseconds": 685.300226,
+        "command": [
+          "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      }
+    },
+    {
+      "disabled": {
+        "milliseconds": 676.400543,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:-UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "original": {
+        "milliseconds": 606.11999,
+        "command": [
+          "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "enabled": {
+        "milliseconds": 670.449388,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:+UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      }
+    },
+    {
+      "original": {
+        "milliseconds": 698.295743,
+        "command": [
+          "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "enabled": {
+        "milliseconds": 583.08538,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:+UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "disabled": {
+        "milliseconds": 789.417072,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:-UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      }
+    },
+    {
+      "enabled": {
+        "milliseconds": 587.831255,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:+UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "disabled": {
+        "milliseconds": 763.409299,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:-UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "original": {
+        "milliseconds": 634.304807,
+        "command": [
+          "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      }
+    },
+    {
+      "disabled": {
+        "milliseconds": 827.641427,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:-UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "original": {
+        "milliseconds": 632.157294,
+        "command": [
+          "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      },
+      "enabled": {
+        "milliseconds": 569.660665,
+        "command": [
+          "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+          "-XX:+UseStringZillaIntrinsics",
+          "-cp",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+          "SourceScan",
+          "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+          "128"
+        ],
+        "checksum": "28030212480"
+      }
+    }
+  ],
+  "speedup": {
+    "original": [
+      1.092324982839139,
+      0.9657102623731187,
+      0.9040503292994281,
+      1.1975874665216268,
+      1.079059341613266,
+      1.109708520949046
+    ],
+    "disabled": [
+      1.191130954732876,
+      0.9669407653897132,
+      1.0088763672642802,
+      1.3538618855441034,
+      1.2986878334667658,
+      1.4528674311750136
+    ]
+  },
+  "paired_median_speedup": {
+    "original": 1.0856921622262026,
+    "disabled": 1.2449093940998208
+  },
+  "control_median_ms": {
+    "original": 659.8025164999999,
+    "enabled": 619.8899475000001,
+    "disabled": 769.9827525000001
+  }
+}

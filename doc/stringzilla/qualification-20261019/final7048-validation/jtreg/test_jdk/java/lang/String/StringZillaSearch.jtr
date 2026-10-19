@@ -1,0 +1,535 @@
+#Test Results (version 2)
+#Mon Oct 19 15:47:48 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java
+$root=/workspace/openjdk-jdk27u/test/jdk
+keywords=othervm
+run=USER_SPECIFIED main/othervm -Xint StringZillaSearch\nUSER_SPECIFIED main/othervm -Xbatch -XX\:TieredStopAtLevel\=1 StringZillaSearch\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-TieredCompilation StringZillaSearch\nUSER_SPECIFIED main/othervm -Xcomp -XX\:-TieredCompilation StringZillaSearch\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-CompactStrings StringZillaSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:DisableIntrinsic\=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch\nUSER_SPECIFIED main/othervm -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:DisableIntrinsic\=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-UseStringZillaIntrinsics StringZillaSearch\n
+source=StringZillaSearch.java
+title=StringZilla search\: encodings, ranges, builder capacity, and Unicode boundaries
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java
+elapsed=56179 0\:00\:56.179
+end=Mon Oct 19 15\:47\:48 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=c6d7b613d422
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main build main build main build main build main build main build main build main
+start=Mon Oct 19 15\:46\:51 UTC 2026
+test=java/lang/String/StringZillaSearch.java
+testJDK=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=56180
+user.name=agent
+work=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String
+
+#section:script_messages
+----------messages:(4/288)----------
+JDK under test: /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+
+#section:build
+----------messages:(7/232)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:46:51.898 UTC 2026
+Test directory:
+  compile: StringZillaSearch
+finished: Mon Oct 19 15:46:52.665 UTC 2026
+elapsed time (seconds): 0.767
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/290)----------
+command: compile /workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 15:46:51.899 UTC 2026
+Mode: othervm
+Process id: 306152
+finished: Mon Oct 19 15:46:52.665 UTC 2026
+elapsed time (seconds): 0.766
+----------configuration:(5/294)----------
+javac compilation environment
+  source path: /workspace/openjdk-jdk27u/test/jdk/java/lang/String
+  class path:  /workspace/openjdk-jdk27u/test/jdk/java/lang/String
+               /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d
+
+----------rerun:(26/1928)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -J-Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -J-Dtest.main.class=StringZillaSearch \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -d /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -sourcepath /workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -classpath /workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d /workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/279)----------
+command: main -Xint StringZillaSearch
+reason: User specified action: run main/othervm -Xint StringZillaSearch 
+started: Mon Oct 19 15:46:52.666 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306179
+finished: Mon Oct 19 15:47:01.886 UTC 2026
+elapsed time (seconds): 9.22
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(28/2033)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.0.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/185)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:01.887 UTC 2026
+finished: Mon Oct 19 15:47:01.887 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/332)----------
+command: main -Xbatch -XX:TieredStopAtLevel=1 StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:TieredStopAtLevel=1 StringZillaSearch 
+started: Mon Oct 19 15:47:01.887 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306250
+finished: Mon Oct 19 15:47:02.784 UTC 2026
+elapsed time (seconds): 0.897
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(29/2070)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbatch \\
+        -XX:TieredStopAtLevel=1 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.1.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/185)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:02.784 UTC 2026
+finished: Mon Oct 19 15:47:02.784 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/330)----------
+command: main -Xbatch -XX:-TieredCompilation StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:-TieredCompilation StringZillaSearch 
+started: Mon Oct 19 15:47:02.784 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306274
+finished: Mon Oct 19 15:47:08.605 UTC 2026
+elapsed time (seconds): 5.821
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(29/2069)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbatch \\
+        -XX:-TieredCompilation \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.2.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/185)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:08.606 UTC 2026
+finished: Mon Oct 19 15:47:08.606 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/328)----------
+command: main -Xcomp -XX:-TieredCompilation StringZillaSearch
+reason: User specified action: run main/othervm -Xcomp -XX:-TieredCompilation StringZillaSearch 
+started: Mon Oct 19 15:47:08.606 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306298
+finished: Mon Oct 19 15:47:17.358 UTC 2026
+elapsed time (seconds): 8.752
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(29/2068)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xcomp \\
+        -XX:-TieredCompilation \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.3.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/187)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:17.358 UTC 2026
+finished: Mon Oct 19 15:47:17.359 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/324)----------
+command: main -Xbatch -XX:-CompactStrings StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:-CompactStrings StringZillaSearch 
+started: Mon Oct 19 15:47:17.359 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306322
+finished: Mon Oct 19 15:47:20.577 UTC 2026
+elapsed time (seconds): 3.218
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(29/2066)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbatch \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.4.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/185)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:20.578 UTC 2026
+finished: Mon Oct 19 15:47:20.578 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/899)----------
+command: main -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch 
+started: Mon Oct 19 15:47:20.578 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306346
+finished: Mon Oct 19 15:47:30.667 UTC 2026
+elapsed time (seconds): 10.089
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2364)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.5.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/185)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:30.667 UTC 2026
+finished: Mon Oct 19 15:47:30.667 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/1110)----------
+command: main -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch 
+started: Mon Oct 19 15:47:30.667 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306369
+finished: Mon Oct 19 15:47:38.902 UTC 2026
+elapsed time (seconds): 8.235
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2470)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.6.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/185)----------
+command: build StringZillaSearch
+reason: Named class compiled on demand
+started: Mon Oct 19 15:47:38.902 UTC 2026
+finished: Mon Oct 19 15:47:38.902 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/344)----------
+command: main -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch
+reason: User specified action: run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch 
+started: Mon Oct 19 15:47:38.902 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 306394
+finished: Mon Oct 19 15:47:48.076 UTC 2026
+elapsed time (seconds): 9.174
+----------configuration:(0/0)----------
+----------System.out:(1/33)----------
+StringZilla search checks passed
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(29/2076)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaSearch.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java \\
+        -Dtest.main.class=StringZillaSearch \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaSearch.d \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbatch \\
+        -XX:-UseStringZillaIntrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaSearch.d/main.7.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

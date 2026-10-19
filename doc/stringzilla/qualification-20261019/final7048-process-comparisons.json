@@ -1,0 +1,1437 @@
+{
+  "sources": {
+    "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "fork": "7048d6f2c74e25737850789812da063900ec18c0"
+  },
+  "image_hashes": {
+    "original": "9b633c468b0c2924fd5b686f6232e4c7e42554badeab7ea7a0135c7ee9c3b9a5",
+    "fork": "aa3b5d34879bbc42a40483c02f755cb9f0de7ead4095cb9b7feecc3d45569ac9"
+  },
+  "inputs": [
+    "/workspace/stringzilla-recovery/final7048-block1-process-controls/RESULTS.json",
+    "/workspace/stringzilla-recovery/final7048-block2-process-controls/RESULTS.json",
+    "/workspace/stringzilla-recovery/final7048-block1-source-scan/RESULTS.json",
+    "/workspace/stringzilla-recovery/final7048-block2-source-scan/RESULTS.json"
+  ],
+  "workloads": {
+    "startup": {
+      "control_median_ms": {
+        "original": 31.066323,
+        "enabled": 30.3922045,
+        "disabled": 30.9103635
+      },
+      "rounds": [
+        {
+          "original": {
+            "milliseconds": 32.946955,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 40.208084,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 39.533215,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 56.818879,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 28.772093,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 32.234401,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 43.684167,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 42.010317,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 28.974831,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 30.366812,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 30.655085,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 29.521302,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 30.39206,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 31.075882,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 29.624303,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 31.961991,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 33.176473,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 33.955875,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 30.186177,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 30.392349,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 29.504648,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 29.263995,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 28.085657,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 31.765834,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 30.868377,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 28.986489,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 29.273919,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 29.584134,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 29.350332,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 30.119308,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 30.645211,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 30.95235,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 31.772613,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 31.095421,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-version"
+            ]
+          },
+          "original": {
+            "milliseconds": 30.135833,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-version"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 28.652128,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-version"
+            ]
+          }
+        }
+      ],
+      "speedup": {
+        "original": [
+          0.8194112159136955,
+          0.567318496375122,
+          1.4498899751995102,
+          0.9905962420264044,
+          0.9747382375528345,
+          0.9770466230070644,
+          0.9932163190150258,
+          1.0854920526059413,
+          0.9901813624612407,
+          1.0079659064844648,
+          1.0367888476930376,
+          1.051783413783437
+        ],
+        "disabled": [
+          0.9832155891835085,
+          0.5063826232826593,
+          1.5076590783221482,
+          0.9630148472920561,
+          1.022500021387165,
+          0.941280146660924,
+          0.970791958199743,
+          0.9597342058047782,
+          1.0544668447022758,
+          1.0261999080623687,
+          1.010022414268905,
+          1.0852743991650464
+        ]
+      },
+      "block_paired_median_speedup": {
+        "original": [
+          0.9758924302799494,
+          1.0223773770887512
+        ],
+        "disabled": [
+          0.9731152182377822,
+          1.0181111611656368
+        ]
+      },
+      "paired_median_speedup": {
+        "original": 0.9919062805207151,
+        "disabled": 0.9966190017262067
+      }
+    },
+    "javac": {
+      "control_median_ms": {
+        "original": 1599.426113,
+        "enabled": 1580.808319,
+        "disabled": 1580.433295
+      },
+      "rounds": [
+        {
+          "original": {
+            "milliseconds": 1914.971979,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r0-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1640.389154,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r0-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1669.109792,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r0-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 1703.727658,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r1-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1645.284379,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r1-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1572.895133,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r1-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 1555.255001,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r2-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1729.443962,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r2-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1509.579046,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r2-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 1889.0201,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r3-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1542.523369,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r3-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1538.008826,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r3-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 1570.107238,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r4-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1607.951575,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r4-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1557.195487,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r4-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 1629.493842,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r5-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1475.921761,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r5-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1653.861476,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block1-process-controls/javac-r5-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 1559.873807,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r0-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1667.68861,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r0-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1441.1538,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r0-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 1591.5094,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r1-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1440.924972,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r1-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1407.081963,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r1-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 1656.220668,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r2-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1584.454465,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r2-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1513.696616,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r2-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 1614.397761,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r3-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1542.577981,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r3-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1489.594553,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r3-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 1549.649327,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r4-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "disabled": {
+            "milliseconds": 1544.998061,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r4-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1787.61081,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r4-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 1605.611589,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:-UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r5-disabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "original": {
+            "milliseconds": 1863.492228,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/javac",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r5-original-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          },
+          "enabled": {
+            "milliseconds": 1610.689755,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac",
+              "-J-XX:+UseStringZillaIntrinsics",
+              "-proc:none",
+              "-d",
+              "/workspace/stringzilla-recovery/final7048-block2-process-controls/javac-r5-enabled-classes",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaSearch.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaBounded.java",
+              "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java"
+            ]
+          }
+        }
+      ],
+      "speedup": {
+        "original": [
+          1.1673888322965589,
+          0.9232080759001213,
+          1.1456465076026234,
+          1.2246298098061423,
+          0.9917765164776597,
+          0.8924095411966655,
+          0.9353507589165582,
+          0.8841179090742411,
+          1.0467450665160238,
+          1.0465582815809686,
+          1.1535582785433622,
+          1.1569529279088262
+        ],
+        "disabled": [
+          1.0175084295881658,
+          0.9656968185463359,
+          1.0302574119063388,
+          0.9970732741618517,
+          1.0241030269042044,
+          0.9852662182694194,
+          0.864162404994779,
+          0.9053826336181239,
+          1.0941562863347247,
+          0.9656526745146118,
+          0.9969985041654523,
+          0.9968472103431241
+        ]
+      },
+      "block_paired_median_speedup": {
+        "original": [
+          1.0687115120401416,
+          1.0466516740484963
+        ],
+        "disabled": [
+          1.0072908518750088,
+          0.9812499424288679
+        ]
+      },
+      "paired_median_speedup": {
+        "original": 1.0466516740484963,
+        "disabled": 0.9969228572542882
+      }
+    },
+    "source-indexing": {
+      "control_median_ms": {
+        "original": 685.4619195,
+        "enabled": 677.8640705,
+        "disabled": 782.986639
+      },
+      "rounds": [
+        {
+          "original": {
+            "milliseconds": 712.139787,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 651.94864,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 776.556206,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 709.633368,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 686.173432,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 685.300226,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 676.400543,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 606.11999,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 670.449388,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 698.295743,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 583.08538,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 789.417072,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 587.831255,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 763.409299,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 634.304807,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 827.641427,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 632.157294,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 569.660665,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block1-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 799.049782,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 769.713635,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 763.198441,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 696.589983,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 859.510378,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 655.334567,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 824.550026,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 685.623613,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 685.278753,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "original": {
+            "milliseconds": 690.780304,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 662.329002,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 808.725996,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "enabled": {
+            "milliseconds": 729.228537,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "disabled": {
+            "milliseconds": 686.294036,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 679.327604,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        },
+        {
+          "disabled": {
+            "milliseconds": 798.849988,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:-UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "original": {
+            "milliseconds": 768.404016,
+            "command": [
+              "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          },
+          "enabled": {
+            "milliseconds": 749.458179,
+            "command": [
+              "/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java",
+              "-XX:+UseStringZillaIntrinsics",
+              "-cp",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/classes",
+              "SourceScan",
+              "/workspace/stringzilla-recovery/final7048-block2-source-scan/corpus.txt",
+              "128"
+            ],
+            "checksum": "28030212480"
+          }
+        }
+      ],
+      "speedup": {
+        "original": [
+          1.092324982839139,
+          0.9657102623731187,
+          0.9040503292994281,
+          1.1975874665216268,
+          1.079059341613266,
+          1.109708520949046,
+          1.0381130665562395,
+          0.9407751805124651,
+          1.0005032404674596,
+          1.0429564490065921,
+          0.9315702410587369,
+          1.0252793785308734
+        ],
+        "disabled": [
+          1.191130954732876,
+          0.9669407653897132,
+          1.0088763672642802,
+          1.3538618855441034,
+          1.2986878334667658,
+          1.4528674311750136,
+          0.9915355611441131,
+          1.2338827703182749,
+          1.2032330236276856,
+          1.2210336457529911,
+          0.9411233943522976,
+          1.0659033557628306
+        ]
+      },
+      "block_paired_median_speedup": {
+        "original": [
+          1.0856921622262026,
+          1.0128913094991665
+        ],
+        "disabled": [
+          1.2449093940998208,
+          1.134568189695258
+        ]
+      },
+      "paired_median_speedup": {
+        "original": 1.0316962225435564,
+        "disabled": 1.1971819891802808
+      }
+    }
+  }
+}

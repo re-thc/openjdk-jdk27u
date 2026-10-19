@@ -1,0 +1,409 @@
+#Test Results (version 2)
+#Mon Oct 19 15:46:34 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java
+$root=/workspace/openjdk-jdk27u/test/hotspot/jtreg
+keywords=othervm driver
+library=/test/lib
+modules=java.base/java.lang\:open
+requires=(vm.compiler1.enabled & vm.compiler2.enabled) & ((os.arch \=\= "amd64" | os.arch \=\= "x86_64" | os.arch \=\= "aarch64"))
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI TestStringZillaWork\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:DisableIntrinsic\=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 TestStringZillaWork\n
+source=TestStringZillaWork.java
+title=Force bounded chunk helpers through C1/C2, including overlapping windows
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java
+elapsed=3171 0\:00\:03.171
+end=Mon Oct 19 15\:46\:34 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=c6d7b613d422
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver build compile main build main
+start=Mon Oct 19 15\:46\:30 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaWork.java
+testJDK=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=3172
+user.name=agent
+work=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/538)----------
+JDK under test: /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/openjdk-jdk27u/test/lib
+   class directory: /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib
+
+#section:build
+----------messages:(7/282)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 15:46:30.929 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Mon Oct 19 15:46:31.739 UTC 2026
+elapsed time (seconds): 0.81
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/340)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 15:46:30.930 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 305273
+finished: Mon Oct 19 15:46:31.739 UTC 2026
+elapsed time (seconds): 0.809
+----------configuration:(6/407)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d
+               /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib
+
+----------rerun:(28/2422)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaWork.java \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java \\
+        -J-Dtest.main.class=TestStringZillaWork \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -sourcepath /workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib /workspace/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Mon Oct 19 15:46:31.739 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Mon Oct 19 15:46:32.353 UTC 2026
+elapsed time (seconds): 0.614
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/353)----------
+command: compile /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 15:46:31.740 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 305300
+finished: Mon Oct 19 15:46:32.353 UTC 2026
+elapsed time (seconds): 0.613
+----------configuration:(6/407)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d
+               /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib
+
+----------rerun:(28/2435)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaWork.java \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java \\
+        -J-Dtest.main.class=TestStringZillaWork \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -sourcepath /workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib /workspace/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/443)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 15:46:32.353 UTC 2026
+Mode: othervm
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 305349
+finished: Mon Oct 19 15:46:32.452 UTC 2026
+elapsed time (seconds): 0.099
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/2715)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaWork.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java \\
+        -Dtest.main.class=TestStringZillaWork \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaWork.d/driver.0.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/236)----------
+command: build TestStringZillaWork
+reason: Named class compiled on demand
+started: Mon Oct 19 15:46:32.452 UTC 2026
+Test directory:
+  compile: TestStringZillaWork
+finished: Mon Oct 19 15:46:33.073 UTC 2026
+elapsed time (seconds): 0.621
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/369)----------
+command: compile /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 15:46:32.453 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 305371
+finished: Mon Oct 19 15:46:33.073 UTC 2026
+elapsed time (seconds): 0.62
+----------configuration:(8/581)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/openjdk-jdk27u/test/lib
+  class path:  /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d
+               /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib
+
+----------rerun:(28/2587)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaWork.java \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java \\
+        -J-Dtest.main.class=TestStringZillaWork \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -sourcepath /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -classpath /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib /workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/526)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaWork
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaWork 
+started: Mon Oct 19 15:46:33.073 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 305398
+finished: Mon Oct 19 15:46:33.584 UTC 2026
+elapsed time (seconds): 0.511
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(34/2806)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaWork.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java \\
+        -Dtest.main.class=TestStringZillaWork \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaWork.d/main.1.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/187)----------
+command: build TestStringZillaWork
+reason: Named class compiled on demand
+started: Mon Oct 19 15:46:33.584 UTC 2026
+finished: Mon Oct 19 15:46:33.584 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/1130)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 TestStringZillaWork
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 TestStringZillaWork 
+started: Mon Oct 19 15:46:33.584 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 305422
+finished: Mon Oct 19 15:46:34.097 UTC 2026
+elapsed time (seconds): 0.513
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(35/3119)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib:/workspace/openjdk-jdk27u/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaWork.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaWork.java \\
+        -Dtest.main.class=TestStringZillaWork \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d:/workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/classes/0/compiler/intrinsics/string/TestStringZillaWork.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaWork.d/main.2.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

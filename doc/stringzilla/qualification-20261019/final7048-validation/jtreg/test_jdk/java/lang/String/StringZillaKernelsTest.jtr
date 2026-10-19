@@ -1,0 +1,162 @@
+#Test Results (version 2)
+#Mon Oct 19 15:46:51 UTC 2026
+#-----testdescription-----
+$file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java
+$root=/workspace/openjdk-jdk27u/test/jdk
+keywords=native
+modules=java.base/java.lang\:open
+run=USER_SPECIFIED main/native StringZillaKernelsTest\n
+source=StringZillaKernelsTest.java
+title=Enforce native work/stack bounds and verify odd-byte UTF-16 searches
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java
+elapsed=893 0\:00\:00.893
+end=Mon Oct 19 15\:46\:51 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=c6d7b613d422
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Mon Oct 19 15\:46\:51 UTC 2026
+test=java/lang/String/StringZillaKernelsTest.java
+testJDK=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=894
+user.name=agent
+work=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String
+
+#section:script_messages
+----------messages:(4/288)----------
+JDK under test: /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+
+#section:build
+----------messages:(7/242)----------
+command: build StringZillaKernelsTest
+reason: Named class compiled on demand
+started: Mon Oct 19 15:46:51.003 UTC 2026
+Test directory:
+  compile: StringZillaKernelsTest
+finished: Mon Oct 19 15:46:51.499 UTC 2026
+elapsed time (seconds): 0.496
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/353)----------
+command: compile /workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 15:46:51.003 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 306104
+finished: Mon Oct 19 15:46:51.499 UTC 2026
+elapsed time (seconds): 0.496
+----------configuration:(6/324)----------
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/openjdk-jdk27u/test/jdk/java/lang/String
+  class path:  /workspace/openjdk-jdk27u/test/jdk/java/lang/String
+               /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d
+
+----------rerun:(28/2056)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -J-Dtest.name=java/lang/String/StringZillaKernelsTest.java \\
+        -J-Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java \\
+        -J-Dtest.main.class=StringZillaKernelsTest \\
+        -J-Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -J-Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -J-Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d \\
+        -J-Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d \\
+        -sourcepath /workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -classpath /workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d /workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/417)----------
+command: main StringZillaKernelsTest
+reason: User specified action: run main/native StringZillaKernelsTest 
+started: Mon Oct 19 15:46:51.499 UTC 2026
+Mode: othervm [/native test requires --enable-native-access=ALL-UNNAMED]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 306131
+finished: Mon Oct 19 15:46:51.894 UTC 2026
+elapsed time (seconds): 0.395
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(32/2336)*----------
+cd /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/scratch/2 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+LD_LIBRARY_PATH=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+CLASSPATH=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d:/workspace/openjdk-jdk27u/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dcompile.jdk=/workspace/openjdk-jdk27u/build/stringzilla-final/images/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.nativepath=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/openjdk-jdk27u/test/jdk \\
+        -Dtest.name=java/lang/String/StringZillaKernelsTest.java \\
+        -Dtest.file=/workspace/openjdk-jdk27u/test/jdk/java/lang/String/StringZillaKernelsTest.java \\
+        -Dtest.main.class=StringZillaKernelsTest \\
+        -Dtest.src=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/openjdk-jdk27u/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d \\
+        -Dtest.class.path=/workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/classes/3/java/lang/String/StringZillaKernelsTest.d \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Djava.library.path=/workspace/openjdk-jdk27u/build/stringzilla-final/images/test/jdk/jtreg/native \\
+        --enable-native-access=ALL-UNNAMED \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/stringzilla-recovery/physical-guard-jtreg-work/test_jdk/java/lang/String/StringZillaKernelsTest.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

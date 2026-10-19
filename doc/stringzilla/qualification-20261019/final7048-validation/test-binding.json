@@ -1,0 +1,36 @@
+{
+  "source": "7048d6f2c74e25737850789812da063900ec18c0",
+  "tested_code": "The guarded code passed all14 descriptions before committing; the post-commit normal image refresh compiled no Java or native source and regenerated image/CDS metadata only. Timings use the sealed clean committed image.",
+  "image_tree_sha256": "aa3b5d34879bbc42a40483c02f755cb9f0de7ead4095cb9b7feecc3d45569ac9",
+  "changed_files_since_e45": [
+    "src/java.base/share/classes/java/lang/StringLatin1.java",
+    "test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java"
+  ],
+  "all_sanitizer_input_hashes_still_match": true,
+  "sanitizer_receipt": "../finale45-native-validation/receipt.json",
+  "native_library_sha256": {
+    "e45": "0343653696b69a9823aed0ef7ebd7a1b0df0108ea00a235a259cac06ba2d695c",
+    "7048": "0343653696b69a9823aed0ef7ebd7a1b0df0108ea00a235a259cac06ba2d695c"
+  },
+  "build_and_test_logs": {
+    "physical-guard-committed-build.log": "f573c1f9e1672825b4a82ee9c7952f0b7e034bad90a62d939b36d6f139c65bee",
+    "physical-guard-jtreg.log": "7bb53d0cd196569485e4c7c8b7138d4ddb98f3ba21c3ee8e033a66fa8048edb7",
+    "physical-guard-build.log": "612f26fee5b5f169e368eae83bea46d82ceabbe0dab4a70aa7a142538812a040"
+  },
+  "jtreg_files": {
+    "jtreg/test_jdk/java/lang/String/StringZillaBounded_id0.jtr": "e3b97b6cc7d4464430e158aecb195a7be14ae3c88f8e6c8a0cbfd85c1e84fadb",
+    "jtreg/test_jdk/java/lang/String/StringZillaBounded_limitedAVX.jtr": "a52a5e47307e77a75f4a5027813c89d0ff0b15782c5ddd1b9ba047a76939999d",
+    "jtreg/test_jdk/java/lang/String/StringZillaBounded_headerLayouts.jtr": "b1b8cf1a7a4f56b70f5bc9063be41ebf31194b7469c6bd7eb1f5eabe8b7020c5",
+    "jtreg/test_jdk/java/lang/String/StringZillaKernelsTest.jtr": "826be8aa4f9f48365ed91eef8c37162698be572346b9cb769d31e97acde9c6a4",
+    "jtreg/test_jdk/java/lang/String/StringZillaSearch.jtr": "996d6400a90d2f89228cd9a9b1603959e9b4a6a235c98aee2372a7e9edf5cb5d",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaEquality.jtr": "1b6e0c1c1d4280b93e5ca610b07f36cefe6170ec6a9fd0d88538971bb0848d95",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_serial.jtr": "ba362fa4d21396b2890bfff787c2553137cc46e03b51689f3d1609050a505cf5",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaAvailability.jtr": "a9629c63378795b2e604ba37200f20f242661056cf97f58d8d09d2a710f6a2e5",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds_id0.jtr": "ea19d4262cda2ef44dc8a4f3769e4565155f8ce4f0d51c1415d65f45509c9dea",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.jtr": "b3ac5f3c3c7cffca9883d6def16c69a2d7fe053a8c9af4ba7e2d8a9fd5e1b9f7",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.jtr": "0b6aa260f3060ffe151fd376329202896c60565ba8a6d7ffce6dac751f413e55",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaWork.jtr": "6cfd83b14f47147b636e8c5cb181f8ca341f1989276643f0765779c51921f843",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.jtr": "5ec0bd1ea2e29773feed67f23f8ea2b7fdf55eaf55802526c12c5e8862764080",
+    "jtreg/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaCompilation.jtr": "48b1027e6a5b6647cefb62d547768810ffe217df6cd3f1c8fb6652cc0cd82fb3"
+  }
+}
