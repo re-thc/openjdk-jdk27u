@@ -4,11 +4,11 @@
   "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
   "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
   "planned_triplets": 1886,
-  "accepted_triplets": 933,
-  "accepted_records": 2799,
-  "raw_samples": 27990,
-  "higher_mean_groups": 259,
-  "nonoverlap_loss_groups": 114,
+  "accepted_triplets": 1624,
+  "accepted_records": 4872,
+  "raw_samples": 48720,
+  "higher_mean_groups": 453,
+  "nonoverlap_loss_groups": 220,
   "qualification_complete": false,
   "cohorts": [
     {
@@ -186,37 +186,119 @@
       "raw_samples": 3090,
       "higher_mean_groups": 19,
       "nonoverlap_loss_groups": 4
-    }
-  ],
-  "root_peer_checks": [
-    {
-      "result": "PASS10fileSHA372record/source/image/flags/rawscorebindings",
-      "triplets": 124,
-      "records": 372,
-      "rawSamples": 3720,
-      "higher": 35,
-      "nonoverlap": 9
     },
     {
       "backend": "neon",
-      "tier": "c1",
-      "triplets": 110,
-      "records": 330,
-      "rawSamples": 3300,
-      "higher": 29,
-      "nonoverlap": 25,
-      "result": "PASS file SHA256, source/image/flags/raw score and O/E/D key bindings"
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837281,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12162696031,
+        "name": "stringzilla-final-results-neon-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:b56db8596c00fc4adf03c393763137da722114b7a65a84e5d6ce000c840b40f3",
+        "size": 8859045
+      },
+      "triplets": 118,
+      "records": 354,
+      "raw_samples": 3540,
+      "higher_mean_groups": 19,
+      "nonoverlap_loss_groups": 5
     },
     {
       "backend": "serial",
-      "tier": "c1",
-      "triplets": 92,
-      "records": 276,
-      "rawSamples": 2760,
-      "higher": 28,
-      "nonoverlap": 15,
-      "result": "PASS file SHA256, source/image/flags/raw score and O/E/D key bindings"
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837156,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12163055881,
+        "name": "stringzilla-final-results-serial-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+        "size": 13904299
+      },
+      "triplets": 170,
+      "records": 510,
+      "raw_samples": 5100,
+      "higher_mean_groups": 74,
+      "nonoverlap_loss_groups": 49
     },
+    {
+      "backend": "neon",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837245,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12163325138,
+        "name": "stringzilla-final-results-neon-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+        "size": 13538659
+      },
+      "triplets": 143,
+      "records": 429,
+      "raw_samples": 4290,
+      "higher_mean_groups": 52,
+      "nonoverlap_loss_groups": 36
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837116,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12162394322,
+        "name": "stringzilla-final-results-avx2-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:b82daef57744108587b80391d88cd6ce09929a55e068739d0044eaac8df505c2",
+        "size": 9568819
+      },
+      "triplets": 124,
+      "records": 372,
+      "raw_samples": 3720,
+      "higher_mean_groups": 32,
+      "nonoverlap_loss_groups": 11
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837124,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12162922626,
+        "name": "stringzilla-final-results-avx2-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:c4bd35f2cc004db66ccf1d78ba6074762048c907374002b5c5fcd2bf0c9d9ad2",
+        "size": 9037363
+      },
+      "triplets": 136,
+      "records": 408,
+      "raw_samples": 4080,
+      "higher_mean_groups": 17,
+      "nonoverlap_loss_groups": 5
+    }
+  ],
+  "root_peer_checks": [
     {
       "receipt": "4fff82f4d91c7269418b2309340f8e3acbad6bf4",
       "backend": "avx2",
@@ -261,6 +343,64 @@
       "records": 309,
       "rawSamples": 3090,
       "result": "PASS file SHA256, source/image/tier/flag bindings, matched O/E/D JVM args, raw score means, complete key sets"
+    },
+    {
+      "receipt": "a86fe0248106565e4fc8f0644236c6f00faeeef5",
+      "backend": "neon",
+      "tier": "interpreter",
+      "triplets": 118,
+      "records": 354,
+      "rawSamples": 3540,
+      "result": "PASS file SHA256, complete-image source and JVM flag bindings, matched O/E/D keys, raw sample means and retained losses"
+    },
+    {
+      "receipt": "f44023a106140e72102e13d1a54068e020cb3053",
+      "backend": "serial",
+      "tier": "c2",
+      "triplets": 170,
+      "records": 510,
+      "rawSamples": 5100,
+      "result": "PASS file SHA256, complete-image source and JVM flag bindings, matched O/E/D keys, raw sample means and retained losses"
+    },
+    {
+      "receipt": "6e76446fa44cd5584db92550f32aecbeb05898a0",
+      "backend": "neon",
+      "tier": "c2",
+      "triplets": 143,
+      "records": 429,
+      "rawSamples": 4290,
+      "result": "PASS file SHA256, complete-image source and JVM flag bindings, matched O/E/D keys, raw sample means and retained losses"
+    },
+    {
+      "receipt": "ebc97929ecc431621e4db2ececdc552680bd16f8",
+      "backend": "avx2",
+      "tier": "c2",
+      "triplets": 124,
+      "records": 372,
+      "rawSamples": 3720,
+      "result": "PASS file SHA256, complete-image source and JVM flag bindings, matched O/E/D keys, raw sample means and retained losses"
+    },
+    {
+      "receipt": "4d362ac27ada612724edc275652e1cab0d4857ed",
+      "backend": "avx2",
+      "tier": "interpreter",
+      "triplets": 136,
+      "records": 408,
+      "rawSamples": 4080,
+      "result": "PASS file SHA256, complete-image source and JVM flag bindings, matched O/E/D keys, raw sample means and retained losses"
+    }
+  ],
+  "missing_triplets": 262,
+  "missing_groups": [
+    {
+      "backend": "avx512",
+      "tier": "interpreter",
+      "triplets": 136
+    },
+    {
+      "backend": "avx512",
+      "tier": "c1",
+      "triplets": 126
     }
   ]
 }

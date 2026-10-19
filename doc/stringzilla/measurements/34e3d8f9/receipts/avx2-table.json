@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "backend": "avx2",
+  "build_profile": "Linux x64: -march=x86-64-v3 -mtune=generic",
+  "consumer_contexts": {
+    "interpreter": {
+      "run": 39182567318,
+      "head": "57d209684d4887100690410e326377759df13176",
+      "job_id": 117847837124
+    },
+    "c1": {
+      "run": 39182567318,
+      "head": "57d209684d4887100690410e326377759df13176",
+      "job_id": 117847837039
+    },
+    "c2": {
+      "run": 39182567318,
+      "head": "57d209684d4887100690410e326377759df13176",
+      "job_id": 117847837116
+    }
+  },
+  "counts": {
+    "triplets": 386,
+    "measurements": 1158,
+    "raw_samples": 11580,
+    "higher_original": 51,
+    "higher_disabled": 55,
+    "higher_either": 71,
+    "nonoverlap_original": 15,
+    "nonoverlap_disabled": 18
+  },
+  "timing_evidence": true,
+  "raw_indexes": [
+    {
+      "tier": "interpreter",
+      "path": "indexes/avx2-interpreter.json",
+      "blob": "90f0e99f1b0e1495a40223a3031efeddbbcecd85"
+    },
+    {
+      "tier": "c1",
+      "path": "indexes/avx2-c1.json",
+      "blob": "6893a66c0abc6bf2ed4c1db3f77259b84a62e2e5"
+    },
+    {
+      "tier": "c2",
+      "path": "indexes/avx2-c2.json",
+      "blob": "65d57e96321965e6b1e4b8816909270075b6e224"
+    }
+  ]
+}

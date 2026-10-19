@@ -1,8 +1,10 @@
 # Complete-image qualification: runtime 34e3d8f9
 
-These measurements compare complete original `416d7db3` images with enabled and disabled controls from the same complete `916ba895` fork image. Production code and microbenchmarks are identical at `c73d3586`; its only additional change is a native test range guard. No patched-class control is used. Later PR dispatch corrections require their own qualification and are not claimed as measurements of this source.
+These measurements compare complete original `416d7db3` images with enabled and disabled controls from the same complete `916ba895` fork image. Production code and microbenchmarks are identical at `c73d3586`; its only additional change is a native test range guard. No patched-class control is used. Later dispatch changes require new measurements and are not qualified by these results.
 
-Accepted coverage is **933 of 1,886 planned backend/tier/input triplets** (2,799 control records; 27,990 raw measurement samples). The remaining work contributes no performance conclusion. MSVC has completed all three tiers: [all 378 comparisons](msvc.md). Native ARM64 NEON has accepted C1 results; its other tiers require separate receipts.
+Accepted coverage is **1,624 of 1,886 planned backend/tier/input triplets**: 4,872 control records and 48,720 raw samples. All three tiers completed on GCC serial, AVX2, native ARM64 NEON and native Windows MSVC. AVX-512 C2 completed; its interpreter and C1 groups account for the remaining 262 triplets.
+
+Complete backend tables: [serial](serial.md), [AVX2](avx2.md), [NEON](neon.md), [MSVC](msvc.md).
 
 | Backend / tier | Triplets | Higher enabled mean vs either control | Nonoverlap loss vs either control | Job |
 |---|---:|---:|---:|---|
@@ -14,19 +16,14 @@ Accepted coverage is **933 of 1,886 planned backend/tier/input triplets** (2,799
 | msvc / c2 | 149 | 70 | 42 | [117847837218](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837218) |
 | msvc / c1 | 126 | 45 | 5 | [117847837223](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837223) |
 | serial / interpreter | 103 | 19 | 4 | [117847837154](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837154) |
+| neon / interpreter | 118 | 19 | 5 | [117847837281](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837281) |
+| serial / c2 | 170 | 74 | 49 | [117847837156](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837156) |
+| neon / c2 | 143 | 52 | 36 | [117847837245](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837245) |
+| avx2 / c2 | 124 | 32 | 11 | [117847837116](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837116) |
+| avx2 / interpreter | 136 | 17 | 5 | [117847837124](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39182567318/job/117847837124) |
 
-A higher mean is retained even when error intervals overlap. “Nonoverlap” means the enabled score minus its JMH-reported error exceeds at least one control's score plus its reported error. This is descriptive and does not apply a multiple-comparison correction or establish causation. [Every higher mean](LOSSES.md) and [all accepted comparisons](COMPARISONS.md) remain visible. The normalized JSON retains every score, error and raw sample, plus the saved original JMH filename and SHA-256.
+All **453 higher enabled means** remain in [LOSSES.md](LOSSES.md); [COMPARISONS.md](COMPARISONS.md) contains all accepted rows. Of these, 220 have nonoverlapping reported error intervals against at least one control. This is descriptive: it applies no multiple-comparison correction and does not establish causation. Overlapping intervals also remain visible.
 
-Examples describe individual fixtures, not a general speedup claim. O/E compares original Java with enabled; disabled remains an independent control. The loss below remains an acceptance failure to resolve.
+The normalized JSON preserves all scores, reported errors, raw samples, JVM flags, complete-image hashes and original JSON filename/SHA-256 bindings. [The original JMH file collection](exact-jmh/README.md) currently preserves 372 unchanged files from the AVX-512 C2 cohort; its index explicitly distinguishes this partial byte collection from the larger normalized result set. Saved-file export collects no new timings.
 
-| Backend / tier | Case | Original ns/op | Enabled ns/op | Disabled ns/op | O/E | Nonoverlap loss |
-|---|---|---:|---:|---:|---:|---|
-| avx512 / c2 | overlap-min-latin | 106.544 ± 1.967 | 12.021 ± 0.221 | 111.228 ± 2.286 | 8.863× | no |
-| neon / c1 | bulk-utf16 | 2528.659 ± 10.611 | 645.294 ± 2.215 | 2427.072 ± 2.589 | 3.919× | no |
-| serial / c1 | utf16-end-64 | 57.808 ± 0.335 | 104.401 ± 0.301 | 60.632 ± 4.686 | 0.554× | yes |
-| msvc / interpreter | equal-latin1-4096 | 61652.014 ± 10258.129 | 360.282 ± 14.660 | 76873.722 ± 3896.825 | 171.122× | no |
-| msvc / interpreter | bulk-latin1 | 50655.974 ± 6324.716 | 2181.473 ± 71.706 | 52076.405 ± 9106.245 | 23.221× | no |
-
-[Protocol and frozen projections](protocol/README.md) · [Source/image equivalence](pr-source-binding.json) · [Complete-image preflight](complete-image-preflight.json)
-
-Two forks, three 500 ms warmups and five 500 ms measurements per fork run in rotated original/enabled/disabled order, on one selected CPU with Serial GC and disabled CDS. All three controls use the same host. “Serial” identifies the library backend; inherited compiler settings can generate SIMD. Compilation witnesses are diagnostic evidence and are excluded from timing comparisons. Full machine code and host dumps remain in authenticated workflow artifacts; published excerpts contain only compact Java inlining summaries.
+The required AVX2 C2 boundaries—Latin-1 count 257 at source lengths 288/289/290 and UTF-16 count 129 at 144/145/146—are included, alongside 64-code-unit, immediate, mixed, equality, serial and repeated-overlap fixtures. The dispatch fixes prompted by these results must pass matched controls on their own final source. Native ARM/MSVC measurements qualify the exact compiler/backend profiles in the receipts, rather than every supported CPU or compiler configuration.

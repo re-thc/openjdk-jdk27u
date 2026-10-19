@@ -1,0 +1,1641 @@
+{
+  "schema": "stringzilla-final-shard-normalized-index-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "backend": "neon",
+  "tier": "c2",
+  "workflow": {
+    "run_id": 39182567318,
+    "head": "57d209684d4887100690410e326377759df13176",
+    "job_id": 117847837245,
+    "attempt": 1,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "id": 12163325138,
+    "name": "stringzilla-final-results-neon-c2-57d209684d4887100690410e326377759df13176-attempt1",
+    "digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+    "size": 13538659
+  },
+  "producer": {
+    "run_id": 39164738566,
+    "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+    "job_id": 117789053159,
+    "artifact_id": 12151936751,
+    "artifact_digest": "sha256:674d6a986ee2856c3975dab979546c0237ef595740e46cd43ea45669108b55f2",
+    "conclusion": "success"
+  },
+  "image_tree_sha256": {
+    "original": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37",
+    "fork": "32b45b9e26ce2ae7c4a9d50a6537b0a986e0f3d825346d99d0a52cea7ed5d8bb"
+  },
+  "decoded_log_sha256": "62d17544407379252f05da8e691bbfbdd618d2f055dd8004996aa209addfa877",
+  "collector_blob": "a2eba213de680a4421abe9c147fd583196f1354d",
+  "normalizer_blob": "a1648be0faf3167262c372dc210983168df5b68d",
+  "physical_keys_sha256": "820bcde4d6bb45622091dab4aa5609c685e56dbc711747f5f4f070853b854303",
+  "triplets": 143,
+  "records": 429,
+  "raw_samples": 4290,
+  "phases": {
+    "stock": {
+      "triplets": 137,
+      "records": 411,
+      "standard_diagnostics": 57
+    },
+    "periodic": {
+      "triplets": 2,
+      "records": 6,
+      "standard_diagnostics": 57
+    },
+    "utf16-probe": {
+      "triplets": 4,
+      "records": 12,
+      "standard_diagnostics": 57
+    }
+  },
+  "extra_diagnostics": {
+    "uniform": 6,
+    "positive": 9,
+    "timing_evidence": false
+  },
+  "higher_mean_groups": 52,
+  "nonoverlap_loss_groups": 36,
+  "all_higher_means": [
+    {
+      "case": "tiny-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 3.408996502233556,
+      "original_error": 0.008444768597223857,
+      "enabled_ns": 3.66094650295945,
+      "enabled_error": 0.012441479947883966,
+      "disabled_ns": 3.6534893001031774,
+      "disabled_error": 0.014913170750643603,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9311789996050962,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9979630396537496,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "tiny-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 2.8629020969721575,
+      "original_error": 0.00914820179110403,
+      "enabled_ns": 2.7489932822149945,
+      "enabled_error": 0.011334817575674559,
+      "disabled_ns": 2.746191086360064,
+      "disabled_error": 0.012333667449855213,
+      "comparisons": {
+        "original": {
+          "speedup": 1.041436556245558,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9989806465250171,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "immediate-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 5.443260402120364,
+      "original_error": 0.017826431793726095,
+      "enabled_ns": 6.143769062894094,
+      "enabled_error": 0.009718596822689244,
+      "disabled_ns": 5.603636690329036,
+      "disabled_error": 0.028630252039046122,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8859806328000638,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9120845254703271,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "immediate-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 5.415158983953122,
+      "original_error": 0.01106650475066619,
+      "enabled_ns": 5.7796760550392685,
+      "enabled_error": 0.03270568528236625,
+      "disabled_ns": 5.503716777831037,
+      "disabled_error": 0.04206748466913133,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9369312280455016,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9522535044213033,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "mixed-end-9",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "9",
+        "position": "END"
+      },
+      "original_ns": 9.507242888614373,
+      "original_error": 2.4980664162098143,
+      "enabled_ns": 8.657252661961355,
+      "enabled_error": 0.011695285564988719,
+      "disabled_ns": 8.141926615343705,
+      "disabled_error": 0.020963556758321462,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0981824442282648,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9404746440078023,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "equal-latin1-32",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+      "params": {
+        "coder": "LATIN1",
+        "length": "32",
+        "needleLength": "4",
+        "position": "EQUAL"
+      },
+      "original_ns": 3.5232835305381505,
+      "original_error": 0.01422999061474702,
+      "enabled_ns": 3.5590550141321686,
+      "enabled_error": 0.027438027508750167,
+      "disabled_ns": 3.5701995703916003,
+      "disabled_error": 0.015327220457152681,
+      "comparisons": {
+        "original": {
+          "speedup": 0.98994916250185,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.003131324527207,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "equal-latin1-4096",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "EQUAL"
+      },
+      "original_ns": 255.3509670801696,
+      "original_error": 0.5781033938945254,
+      "enabled_ns": 255.36499499899384,
+      "enabled_error": 1.4389997617728754,
+      "disabled_ns": 255.19445380090048,
+      "disabled_error": 0.5613565674092943,
+      "comparisons": {
+        "original": {
+          "speedup": 0.999945067181881,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9993321668927488,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "equal-utf16-32",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+      "params": {
+        "coder": "UTF16",
+        "length": "32",
+        "needleLength": "4",
+        "position": "EQUAL"
+      },
+      "original_ns": 5.601049564180175,
+      "original_error": 0.02190841850815296,
+      "enabled_ns": 5.605229310827395,
+      "enabled_error": 0.026576324390622342,
+      "disabled_ns": 5.5992507329417425,
+      "disabled_error": 0.019702523311690725,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9992543129967678,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9989333928097992,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "equal-utf16-4096",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "EQUAL"
+      },
+      "original_ns": 502.1045734857964,
+      "original_error": 0.5359735049589415,
+      "enabled_ns": 502.5359081174909,
+      "enabled_error": 1.9440798605865874,
+      "disabled_ns": 501.5106359079165,
+      "disabled_error": 1.3879137524321286,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9991416839578483,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9979598030846888,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "overlap-min-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "0",
+        "needleLength": "129",
+        "shape": "OVERLAP"
+      },
+      "original_ns": 117.58801661691196,
+      "original_error": 0.18384404032949844,
+      "enabled_ns": 113.9811865953538,
+      "enabled_error": 2.263355988706415,
+      "disabled_ns": 109.11104999467241,
+      "disabled_error": 0.1921465644922381,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0316440820568293,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.957272452181333,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "mixed-boundary-end-15",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "15",
+        "position": "END"
+      },
+      "original_ns": 10.367888532890339,
+      "original_error": 0.08679193863108342,
+      "enabled_ns": 11.520047910902274,
+      "enabled_error": 1.1246364581221737,
+      "disabled_ns": 10.21634573441536,
+      "disabled_error": 0.11347788875183945,
+      "comparisons": {
+        "original": {
+          "speedup": 0.899986581052188,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.8868318789496418,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "mixed-boundary-end-16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "16",
+        "position": "END"
+      },
+      "original_ns": 13.72545367487722,
+      "original_error": 0.21798996425890096,
+      "enabled_ns": 11.266971227534889,
+      "enabled_error": 0.10932137214933754,
+      "disabled_ns": 10.795366450258971,
+      "disabled_error": 0.03863474998767383,
+      "comparisons": {
+        "original": {
+          "speedup": 1.218202602784158,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9581427193030029,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "mixed-boundary-end-17",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "17",
+        "position": "END"
+      },
+      "original_ns": 12.7063119570082,
+      "original_error": 2.1326001767947655,
+      "enabled_ns": 11.743918884525424,
+      "enabled_error": 0.06359627919500256,
+      "disabled_ns": 11.283276347632537,
+      "disabled_error": 0.06221062822381901,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0819482050196114,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9607760798229064,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "neon-utf16-1024-8",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "1024",
+        "needleLength": "8",
+        "position": "MISS"
+      },
+      "original_ns": 193.04090272920578,
+      "original_error": 0.6263835760070041,
+      "enabled_ns": 190.7350001585699,
+      "enabled_error": 0.241280107954359,
+      "disabled_ns": 185.48220256828077,
+      "disabled_error": 2.698392515711882,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0120895617936867,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9724602323332259,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "neon-utf16-1025-8",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "1025",
+        "needleLength": "8",
+        "position": "MISS"
+      },
+      "original_ns": 193.6669226244634,
+      "original_error": 0.6110524611125777,
+      "enabled_ns": 190.90531733452443,
+      "enabled_error": 0.3968445570682387,
+      "disabled_ns": 185.08124107036934,
+      "disabled_error": 3.0079091138149883,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0144658374554325,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9694923308293738,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "neon-utf16-1024-9",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "1024",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "original_ns": 193.69157920390165,
+      "original_error": 0.7026017007780689,
+      "enabled_ns": 187.9723304640103,
+      "enabled_error": 1.284387858987207,
+      "disabled_ns": 184.45174831364363,
+      "disabled_error": 1.0674739113485412,
+      "comparisons": {
+        "original": {
+          "speedup": 1.030426013902011,
+          "slower_mean": false,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9812707426583684,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "neon-utf16-1025-9",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "1025",
+        "needleLength": "9",
+        "position": "MISS"
+      },
+      "original_ns": 192.33285211227036,
+      "original_error": 0.3874366109442304,
+      "enabled_ns": 191.2547478102917,
+      "enabled_error": 2.763476414684996,
+      "disabled_ns": 185.47165078883629,
+      "disabled_error": 2.3784805141121295,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0056370067374645,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9697623348561693,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "immediate-utf16-126",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "126",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 5.333883187662256,
+      "original_error": 0.01943084721158649,
+      "enabled_ns": 6.127927145392907,
+      "enabled_error": 0.01938115578411438,
+      "disabled_ns": 5.537323903952626,
+      "disabled_error": 0.014809480569201025,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8704220956139094,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.903621040618228,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "immediate-utf16-127",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 5.418302739696018,
+      "original_error": 0.019533587009446178,
+      "enabled_ns": 6.156922246174308,
+      "enabled_error": 0.02211580293503081,
+      "disabled_ns": 5.603800504917069,
+      "disabled_error": 0.030847757206968848,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8800342968538799,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9101626236061484,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-forward-latin-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 1264.7050298664317,
+      "original_error": 79.83681353506991,
+      "enabled_ns": 1245.8703926854046,
+      "enabled_error": 44.93993483506214,
+      "disabled_ns": 1227.8689093118487,
+      "disabled_error": 18.166564392181055,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0151176537235387,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9855510786039673,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-latin-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "START"
+      },
+      "original_ns": 3.837121308241629,
+      "original_error": 0.027212490294056823,
+      "enabled_ns": 3.8751065389382475,
+      "enabled_error": 0.06533919158826353,
+      "disabled_ns": 3.8413580837976746,
+      "disabled_error": 0.02882871601644931,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9901976293258181,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9912909606996716,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-utf16-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 44.73111238133752,
+      "original_error": 1.1820952654072763,
+      "enabled_ns": 44.6574087711098,
+      "enabled_error": 1.1883404195080833,
+      "disabled_ns": 44.60462080336301,
+      "disabled_error": 0.9981561382369933,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0016504229030727,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9988179348242673,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-utf16-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 1229.4439678562117,
+      "original_error": 30.48639929488518,
+      "enabled_ns": 1255.7981497924516,
+      "enabled_error": 78.26947882833964,
+      "disabled_ns": 1232.5042588057834,
+      "disabled_error": 21.471603259723167,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9790139984355005,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9814509274515829,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-utf16-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "START"
+      },
+      "original_ns": 4.522065388426116,
+      "original_error": 0.019231173598244375,
+      "enabled_ns": 4.527166616849738,
+      "enabled_error": 0.01347995748678361,
+      "disabled_ns": 4.570006769247008,
+      "disabled_error": 0.028107135424499986,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9988731962272748,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0094629060564775,
+          "slower_mean": false,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-forward-mixed-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "128",
+        "needleLength": "4",
+        "position": "START"
+      },
+      "original_ns": 3.9578856417465866,
+      "original_error": 0.0254614768226178,
+      "enabled_ns": 3.943258653120849,
+      "enabled_error": 0.01585615523667218,
+      "disabled_ns": 3.9349537598563296,
+      "disabled_error": 0.02053427564373996,
+      "comparisons": {
+        "original": {
+          "speedup": 1.003709365758739,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9978939009598199,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-mixed-64",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "64",
+        "position": "MISS"
+      },
+      "original_ns": 84.16765210120087,
+      "original_error": 0.13100886385429786,
+      "enabled_ns": 84.17193300275292,
+      "enabled_error": 0.09243235693388312,
+      "disabled_ns": 84.12069927338727,
+      "disabled_error": 0.09560762265319747,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9999491409856073,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9993913205086549,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-forward-latin-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 11.455870886986416,
+      "original_error": 0.023945370135768772,
+      "enabled_ns": 11.504601695038698,
+      "enabled_error": 0.017432539686517208,
+      "disabled_ns": 11.492454117205577,
+      "disabled_error": 0.013722548174023678,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9957642333612213,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9989441113951507,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-forward-latin-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 172.4166866069164,
+      "original_error": 0.6296328980110222,
+      "enabled_ns": 174.1048148751762,
+      "enabled_error": 2.5614804696381728,
+      "disabled_ns": 173.24211545876568,
+      "disabled_error": 4.052884560308602,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9903039541469884,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9950449422261582,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-latin-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 2.8820239018067677,
+      "original_error": 0.009331614641293007,
+      "enabled_ns": 3.7512692391783036,
+      "enabled_error": 0.014414205269616212,
+      "disabled_ns": 3.732341658734451,
+      "disabled_error": 0.033294682550677045,
+      "comparisons": {
+        "original": {
+          "speedup": 0.7682796723058087,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9949543529837387,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-forward-utf16-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "129",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 15.507114665292638,
+      "original_error": 5.061519688388341,
+      "enabled_ns": 12.3335127778176,
+      "enabled_error": 0.015586725300782287,
+      "disabled_ns": 12.253353826086014,
+      "disabled_error": 0.02610554441079959,
+      "comparisons": {
+        "original": {
+          "speedup": 1.2573153281344882,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9935007200968928,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-char-forward-utf16-bulk",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 351.7948841270942,
+      "original_error": 4.519726673943312,
+      "enabled_ns": 352.9197622685048,
+      "enabled_error": 3.386777187984269,
+      "disabled_ns": 351.8349319950954,
+      "disabled_error": 2.3030134337222004,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9968126518782056,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9969261277225273,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 30.130192674726505,
+      "original_error": 0.05519780714737055,
+      "enabled_ns": 31.44702051060966,
+      "enabled_error": 0.07827177536648583,
+      "disabled_ns": 31.454152985609795,
+      "disabled_error": 0.11333458449571922,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9581255134985243,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0002268092456559,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-utf16-at",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 30.47556325777286,
+      "original_error": 0.06762423734049076,
+      "enabled_ns": 32.45104131493651,
+      "enabled_error": 0.09397082900276853,
+      "disabled_ns": 31.6403896184813,
+      "disabled_error": 0.13066311529597846,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9391243554254025,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9750192393338674,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-utf16-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 2.8867243067809953,
+      "original_error": 0.013591963303543854,
+      "enabled_ns": 3.3373140594640405,
+      "enabled_error": 0.01554051639497919,
+      "disabled_ns": 3.348533763897147,
+      "disabled_error": 0.02273968486517554,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8649843123378661,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0033618964931663,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-builder-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.builderIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 1238.7132162473933,
+      "original_error": 18.72260198166781,
+      "enabled_ns": 1228.4834590846967,
+      "enabled_error": 7.172772775415036,
+      "disabled_ns": 1227.2785603830412,
+      "disabled_error": 4.061415930619986,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0083271427767684,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.999019198270237,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-builder-mixed",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.builderIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 1224.3203802632236,
+      "original_error": 2.6531315317172615,
+      "enabled_ns": 1224.821806915123,
+      "enabled_error": 2.58540237229326,
+      "disabled_ns": 1224.7507403677903,
+      "disabled_error": 2.0749419247106533,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9995906125698706,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9999419780518836,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "utf16-uniform-end-129-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "129",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "original_ns": 45.57981879530679,
+      "original_error": 0.2285685223168255,
+      "enabled_ns": 59.40285837274687,
+      "enabled_error": 0.24831876287422575,
+      "disabled_ns": 48.320032402071206,
+      "disabled_error": 0.12004790125788051,
+      "comparisons": {
+        "original": {
+          "speedup": 0.7673000936974798,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8134294161211559,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "utf16-uniform-end-130-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "130",
+        "needleLength": "129",
+        "shape": "UTF16_UNIFORM_END"
+      },
+      "original_ns": 45.519004602878255,
+      "original_error": 0.0361583553795911,
+      "enabled_ns": 59.231032514506786,
+      "enabled_error": 0.09280791086898033,
+      "disabled_ns": 48.22757599024057,
+      "disabled_error": 0.03651954335014882,
+      "comparisons": {
+        "original": {
+          "speedup": 0.7684992590958093,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8142281831475542,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "simd-char-reverse-utf16-129",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "129",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 29.71310147341586,
+      "original_error": 0.11567586561111175,
+      "enabled_ns": 31.811662839068493,
+      "enabled_error": 0.15778604151846995,
+      "disabled_ns": 31.07838783137412,
+      "disabled_error": 0.0795464081770156,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9340316984915561,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9769494914049628,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "simd-char-reverse-utf16-255",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 52.43819505258578,
+      "original_error": 0.06814592541782702,
+      "enabled_ns": 54.782209011665444,
+      "enabled_error": 0.8096345355113576,
+      "disabled_ns": 53.87262963084847,
+      "disabled_error": 0.49240656981828845,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9572121314315652,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9833964457215794,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "simd-char-reverse-utf16-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 52.93124714880721,
+      "original_error": 0.2247371014033269,
+      "enabled_ns": 54.6105566600859,
+      "enabled_error": 0.19656316805767407,
+      "disabled_ns": 53.66578645132724,
+      "disabled_error": 0.15283004817077106,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9692493610396381,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9826998612257477,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "simd-char-reverse-utf16-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "257",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 51.814348209339094,
+      "original_error": 0.4711736964267168,
+      "enabled_ns": 53.87448292755399,
+      "enabled_error": 0.1604119681752729,
+      "disabled_ns": 53.30828820133585,
+      "disabled_error": 0.7071028474811628,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9617604734882523,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9894904842617327,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "neon-threshold-utf16-512-9-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "512",
+        "needleLength": "9",
+        "position": "END"
+      },
+      "original_ns": 7.323052222991457,
+      "original_error": 0.013256733849132037,
+      "enabled_ns": 10.079313797519383,
+      "enabled_error": 0.06753289615040121,
+      "disabled_ns": 8.07420469868887,
+      "disabled_error": 0.015653882329428537,
+      "comparisons": {
+        "original": {
+          "speedup": 0.7265427359542801,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8010669040461872,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-latin-single-end-257-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "END"
+      },
+      "original_ns": 90.84998115219601,
+      "original_error": 0.48158379588346784,
+      "enabled_ns": 110.85389819106327,
+      "enabled_error": 0.45524849304675147,
+      "disabled_ns": 93.45508241200704,
+      "disabled_error": 3.3754770569831662,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8195470130929512,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8430473256874708,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-latin-two-end-258-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "258",
+        "needleLength": "257",
+        "position": "END"
+      },
+      "original_ns": 91.20775486621228,
+      "original_error": 1.085489417096158,
+      "enabled_ns": 110.66087724718639,
+      "enabled_error": 0.13835704371405338,
+      "disabled_ns": 91.48988975331982,
+      "disabled_error": 0.2370896375188303,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8242095773601983,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8267591223676658,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "supp-neon-c2-utf16-positive-512-9",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaLongNeedle.lastIndexOf",
+      "params": {
+        "length": "502",
+        "needleLength": "9",
+        "shape": "END"
+      },
+      "original_ns": 8.652556940175064,
+      "original_error": 0.011519786510307667,
+      "enabled_ns": 11.629059282031566,
+      "enabled_error": 0.018070638487230947,
+      "disabled_ns": 8.638442591041082,
+      "disabled_error": 0.08147956969862187,
+      "comparisons": {
+        "original": {
+          "speedup": 0.7440461631788573,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.7428324494302491,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "final-neon-c2-reverse-char-utf16-384",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "384",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 75.50276706505758,
+      "original_error": 0.6971092275900146,
+      "enabled_ns": 77.1475221144689,
+      "enabled_error": 0.7171921880674778,
+      "disabled_ns": 76.06573337779506,
+      "disabled_error": 0.30898080566490715,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9786803904476558,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9859776606296088,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "final-neon-c2-reverse-char-utf16-512",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "512",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 97.25231010085719,
+      "original_error": 0.1716817214396582,
+      "enabled_ns": 98.73033392608343,
+      "enabled_error": 0.2611083456199831,
+      "disabled_ns": 97.97876716429255,
+      "disabled_error": 0.4150889970355568,
+      "comparisons": {
+        "original": {
+          "speedup": 0.985029688785082,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9923876813548148,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "long-latin-head-candidate-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+      "params": {
+        "length": "258",
+        "needleLength": "257",
+        "shape": "LATIN_HEAD_CANDIDATE_MISS"
+      },
+      "original_ns": 228.24496282215205,
+      "original_error": 0.1682539471335883,
+      "enabled_ns": 232.10266615094343,
+      "enabled_error": 1.2414050933205887,
+      "disabled_ns": 228.2071666730561,
+      "disabled_error": 0.34470944316879015,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9833793235003918,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9832164811267011,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "final-neon-c2-reverse-char-utf16-767",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "767",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 141.3957920507209,
+      "original_error": 0.9711673991474629,
+      "enabled_ns": 142.11987776749098,
+      "enabled_error": 0.3523947714847059,
+      "disabled_ns": 141.12150489742035,
+      "disabled_error": 0.2141644655674308,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9949051059700833,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9929751355985265,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "probe-utf16-single-64-penultimate-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "params": {
+        "length": "64",
+        "needleLength": "64",
+        "shape": "PENULTIMATE_MISS"
+      },
+      "original_ns": 3.353054117862571,
+      "original_error": 0.012934983440856881,
+      "enabled_ns": 4.4180974771131005,
+      "enabled_error": 0.03839614001478484,
+      "disabled_ns": 3.3752385832804612,
+      "disabled_error": 0.025000860369697817,
+      "comparisons": {
+        "original": {
+          "speedup": 0.7589362016642384,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.763957472818352,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "probe-utf16-single-64-near-end-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaUTF16Probe.lastIndexOf",
+      "params": {
+        "length": "64",
+        "needleLength": "64",
+        "shape": "NEAR_END_MISS"
+      },
+      "original_ns": 5.263087928972846,
+      "original_error": 0.029069438139878598,
+      "enabled_ns": 5.794177718896365,
+      "enabled_error": 0.019627119424381036,
+      "disabled_ns": 5.326747132956447,
+      "disabled_error": 0.019270984498666495,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9083407835090227,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9193275372939457,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    }
+  ],
+  "nonoverlap_loss_cases": [
+    "tiny-latin",
+    "immediate-utf16",
+    "immediate-latin",
+    "mixed-end-9",
+    "overlap-min-utf16",
+    "mixed-boundary-end-15",
+    "mixed-boundary-end-16",
+    "mixed-boundary-end-17",
+    "neon-utf16-1024-8",
+    "neon-utf16-1025-8",
+    "neon-utf16-1024-9",
+    "neon-utf16-1025-9",
+    "immediate-utf16-126",
+    "immediate-utf16-127",
+    "char-forward-latin-256",
+    "supp-char-reverse-latin-early",
+    "supp-char-forward-utf16-at",
+    "supp-char-reverse-utf16-below",
+    "supp-char-reverse-utf16-at",
+    "supp-char-reverse-utf16-early",
+    "utf16-uniform-end-129-129",
+    "utf16-uniform-end-130-129",
+    "simd-char-reverse-utf16-129",
+    "simd-char-reverse-utf16-255",
+    "simd-char-reverse-utf16-256",
+    "simd-char-reverse-utf16-257",
+    "neon-threshold-utf16-512-9-end",
+    "supp-latin-single-end-257-257",
+    "supp-latin-two-end-258-257",
+    "supp-neon-c2-utf16-positive-512-9",
+    "final-neon-c2-reverse-char-utf16-384",
+    "final-neon-c2-reverse-char-utf16-512",
+    "long-latin-head-candidate-miss",
+    "final-neon-c2-reverse-char-utf16-767",
+    "probe-utf16-single-64-penultimate-miss",
+    "probe-utf16-single-64-near-end-miss"
+  ],
+  "all_raw_samples_preserved": true,
+  "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained",
+  "files": [
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/neon-c2-original.json",
+      "sha": "2fe606765052d498ae5d59b077442921df7a5103",
+      "sha256": "cf7201d18c2c88d21a68a7fbb9084d28b73dec71c2bd5a65aaa0ea4be55725cc",
+      "bytes": 121029
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/neon-c2-enabled.json",
+      "sha": "56803108d412ea1e9293bf817040b3e85f3ea256",
+      "sha256": "24c1e69b30c7747d2d497e3c7e132975f6a33ab0192b011585e4edcbc4a6612a",
+      "bytes": 125214
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/neon-c2-disabled.json",
+      "sha": "dbdcae04678dbf028ba1d9d77d2dc81a0acacf30",
+      "sha256": "ea465e8f36ab4a1ee8057a5a12e5c912ef9f9c3927bfd0cd0b6b8caa3882220b",
+      "bytes": 125332
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/neon-c2-metadata.json",
+      "sha": "cb751823d0ee246de278bb7ea9a4a9ef19dd16a2",
+      "sha256": "fe02634c521a7c70082467d861daa67ba30b5697ddd3d12ca413775c002047e0",
+      "bytes": 189305
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/neon-c2-original.json",
+      "sha": "de7b92e034422cfcc7977937c56f24a6224140af",
+      "sha256": "3de066d5afc0efd78958e9cd4bd70ae6d05b915e2c8dcc2385537324bb3fa6e3",
+      "bytes": 2771
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/neon-c2-enabled.json",
+      "sha": "70b5f403ce8e4cdb02d17830bd5e12768af87f0d",
+      "sha256": "8eb0569f406aaa0ec8cdd739beaf3f1636eea1d66d7ccb43551a7cab60fb4a36",
+      "bytes": 2845
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/neon-c2-disabled.json",
+      "sha": "f92172163bb417dd5b66c877b6e0ab00acf8c231",
+      "sha256": "a95f7b7eb074d5d48af153658260b43eee474d5a7c5c7ce4ab9bb3d34a67f378",
+      "bytes": 2832
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/neon-c2-metadata.json",
+      "sha": "0c5d3d64b8975afdf398e220e1751d1eb2751385",
+      "sha256": "0f2b551c55d476aedfec46d16b38026cbae4e33cea52ac6519ef3c08888ef187",
+      "bytes": 47280
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/utf16-probe/neon-c2-original.json",
+      "sha": "570b007680e12599eb2a3aed7aaa463cd79f2d76",
+      "sha256": "34f5dca17e4e3b41a8b4a5d3b7addafe753b99bd32c7621049d23664dbe2dda3",
+      "bytes": 4569
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/utf16-probe/neon-c2-enabled.json",
+      "sha": "d3e0751f5b6d950aaec073e11f485c4c22b49c22",
+      "sha256": "8681b68f8dffe7451d3682aa578cf97dac56db533ddc28847b340b853cc79549",
+      "bytes": 4670
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/utf16-probe/neon-c2-disabled.json",
+      "sha": "4fcae7a91feaa02b6f215f70c91779f73eccb6cf",
+      "sha256": "e4c14d5b518c96a94f8262f1228cbc8b915c61cdc58968dc40cdbc112218ac13",
+      "bytes": 4701
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/utf16-probe/neon-c2-metadata.json",
+      "sha": "fdbd62b93f59d2efd31d6e58970bde5025bc16fa",
+      "sha256": "3eb5efd2ca6bd6ce57f1d2b23a724710d5da6c7c57702f1f1c5691f8032cfc49",
+      "bytes": 49536
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/diagnostics/neon-c2.json",
+      "sha": "e6ce6034a21ede5022c41239110980d2b8d8936f",
+      "sha256": "5d48a71a317c62bf25b5a009dbc40d3256d0bbdf98d911fddccf7e8c0da87c8b",
+      "bytes": 14854
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/indexes/neon-c2.json",
+      "sha": "85d9bbcf8cb7250189498f02f808e4b3f3479a0a",
+      "sha256": "8ccebb73b0ac34832b862950f378a0431379d456a94acd6412ba6fb4c7f68013",
+      "bytes": 1922
+    }
+  ]
+}

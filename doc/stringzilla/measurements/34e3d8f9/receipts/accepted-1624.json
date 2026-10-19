@@ -1,0 +1,350 @@
+{
+  "schema": "stringzilla-final-qualification-progress-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "status": "partial: all normal backend measurements plus SKY C2 strictly accepted; SKY interpreter and C1 pending",
+  "expected": {
+    "triplets": 1886,
+    "records": 5658,
+    "physical_keys_sha256": "dd8faf0112a66103aa8d6b6a958d7ec3c813e1b4b7b5fd7ea0f85004231a434e"
+  },
+  "accepted": {
+    "triplets": 1624,
+    "records": 4872,
+    "raw_samples": 48720,
+    "physical_keys_sha256": "716bf7d446400d59fdf6a480fd496a131cb9e062faf09c364572c019c989afc9",
+    "higher_mean_groups": 453,
+    "nonoverlap_loss_groups": 220,
+    "nonoverlap_original_groups": 160
+  },
+  "pending": {
+    "backend": "avx512",
+    "tiers": [
+      "interpreter",
+      "c1"
+    ],
+    "triplets": 262,
+    "records": 786,
+    "physical_keys_sha256": "b2e6a576ffc40b443c969d01bad51dedb224b095c1339c3c54f00a0d61dca000",
+    "consumer_run": 39196718293,
+    "consumer_head": "63f17c05909ef7f3cba6d428ef57ff5ae79960c3",
+    "timings_claimed": false
+  },
+  "shards": [
+    {
+      "backend": "serial",
+      "tier": "interpreter",
+      "triplets": 103,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837154,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161164138,
+        "name": "stringzilla-final-results-serial-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:03fd6c258cff0d5b61c758b8a7f8eb925d7d3ee8edb75a9abe057e0d49f173ea",
+        "size": 8727013
+      },
+      "normalized_receipt_blob": "9bb4ea843ab21e941203e3fb1e7df134ffe0570a",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "serial",
+      "tier": "c1",
+      "triplets": 92,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837127,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12160497682,
+        "name": "stringzilla-final-results-serial-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:ac5940c753bb7fbfaa3aefc0d3f569bf7ce578f50f5873bf201fc1817f9e9d60",
+        "size": 8601122
+      },
+      "normalized_receipt_blob": "12933cdf5552a9693a34c927bcdb8ae81b8e1d9a",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "serial",
+      "tier": "c2",
+      "triplets": 170,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837156,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12163055881,
+        "name": "stringzilla-final-results-serial-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:091e6cbb6976ad8100d178d75ff986649e475f0bfb66e986a856410c6fd64eed",
+        "size": 13904299
+      },
+      "normalized_receipt_blob": "f44023a106140e72102e13d1a54068e020cb3053",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "avx2",
+      "tier": "interpreter",
+      "triplets": 136,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837124,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12162922626,
+        "name": "stringzilla-final-results-avx2-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:c4bd35f2cc004db66ccf1d78ba6074762048c907374002b5c5fcd2bf0c9d9ad2",
+        "size": 9037363
+      },
+      "normalized_receipt_blob": "4d362ac27ada612724edc275652e1cab0d4857ed",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "triplets": 126,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837039,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161251890,
+        "name": "stringzilla-final-results-avx2-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:31d018c197d52930659c2abdf0af8f46d3488275fe7d9ed9c53eec940abd1947",
+        "size": 8890119
+      },
+      "normalized_receipt_blob": "4fff82f4d91c7269418b2309340f8e3acbad6bf4",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "avx2",
+      "tier": "c2",
+      "triplets": 124,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837116,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12162394322,
+        "name": "stringzilla-final-results-avx2-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:b82daef57744108587b80391d88cd6ce09929a55e068739d0044eaac8df505c2",
+        "size": 9568819
+      },
+      "normalized_receipt_blob": "ebc97929ecc431621e4db2ececdc552680bd16f8",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "neon",
+      "tier": "interpreter",
+      "triplets": 118,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837281,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12162696031,
+        "name": "stringzilla-final-results-neon-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:b56db8596c00fc4adf03c393763137da722114b7a65a84e5d6ce000c840b40f3",
+        "size": 8859045
+      },
+      "normalized_receipt_blob": "a86fe0248106565e4fc8f0644236c6f00faeeef5",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "neon",
+      "tier": "c1",
+      "triplets": 110,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837167,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12159948918,
+        "name": "stringzilla-final-results-neon-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:60809f7e467974c9a55506b9f77ad207b4068b9320747938bebdec201063bafd",
+        "size": 8720697
+      },
+      "normalized_receipt_blob": "e390ab4bc580f6674e458b04859a5f51bf4de9d5",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "neon",
+      "tier": "c2",
+      "triplets": 143,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837245,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12163325138,
+        "name": "stringzilla-final-results-neon-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:f43b7a1a7812102e4b57d37c8b7d2bf33a57959ce20f450c1f623f7cb9816a37",
+        "size": 13538659
+      },
+      "normalized_receipt_blob": "6e76446fa44cd5584db92550f32aecbeb05898a0",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "msvc",
+      "tier": "interpreter",
+      "triplets": 103,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837243,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12160783629,
+        "name": "stringzilla-final-results-msvc-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:cc9c972507576b9e018613e9a80c34d9c0b7ae1a05c871b8bba0ee0b1e005de6",
+        "size": 9572788
+      },
+      "normalized_receipt_blob": "3edcbdf3a03d26c61b2c20745d9aa36484b60bcf",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "msvc",
+      "tier": "c1",
+      "triplets": 126,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837223,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161922489,
+        "name": "stringzilla-final-results-msvc-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:ec0aa910ab205192ffe962e135815c3ab570a9267615275509bda2d306ab3ab2",
+        "size": 9770676
+      },
+      "normalized_receipt_blob": "0d58a09698f20178d220fa241d74b951d09e9f78",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "msvc",
+      "tier": "c2",
+      "triplets": 149,
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837218,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161726194,
+        "name": "stringzilla-final-results-msvc-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+        "size": 15007812
+      },
+      "normalized_receipt_blob": "31e1ae52ef56896a114f145ac284ed664ec27f4a",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    },
+    {
+      "backend": "avx512",
+      "tier": "c2",
+      "triplets": 124,
+      "workflow": {
+        "run_id": 39174300598,
+        "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "job_id": 117820226854,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12159124281,
+        "name": "stringzilla-final-results-avx512-c2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1-attempt1",
+        "digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
+        "size": 9879679
+      },
+      "normalized_receipt_blob": "7ff7b4364ae89e989471e38fc712cd56e5609f33",
+      "all_higher_means_retained": true,
+      "all_raw_samples_retained": true,
+      "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained"
+    }
+  ],
+  "backend_reports": [
+    {
+      "backend": "serial",
+      "triplets": 365,
+      "markdown_blob": "ca4aa38fda3acb818c7117f029a16cd1fb027f19",
+      "binding_blob": "7877cd34be381420d0136201568b6a0162f32fa0"
+    },
+    {
+      "backend": "avx2",
+      "triplets": 386,
+      "markdown_blob": "67410f1ec462a9860944a223bd7ef2c8b9eb3d03",
+      "binding_blob": "3e444f5e63d8995ff9d0b9cf5b8fb65d80d1dcfc"
+    },
+    {
+      "backend": "neon",
+      "triplets": 371,
+      "markdown_blob": "48c1038617351a755fd7902cbcc1573d44502741",
+      "binding_blob": "2e1cafb487334f9fd9681fb69a6efebd35afc5e4"
+    },
+    {
+      "backend": "msvc",
+      "triplets": 378,
+      "markdown_blob": "0759ecf28d168c937b91de7b89dd56e4e823a25e",
+      "binding_blob": "a2db91aa172bbca456b7f1e66cec082736ed9921"
+    }
+  ],
+  "diagnostic_only_index": "de53813a1bba6534878eb24b61f9e78c5fcbb3c1",
+  "complete": false
+}
