@@ -30,6 +30,8 @@ import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.DontInline;
@@ -4439,7 +4441,8 @@ final class DualPivotQuicksort {
         private static final int MAX_WHOLE_INT_SORT_SIZE = 1 << 16;
 
         private static final class Config {
-            static final boolean ENABLED = !"false".equalsIgnoreCase(
+            static final boolean ENABLED = OperatingSystem.isLinux() && Architecture.isX64()
+                    && !"false".equalsIgnoreCase(
                     VM.getSavedProperty("jdk.util.Arrays.useWholeIntSort"));
         }
 
