@@ -39,22 +39,22 @@ AC_DEFUN_ONCE([LIB_SETUP_HEX_SIMD],
         test "x$RUSTC" != "x$FIXPATH $RUSTC_EXECUTABLE"; then
       AC_MSG_ERROR([RUSTC must name a single executable without arguments; use a compiler wrapper executable for additional options])
     fi
-    AC_MSG_CHECKING([for Cargo version (1.85 or later required)])
+    AC_MSG_CHECKING([for Cargo version (1.99 or later required)])
     CARGO_VERSION=`$CARGO --version | $CUT -d ' ' -f 2`
     CARGO_MAJOR=`$ECHO "$CARGO_VERSION" | $CUT -d . -f 1`
     CARGO_MINOR=`$ECHO "$CARGO_VERSION" | $CUT -d . -f 2`
     if ! test "$CARGO_MAJOR" -ge 1 2>/dev/null || \
-        { test "$CARGO_MAJOR" -eq 1 && ! test "$CARGO_MINOR" -ge 85 2>/dev/null; }; then
-      AC_MSG_ERROR([Cargo 1.85 or later is required, found $CARGO_VERSION])
+        { test "$CARGO_MAJOR" -eq 1 && ! test "$CARGO_MINOR" -ge 99 2>/dev/null; }; then
+      AC_MSG_ERROR([Cargo 1.99 or later is required, found $CARGO_VERSION])
     fi
     AC_MSG_RESULT([$CARGO_VERSION])
-    AC_MSG_CHECKING([for rustc version (1.85 or later required)])
+    AC_MSG_CHECKING([for rustc version (1.99 or later required)])
     RUSTC_VERSION=`$RUSTC --version | $CUT -d ' ' -f 2`
     RUSTC_MAJOR=`$ECHO "$RUSTC_VERSION" | $CUT -d . -f 1`
     RUSTC_MINOR=`$ECHO "$RUSTC_VERSION" | $CUT -d . -f 2`
     if ! test "$RUSTC_MAJOR" -ge 1 2>/dev/null || \
-        { test "$RUSTC_MAJOR" -eq 1 && ! test "$RUSTC_MINOR" -ge 85 2>/dev/null; }; then
-      AC_MSG_ERROR([rustc 1.85 or later is required, found $RUSTC_VERSION])
+        { test "$RUSTC_MAJOR" -eq 1 && ! test "$RUSTC_MINOR" -ge 99 2>/dev/null; }; then
+      AC_MSG_ERROR([rustc 1.99 or later is required, found $RUSTC_VERSION])
     fi
     AC_MSG_RESULT([$RUSTC_VERSION])
 

@@ -657,8 +657,9 @@ files.
 ### HexFormat SIMD library
 
 Native glibc Linux x64 builds enable the private, Rust-backed
-[hex-simd](https://github.com/Nugine/simd) library by default. Runtime activation
-requires AVX2. Use `--disable-hex-simd` to build without Rust/Cargo, or
+[hex-simd](https://github.com/Nugine/simd) library by default. The supported x64
+runtime target is AVX2 or later. Use `--disable-hex-simd` to build without
+Rust/Cargo, or
 `-Djdk.hexFormat.useNative=false` to keep the Java implementation at runtime.
 Small inputs, decorated formats, arbitrary `CharSequence` inputs and UTF16
 parsing retain Java paths. The library loads lazily after VM bootstrap.
@@ -678,10 +679,10 @@ target is not a performance claim. Cross builds are rejected when enabled.
 | macOS AArch64 | `aarch64-apple-darwin` |
 | Windows x64 (Microsoft toolchain) | `x86_64-pc-windows-msvc` |
 
-Enabled builds require installed Rust/Cargo 1.85 or later with the matching
-native host target and the ordinary JDK C/C++ toolchain. Validation used Rust
-1.99; the declared minimum has not been executed. Windows needs native Windows
-Cargo/Rust alongside the JDK Unix shell and Visual Studio tools.
+Enabled builds require installed Rust/Cargo 1.99 or later with the matching
+native host target and the ordinary JDK C/C++ toolchain. Rust/Cargo 1.99 is the
+supported and validated toolchain for the Linux x64 AVX2 target. Windows needs
+native Windows Cargo/Rust alongside the JDK Unix shell and Visual Studio tools.
 
 The manifest pins `Nugine/simd` revision
 `dff9585c080896a9ebdb8d6dcabce17bd69a0874`; `Cargo.lock` pins `outref` 0.5.1

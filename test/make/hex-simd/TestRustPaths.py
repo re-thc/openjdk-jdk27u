@@ -40,7 +40,8 @@ with tempfile.TemporaryDirectory(prefix="hex-rust-paths-") as tmp:
     executable(rustc, '''import os, sys
 from pathlib import Path
 args = sys.argv[1:]
-if args == ['--version']: print('rustc 1.85.0 (fixture)')
+if args == ['--version']:
+    print('rustc ' + os.environ.get('FIXTURE_RUSTC_VERSION', '1.99.0') + ' (fixture)')
 elif args == ['-vV']: print('host: ' + os.environ['FIXTURE_TARGET'])
 elif args == ['--print', 'sysroot']: print(os.environ['FIXTURE_SYSROOT'])
 elif '--print' in args and 'native-static-libs' in args:
@@ -53,7 +54,8 @@ from pathlib import Path
 args = sys.argv[1:]
 assert args[:2] == ['--color', 'never'], args
 args = args[2:]
-if args == ['--version']: print('cargo 1.85.0 (fixture)')
+if args == ['--version']:
+    print('cargo ' + os.environ.get('FIXTURE_CARGO_VERSION', '1.99.0') + ' (fixture)')
 else:
     assert args[:5] == ['build', '--locked', '--release', '--jobs', '2'], args
     assert os.environ['RUSTC'] == os.environ['FIXTURE_EXPECTED_RUSTC'], os.environ['RUSTC']
@@ -184,6 +186,14 @@ check: $(HEX_SIMD_RUST_ARCHIVE)
             calls = [json.loads(line) for line in (case / "fixpath-calls.jsonl").read_text().splitlines()]
             cargo_calls = [args for args in calls if args[:2] == ["exec", str(cargo)] and "build" in args]
             assert len(cargo_calls) == 1, calls
+        else:
+            for tool, label in [("CARGO", "Cargo"), ("RUSTC", "rustc")]:
+                env[f"FIXTURE_{tool}_VERSION"] = "1.98.0"
+                rejected = run(["bash", str(root / "configure"), "--enable-hex-simd"],
+                               case, env, success=False)
+                assert f"{label} 1.99 or later is required, found 1.98.0" in rejected, rejected
+                del env[f"FIXTURE_{tool}_VERSION"]
+            print("PASS Rust/Cargo 1.99 support and 1.98 rejection")
         # Extra compiler flags cannot be silently lost in the bare export.
         env["FIXTURE_RUSTC"] += " --cfg fixture"
         rejected = run(["bash", str(root / "configure"), "--enable-hex-simd"], case, env, success=False)

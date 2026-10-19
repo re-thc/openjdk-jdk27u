@@ -850,8 +850,8 @@ does not properly locate your libffi files.</p>
 <h3 id="hexformat-simd-library">HexFormat SIMD library</h3>
 <p>Native glibc Linux x64 builds enable the private, Rust-backed <a
 href="https://github.com/Nugine/simd">hex-simd</a> library by default.
-Runtime activation requires AVX2. Use <code>--disable-hex-simd</code> to
-build without Rust/Cargo, or
+The supported x64 runtime target is AVX2 or later. Use
+<code>--disable-hex-simd</code> to build without Rust/Cargo, or
 <code>-Djdk.hexFormat.useNative=false</code> to keep the Java
 implementation at runtime. Small inputs, decorated formats, arbitrary
 <code>CharSequence</code> inputs and UTF16 parsing retain Java paths.
@@ -891,11 +891,11 @@ performance claim. Cross builds are rejected when enabled.</p>
 </tr>
 </tbody>
 </table>
-<p>Enabled builds require installed Rust/Cargo 1.85 or later with the
+<p>Enabled builds require installed Rust/Cargo 1.99 or later with the
 matching native host target and the ordinary JDK C/C++ toolchain.
-Validation used Rust 1.99; the declared minimum has not been executed.
-Windows needs native Windows Cargo/Rust alongside the JDK Unix shell and
-Visual Studio tools.</p>
+Rust/Cargo 1.99 is the supported and validated toolchain for the Linux
+x64 AVX2 target. Windows needs native Windows Cargo/Rust alongside the
+JDK Unix shell and Visual Studio tools.</p>
 <p>The manifest pins <code>Nugine/simd</code> revision
 <code>dff9585c080896a9ebdb8d6dcabce17bd69a0874</code>;
 <code>Cargo.lock</code> pins <code>outref</code> 0.5.1 and its registry
