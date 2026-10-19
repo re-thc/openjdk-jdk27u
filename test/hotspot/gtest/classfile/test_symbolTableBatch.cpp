@@ -41,6 +41,38 @@ public:
     SymbolTable::new_symbols(cld, cp, count, names, lengths, indices);
   }
 
+  static void check_permanent_duplicates(const constantPoolHandle& cp, const char* name) {
+    const int count = 64;
+    const int length = (int)strlen(name);
+    const char* names[count];
+    int lengths[count];
+    int indices[count];
+    for (int i = 0; i < count; i++) {
+      names[i] = name;
+      lengths[i] = length;
+      indices[i] = i + 1;
+    }
+    const size_t before = SymbolTable::arena()->used();
+    batch(ClassLoaderData::the_null_class_loader_data(), cp, count, names, lengths, indices);
+    const size_t used = SymbolTable::arena()->used() - before;
+    Symbol* symbol = cp->symbol_at(1);
+    // Allow one symbol, its node header/alignment, and an unused chunk tail.
+    EXPECT_LT(used, 4u * symbol->byte_size());
+    EXPECT_TRUE(symbol->is_permanent());
+    EXPECT_TRUE(symbol->equals(name, length));
+    for (int i = 1; i < count; i++) {
+      EXPECT_EQ(symbol, cp->symbol_at(i + 1));
+    }
+
+    // Simulate a miss whose insertion loses to an existing permanent symbol.
+    unsigned int hash = 0;
+    EXPECT_EQ(symbol, SymbolTable::lookup_only(name, length, hash));
+    EXPECT_EQ(symbol, SymbolTable::do_add_if_needed(name, length, hash, true));
+    const size_t warmed = SymbolTable::arena()->used();
+    EXPECT_EQ(symbol, SymbolTable::do_add_if_needed(name, length, hash, true));
+    EXPECT_EQ(warmed, SymbolTable::arena()->used());
+  }
+
   static void check(int count, int layout) {
     JavaThread* THREAD = JavaThread::current();
     ThreadInVMfromNative tiv(THREAD);
@@ -95,6 +127,34 @@ public:
     EXPECT_EQ(anchor->refcount(), initial_refcount);
   }
 };
+
+class SymbolTablePermanentDuplicates : public VM_GTestExecuteAtSafepoint {
+  const constantPoolHandle& _cp;
+  const char* _name;
+public:
+  SymbolTablePermanentDuplicates(const constantPoolHandle& cp, const char* name)
+    : _cp(cp), _name(name) {}
+  void doit() { SymbolTableTest::check_permanent_duplicates(_cp, _name); }
+};
+
+TEST_VM(SymbolTable, batch_permanent_duplicates) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative tiv(THREAD);
+  HandleMark hm(THREAD);
+  ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();
+  ConstantPool* pool = ConstantPool::allocate(cld, 65, THREAD);
+  ASSERT_FALSE(HAS_PENDING_EXCEPTION);
+  constantPoolHandle cp(THREAD, pool);
+  char name[512];
+  memset(name, 'x', sizeof(name) - 1);
+  const char* prefix = "test_symbol_batch_cold_permanent_";
+  memcpy(name, prefix, strlen(prefix));
+  name[sizeof(name) - 1] = '\0';
+  // Exclude concurrent Symbol arena allocations from the storage checks.
+  SymbolTablePermanentDuplicates op(cp, name);
+  VMThread::execute(&op);
+  MetadataFactory::free_metadata(cld, pool);
+}
 
 TEST_VM(SymbolTable, batch_reference_ownership) {
   const int counts[] = {0, 1, 15, 16, 17, 257};

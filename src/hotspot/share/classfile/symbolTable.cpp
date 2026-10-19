@@ -161,7 +161,7 @@ public:
       // so log it.
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
       size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
-      if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
+      if (!SymbolTable::arena()->Afree(memory, ARENA_ALIGN(alloc_size))) {
         // Can't access the symbol after Afree, but we just printed it above.
         NOT_PRODUCT(log_trace(symboltable)(" - Leaked permanent symbol");)
       }
@@ -583,7 +583,14 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     Symbol* sym = syms[i];
     if (sym == nullptr) {
       assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
-      sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
+      // Earlier entries in this batch may have inserted the same name. Avoid
+      // allocating unused candidates in arenas that cannot reliably reclaim them.
+      if (is_permanent || CDSConfig::is_dumping_static_archive()) {
+        sym = do_lookup(names[i], lengths[i], hashes[i]);
+      }
+      if (sym == nullptr) {
+        sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
+      }
     } else if (!shared_first) {
       _lookup_shared_first = true;
     }
