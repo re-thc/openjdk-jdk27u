@@ -235,6 +235,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   }
 
   switch (id) {
+  case vmIntrinsics::_simdutf_useUTF32WordReads:
+#ifdef AMD64
+    return UseSIMDUTFIntrinsics;
+#else
+    return false;
+#endif
   case vmIntrinsics::_simdutf_decodeLatin1:
     return FLAG_IS_DEFAULT(SIMDUTFMinLength);
   case vmIntrinsics::_simdutf_utf8PrefixThreshold:

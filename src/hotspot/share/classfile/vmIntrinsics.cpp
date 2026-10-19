@@ -68,6 +68,7 @@ inline bool match_F_SN(u2 flags) {
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_useUTF32WordReads:
   case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
   case vmIntrinsics::_simdutf_utf16CopyThreshold:
   case vmIntrinsics::_simdutf_base64EncoderThreshold:
@@ -128,6 +129,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
+  case vmIntrinsics::_simdutf_useUTF32WordReads:
   case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
   case vmIntrinsics::_simdutf_utf16CopyThreshold:
   case vmIntrinsics::_simdutf_base64EncoderThreshold:

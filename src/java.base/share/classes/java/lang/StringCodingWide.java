@@ -101,14 +101,20 @@ final class StringCodingWide {
         return null;
     }
 
+    @ForceInline
     private static int unit(byte[] src, MemorySegment segment, long offset, int width, boolean big) {
         if (src == null) {
             return segment.get(big ? SegmentLayouts.CHAR_BE : SegmentLayouts.CHAR_LE, offset);
         }
+        int off = (int)offset;
         if (width == 2) {
-            return UNSAFE.getCharUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big);
+            return big ? (src[off] & 255) << 8 | src[off + 1] & 255
+                    : (src[off + 1] & 255) << 8 | src[off] & 255;
         }
-        return UNSAFE.getIntUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big);
+        return big ? src[off] << 24 | (src[off + 1] & 255) << 16
+                        | (src[off + 2] & 255) << 8 | src[off + 3] & 255
+                : src[off + 3] << 24 | (src[off + 2] & 255) << 16
+                        | (src[off + 1] & 255) << 8 | src[off] & 255;
     }
 
     static String decode(Charset cs, byte[] src, int off, int len) {
@@ -142,6 +148,7 @@ final class StringCodingWide {
         return decodeUTF32(src, off, len, big);
     }
 
+    @ForceInline
     private static String decodeUTF32(byte[] src, int off, int len, boolean big) {
         int words = len >> 2;
         if ((off & 3) != 0 && !SimdUTF.useScalarUTF32StringDecoding(len)) {
@@ -154,8 +161,11 @@ final class StringCodingWide {
         int units = words;
         boolean latin1 = String.COMPACT_STRINGS;
         int nonLatinIndex = -1;
+        boolean wordReads = SimdUTF.useUTF32WordReads();
         for (int i = 0; i < words; i++) {
-            int cp = unit(src, null, off + ((long)i << 2), 4, big);
+            long offset = off + ((long)i << 2);
+            int cp = wordReads ? UNSAFE.getIntUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big)
+                    : unit(src, null, offset, 4, big);
             // Java accepts surrogate-valued UTF-32 through its decoder.
             if (!Character.isValidCodePoint(cp) || cp >= 0xd800 && cp <= 0xdfff) return null;
             if (latin1 && cp > 255) {
@@ -177,8 +187,9 @@ final class StringCodingWide {
 
     private static String decodeLatin1UTF32(byte[] src, int off, int words, boolean big) {
         byte[] value = new byte[words];
-        for (int i = 0; i < words; i++) {
-            value[i] = (byte)unit(src, null, off + ((long)i << 2), 4, big);
+        int lowByte = off + (big ? 3 : 0);
+        for (int i = 0; i < words; i++, lowByte += 4) {
+            value[i] = src[lowByte];
         }
         return new String(value, String.LATIN1);
     }

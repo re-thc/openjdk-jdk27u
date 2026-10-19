@@ -110,6 +110,8 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_simdutf_useUTF32WordReads:
+    return false;
   case vmIntrinsics::_simdutf_utf16CopyThreshold:
   case vmIntrinsics::_simdutf_base64EncoderThreshold:
   case vmIntrinsics::_simdutf_useLatin1Decoding:

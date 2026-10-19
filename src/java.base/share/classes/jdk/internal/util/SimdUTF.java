@@ -161,6 +161,12 @@ public final class SimdUTF {
     }
 
     @ForceInline
+    @IntrinsicCandidate
+    public static boolean useUTF32WordReads() {
+        return false;
+    }
+
+    @ForceInline
     public static boolean isEligibleLatin1Decoding(int len) {
         int threshold = minLength;
         return threshold > 0 && len >= threshold
