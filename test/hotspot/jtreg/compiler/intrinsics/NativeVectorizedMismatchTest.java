@@ -94,6 +94,7 @@ import jdk.test.whitebox.WhiteBox;
 public class NativeVectorizedMismatchTest {
     private static final int LIMIT = 65536;
     private static final int MINIMUM = 128;
+    private static final int BULK_MINIMUM = 512;
     private static final int AARCH64_HEAP_PREFIX = 2048;
     private static final MemorySegment A = Arena.ofAuto().allocate(2 * LIMIT + 16);
     private static final MemorySegment B = Arena.ofAuto().allocate(2 * LIMIT + 16);
@@ -211,6 +212,58 @@ public class NativeVectorizedMismatchTest {
                   "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLongs(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM >> 3, 3);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {LEAF}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeIntermediate(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, 256, 0);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {LEAF}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeCharsIntermediate(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, (256 >> 1), 1);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {LEAF}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeIntsIntermediate(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, (256 >> 2), 2);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, failOn = {LEAF}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeLongsIntermediate(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, (256 >> 3), 3);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeAtBulkMinimum(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, BULK_MINIMUM, 0);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeCharsAtBulkMinimum(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, (BULK_MINIMUM >> 1), 1);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeIntsAtBulkMinimum(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, (BULK_MINIMUM >> 2), 2);
+    }
+
+    @Test
+    @IR(counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int nativeLongsAtBulkMinimum(long a, long b) {
+        return ArraysSupport.vectorizedMismatch(null, a, null, b, (BULK_MINIMUM >> 3), 3);
     }
 
     @Test
@@ -362,6 +415,8 @@ public class NativeVectorizedMismatchTest {
                  "mixedRange", "mixedReverseRange", "nativeAtLimit", "nativeAboveLimit",
                  "nativeZero", "nativeShort", "nativeBelowMinimum", "nativeAtMinimum",
                  "nativeChars", "nativeInts", "nativeLongs",
+                 "nativeIntermediate", "nativeCharsIntermediate", "nativeIntsIntermediate", "nativeLongsIntermediate",
+                 "nativeAtBulkMinimum", "nativeCharsAtBulkMinimum", "nativeIntsAtBulkMinimum", "nativeLongsAtBulkMinimum",
                  "nativeCharsBelowMinimum", "nativeIntsBelowMinimum", "nativeLongsBelowMinimum", "nativeSmallInts",
                  "nativeCharsAtLimit", "nativeIntsAtLimit", "nativeLongsAtLimit",
                  "nativeCharsAboveLimit", "nativeIntsAboveLimit", "nativeLongsAboveLimit",
@@ -406,6 +461,14 @@ public class NativeVectorizedMismatchTest {
         nativeChars(a, b);
         nativeInts(a, b);
         nativeLongs(a, b);
+        nativeIntermediate(a, b);
+        nativeCharsIntermediate(a, b);
+        nativeIntsIntermediate(a, b);
+        nativeLongsIntermediate(a, b);
+        nativeAtBulkMinimum(a, b);
+        nativeCharsAtBulkMinimum(a, b);
+        nativeIntsAtBulkMinimum(a, b);
+        nativeLongsAtBulkMinimum(a, b);
         nativeCharsBelowMinimum(a, b);
         nativeIntsBelowMinimum(a, b);
         nativeLongsBelowMinimum(a, b);
@@ -505,6 +568,14 @@ public class NativeVectorizedMismatchTest {
         checkConstant(0, LIMIT + 1, () -> nativeAboveLimit(a, b));
         checkConstant(0, 64, () -> nativeShort(a, b));
         checkConstant(0, 0, () -> nativeZero(a, b));
+        checkConstant(0, 256, () -> nativeIntermediate(a, b));
+        checkConstant(1, (256 >> 1), () -> nativeCharsIntermediate(a, b));
+        checkConstant(2, (256 >> 2), () -> nativeIntsIntermediate(a, b));
+        checkConstant(3, (256 >> 3), () -> nativeLongsIntermediate(a, b));
+        checkConstant(0, BULK_MINIMUM, () -> nativeAtBulkMinimum(a, b));
+        checkConstant(1, (BULK_MINIMUM >> 1), () -> nativeCharsAtBulkMinimum(a, b));
+        checkConstant(2, (BULK_MINIMUM >> 2), () -> nativeIntsAtBulkMinimum(a, b));
+        checkConstant(3, (BULK_MINIMUM >> 3), () -> nativeLongsAtBulkMinimum(a, b));
         checkConstant(1, (MINIMUM >> 1) - 1, () -> nativeCharsBelowMinimum(a, b));
         checkConstant(1, MINIMUM >> 1, () -> nativeChars(a, b));
         checkConstant(1, LIMIT >> 1, () -> nativeCharsAtLimit(a, b));
@@ -617,7 +688,9 @@ public class NativeVectorizedMismatchTest {
 
     private enum Kind {
         VARIABLE,   // guarded leaf with a Java fallback
-        IN_RANGE,   // constant at the minimum: leaf only
+        IN_RANGE,   // complete scalar prefix on AArch64; leaf on x86
+        BULK,       // constant at the bulk admission minimum
+        INTERMEDIATE, // Java on AArch64; leaf on x86
         AT_LIMIT,   // constant at the native leaf bound
         ABOVE,      // constant above the bound: polling Java fallback only
         SHORT,      // constant below the minimum: bounded Java fallback only
@@ -640,7 +713,7 @@ public class NativeVectorizedMismatchTest {
         }
     }
 
-    private static final int[] WARM_LENGTHS = {0, 7, 64, 127, 128, 200, 1000, 4096};
+    private static final int[] WARM_LENGTHS = {0, 7, 64, 127, 128, 129, 200, 255, 256, 511, 512, 513, 1000, 4096};
 
     private static IntConsumer warmRange(int scale) {
         return i -> rangeOf(scale, NA, NB, i % 500 == 0 ? (LIMIT >> scale) + 1 : WARM_LENGTHS[i % WARM_LENGTHS.length]);
@@ -660,6 +733,14 @@ public class NativeVectorizedMismatchTest {
                 new IdealCase("nativeChars", Kind.IN_RANGE, 1, i -> nativeChars(NA, NB)),
                 new IdealCase("nativeInts", Kind.IN_RANGE, 2, i -> nativeInts(NA, NB)),
                 new IdealCase("nativeLongs", Kind.IN_RANGE, 3, i -> nativeLongs(NA, NB)),
+                new IdealCase("nativeIntermediate", Kind.INTERMEDIATE, 0, i -> nativeIntermediate(NA, NB)),
+                new IdealCase("nativeCharsIntermediate", Kind.INTERMEDIATE, 1, i -> nativeCharsIntermediate(NA, NB)),
+                new IdealCase("nativeIntsIntermediate", Kind.INTERMEDIATE, 2, i -> nativeIntsIntermediate(NA, NB)),
+                new IdealCase("nativeLongsIntermediate", Kind.INTERMEDIATE, 3, i -> nativeLongsIntermediate(NA, NB)),
+                new IdealCase("nativeAtBulkMinimum", Kind.BULK, 0, i -> nativeAtBulkMinimum(NA, NB)),
+                new IdealCase("nativeCharsAtBulkMinimum", Kind.BULK, 1, i -> nativeCharsAtBulkMinimum(NA, NB)),
+                new IdealCase("nativeIntsAtBulkMinimum", Kind.BULK, 2, i -> nativeIntsAtBulkMinimum(NA, NB)),
+                new IdealCase("nativeLongsAtBulkMinimum", Kind.BULK, 3, i -> nativeLongsAtBulkMinimum(NA, NB)),
                 new IdealCase("nativeAtLimit", Kind.AT_LIMIT, 0, i -> nativeAtLimit(NA, NB)),
                 new IdealCase("nativeCharsAtLimit", Kind.AT_LIMIT, 1, i -> nativeCharsAtLimit(NA, NB)),
                 new IdealCase("nativeIntsAtLimit", Kind.AT_LIMIT, 2, i -> nativeIntsAtLimit(NA, NB)),
@@ -1043,7 +1124,16 @@ public class NativeVectorizedMismatchTest {
         }
 
         private List<Set<Integer>> lengthGuards(int scale, N length) {
-            int minimum = MINIMUM >> scale, span = (LIMIT >> scale) - minimum;
+            int minimum = MINIMUM >> scale;
+            return rangeGuards(length, minimum, (LIMIT >> scale) - minimum);
+        }
+
+        private List<Set<Integer>> shortNativeGuards(int scale, N length) {
+            int minimum = (MINIMUM >> scale) + 1;
+            return rangeGuards(length, minimum, (BULK_MINIMUM >> scale) - minimum - 1);
+        }
+
+        private List<Set<Integer>> rangeGuards(N length, int minimum, int span) {
             Set<Integer> inside = new HashSet<>(), outside = new HashSet<>();
             for (N iff : named("If")) {
                 N bool = input(iff, 1);
@@ -1143,12 +1233,16 @@ public class NativeVectorizedMismatchTest {
             Integer constant = intCon(count);
             Set<Integer> inside;
             if (constant != null) {
-                if (constant < (MINIMUM >> scale) || constant > (LIMIT >> scale)) {
+                if (constant < (BULK_MINIMUM >> scale) || constant > (LIMIT >> scale)) {
                     throw new AssertionError("native chunk leaf is outside its byte bounds: " + count);
                 }
                 inside = named("Start").stream().map(N::idx).collect(Collectors.toSet());
             } else {
                 inside = lengthGuards(scale, count).get(0);
+                Set<Integer> admitted = shortNativeGuards(scale, count).get(1);
+                if (admitted.isEmpty() || !dominatedBy(leaf, admitted) || firstWordEqual(admitted).size() != 16) {
+                    throw new AssertionError("native chunk bypasses bulk admission or its pinned prefix: " + leaf);
+                }
             }
             if (inside.isEmpty() || !dominatedBy(leaf, inside)) {
                 throw new AssertionError("full chunk leaf bypasses its original-length guard: " + leaf);
@@ -1187,13 +1281,21 @@ public class NativeVectorizedMismatchTest {
                     throw new AssertionError("native leaf does not keep its original length parameter: " + originalLength);
                 }
             }
-            if (!variable && !Integer.valueOf((kind == Kind.IN_RANGE ? MINIMUM : LIMIT) >> scale)
+            if (!variable && !Integer.valueOf((kind == Kind.BULK ? BULK_MINIMUM : LIMIT) >> scale)
                     .equals(intCon(originalLength))) {
                 throw new AssertionError("native leaf does not keep its full constant length: " + originalLength);
             }
             List<Set<Integer>> guards = variable ? lengthGuards(scale, originalLength) : List.of(
                     named("Start").stream().map(N::idx).collect(Collectors.toSet()), Set.of());
-            Set<Integer> inside = guards.get(0), outside = guards.get(1);
+            Set<Integer> inside = guards.get(0), outside = new HashSet<>(guards.get(1));
+            if (variable) {
+                List<Set<Integer>> shortGuards = shortNativeGuards(scale, originalLength);
+                Set<Integer> admitted = shortGuards.get(1);
+                if (admitted.isEmpty() || !dominatedBy(leaf, admitted) || firstWordEqual(admitted).size() != 16) {
+                    throw new AssertionError("native leaf or prefix bypasses bulk admission: " + leaf);
+                }
+                outside.addAll(shortGuards.get(0));
+            }
             if (inside.isEmpty() || !dominatedBy(leaf, inside)) {
                 throw new AssertionError("native leaf bypasses its original-length guard: " + leaf);
             }
@@ -1244,6 +1346,9 @@ public class NativeVectorizedMismatchTest {
         }
 
         void verify(Kind kind, int scale, Fallback expected) {
+            if (kind == Kind.INTERMEDIATE) {
+                kind = Platform.isAArch64() ? Kind.SHORT : Kind.IN_RANGE;
+            }
             if (kind == Kind.CHUNKED) {
                 verifyChunked();
                 return;
@@ -1265,11 +1370,11 @@ public class NativeVectorizedMismatchTest {
             // A genuine inlined fallback polls in a loop of the Java implementation.
             boolean polls = safepoints.stream().anyMatch(n -> inLoop(n) &&
                     n.spec().contains("ArraysSupport::vectorizedMismatch @ bci:"));
-            if (Platform.isAArch64() && (kind == Kind.VARIABLE || kind == Kind.IN_RANGE || kind == Kind.AT_LIMIT)) {
+            if (Platform.isAArch64() && (kind == Kind.VARIABLE || kind == Kind.IN_RANGE || kind == Kind.BULK || kind == Kind.AT_LIMIT)) {
                 verifyAArch64(kind, scale, expected, leaves, namedCalls, safepoints, traps, polls);
                 return;
             }
-            if (kind == Kind.IN_RANGE || kind == Kind.AT_LIMIT) {
+            if (kind == Kind.IN_RANGE || kind == Kind.BULK || kind == Kind.AT_LIMIT) {
                 if (leaves.size() != 1 || !namedCalls.isEmpty() || !safepoints.isEmpty() || !traps.isEmpty()) {
                     throw new AssertionError("expected only the leaf: leaves=" + leaves + " calls=" + namedCalls +
                                              " safepoints=" + safepoints + " traps=" + traps);
@@ -1292,7 +1397,7 @@ public class NativeVectorizedMismatchTest {
                                          " safepoints=" + safepoints);
             }
             if (kind == Kind.SHORT && inlined && named("LoadL").isEmpty() && named("LoadI").isEmpty()) {
-                throw new AssertionError("no inlined comparison below the minimum");
+                throw new AssertionError("no inlined comparison on the short Java route");
             }
             if (kind != Kind.VARIABLE) {
                 return;

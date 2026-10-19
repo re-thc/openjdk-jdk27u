@@ -22,6 +22,10 @@
  */
 package org.openjdk.bench.java.util;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -117,5 +121,100 @@ public class ArraysMismatchEarlyExit {
         int x = controls[++cursor & 255];
         x ^= x >>> 13;
         return x * 0x5bd1e995;
+    }
+
+    /** Array equality distinguishes signed zero; buffer equality does not. */
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Thread)
+    @Warmup(iterations = 5, time = 1)
+    @Measurement(iterations = 5, time = 1)
+    @Fork(3)
+    public static class FloatingPoint {
+        @Param({"FLOAT", "DOUBLE"})
+        public String kind;
+
+        @Param({"8", "64", "4096"})
+        public int size;
+
+        @Param({"ARRAY", "HEAP", "DIRECT"})
+        public String storage;
+
+        @Param({"NAN_MATCH", "SIGNED_ZERO"})
+        public String pattern;
+
+        @Param({"0", "7"})
+        public int position;
+
+        private float[] fa, fb;
+        private double[] da, db;
+        private FloatBuffer fab, fbb;
+        private DoubleBuffer dab, dbb;
+
+        @Setup
+        public void setup() {
+            if (position < 0 || position >= size) {
+                throw new IllegalArgumentException("Position outside range");
+            }
+            boolean nan = switch (pattern) {
+                case "NAN_MATCH" -> true;
+                case "SIGNED_ZERO" -> false;
+                default -> throw new IllegalArgumentException(pattern);
+            };
+            boolean array = storage.equals("ARRAY");
+            boolean direct = storage.equals("DIRECT");
+            if (!array && !direct && !storage.equals("HEAP")) {
+                throw new IllegalArgumentException(storage);
+            }
+            switch (kind) {
+                case "FLOAT" -> {
+                    fa = new float[size];
+                    fb = new float[size];
+                    fa[position] = nan ? Float.intBitsToFloat(0x7fc00001) : 0.0f;
+                    fb[position] = nan ? Float.intBitsToFloat(0xff800002) : -0.0f;
+                    if (nan && Float.floatToRawIntBits(fa[position]) == Float.floatToRawIntBits(fb[position])) {
+                        throw new AssertionError("NaN payloads must differ");
+                    }
+                    if (!array) {
+                        fab = direct ? ByteBuffer.allocateDirect(size * Float.BYTES)
+                                .order(ByteOrder.nativeOrder()).asFloatBuffer() : FloatBuffer.allocate(size);
+                        fbb = direct ? ByteBuffer.allocateDirect(size * Float.BYTES)
+                                .order(ByteOrder.nativeOrder()).asFloatBuffer() : FloatBuffer.allocate(size);
+                        fab.put(fa).clear();
+                        fbb.put(fb).clear();
+                    }
+                }
+                case "DOUBLE" -> {
+                    da = new double[size];
+                    db = new double[size];
+                    da[position] = nan ? Double.longBitsToDouble(0x7ff8000000000001L) : 0.0;
+                    db[position] = nan ? Double.longBitsToDouble(0xfff0000000000002L) : -0.0;
+                    if (nan && Double.doubleToRawLongBits(da[position]) == Double.doubleToRawLongBits(db[position])) {
+                        throw new AssertionError("NaN payloads must differ");
+                    }
+                    if (!array) {
+                        dab = direct ? ByteBuffer.allocateDirect(size * Double.BYTES)
+                                .order(ByteOrder.nativeOrder()).asDoubleBuffer() : DoubleBuffer.allocate(size);
+                        dbb = direct ? ByteBuffer.allocateDirect(size * Double.BYTES)
+                                .order(ByteOrder.nativeOrder()).asDoubleBuffer() : DoubleBuffer.allocate(size);
+                        dab.put(da).clear();
+                        dbb.put(db).clear();
+                    }
+                }
+                default -> throw new IllegalArgumentException(kind);
+            }
+            int expected = array && !nan ? position : -1;
+            if (mismatch() != expected) {
+                throw new AssertionError("Invalid floating-point fixture");
+            }
+        }
+
+        @Benchmark
+        public int mismatch() {
+            if (storage.equals("ARRAY")) {
+                return kind.equals("FLOAT") ? Arrays.mismatch(fa, fb) : Arrays.mismatch(da, db);
+            }
+            return kind.equals("FLOAT") ? fab.mismatch(fbb) : dab.mismatch(dbb);
+        }
     }
 }

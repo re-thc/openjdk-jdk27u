@@ -28,6 +28,7 @@ package java.nio;
 import java.lang.ref.Reference;
 
 import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -138,7 +139,11 @@ final class BufferMismatch {
     static int mismatch(FloatBuffer a, int aOff, FloatBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
-            if (Float.floatToRawIntBits(a.get(aOff)) == Float.floatToRawIntBits(b.get(bOff))) {
+            if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+                // Use the typed prefix, including its NaN handling, for heap arrays.
+                i = ArraysSupport.mismatch(a.hb, aOff + a.offset,
+                        b.hb, bOff + b.offset, length);
+            } else if (Float.floatToRawIntBits(a.get(aOff)) == Float.floatToRawIntBits(b.get(bOff))) {
                 i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
                     b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
                     length, ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
@@ -193,7 +198,10 @@ final class BufferMismatch {
     static int mismatch(DoubleBuffer a, int aOff, DoubleBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {
-            if (Double.doubleToRawLongBits(a.get(aOff)) == Double.doubleToRawLongBits(b.get(bOff))) {
+            if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+                i = ArraysSupport.mismatch(a.hb, aOff + a.offset,
+                        b.hb, bOff + b.offset, length);
+            } else if (Double.doubleToRawLongBits(a.get(aOff)) == Double.doubleToRawLongBits(b.get(bOff))) {
                 i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
                     b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
                     length, ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);

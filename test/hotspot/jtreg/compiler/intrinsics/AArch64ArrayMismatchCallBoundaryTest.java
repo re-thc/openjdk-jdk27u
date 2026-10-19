@@ -370,6 +370,21 @@ public class AArch64ArrayMismatchCallBoundaryTest {
             check(floatRange(fa, 0, fa.length, fb, 0, fb.length), position, "float signed zero");
             check(doubleRange(da, 0, da.length, db, 0, db.length), position, "double signed zero");
         }
+        float[] fa = new float[length], fb = new float[length];
+        double[] da = new double[length], db = new double[length];
+        Arrays.fill(fa, Float.intBitsToFloat(0x7fc00001));
+        Arrays.fill(fb, Float.intBitsToFloat(0xff800002));
+        Arrays.fill(da, Double.longBitsToDouble(0x7ff8000000000001L));
+        Arrays.fill(db, Double.longBitsToDouble(0xfff0000000000002L));
+        check(floatRange(fa, 0, length, fb, 0, length), -1, "dense float NaNs");
+        check(doubleRange(da, 0, length, db, 0, length), -1, "dense double NaNs");
+        check(Arrays.mismatch(fa, fb), -1, "dense whole float NaNs");
+        check(Arrays.mismatch(da, db), -1, "dense whole double NaNs");
+        fb[length - 1] = 0;
+        db[length - 1] = 0;
+        check(floatRange(fa, 0, length, fb, 0, length), length - 1, "after dense float NaNs");
+        check(doubleRange(da, 0, length, db, 0, length), length - 1, "after dense double NaNs");
+
     }
 
     private static void exceptions() {

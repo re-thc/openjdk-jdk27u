@@ -6732,6 +6732,8 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   return true;
 }
 
+static constexpr int aarch64_mismatch_bulk_minimum_bytes = 512;
+
 Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
   const TypeInt* scale = _gvn.type(argument(7))->isa_int();
   if (scale == nullptr || !scale->is_con() || scale->get_con() < 0 || scale->get_con() > 3) {
@@ -6751,7 +6753,28 @@ Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
   Node* adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum)));
   Node* cmp = _gvn.transform(new CmpUNode(adjusted, intcon(maximum - minimum)));
   Node* outside = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
-  return generate_guard(outside, nullptr, PROB_FAIR);
+  Node* slow_control = generate_guard(outside, nullptr, PROB_FAIR);
+  if (AARCH64_ONLY(true) NOT_AARCH64(false) && native_access && !stopped()) {
+    // The exact minimum has a complete scalar-prefix exit. Intermediate
+    // native ranges retain Java instead of paying for the prefix and a stub.
+    int bulk_minimum = aarch64_mismatch_bulk_minimum_bytes >> scale->get_con();
+    Node* short_adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum + 1)));
+    Node* short_cmp = _gvn.transform(new CmpUNode(short_adjusted, intcon(bulk_minimum - minimum - 2)));
+    Node* short_range = _gvn.transform(new BoolNode(short_cmp, BoolTest::le));
+    Node* short_control = generate_guard(short_range, nullptr, PROB_FAIR);
+    if (short_control != nullptr) {
+      if (slow_control == nullptr) {
+        slow_control = short_control;
+      } else {
+        RegionNode* slow_region = new RegionNode(3);
+        slow_region->init_req(1, slow_control);
+        slow_region->init_req(2, short_control);
+        record_for_igvn(slow_region);
+        slow_control = _gvn.transform(slow_region);
+      }
+    }
+  }
+  return slow_control;
 }
 
 //-------------inline_vectorizedMismatch------------------------------
@@ -6788,7 +6811,10 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     }
     intrinsic_limit = (native_access ? 64 * K : 2 * K) >> scale_type->get_con();
     const TypeInt* length_type = _gvn.type(length)->is_int();
-    if (length_type->_lo > intrinsic_limit || length_type->_hi < (128 >> scale_type->get_con())) {
+    int minimum = 128 >> scale_type->get_con();
+    int bulk_minimum = aarch64_mismatch_bulk_minimum_bytes >> scale_type->get_con();
+    if (length_type->_lo > intrinsic_limit || length_type->_hi < minimum ||
+        (aarch64_mismatch && native_access && length_type->_lo > minimum && length_type->_hi < bulk_minimum)) {
       return false;
     }
     C->set_has_unsafe_access(true);
@@ -6838,6 +6864,13 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     RegionNode* slow_region = new RegionNode(1);
     record_for_igvn(slow_region);
     generate_slow_guard(out_of_bounds, slow_region);
+    if (aarch64_mismatch && native_access && !stopped()) {
+      int bulk_minimum = aarch64_mismatch_bulk_minimum_bytes >> _gvn.type(scale)->is_int()->get_con();
+      Node* short_adjusted = _gvn.transform(new SubINode(length, intcon(minimum + 1)));
+      Node* short_cmp = _gvn.transform(new CmpUNode(short_adjusted, intcon(bulk_minimum - minimum - 2)));
+      Node* short_range = _gvn.transform(new BoolNode(short_cmp, BoolTest::le));
+      generate_slow_guard(short_range, slow_region);
+    }
     Node* slow_control = _gvn.transform(slow_region);
     if (slow_control != top()) {
       PreserveJVMState pjvms(this);
@@ -6851,7 +6884,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     }
   }
 
-  if (has_java_path) {
+  if (has_java_path && !stopped()) {
     // The range guard makes these pinned, unaligned prefix loads safe.
     // Avoid stub entry for early heap and native/scoped mismatches, retaining
     // the original Java arguments for deoptimization.

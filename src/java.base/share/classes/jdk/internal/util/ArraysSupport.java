@@ -31,7 +31,6 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -447,7 +446,7 @@ public class ArraysSupport {
     }
 
     // The typed caller has compared prefixBytes. Scan only the bounded
-    // admission range; the last word overlaps already equal bytes if needed.
+    // inline range; the last word overlaps already equal bytes if needed.
     private static int mismatchSmall(Object a, long aOffset, Object b, long bOffset,
                                      int length, int log2ArrayIndexScale, int prefixBytes) {
         int last = (length << log2ArrayIndexScale) - Long.BYTES;
@@ -467,7 +466,6 @@ public class ArraysSupport {
     }
 
     // Bulk scans retain the typed Java implementation and its canonical NaN handling.
-    @DontInline
     private static int mismatchLarge(boolean[] a, int aFromIndex,
                                      boolean[] b, int bFromIndex, int length) {
         int i = 0;
@@ -491,7 +489,6 @@ public class ArraysSupport {
         return -1;
     }
 
-    @DontInline
     private static int mismatchLarge(byte[] a, int aFromIndex,
                                      byte[] b, int bFromIndex, int length) {
         // assert 0 <= aFromIndex < a.length
@@ -521,7 +518,6 @@ public class ArraysSupport {
         return -1;
     }
 
-    @DontInline
     private static int mismatchLarge(char[] a, int aFromIndex,
                                      char[] b, int bFromIndex, int length) {
         int i = 0;
@@ -545,7 +541,6 @@ public class ArraysSupport {
         return -1;
     }
 
-    @DontInline
     private static int mismatchLarge(short[] a, int aFromIndex,
                                      short[] b, int bFromIndex, int length) {
         int i = 0;
@@ -569,7 +564,6 @@ public class ArraysSupport {
         return -1;
     }
 
-    @DontInline
     private static int mismatchLarge(int[] a, int aFromIndex,
                                      int[] b, int bFromIndex, int length) {
         int i = 0;
@@ -593,7 +587,6 @@ public class ArraysSupport {
         return -1;
     }
 
-    @DontInline
     private static int mismatchLarge(long[] a, int aFromIndex,
                                      long[] b, int bFromIndex, int length) {
         if (length == 0) {
@@ -610,7 +603,6 @@ public class ArraysSupport {
         return i >= 0 ? i : -1;
     }
 
-    @DontInline
     private static int mismatchLarge(float[] a, int aFromIndex,
                                      float[] b, int bFromIndex, int length) {
         int i = 0;
@@ -647,7 +639,6 @@ public class ArraysSupport {
         return -1;
     }
 
-    @DontInline
     private static int mismatchLarge(double[] a, int aFromIndex,
                                      double[] b, int bFromIndex, int length) {
         if (length == 0) {
@@ -1114,26 +1105,20 @@ public class ArraysSupport {
                                int length) {
         if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
             if (length <= 0) return -1;
-            // Only a NaN in a can hide a raw mismatch; defer canonical comparison.
+            // Different raw representations match only when both values are NaNs.
             int av = Float.floatToRawIntBits(a[aFromIndex]);
             int bv = Float.floatToRawIntBits(b[bFromIndex]);
-            boolean matched = true;
-            if (av != bv) {
-                if ((av & 0x7fffffff) <= 0x7f800000) return 0;
-                matched = false;
-            }
-            if (matched && length > 1) {
+            if (av != bv && ((av & 0x7fffffff) <= 0x7f800000 ||
+                             (bv & 0x7fffffff) <= 0x7f800000)) return 0;
+            if (length > 1) {
                 long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE) + 4;
                 long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE) + 4;
                 av = U.getIntUnaligned(a, aOffset);
                 bv = U.getIntUnaligned(b, bOffset);
-                if (av != bv) {
-                    if ((av & 0x7fffffff) <= 0x7f800000) return 1;
-                    matched = false;
-                }
+                if (av != bv && ((av & 0x7fffffff) <= 0x7f800000 ||
+                                 (bv & 0x7fffffff) <= 0x7f800000)) return 1;
             }
-            if (matched && length <= 2) return -1;
-            if (!matched) return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
+            if (length <= 2) return -1;
             long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
             int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_FLOAT_INDEX_SCALE)
@@ -1143,7 +1128,7 @@ public class ArraysSupport {
             if (prefixMismatch >= 0) {
                 if (!Float.isNaN(a[aFromIndex + prefixMismatch]) ||
                         !Float.isNaN(b[bFromIndex + prefixMismatch])) return prefixMismatch;
-                return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
+                prefixLength = prefixMismatch + 1;
             }
             if (length == prefixLength) return -1;
             int result = mismatchLarge(a, aFromIndex + prefixLength,
@@ -1257,26 +1242,20 @@ public class ArraysSupport {
                                int length) {
         if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
             if (length <= 0) return -1;
-            // Only a NaN in a can hide a raw mismatch; defer canonical comparison.
+            // Different raw representations match only when both values are NaNs.
             long av = Double.doubleToRawLongBits(a[aFromIndex]);
             long bv = Double.doubleToRawLongBits(b[bFromIndex]);
-            boolean matched = true;
-            if (av != bv) {
-                if ((av & Long.MAX_VALUE) <= 0x7ff0000000000000L) return 0;
-                matched = false;
-            }
-            if (matched && length > 1) {
+            if (av != bv && ((av & Long.MAX_VALUE) <= 0x7ff0000000000000L ||
+                             (bv & Long.MAX_VALUE) <= 0x7ff0000000000000L)) return 0;
+            if (length > 1) {
                 long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE) + 8;
                 long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE) + 8;
                 av = U.getLongUnaligned(a, aOffset);
                 bv = U.getLongUnaligned(b, bOffset);
-                if (av != bv) {
-                    if ((av & Long.MAX_VALUE) <= 0x7ff0000000000000L) return 1;
-                    matched = false;
-                }
+                if (av != bv && ((av & Long.MAX_VALUE) <= 0x7ff0000000000000L ||
+                                 (bv & Long.MAX_VALUE) <= 0x7ff0000000000000L)) return 1;
             }
-            if (matched && length <= 2) return -1;
-            if (!matched) return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
+            if (length <= 2) return -1;
             long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_DOUBLE_INDEX_SCALE)
@@ -1286,7 +1265,7 @@ public class ArraysSupport {
             if (prefixMismatch >= 0) {
                 if (!Double.isNaN(a[aFromIndex + prefixMismatch]) ||
                         !Double.isNaN(b[bFromIndex + prefixMismatch])) return prefixMismatch;
-                return mismatchLarge(a, aFromIndex, b, bFromIndex, length);
+                prefixLength = prefixMismatch + 1;
             }
             if (length == prefixLength) return -1;
             int result = mismatchLarge(a, aFromIndex + prefixLength,

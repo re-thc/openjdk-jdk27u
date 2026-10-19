@@ -22,11 +22,27 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary CharBuffer.put(String, int, int) and append(String) on views of direct and heap
  *          byte buffers copy the requested range in both byte orders, on either side of
  *          the bulk-copy threshold, and keep their precondition checks
  * @run main CharBufferViewPutString
+ * @run main/othervm -Xint CharBufferViewPutString
+ */
+
+/*
+ * @test id=c1
+ * @summary Check CharBuffer string copies with C1
+ * @requires vm.compiler1.enabled
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 CharBufferViewPutString
+ */
+
+/*
+ * @test id=c2
+ * @summary Check CharBuffer string copies with C2
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 CharBufferViewPutString
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-CompactStrings CharBufferViewPutString
  */
 
 import java.nio.BufferOverflowException;
@@ -96,7 +112,8 @@ public class CharBufferViewPutString {
     private static void test(boolean direct, ByteOrder order) {
         for (boolean latin1 : new boolean[] {true, false}) {
             String src = text(4100, latin1);
-            for (int length : new int[] {0, 1, 7, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 2049, 4097}) {
+            for (int length : new int[] {0, 1, 7, 31, 32, 33, 63, 64, 65, 127, 128, 129,
+                    255, 256, 257, 1023, 1024, 1025, 2049, 4097}) {
                 for (int start : new int[] {0, 1, 3}) {
                     int end = start + length;
                     String what = (direct ? "direct/" : "heap/") + order + "/" + (latin1 ? "latin1" : "utf16")

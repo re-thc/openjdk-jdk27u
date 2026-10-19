@@ -33,6 +33,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.nio.BufferCleaner;
 import java.util.Objects;
+#if[char]
+import jdk.internal.access.SharedSecrets;
+#end[char]
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
@@ -432,14 +435,18 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw] 
     private static final int APPEND_BUF_SIZE = 1024;
+    private static final byte LATIN1_CODER = 0;
 
     // Shorter strings are put char by char: staging them for the bulk copy
     // costs an allocation and, for swapped byte order, a native call.
+    // UTF-16 input needs a larger copy to amortize staging.
 #if[boU]
     private static final int PUT_STRING_BULK_MINIMUM = 32;
+    private static final int PUT_STRING_UTF16_BULK_MINIMUM = 64;
 #end[boU]
 #if[boS]
-    private static final int PUT_STRING_BULK_MINIMUM = 64;
+    private static final int PUT_STRING_BULK_MINIMUM = 128;
+    private static final int PUT_STRING_UTF16_BULK_MINIMUM = 256;
 #end[boS]
 
     // Copies csq[start, end) to this buffer from index onwards, staging
@@ -472,7 +479,9 @@ class Direct$Type$Buffer$RW$$BO$
         if (length > rem)
             throw new BufferOverflowException();
 
-        if (length < PUT_STRING_BULK_MINIMUM) {
+        if (length < PUT_STRING_BULK_MINIMUM ||
+                (length < PUT_STRING_UTF16_BULK_MINIMUM &&
+                 SharedSecrets.getJavaLangAccess().stringCoder(src) != LATIN1_CODER)) {
             for (int i = start; i < end; i++)
                 put(src.charAt(i));
             return this;

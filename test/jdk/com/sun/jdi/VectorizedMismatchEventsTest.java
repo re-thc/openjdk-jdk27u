@@ -54,8 +54,8 @@ class VectorizedMismatchEventsTarg {
     }
 
     public static void main(String[] args) {
-        compare(); // reaches the breakpoint
-        compare(); // reports a method entry
+        compare();
+        compare();
     }
 }
 

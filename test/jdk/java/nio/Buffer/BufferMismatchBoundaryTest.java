@@ -231,7 +231,36 @@ public class BufferMismatchBoundaryTest {
         MemorySegment.ofBuffer(b.clear()).fill((byte) 0);
     }
 
+    private static void heapFloatingPoint() {
+        for (int size : new int[] {0, 1, 2, 7, 8, 31, 32, 63, 64, 65, 128, 129, 4096}) {
+            FloatBuffer fa = FloatBuffer.allocate(size + 8).position(3).slice();
+            FloatBuffer fb = FloatBuffer.allocate(size + 8).position(5).slice();
+            DoubleBuffer da = DoubleBuffer.allocate(size + 8).position(3).slice();
+            DoubleBuffer db = DoubleBuffer.allocate(size + 8).position(5).slice();
+            fa.limit(size); fb.limit(size); da.limit(size); db.limit(size);
+            for (int i = 0; i < size; i++) {
+                fa.put(i, (i & 1) == 0 ? -0.0f : Float.intBitsToFloat(0x7fc00001));
+                fb.put(i, (i & 1) == 0 ? +0.0f : Float.intBitsToFloat(0x7fc01234));
+                da.put(i, (i & 1) == 0 ? -0.0 : Double.longBitsToDouble(0x7ff8000000000001L));
+                db.put(i, (i & 1) == 0 ? +0.0 : Double.longBitsToDouble(0x7ff8000000001234L));
+            }
+            for (boolean readOnly : new boolean[] {false, true}) {
+                FloatBuffer x = readOnly ? fa.asReadOnlyBuffer() : fa;
+                DoubleBuffer y = readOnly ? da.asReadOnlyBuffer() : da;
+                equal(x.mismatch(fb), -1); equal(y.mismatch(db), -1);
+                for (int i = 0; i < size; i++) {
+                    float fv = fb.get(i); double dv = db.get(i);
+                    fb.put(i, 42); db.put(i, 42);
+                    equal(x.mismatch(fb), i); equal(fb.mismatch(x), i);
+                    equal(y.mismatch(db), i); equal(db.mismatch(y), i);
+                    fb.put(i, fv); db.put(i, dv);
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        heapFloatingPoint();
         Path file = Files.createTempFile("buffer-mismatch", ".dat");
         ByteBuffer mappedBuffer = null;
         try (Arena arena = Arena.ofConfined();

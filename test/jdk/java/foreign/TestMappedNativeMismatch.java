@@ -26,6 +26,7 @@
  * @test id=default
  * @summary Segment and buffer mismatch must recover from faults in truncated mapped memory
  * @requires (os.family == "linux") & (os.simpleArch == "x64" | os.simpleArch == "aarch64") & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xint -Dtest.warmup=10 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestMappedNativeMismatch
@@ -35,11 +36,22 @@
  * @test id=avx3
  * @summary Segment and buffer mismatch must recover from faults in the x86 stub's AVX-512 paths
  * @requires (os.family == "linux") & (os.simpleArch == "x64") & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                  -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 TestMappedNativeMismatch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000
  *                  -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64
  *                  -XX:AVX3Threshold=0 TestMappedNativeMismatch
+ */
+
+/*
+ * @test id=macos
+ * @summary Recover from truncated mapped-memory faults on macOS AArch64
+ * @requires (os.family == "mac") & (os.simpleArch == "aarch64") & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.misc
+ * @run main/othervm -Xint -Dtest.warmup=10 TestMappedNativeMismatch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestMappedNativeMismatch
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestMappedNativeMismatch
  */
 
 import java.lang.foreign.Arena;
@@ -51,9 +63,11 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import jdk.internal.misc.Unsafe;
 
 public class TestMappedNativeMismatch {
-    private static final int SIZE = 65537;
+    private static final int PAGE_SIZE = Unsafe.getUnsafe().pageSize();
+    private static final int SIZE = PAGE_SIZE + 65537;
 
     private static long mappedSource(MemorySegment a, MemorySegment b) {
         return a.mismatch(b);
@@ -121,7 +135,7 @@ public class TestMappedNativeMismatch {
                     throw new AssertionError(result);
                 }
             }
-            // Leave the Java first-byte precheck accessible. Offset 4094
+            // Leave the Java first-byte precheck accessible. The page-end offset
             // faults in the compiled first-word comparison; offset zero
             // faults later in the bulk stub. Exercise both base orders.
             channel.truncate(truncate);
@@ -135,13 +149,16 @@ public class TestMappedNativeMismatch {
         for (boolean source : new boolean[] {true, false}) {
             for (boolean heap : new boolean[] {true, false}) {
                 for (int kind = 0; kind < 4; kind++) {
-                    test(source, heap, 0, SIZE, kind, 4096);
-                    test(source, heap, 0, 65536, kind, 4096);
-                    test(source, heap, 4094, 4096, kind, 4096);
-                    test(source, heap, 4094, 16, kind, 4096);
-                    test(source, heap, 4094, 128, kind, 4096);
-                    test(source, heap, 4088, 128, kind, 4096);
-                    test(source, heap, 0, 65536, kind, 61440);
+                    test(source, heap, 0, SIZE, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 8, 65536, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 2, 4096, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 2, 16, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 2, 128, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 8, 128, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 256, 511, kind, PAGE_SIZE);
+                    test(source, heap, PAGE_SIZE - 256, 512, kind, PAGE_SIZE);
+                    long lastPage = ((long) PAGE_SIZE - 8 + 65536 - 1) / PAGE_SIZE * PAGE_SIZE;
+                    test(source, heap, PAGE_SIZE - 8, 65536, kind, lastPage);
                 }
             }
         }
