@@ -94,6 +94,13 @@ public class NativePrimitiveSort {
             input[offset] = 0;
             for (int i = 1; i <= 32; i++) input[offset + (int) ((long) (size - 1) * i / 32)] = 0;
         }
+        if (pattern == 19 && size > 0) {
+            // Monotonic sample hiding unordered data must still sort correctly.
+            input[offset] = -17;
+            for (int i = 1; i <= 32; i++) {
+                input[offset + (int) ((long) (size - 1) * i / 32)] = i - 17;
+            }
+        }
         if (width == 4) for (int i = 0; i < input.length; i++) input[i] = (int) input[i];
         long[] expected = oracle(input, offset, size, width);
         if (width == 4) {
@@ -135,10 +142,10 @@ public class NativePrimitiveSort {
                        4093, 4095, 4096, 4097, 8191, 16383, 16384, 16385, 32769,
                        65521, 65535, 65536, 65537};
         for (int width : new int[]{4, 8}) for (int size : sizes)
-            for (int offset : new int[]{0, 3, 17}) for (int pattern = 0; pattern < 19; pattern++)
+            for (int offset : new int[]{0, 3, 17}) for (int pattern = 0; pattern < 20; pattern++)
                 check(size, offset, pattern, width);
         if (!quick) for (int width : new int[]{4, 8}) for (int size : new int[]{131071, 262147, 1048573, 1048576, 1048577})
-            for (int offset : new int[]{0, 17}) for (int pattern = 0; pattern < 19; pattern++)
+            for (int offset : new int[]{0, 17}) for (int pattern = 0; pattern < 20; pattern++)
                 check(size, offset, pattern, width);
         // Exercise public whole-array overloads as well as range overloads.
         for (int width : new int[]{4, 8}) {

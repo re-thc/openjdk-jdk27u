@@ -35,16 +35,18 @@ final class PrimitiveSort {
     static final int MAX_SIZE = 1 << 20;
 
     // This class is initialized only for ranges within the admission bounds.
-    static final boolean ENABLED = initialize();
+    static final boolean ENABLED = StaticProperty.osName().equals("Linux")
+            && StaticProperty.osArch().equals("amd64")
+            && !Boolean.getBoolean("jdk.util.Arrays.disableNativeSort");
+
+    // Ordered and skewed calls do not load or initialize the native library.
+    private static final class Native {
+        static final boolean SUPPORTED = initializeNative();
+    }
 
     private PrimitiveSort() {}
 
-    private static boolean initialize() {
-        if (!StaticProperty.osName().equals("Linux")
-                || !StaticProperty.osArch().equals("amd64")
-                || Boolean.getBoolean("jdk.util.Arrays.disableNativeSort")) {
-            return false;
-        }
+    private static boolean initializeNative() {
         try {
             BootLoader.loadLibrary("primitivesort");
             return supported();
@@ -55,7 +57,7 @@ final class PrimitiveSort {
 
     @DontInline
     static boolean trySort(int[] a, int low, int size) {
-        if (highlySkewed(a, low, size)) {
+        if (preferJava(a, low, size) || !Native.SUPPORTED) {
             return false;
         }
         if (DualPivotQuicksort.tryMergeRuns(null, a, low, size)) {
@@ -69,7 +71,7 @@ final class PrimitiveSort {
 
     @DontInline
     static boolean trySort(long[] a, int low, int size) {
-        if (highlySkewed(a, low, size)) {
+        if (preferJava(a, low, size) || !Native.SUPPORTED) {
             return false;
         }
         if (DualPivotQuicksort.tryMergeRuns(null, a, low, size)) {
@@ -81,27 +83,33 @@ final class PrimitiveSort {
         return sortLongs(a, low, size);
     }
 
-    // A small sample protects the Java partitioner's inexpensive treatment of
-    // highly skewed input. A false positive only selects the Java algorithm.
-    static boolean highlySkewed(int[] a, int low, int size) {
-        int value = a[low], matches = 0;
+    // Keep sampled monotonic and highly skewed input at the original Java
+    // entry, including its run-scan call site. A false positive only selects
+    // the Java algorithm; the full run scan still precedes every native sort.
+    static boolean preferJava(int[] a, int low, int size) {
+        int first = a[low], previous = first;
+        int matches = 0, ascending = 0, descending = 0;
         for (int i = 1; i <= 32; i++) {
-            if (a[low + (int) ((long) (size - 1) * i / 32)] == value) {
-                matches++;
-            }
+            int value = a[low + (int) ((long) (size - 1) * i / 32)];
+            if (value == first) matches++;
+            if (value > previous) ascending++;
+            if (value < previous) descending++;
+            previous = value;
         }
-        return matches >= 28;
+        return matches >= 28 || ascending == 0 || descending == 0;
     }
 
-    static boolean highlySkewed(long[] a, int low, int size) {
-        long value = a[low];
-        int matches = 0;
+    static boolean preferJava(long[] a, int low, int size) {
+        long first = a[low], previous = first;
+        int matches = 0, ascending = 0, descending = 0;
         for (int i = 1; i <= 32; i++) {
-            if (a[low + (int) ((long) (size - 1) * i / 32)] == value) {
-                matches++;
-            }
+            long value = a[low + (int) ((long) (size - 1) * i / 32)];
+            if (value == first) matches++;
+            if (value > previous) ascending++;
+            if (value < previous) descending++;
+            previous = value;
         }
-        return matches >= 28;
+        return matches >= 28 || ascending == 0 || descending == 0;
     }
 
     private static native boolean supported();
