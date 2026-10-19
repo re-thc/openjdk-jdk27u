@@ -1,0 +1,57 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/stringzilla-recovery/final77-avx2/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-stringzilla-benchmark
+# VM invoker: /workspace/stringzilla-baseline/build/stringzilla-original/images/jdk/bin/java
+# VM options: -XX:ActiveProcessorCount=1 -XX:+UseSerialGC -Xshare:off -XX:UseAVX=2 -XX:TieredStopAtLevel=1
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 300 ms each
+# Measurement: 5 iterations, 300 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf
+# Parameters: (coder = MIXED, length = 4096, needleLength = 31, position = END)
+
+# Run progress: 0.00% complete, ETA 00:00:02
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/stringzilla-recovery/final77-avx2/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 37.321 ns/op
+# Warmup Iteration   2: 37.196 ns/op
+# Warmup Iteration   3: 35.828 ns/op
+Iteration   1: 36.129 ns/op
+Iteration   2: 36.291 ns/op
+Iteration   3: 35.268 ns/op
+Iteration   4: 37.547 ns/op
+Iteration   5: 35.190 ns/op
+
+
+Result "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf":
+  36.085 ±(99.9%) 3.679 ns/op [Average]
+  (min, avg, max) = (35.190, 36.085, 37.547), stdev = 0.955
+  CI (99.9%): [32.406, 39.764] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:02
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                      (coder)  (length)  (needleLength)  (position)  Mode  Cnt   Score   Error  Units
+StringZillaSearch.lastIndexOf    MIXED      4096              31         END  avgt    5  36.085 ± 3.679  ns/op
+
+Benchmark result is saved to /workspace/stringzilla-recovery/final77-avx2/c1-mixed-probe-end-31-r0-original.json

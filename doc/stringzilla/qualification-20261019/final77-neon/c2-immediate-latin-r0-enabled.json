@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:-TieredCompilation",
+            "-XX:+UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "LATIN1",
+            "length" : "4096",
+            "needleLength" : "4",
+            "position" : "END"
+        },
+        "primaryMetric" : {
+            "score" : 3.577939299910787,
+            "scoreError" : 0.03025659355432704,
+            "scoreConfidence" : [
+                3.54768270635646,
+                3.608195893465114
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3.5664461846912685,
+                "50.0" : 3.5771038708168286,
+                "90.0" : 3.587357423410034,
+                "95.0" : 3.587357423410034,
+                "99.0" : 3.587357423410034,
+                "99.9" : 3.587357423410034,
+                "99.99" : 3.587357423410034,
+                "99.999" : 3.587357423410034,
+                "99.9999" : 3.587357423410034,
+                "100.0" : 3.587357423410034
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    3.5826531798791654,
+                    3.5664461846912685,
+                    3.5771038708168286,
+                    3.587357423410034,
+                    3.5761358407566366
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

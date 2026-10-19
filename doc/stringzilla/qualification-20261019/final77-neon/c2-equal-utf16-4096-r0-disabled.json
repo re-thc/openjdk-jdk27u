@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaSearch.equals",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:-TieredCompilation",
+            "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "coder" : "UTF16",
+            "length" : "4096",
+            "needleLength" : "4",
+            "position" : "EQUAL"
+        },
+        "primaryMetric" : {
+            "score" : 502.6386614627769,
+            "scoreError" : 3.8364380669233666,
+            "scoreConfidence" : [
+                498.8022233958535,
+                506.4750995297003
+            ],
+            "scorePercentiles" : {
+                "0.0" : 501.60691127170645,
+                "50.0" : 502.4912942042195,
+                "90.0" : 503.74258687258686,
+                "95.0" : 503.74258687258686,
+                "99.0" : 503.74258687258686,
+                "99.9" : 503.74258687258686,
+                "99.99" : 503.74258687258686,
+                "99.999" : 503.74258687258686,
+                "99.9999" : 503.74258687258686,
+                "100.0" : 503.74258687258686
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    502.4912942042195,
+                    503.5880789856579,
+                    501.76443597971365,
+                    501.60691127170645,
+                    503.74258687258686
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

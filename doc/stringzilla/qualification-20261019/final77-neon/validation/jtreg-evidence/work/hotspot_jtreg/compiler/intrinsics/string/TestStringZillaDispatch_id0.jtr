@@ -1,0 +1,722 @@
+#Test Results (version 2)
+#Mon Oct 19 13:38:14 UTC 2026
+#-----testdescription-----
+$file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+$root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg
+id=id0
+keywords=othervm driver
+library=/test/lib
+modules=java.base/java.lang\:open
+requires=(vm.compiler1.enabled & vm.compiler2.enabled) & ((os.arch \=\= "amd64" | os.arch \=\= "x86_64" | os.arch \=\= "aarch64"))
+run=USER_SPECIFIED compile/module\=java.base java/lang/StringZillaDispatchHelper.java\nUSER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:-UseStringZillaIntrinsics TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:DisableIntrinsic\=_stringzillaCompilerTier TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI TestStringZillaDispatch interpreted\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:-UseStringZillaIntrinsics TestStringZillaDispatch interpreted\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:DisableIntrinsic\=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch interpreted\n
+source=TestStringZillaDispatch.java
+title=Reverse-search dispatch folds the compiling tier and preserves boundary matches
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java\#id0
+elapsed=9102 0\:00\:09.102
+end=Mon Oct 19 13\:38\:14 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=runnervmp8q7d.y232teqa1aqu1oajvuuj3tvpxf.gx.internal.cloudapp.net
+javatestOS=Linux 7.0.0-1017-azure (aarch64)
+javatestVersion=6.0-ea+b24-2026-10-09-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.2.1 dev 0
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages compile build compile build compile driver build compile main build main build main build main build main build main
+start=Mon Oct 19 13\:38\:05 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaDispatch.java\#id0
+testJDK=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork
+testJDK_OS=[name\:Linux,arch\:aarch64,version\:7.0.0-1017-azure,family\:linux,simple_arch\:aarch64,simple_version\:7.0,processors\:4,maxMemory\:16715374592,maxSwap\:3221221376]
+testJDK_os.arch=aarch64
+testJDK_os.name=Linux
+testJDK_os.version=7.0.0-1017-azure
+totalTime=9102
+user.name=runner
+work=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/573)----------
+JDK under test: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-stringzilla-benchmark)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-stringzilla-benchmark, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib
+   class directory: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib
+
+#section:compile
+----------messages:(8/469)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/java.base/java/lang/StringZillaDispatchHelper.java
+reason: User specified action: run compile/module=java.base java/lang/StringZillaDispatchHelper.java 
+started: Mon Oct 19 13:38:05.500 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 49809
+finished: Mon Oct 19 13:38:05.912 UTC 2026
+elapsed time (seconds): 0.412
+----------configuration:(8/696)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/java.base 
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d 
+  patch:       java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/java.base
+                         /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------rerun:(25/2112)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/compile.0.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 13:38:05.912 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Mon Oct 19 13:38:06.606 UTC 2026
+elapsed time (seconds): 0.694
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/361)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:38:05.913 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 49836
+finished: Mon Oct 19 13:38:06.606 UTC 2026
+elapsed time (seconds): 0.693
+----------configuration:(8/692)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib 
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d 
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib 
+  patch:       java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------rerun:(25/2112)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/compile.1.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:06.606 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Mon Oct 19 13:38:07.173 UTC 2026
+elapsed time (seconds): 0.567
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/374)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:38:06.606 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 49863
+finished: Mon Oct 19 13:38:07.172 UTC 2026
+elapsed time (seconds): 0.566
+----------configuration:(8/692)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib 
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d 
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib 
+  patch:       java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------rerun:(25/2112)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/compile.2.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/485)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 13:38:07.173 UTC 2026
+Mode: othervm [test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 49890
+finished: Mon Oct 19 13:38:07.253 UTC 2026
+elapsed time (seconds): 0.08
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(30/3100)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/driver.3.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/244)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:07.254 UTC 2026
+Test directory:
+  compile: TestStringZillaDispatch
+finished: Mon Oct 19 13:38:07.871 UTC 2026
+elapsed time (seconds): 0.617
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/395)----------
+command: compile /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 13:38:07.254 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: othervm
+Process id: 49912
+finished: Mon Oct 19 13:38:07.871 UTC 2026
+elapsed time (seconds): 0.617
+----------configuration:(10/912)----------
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string 
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib 
+  class path:  /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string 
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d 
+               /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib 
+  patch:       java.base /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------rerun:(25/2112)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -J-Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -J-Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -J-Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -J-Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        @/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/compile.4.jta
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/576)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch 
+started: Mon Oct 19 13:38:07.871 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 49940
+finished: Mon Oct 19 13:38:09.328 UTC 2026
+elapsed time (seconds): 1.457
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(34/3191)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/main.5.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/193)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:09.328 UTC 2026
+finished: Mon Oct 19 13:38:09.329 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/636)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch 
+started: Mon Oct 19 13:38:09.329 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 49963
+finished: Mon Oct 19 13:38:10.245 UTC 2026
+elapsed time (seconds): 0.916
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(35/3232)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:-UseStringZillaIntrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/main.6.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:10.246 UTC 2026
+finished: Mon Oct 19 13:38:10.246 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/668)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaCompilerTier TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaCompilerTier TestStringZillaDispatch 
+started: Mon Oct 19 13:38:10.246 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 49986
+finished: Mon Oct 19 13:38:11.008 UTC 2026
+elapsed time (seconds): 0.762
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(35/3248)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:DisableIntrinsic=_stringzillaCompilerTier \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/main.7.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:11.008 UTC 2026
+finished: Mon Oct 19 13:38:11.008 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/595)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch interpreted 
+started: Mon Oct 19 13:38:11.009 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 50009
+finished: Mon Oct 19 13:38:11.799 UTC 2026
+elapsed time (seconds): 0.79
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(34/3201)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/main.8.jta interpreted
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:11.799 UTC 2026
+finished: Mon Oct 19 13:38:11.799 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/656)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch interpreted 
+started: Mon Oct 19 13:38:11.799 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 50030
+finished: Mon Oct 19 13:38:13.803 UTC 2026
+elapsed time (seconds): 2.004
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(35/3242)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:-UseStringZillaIntrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/main.9.jta interpreted
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Mon Oct 19 13:38:13.803 UTC 2026
+finished: Mon Oct 19 13:38:13.803 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/790)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch interpreted 
+started: Mon Oct 19 13:38:13.804 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 50051
+finished: Mon Oct 19 13:38:14.598 UTC 2026
+elapsed time (seconds): 0.794
+----------configuration:(5/295)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(35/3310)*----------
+cd /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/scratch && \\
+HOME=/home/runner \\
+LANG=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+XDG_CONFIG_HOME=/home/runner/.config \\
+XDG_RUNTIME_DIR=/run/user/1001 \\
+CLASSPATH=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/javatest.jar:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg/installed/lib/jtreg.jar \\
+    /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts=-XX:ActiveProcessorCount=2 \\
+        -Dtest.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dcompile.jdk=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#id0 \\
+        -Dtest.file=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/hotspot/jtreg/compiler/intrinsics/string:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/test/lib \\
+        -Dtest.classes=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d \\
+        -Dtest.class.path=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d:/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/classes/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:ActiveProcessorCount=2 \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 \\
+        com.sun.javatest.regtest.agent.MainWrapper /home/runner/work/openjdk-jdk27u/openjdk-jdk27u/jtreg-evidence/work/hotspot_jtreg/compiler/intrinsics/string/TestStringZillaDispatch_id0.d/main.10.jta interpreted
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

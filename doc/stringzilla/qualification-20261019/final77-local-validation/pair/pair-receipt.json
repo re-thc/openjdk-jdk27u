@@ -1,0 +1,43 @@
+{
+  "sources": {
+    "original": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "fork": "77a60d0f6c2cfbfc1094c2cd69bfa64d87208759"
+  },
+  "source_trees": {
+    "original": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest",
+    "fork": "040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree d637d29963f3a70dd0cc8298fbb8f4e5961bd841\tmake\n040000 tree 3752d018ffaea72d451f39defb049e456f01bc14\tsrc\n040000 tree 8a0e8a8e94fae94edff9a53741456f83ff19fba8\ttest"
+  },
+  "image_hashes": {
+    "original": "9b633c468b0c2924fd5b686f6232e4c7e42554badeab7ea7a0135c7ee9c3b9a5",
+    "fork": "0726a6afdbbe904863fcf3364d7090045c14188b2b1c197316add0912b7036b6"
+  },
+  "spec": {
+    "SOURCE_DATE": "1792195200",
+    "VERSION_OPT": "stringzilla-benchmark",
+    "VERSION_STRING": "27.0.2-internal-stringzilla-benchmark",
+    "DEBUG_LEVEL": "release",
+    "JVM_VARIANTS": "server",
+    "JVM_FEATURES_server": "cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc",
+    "TOOLCHAIN_TYPE": "gcc",
+    "TOOLCHAIN_VERSION": "",
+    "CC_VERSION_NUMBER": "16.2.0",
+    "CXX_VERSION_NUMBER": "16.2.0",
+    "EXTRA_CFLAGS": "-m64 -march=x86-64-v3 -mtune=generic",
+    "EXTRA_CXXFLAGS": "-m64 -march=x86-64-v3 -mtune=generic",
+    "EXTRA_LDFLAGS": "-m64 "
+  },
+  "boot_jdk_archive_sha256": "95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b",
+  "compiler": "gcc-16 (Debian 16.2.0-3) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "kernel_commands": {
+    "fork": "/workspace/toolchains/gcc16/bin/gcc -MMD -MF /workspace/openjdk-jdk27u/build/stringzilla-final/support/native/java.base/libjava/StringZillaKernels.d.tmp -fvisibility=hidden -pipe -fstack-protector -finput-charset=utf-8 -DLIBC=gnu -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 -DLINUX -DNDEBUG -fmacro-prefix-map=/workspace/openjdk-jdk27u/= -std=c11 -fno-strict-aliasing -Wall -Wextra -Wformat=2 -Winvalid-pch -Wpointer-arith -Wreturn-type -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized -Wunused-const-variable=1 -Wunused-function -Wunused-result -Wunused-value -m64 -march=x86-64-v3 -mtune=generic -D_LITTLE_ENDIAN -DARCH='\"amd64\"' -Damd64 -D_LP64=1 -fno-omit-frame-pointer -fno-lifetime-dse -fPIC -I/workspace/openjdk-jdk27u/src/java.base/linux/native/libjava -I/workspace/openjdk-jdk27u/src/java.base/unix/native/libjava -I/workspace/openjdk-jdk27u/src/java.base/share/native/libjava -I/workspace/openjdk-jdk27u/build/stringzilla-final/support/headers/java.base -I/workspace/openjdk-jdk27u/src/hotspot/share/include -I/workspace/openjdk-jdk27u/src/hotspot/os/posix/include -I/workspace/openjdk-jdk27u/build/stringzilla-final/support/modules_include/java.base -I/workspace/openjdk-jdk27u/src/java.base/unix/native/include -I/workspace/openjdk-jdk27u/src/java.base/share/native/include -Wno-unused-parameter -Werror -O3 -I/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla -Wno-unknown-pragmas -c -o /workspace/openjdk-jdk27u/build/stringzilla-final/support/native/java.base/libjava/StringZillaKernels.o /workspace/openjdk-jdk27u/src/java.base/share/native/libjava/StringZillaKernels.c -frandom-seed=\"StringZillaKernels.c\"\n"
+  },
+  "build_commands": {
+    "original": "make CONF=stringzilla-original JOBS=2 images",
+    "fork": "make CONF=stringzilla-final JOBS=2 images test-image; final make CONF=stringzilla-final JOBS=4 images test-image after documentation commit"
+  },
+  "release": {
+    "original": "IMPLEMENTOR=\"N/A\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-stringzilla-benchmark\"\nJAVA_VERSION=\"27.0.2\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.xml java.prefs java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.internal.ed jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jstatd jdk.localedata jdk.management jdk.management.agent jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.xml.dom\"\nOS_ARCH=\"x86_64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:416d7db3ec3c\"\n",
+    "fork": "IMPLEMENTOR=\"N/A\"\nJAVA_RUNTIME_VERSION=\"27.0.2-internal-stringzilla-benchmark\"\nJAVA_VERSION=\"27.0.2\"\nJAVA_VERSION_DATE=\"2027-01-19\"\nLIBC=\"gnu\"\nMODULES=\"java.base java.compiler java.instrument java.logging java.management java.security.sasl java.naming java.rmi java.management.rmi java.net.http java.xml java.prefs java.scripting java.security.jgss java.smartcardio java.transaction.xa java.sql java.sql.rowset java.xml.crypto jdk.internal.jvmstat jdk.attach jdk.charsets jdk.internal.opt jdk.zipfs jdk.compiler jdk.crypto.cryptoki jdk.crypto.ec jdk.dynalink jdk.httpserver jdk.incubator.vector jdk.internal.ed jdk.internal.le jdk.internal.md jdk.jartool jdk.javadoc jdk.jcmd jdk.jdeps jdk.jdwp.agent jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.jstatd jdk.localedata jdk.management jdk.management.agent jdk.management.jfr jdk.naming.dns jdk.naming.rmi jdk.net jdk.nio.mapmode jdk.sctp jdk.security.auth jdk.security.jgss jdk.unsupported jdk.xml.dom\"\nOS_ARCH=\"x86_64\"\nOS_NAME=\"Linux\"\nSOURCE=\".:git:77a60d0f6c2c\"\n"
+  },
+  "final_incremental_build": "make CONF=stringzilla-final JOBS=4 images; complete image rebuilt through normal JDK make/jlink pipeline"
+}
