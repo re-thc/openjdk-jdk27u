@@ -96,7 +96,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        DualPivotQuicksort.sort(a, 0, 0, a.length);
+        DualPivotQuicksort.IntSorter.sort(a, 0, a.length);
     }
 
     /**
@@ -120,7 +120,7 @@ public final class Arrays {
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
+        DualPivotQuicksort.IntSorter.sort(a, fromIndex, toIndex);
     }
 
     /**

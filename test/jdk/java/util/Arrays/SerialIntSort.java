@@ -58,7 +58,7 @@ public class SerialIntSort {
             System.setProperties(properties);
         }
         if (args.length > 0 && args[0].equals("disabled")) {
-            var field = Class.forName("java.util.DualPivotQuicksort$WholeIntSortConfig")
+            var field = Class.forName("java.util.DualPivotQuicksort$IntSorter$Config")
                     .getDeclaredField("ENABLED");
             field.setAccessible(true);
             if (field.getBoolean(null)) throw new AssertionError("startup opt-out ignored");
@@ -107,7 +107,8 @@ public class SerialIntSort {
     static void checkFirstRunAdmission() throws Exception {
         Class<?> dpqs = Class.forName("java.util.DualPivotQuicksort");
         Class<?> sorter = Class.forName("java.util.DualPivotQuicksort$Sorter");
-        var admission = dpqs.getDeclaredMethod("hasShortFirstIntRun", int[].class, int.class);
+        var admission = Class.forName("java.util.DualPivotQuicksort$IntSorter")
+                .getDeclaredMethod("hasShortFirstIntRun", int[].class, int.class);
         var merge = dpqs.getDeclaredMethod("tryMergeRuns", sorter, int[].class, int.class, int.class);
         admission.setAccessible(true);
         merge.setAccessible(true);
