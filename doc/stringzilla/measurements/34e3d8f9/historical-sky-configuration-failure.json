@@ -1,0 +1,108 @@
+{
+  "schema": "stringzilla-historical-sky-config-failure-v1",
+  "status": "terminal-zero; no retry scheduled",
+  "qualification_source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "run_id": 39202775591,
+  "head": "5842fdeefc5b776cf107fe7ebb4aa33491615918",
+  "jobs": [
+    {
+      "id": 117899092652,
+      "name": "Authenticate exact missing-only scope and original complete pair",
+      "status": "completed",
+      "conclusion": "failure",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout unchanged candidate runtime and frozen harness",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout original source identity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout exact auxiliary guards and projections",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Execute offline guard tests and revalidate actual terminal zero proof",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Retain authenticated source input and missing scope receipts",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Checkout exact auxiliary guards and projections",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout original source identity",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout unchanged candidate runtime and frozen harness",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 117916947263,
+      "name": "Single host missing SKY controls",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    },
+    {
+      "id": 117916948156,
+      "name": "Qualify exact completed missing SKY controls and preserve failed parent status",
+      "status": "completed",
+      "conclusion": "skipped",
+      "steps": []
+    }
+  ],
+  "decoded_configuration_log_sha256": "ead27d44b00b0b548b6bd7874a26ceed5b5e19d6cb15ce42d9494a796e045dfd",
+  "failure": {
+    "step": "Execute offline guard tests and revalidate actual terminal zero proof",
+    "tests_run": 21,
+    "errors": 1,
+    "other_tests_passed": 20,
+    "old17_test_suite_executed": false,
+    "test": "test_previous_attempt_requires_fresh_terminal_zero_api_and_pinned_proof",
+    "test_line": 193,
+    "exception": "TypeError: verify_inputs() missing 1 required positional argument: 'ctx'",
+    "minimal_test_fix": "Pass self.ctx to this negative test call; actual context guard remains required."
+  },
+  "artifact_count": 0,
+  "executed_measurement_workers": 0,
+  "images_restored": false,
+  "benchmark_jvm_started": false,
+  "timed_records": 0,
+  "actual_jmh_protocol_markers": 0,
+  "offline_fixture_markers_are_not_runtime_evidence": true,
+  "historical_result": {
+    "qualified_triplets": 1624,
+    "planned_triplets": 1886,
+    "missing_triplets": 262,
+    "complete": false
+  },
+  "decision": "Preserve all historical raw scores and this actual zero-work failure. Final-source6bb2298 includes all1886 historical keys; resources go to final-source qualification rather than another historical enabled-image lease."
+}
