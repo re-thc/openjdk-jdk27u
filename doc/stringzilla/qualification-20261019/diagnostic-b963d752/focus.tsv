@@ -1,0 +1,4 @@
+id	benchmark	length	coder	position	needleLength	shape	backends	tiers
+immediate-utf16	StringZillaSearch.lastIndexOf	128	UTF16	END	4	-	serial,avx2,neon,msvc,avx512	interpreter,c1,c2
+bulk-latin1	StringZillaSearch.lastIndexOf	4096	LATIN1	MISS	4	-	serial,avx2,neon,msvc,avx512	interpreter,c1,c2
+latin-vm-end-9	StringZillaSearch.lastIndexOf	4096	LATIN1	END	9	-	serial,msvc	c2

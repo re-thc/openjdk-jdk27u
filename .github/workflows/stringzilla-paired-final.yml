@@ -1,8 +1,8 @@
 # Copyright (c) 2026, re-thc. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 name: StringZilla final paired native checks
-# Run 39255160204 stopped during authenticated archive restoration; no builds or
-# timings ran. This retry corrects cross-host redirect headers only.
+# Run 39255767694 had two queued jobs and no executed steps. This run builds
+# the corrected shared verifier and retains the same independent originals.
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -13,7 +13,7 @@ permissions:
 env:
   PYTHONDONTWRITEBYTECODE: '1'
 concurrency:
-  group: stringzilla-paired-final-b963d752
+  group: stringzilla-paired-final-77a60d0f
   cancel-in-progress: false
 jobs:
   neon:
@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: b963d7525943c0540d7753c29f459bf5ad77e2eb
+          ref: 77a60d0f6c2cfbfc1094c2cd69bfa64d87208759
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -97,7 +97,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: b963d7525943c0540d7753c29f459bf5ad77e2eb
+          ref: 77a60d0f6c2cfbfc1094c2cd69bfa64d87208759
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:

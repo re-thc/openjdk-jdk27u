@@ -15,7 +15,7 @@ import urllib.request
 import urllib.parse
 import zipfile
 
-SOURCE = 'b963d7525943c0540d7753c29f459bf5ad77e2eb'
+SOURCE = '77a60d0f6c2cfbfc1094c2cd69bfa64d87208759'
 PRODUCER = 'a677a179522428c24b85cf76dbf0895f3aa1825f'
 ARTIFACTS = {
     'neon':(12168885783,'2ff97e0af5bee64f0fb410d9befc7afe9697dbcddc2476c7a293c968a3380099'),
