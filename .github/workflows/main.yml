@@ -23,186 +23,162 @@
 # questions.
 #
 
-name: 'OpenJDK GHA Sanity Checks'
+name: PR51 Windows x64 decoder probes
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
   workflow_dispatch:
-    inputs:
-      platforms:
-        description: 'Targets: linux-x64, linux-aarch64, macos-aarch64, windows-x64'
-        required: true
-        default: 'linux-x64, linux-aarch64, macos-aarch64, windows-x64'
-      configure-arguments:
-        description: 'Additional configure arguments'
-        required: false
-      make-arguments:
-        description: 'Additional make arguments'
-        required: false
-      dry-run:
-        description: 'Skip builds and tests; only prepare dependencies and configure'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  # PR updates share refs/pull/<number>/merge; branch runs share refs/heads/<branch>.
-  # Keep this key independent of the commit so new runs cancel stale builds/tests.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: pr51-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MSYS2_PATH_TYPE: minimal
+  CHERE_INVOKING: 1
 
 jobs:
   prepare:
-    name: 'Prepare the run'
     runs-on: ubuntu-26.04
-    outputs:
-      linux-x64: ${{ steps.include.outputs.linux-x64 }}
-      linux-aarch64: ${{ steps.include.outputs.linux-aarch64 }}
-      macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
-      windows-x64: ${{ steps.include.outputs.windows-x64 }}
-      dry-run: ${{ steps.include.outputs.dry-run }}
     steps:
-      - name: 'Checkout the scripts'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ./.github/actions/build-jtreg
+
+  build:
+    needs: prepare
+    runs-on: windows-2025
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: baseline-release
+            source: 01903ba375f94c0ab7f9193d3e36bd30fe663d7e
+            debug: release
+          - name: candidate-release
+            source: b7898b9d0010e1436b873b95c59f5261092fb3f1
+            debug: release
+          - name: candidate-fastdebug
+            source: b7898b9d0010e1436b873b95c59f5261092fb3f1
+            debug: fastdebug
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          sparse-checkout: |
-            .github
-            make/conf/github-actions.conf
-
-      - name: 'Check what jobs to run'
-        id: include
+          ref: ${{ matrix.source }}
+          path: source
+      - uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: windows-x64
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - uses: ./.github/actions/get-gtest
+        id: gtest
+      - name: Configure exact clean source
+        shell: env /usr/bin/bash --login -eo pipefail {0}
         env:
-          REQUESTED_PLATFORMS: ${{ github.event.inputs.platforms || secrets.JDK_SUBMIT_PLATFORMS }}
-          DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
-        run: bash .github/scripts/select-platforms.sh
+          PATH: ''
+        run: |
+          cd source
+          test "$(git rev-parse HEAD)" = '${{ matrix.source }}'
+          test -z "$(git status --porcelain)"
+          bash bin/configure-dev \
+            --with-conf-name=windows-x64 \
+            --with-debug-level=${{ matrix.debug }} \
+            --with-version-opt=pr51-windows-${{ matrix.source }} \
+            --with-boot-jdk=${{ steps.bootjdk.outputs.path }} \
+            --with-jtreg=${{ steps.jtreg.outputs.path }} \
+            --with-gtest=${{ steps.gtest.outputs.path }} \
+            --with-toolchain-version=2026 \
+            --with-msvc-toolset-version=14.44 \
+            --with-jmod-compress=zip-1 \
+            --with-external-symbols-in-bundles=none
+      - name: Build matched development-profile images
+        run: make -C source CONF=windows-x64 JOBS=4 LOG=info images test-image
+      - name: Package image and exact identities
+        shell: pwsh
+        run: |
+          $out = 'build-output/${{ matrix.name }}'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          Copy-Item -Recurse source/build/windows-x64/images/jdk "$out/jdk"
+          Copy-Item -Recurse source/build/windows-x64/images/test/hotspot/jtreg/native "$out/native"
+          Copy-Item source/build/windows-x64/spec.gmk "$out/spec.gmk"
+          Copy-Item source/build/windows-x64/configure.log "$out/configure.log"
+          Copy-Item source/build/windows-x64/build.log "$out/build.log"
+          $spec = Get-Content -Raw "$out/spec.gmk"
+          $compiler = [regex]::Match($spec, '(?m)^CXX_VERSION_NUMBER\s*:?=\s*(.+)$').Groups[1].Value.Trim()
+          if ($compiler -notmatch '^19\.44\.') { throw "Unexpected MSVC: $compiler" }
+          $meta = @{
+            source = (& git -C source rev-parse HEAD).Trim()
+            dirty = ((& git -C source status --porcelain) -join "`n")
+            debug = '${{ matrix.debug }}'
+            compiler = $compiler
+            toolset = '14.44'
+            configuration = 'bin/configure-dev; Windows x64; AVX2; toolchain 2026; toolset 14.44'
+            jvm_sha256 = (Get-FileHash "$out/jdk/bin/server/jvm.dll" -Algorithm SHA256).Hash.ToLower()
+            java_sha256 = (Get-FileHash "$out/jdk/bin/java.exe" -Algorithm SHA256).Hash.ToLower()
+            runner_image = $env:ImageVersion
+            run_id = $env:GITHUB_RUN_ID
+            workflow_sha = $env:GITHUB_SHA
+          }
+          $meta | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 "$out/metadata.json"
+          & "$out/jdk/bin/java.exe" -version 2>&1 | Set-Content "$out/java-version.txt"
+          if ($LASTEXITCODE -ne 0) { throw 'Built VM startup failed' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr51-windows-${{ matrix.name }}
+          path: build-output/${{ matrix.name }}
+          retention-days: 14
+          compression-level: 1
 
-      - name: 'Build JTReg'
-        uses: ./.github/actions/build-jtreg
-        if: steps.include.outputs.linux-x64 == 'true' || steps.include.outputs.linux-aarch64 == 'true' || steps.include.outputs.macos-aarch64 == 'true' || steps.include.outputs.windows-x64 == 'true'
-
-  build-linux-x64:
-    name: linux-x64
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      gcc-major-version: '16'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: needs.prepare.outputs.linux-x64 == 'true'
-
-  build-linux-aarch64:
-    name: linux-aarch64
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-aarch64
-      runs-on: 'ubuntu-26.04-arm'
-      bootjdk-platform: linux-aarch64
-      gcc-major-version: '16'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: needs.prepare.outputs.linux-aarch64 == 'true'
-
-  build-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - prepare
-      - test-linux-x64
-      - test-linux-aarch64
-    uses: ./.github/workflows/build-macos.yml
-    with:
-      platform: macos-aarch64
-      runs-on: 'macos-26'
-      xcode-toolset-version: '26.6'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    # Selected Linux targets must finish successfully; manual non-Linux runs still work.
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.macos-aarch64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success') &&
-      (needs.prepare.outputs.linux-aarch64 != 'true' || needs.test-linux-aarch64.result == 'success')
-
-  build-windows-x64:
-    name: windows-x64
-    needs:
-      - prepare
-      - test-linux-x64
-      - test-linux-aarch64
-    uses: ./.github/workflows/build-windows.yml
-    with:
-      platform: windows-x64
-      runs-on: windows-2025
-      architecture: 'x86.x64'
-      msvc-toolset-version: '14.44'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.windows-x64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success') &&
-      (needs.prepare.outputs.linux-aarch64 != 'true' || needs.test-linux-aarch64.result == 'success')
-
-  test-linux-x64:
-    name: linux-x64
-    needs:
-      - prepare
-      - build-linux-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-x64
-      bootjdk-platform: linux-x64
-      runs-on: ubuntu-26.04
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
-
-  test-linux-aarch64:
-    name: linux-aarch64
-    needs:
-      - prepare
-      - build-linux-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-aarch64
-      bootjdk-platform: linux-aarch64
-      runs-on: ubuntu-26.04-arm
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
-
-  test-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - prepare
-      - build-macos-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: macos-aarch64
-      bootjdk-platform: macos-aarch64
-      runs-on: macos-26
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      xcode-toolset-version: '26.6'
-      debug-suffix: -debug
-
-  test-windows-x64:
-    name: windows-x64
-    needs:
-      - prepare
-      - build-windows-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: windows-x64
-      bootjdk-platform: windows-x64
-      architecture: 'x86.x64'
-      runs-on: windows-2025
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
+  probe:
+    needs: [prepare, build]
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: re-thc/jzstd
+          ref: 7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6
+          path: codec
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: b7898b9d0010e1436b873b95c59f5261092fb3f1
+          path: candidate-source
+      - uses: ./.github/actions/get-jtreg
+        id: jtreg
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: pr51-windows-*
+          path: images
+      - name: Record processor and runner
+        shell: pwsh
+        run: |
+          Get-CimInstance Win32_Processor | Select-Object Name,Manufacturer,NumberOfCores,NumberOfLogicalProcessors | ConvertTo-Json | Set-Content -Encoding utf8 windows-processor.json
+          Get-CimInstance Win32_OperatingSystem | Select-Object Caption,Version,BuildNumber,TotalVisibleMemorySize | ConvertTo-Json | Set-Content -Encoding utf8 windows-os.json
+      - name: Correctness, activation and fixed interleaved comparisons
+        shell: pwsh
+        run: |
+          python -B -S .github/pr51-windows/probe.py --jtreg '${{ steps.jtreg.outputs.path }}'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: pr51-windows-probe-evidence
+          path: |
+            windows-evidence
+            windows-processor.json
+            windows-os.json
+            .github/pr51-windows/plan.json
+          retention-days: 30

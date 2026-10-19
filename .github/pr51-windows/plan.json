@@ -1,0 +1,1045 @@
+{
+  "platform": "windows-x64",
+  "baseline_source": "01903ba375f94c0ab7f9193d3e36bd30fe663d7e",
+  "candidate_source": "b7898b9d0010e1436b873b95c59f5261092fb3f1",
+  "codec_source": "7a6b345d0df3d8571a30f4a9c974dfaa3a10d9b6",
+  "linux_probe_package": "26a75f6755204efee764452ad02a0fe3d273dffa",
+  "compiler_toolset": "14.44",
+  "windows_runner": "windows-2025",
+  "common_flags": [
+    "--add-modules",
+    "jdk.incubator.vector",
+    "-Xshare:off",
+    "-Xms512m",
+    "-Xmx512m",
+    "-XX:+UseG1GC"
+  ],
+  "c2_extra_flags": [
+    "-Xbatch",
+    "-XX:-TieredCompilation",
+    "-XX:-UseOnStackReplacement",
+    "-XX:CompileThresholdScaling=0.1"
+  ],
+  "warmup_seconds": 6,
+  "samples_per_fork": 5,
+  "sample_ms": 700,
+  "correctness_rounds": 32,
+  "cases": [
+    {
+      "id": "source-l1",
+      "corpus": "source",
+      "level": 1,
+      "mode": "decode",
+      "vm": "tiered"
+    },
+    {
+      "id": "source-l3",
+      "corpus": "source",
+      "level": 3,
+      "mode": "decode",
+      "vm": "tiered"
+    },
+    {
+      "id": "json-l3",
+      "corpus": "json",
+      "level": 3,
+      "mode": "decode",
+      "vm": "tiered"
+    },
+    {
+      "id": "dna-l3",
+      "corpus": "dna",
+      "level": 3,
+      "mode": "decode",
+      "vm": "tiered"
+    },
+    {
+      "id": "random-control",
+      "corpus": "random",
+      "level": 1,
+      "mode": "decode",
+      "vm": "tiered"
+    },
+    {
+      "id": "zeros-control",
+      "corpus": "zeros",
+      "level": 1,
+      "mode": "decode",
+      "vm": "tiered"
+    },
+    {
+      "id": "generic-reader-control",
+      "corpus": "source",
+      "level": 1,
+      "mode": "decode",
+      "vm": "tiered",
+      "options": [
+        "-Djzstd.rollingSequenceBits=false"
+      ]
+    },
+    {
+      "id": "source-l1-c2",
+      "corpus": "source",
+      "level": 1,
+      "mode": "decode",
+      "vm": "c2-only"
+    }
+  ],
+  "blocks": 6,
+  "schedule": [
+    {
+      "sequence": 0,
+      "block": 0,
+      "case": "source-l1",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 1,
+      "block": 0,
+      "case": "source-l1",
+      "variant": "off"
+    },
+    {
+      "sequence": 2,
+      "block": 0,
+      "case": "source-l1",
+      "variant": "on"
+    },
+    {
+      "sequence": 3,
+      "block": 0,
+      "case": "source-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 4,
+      "block": 0,
+      "case": "source-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 5,
+      "block": 0,
+      "case": "source-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 6,
+      "block": 0,
+      "case": "json-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 7,
+      "block": 0,
+      "case": "json-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 8,
+      "block": 0,
+      "case": "json-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 9,
+      "block": 0,
+      "case": "dna-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 10,
+      "block": 0,
+      "case": "dna-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 11,
+      "block": 0,
+      "case": "dna-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 12,
+      "block": 0,
+      "case": "random-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 13,
+      "block": 0,
+      "case": "random-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 14,
+      "block": 0,
+      "case": "random-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 15,
+      "block": 0,
+      "case": "zeros-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 16,
+      "block": 0,
+      "case": "zeros-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 17,
+      "block": 0,
+      "case": "zeros-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 18,
+      "block": 0,
+      "case": "generic-reader-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 19,
+      "block": 0,
+      "case": "generic-reader-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 20,
+      "block": 0,
+      "case": "generic-reader-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 21,
+      "block": 0,
+      "case": "source-l1-c2",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 22,
+      "block": 0,
+      "case": "source-l1-c2",
+      "variant": "off"
+    },
+    {
+      "sequence": 23,
+      "block": 0,
+      "case": "source-l1-c2",
+      "variant": "on"
+    },
+    {
+      "sequence": 24,
+      "block": 1,
+      "case": "source-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 25,
+      "block": 1,
+      "case": "source-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 26,
+      "block": 1,
+      "case": "source-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 27,
+      "block": 1,
+      "case": "json-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 28,
+      "block": 1,
+      "case": "json-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 29,
+      "block": 1,
+      "case": "json-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 30,
+      "block": 1,
+      "case": "dna-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 31,
+      "block": 1,
+      "case": "dna-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 32,
+      "block": 1,
+      "case": "dna-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 33,
+      "block": 1,
+      "case": "random-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 34,
+      "block": 1,
+      "case": "random-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 35,
+      "block": 1,
+      "case": "random-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 36,
+      "block": 1,
+      "case": "zeros-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 37,
+      "block": 1,
+      "case": "zeros-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 38,
+      "block": 1,
+      "case": "zeros-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 39,
+      "block": 1,
+      "case": "generic-reader-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 40,
+      "block": 1,
+      "case": "generic-reader-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 41,
+      "block": 1,
+      "case": "generic-reader-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 42,
+      "block": 1,
+      "case": "source-l1-c2",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 43,
+      "block": 1,
+      "case": "source-l1-c2",
+      "variant": "on"
+    },
+    {
+      "sequence": 44,
+      "block": 1,
+      "case": "source-l1-c2",
+      "variant": "off"
+    },
+    {
+      "sequence": 45,
+      "block": 1,
+      "case": "source-l1",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 46,
+      "block": 1,
+      "case": "source-l1",
+      "variant": "on"
+    },
+    {
+      "sequence": 47,
+      "block": 1,
+      "case": "source-l1",
+      "variant": "off"
+    },
+    {
+      "sequence": 48,
+      "block": 2,
+      "case": "json-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 49,
+      "block": 2,
+      "case": "json-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 50,
+      "block": 2,
+      "case": "json-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 51,
+      "block": 2,
+      "case": "dna-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 52,
+      "block": 2,
+      "case": "dna-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 53,
+      "block": 2,
+      "case": "dna-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 54,
+      "block": 2,
+      "case": "random-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 55,
+      "block": 2,
+      "case": "random-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 56,
+      "block": 2,
+      "case": "random-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 57,
+      "block": 2,
+      "case": "zeros-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 58,
+      "block": 2,
+      "case": "zeros-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 59,
+      "block": 2,
+      "case": "zeros-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 60,
+      "block": 2,
+      "case": "generic-reader-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 61,
+      "block": 2,
+      "case": "generic-reader-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 62,
+      "block": 2,
+      "case": "generic-reader-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 63,
+      "block": 2,
+      "case": "source-l1-c2",
+      "variant": "off"
+    },
+    {
+      "sequence": 64,
+      "block": 2,
+      "case": "source-l1-c2",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 65,
+      "block": 2,
+      "case": "source-l1-c2",
+      "variant": "on"
+    },
+    {
+      "sequence": 66,
+      "block": 2,
+      "case": "source-l1",
+      "variant": "off"
+    },
+    {
+      "sequence": 67,
+      "block": 2,
+      "case": "source-l1",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 68,
+      "block": 2,
+      "case": "source-l1",
+      "variant": "on"
+    },
+    {
+      "sequence": 69,
+      "block": 2,
+      "case": "source-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 70,
+      "block": 2,
+      "case": "source-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 71,
+      "block": 2,
+      "case": "source-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 72,
+      "block": 3,
+      "case": "dna-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 73,
+      "block": 3,
+      "case": "dna-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 74,
+      "block": 3,
+      "case": "dna-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 75,
+      "block": 3,
+      "case": "random-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 76,
+      "block": 3,
+      "case": "random-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 77,
+      "block": 3,
+      "case": "random-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 78,
+      "block": 3,
+      "case": "zeros-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 79,
+      "block": 3,
+      "case": "zeros-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 80,
+      "block": 3,
+      "case": "zeros-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 81,
+      "block": 3,
+      "case": "generic-reader-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 82,
+      "block": 3,
+      "case": "generic-reader-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 83,
+      "block": 3,
+      "case": "generic-reader-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 84,
+      "block": 3,
+      "case": "source-l1-c2",
+      "variant": "off"
+    },
+    {
+      "sequence": 85,
+      "block": 3,
+      "case": "source-l1-c2",
+      "variant": "on"
+    },
+    {
+      "sequence": 86,
+      "block": 3,
+      "case": "source-l1-c2",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 87,
+      "block": 3,
+      "case": "source-l1",
+      "variant": "off"
+    },
+    {
+      "sequence": 88,
+      "block": 3,
+      "case": "source-l1",
+      "variant": "on"
+    },
+    {
+      "sequence": 89,
+      "block": 3,
+      "case": "source-l1",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 90,
+      "block": 3,
+      "case": "source-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 91,
+      "block": 3,
+      "case": "source-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 92,
+      "block": 3,
+      "case": "source-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 93,
+      "block": 3,
+      "case": "json-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 94,
+      "block": 3,
+      "case": "json-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 95,
+      "block": 3,
+      "case": "json-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 96,
+      "block": 4,
+      "case": "random-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 97,
+      "block": 4,
+      "case": "random-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 98,
+      "block": 4,
+      "case": "random-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 99,
+      "block": 4,
+      "case": "zeros-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 100,
+      "block": 4,
+      "case": "zeros-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 101,
+      "block": 4,
+      "case": "zeros-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 102,
+      "block": 4,
+      "case": "generic-reader-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 103,
+      "block": 4,
+      "case": "generic-reader-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 104,
+      "block": 4,
+      "case": "generic-reader-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 105,
+      "block": 4,
+      "case": "source-l1-c2",
+      "variant": "on"
+    },
+    {
+      "sequence": 106,
+      "block": 4,
+      "case": "source-l1-c2",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 107,
+      "block": 4,
+      "case": "source-l1-c2",
+      "variant": "off"
+    },
+    {
+      "sequence": 108,
+      "block": 4,
+      "case": "source-l1",
+      "variant": "on"
+    },
+    {
+      "sequence": 109,
+      "block": 4,
+      "case": "source-l1",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 110,
+      "block": 4,
+      "case": "source-l1",
+      "variant": "off"
+    },
+    {
+      "sequence": 111,
+      "block": 4,
+      "case": "source-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 112,
+      "block": 4,
+      "case": "source-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 113,
+      "block": 4,
+      "case": "source-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 114,
+      "block": 4,
+      "case": "json-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 115,
+      "block": 4,
+      "case": "json-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 116,
+      "block": 4,
+      "case": "json-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 117,
+      "block": 4,
+      "case": "dna-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 118,
+      "block": 4,
+      "case": "dna-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 119,
+      "block": 4,
+      "case": "dna-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 120,
+      "block": 5,
+      "case": "zeros-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 121,
+      "block": 5,
+      "case": "zeros-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 122,
+      "block": 5,
+      "case": "zeros-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 123,
+      "block": 5,
+      "case": "generic-reader-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 124,
+      "block": 5,
+      "case": "generic-reader-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 125,
+      "block": 5,
+      "case": "generic-reader-control",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 126,
+      "block": 5,
+      "case": "source-l1-c2",
+      "variant": "on"
+    },
+    {
+      "sequence": 127,
+      "block": 5,
+      "case": "source-l1-c2",
+      "variant": "off"
+    },
+    {
+      "sequence": 128,
+      "block": 5,
+      "case": "source-l1-c2",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 129,
+      "block": 5,
+      "case": "source-l1",
+      "variant": "on"
+    },
+    {
+      "sequence": 130,
+      "block": 5,
+      "case": "source-l1",
+      "variant": "off"
+    },
+    {
+      "sequence": 131,
+      "block": 5,
+      "case": "source-l1",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 132,
+      "block": 5,
+      "case": "source-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 133,
+      "block": 5,
+      "case": "source-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 134,
+      "block": 5,
+      "case": "source-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 135,
+      "block": 5,
+      "case": "json-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 136,
+      "block": 5,
+      "case": "json-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 137,
+      "block": 5,
+      "case": "json-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 138,
+      "block": 5,
+      "case": "dna-l3",
+      "variant": "on"
+    },
+    {
+      "sequence": 139,
+      "block": 5,
+      "case": "dna-l3",
+      "variant": "off"
+    },
+    {
+      "sequence": 140,
+      "block": 5,
+      "case": "dna-l3",
+      "variant": "baseline"
+    },
+    {
+      "sequence": 141,
+      "block": 5,
+      "case": "random-control",
+      "variant": "on"
+    },
+    {
+      "sequence": 142,
+      "block": 5,
+      "case": "random-control",
+      "variant": "off"
+    },
+    {
+      "sequence": 143,
+      "block": 5,
+      "case": "random-control",
+      "variant": "baseline"
+    }
+  ],
+  "total_forks": 144,
+  "contrasts": [
+    "candidate_on / candidate_off",
+    "candidate_on / baseline",
+    "candidate_off / baseline"
+  ],
+  "all_observations_retained": true,
+  "optional_stopping": false,
+  "input_sha256": {
+    "CodecProbe.java": "8fa4e5896385a2a6ca367b1b6a5f6cefb53e1ee61bc8fa3df976c9743ed350ca",
+    "DecoderCheck.java": "c914236376c24cecbd2974e051998e8fafc3a42974d751eb2f81024f79d007b5",
+    "corpora/boundary-random-131071.bin": "60a4da049a7abc8793240407cc18dceaa85c1e20fff8317577c2a25150be2d78",
+    "corpora/boundary-random-131071.l1.zst": "476d03532ba8869e03cb91ebd932d5f810718648d182efc2a61938582099b489",
+    "corpora/boundary-random-131071.l3.zst": "476d03532ba8869e03cb91ebd932d5f810718648d182efc2a61938582099b489",
+    "corpora/boundary-random-131071.l9.zst": "476d03532ba8869e03cb91ebd932d5f810718648d182efc2a61938582099b489",
+    "corpora/boundary-random-131072.bin": "c00bc0d4909bf1f181b1e7f17e8eb1e7310fda1dbf9080e2a2ef94b3d8df1278",
+    "corpora/boundary-random-131072.l1.zst": "479f58c25c3d3b376903c268ee2d3c77aa39e461950c46891ffc8a520812113a",
+    "corpora/boundary-random-131072.l3.zst": "479f58c25c3d3b376903c268ee2d3c77aa39e461950c46891ffc8a520812113a",
+    "corpora/boundary-random-131072.l9.zst": "479f58c25c3d3b376903c268ee2d3c77aa39e461950c46891ffc8a520812113a",
+    "corpora/boundary-random-131073.bin": "14bca864e80d31eab6ac0e3507028fab46eeb19466790a2d46b8a661d3b9d974",
+    "corpora/boundary-random-131073.l1.zst": "1e111aad104964d6861f82a9921fc3247ddb602361d006b7be73bf0cd36a7472",
+    "corpora/boundary-random-131073.l3.zst": "1e111aad104964d6861f82a9921fc3247ddb602361d006b7be73bf0cd36a7472",
+    "corpora/boundary-random-131073.l9.zst": "1e111aad104964d6861f82a9921fc3247ddb602361d006b7be73bf0cd36a7472",
+    "corpora/boundary-text-131071.bin": "01467cbe642baac26ba10fd8c7978fa6ca1728fe6e2f050e8f2cb032c59c01e0",
+    "corpora/boundary-text-131071.l1.zst": "3415cb6e5c1d07a35d022d4ff9aba8f5bb9f7419e138e8b3658a344a18c9420f",
+    "corpora/boundary-text-131071.l3.zst": "c567ea9e3454bf842823287b52f3e548a14bdfa86121f016cd623fbb2047aac3",
+    "corpora/boundary-text-131071.l9.zst": "d3b9f1f13d85222048eb2395610ad6c37f9ebc964b0b6c70c822f7efa41f1a88",
+    "corpora/boundary-text-131072.bin": "f680ce6dd2d04f4d5f6e07548c8aa90408348e27df9a026047df314ac05120ca",
+    "corpora/boundary-text-131072.l1.zst": "dec44ada797c2e12d4088d82c6c31aa049712ef1de45c9ab1d8c8f60a918942a",
+    "corpora/boundary-text-131072.l3.zst": "cde192ab73b8a42fd5ae8dbdbd1e63300ea3ef0544d5920be3c51da5c5116f09",
+    "corpora/boundary-text-131072.l9.zst": "100ff1268dbb6a0c983236408dca2c1afc4c3ddef131eab205856e903050786e",
+    "corpora/boundary-text-131073.bin": "19fe4642dc610c117a1616739103b5a73797fc2b3d2a246cc683e825266e8f6d",
+    "corpora/boundary-text-131073.l1.zst": "ee2a7f739eba0ec9aaf4db1d4ce72642536e815cdb9832d4011e256603ade6a3",
+    "corpora/boundary-text-131073.l3.zst": "60cb2aeb177d051e91edcf5f58d829d69d747ddb7df72624255bdc4720aa7a43",
+    "corpora/boundary-text-131073.l9.zst": "ef2a3f36003f7e59ac2df732cd7b12d93dbb870ba21d3235fcb089511cc7692f",
+    "corpora/dna.bin": "3367e4f102a85686ee64cd53cfae0cfa901def61495114ea6a67202736d2a826",
+    "corpora/dna.l1.zst": "7ce9ff03b4c04f3fe5d0c38bf366da547f9289e81d3c8264f36e81f892874885",
+    "corpora/dna.l3.zst": "21ed113a36e8a8c38c9fb94553c4b238aa70aa0daebf9f6b621fceca9093bb6c",
+    "corpora/dna.l9.zst": "4f6ac883b40348359e0dffad1dcea5544bf4edde5c464b6e849059dc6201ab15",
+    "corpora/empty.bin": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "corpora/empty.l1.zst": "6fb8543883dafcc2ed0934866b8b3f775231f5b0933add08bf502e9e84944cbd",
+    "corpora/empty.l3.zst": "6fb8543883dafcc2ed0934866b8b3f775231f5b0933add08bf502e9e84944cbd",
+    "corpora/empty.l9.zst": "6fb8543883dafcc2ed0934866b8b3f775231f5b0933add08bf502e9e84944cbd",
+    "corpora/frames.tsv": "71aeba1cc862549a5e5e9a41b8faa5bf37be35a73e3af3f4fed36b307a33b70c",
+    "corpora/json.bin": "2a11c3789306d845fd60faface9c65034e68dd36a50ed5c5a4303e4da9dbb94b",
+    "corpora/json.l1.zst": "de98c2250e0ef48ddf7acb3f93481a786c5d8935e8a6d5850ee9f62811d0a686",
+    "corpora/json.l3.zst": "1a424b2f66860da640c8cf857a83f3edd430aa6ca3ddf472e74d8faaedfa1b34",
+    "corpora/json.l9.zst": "40e9931e13adae55b42de8f2ac265f9ad677407682d5f62536e2c8ea2a93f2c5",
+    "corpora/low16.bin": "8582aad4ad9250225da8fa0a604c3e77e021b51ffd804a6f0c0256378a0cdb96",
+    "corpora/low16.l1.zst": "14395c6914e1d8d8cd8fa84f1d12282ef1a06234fc9eec52472cb7a675b4370c",
+    "corpora/low16.l3.zst": "4febd5caa6f316b61a2e12335cad24e7878fe44d516dd5d37967abc61466d300",
+    "corpora/low16.l9.zst": "75e6b18a1fb3a08d79e6282634a0fb0c85f59cea0ac88e7e51febeea32828dbe",
+    "corpora/low4.bin": "b2c91850fc4b6d640a408b583532b0e88bab45608ad7df3501f4298eb175e7bf",
+    "corpora/low4.l1.zst": "ad40bf746a945afadfe5a12c84fbea8afe80812d366b41600aac3aa9285c33bb",
+    "corpora/low4.l3.zst": "4dfeaeef1402b3c7ddeac99d1a06be7947df01ab5b8882497ed99d3f509d3416",
+    "corpora/low4.l9.zst": "1b051cfedd6641687996eccb3273478f7e0b841e6c5a3c37a5b4e0691fb6cecb",
+    "corpora/pat256.bin": "84b3be31e09168e3d59cb6f1948780cee796e6db933333b612935286c80c32d7",
+    "corpora/pat256.l1.zst": "9f5c65e92b252519a64edfc6f3a1215d84418e235861ab1109004b2dd0f132d0",
+    "corpora/pat256.l3.zst": "9f5c65e92b252519a64edfc6f3a1215d84418e235861ab1109004b2dd0f132d0",
+    "corpora/pat256.l9.zst": "9f5c65e92b252519a64edfc6f3a1215d84418e235861ab1109004b2dd0f132d0",
+    "corpora/pat7.bin": "37e2a47b1b1ffb5c4a19d66982a8af1df8a44c4ef7ed1b29f6aae94d1ec8446c",
+    "corpora/pat7.l1.zst": "82f8c6f8fc2a57a9c0789058a3ef029b67ecdce18d1d134d7eb161d146c8af95",
+    "corpora/pat7.l3.zst": "82f8c6f8fc2a57a9c0789058a3ef029b67ecdce18d1d134d7eb161d146c8af95",
+    "corpora/pat7.l9.zst": "82f8c6f8fc2a57a9c0789058a3ef029b67ecdce18d1d134d7eb161d146c8af95",
+    "corpora/random.bin": "55b3e6ee48212ed8fd768dceb21f6022c603bf98e113ab18f61030bf31b4844f",
+    "corpora/random.l1.zst": "bd328e9824d6f8ef8ce8678019ac3952fb4200329b79ae0c7e8dbc0e55c4a630",
+    "corpora/random.l3.zst": "bd328e9824d6f8ef8ce8678019ac3952fb4200329b79ae0c7e8dbc0e55c4a630",
+    "corpora/random.l9.zst": "bd328e9824d6f8ef8ce8678019ac3952fb4200329b79ae0c7e8dbc0e55c4a630",
+    "corpora/single.bin": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+    "corpora/single.l1.zst": "753307da556e7a19e36fe2e633cf167407307eec696afa6be6e1c3fd8f2ab2fa",
+    "corpora/single.l3.zst": "753307da556e7a19e36fe2e633cf167407307eec696afa6be6e1c3fd8f2ab2fa",
+    "corpora/single.l9.zst": "753307da556e7a19e36fe2e633cf167407307eec696afa6be6e1c3fd8f2ab2fa",
+    "corpora/source.bin": "dddfad1293504a9bd47b89e491c29e74833e16fc39a4fe752f88091dbc5678b9",
+    "corpora/source.l1.zst": "6901a47a3100e2e1453a43a70017d5a6ad83fcc49a3f8b1be875d7ffe08dcab5",
+    "corpora/source.l3.zst": "dd1ea2bbbafb472de4dd09002722a97e90a067c0e52343c302101482c906c48f",
+    "corpora/source.l9.zst": "915226f4aa5542c79abf10a0456395144271260d22ebde1dfe55505945d11f04",
+    "corpora/sparse.bin": "7babf4d94f02645ba3111e320f57924366a505ddff334005b3297702b47c21b2",
+    "corpora/sparse.l1.zst": "df9ee52d9bedadc77da6c65c5d6696e60c602349ca82ba75f07090fbf1185430",
+    "corpora/sparse.l3.zst": "3f1a37b43b76b364ffcf58ac53a43c950e212ab33138cd9596411b66c602ddca",
+    "corpora/sparse.l9.zst": "7f7f06258078788702dcb8be2a4f133348e498cc6206fd11a3a946fb8fbb3591",
+    "corpora/text.bin": "0357c7661885df1d00d745b7dcc15e5ca70c65a463f7ab03daea6cbb607fef25",
+    "corpora/text.l1.zst": "94514888a8cb1b4f9e9ad319a06d43a52f031373498ad1f5ec85a2fef8818365",
+    "corpora/text.l3.zst": "8f05d1d156c4ad6e95d1b08371abe4f72efdb3ac030a35dd6fca60b96e90dad5",
+    "corpora/text.l9.zst": "4e70b0172207dc1d9d4190d114f510169490c491f0fea751ea9a4c999e7f225d",
+    "corpora/zeros.bin": "fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471",
+    "corpora/zeros.l1.zst": "77d8cabf0fb9b00dbdf25d840ded37b0b009c8563e9a46d4476058061f52d7f1",
+    "corpora/zeros.l3.zst": "77d8cabf0fb9b00dbdf25d840ded37b0b009c8563e9a46d4476058061f52d7f1",
+    "corpora/zeros.l9.zst": "a55aabb7d7a1060933643e037a624f358efea29f4e1a96a18aa786c7660ffbf5",
+    "probe.py": "e15d9c01b47e3e0379d66e7073e79b42b79023b81e935ffa8a33cffe77990f11"
+  }
+}
