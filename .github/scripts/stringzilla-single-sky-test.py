@@ -68,14 +68,7 @@ class SingleHostTests(unittest.TestCase):
                     "Measure missing SKY interpreter controls",
                     "Retain completed SKY interpreter raw results"), 1)]}
         self.prior = json.loads((MODULE_PATH.parent / "stringzilla-single-sky-prior-attempt-zero.json").read_text())
-        self.queued_zero = {"schema": "stringzilla-single-sky-queued-zero-v1", "source": m.SOURCE, "base": m.BASE,
-            "run_id": m.SUPERSEDED_QUEUED_RUN, "head": m.SUPERSEDED_QUEUED_HEAD, "attempt": 1,
-            "head_branch": m.RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled",
-            "configuration": {"id": m.SUPERSEDED_QUEUED_JOB,
-                "name": "Authenticate exact missing-only scope and original complete pair",
-                "status": "completed", "conclusion": "cancelled", "steps": []},
-            "worker_jobs": 0, "artifacts": [], "timed_records": 0, "images_restored": False,
-            "missing_tiers": ["interpreter", "c1"], "triplets": 262, "records": 786}
+        self.queued_zero = self.queued_fixture()
         self.inputs = {"schema": "stringzilla-single-sky-preparation-v1", **self.ctx,
             "source": m.SOURCE, "source_tree": m.SOURCE_TREE, "base": m.BASE,
             "module_sha256": m.sha(MODULE_PATH), "tiers": ["interpreter"],
@@ -575,34 +568,61 @@ class SingleHostTests(unittest.TestCase):
                 child.assert_not_called()
                 api.assert_not_called()
 
+    def queued_fixture(self, install=False):
+        names = ("Authenticate exact missing-only scope and original complete pair", m.WORKER,
+                 "Qualify exact completed missing SKY controls and preserve failed parent status")
+        attempts = []
+        for run_id, head, config_id in m.SUPERSEDED_QUEUED_ATTEMPTS:
+            run = {"id": run_id, "head_sha": head, "run_attempt": 1,
+                "head_branch": m.RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled"}
+            jobs = [{"id": config_id + index * 1000, "name": name, "run_id": run_id, "head_sha": head,
+                     "run_attempt": 1, "status": "completed", "conclusion": "cancelled", "steps": []}
+                    for index, name in enumerate(names)]
+            root = "actions/runs/" + str(run_id)
+            if install:
+                self.api_objects.update({root: run, root + "/jobs?filter=all&per_page=100":
+                    {"total_count": 3, "jobs": jobs},
+                    root + "/artifacts?per_page=100": {"total_count": 0, "artifacts": []}})
+            attempts.append({"run_id": run_id, "head": head, "attempt": 1,
+                "head_branch": m.RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled",
+                "configuration_job_id": config_id,
+                "jobs": [{key: job[key] for key in ("id", "name", "status", "conclusion", "steps")}
+                         for job in sorted(jobs, key=lambda item: item["name"])],
+                "artifacts": [], "materialized_worker_jobs": 1, "executed_worker_jobs": 0,
+                "timed_records": 0, "images_restored": False})
+        return {"schema": "stringzilla-single-sky-queued-zero-chain-v1", "source": m.SOURCE, "base": m.BASE,
+                "attempts": attempts, "executed_worker_jobs": 0, "timed_records": 0, "images_restored": False}
+
     def test_superseded_queued_attempt_requires_cancelled_exact_zero(self):
-        root = "actions/runs/" + str(m.SUPERSEDED_QUEUED_RUN)
-        run = {"id": m.SUPERSEDED_QUEUED_RUN, "head_sha": m.SUPERSEDED_QUEUED_HEAD, "run_attempt": 1,
-            "head_branch": m.RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled"}
-        job = {"id": m.SUPERSEDED_QUEUED_JOB, "name": self.queued_zero["configuration"]["name"],
-            "run_id": m.SUPERSEDED_QUEUED_RUN, "head_sha": m.SUPERSEDED_QUEUED_HEAD, "run_attempt": 1,
-            "status": "completed", "conclusion": "cancelled", "steps": []}
-        jobs = {"total_count": 1, "jobs": [job]}
-        artifacts = {"total_count": 0, "artifacts": []}
-        self.api_objects.update({root: run, root + "/jobs?filter=all&per_page=100": jobs,
-                                 root + "/artifacts?per_page=100": artifacts})
-        self.assertEqual(m.verify_superseded_queued_attempt(), self.queued_zero)
-        for target, field, value in ((run, "head_sha", "0" * 40), (run, "status", "queued"),
-                (run, "conclusion", "success"), (run, "run_attempt", 2),
-                (job, "id", 999), (job, "status", "in_progress"), (job, "conclusion", "success"),
-                (job, "name", m.WORKER), (jobs, "total_count", 2), (artifacts, "total_count", 1)):
-            previous = target[field]
-            target[field] = value
+        expected = self.queued_fixture(install=True)
+        self.assertEqual(m.verify_superseded_queued_attempt(), expected)
+        for run_id, head, config_id in m.SUPERSEDED_QUEUED_ATTEMPTS:
+            root = "actions/runs/" + str(run_id)
+            run, jobs, artifacts = (self.api_objects[path] for path in
+                (root, root + "/jobs?filter=all&per_page=100", root + "/artifacts?per_page=100"))
+            job = jobs["jobs"][0]
+            for target, field, value in ((run, "head_sha", "0" * 40), (run, "status", "queued"),
+                    (run, "conclusion", "success"), (run, "run_attempt", 2),
+                    (job, "id", 999), (job, "status", "in_progress"), (job, "conclusion", "success"),
+                    (job, "name", "Unlisted job"), (jobs, "total_count", 4), (artifacts, "total_count", 1)):
+                previous = target[field]
+                target[field] = value
+                self.reject(m.verify_superseded_queued_attempt)
+                target[field] = previous
+            for child in jobs["jobs"]:
+                child["steps"] = [{"name": "Executed work", "number": 1, "status": "completed", "conclusion": "success"}]
+                self.reject(m.verify_superseded_queued_attempt)
+                child["steps"] = []
+            jobs["jobs"].append(copy.deepcopy(job))
+            jobs["total_count"] = 4
             self.reject(m.verify_superseded_queued_attempt)
-            target[field] = previous
-        job["steps"] = [{"name": "Execute guards", "number": 1, "status": "completed", "conclusion": "success"}]
-        self.reject(m.verify_superseded_queued_attempt)
-        job["steps"] = []
-        artifacts["artifacts"] = [{"id": 123, "name": "unexpected"}]
-        self.reject(m.verify_superseded_queued_attempt)
-        artifacts["artifacts"] = []
+            jobs["jobs"].pop()
+            jobs["total_count"] = 3
+            artifacts["artifacts"] = [{"id": 123, "name": "unexpected"}]
+            self.reject(m.verify_superseded_queued_attempt)
+            artifacts["artifacts"] = []
         bad = copy.deepcopy(self.inputs)
-        bad["superseded_queued_zero"]["conclusion"] = "success"
+        bad["superseded_queued_zero"]["attempts"][0]["conclusion"] = "success"
         bad["superseded_queued_zero_sha256"] = m.raw_sha(raw(bad["superseded_queued_zero"]))
         self.reject(m.verify_inputs, bad, self.ctx)
 

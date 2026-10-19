@@ -42,13 +42,15 @@ PRIOR_ZERO_SHA256 = "7f44243c287516b68d63770e70c8847c53504e19b4c0f08e6a3201231c2
 SUPERSEDED_QUEUED_RUN = 39196718293
 SUPERSEDED_QUEUED_HEAD = "63f17c05909ef7f3cba6d428ef57ff5ae79960c3"
 SUPERSEDED_QUEUED_JOB = 117880968412
+SUPERSEDED_QUEUED_ATTEMPTS = ((SUPERSEDED_QUEUED_RUN, SUPERSEDED_QUEUED_HEAD, SUPERSEDED_QUEUED_JOB),
+    (39202118137, "50e375b7ed7e5e63d77624dfb93e4d1734feb731", 117897111960))
 RETRY_REF = "refs/heads/codex/stringzilla-single-sky-missing-916ba895-retry1"
 WORKER = "Single host missing SKY controls"
 HERE = Path(__file__).resolve().parent
 ROOT = Path.cwd()
 FOLDER = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-single-sky"
 COUNTS = {"interpreter": 136, "c1": 126, "c2": 124}
-GUARD_TEST_HASH = "f7e6d24a283c9be1c752c88a76ebf8d41ed70635a5a191e4871340e81d69e6fe"
+GUARD_TEST_HASH = "52719c24eea12bec3c70e6eb66ec7202a07a0f29d75c8b49fdf38c6c10dc3453"
 MODEL_HASH = "02f3e3d64d5f19e036e98959b4ec576cc20fb614aa3967af801c421af603f7f5"
 COLLECTOR_TEST_HASH = "a0ee651404f0f9b44dccc5e117fddff86657f4a6fa6fcdcb5bd958470e1b90ae"
 
@@ -328,29 +330,41 @@ def verify_host(proof):
 
 
 def verify_superseded_queued_attempt():
-    assert context()["run_id"] != SUPERSEDED_QUEUED_RUN
-    run = api("actions/runs/" + str(SUPERSEDED_QUEUED_RUN))
-    assert run["id"] == SUPERSEDED_QUEUED_RUN and run["head_sha"] == SUPERSEDED_QUEUED_HEAD
-    assert run["run_attempt"] == 1 and run["head_branch"] == RETRY_REF.removeprefix("refs/heads/")
-    assert run["status"] == "completed" and run["conclusion"] == "cancelled"
-    payload = api("actions/runs/" + str(SUPERSEDED_QUEUED_RUN) + "/jobs?filter=all&per_page=100")
-    assert payload["total_count"] == len(payload["jobs"]) == 1
-    job = payload["jobs"][0]
-    assert job["id"] == SUPERSEDED_QUEUED_JOB and job["name"] == "Authenticate exact missing-only scope and original complete pair"
-    assert job["run_id"] == SUPERSEDED_QUEUED_RUN and job["head_sha"] == SUPERSEDED_QUEUED_HEAD and job["run_attempt"] == 1
-    assert job["status"] == "completed" and job["conclusion"] in ("cancelled", "skipped")
-    steps = [{key: step[key] for key in ("name", "number", "status", "conclusion")} for step in job["steps"]]
-    assert all(step["status"] == "completed" and step["conclusion"] in ("cancelled", "skipped") for step in steps)
-    payload = api("actions/runs/" + str(SUPERSEDED_QUEUED_RUN) + "/artifacts?per_page=100")
-    assert payload["total_count"] == len(payload["artifacts"]) == 0
-    return {"schema": "stringzilla-single-sky-queued-zero-v1", "source": SOURCE, "base": BASE,
-        "run_id": SUPERSEDED_QUEUED_RUN, "head": SUPERSEDED_QUEUED_HEAD, "attempt": 1,
-        "head_branch": RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled",
-        "configuration": {"id": job["id"], "name": job["name"], "status": job["status"],
-            "conclusion": job["conclusion"], "steps": steps},
-        "worker_jobs": 0, "artifacts": [], "timed_records": 0, "images_restored": False,
-        "missing_tiers": ["interpreter", "c1"], "triplets": 262, "records": 786}
-
+    ctx = context()
+    attempts = []
+    names = {"Authenticate exact missing-only scope and original complete pair", WORKER,
+             "Qualify exact completed missing SKY controls and preserve failed parent status"}
+    for run_id, head, config_id in SUPERSEDED_QUEUED_ATTEMPTS:
+        assert ctx["run_id"] != run_id
+        run = api("actions/runs/" + str(run_id))
+        assert run["id"] == run_id and run["head_sha"] == head and run["run_attempt"] == 1
+        assert run["head_branch"] == RETRY_REF.removeprefix("refs/heads/")
+        assert run["status"] == "completed" and run["conclusion"] == "cancelled"
+        payload = api("actions/runs/" + str(run_id) + "/jobs?filter=all&per_page=100")
+        assert payload["total_count"] == len(payload["jobs"]) and 1 <= len(payload["jobs"]) <= 3
+        jobs = payload["jobs"]
+        assert len({job["name"] for job in jobs}) == len(jobs) and {job["name"] for job in jobs} <= names
+        assert len({job["id"] for job in jobs}) == len(jobs)
+        config = [job for job in jobs if job["id"] == config_id]
+        assert len(config) == 1 and config[0]["name"] == "Authenticate exact missing-only scope and original complete pair"
+        records = []
+        for job in sorted(jobs, key=lambda item: item["name"]):
+            assert isinstance(job["id"], int) and job["id"] > 0
+            assert job["run_id"] == run_id and job["head_sha"] == head and job["run_attempt"] == 1
+            assert job["status"] == "completed" and job["conclusion"] in ("cancelled", "skipped")
+            steps = [{key: step[key] for key in ("name", "number", "status", "conclusion")} for step in job["steps"]]
+            assert all(step["status"] == "completed" and step["conclusion"] in ("cancelled", "skipped") for step in steps)
+            records.append({"id": job["id"], "name": job["name"], "status": job["status"],
+                            "conclusion": job["conclusion"], "steps": steps})
+        payload = api("actions/runs/" + str(run_id) + "/artifacts?per_page=100")
+        assert payload["total_count"] == len(payload["artifacts"]) == 0
+        attempts.append({"run_id": run_id, "head": head, "attempt": 1,
+            "head_branch": RETRY_REF.removeprefix("refs/heads/"), "status": "completed", "conclusion": "cancelled",
+            "configuration_job_id": config_id, "jobs": records, "artifacts": [],
+            "materialized_worker_jobs": sum(job["name"] == WORKER for job in jobs),
+            "executed_worker_jobs": 0, "timed_records": 0, "images_restored": False})
+    return {"schema": "stringzilla-single-sky-queued-zero-chain-v1", "source": SOURCE, "base": BASE,
+            "attempts": attempts, "executed_worker_jobs": 0, "timed_records": 0, "images_restored": False}
 
 def verify_inputs(value, ctx):
     assert value["run_id"] == ctx["run_id"] and value["head"] == ctx["head"] and value["attempt"] == 1
@@ -366,12 +380,15 @@ def verify_inputs(value, ctx):
     assert value["independent_scope_model_passed"] is True
     assert value["superseded_queued_zero_sha256"] == raw_sha((json.dumps(value["superseded_queued_zero"], indent=2) + "\n").encode())
     queued = value["superseded_queued_zero"]
-    assert queued["schema"] == "stringzilla-single-sky-queued-zero-v1"
+    assert queued["schema"] == "stringzilla-single-sky-queued-zero-chain-v1"
     assert queued["source"] == SOURCE and queued["base"] == BASE
-    assert queued["run_id"] == SUPERSEDED_QUEUED_RUN and queued["head"] == SUPERSEDED_QUEUED_HEAD and queued["attempt"] == 1
-    assert queued["status"] == "completed" and queued["conclusion"] == "cancelled"
-    assert queued["worker_jobs"] == queued["timed_records"] == 0 and queued["artifacts"] == []
-    assert queued["images_restored"] is False
+    assert queued["executed_worker_jobs"] == queued["timed_records"] == 0 and queued["images_restored"] is False
+    assert len(queued["attempts"]) == len(SUPERSEDED_QUEUED_ATTEMPTS)
+    for entry, expected in zip(queued["attempts"], SUPERSEDED_QUEUED_ATTEMPTS):
+        assert (entry["run_id"], entry["head"], entry["configuration_job_id"]) == expected and entry["attempt"] == 1
+        assert entry["status"] == "completed" and entry["conclusion"] == "cancelled"
+        assert entry["executed_worker_jobs"] == entry["timed_records"] == 0 and entry["images_restored"] is False
+        assert entry["artifacts"] == []
     assert value["prior_attempt_zero_sha256"] == PRIOR_ZERO_SHA256
     assert raw_sha((json.dumps(value["prior_attempt_zero"], indent=2) + "\n").encode()) == PRIOR_ZERO_SHA256
     assert set(value["image_hashes"]) == {"original", "fork"}
