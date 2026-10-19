@@ -638,6 +638,7 @@ public class RustRegexTest {
         Object engine = NATIVE.get(first);
         if (engine == null || HANDLE.getLong(engine) == 0)
             throw new AssertionError("initial general preparation was not validated natively");
+        checkPreparedNames((RustRegex) engine);
         Field entries = Class.forName("jdk.internal.util.regex.RustRegex$CompiledCache")
                 .getDeclaredField("ENTRIES");
         entries.setAccessible(true);
@@ -655,6 +656,7 @@ public class RustRegexTest {
         Object deferred = NATIVE.get(replacement);
         if (deferred == null || deferred == engine || HANDLE.getLong(deferred) != 0)
             throw new AssertionError("collected validated preparation was not reused lazily");
+        checkPreparedNames((RustRegex) deferred);
         Pattern ref = reference(expression, 0);
         Matcher a = replacement.matcher("\u0100\uD800"), b = ref.matcher("\u0100\uD800");
         equal(a, b, a.find(), b.find(), true);
@@ -672,6 +674,15 @@ public class RustRegexTest {
             }
         }
         java.lang.ref.Reference.reachabilityFence(first);
+    }
+
+    private static void checkPreparedNames(RustRegex engine) {
+        if (!engine.namedGroups.equals(Map.of("parts", 1)))
+            throw new AssertionError("prepared capture names changed");
+        try {
+            engine.namedGroups.put("unexpected", 2);
+            throw new AssertionError("prepared capture names are mutable");
+        } catch (UnsupportedOperationException expected) { }
     }
 
     private static void resetCapturePublication() throws Exception {

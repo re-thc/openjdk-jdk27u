@@ -64,7 +64,7 @@ public final class RustRegex {
     private RustRegex(long handle, Subset subset, FastPlan fastPlan) {
         this.handle = handle;
         groupCount = subset.groups;
-        namedGroups = Map.copyOf(subset.names);
+        namedGroups = subset.names;
         contextSensitive = subset.contextSensitive;
         finalTerminatorSensitive = subset.finalTerminatorSensitive;
         this.fastPlan = fastPlan;
@@ -127,6 +127,9 @@ public final class RustRegex {
                 cache(key, new CacheEntry(true, null, null, null));
                 return null;
             }
+            // Freeze capture metadata once, before publishing a preparation.
+            // Reconstructing a collected wrapper can share the immutable map.
+            subset.names = Map.copyOf(subset.names);
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
@@ -695,7 +698,8 @@ public final class RustRegex {
     private static final class Subset {
         final String source;
         final StringBuilder output = new StringBuilder();
-        final Map<String, Integer> names = new HashMap<>();
+        // Mutable while parsing; frozen before this preparation is published.
+        Map<String, Integer> names = new HashMap<>();
         final int flags;
         int cursor, groups = 1;
         boolean complex, contextSensitive, finalTerminatorSensitive, variableLength;

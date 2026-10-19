@@ -2078,10 +2078,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             int endQuote = pattern.indexOf("\\E", 2);
             if (endQuote < 0 || endQuote == pattern.length() - 2) return true;
         }
-        // A plain literal has no complex native plan. Stop at the first
-        // possible operator or escape; the native parser validates the rest.
-        for (int i = 0; i < pattern.length(); i++) {
-            switch (pattern.charAt(i)) {
+        // A plain literal has no complex native plan. Check leading classes or
+        // groups first, then scan backwards for common trailing quantifiers.
+        // The native parser validates the rest after any operator or escape.
+        int length = pattern.length();
+        for (int visited = 0; visited < length; visited++) {
+            int index = visited == 0 ? 0 : length - visited;
+            switch (pattern.charAt(index)) {
                 case '(', ')', '[', ']', '{', '}', '.', '^', '$', '|', '*', '+', '?', '\\':
                     return false;
             }
