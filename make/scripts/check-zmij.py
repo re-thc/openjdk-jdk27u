@@ -37,8 +37,7 @@ def fixtures():
 
 
 def method_body(adapter):
-    # Compile the same shared implementation as the VM, rather than extracting
-    # C++ bodies with brace counting after the bridge moved into its own header.
+    # Compile the same shared metadata implementation as the VM.
     if 'return hotspot_zmij_decimal_metadata(bits);' not in adapter.read_text():
         raise RuntimeError('Review checker binding after changing Zmij::decimal')
     return ('#include "utilities/zmijMetadata.inline.hpp"\n'
