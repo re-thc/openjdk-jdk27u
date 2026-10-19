@@ -60,6 +60,8 @@ static bool sort_range(JNIEnv* env, jlongArray array, jint low, jint size) {
 
     // VQSort is allocation-free. Its per-thread seed initialization, runtime
     // dispatch and entire sort execute in ordinary JNI native thread state.
+    // The upstream seed override uses its nonblocking address/clock fallback;
+    // sorting still has an independent bounded-depth heapsort fallback.
     hwy::VQSort(buffer, static_cast<size_t>(size), hwy::SortAscending());
 
     for (jint offset = 0; offset < size; offset += COPY_CHUNK) {

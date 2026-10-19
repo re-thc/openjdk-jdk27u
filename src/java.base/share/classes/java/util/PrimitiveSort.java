@@ -39,7 +39,7 @@ final class PrimitiveSort {
             && StaticProperty.osArch().equals("amd64")
             && !Boolean.getBoolean("jdk.util.Arrays.disableNativeSort");
 
-    // Ordered and skewed calls do not load or initialize the native library.
+    // The caller retains structured and repeated-pivot inputs in Java.
     private static final class Native {
         static final boolean SUPPORTED = initializeNative();
     }
@@ -57,32 +57,10 @@ final class PrimitiveSort {
 
     @DontInline
     static boolean trySort(long[] a, int low, int size) {
-        if (preferJava(a, low, size) || !Native.SUPPORTED) {
-            return false;
-        }
-        if (DualPivotQuicksort.tryMergeRuns(null, a, low, size)) {
-            return true;
-        }
-        // A failed run scan may already have reversed a prefix. The native
-        // buffer copies that permutation; allocation failure leaves it intact
-        // for the ordinary Java sort, including its normal depth accounting.
-        return sortLongs(a, low, size);
-    }
-
-    // Keep sampled monotonic and highly skewed input at the original Java
-    // entry, including its run-scan call site. A false positive only selects
-    // the Java algorithm; the full run scan still precedes every native sort.
-    static boolean preferJava(long[] a, int low, int size) {
-        long first = a[low], previous = first;
-        int matches = 0, ascending = 0, descending = 0;
-        for (int i = 1; i <= 32; i++) {
-            long value = a[low + (int) ((long) (size - 1) * i / 32)];
-            if (value == first) matches++;
-            if (value > previous) ascending++;
-            if (value < previous) descending++;
-            previous = value;
-        }
-        return matches >= 28 || ascending == 0 || descending == 0;
+        // The caller has already declined run merging and sorted its pivot
+        // sample. Failure leaves that permutation intact and falls through
+        // to the original partition with unchanged recursion-depth accounting.
+        return Native.SUPPORTED && sortLongs(a, low, size);
     }
 
     private static native boolean supported();

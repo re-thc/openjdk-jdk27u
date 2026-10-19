@@ -137,12 +137,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        int size = a.length;
-        if (size >= PrimitiveSort.MIN_SIZE && size <= PrimitiveSort.MAX_SIZE
-                && PrimitiveSort.ENABLED && PrimitiveSort.trySort(a, 0, size)) {
-            return;
-        }
-        DualPivotQuicksort.sort(a, 0, 0, size);
+        DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
     /**
@@ -169,11 +164,6 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        int size = toIndex - fromIndex;
-        if (size >= PrimitiveSort.MIN_SIZE && size <= PrimitiveSort.MAX_SIZE
-                && PrimitiveSort.ENABLED && PrimitiveSort.trySort(a, fromIndex, size)) {
-            return;
-        }
         DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 

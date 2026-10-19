@@ -1150,6 +1150,15 @@ final class DualPivotQuicksort {
              */
             if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
 
+                // Reuse the existing distinct-pivot test for native admission.
+                // The run scan and depth increment have already happened;
+                // decline continues through this same partitioning path.
+                if (bits == DELTA && sorter == null
+                        && size >= PrimitiveSort.MIN_SIZE && size <= PrimitiveSort.MAX_SIZE
+                        && PrimitiveSort.ENABLED && PrimitiveSort.trySort(a, low, size)) {
+                    return;
+                }
+
                 /*
                  * Use the first and fifth of the five sorted elements as
                  * the pivots. These values are inexpensive approximation
@@ -1552,7 +1561,7 @@ final class DualPivotQuicksort {
      * @param size the array size
      * @return true if finally sorted, false otherwise
      */
-    static boolean tryMergeRuns(Sorter sorter, long[] a, int low, int size) {
+    private static boolean tryMergeRuns(Sorter sorter, long[] a, int low, int size) {
 
         /*
          * The run array is constructed only if initial runs are

@@ -162,7 +162,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(filter $(TOOLCHAIN
       NAME := primitivesort, \
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
-      CXXFLAGS := -std=c++17 -fno-rtti -DHWY_WANT_AVX3_ZEN4 \
+      CXXFLAGS := -std=c++17 -fno-rtti -DHWY_WANT_AVX3_ZEN4 -DHWY_OS_RNG_SECURE_SEED=0 \
           -isystem $(TOPDIR)/src/java.base/share/native/libprimitivesort/highway, \
       DISABLED_WARNINGS_gcc := unused-variable, \
       LIBS_linux := $(LIBM), \
