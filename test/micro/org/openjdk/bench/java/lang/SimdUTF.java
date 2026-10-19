@@ -55,6 +55,8 @@ public class SimdUTF {
     private char[] chars, targetChars;
     private char[] malformedCountChars;
     private char[] supplementaryChars;
+    private String prefixedPairs, sparsePairs;
+    private char[] prefixedPairChars, sparsePairChars;
     private StringBuilder supplementaryBuilder;
     private StringBuffer supplementaryBuffer;
     private ByteBuffer charsetBytes, charsetInput, charsetTightInput;
@@ -97,6 +99,11 @@ public class SimdUTF {
         utf16Near = "漢".repeat(near) + "z" + "漢".repeat(size - near - 1);
         supplementary = "😃".repeat(size / 2);
         supplementaryChars = supplementary.toCharArray();
+        prefixedPairs = "a" + "\ud83d\ude03".repeat((size - 1) / 2) + "a".repeat((size - 1) & 1);
+        sparsePairs = "\ud83d\ude03".repeat(Math.min(8, size / 2))
+                + "\u6f22".repeat(Math.max(0, size - 16));
+        prefixedPairChars = prefixedPairs.toCharArray();
+        sparsePairChars = sparsePairs.toCharArray();
         supplementaryBuilder = new StringBuilder(supplementary);
         supplementaryBuffer = new StringBuffer(supplementary);
         asciiBytes = ascii.getBytes(StandardCharsets.UTF_8);
@@ -199,6 +206,18 @@ public class SimdUTF {
     }
     @Benchmark public int charArrayCodePointCount() {
         return Character.codePointCount(supplementaryChars, 0, supplementaryChars.length);
+    }
+    @Benchmark public int prefixedPairCodePointCount() {
+        return prefixedPairs.codePointCount(0, prefixedPairs.length());
+    }
+    @Benchmark public int prefixedPairCharArrayCodePointCount() {
+        return Character.codePointCount(prefixedPairChars, 0, prefixedPairChars.length);
+    }
+    @Benchmark public int sparsePairCodePointCount() {
+        return sparsePairs.codePointCount(0, sparsePairs.length());
+    }
+    @Benchmark public int sparsePairCharArrayCodePointCount() {
+        return Character.codePointCount(sparsePairChars, 0, sparsePairChars.length);
     }
     @Benchmark public int bmpCodePointCount() {
         return bmp.codePointCount(0, bmp.length());
