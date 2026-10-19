@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ */
+
+    private static final int EXPERIMENT_BACKEND = Integer.getInteger("jdk.util.Arrays.backend", 0);
+    private static final boolean EXPERIMENT_COPY = Boolean.getBoolean("jdk.util.Arrays.backendCopy");
+    static {
+        if (EXPERIMENT_BACKEND != 0) System.load(System.getProperty("backend.lib"));
+    }
+    private static native boolean sortCopy(Object array, int low, int size, int width, int backend);
+    private static void nativeFallback(int[] a, int low, int high) { sort(null, a, 0, low, high); }
+    private static void nativeFallback(long[] a, int low, int high) { sort(null, a, 0, low, high); }
+    private static boolean highlySkewed(int[] a, int low, int size) {
+        int value=a[low]; int matches=0;
+        for(int i=1;i<=32;i++) if(a[low+(int)((long)(size-1)*i/32)]==value) matches++;
+        return matches>=28;
+    }
+    @jdk.internal.vm.annotation.DontInline
+    private static boolean experiment(int[] a, int low, int high) {
+        int size=high-low;
+        if (EXPERIMENT_BACKEND == 0 || size < 4096 || size > (EXPERIMENT_COPY ? 1048576 : 65536)) return false;
+        if (highlySkewed(a,low,size)) return false;
+        if (tryMergeRuns(null,a,low,size)) return true;
+        if (EXPERIMENT_COPY) return sortCopy(a,low,size,4,EXPERIMENT_BACKEND);
+        sort(int.class,a,Unsafe.ARRAY_INT_BASE_OFFSET,low,high,DualPivotQuicksort::nativeFallback);
+        return true;
+    }
+    private static boolean highlySkewed(long[] a, int low, int size) {
+        long value=a[low]; int matches=0;
+        for(int i=1;i<=32;i++) if(a[low+(int)((long)(size-1)*i/32)]==value) matches++;
+        return matches>=28;
+    }
+    @jdk.internal.vm.annotation.DontInline
+    private static boolean experiment(long[] a, int low, int high) {
+        int size=high-low;
+        if (EXPERIMENT_BACKEND == 0 || size < 4096 || size > (EXPERIMENT_COPY ? 1048576 : 65536)) return false;
+        if (highlySkewed(a,low,size)) return false;
+        if (tryMergeRuns(null,a,low,size)) return true;
+        if (EXPERIMENT_COPY) return sortCopy(a,low,size,8,EXPERIMENT_BACKEND);
+        sort(long.class,a,Unsafe.ARRAY_LONG_BASE_OFFSET,low,high,DualPivotQuicksort::nativeFallback);
+        return true;
+    }
+
+
