@@ -143,12 +143,14 @@ public class StandardCharsets extends CharsetProvider {
             return ISO_8859_1.INSTANCE;
         } else {
             csn = toLower(charsetName);
-            if (csn.equals("utf-8")) {
-                return UTF_8.INSTANCE;
-            } else if (csn.equals("us-ascii")) {
-                return US_ASCII.INSTANCE;
-            } else if (csn.equals("iso-8859-1")) {
-                return ISO_8859_1.INSTANCE;
+            Charset canonical = switch (csn.length()) {
+                case 5 -> csn.equals("utf-8") ? UTF_8.INSTANCE : null;
+                case 8 -> csn.equals("us-ascii") ? US_ASCII.INSTANCE : null;
+                case 10 -> csn.equals("iso-8859-1") ? ISO_8859_1.INSTANCE : null;
+                default -> null;
+            };
+            if (canonical != null) {
+                return canonical;
             }
             csn = canonicalize(csn);
         }
