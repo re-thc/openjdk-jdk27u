@@ -43,7 +43,7 @@ protected Java paths and memory-bandwidth-size inputs. Every observation must be
 retained. `SafepointBench` records GC overlap and uses `-Xlog:safepoint` for the
 reaching-safepoint component. `NativeActivation` verifies native frames and the
 opt-out. `fail-malloc.c` injects failure only into the product library's malloc
-calls, testing Java fallback after a potentially mutating run scan.
+calls, testing Java fallback with original input/depth accounting.
 
 The prior unavailable Java production sorter is for objects/collections, not
 primitive arrays. It is not represented as a primitive baseline. Float/double
@@ -100,8 +100,8 @@ sizes, offsets and seed; it is not a second blind algorithm-selection holdout.
 The malloc tracer is glibc-specific and records library-owned requested malloc
 bytes. It does not measure all allocator/loader/thread overhead. The selected
 static C++ runtime retains a 72KiB process pool; the measured library's PT_TLS
-is 40 bytes per OS thread, plus loader alignment/overhead. Sort buffers are
-4MiB/8MiB at the upper bound, owned and freed by each call. Do not equate RSS
+is 40 bytes per OS thread, plus loader alignment/overhead. Historical int+long sort buffers were
+4MiB/8MiB; the selected long-only buffer is at most8MiB, owned and freed by each call. Do not equate RSS
 with live owned allocations. IPS2Ra reused contexts and parallel worker pools
 have separate ownership and cleanup costs; they are not shipped by the product.
 
@@ -115,7 +115,7 @@ qualification pass or a recipe used by the selected implementation.
 For final tests, use full release and fastdebug images with jtreg8.3, rather than
 a patched class or native-kernel image. Run `Sorting`,
 `SortingNearlySortedPrimitive`, `NativePrimitiveSort`,
-`NativePrimitiveSortDeoptimization`, plus HotSpot's `SortingDeoptimizationTest`
+`NativePrimitiveSortActivation`, `NativePrimitiveSortDeoptimization`, plus HotSpot's `SortingDeoptimizationTest`
 and `TestOffsetSorting`. Exercise G1/Serial/ZGC, interpreter, C1, C2-only, opt-out,
 HotSpot intrinsic disablement, AVX flags, compact/wide object headers, small
 stacks, concurrent sorting and forced native allocation failure. No test here
@@ -128,8 +128,8 @@ int run-scan visibility are restored to baseline, and no int native entry or
 kernel is linked. Historical int/C2 and all-family prototypes remain in this
 harness so the rejection can be reproduced. `NativeActivation` defaults to
 long-only expectations; set `-DnativeInt=true` for the earlier int+long image.
-The final product owns at most an8MiB sort buffer per call. Its default
-thresholds and long admission are unchanged from E9.
+The selected product owns at most an8MiB sort buffer per call. E12 retains
+the size bounds and replaces E9/E10 admission as described below.
 
 On the final product, the post driver also runs four balanced baseline/actual
 AVX2 pairs through `NativeAVX2Bench` and the identical `PublicBench` driver.
@@ -153,5 +153,60 @@ from the library-owned requested/live byte counters; neither measurement alone
 attributes all process residency.
 
 Product implementation: https://github.com/re-thc/openjdk-jdk27u/pull/57
-Final product source: fd19ce8f58945e0b86afb2935598d358353b0182.
+Final product source: 152455d13df1551e2d28b2ba4008600091dec320 (runtime implementation c32df6ec35b02429c0edc55ce2844ee3433765fe; following commit adds tests).
 Use that source/image in a separate checkout; this harness branch starts from the original baseline.
+
+
+## Reviewed default and focused follow-up
+
+E12 admits only long ranges 4,096..1,048,576 whose first nonconstant monotonic
+run breaks before the original Java MIN_FIRST_RUN_SIZE=16. Equal first values
+and longer first runs retain the original Java entry. This read-only <=16-element
+preflight does not call the mutating shared run scanner. Native failure enters
+the original Java sorter at depth0 once. Recursive bodies are unchanged; only
+that compile-time constant's access flag differs. The public long methods are
+28/34 bytecodes, retaining ordinary C1 inlining. This conservative admission can
+forgo old native gains on long-prefix inputs. It preserves the measured large
+random/low-cardinality/two-value wins without the old skewed-long loss. Int,
+parallel, float/double and larger ranges keep the original implementations.
+
+The normal pinned Highway dynamic API is built with its supported
+HWY_OS_RNG_SECURE_SEED=0 override. It uses the upstream address/clock seed
+fallback without getrandom blocking. No cryptographic RNG is needed for pivot
+choice; Highway's independent depth-limited heapsort bounds adversarial work.
+No upstream source is changed and no platform target is hard-coded.
+
+`review-r1.py` diagnoses the old fd19 frontend against baseline and same-image
+opt-out. `review-direct-probe.sh` shares the Java sorter across public,
+guarded-direct and direct calls in the same VM. `review-e11.py` preserves the
+rejected existing-pivot/recursive-loop alternative. `review-e12.py` compares the
+selected entry with baseline, opt-out and old frontend in four balanced rounds;
+short transition windows remain alongside warmed windows. `review-large.py`
+warms the protected 1Mi+1 and16Mi Java controls. `review-structured.py` retains
+structured cases and losses. `review-warm-structured.py` diagnoses merge-helper
+entry warmup at32768; `review-steady-structured.py` then warms400 calls at the
+actual1Mi size because the former still changed large-input C2 profiles during
+measurement. These are distinct fixed experiments, never replacements for
+losses or policy tuning. `review-final-metrics.py` repeats actual AVX2 dispatch,
+cold calls, allocation/RSS and G1/Serial/Z safepoints on the final image.
+
+Drivers use immutable image names from this experiment. Provide those complete
+images (or edit the plan before running), compile ReviewFocusedBench.java, ReviewLargeBench.java,
+ReviewStructuredBench.java, ReviewWarmStructuredBench.java and
+ReviewSteadyStructuredBench.java with build on the class path (the direct-probe
+script compiles its own patch-module companion), and run each Python script from this directory. Source c32 and152
+have identical production trees and runtime component hashes. Output directories
+must be new; existing observations are never overwritten.
+
+`qualify-image.sh` now builds the test-only native JVMTI/allocator companion from
+the matching product source and supplies jtreg's nativepath. Activation asserts
+real long native calls in default/interpreter/C1 and zero with opt-out. The GC
+fixture holds two genuine native long sorts while they own their buffers,
+requests GC/deoptimization, injects allocation and checked-copy declines, checks
+full outputs and guards, and requires live native bytes to return to the retained
+runtime pool. Its smaller-array phase observes actual relocation between copy
+chunks. Unsupported instrumentation reports SKIP; a supported GCC image missing
+the product component fails. A negative baseline Arrays.class patch proved the
+activation test fails when the hook is absent. Run this script on both final
+release and fastdebug images. The product has no test hooks or retained sorting
+contexts.

@@ -19,7 +19,8 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 image=${1:?complete product image}
 objects=${2:?configured java.base libprimitivesort object directory}
 highway=${3:?product Highway source directory}
-test_image="$root/images/seed-failure-test"
+label=${SORT_FAULT_LABEL:-seed}
+test_image=${SORT_FAULT_IMAGE:-"$root/images/$label-failure-test"}
 if [[ -e "$test_image" ]]; then echo 'Use a fresh test-image destination.' >&2; exit 1; fi
 mkdir -p "$root/build" "$root/images" "$root/evidence"
 cp -a "$image" "$test_image"
@@ -28,7 +29,7 @@ native_objects=("$objects/PrimitiveSort.o" "$objects/abort.o" "$root/build/throw
 nm -C "$image/lib/libprimitivesort.so" > "$root/build/seed-product-symbols.txt"
 if rg -q 'SortI32Asc' "$root/build/seed-product-symbols.txt"; then native_objects+=("$objects/vqsort_i32a.o"); fi
 native_objects+=("$objects/vqsort_i64a.o")
-sha256sum "${native_objects[@]}" > "$root/evidence/seed-product-objects.sha256"
+sha256sum "${native_objects[@]}" > "$root/evidence/$label-product-objects.sha256"
 g++ -shared -m64 -fuse-ld=mold -Wl,-z,defs,-z,relro,-z,now,--no-as-needed,--exclude-libs,ALL,-z,noexecstack,-O1 -Wl,-soname,libprimitivesort.so -o "$test_image/lib/libprimitivesort.so" "${native_objects[@]}" -static-libstdc++ -static-libgcc -lm
 # Compile NativePrimitiveSort from the matching product source into build first.
-LD_PRELOAD="$root/build/malloc-trace.so" "$test_image/bin/java" -Xmx1g -cp "$root/build" NativePrimitiveSort quick > "$root/evidence/seed-failure.out" 2> "$root/evidence/seed-failure.err"
+LD_PRELOAD="$root/build/malloc-trace.so" "$test_image/bin/java" -Xmx1g -cp "$root/build" NativePrimitiveSort quick > "$root/evidence/$label-failure.out" 2> "$root/evidence/$label-failure.err"
