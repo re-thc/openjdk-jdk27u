@@ -2024,7 +2024,11 @@ void HeapShared::check_special_subgraph_classes() {
 
 // These raw oop addresses live only during a safepoint/no-GC subgraph walk.
 // No iterator or pointer into the table escapes.
-class HeapShared::SeenObjectsTable : public KHashTable<char, mtClassShared, false> {};
+class HeapShared::SeenObjectsTable : public KHashTable<char, mtClassShared, false> {
+public:
+  // Preserve AnyObj's allocation marker during value-initialization.
+  SeenObjectsTable() {}
+};
 
 void HeapShared::init_seen_objects_table() {
   assert(_seen_objects_table == nullptr, "must be");

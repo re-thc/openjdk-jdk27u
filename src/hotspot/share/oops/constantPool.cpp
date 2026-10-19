@@ -1940,7 +1940,11 @@ jint ConstantPool::cpool_entry_size(jint idx) {
 } /* end cpool_entry_size */
 
 
-class ConstantPool::SymbolHash::Table : public SymbolIndexMap {};
+class ConstantPool::SymbolHash::Table : public SymbolIndexMap {
+public:
+  // Preserve AnyObj's allocation marker during value-initialization.
+  Table() {}
+};
 
 ConstantPool::SymbolHash::SymbolHash() : _table(new (mtSymbol) Table()) {}
 ConstantPool::SymbolHash::~SymbolHash() { delete _table; }

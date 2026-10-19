@@ -168,7 +168,11 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 }
 
 // Values are copied out on lookup; entries never escape or get iterated.
-class ArchiveBuilder::BufferedToSrcTable : public KHashTable<address, mtClassShared> {};
+class ArchiveBuilder::BufferedToSrcTable : public KHashTable<address, mtClassShared> {
+public:
+  // Preserve AnyObj's allocation marker during value-initialization.
+  BufferedToSrcTable() {}
+};
 
 ArchiveBuilder::ArchiveBuilder() :
   _current_dump_region(nullptr),

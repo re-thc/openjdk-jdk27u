@@ -60,7 +60,8 @@ class SymbolIndexMap : public AnyObj {
   Map _table;
 
 public:
-  SymbolIndexMap() = default;
+  // A user-provided constructor preserves AnyObj's heap allocation marker.
+  SymbolIndexMap() {}
   void add_if_absent(const Symbol* sym, u2 value) { _table.emplace(sym, value); }
   u2 symbol_to_value(const Symbol* sym) const {
     auto entry = _table.find(sym);

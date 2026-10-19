@@ -68,12 +68,13 @@ TEST_VM(KHashTable, native_accounting) {
   const size_t before_size = memory->malloc_size();
   const size_t before_count = memory->malloc_count();
   {
-    KHashTable<address, mtTest> table;
+    auto* table = new (mtTest) KHashTable<address, mtTest>();
     for (uintptr_t i = 0; i < 10000; ++i) {
-      table.put_if_absent(i * 8, (address)(i * 8));
+      table->put_if_absent(i * 8, (address)(i * 8));
     }
     ASSERT_GT(memory->malloc_size(), before_size);
     ASSERT_GT(memory->malloc_count(), before_count);
+    delete table;
   }
   ASSERT_EQ(before_size, memory->malloc_size());
   ASSERT_EQ(before_count, memory->malloc_count());

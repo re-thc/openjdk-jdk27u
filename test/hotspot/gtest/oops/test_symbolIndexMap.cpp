@@ -41,12 +41,13 @@ TEST_VM(SymbolIndexMap, native_accounting) {
   const size_t before_size = memory->malloc_size();
   const size_t before_count = memory->malloc_count();
   {
-    SymbolIndexMap table;
+    auto* table = new (mtSymbol) SymbolIndexMap();
     for (uintptr_t i = 1; i <= 16000; ++i) {
-      table.add_if_absent((const Symbol*)(i * 8), (u2)i);
+      table->add_if_absent((const Symbol*)(i * 8), (u2)i);
     }
     ASSERT_GT(memory->malloc_size(), before_size);
     ASSERT_GT(memory->malloc_count(), before_count);
+    delete table;
   }
   ASSERT_EQ(before_size, memory->malloc_size());
   ASSERT_EQ(before_count, memory->malloc_count());
