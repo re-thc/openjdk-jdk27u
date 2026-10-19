@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstdint>
+#include <memory>
 
 #include "jni.h"
 #include "hwy/contrib/sort/vqsort.h"
@@ -38,11 +39,14 @@ static constexpr jint COPY_CHUNK = 16384;
 static constexpr jint MAX_SORT_SIZE = 1 << 20;
 
 template<typename Array, typename T>
-static bool sort_range(JNIEnv* env, Array array, jint low, jint size) noexcept {
+static bool sort_range(JNIEnv* env, Array array, jint low, jint size) {
     if (size < 0 || size > MAX_SORT_SIZE) {
         return false;
     }
-    T* buffer = static_cast<T*>(std::malloc(static_cast<size_t>(size) * sizeof(T)));
+    std::unique_ptr<T, decltype(&std::free)> storage(
+            static_cast<T*>(std::malloc(static_cast<size_t>(size) * sizeof(T))),
+            &std::free);
+    T* buffer = storage.get();
     if (buffer == nullptr) {
         return false;
     }
@@ -56,7 +60,6 @@ static bool sort_range(JNIEnv* env, Array array, jint low, jint size) noexcept {
                                     count, reinterpret_cast<jlong*>(buffer + offset));
         }
         if (env->ExceptionCheck()) {
-            std::free(buffer);
             return false;
         }
     }
@@ -75,26 +78,36 @@ static bool sort_range(JNIEnv* env, Array array, jint low, jint size) noexcept {
                                     count, reinterpret_cast<jlong*>(buffer + offset));
         }
         if (env->ExceptionCheck()) {
-            std::free(buffer);
             return false;
         }
     }
-    std::free(buffer);
     return true;
 }
 
 extern "C" {
-JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_supported(JNIEnv*, jclass) {
-    return (hwy::SupportedTargets() & HWY_AVX2) != 0;
+JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_supported(JNIEnv*, jclass) noexcept {
+    try {
+        return (hwy::SupportedTargets() & HWY_AVX2) != 0;
+    } catch (...) {
+        return false;
+    }
 }
 
 JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_sortInts(
-        JNIEnv* env, jclass, jintArray array, jint low, jint size) {
-    return sort_range<jintArray, int32_t>(env, array, low, size);
+        JNIEnv* env, jclass, jintArray array, jint low, jint size) noexcept {
+    try {
+        return sort_range<jintArray, int32_t>(env, array, low, size);
+    } catch (...) {
+        return false;
+    }
 }
 
 JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_sortLongs(
-        JNIEnv* env, jclass, jlongArray array, jint low, jint size) {
-    return sort_range<jlongArray, int64_t>(env, array, low, size);
+        JNIEnv* env, jclass, jlongArray array, jint low, jint size) noexcept {
+    try {
+        return sort_range<jlongArray, int64_t>(env, array, low, size);
+    } catch (...) {
+        return false;
+    }
 }
 }
