@@ -38,27 +38,21 @@
 static constexpr jint COPY_CHUNK = 16384;
 static constexpr jint MAX_SORT_SIZE = 1 << 20;
 
-template<typename Array, typename T>
-static bool sort_range(JNIEnv* env, Array array, jint low, jint size) {
+static bool sort_range(JNIEnv* env, jlongArray array, jint low, jint size) {
     if (size < 0 || size > MAX_SORT_SIZE) {
         return false;
     }
-    std::unique_ptr<T, decltype(&std::free)> storage(
-            static_cast<T*>(std::malloc(static_cast<size_t>(size) * sizeof(T))),
+    std::unique_ptr<int64_t, decltype(&std::free)> storage(
+            static_cast<int64_t*>(std::malloc(static_cast<size_t>(size) * sizeof(int64_t))),
             &std::free);
-    T* buffer = storage.get();
+    int64_t* buffer = storage.get();
     if (buffer == nullptr) {
         return false;
     }
     for (jint offset = 0; offset < size; offset += COPY_CHUNK) {
         jint count = std::min(COPY_CHUNK, size - offset);
-        if constexpr (sizeof(T) == sizeof(jint)) {
-            env->GetIntArrayRegion(reinterpret_cast<jintArray>(array), low + offset,
-                                   count, reinterpret_cast<jint*>(buffer + offset));
-        } else {
-            env->GetLongArrayRegion(reinterpret_cast<jlongArray>(array), low + offset,
-                                    count, reinterpret_cast<jlong*>(buffer + offset));
-        }
+        env->GetLongArrayRegion(array, low + offset, count,
+                                reinterpret_cast<jlong*>(buffer + offset));
         if (env->ExceptionCheck()) {
             return false;
         }
@@ -70,13 +64,8 @@ static bool sort_range(JNIEnv* env, Array array, jint low, jint size) {
 
     for (jint offset = 0; offset < size; offset += COPY_CHUNK) {
         jint count = std::min(COPY_CHUNK, size - offset);
-        if constexpr (sizeof(T) == sizeof(jint)) {
-            env->SetIntArrayRegion(reinterpret_cast<jintArray>(array), low + offset,
-                                   count, reinterpret_cast<jint*>(buffer + offset));
-        } else {
-            env->SetLongArrayRegion(reinterpret_cast<jlongArray>(array), low + offset,
-                                    count, reinterpret_cast<jlong*>(buffer + offset));
-        }
+        env->SetLongArrayRegion(array, low + offset, count,
+                                reinterpret_cast<jlong*>(buffer + offset));
         if (env->ExceptionCheck()) {
             return false;
         }
@@ -93,19 +82,10 @@ JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_supported(JNIEnv*, jclas
     }
 }
 
-JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_sortInts(
-        JNIEnv* env, jclass, jintArray array, jint low, jint size) noexcept {
-    try {
-        return sort_range<jintArray, int32_t>(env, array, low, size);
-    } catch (...) {
-        return false;
-    }
-}
-
 JNIEXPORT jboolean JNICALL Java_java_util_PrimitiveSort_sortLongs(
         JNIEnv* env, jclass, jlongArray array, jint low, jint size) noexcept {
     try {
-        return sort_range<jlongArray, int64_t>(env, array, low, size);
+        return sort_range(env, array, low, size);
     } catch (...) {
         return false;
     }

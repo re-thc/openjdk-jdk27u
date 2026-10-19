@@ -29,7 +29,7 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.DontInline;
 
-/** Native sorting of bounded integer ranges on Linux x64. */
+/** Native sorting of bounded long ranges on Linux x64. */
 final class PrimitiveSort {
     static final int MIN_SIZE = 4096;
     static final int MAX_SIZE = 1 << 20;
@@ -56,20 +56,6 @@ final class PrimitiveSort {
     }
 
     @DontInline
-    static boolean trySort(int[] a, int low, int size) {
-        if (preferJava(a, low, size) || !Native.SUPPORTED) {
-            return false;
-        }
-        if (DualPivotQuicksort.tryMergeRuns(null, a, low, size)) {
-            return true;
-        }
-        // A failed run scan may already have reversed a prefix. The native
-        // buffer copies that permutation; allocation failure leaves it intact
-        // for the ordinary Java sort, including its normal depth accounting.
-        return sortInts(a, low, size);
-    }
-
-    @DontInline
     static boolean trySort(long[] a, int low, int size) {
         if (preferJava(a, low, size) || !Native.SUPPORTED) {
             return false;
@@ -86,19 +72,6 @@ final class PrimitiveSort {
     // Keep sampled monotonic and highly skewed input at the original Java
     // entry, including its run-scan call site. A false positive only selects
     // the Java algorithm; the full run scan still precedes every native sort.
-    static boolean preferJava(int[] a, int low, int size) {
-        int first = a[low], previous = first;
-        int matches = 0, ascending = 0, descending = 0;
-        for (int i = 1; i <= 32; i++) {
-            int value = a[low + (int) ((long) (size - 1) * i / 32)];
-            if (value == first) matches++;
-            if (value > previous) ascending++;
-            if (value < previous) descending++;
-            previous = value;
-        }
-        return matches >= 28 || ascending == 0 || descending == 0;
-    }
-
     static boolean preferJava(long[] a, int low, int size) {
         long first = a[low], previous = first;
         int matches = 0, ascending = 0, descending = 0;
@@ -113,6 +86,5 @@ final class PrimitiveSort {
     }
 
     private static native boolean supported();
-    static native boolean sortInts(int[] a, int low, int size);
     static native boolean sortLongs(long[] a, int low, int size);
 }

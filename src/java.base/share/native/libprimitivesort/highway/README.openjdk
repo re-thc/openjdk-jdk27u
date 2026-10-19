@@ -4,10 +4,10 @@ Repository: https://github.com/google/highway
 Revision: 1693ca7926ed12c5520623564e465cff97d93374
 License: upstream dual Apache-2.0 / BSD-3-Clause; this integration uses BSD-3-Clause.
 
-UPSTREAM_FILES lists the unmodified source/header subset used for signed 32-bit
-and 64-bit ascending VQSort with normal dynamic dispatch on Linux x64 GCC.
+UPSTREAM_FILES lists the unmodified source/header subset used for signed
+64-bit ascending VQSort with normal dynamic dispatch on Linux x64 GCC.
 The subset was obtained from compiler dependency output for abort.cc, targets.cc,
-os_rng.cc, vqsort_i32a.cc and vqsort_i64a.cc using -std=c++17 -march=x86-64-v3
+os_rng.cc, vqsort_i64a.cc using -std=c++17 -march=x86-64-v3
 -DHWY_WANT_AVX3_ZEN4. Preserve upstream headers and the complete LICENSE.
 
 HWY_WANT_AVX3_ZEN4 enables the official AMD-specific dispatch target. Upstream
