@@ -583,11 +583,9 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     Symbol* sym = syms[i];
     if (sym == nullptr) {
       assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
-      // Earlier entries in this batch may have inserted the same name. Avoid
-      // allocating unused candidates in arenas that cannot reliably reclaim them.
-      if (is_permanent || CDSConfig::is_dumping_static_archive()) {
-        sym = do_lookup(names[i], lengths[i], hashes[i]);
-      }
+      // The name may have been inserted since the batch lookup, by this batch
+      // or another thread. Avoid allocating a candidate that is already obsolete.
+      sym = do_lookup(names[i], lengths[i], hashes[i]);
       if (sym == nullptr) {
         sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
       }
