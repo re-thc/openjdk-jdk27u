@@ -1,4 +1,5 @@
 dnl Copyright (c) 2019, 2020, Red Hat Inc. All rights reserved.
+dnl Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 dnl DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 dnl
 dnl This code is free software; you can redistribute it and/or modify it
