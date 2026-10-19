@@ -306,20 +306,24 @@ public class TestStringZillaDispatch {
         for (int count : new int[]{8, 9, 16, 32, 64, 128, 129}) {
             String needle = "\u0402" + "\u0401".repeat(count - 2) + "\u0403";
             String denseNeedle = "\u0401".repeat(count - 2) + "\u0402\u0401";
-            for (int length : new int[]{511, 512, 513, 1023, 1024}) {
+            for (int length : new int[]{127, 128, 129, 511, 512, 513, 1023, 1024, 4096}) {
+                if (count > length) continue;
                 String absent = "\u0401".repeat(length);
                 checkReverse(search, absent, needle, Integer.MAX_VALUE, -1);
                 checkReverse(search, absent, denseNeedle, Integer.MAX_VALUE, -1);
-                char[] shiftedValue = absent.toCharArray();
-                ByteBuffer shifted = ByteBuffer.allocate((count + 1) * 2).order(ByteOrder.nativeOrder());
-                for (int i = 0; i < count; i++) {
-                    shifted.putChar(1 + i * 2, denseNeedle.charAt(i));
+                if (length > count) {
+                    char[] shiftedValue = absent.toCharArray();
+                    ByteBuffer shifted = ByteBuffer.allocate((count + 1) * 2).order(ByteOrder.nativeOrder());
+                    for (int i = 0; i < count; i++) {
+                        shifted.putChar(1 + i * 2, denseNeedle.charAt(i));
+                    }
+                    for (int i = 0; i <= count; i++) {
+                        shiftedValue[length - count - 1 + i] = shifted.getChar(i * 2);
+                    }
+                    checkReverse(search, new String(shiftedValue), denseNeedle, Integer.MAX_VALUE, -1);
                 }
-                for (int i = 0; i <= count; i++) {
-                    shiftedValue[length - count - 1 + i] = shifted.getChar(i * 2);
-                }
-                checkReverse(search, new String(shiftedValue), denseNeedle, Integer.MAX_VALUE, -1);
                 for (int position : new int[]{0, 1, length / 2, length - count}) {
+                    if (position + count > length) continue;
                     String value = absent.substring(0, position) + needle
                             + absent.substring(position + count);
                     for (int from : new int[]{position - 1, position, length - count,
