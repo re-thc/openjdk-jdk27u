@@ -44,10 +44,7 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/utf8.hpp"
 
-// We used to not resize at all, so let's be conservative
-// and not set it too short before we decide to resize,
-// to match previous startup behavior
-const double PREF_AVG_LIST_LEN = 8.0;
+const double PREF_AVG_LIST_LEN = 2.0;
 // 2^24 is max size, like StringTable.
 const size_t END_SIZE = 24;
 // If a chain gets to 100 something might be wrong
@@ -506,6 +503,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   SymbolTableGet stg;
   bool clean_hint = false;
   bool rehash_warning = false;
+  bool inserted = false;
   Thread* current = Thread::current();
   Symbol* sym;
 
@@ -517,6 +515,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
 
   do {
     if (_local_table->insert(current, lookup, *tmp, &rehash_warning, &clean_hint)) {
+      inserted = true;
       if (_local_table->get(current, lookup, stg, &rehash_warning)) {
         sym = stg.get_res_sym();
         // The get adds one to ref count, but we inserted with our ref already included.
@@ -542,6 +541,9 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   if (clean_hint) {
     mark_has_items_to_clean();
     check_concurrent_work();
+  } else if (inserted && should_grow()) {
+    // Live symbols can require growth even without a cleanup hint.
+    trigger_cleanup();
   }
 
   assert((sym == nullptr) || sym->refcount() != 0, "found dead symbol");

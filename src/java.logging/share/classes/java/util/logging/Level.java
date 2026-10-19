@@ -646,22 +646,26 @@ public class Level implements java.io.Serializable {
         static synchronized Optional<Level> findByName(String name,
                 Function<KnownLevel, Optional<Level>> selector) {
             purge();
-            return nameToLevels.getOrDefault(name, Collections.emptyList())
-                        .stream()
-                        .map(selector)
-                        .flatMap(Optional::stream)
-                        .findFirst();
+            for (KnownLevel level : nameToLevels.getOrDefault(name, Collections.emptyList())) {
+                Optional<Level> selected = selector.apply(level);
+                if (selected.isPresent()) {
+                    return selected;
+                }
+            }
+            return Optional.empty();
         }
 
         // Returns a KnownLevel with the given value.
         static synchronized Optional<Level> findByValue(int value,
                 Function<KnownLevel, Optional<Level>> selector) {
             purge();
-            return intToLevels.getOrDefault(value, Collections.emptyList())
-                        .stream()
-                        .map(selector)
-                        .flatMap(Optional::stream)
-                        .findFirst();
+            for (KnownLevel level : intToLevels.getOrDefault(value, Collections.emptyList())) {
+                Optional<Level> selected = selector.apply(level);
+                if (selected.isPresent()) {
+                    return selected;
+                }
+            }
+            return Optional.empty();
         }
 
         // Returns a KnownLevel with the given localized name matching

@@ -31,24 +31,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 class MethodHandleFloatFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
-    static FieldAccessorImpl fieldAccessor(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly) {
+    static FieldAccessorImpl fieldAccessor(Field field, MethodHandle getter, boolean isReadOnly) {
         boolean isStatic = Modifier.isStatic(field.getModifiers());
         if (isStatic) {
             getter = getter.asType(MethodType.methodType(float.class));
-            if (setter != null) {
-                setter = setter.asType(MethodType.methodType(void.class, float.class));
-            }
         } else {
             getter = getter.asType(MethodType.methodType(float.class, Object.class));
-            if (setter != null) {
-                setter = setter.asType(MethodType.methodType(void.class, Object.class, float.class));
-            }
         }
-        return new MethodHandleFloatFieldAccessorImpl(field, getter, setter, isReadOnly, isStatic);
+        return new MethodHandleFloatFieldAccessorImpl(field, getter, isReadOnly, isStatic);
     }
 
-    MethodHandleFloatFieldAccessorImpl(Field field, MethodHandle getter, MethodHandle setter, boolean isReadOnly, boolean isStatic) {
-        super(field, getter, setter, isReadOnly, isStatic);
+    MethodHandleFloatFieldAccessorImpl(Field field, MethodHandle getter, boolean isReadOnly, boolean isStatic) {
+        super(field, getter, isReadOnly, isStatic);
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
@@ -177,6 +171,7 @@ class MethodHandleFloatFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             ensureObj(obj);     // throw NPE if obj is null on instance field
             throwFinalFieldIllegalAccessException(f);
         }
+        MethodHandle setter = setter();
         try {
             if (isStatic()) {
                 setter.invokeExact(f);

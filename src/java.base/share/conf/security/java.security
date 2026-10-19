@@ -156,7 +156,9 @@ security.provider.tbd=SunPKCS11
 #
 # On Unix-like systems (for example, Linux/MacOS), the
 # "NativePRNG", "SHA1PRNG" and "DRBG" implementations obtains seed data from
-# special device files such as file:/dev/random.
+# special device files such as file:/dev/random. If the source is
+# file:/dev/random or file:/dev/urandom, "NativePRNG" obtains it from the
+# random number generator of the operating system instead.
 #
 # On Windows systems, specifying the URLs "file:/dev/random" or
 # "file:/dev/urandom" will enable the native Microsoft CryptoAPI seeding
@@ -167,9 +169,8 @@ security.provider.tbd=SunPKCS11
 # exception occurs while accessing the specified URL:
 #
 #     NativePRNG:
-#         a default value of /dev/random will be used.  If neither
-#         are available, the implementation will be disabled.
-#         "file" is the only currently supported protocol type.
+#         the random number generator of the operating system will be
+#         used.  "file" is the only currently supported protocol type.
 #
 #     SHA1PRNG and DRBG:
 #         the traditional system/thread activity algorithm will be used.

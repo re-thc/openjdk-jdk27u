@@ -1,0 +1,299 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test id=c2-g1
+ * @summary An owner that fast-locked an object finds the monitor another thread
+ *          inflated, after GC movement, recursion, exceptions and deflation
+ * @requires vm.compiler2.enabled & vm.gc.G1
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:GuaranteedAsyncDeflationInterval=1 -XX:PerMethodTrapLimit=0
+ *                   -XX:+UseG1GC -XX:-BackgroundCompilation ExitAfterContendedInflation 4
+ */
+
+/*
+ * @test id=c2-serial-eight-byte-headers
+ * @requires vm.bits == "64" & vm.compiler2.enabled & vm.gc.Serial
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:GuaranteedAsyncDeflationInterval=1 -XX:PerMethodTrapLimit=0
+ *                   -XX:+UseSerialGC -XX:-UseFourByteObjectHeaders -XX:-BackgroundCompilation
+ *                   ExitAfterContendedInflation 4
+ */
+
+/*
+ * @test id=c2-serial
+ * @requires vm.compiler2.enabled & vm.gc.Serial
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:GuaranteedAsyncDeflationInterval=1 -XX:PerMethodTrapLimit=0
+ *                   -XX:+UseSerialGC -XX:-BackgroundCompilation ExitAfterContendedInflation 4
+ */
+
+/*
+ * @test id=c1-g1
+ * @requires vm.compiler1.enabled & vm.gc.G1
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:GuaranteedAsyncDeflationInterval=1 -XX:PerMethodTrapLimit=0
+ *                   -XX:+UseG1GC -XX:-BackgroundCompilation ExitAfterContendedInflation 1
+ */
+
+/*
+ * @test id=int-g1
+ * @requires vm.gc.G1
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:GuaranteedAsyncDeflationInterval=1
+ *                   -XX:+UseG1GC -Xint ExitAfterContendedInflation 0
+ */
+
+import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
+
+public class ExitAfterContendedInflation {
+    static final WhiteBox WB = WhiteBox.getWhiteBox();
+
+    static final int RECURSIVE = 1;
+    static final int EXCEPTION = 2;
+    static final int MOVE = 4;
+    static final int HASH_FIRST = 8;
+    static final int MOVE_FIRST = 16;
+    static final int ALL = 32;
+    static final int ROUNDS = 3;
+
+    static final long WAIT_NANOS = TimeUnit.SECONDS.toNanos(60);
+    static final long JOIN_MILLIS = TimeUnit.SECONDS.toMillis(60);
+
+    // A plain field in the same eight bytes as a four-byte header, written
+    // while the lock is held.
+    static final class Holder {
+        boolean inCall;
+        Object a;
+        Object b;
+    }
+
+    static volatile Holder target;
+    static volatile long requests;
+    static volatile boolean done;
+    static volatile long entries;
+    static final AtomicReference<Throwable> contenderFailure = new AtomicReference<>();
+
+    static void checkContender() {
+        Throwable t = contenderFailure.get();
+        if (t != null) {
+            throw new RuntimeException("Contender failed", t);
+        }
+    }
+
+    static void awaitInflatedAndBlocked(Holder o, Thread contender) {
+        target = o;
+        requests++;
+        long deadline = System.nanoTime() + WAIT_NANOS;
+        while (!(WB.isMonitorInflated(o) && contender.getState() == Thread.State.BLOCKED)) {
+            checkContender();
+            if (System.nanoTime() > deadline) {
+                throw new RuntimeException("Contender did not inflate the monitor: " + contender.getState());
+            }
+            Thread.onSpinWait();
+        }
+    }
+
+    static void inner(Holder o, int flags, Thread contender) {
+        synchronized (o) {
+            o.inCall = true;
+            awaitInflatedAndBlocked(o, contender);
+            if ((flags & MOVE) != 0) {
+                WB.youngGC();
+            }
+            o.inCall = false;
+            if ((flags & EXCEPTION) != 0) {
+                throw new IllegalStateException("expected");
+            }
+        }
+    }
+
+    // The exit of this region must find the monitor that the contender
+    // inserted into the monitor table while this thread held a fast lock.
+    // The monitor cannot be deflated before that exit: it stays anonymously
+    // owned until this thread exits or takes over ownership.
+    static void owner(Holder o, int flags, Thread contender) {
+        synchronized (o) {
+            if ((flags & RECURSIVE) != 0) {
+                try {
+                    inner(o, flags, contender);
+                } catch (IllegalStateException e) {
+                    // expected
+                }
+                Asserts.assertTrue(Thread.holdsLock(o), "outer lock must still be held");
+            } else {
+                o.inCall = true;
+                awaitInflatedAndBlocked(o, contender);
+                if ((flags & MOVE) != 0) {
+                    WB.youngGC();
+                }
+                o.inCall = false;
+                if ((flags & EXCEPTION) != 0) {
+                    throw new IllegalStateException("expected");
+                }
+            }
+        }
+    }
+
+    static void runOwner(Holder o, int flags, Thread contender) {
+        try {
+            owner(o, flags, contender);
+        } catch (IllegalStateException e) {
+            if ((flags & EXCEPTION) == 0 || (flags & RECURSIVE) != 0) {
+                throw e;
+            }
+        }
+    }
+
+    static void compile(Method m, int level) {
+        if (level == 0 || WB.getMethodCompilationLevel(m) == level) {
+            return;
+        }
+        Asserts.assertTrue(WB.enqueueMethodForCompilation(m, level), "Could not enqueue " + m);
+        Asserts.assertEQ(WB.getMethodCompilationLevel(m), level, "Unexpected compilation level for " + m);
+    }
+
+    static void contend() {
+        try {
+            long served = 0;
+            while (!done) {
+                if (requests != served) {
+                    served = requests;
+                    Holder o = target;
+                    synchronized (o) {
+                        if (o.inCall) {
+                            throw new RuntimeException("Entered while the owner held the lock");
+                        }
+                        entries++;
+                    }
+                } else {
+                    Thread.onSpinWait();
+                }
+            }
+        } catch (Throwable t) {
+            contenderFailure.compareAndSet(null, t);
+        }
+    }
+
+    // Preserve an owner exception if contender teardown also fails.
+    static void stopContender(Thread contender, Throwable inFlight) throws InterruptedException {
+        done = true;
+        contender.join(JOIN_MILLIS);
+        if (contender.isAlive()) {
+            RuntimeException e = new RuntimeException("Contender did not stop: " + contender.getState());
+            if (inFlight == null) {
+                throw e;
+            }
+            inFlight.addSuppressed(e);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int level = Integer.parseInt(args[0]);
+        Class<?> c = ExitAfterContendedInflation.class;
+        Method owner = c.getDeclaredMethod("owner", Holder.class, int.class, Thread.class);
+        Method inner = c.getDeclaredMethod("inner", Holder.class, int.class, Thread.class);
+        // Load the classes used on the exceptional paths before compiling.
+        new IllegalStateException().fillInStackTrace();
+        new Holder();
+
+        Thread contender = new Thread(ExitAfterContendedInflation::contend, "contender");
+        contender.setDaemon(true);
+        long expected = 0;
+        Throwable inFlight = null;
+        try {
+            contender.start();
+            for (int flags = 0; flags < ALL; flags++) {
+                Holder o = new Holder();
+                int hash = 0;
+                if ((flags & HASH_FIRST) != 0) {
+                    hash = System.identityHashCode(o);
+                }
+                if ((flags & MOVE_FIRST) != 0) {
+                    // Move the object before it is locked. With four-byte headers,
+                    // an object hashed before the move keeps its address-derived
+                    // hash in an expanded hash slot, so inflation looks the monitor
+                    // up under that stored hash. An object not yet hashed gets a
+                    // hash derived from its new address when it is inflated.
+                    WB.youngGC();
+                }
+                for (int round = 0; round < ROUNDS; round++) {
+                    Asserts.assertFalse(WB.isMonitorInflated(o), "flags=" + flags + " round=" + round);
+                    compile(inner, level);
+                    compile(owner, level);
+                    runOwner(o, flags, contender);
+                    expected++;
+                    long deadline = System.nanoTime() + WAIT_NANOS;
+                    while (entries != expected) {
+                        checkContender();
+                        if (System.nanoTime() > deadline) {
+                            throw new RuntimeException("Contender did not enter: flags=" + flags);
+                        }
+                        Thread.onSpinWait();
+                    }
+                    if ((flags & HASH_FIRST) != 0) {
+                        Asserts.assertEQ(System.identityHashCode(o), hash, "Changed identity hash, flags=" + flags);
+                    }
+                    // Wait for deflation, so that the next inflation of the same
+                    // object inserts a new monitor under the same hash.
+                    long deflationDeadline = System.nanoTime() + WAIT_NANOS;
+                    while (WB.isMonitorInflated(o)) {
+                        checkContender();
+                        if (System.nanoTime() > deflationDeadline) {
+                            throw new RuntimeException("Monitor was not deflated: flags=" + flags);
+                        }
+                        Thread.onSpinWait();
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            inFlight = t;
+            throw t;
+        } finally {
+            stopContender(contender, inFlight);
+        }
+        checkContender();
+        Asserts.assertEQ(expected, (long) ALL * ROUNDS, "Unexpected number of exits");
+        Asserts.assertEQ(entries, expected, "Unexpected number of contended entries");
+        System.out.println("Verified " + expected + " exits after contended inflation");
+    }
+}

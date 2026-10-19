@@ -28,6 +28,7 @@ package jdk.internal.access;
 import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
@@ -43,6 +44,7 @@ public interface JavaUtilZipFileAccess {
     public Enumeration<JarEntry> entries(ZipFile zip);
     public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
+    public Set<String> entryDirectories(ZipFile zip);
     public void setExternalFileAttributes(ZipEntry ze, int externalFileAttributes);
     public int getExternalFileAttributes(ZipEntry ze);
 }

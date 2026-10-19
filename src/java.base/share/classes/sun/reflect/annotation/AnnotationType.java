@@ -82,6 +82,12 @@ public class AnnotationType {
         AnnotationType result = jla.getAnnotationType(annotationClass); // volatile read
         if (result == null) {
             result = new AnnotationType(annotationClass);
+            // Retry defaults with constants unresolved during enum initialization.
+            for (Object defaultValue : result.memberDefaults.values()) {
+                if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(defaultValue)) {
+                    return result;
+                }
+            }
             // try to CAS the AnnotationType: null -> result
             if (!jla.casAnnotationType(annotationClass, null, result)) {
                 // somebody was quicker -> read it's result
@@ -123,7 +129,13 @@ public class AnnotationType {
                 memberTypes.put(name, invocationHandlerReturnType(type));
                 members.put(name, method);
 
-                Object defaultValue = method.getDefaultValue();
+                // Keep temporary enum failures uncached; preserve getDefaultValue errors otherwise.
+                Object defaultValue =
+                    SharedSecrets.getJavaLangReflectAccess().parseDefaultValue(method);
+                if (defaultValue instanceof ExceptionProxy
+                        && !AnnotationInvocationHandler.hasUnresolvedEnumConstant(defaultValue)) {
+                    defaultValue = method.getDefaultValue();
+                }
                 if (defaultValue != null) {
                     memberDefaults.put(name, defaultValue);
                 }

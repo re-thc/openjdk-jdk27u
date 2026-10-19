@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,10 +339,14 @@ void AOTMetaspace::initialize_for_static_dump() {
   }
 }
 
-void AOTMetaspace::open_output_mapinfo() {
+void AOTMetaspace::create_output_mapinfo() {
   const char* static_archive = CDSConfig::output_archive_path();
   assert(static_archive != nullptr, "sanity");
   _output_mapinfo = new FileMapInfo(static_archive, true);
+}
+
+void AOTMetaspace::open_output_mapinfo() {
+  create_output_mapinfo();
   _output_mapinfo->open_as_output();
 }
 
@@ -1200,7 +1205,11 @@ void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS
     if (CDSConfig::is_dumping_final_static_archive()) {
       FileMapInfo::free_current_info(); // FIXME: should not free current info
     }
-    open_output_mapinfo();
+    if (CDSConfig::is_dumping_classic_static_archive()) {
+      create_output_mapinfo();
+    } else {
+      open_output_mapinfo();
+    }
   }
 
   VM_PopulateDumpSharedSpace op(builder, _output_mapinfo);
@@ -1240,6 +1249,10 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder,
   // relocate the data so that it can be mapped to AOTMetaspace::requested_base_address()
   // without runtime relocation.
   builder->relocate_to_requested();
+  // Classic CDS must finish preparation before removing or creating its output.
+  if (CDSConfig::is_dumping_classic_static_archive() && !map_info->is_open()) {
+    map_info->open_as_output();
+  }
   if (!map_info->is_open()) {
     return false;
   }
