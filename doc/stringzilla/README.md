@@ -35,7 +35,7 @@ GCC/Clang use portable scalar loads for unaligned byte-array offsets.
 
 Sizes refer to the logical search range after public API normalization. UTF-16
 helpers check the physical array ends before unchecked code-unit access.
-The shared reverse dispatcher sends prefixes below 32 source bytes directly to
+The shared same-coder reverse dispatcher sends prefixes below 32 source bytes directly to
 the original Java helpers, without initializing `StringZilla`.
 
 Compiled substring search requires 256 source bytes before native dispatch;

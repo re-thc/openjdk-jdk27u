@@ -69,12 +69,18 @@ public class StringZillaTailSearch {
             case "LATIN_FIRST_MISS":
             case "LATIN_MIDDLE_MISS":
             case "LATIN_FIFTH_FROM_END_MISS":
+            case "LATIN_SIXTH_FROM_END_MISS":
+            case "LATIN_SEVENTH_FROM_END_MISS":
+            case "LATIN_EIGHTH_FROM_END_MISS":
             case "LATIN_NINTH_FROM_END_MISS":
                 repeated = 'a';
                 mismatch = switch (shape) {
                     case "LATIN_FIRST_MISS" -> 0;
                     case "LATIN_MIDDLE_MISS" -> needleLength / 2;
                     case "LATIN_FIFTH_FROM_END_MISS" -> needleLength - 5;
+                    case "LATIN_SIXTH_FROM_END_MISS" -> needleLength - 6;
+                    case "LATIN_SEVENTH_FROM_END_MISS" -> needleLength - 7;
+                    case "LATIN_EIGHTH_FROM_END_MISS" -> needleLength - 8;
                     default -> needleLength - 9;
                 };
                 if (mismatch < 0 || mismatch >= needleLength - 1) {
