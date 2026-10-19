@@ -1959,7 +1959,8 @@ u2 ConstantPool::SymbolHash::symbol_to_value(const Symbol* sym) {
 
 // SymbolHash is used to find a constant pool index from a string.
 // This function fills in SymbolHashs, one for utf8s and one for
-// class names, returns size of the cpool raw bytes.
+// class names, returns size of the cpool raw bytes. classmap may be null when
+// only the constant-pool bytes are being reconstituted.
 jint ConstantPool::hash_entries_to(SymbolHash *symmap,
                                    SymbolHash *classmap) {
   jint size = 0;
@@ -1977,8 +1978,10 @@ jint ConstantPool::hash_entries_to(SymbolHash *symmap,
       case JVM_CONSTANT_Class:
       case JVM_CONSTANT_UnresolvedClass:
       case JVM_CONSTANT_UnresolvedClassInError: {
-        Symbol* sym = klass_name_at(idx);
-        classmap->add_if_absent(sym, idx);
+        if (classmap != nullptr) {
+          Symbol* sym = klass_name_at(idx);
+          classmap->add_if_absent(sym, idx);
+        }
         break;
       }
       case JVM_CONSTANT_Long:

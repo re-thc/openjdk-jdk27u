@@ -47,13 +47,16 @@ class JvmtiConstantPoolReconstituter : public StackObj {
   }
 
   u2 class_symbol_to_cpool_index(Symbol* sym) {
+    assert(_classmap != nullptr, "class indexes are needed only for class-file reconstruction");
     return _classmap->symbol_to_value(sym);
   }
 
  public:
   // Calls to this constructor must be proceeded by a ResourceMark
   // and a HandleMark
-  JvmtiConstantPoolReconstituter(InstanceKlass* ik);
+  // Copying constant-pool bytes needs only UTF8 indexes. Full class-file
+  // reconstruction also needs class indexes (this_class, super_class, interfaces).
+  JvmtiConstantPoolReconstituter(InstanceKlass* ik, bool need_class_map = false);
 
   ~JvmtiConstantPoolReconstituter() {
     if (_symmap != nullptr) {
@@ -133,7 +136,7 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   // Calls to this constructor must be proceeded by a ResourceMark
   // and a HandleMark
   JvmtiClassFileReconstituter(InstanceKlass* ik) :
-                                      JvmtiConstantPoolReconstituter(ik) {
+                                      JvmtiConstantPoolReconstituter(ik, true) {
     _buffer_size = initial_buffer_size;
     _buffer = _buffer_ptr = NEW_RESOURCE_ARRAY(u1, _buffer_size);
     _thread = Thread::current();
