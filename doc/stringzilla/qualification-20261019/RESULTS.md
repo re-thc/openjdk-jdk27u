@@ -225,9 +225,14 @@ The shipped current Windows and ARM `StringLatin1` instruction listings match
 the measured Linux image, including the final range guard. No duplicate native
 run or additional performance campaign is needed.
 
-Ordinary CI's Prepare and both x64 builds pass. ARM release is compiling,
-ARM debug awaits a runner, and the twelve x64 tier1 jobs are queued. Those
-existing jobs remain the only unfinished qualification gate.
+Ordinary CI's Prepare and all four release/fastdebug builds on x64 and ARM
+pass. The [build receipt](ci7048-builds-verified.json) binds their checkout,
+bundle/profile checks and complete retained logs. The
+[tier1 receipt](ci7048-test-summary.json) records the current observation and
+collected test counts, retaining skipped descriptions as well as passes.
+Four of the twenty-four groups pass at this observation; the remaining groups
+are pending in the same run. Those existing tier1 jobs are the only unfinished
+qualification gate. The live run link provides subsequent status.
 
 ## Decision
 
