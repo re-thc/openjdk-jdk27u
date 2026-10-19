@@ -1,0 +1,47 @@
+name: Inspect exact final SKY JMH call graphs
+on:
+  push:
+    branches: [codex/stringzilla-final-sky-call-graphs]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnostics:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    container:
+      image: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+    env:
+      EXPECTED_CONTAINER_IMAGE: ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install runtime and diagnostic-reader tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq python3 gh ca-certificates libstdc++6 binutils git
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - name: Check diagnostic parser without Java
+        run: |
+          python3 -m py_compile .github/scripts/stringzilla-final-sky-jit.py .github/scripts/stringzilla-final-sky-jit-test.py
+          python3 .github/scripts/stringzilla-final-sky-jit-test.py .github/scripts/stringzilla-final-sky-jit.py
+      - name: Reuse complete images and saved classes for exact C2 witnesses
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/stringzilla-final-sky-jit.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-final-sky-jit-compact-${{ github.sha }}
+          path: sky-jit-output/compact
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-final-sky-jit-original-private-${{ github.sha }}
+          path: sky-jit-output/private
+          if-no-files-found: error
+          retention-days: 30
