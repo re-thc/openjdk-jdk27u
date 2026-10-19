@@ -67,12 +67,14 @@ class SingleHostTests(unittest.TestCase):
                 for number, name in enumerate(("Publish immutable single-host CPU fact",
                     "Measure missing SKY interpreter controls",
                     "Retain completed SKY interpreter raw results"), 1)]}
+        self.prior = json.loads((MODULE_PATH.parent / "stringzilla-single-sky-prior-attempt-zero.json").read_text())
         self.inputs = {"schema": "stringzilla-single-sky-preparation-v1", **self.ctx,
             "source": m.SOURCE, "source_tree": m.SOURCE_TREE, "base": m.BASE,
             "module_sha256": m.sha(MODULE_PATH), "tiers": ["interpreter"],
             "missing_proof_sha256": m.MISSING_PROOF_HASH, "helper_sha256": m.HELPER_HASH,
             "manifest_sha256": m.MANIFEST_HASH, "python_auth_tests_passed": True,
-            "independent_scope_model_passed": True, "producer_run": m.PAIR_RUN,
+            "independent_scope_model_passed": True, "prior_attempt_zero_sha256": m.PRIOR_ZERO_SHA256,
+            "prior_attempt_zero": self.prior, "producer_run": m.PAIR_RUN,
             "producer_head": m.PAIR_HEAD, "pair_artifact_id": m.PAIR_ID,
             "pair_artifact_digest": m.PAIR_DIGEST, "driver_sha256": m.sha(self.driver),
             "image_hashes": {"original": "1" * 64, "fork": "2" * 64}}
@@ -140,6 +142,126 @@ class SingleHostTests(unittest.TestCase):
         files = {**self.files, "single-host-binding.json": raw(self.record if record is None else record)}
         with zipfile.ZipFile(io.BytesIO(pack(files))) as bundle:
             return m.verify_tier_artifact(bundle, "interpreter", self.job if job is None else job)
+
+    def test_previous_attempt_requires_fresh_terminal_zero_api_and_pinned_proof(self):
+        self.patch(m, "MISSING_TIERS", new=("interpreter", "c1"))
+        path = "actions/runs/" + str(m.PRIOR_ZERO_RUN)
+        configuration = {"id": 999, "name": "Authenticate exact missing-only scope and original complete pair",
+            "status": "completed", "conclusion": "success"}
+        worker = {**copy.deepcopy(self.prior["worker"])}
+        collector = {**self.prior["collector"],
+            "name": "Qualify exact completed missing SKY controls and preserve failed parent status"}
+        jobs = [configuration, worker, collector]
+        for job in jobs:
+            job.update(run_id=m.PRIOR_ZERO_RUN, head_sha=m.PRIOR_ZERO_HEAD, run_attempt=1)
+        expected = self.prior["artifacts"][0]
+        artifact = {**{key: expected[key] for key in ("id", "name", "digest", "expired")},
+            "size_in_bytes": expected["size"],
+            "workflow_run": {"id": m.PRIOR_ZERO_RUN, "head_sha": m.PRIOR_ZERO_HEAD}}
+        run = {"id": m.PRIOR_ZERO_RUN, "head_sha": m.PRIOR_ZERO_HEAD,
+               "run_attempt": 1, "status": "completed", "conclusion": "failure"}
+        self.api_objects.update({path: run, path + "/jobs?filter=all&per_page=100":
+            {"total_count": 3, "jobs": jobs}, path + "/artifacts?per_page=100":
+            {"total_count": 1, "artifacts": [artifact]}})
+        self.assertEqual(m.verify_prior_attempt_zero(self.prior), self.prior)
+        for obj, field, value in ((run, "status", "in_progress"), (run, "run_attempt", 2),
+                (run, "head_sha", "e" * 40), (worker, "conclusion", "success"),
+                (worker, "status", "queued"), (worker, "run_attempt", 2),
+                (worker, "id", 1), (collector, "conclusion", "success"),
+                (collector, "status", "in_progress"), (configuration, "conclusion", "failure"),
+                (artifact, "digest", "sha256:" + "0" * 64), (artifact, "expired", True),
+                (artifact, "size_in_bytes", 0), (artifact["workflow_run"], "head_sha", "e" * 40)):
+            previous = obj[field]
+            obj[field] = value
+            self.reject(m.verify_prior_attempt_zero, self.prior)
+            obj[field] = previous
+        step = next(step for step in worker["steps"] if step["name"] == "Measure missing SKY c1 controls")
+        step["conclusion"] = "success"
+        self.reject(m.verify_prior_attempt_zero, self.prior)
+        step["conclusion"] = "skipped"
+        jobs.append({**collector})
+        self.reject(m.verify_prior_attempt_zero, self.prior)
+        jobs.pop()
+        self.api_objects[path + "/artifacts?per_page=100"]["artifacts"].append(
+            {"name": "stringzilla-final-results-avx512-c1-unexpected"})
+        self.reject(m.verify_prior_attempt_zero, self.prior)
+        changed = {**self.prior, "timed_records": 1}
+        self.reject(m.verify_prior_attempt_zero, changed)
+        changed_inputs = {**self.inputs, "tiers": ["interpreter", "c1"], "prior_attempt_zero_sha256": "0" * 64}
+        self.reject(m.verify_inputs, changed_inputs)
+
+    def test_probe_rechecks_previous_zero_before_current_worker_or_cpu(self):
+        with mock.patch.dict(os.environ, SOURCE=m.SOURCE, SOURCE_TREE=m.SOURCE_TREE), \
+             mock.patch.object(m, "FOLDER", self.folder / "new-probe"), \
+             mock.patch.object(m, "preparation", return_value=(self.inputs, {})), \
+             mock.patch.object(m, "verify_prior_attempt_zero", side_effect=AssertionError("not zero")), \
+             mock.patch.object(m, "current_job") as job, mock.patch.object(m, "host") as host:
+            self.reject(m.probe)
+            job.assert_not_called()
+            host.assert_not_called()
+
+    def test_upload_digest_formats_are_exact_and_fail_closed(self):
+        digest = "a" * 64
+        self.assertEqual(m.canonical_artifact_digest(digest), "sha256:" + digest)
+        self.assertEqual(m.canonical_artifact_digest("sha256:" + digest), "sha256:" + digest)
+        for value in ("", "a" * 63, "a" * 65, "A" * 64, "sha256:" + "A" * 64,
+                "SHA256:" + digest, "sha512:" + digest, "sha256:sha256:" + digest,
+                " " + digest, digest + "\n", None, 0, True, [], {}):
+            with self.subTest(value=value):
+                self.reject(m.canonical_artifact_digest, value)
+
+    def test_actual_preparation_and_fact_accept_bare_and_prefixed_upload_digests(self):
+        prep = self.api_objects["actions/artifacts/301"]
+        artifact = self.api_objects["actions/artifacts/300"]
+        m.write(self.folder / "lease.json", self.fact)
+        live = {**self.job, "status": "in_progress", "conclusion": None}
+        with mock.patch.object(m, "current_job", return_value=live), \
+             mock.patch.object(m, "verify_host"):
+            for bare in (False, True):
+                with self.subTest(bare=bare), mock.patch.dict(os.environ,
+                        PREPARATION_ID="301", PREPARATION_DIGEST=prep["digest"][7:] if bare else prep["digest"],
+                        FACT_ARTIFACT_ID="300", FACT_ARTIFACT_DIGEST=artifact["digest"][7:] if bare else artifact["digest"]):
+                    inputs, preparation = m.preparation(self.folder)
+                    self.assertEqual(inputs, self.inputs)
+                    self.assertEqual(preparation["artifact_digest"], prep["digest"])
+                    fact, binding, job = m.own_fact()
+                    self.assertEqual(fact, self.fact)
+                    self.assertEqual(binding, self.binding)
+                    self.assertEqual(job, live)
+            for supplied in ("0" * 64, "sha256:" + "0" * 64, "bad", "a" * 63, "a" * 65):
+                with self.subTest(invalid=supplied), mock.patch.dict(os.environ,
+                        PREPARATION_ID="301", PREPARATION_DIGEST=supplied,
+                        FACT_ARTIFACT_ID="300", FACT_ARTIFACT_DIGEST=supplied):
+                    self.reject(m.preparation, self.folder)
+                    self.reject(m.own_fact)
+
+    def test_actual_retention_accepts_upload_formats_and_keeps_api_digest(self):
+        artifact = self.artifact(302, "stringzilla-final-results-avx512-interpreter-" + self.ctx["head"] + "-attempt1", {})
+        for bare in (False, True):
+            with self.subTest(bare=bare), tempfile.TemporaryDirectory(dir=self.folder) as temporary:
+                previous = Path.cwd()
+                os.chdir(temporary)
+                try:
+                    out = Path("perf-output")
+                    out.mkdir()
+                    m.write(out / "single-host-binding.json", self.record)
+                    for name in ("perf-images", "perf-image-archives"):
+                        Path(name).mkdir()
+                    with mock.patch.dict(os.environ, RESULT_ARTIFACT_ID="302",
+                            RESULT_ARTIFACT_DIGEST=artifact["digest"][7:] if bare else artifact["digest"]):
+                        m.retained("interpreter")
+                    receipt = json.loads((self.folder / "interpreter-retained.json").read_text())
+                    self.assertEqual(receipt["artifact_digest"], artifact["digest"])
+                    self.assertTrue(Path("perf-retained/interpreter/single-host-binding.json").is_file())
+                    self.assertFalse(Path("perf-output").exists())
+                finally:
+                    os.chdir(previous)
+        for supplied in ("0" * 64, "sha256:" + "0" * 64, "bad", "a" * 63, "a" * 65):
+            with self.subTest(invalid=supplied), mock.patch.dict(os.environ,
+                    RESULT_ARTIFACT_ID="302", RESULT_ARTIFACT_DIGEST=supplied), \
+                 mock.patch.object(m.shutil, "rmtree") as remove:
+                self.reject(m.retained, "interpreter")
+                remove.assert_not_called()
 
     def test_actual_fact_rejects_identity_cpu_and_context_mutations(self):
         m.verify_fact(self.fact, self.job, self.ctx)

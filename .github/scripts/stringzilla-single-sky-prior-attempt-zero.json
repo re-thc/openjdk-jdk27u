@@ -1,0 +1,188 @@
+{
+  "schema": "stringzilla-single-sky-infrastructure-zero-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "run_id": 39187437768,
+  "head": "4176f25bfc42a553d9192328d726b233c23b552f",
+  "attempt": 1,
+  "missing_tiers": [
+    "interpreter",
+    "c1"
+  ],
+  "triplets": 262,
+  "records": 786,
+  "timed_records": 0,
+  "worker": {
+    "id": 117856984856,
+    "name": "Single host missing SKY controls",
+    "status": "completed",
+    "conclusion": "failure",
+    "started_at": "2026-10-19T03:13:49Z",
+    "completed_at": "2026-10-19T03:14:06Z",
+    "steps": [
+      {
+        "name": "Set up job",
+        "number": 1,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Initialize containers",
+        "number": 2,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Install only physical eligibility and artifact API dependencies",
+        "number": 3,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Authenticate actual physical worker before compiler or image restoration",
+        "number": 4,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "name": "Publish immutable single-host CPU fact",
+        "number": 5,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Eligible worker installs exact native prerequisites",
+        "number": 6,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Checkout unchanged candidate runtime and frozen harness",
+        "number": 7,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Checkout original source identity",
+        "number": 8,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Checkout exact auxiliary guards and projections",
+        "number": 9,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Persist exact checkout ownership exceptions for container subprocesses",
+        "number": 10,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Measure missing SKY interpreter controls",
+        "number": 11,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Retain completed SKY interpreter raw results",
+        "number": 12,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Release interpreter scratch only after durable per-tier retention",
+        "number": 13,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Measure missing SKY c1 controls",
+        "number": 14,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Retain completed SKY c1 raw results",
+        "number": 15,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Release c1 scratch only after durable per-tier retention",
+        "number": 16,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Measure missing SKY c2 controls",
+        "number": 17,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Retain completed SKY c2 raw results",
+        "number": 18,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Release c2 scratch only after durable per-tier retention",
+        "number": 19,
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Retain physical unavailable, infrastructure and partial evidence without retry",
+        "number": 20,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Stop containers",
+        "number": 40,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "number": 41,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "failure": {
+    "step": "Authenticate actual physical worker before compiler or image restoration",
+    "module_blob": "663ce760368e9bfb3e1fb01c5106b0aaddc559e9",
+    "line": 339,
+    "reason": "API artifact digest includes sha256: prefix; upload-artifact output is bare lower-case hex. Exact equality rejects before physical CPU fact, checkout, image restore or JVM.",
+    "expected_artifact_digest": "sha256:33a7fbe383613d531a633a41dfa24179f2d0fd60f14e1631212b60614b028353",
+    "upload_output_digest": "33a7fbe383613d531a633a41dfa24179f2d0fd60f14e1631212b60614b028353"
+  },
+  "artifacts": [
+    {
+      "id": 12159505454,
+      "name": "stringzilla-single-sky-preparation-4176f25bfc42a553d9192328d726b233c23b552f",
+      "digest": "sha256:33a7fbe383613d531a633a41dfa24179f2d0fd60f14e1631212b60614b028353",
+      "size": 58020,
+      "expired": false
+    }
+  ],
+  "collector": {
+    "id": 117871808510,
+    "status": "completed",
+    "conclusion": "skipped"
+  },
+  "log_sha256": "91a234a70d804efa2d95cedbd41af1061a96c88bd1caa1a048c47d476c55d372",
+  "marker_counts": {
+    "STRINGZILLA_RESULT ": 0,
+    "STRINGZILLA_PROVENANCE ": 0,
+    "STRINGZILLA_COMPLETE ": 0,
+    "STRINGZILLA_SINGLE_HOST_FACT ": 0
+  },
+  "observed_at": "2026-10-19T03:25:00Z",
+  "scope": "Only this terminal-zero I/C1 attempt may be retried after reviewed digest-only tooling fix. All current normal1500 and completed SKY C2 remain separate."
+}

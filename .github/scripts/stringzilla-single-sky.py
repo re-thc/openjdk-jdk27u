@@ -36,12 +36,15 @@ PAIR_ID = 12151804060
 PAIR_DIGEST = "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f"
 VALIDATION_ID = 12152835042
 VALIDATION_DIGEST = "sha256:29ae506c6ccb65a087f78e30fcf3a74adfce710e8201e274326655ade01bef56"
+PRIOR_ZERO_RUN = 39187437768
+PRIOR_ZERO_HEAD = "4176f25bfc42a553d9192328d726b233c23b552f"
+PRIOR_ZERO_SHA256 = "7f44243c287516b68d63770e70c8847c53504e19b4c0f08e6a3201231c249040"
 WORKER = "Single host missing SKY controls"
 HERE = Path(__file__).resolve().parent
 ROOT = Path.cwd()
 FOLDER = Path(os.environ["RUNNER_TEMP"]) / "stringzilla-single-sky"
 COUNTS = {"interpreter": 136, "c1": 126, "c2": 124}
-GUARD_TEST_HASH = "f985e76b3a24cc59ed79b89c10d2f838e7222460e5314ce9381c2eb035f686cc"
+GUARD_TEST_HASH = "1bfb0128872decb5218c8cf9dd935e7ccb84a0dce8826e56604e3c8fa578edab"
 MODEL_HASH = "02f3e3d64d5f19e036e98959b4ec576cc20fb614aa3967af801c421af603f7f5"
 COLLECTOR_TEST_HASH = "a0ee651404f0f9b44dccc5e117fddff86657f4a6fa6fcdcb5bd958470e1b90ae"
 
@@ -52,6 +55,11 @@ def sha(path):
 
 def raw_sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def canonical_artifact_digest(value):
+    assert isinstance(value, str) and re.fullmatch(r"(?:sha256:)?[a-f0-9]{64}", value), "Malformed artifact SHA-256"
+    return value if value.startswith("sha256:") else "sha256:" + value
 
 
 def write(path, value):
@@ -327,16 +335,55 @@ def verify_inputs(value, ctx):
     assert value["pair_artifact_id"] == PAIR_ID and value["pair_artifact_digest"] == PAIR_DIGEST
     assert re.fullmatch(r"[a-f0-9]{64}", value["driver_sha256"])
     assert value["independent_scope_model_passed"] is True
+    assert value["prior_attempt_zero_sha256"] == PRIOR_ZERO_SHA256
+    assert raw_sha((json.dumps(value["prior_attempt_zero"], indent=2) + "\n").encode()) == PRIOR_ZERO_SHA256
     assert set(value["image_hashes"]) == {"original", "fork"}
     assert all(re.fullmatch(r"[a-f0-9]{64}", v) for v in value["image_hashes"].values())
     assert value["image_hashes"]["original"] != value["image_hashes"]["fork"]
+
+
+def verify_prior_attempt_zero(proof):
+    assert raw_sha((json.dumps(proof, indent=2) + "\n").encode()) == PRIOR_ZERO_SHA256
+    assert proof["schema"] == "stringzilla-single-sky-infrastructure-zero-v1"
+    assert proof["source"] == SOURCE and proof["baseline"] == BASE
+    assert proof["run_id"] == PRIOR_ZERO_RUN and proof["head"] == PRIOR_ZERO_HEAD and proof["attempt"] == 1
+    assert tuple(proof["missing_tiers"]) == selected_tiers() and proof["triplets"] == 262 and proof["records"] == 786
+    assert proof["timed_records"] == 0 and all(count == 0 for count in proof["marker_counts"].values())
+    assert context()["run_id"] != PRIOR_ZERO_RUN
+    run = api("actions/runs/" + str(PRIOR_ZERO_RUN))
+    assert run["id"] == PRIOR_ZERO_RUN and run["head_sha"] == PRIOR_ZERO_HEAD and run["run_attempt"] == 1
+    assert run["status"] == "completed" and run["conclusion"] == "failure"
+    payload = api("actions/runs/" + str(PRIOR_ZERO_RUN) + "/jobs?filter=all&per_page=100")
+    assert payload["total_count"] == len(payload["jobs"]) == 3
+    names = {"Authenticate exact missing-only scope and original complete pair",
+             WORKER, "Qualify exact completed missing SKY controls and preserve failed parent status"}
+    assert {job["name"] for job in payload["jobs"]} == names
+    for job in payload["jobs"]:
+        assert job["run_id"] == PRIOR_ZERO_RUN and job["head_sha"] == PRIOR_ZERO_HEAD and job["run_attempt"] == 1
+        assert job["status"] == "completed"
+        if job["name"] == WORKER:
+            assert job["id"] == proof["worker"]["id"] == 117856984856 and job["conclusion"] == "failure"
+            actual = [{key: step[key] for key in ("name", "number", "status", "conclusion")} for step in job["steps"]]
+            assert actual == proof["worker"]["steps"]
+        elif job["name"] == "Authenticate exact missing-only scope and original complete pair":
+            assert job["conclusion"] == "success"
+        else:
+            assert job["id"] == proof["collector"]["id"] == 117871808510 and job["conclusion"] == "skipped"
+    payload = api("actions/runs/" + str(PRIOR_ZERO_RUN) + "/artifacts?per_page=100")
+    assert payload["total_count"] == len(payload["artifacts"]) == 1
+    artifact = payload["artifacts"][0]
+    expected = proof["artifacts"][0]
+    assert all(artifact[key] == expected[key] for key in ("id", "name", "digest", "expired"))
+    assert artifact["size_in_bytes"] == expected["size"]
+    assert artifact["workflow_run"]["id"] == PRIOR_ZERO_RUN and artifact["workflow_run"]["head_sha"] == PRIOR_ZERO_HEAD
+    return proof
 
 
 def preparation(folder):
     ctx = context()
     artifact = api("actions/artifacts/" + os.environ["PREPARATION_ID"])
     assert artifact["id"] == int(os.environ["PREPARATION_ID"])
-    assert artifact["digest"] == os.environ["PREPARATION_DIGEST"]
+    assert artifact["digest"] == canonical_artifact_digest(os.environ["PREPARATION_DIGEST"])
     assert artifact["name"] == "stringzilla-single-sky-preparation-" + ctx["head"]
     value, proof_sha = read_json_artifact(artifact, "preparation.json", folder / "preparation.zip", ctx)
     verify_inputs(value, ctx)
@@ -348,6 +395,7 @@ def probe():
     assert os.environ["SOURCE"] == SOURCE and os.environ["SOURCE_TREE"] == SOURCE_TREE
     FOLDER.mkdir()
     prep, binding = preparation(FOLDER)
+    verify_prior_attempt_zero(prep["prior_attempt_zero"])
     job = current_job(ctx)
     assert job["status"] == "in_progress" and job["runner_name"] == os.environ["RUNNER_NAME"]
     proof = {**ctx, "schema": "stringzilla-single-host-fact-v1", "mode": "single-host-v1",
@@ -391,7 +439,7 @@ def own_fact():
     proof = json.loads((FOLDER / "lease.json").read_text())
     artifact = api("actions/artifacts/" + os.environ["FACT_ARTIFACT_ID"])
     assert artifact["id"] == int(os.environ["FACT_ARTIFACT_ID"])
-    assert artifact["digest"] == os.environ["FACT_ARTIFACT_DIGEST"]
+    assert artifact["digest"] == canonical_artifact_digest(os.environ["FACT_ARTIFACT_DIGEST"])
     assert artifact["name"] == "stringzilla-single-sky-fact-" + ctx["head"]
     published, published_sha = read_json_artifact(artifact, "lease.json", FOLDER / "published-fact.zip", ctx)
     assert published == proof and published_sha == sha(FOLDER / "lease.json")
@@ -466,6 +514,9 @@ def prepare():
                     HERE / "stringzilla-final-sky-election.py", OLD_ALGORITHM_HASH], check=True)
     folder = Path("perf-output")
     folder.mkdir(exist_ok=True)
+    prior_raw = (HERE / "stringzilla-single-sky-prior-attempt-zero.json").read_bytes()
+    assert raw_sha(prior_raw) == PRIOR_ZERO_SHA256
+    prior = verify_prior_attempt_zero(json.loads(prior_raw))
     proof = verify_missing(folder)
     model = HERE / "stringzilla-single-sky-model.js"
     collector_test = HERE / "stringzilla-single-sky-collector-test.js"
@@ -521,7 +572,8 @@ def prepare():
         "validation_artifact_id": VALIDATION_ID, "validation_artifact_digest": VALIDATION_DIGEST,
         "validation_receipt_sha256": raw_sha(raw), "image_hashes": images, "physical_keys": selected,
         "triplets": len(selected), "records": len(selected) * 3, "python_auth_tests_passed": True,
-        "independent_scope_model_passed": True, **ctx}
+        "independent_scope_model_passed": True, "prior_attempt_zero_sha256": PRIOR_ZERO_SHA256,
+        "prior_attempt_zero": prior, **ctx}
     verify_missing(folder)
     write(folder / "preparation.json", value)
     archive.unlink()
@@ -613,7 +665,7 @@ def retained(tier):
     ctx = context()
     artifact = api("actions/artifacts/" + os.environ["RESULT_ARTIFACT_ID"])
     assert artifact["id"] == int(os.environ["RESULT_ARTIFACT_ID"])
-    assert artifact["digest"] == os.environ["RESULT_ARTIFACT_DIGEST"]
+    assert artifact["digest"] == canonical_artifact_digest(os.environ["RESULT_ARTIFACT_DIGEST"])
     assert artifact["name"] == "stringzilla-final-results-avx512-" + tier + "-" + ctx["head"] + "-attempt1"
     assert artifact["workflow_run"]["id"] == ctx["run_id"] and artifact["workflow_run"]["head_sha"] == ctx["head"]
     assert not artifact["expired"] and re.fullmatch(r"sha256:[a-f0-9]{64}", artifact["digest"])
