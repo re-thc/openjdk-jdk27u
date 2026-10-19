@@ -1,0 +1,663 @@
+{
+  "schema": "stringzilla-final-shard-normalized-index-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "backend": "serial",
+  "tier": "interpreter",
+  "workflow": {
+    "run_id": 39182567318,
+    "head": "57d209684d4887100690410e326377759df13176",
+    "job_id": 117847837154,
+    "attempt": 1,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "id": 12161164138,
+    "name": "stringzilla-final-results-serial-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+    "digest": "sha256:03fd6c258cff0d5b61c758b8a7f8eb925d7d3ee8edb75a9abe057e0d49f173ea",
+    "size": 8727013
+  },
+  "producer": {
+    "run_id": 39164738566,
+    "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+    "job_id": 117789053116,
+    "artifact_id": 12151758260,
+    "artifact_digest": "sha256:4eb4aec81c2905af9ff8fe867d431b65c9b6cbf24821cbfbe4cf2aaefb334e36",
+    "conclusion": "success"
+  },
+  "image_tree_sha256": {
+    "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9",
+    "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e"
+  },
+  "decoded_log_sha256": "8354a0cee9424f30451bd78a3b079000236565f62d181d24c966cef161e4789a",
+  "collector_blob": "a2eba213de680a4421abe9c147fd583196f1354d",
+  "normalizer_blob": "a1648be0faf3167262c372dc210983168df5b68d",
+  "physical_keys_sha256": "4d5ed2eebd057ea90a08e0d3c9cdbfb38ca700f9b1fd31a44adfc53e485c2c18",
+  "triplets": 103,
+  "records": 309,
+  "raw_samples": 3090,
+  "phases": {
+    "stock": {
+      "triplets": 101,
+      "records": 303,
+      "standard_diagnostics": 57
+    },
+    "periodic": {
+      "triplets": 2,
+      "records": 6,
+      "standard_diagnostics": 57
+    }
+  },
+  "extra_diagnostics": {
+    "uniform": 0,
+    "positive": 0,
+    "timing_evidence": false
+  },
+  "higher_mean_groups": 19,
+  "nonoverlap_loss_groups": 4,
+  "all_higher_means": [
+    {
+      "case": "tiny-latin",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 380.7653313634215,
+      "original_error": 16.471440656648774,
+      "enabled_ns": 385.4909887676598,
+      "enabled_error": 12.694650302911986,
+      "disabled_ns": 369.6032738965224,
+      "disabled_error": 11.689539822528143,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9877411987778357,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9587857684509634,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "tiny-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 640.3918723516946,
+      "original_error": 11.534006230879966,
+      "enabled_ns": 637.0732985512637,
+      "enabled_error": 39.641410317475284,
+      "disabled_ns": 628.9313276156304,
+      "disabled_error": 17.052509967523967,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0052090925926065,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9872197265932372,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-latin1-31-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 828.8136724531017,
+      "original_error": 43.2620507701661,
+      "enabled_ns": 840.6144459488353,
+      "enabled_error": 43.668616537562066,
+      "disabled_ns": 817.2680204419264,
+      "disabled_error": 31.194086227807567,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9859617288846214,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9722269518214658,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-latin1-31-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 477.9378275674153,
+      "original_error": 19.534539646460576,
+      "enabled_ns": 475.9611319984341,
+      "enabled_error": 11.130998475637076,
+      "disabled_ns": 452.80787210515865,
+      "disabled_error": 13.136873215208889,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0041530609036953,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9513547255506746,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-utf16-15-miss",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "15",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 1341.6613213039223,
+      "original_error": 51.85574288413088,
+      "enabled_ns": 1419.5350275105898,
+      "enabled_error": 122.10713839972072,
+      "disabled_ns": 1406.7136279247036,
+      "disabled_error": 148.79037556732786,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9451413986287939,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9909678878383362,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-utf16-15-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "15",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 1013.348585374773,
+      "original_error": 56.820489882495785,
+      "enabled_ns": 1056.1518825387748,
+      "enabled_error": 36.456875413517686,
+      "disabled_ns": 1013.742587756146,
+      "disabled_error": 18.340717989445842,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9594724036649811,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9598454583249093,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-mixed-15",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "15",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 1205.0160627089276,
+      "original_error": 51.164458115809445,
+      "enabled_ns": 1265.7287423273087,
+      "enabled_error": 33.43586371506058,
+      "disabled_ns": 1215.1337432178166,
+      "disabled_error": 17.86717896276255,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9520334194933836,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9600269809655562,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-mixed-65",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "65",
+        "position": "MISS"
+      },
+      "original_ns": 255749.7749699281,
+      "original_error": 12301.350967165648,
+      "enabled_ns": 273387.51605290856,
+      "enabled_error": 24658.6131462174,
+      "disabled_ns": 260560.9098541019,
+      "disabled_error": 9658.594457937943,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9354844678439267,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9530826923482332,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-forward-latin-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 4390.109395710926,
+      "original_error": 372.2615677380386,
+      "enabled_ns": 4619.256165105228,
+      "enabled_error": 294.4509984112199,
+      "disabled_ns": 4289.087740768239,
+      "disabled_error": 507.46641037286037,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9503931453021978,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9285234651346798,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-latin-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 286.90819505304665,
+      "original_error": 5.061364380441431,
+      "enabled_ns": 296.11117687439395,
+      "enabled_error": 10.78049834459111,
+      "disabled_ns": 291.416383189914,
+      "disabled_error": 20.964561854107135,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9689205185751868,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9841451655623542,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-forward-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "128",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 9216.602912726572,
+      "original_error": 1322.1760177725025,
+      "enabled_ns": 9190.689231755094,
+      "enabled_error": 867.8414357870622,
+      "disabled_ns": 8904.68557520322,
+      "disabled_error": 372.2078879033449,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0028195579589334,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9688811525077259,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 8658.154426407591,
+      "original_error": 291.46519699182136,
+      "enabled_ns": 8996.94209648918,
+      "enabled_error": 670.5213153977068,
+      "disabled_ns": 8835.248200780525,
+      "disabled_error": 619.1317979551881,
+      "comparisons": {
+        "original": {
+          "speedup": 0.96234413132282,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9820279052621944,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-utf16-early",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 462.11187743633434,
+      "original_error": 21.80409357819146,
+      "enabled_ns": 485.5774684820641,
+      "enabled_error": 23.13558155249134,
+      "disabled_ns": 460.72106975927574,
+      "disabled_error": 23.292036049146695,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9516748766801635,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9488106423049436,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-forward-latin-255",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 4525.524784670089,
+      "original_error": 189.10946644539843,
+      "enabled_ns": 4492.6549524226575,
+      "enabled_error": 377.277080628354,
+      "disabled_ns": 4155.9584120386735,
+      "disabled_error": 569.1914157318904,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0073163491511197,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9250562208872906,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-latin-single-miss-257-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      },
+      "original_ns": 388.39053599510413,
+      "original_error": 7.303743187876972,
+      "enabled_ns": 405.78778354209555,
+      "enabled_error": 29.365922020806345,
+      "disabled_ns": 425.70695086561653,
+      "disabled_error": 11.448741724476722,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9571272269580617,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.049087646625652,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-31",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 359.6196330153855,
+      "original_error": 19.682874507341175,
+      "enabled_ns": 415.012488976467,
+      "enabled_error": 24.652622079496165,
+      "disabled_ns": 413.76099683212607,
+      "disabled_error": 23.318444376059844,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8665272553659884,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.996984447028504,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-255",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 363.27963734240865,
+      "original_error": 25.682797566557007,
+      "enabled_ns": 416.89419788521417,
+      "enabled_error": 11.224352701384646,
+      "disabled_ns": 409.9389500629992,
+      "disabled_error": 20.743648442606812,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8713952825086629,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9833165156591361,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 362.9512126863309,
+      "original_error": 19.400056598012796,
+      "enabled_ns": 432.2817955733047,
+      "enabled_error": 19.12889930815843,
+      "disabled_ns": 412.2698158670616,
+      "disabled_error": 17.438449738641076,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8396171580738774,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9537061705786092,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-4096",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 366.13005423700093,
+      "original_error": 9.210842475539081,
+      "enabled_ns": 432.8047084890498,
+      "enabled_error": 17.7367358207575,
+      "disabled_ns": 411.3632757952939,
+      "disabled_error": 25.33683258484138,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8459474840631597,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9504593358778156,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    }
+  ],
+  "nonoverlap_loss_cases": [
+    "char-reverse-latin-ninth-31",
+    "char-reverse-latin-ninth-255",
+    "char-reverse-latin-ninth-256",
+    "char-reverse-latin-ninth-4096"
+  ],
+  "all_raw_samples_preserved": true,
+  "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained",
+  "files": [
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/serial-interpreter-original.json",
+      "sha": "1571a8033ac42ffbb2fca0cb4c18e28ee2cc8775",
+      "sha256": "5972595aa11b30cb23439cc7991853d8e090828a549a700614323800a3d62336",
+      "bytes": 91193
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/serial-interpreter-enabled.json",
+      "sha": "7c0ec3a97b56c9bf6ea1fc0bac49e0b596cd76f4",
+      "sha256": "b1cb05692cf0947e62542784ed163a7bc58e78fb67cdb13287f5b7b108961910",
+      "bytes": 94241
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/serial-interpreter-disabled.json",
+      "sha": "39d7cf53f8787cde16d78f18c52c3d885eae12f6",
+      "sha256": "c3895cf4c5f84fc1a2b46f958f70d964ee9bd3a6da91a078826810ede92873eb",
+      "bytes": 94378
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/serial-interpreter-metadata.json",
+      "sha": "3cffc9b039f6e0320c80415cd433e04cb8a1d981",
+      "sha256": "f24a1b84f55dc40d278911ceaf8bcabd43f1a9531eb7723992a8ed8dccc1c471",
+      "bytes": 155684
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/serial-interpreter-original.json",
+      "sha": "815f596b3f5553c44bb4784ab82a05ae0a5d2271",
+      "sha256": "4b06850a21e630379a1a87c629f4be6fcfbfe46f61ec4ac8f01bb304f0f64a7f",
+      "bytes": 2830
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/serial-interpreter-enabled.json",
+      "sha": "878ae74ca5406427414a5ccec1640bddac79036b",
+      "sha256": "0ab95fa6e91f9f233acfe9f1b29d4cd223573f0a08f73d765afff9f9bfe50201",
+      "bytes": 2892
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/serial-interpreter-disabled.json",
+      "sha": "dd90eaaeea9714247205ecc569fdbc12fd7c8373",
+      "sha256": "9391ab0edccd3a7d009a385ab46cba586dacb1c8a5e76361d34c79ee0eef613f",
+      "bytes": 2892
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/serial-interpreter-metadata.json",
+      "sha": "0c1e644a91458bceca0dc9985b3cc3f618848bca",
+      "sha256": "28738d7b9cdd6e63c699282d8b1771f0fa5f0cddf0810fdba58c84a9c35824eb",
+      "bytes": 48318
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/diagnostics/serial-interpreter.json",
+      "sha": "ce2617e74354f11353ed1050ff6737f3b80482f9",
+      "sha256": "a413ddbb09f400ee6127a255f3ce13cb4e846e999f3381f7bf381f7afcdb4306",
+      "bytes": 952
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/indexes/serial-interpreter.json",
+      "sha": "a153ffc024b5316a33d2cb714fa0418041c9e3d2",
+      "sha256": "fe81ef33cf1b4b81859e9a37d8448767784f7d7719f5827c90ad2f1865873f5d",
+      "bytes": 1722
+    }
+  ]
+}

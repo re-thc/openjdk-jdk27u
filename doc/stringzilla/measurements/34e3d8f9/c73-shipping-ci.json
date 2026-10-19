@@ -1,0 +1,468 @@
+{
+  "schema_version": 1,
+  "repository": "re-thc/openjdk-jdk27u",
+  "pull_request": 4,
+  "workflow": {
+    "name": "OpenJDK GHA Sanity Checks",
+    "path": ".github/workflows/main.yml",
+    "run_id": 39166944542,
+    "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39166944542",
+    "run_conclusion": "cancelled",
+    "run_attempt": 1,
+    "updated_at": "2026-10-19T03:39:16Z",
+    "job_url_template": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39166944542/job/{job_id}"
+  },
+  "source": {
+    "head": "c73d3586b13764f912c52c9f407020866f0e252c",
+    "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "merge_commit": "95b00711686a2f40cbcb493ad3d7322c13064378",
+    "runtime_equivalent_head": "916ba895e834378e3f7eac7f030fc4abff641d33",
+    "production_trees": {
+      "src": "7de52d62a1ff5ff5e6103c6d3caff7707894dddc",
+      "make": "64d6b10b1481107be1627ebf1243cbd5c163f898",
+      "bin": "a90cc9b6106f06949724750dbb6be23227ecba82"
+    }
+  },
+  "warning_fix": {
+    "file": "test/jdk/java/lang/String/libStringZillaKernelsTest.c",
+    "fixture_before_blob": "51657fdf5a621ca88f70c11362c874a86785eb0b",
+    "fixed_blob": "350a0fc7cee17e1ec4a035be96ab9d81efcb2e1e",
+    "change": "Check the dense-short fixture count is 33 through 128 before computing strides, lengths and unsigned byte sizes.",
+    "fixture_counts": [
+      33,
+      64,
+      128
+    ],
+    "production_runtime_changed": false,
+    "failed_ci": {
+      "head": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "run_id": 39164642050,
+      "job_id": 117788188146,
+      "raw_log_sha256": "a2e27c1ea37cc99d61298ceb00535b8aa3b09072815a6fa64e91d366ae78afff",
+      "artifact_id": 12149944507,
+      "artifact_sha256": "6bb0334dae50c69b2d7d12137a19e2527539d434e175f412a98178415a328350",
+      "diagnostic": "GCC16 -Werror=stringop-overflow in fortified memcpy at check_kernels line306"
+    },
+    "native_validation_receipt_blob": "bba628430ba5ec9adcf14d380048592d8f313f20",
+    "native_validation_scope": "Exact failing -O2/-D_FORTIFY_SOURCE=2 warnings reproduced before the fix; corrected full native test compiled and passed ASan/UBSan/alignment on x64 and AArch64. This is native-test validation, not whole-JDK sanitization."
+  },
+  "targeted_test_jobs": [
+    {
+      "job_id": 117799961548,
+      "platform": "linux-aarch64",
+      "group": "jdk/tier1 part1",
+      "raw_log_sha256": "01c6720ff7832f0d9e0a8689c09b7363d077118fd65fbc3334260851f065b0b2",
+      "test_identities": [
+        "java/lang/String/StringZillaBounded.java#headerLayouts",
+        "java/lang/String/StringZillaKernelsTest.java",
+        "java/lang/String/StringZillaBounded.java#id0",
+        "java/lang/String/StringZillaSearch.java"
+      ],
+      "summary": [
+        "passed: 1,145; excluded: 4; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 32"
+      ],
+      "test_success": true
+    },
+    {
+      "job_id": 117799961582,
+      "platform": "linux-aarch64",
+      "group": "hs/tier1 compiler part3",
+      "raw_log_sha256": "a251447552dba350bdddfe9f95b6eff8ee91881b2e26662f2142e3c5771ed276",
+      "test_identities": [
+        "compiler/intrinsics/string/TestStringZillaAvailability.java",
+        "compiler/intrinsics/string/TestStringZillaCompilation.java",
+        "compiler/intrinsics/string/TestStringZillaEquality.java",
+        "compiler/intrinsics/string/TestStringZillaDispatch.java#id0",
+        "compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0",
+        "compiler/intrinsics/string/TestStringZillaWork.java",
+        "compiler/intrinsics/string/TestStringZillaInterpreterSearch.java"
+      ],
+      "summary": [
+        "passed: 772; did not meet platform requirements: 45"
+      ],
+      "test_success": true
+    },
+    {
+      "job_id": 117804673896,
+      "platform": "linux-x64",
+      "group": "hs/tier1 compiler part3",
+      "raw_log_sha256": "610cb853164623808a22ffbd1e863d7da26fd2af3f1706e46a4d4f3025b2c836",
+      "test_identities": [
+        "compiler/intrinsics/string/TestStringZillaAvailability.java",
+        "compiler/intrinsics/string/TestStringZillaCompilation.java",
+        "compiler/intrinsics/string/TestStringZillaDispatch.java#id0",
+        "compiler/intrinsics/string/TestStringZillaEquality.java",
+        "compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX",
+        "compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#id0",
+        "compiler/intrinsics/string/TestStringZillaUTF16Bounds.java#serial",
+        "compiler/intrinsics/string/TestStringZillaInterpreterSearch.java",
+        "compiler/intrinsics/string/TestStringZillaWork.java"
+      ],
+      "summary": [
+        "passed: 776; did not meet platform requirements: 41"
+      ],
+      "test_success": true
+    },
+    {
+      "job_id": 117804673916,
+      "platform": "linux-x64",
+      "group": "jdk/tier1 part1",
+      "raw_log_sha256": "f607c122e74fb2632b083ab1372d78190255d27b032d05fc21d6ec4428342446",
+      "test_identities": [
+        "java/lang/String/StringZillaBounded.java#headerLayouts",
+        "java/lang/String/StringZillaBounded.java#limitedAVX",
+        "java/lang/String/StringZillaKernelsTest.java",
+        "java/lang/String/StringZillaBounded.java#id0",
+        "java/lang/String/StringZillaSearch.java"
+      ],
+      "summary": [
+        "passed: 1,149; excluded: 4; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 28"
+      ],
+      "test_success": true
+    }
+  ],
+  "source_build_log": {
+    "job_id": 117793876470,
+    "raw_log_sha256": "69e853f25565a5cc87894892766e0eeccabe58582d6b5fcf2ee96a4cc06619a4",
+    "checkout_identity": [
+      "95b007116 Merge c73d3586b13764f912c52c9f407020866f0e252c into 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda"
+    ],
+    "compiler": "gcc (Ubuntu 16-20260322-1ubuntu1) 16.0.1 20260322, trunk r16-8246-g569ace1fa50"
+  },
+  "status": "superseded",
+  "superseded_by": "cacb5322aee81fb15da7d6b81f0661290baab4a0",
+  "job_counts": {
+    "success": 33,
+    "cancelled": 24
+  },
+  "qualification_scope": "All eight platform release/debug builds and all Linux x64/AArch64 tier1 groups passed. The 24 macOS/Windows tier1 jobs were cancelled while awaiting runners after the next source head superseded this run; this receipt does not qualify those tests or the successor head.",
+  "build_groups": {
+    "linux-x64": {
+      "release": {
+        "job_id": 117793876468,
+        "conclusion": "success"
+      },
+      "debug": {
+        "job_id": 117793876517,
+        "conclusion": "success"
+      }
+    },
+    "linux-aarch64": {
+      "debug": {
+        "job_id": 117793876470,
+        "conclusion": "success"
+      },
+      "release": {
+        "job_id": 117793876530,
+        "conclusion": "success"
+      }
+    },
+    "macos-aarch64": {
+      "debug": {
+        "job_id": 117849765040,
+        "conclusion": "success"
+      },
+      "release": {
+        "job_id": 117849765069,
+        "conclusion": "success"
+      }
+    },
+    "windows-x64": {
+      "release": {
+        "job_id": 117849765081,
+        "conclusion": "success"
+      },
+      "debug": {
+        "job_id": 117849765161,
+        "conclusion": "success"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "id": 117792070391,
+      "name": "Prepare the run",
+      "conclusion": "success"
+    },
+    {
+      "id": 117793876468,
+      "name": "linux-x64 / build (release)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117793876470,
+      "name": "linux-aarch64 / build (debug)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117793876517,
+      "name": "linux-x64 / build (debug)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117793876530,
+      "name": "linux-aarch64 / build (release)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961474,
+      "name": "linux-aarch64 / test (hs/tier1 common)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961489,
+      "name": "linux-aarch64 / test (langtools/tier1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961497,
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961513,
+      "name": "linux-aarch64 / test (jdk/tier1 part 2)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961533,
+      "name": "linux-aarch64 / test (hs/tier1 runtime)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961548,
+      "name": "linux-aarch64 / test (jdk/tier1 part 1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961553,
+      "name": "linux-aarch64 / test (lib-test/tier1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961562,
+      "name": "linux-aarch64 / test (hs/tier1 gc)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961569,
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961578,
+      "name": "linux-aarch64 / test (jdk/tier1 part 3)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961582,
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117799961632,
+      "name": "linux-aarch64 / test (hs/tier1 serviceability)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673821,
+      "name": "linux-x64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673823,
+      "name": "linux-x64 / test (hs/tier1 serviceability)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673855,
+      "name": "linux-x64 / test (lib-test/tier1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673858,
+      "name": "linux-x64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673869,
+      "name": "linux-x64 / test (hs/tier1 common)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673871,
+      "name": "linux-x64 / test (jdk/tier1 part 3)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673872,
+      "name": "linux-x64 / test (hs/tier1 gc)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673876,
+      "name": "linux-x64 / test (langtools/tier1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673878,
+      "name": "linux-x64 / test (hs/tier1 runtime)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673896,
+      "name": "linux-x64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804673916,
+      "name": "linux-x64 / test (jdk/tier1 part 1)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117804674001,
+      "name": "linux-x64 / test (jdk/tier1 part 2)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117849765040,
+      "name": "macos-aarch64 / build (debug)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117849765069,
+      "name": "macos-aarch64 / build (release)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117849765081,
+      "name": "windows-x64 / build (release)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117849765161,
+      "name": "windows-x64 / build (debug)",
+      "conclusion": "success"
+    },
+    {
+      "id": 117859561425,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561432,
+      "name": "macos-aarch64 / test (langtools/tier1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561441,
+      "name": "macos-aarch64 / test (hs/tier1 runtime)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561448,
+      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561466,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561472,
+      "name": "macos-aarch64 / test (hs/tier1 common)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561490,
+      "name": "macos-aarch64 / test (lib-test/tier1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561497,
+      "name": "macos-aarch64 / test (jdk/tier1 part 3)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561504,
+      "name": "macos-aarch64 / test (hs/tier1 gc)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561507,
+      "name": "macos-aarch64 / test (hs/tier1 serviceability)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561562,
+      "name": "macos-aarch64 / test (jdk/tier1 part 2)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117859561610,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867838976,
+      "name": "windows-x64 / test (jdk/tier1 part 1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867838980,
+      "name": "windows-x64 / test (jdk/tier1 part 3)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867838986,
+      "name": "windows-x64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867838994,
+      "name": "windows-x64 / test (jdk/tier1 part 2)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839035,
+      "name": "windows-x64 / test (hs/tier1 common)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839036,
+      "name": "windows-x64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839052,
+      "name": "windows-x64 / test (hs/tier1 serviceability)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839054,
+      "name": "windows-x64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839082,
+      "name": "windows-x64 / test (langtools/tier1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839107,
+      "name": "windows-x64 / test (lib-test/tier1)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839172,
+      "name": "windows-x64 / test (hs/tier1 runtime)",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": 117867839182,
+      "name": "windows-x64 / test (hs/tier1 gc)",
+      "conclusion": "cancelled"
+    }
+  ]
+}

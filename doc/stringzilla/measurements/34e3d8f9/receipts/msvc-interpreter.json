@@ -1,0 +1,438 @@
+{
+  "schema": "stringzilla-final-shard-normalized-index-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "backend": "msvc",
+  "tier": "interpreter",
+  "workflow": {
+    "run_id": 39182567318,
+    "head": "57d209684d4887100690410e326377759df13176",
+    "job_id": 117847837243,
+    "attempt": 1,
+    "conclusion": "success"
+  },
+  "artifact": {
+    "id": 12160783629,
+    "name": "stringzilla-final-results-msvc-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+    "digest": "sha256:cc9c972507576b9e018613e9a80c34d9c0b7ae1a05c871b8bba0ee0b1e005de6",
+    "size": 9572788
+  },
+  "producer": {
+    "run_id": 39164738566,
+    "head": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+    "job_id": 117789053344,
+    "artifact_id": 12151927587,
+    "artifact_digest": "sha256:570a8456f7b230d49f8e2769b839c687f244bba756f129dc65f9840e39afe29a",
+    "conclusion": "success"
+  },
+  "image_tree_sha256": {
+    "original": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202",
+    "fork": "566a352f3f88ff6c49ed7523d79220e1f4e95611c21b3bd8c0d70d0969127173"
+  },
+  "decoded_log_sha256": "e141c7bab82e4e22b82c7734798736aea3a4350973a4a0dc36d3116f6f25d2db",
+  "collector_blob": "a2eba213de680a4421abe9c147fd583196f1354d",
+  "normalizer_blob": "a1648be0faf3167262c372dc210983168df5b68d",
+  "physical_keys_sha256": "a1d82793db77250e1ffbed6823e9bd5acab7bb30b73239fad2cd836032c45a1d",
+  "triplets": 103,
+  "records": 309,
+  "raw_samples": 3090,
+  "phases": {
+    "stock": {
+      "triplets": 101,
+      "records": 303,
+      "standard_diagnostics": 57
+    },
+    "periodic": {
+      "triplets": 2,
+      "records": 6,
+      "standard_diagnostics": 57
+    }
+  },
+  "extra_diagnostics": {
+    "uniform": 0,
+    "positive": 0,
+    "timing_evidence": false
+  },
+  "higher_mean_groups": 11,
+  "nonoverlap_loss_groups": 3,
+  "all_higher_means": [
+    {
+      "case": "tiny-utf16",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "4",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 489.50375081252685,
+      "original_error": 84.29646733225914,
+      "enabled_ns": 468.8896544103368,
+      "enabled_error": 17.15362379455227,
+      "disabled_ns": 456.1127307778529,
+      "disabled_error": 44.695173366304765,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0439636409297914,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9727506812907787,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-utf16-15-end",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "UTF16",
+        "length": "15",
+        "needleLength": "4",
+        "position": "END"
+      },
+      "original_ns": 777.4205216625335,
+      "original_error": 15.424358518625167,
+      "enabled_ns": 750.2141980514457,
+      "enabled_error": 80.5761265750323,
+      "disabled_ns": 708.8349410382009,
+      "disabled_error": 49.75514402304105,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0362647410322967,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9448434098945069,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "lower-mixed-15",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "15",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 934.4928087970854,
+      "original_error": 101.84858991120056,
+      "enabled_ns": 851.1705091912406,
+      "enabled_error": 126.58328250215072,
+      "disabled_ns": 817.6627655723096,
+      "disabled_error": 100.4071368087816,
+      "comparisons": {
+        "original": {
+          "speedup": 1.0978914315123716,
+          "slower_mean": false,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9606333357921797,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-forward-mixed-65",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOf",
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "65",
+        "position": "MISS"
+      },
+      "original_ns": 181059.6709761433,
+      "original_error": 37013.17009014462,
+      "enabled_ns": 191917.11293888278,
+      "enabled_error": 55779.79481269275,
+      "disabled_ns": 182499.5544137726,
+      "disabled_error": 32174.94525670566,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9434264000928511,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9509290319091593,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-forward-latin-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.indexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 3063.078188956646,
+      "original_error": 1055.8941634730722,
+      "enabled_ns": 3110.3720411857166,
+      "enabled_error": 600.3244344464831,
+      "disabled_ns": 2871.0089573503933,
+      "disabled_error": 551.8500461736908,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9847947925190835,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 0.9230435842832245,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-char-reverse-utf16-below",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "UTF16",
+        "length": "127",
+        "needleLength": "4",
+        "position": "MISS"
+      },
+      "original_ns": 6267.352071583306,
+      "original_error": 589.1422079072258,
+      "enabled_ns": 6513.4430375972925,
+      "enabled_error": 332.1159039232352,
+      "disabled_ns": 6604.459659139599,
+      "disabled_error": 650.6236148995314,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9622179906090396,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.013973657406219,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "supp-latin-single-miss-257-257",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "params": {
+        "coder": "LATIN1",
+        "length": "257",
+        "needleLength": "257",
+        "position": "MISS"
+      },
+      "original_ns": 286.2327086739103,
+      "original_error": 8.54458963129963,
+      "enabled_ns": 306.3539729396805,
+      "enabled_error": 17.964147855572637,
+      "disabled_ns": 326.4671380935735,
+      "disabled_error": 17.787258108684856,
+      "comparisons": {
+        "original": {
+          "speedup": 0.9343202111182283,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.0656533517776614,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-31",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "31",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 285.3875849996192,
+      "original_error": 26.890225397773204,
+      "enabled_ns": 312.0033190139698,
+      "enabled_error": 11.559313135513628,
+      "disabled_ns": 316.18538278559765,
+      "disabled_error": 14.35395386111387,
+      "comparisons": {
+        "original": {
+          "speedup": 0.914694067683431,
+          "slower_mean": true,
+          "intervals_overlap": true
+        },
+        "disabled": {
+          "speedup": 1.013403907961122,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-255",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "255",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 275.0815009013992,
+      "original_error": 13.567854421671191,
+      "enabled_ns": 312.04416597652624,
+      "enabled_error": 18.56594655531197,
+      "disabled_ns": 312.30080264389727,
+      "disabled_error": 17.35941598935257,
+      "comparisons": {
+        "original": {
+          "speedup": 0.8815466875996406,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 1.0008224369988392,
+          "slower_mean": false,
+          "intervals_overlap": true
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-256",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "256",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 284.9389804753637,
+      "original_error": 21.85935775208611,
+      "enabled_ns": 344.3990039863096,
+      "enabled_error": 22.77805684518605,
+      "disabled_ns": 309.84067752562254,
+      "disabled_error": 11.343938186753261,
+      "comparisons": {
+        "original": {
+          "speedup": 0.827351348805557,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.8996561370367354,
+          "slower_mean": true,
+          "intervals_overlap": false
+        }
+      }
+    },
+    {
+      "case": "char-reverse-latin-ninth-4096",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOfChar",
+      "params": {
+        "coder": "LATIN1",
+        "length": "4096",
+        "needleLength": "4",
+        "position": "NINTH"
+      },
+      "original_ns": 283.48308491141324,
+      "original_error": 14.220809184023178,
+      "enabled_ns": 341.26388108095864,
+      "enabled_error": 20.487210981356696,
+      "disabled_ns": 316.8350489133358,
+      "disabled_error": 21.02099101393513,
+      "comparisons": {
+        "original": {
+          "speedup": 0.830685872801646,
+          "slower_mean": true,
+          "intervals_overlap": false
+        },
+        "disabled": {
+          "speedup": 0.9284165904395035,
+          "slower_mean": true,
+          "intervals_overlap": true
+        }
+      }
+    }
+  ],
+  "nonoverlap_loss_cases": [
+    "char-reverse-latin-ninth-255",
+    "char-reverse-latin-ninth-256",
+    "char-reverse-latin-ninth-4096"
+  ],
+  "all_raw_samples_preserved": true,
+  "unchanged_original_jmh_export": "pending coordinated artifact-only export; original filenames and SHA-256 bindings retained",
+  "files": [
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/msvc-interpreter-original.json",
+      "sha": "b99e46abd88c8275c54227ec28d603de19bf9d56",
+      "sha256": "eb653f6709d1b2d1bb002ca03b259c26ef3b56b2860c28681aef7be2db2cc3fd",
+      "bytes": 90927
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/msvc-interpreter-enabled.json",
+      "sha": "2cd330089260947866d8171c73b8422d8ac143ff",
+      "sha256": "e9670804b9078917b4d0876f44d064be36570ddace0e538055e6e457d4765fb8",
+      "bytes": 93983
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/msvc-interpreter-disabled.json",
+      "sha": "94ffce72e5ae8559f7967c6b18fa0d138b77ba0a",
+      "sha256": "128435fc2dd728fac6f523f677ea2b199da91cd365c6b1007db8f7ee22501da9",
+      "bytes": 94085
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/stock/msvc-interpreter-metadata.json",
+      "sha": "dccc45c770dcd0e610c2db3fa0c1082ddb92fa12",
+      "sha256": "05aed19a175eca0797e5fe9f06da4b06534eb905bdc1b82df658ec62a45409f1",
+      "bytes": 154998
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/msvc-interpreter-original.json",
+      "sha": "9c82fc188f279c8687672c694535d541be2fb2c6",
+      "sha256": "3d114af0c8bc2aafc2123395f0f3fd3e067729fb58ae74e3dd59cc46ac77d751",
+      "bytes": 2817
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/msvc-interpreter-enabled.json",
+      "sha": "3866cc3c5ea3d0b83b01051a2d3348c117c706bb",
+      "sha256": "6d4ab41b1008032f7290cc209471b7d96608621c091f2f5f82e4ca3ded5d7d0b",
+      "bytes": 2885
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/msvc-interpreter-disabled.json",
+      "sha": "f6c7ec4d9c2216bb7f6eb1f874b5190d221d6298",
+      "sha256": "4ee43599c4cf2f004878cd549869666dad50d99e9373b3be38a7a3dbbdd4be47",
+      "bytes": 2888
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/periodic/msvc-interpreter-metadata.json",
+      "sha": "a638c20ba52c8de405302c9848ab132e2d708322",
+      "sha256": "ac4e01766573196342784bf72a80637621a2d8c45e916e64993167e5acbf0b2c",
+      "bytes": 48246
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/diagnostics/msvc-interpreter.json",
+      "sha": "d700c2c13de803c9f2fae6c3b4405209335595ec",
+      "sha256": "a2d0d722a60325965a2eaa15a426c9263c95eb57da864b2e1da8dd819e2a65de",
+      "bytes": 950
+    },
+    {
+      "path": "doc/stringzilla/measurements/34e3d8f9/indexes/msvc-interpreter.json",
+      "sha": "e77e9a009e7f7bd84085eb824cfaade7b4426046",
+      "sha256": "1c5bb7359f402066c8d2a2c1edca4315029e70b9c0c9af03fc146b5c54b9e75d",
+      "bytes": 1700
+    }
+  ]
+}

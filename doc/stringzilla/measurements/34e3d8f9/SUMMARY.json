@@ -4,11 +4,11 @@
   "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
   "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
   "planned_triplets": 1886,
-  "accepted_triplets": 326,
-  "accepted_records": 978,
-  "raw_samples": 9780,
-  "higher_mean_groups": 92,
-  "nonoverlap_loss_groups": 49,
+  "accepted_triplets": 933,
+  "accepted_records": 2799,
+  "raw_samples": 27990,
+  "higher_mean_groups": 259,
+  "nonoverlap_loss_groups": 114,
   "qualification_complete": false,
   "cohorts": [
     {
@@ -76,6 +76,116 @@
       "raw_samples": 2760,
       "higher_mean_groups": 28,
       "nonoverlap_loss_groups": 15
+    },
+    {
+      "backend": "avx2",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837039,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161251890,
+        "name": "stringzilla-final-results-avx2-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:31d018c197d52930659c2abdf0af8f46d3488275fe7d9ed9c53eec940abd1947",
+        "size": 8890119
+      },
+      "triplets": 126,
+      "records": 378,
+      "raw_samples": 3780,
+      "higher_mean_groups": 22,
+      "nonoverlap_loss_groups": 11
+    },
+    {
+      "backend": "msvc",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837243,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12160783629,
+        "name": "stringzilla-final-results-msvc-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:cc9c972507576b9e018613e9a80c34d9c0b7ae1a05c871b8bba0ee0b1e005de6",
+        "size": 9572788
+      },
+      "triplets": 103,
+      "records": 309,
+      "raw_samples": 3090,
+      "higher_mean_groups": 11,
+      "nonoverlap_loss_groups": 3
+    },
+    {
+      "backend": "msvc",
+      "tier": "c2",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837218,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161726194,
+        "name": "stringzilla-final-results-msvc-c2-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:c86d3f1eb915a1b410f78890fd62c1959f18dd98015e7ab1c8dc4d023facc494",
+        "size": 15007812
+      },
+      "triplets": 149,
+      "records": 447,
+      "raw_samples": 4470,
+      "higher_mean_groups": 70,
+      "nonoverlap_loss_groups": 42
+    },
+    {
+      "backend": "msvc",
+      "tier": "c1",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837223,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161922489,
+        "name": "stringzilla-final-results-msvc-c1-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:ec0aa910ab205192ffe962e135815c3ab570a9267615275509bda2d306ab3ab2",
+        "size": 9770676
+      },
+      "triplets": 126,
+      "records": 378,
+      "raw_samples": 3780,
+      "higher_mean_groups": 45,
+      "nonoverlap_loss_groups": 5
+    },
+    {
+      "backend": "serial",
+      "tier": "interpreter",
+      "workflow": {
+        "run_id": 39182567318,
+        "head": "57d209684d4887100690410e326377759df13176",
+        "job_id": 117847837154,
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      "artifact": {
+        "id": 12161164138,
+        "name": "stringzilla-final-results-serial-interpreter-57d209684d4887100690410e326377759df13176-attempt1",
+        "digest": "sha256:03fd6c258cff0d5b61c758b8a7f8eb925d7d3ee8edb75a9abe057e0d49f173ea",
+        "size": 8727013
+      },
+      "triplets": 103,
+      "records": 309,
+      "raw_samples": 3090,
+      "higher_mean_groups": 19,
+      "nonoverlap_loss_groups": 4
     }
   ],
   "root_peer_checks": [
@@ -106,6 +216,51 @@
       "higher": 28,
       "nonoverlap": 15,
       "result": "PASS file SHA256, source/image/flags/raw score and O/E/D key bindings"
+    },
+    {
+      "receipt": "4fff82f4d91c7269418b2309340f8e3acbad6bf4",
+      "backend": "avx2",
+      "tier": "c1",
+      "triplets": 126,
+      "records": 378,
+      "rawSamples": 3780,
+      "result": "PASS file SHA256, source/image/tier/flag bindings, matched O/E/D JVM args, raw score means, complete key sets"
+    },
+    {
+      "receipt": "3edcbdf3a03d26c61b2c20745d9aa36484b60bcf",
+      "backend": "msvc",
+      "tier": "interpreter",
+      "triplets": 103,
+      "records": 309,
+      "rawSamples": 3090,
+      "result": "PASS file SHA256, source/image/tier/flag bindings, matched O/E/D JVM args, raw score means, complete key sets"
+    },
+    {
+      "receipt": "31e1ae52ef56896a114f145ac284ed664ec27f4a",
+      "backend": "msvc",
+      "tier": "c2",
+      "triplets": 149,
+      "records": 447,
+      "rawSamples": 4470,
+      "result": "PASS file SHA256, source/image/tier/flag bindings, matched O/E/D JVM args, raw score means, complete key sets"
+    },
+    {
+      "receipt": "0d58a09698f20178d220fa241d74b951d09e9f78",
+      "backend": "msvc",
+      "tier": "c1",
+      "triplets": 126,
+      "records": 378,
+      "rawSamples": 3780,
+      "result": "PASS file SHA256, source/image/tier/flag bindings, matched O/E/D JVM args, raw score means, complete key sets"
+    },
+    {
+      "receipt": "9bb4ea843ab21e941203e3fb1e7df134ffe0570a",
+      "backend": "serial",
+      "tier": "interpreter",
+      "triplets": 103,
+      "records": 309,
+      "rawSamples": 3090,
+      "result": "PASS file SHA256, source/image/tier/flag bindings, matched O/E/D JVM args, raw score means, complete key sets"
     }
   ]
 }
