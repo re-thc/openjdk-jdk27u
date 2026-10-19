@@ -9,12 +9,26 @@ permissions:
 jobs:
   bindings:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: write
     outputs:
       matrix: ${{ steps.proof.outputs.matrix }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           sparse-checkout: .github/scripts
+      - name: Stop only the obsolete saved-file reader before replacement
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/stringzilla-final-saved-predecessor.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-final-saved-predecessor-${{ github.sha }}
+          path: saved-predecessor.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Check saved-byte transport without a JVM
         run: |
           python3 -m py_compile .github/scripts/stringzilla-final-saved-files.py .github/scripts/stringzilla-final-saved-files-test.py .github/scripts/stringzilla-raw-jmh.py .github/scripts/stringzilla-final-sky-election.py .github/scripts/single-host-validation/stringzilla-single-sky.py .github/scripts/single-host-validation/stringzilla-final.py

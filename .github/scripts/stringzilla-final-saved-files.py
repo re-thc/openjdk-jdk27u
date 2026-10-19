@@ -30,6 +30,7 @@ PRODUCER = {"run_id": 39164738566, "head": "8bd517316162bc8a638b8339da47ac9c36b4
 CONSUMERS = {"avx512": {"run_id": 39174300598, "head": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1"},
              "normal": {"run_id": 39182567318, "head": "57d209684d4887100690410e326377759df13176"}}
 SINGLE_HOST = {"run_id": 39187437768, "head": "4176f25bfc42a553d9192328d726b233c23b552f"}
+SOURCE_INPUTS = {"original":{"revision":"416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda","runtime_trees":"040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 60b42189e64a5a7cfb3dbfcbed7faeff778493d6\tmake\n040000 tree 9483b1544a654c3c698ba7f8685cdf34059badd6\tsrc\n040000 tree 1d64a6e90f219918ee2872974bff8f9b75edf833\ttest"},"fork":{"revision":"916ba895e834378e3f7eac7f030fc4abff641d33","runtime_trees":"040000 tree a90cc9b6106f06949724750dbb6be23227ecba82\tbin\n040000 tree 64d6b10b1481107be1627ebf1243cbd5c163f898\tmake\n040000 tree 7de52d62a1ff5ff5e6103c6d3caff7707894dddc\tsrc\n040000 tree 42c99f77685c06f481b60d8584700412bbc58eb0\ttest"}}
 PARENTS = {"stock": "d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d",
            "periodic": "02e48d06c5d3fdec8fb897fdff26dc1e0b5231ad2001397cb0f08313048938c2",
            "utf16-probe": "06dc833fa691489a1869628aa94715ab3b3ff4ba550b3b936d590c6dee4ef834"}
@@ -604,7 +605,7 @@ def read(case):
     pair = json.loads(pair_raw)
     assert pair["sources"] == {"original": BASE, "fork": SOURCE} and pair["backend"] == alias
     assert str(pair["producer_run"]) == str(PRODUCER["run_id"]) and pair["producer_head"] == PRODUCER["head"]
-    assert pair["source_trees"] == {"original": "dd8fc9c14c376d51876fbe312f419cb1d2c086d1", "fork": SOURCE_TREE}
+    assert pair["source_trees"] == SOURCE_INPUTS
     assert pair["helper_sha256"] == HELPER and pair["parent_manifest_sha256"] == PARENTS["stock"]
     assert compact_images(pair["image_hashes"]) == case["image_hashes"]
     assert pair["spec"]["DEBUG_LEVEL"] == "release" and pair["spec"]["SOURCE_DATE"] == "1792195200"
