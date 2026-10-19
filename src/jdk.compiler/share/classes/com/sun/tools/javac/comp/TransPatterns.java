@@ -471,6 +471,8 @@ public class TransPatterns extends TreeTranslator {
             // restarted from the next index.
             //-case null is always desugared to case -1, as the typeSwitch bootstrap method will
             // return -1 when the input is null
+            //-small reference-only classifiers use a private static method instead of a bootstrap,
+            // with the same case-index and restart protocol
             //
             //note the selector is evaluated only once and stored in a temporary variable
             ListBuffer<JCCase> newCases = new ListBuffer<>();
@@ -723,6 +725,8 @@ public class TransPatterns extends TreeTranslator {
      * Share a private classifier for repeated selector types and label sequences in the same class.
      * Keep the call in the switch's selector expression so a failed guard
      * restarts it using the updated index, without evaluating the original selector again.
+     * The generated caller supplies a restart in [0, labels.length], so the private
+     * classifier does not need the public bootstrap's restart bounds check.
      */
     private JCExpression makeDirectTypeSwitch(VarSymbol selector, VarSymbol index,
                                              LoadableConstant[] labels, boolean hasNullCase) {
