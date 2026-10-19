@@ -1,0 +1,159 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla final paired native checks
+on:
+  push:
+    branches: [codex/stringzilla-final-artifacts]
+    paths: [.github/workflows/stringzilla-paired-final.yml]
+permissions:
+  contents: read
+  actions: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+concurrency:
+  group: stringzilla-paired-final-f6244a8f
+  cancel-in-progress: false
+jobs:
+  neon:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: f6244a8f97ce8b807a50deac71ab80868c12c75b
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: doc/stringzilla/qualification-20261019
+      - name: Restore verified native ARM pair
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 driver/doc/stringzilla/qualification-20261019/prepare.py restore --backend neon
+      - name: Repeated paired ARM measurements
+        run: >-
+          python3 driver/doc/stringzilla/qualification-20261019/paired.py
+          --source . --pair pair --backend neon
+          --manifest driver/doc/stringzilla/qualification-20261019/focus.tsv
+          --output paired-results
+      - name: Retain ARM evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-paired-neon-${{ github.sha }}
+          path: |
+            paired-results
+            pair/reuse.json
+          if-no-files-found: error
+          retention-days: 30
+  msvc:
+    runs-on: windows-2025
+    timeout-minutes: 180
+    env:
+      MSYS2_PATH_TYPE: minimal
+      CHERE_INVOKING: 1
+      CONFIGURE_DEV_NO_MOLD: 1
+      GIT_CONFIG_COUNT: 1
+      GIT_CONFIG_KEY_0: core.autocrlf
+      GIT_CONFIG_VALUE_0: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: f6244a8f97ce8b807a50deac71ab80868c12c75b
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: driver
+          persist-credentials: false
+          sparse-checkout: doc/stringzilla/qualification-20261019
+      - name: Restore verified independent Windows baseline
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import subprocess
+          subprocess.run(['python','driver/doc/stringzilla/qualification-20261019/prepare.py','restore','--backend','msvc'],check=True)
+      - uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: windows-x64
+      - name: Check MSVC 14.44 toolset
+        id: msvc
+        shell: bash
+        run: |
+          set +e
+          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
+          if [ $? -eq 0 ]; then echo 'installed=true' >> "$GITHUB_OUTPUT"; else echo 'installed=false' >> "$GITHUB_OUTPUT"; fi
+      - name: Install matching MSVC toolset if absent
+        if: steps.msvc.outputs.installed != 'true'
+        shell: bash
+        run: >-
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe'
+          modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise'
+          --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+      - name: Build complete candidate with production kernel flags
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+            --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+            --with-source-date=1792195200 --with-native-debug-symbols=none \
+            --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1
+          make CONF=perf JOBS=2 images
+      - name: Seal new candidate and verify actual compiler command
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(['python','driver/doc/stringzilla/qualification-20261019/prepare.py','seal','--backend','msvc'],check=True)
+      - name: Check native contracts, tiers, opt-out and forced JNI
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(['python','driver/doc/stringzilla/qualification-20261019/validate-windows.py'],check=True)
+      - name: Generate fastdebug and slowdebug native compiler commands
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: |
+          for level in fastdebug slowdebug; do
+            bash bin/configure-dev --with-conf-name="flags-$level" --with-debug-level="$level" \
+              --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
+              --with-source-date=1792195200 --with-native-debug-symbols=none \
+              --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1
+            make CONF="flags-$level" JOBS=2 java.base-libs-compile-commands
+          done
+      - name: Verify generated commands preserve slowdebug
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(['python','driver/doc/stringzilla/qualification-20261019/verify-commands.py'],check=True)
+      - name: Repeated paired Windows measurements
+        shell: python
+        run: |
+          import subprocess
+          subprocess.run(['python','driver/doc/stringzilla/qualification-20261019/paired.py',
+            '--source','.','--pair','pair','--backend','msvc',
+            '--manifest','driver/doc/stringzilla/qualification-20261019/focus.tsv','--output','paired-results'],check=True)
+      - name: Retain Windows evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-paired-msvc-${{ github.sha }}
+          path: |
+            paired-results
+            pair/*.json
+            pair/*.gmk
+            pair/*.cmdline
+            build/perf/configure.log
+            validation
+          if-no-files-found: error
+          retention-days: 30
