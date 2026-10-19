@@ -32,6 +32,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.DontInline;
 
 /**
  * This class implements powerful and fully optimized versions, both
@@ -258,23 +259,30 @@ final class DualPivotQuicksort {
         } else if (parallelism == 0 && size >= MIN_WHOLE_INT_SORT_SIZE
                 && size <= MAX_WHOLE_INT_SORT_SIZE && VM.isBooted()
                 && WholeIntSortConfig.ENABLED) {
-            if (!tryMergeRuns(null, a, low, size)) {
-                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high,
-                        DualPivotQuicksort::sortAfterRunDetection);
-            }
+            sortWholeInt(a, low, high);
         } else {
             sort(null, a, 0, low, high);
         }
     }
 
     /**
-     * Resumes normal int sorting when whole-range intrinsification is unavailable.
-     * Run detection can reverse descending runs even when it returns false, so
-     * do not scan them again. Partition depth and leaf thresholds are unchanged.
-     * This entry is used only for ranges of at least MIN_WHOLE_INT_SORT_SIZE.
+     * Keeps whole-range run detection and native sorting out of small callers.
      */
-    private static void sortAfterRunDetection(int[] a, int low, int high) {
-        sort(null, a, 0, low, high, true);
+    @DontInline
+    private static void sortWholeInt(int[] a, int low, int high) {
+        if (!tryMergeRuns(null, a, low, high - low)) {
+            sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high,
+                    DualPivotQuicksort::sortJavaInt);
+        }
+    }
+
+    /**
+     * Uses the original Java sorter if whole-range intrinsification is absent.
+     * A failed run scan may have reversed runs. The original sorter accepts
+     * that valid permutation and may scan it again before partitioning.
+     */
+    private static void sortJavaInt(int[] a, int low, int high) {
+        sort(null, a, 0, low, high);
     }
 
     /**
@@ -289,11 +297,6 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      */
     static void sort(Sorter sorter, int[] a, int bits, int low, int high) {
-        sort(sorter, a, bits, low, high, false);
-    }
-
-    private static void sort(Sorter sorter, int[] a, int bits, int low, int high,
-            boolean skipInitialRunCheck) {
         while (true) {
             int end = high - 1, size = high - low;
             /*
@@ -317,10 +320,9 @@ final class DualPivotQuicksort {
              * parts are nearly sorted and then merge runs.
              */
             if ((bits == 0 || size > MIN_TRY_MERGE_SIZE && (bits & 1) > 0)
-                    && !skipInitialRunCheck && tryMergeRuns(sorter, a, low, size)) {
+                    && tryMergeRuns(sorter, a, low, size)) {
                 return;
             }
-            skipInitialRunCheck = false;
 
             /*
              * Switch to heap sort if execution
