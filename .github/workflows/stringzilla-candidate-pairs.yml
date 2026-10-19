@@ -1,0 +1,54 @@
+# Copyright (c) 2026, re-thc. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Build and validate closed StringZilla candidate images
+on:
+  push:
+    branches: [codex/stringzilla-candidate-pairs-bdeb6ba8]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-candidate-pairs-bdeb6ba8
+  cancel-in-progress: false
+
+# This run publishes four complete new candidate pairs only. Measurement scope is
+# qualified separately after the remaining source916 comparisons are collected.
+# The immutable original416 image is restored from its validated source916 pair;
+# the old fork is discarded without extraction. No production reference is changed.
+jobs:
+  serial:
+    uses: ./.github/workflows/stringzilla-candidate-build.yml
+    with:
+      source: bdeb6ba8bb5663cf3592221fdaff5da382cbc496
+      backend: serial
+      runner: ubuntu-26.04
+      platform: linux-x64
+      helper-hash: e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea
+      parent-manifest-hash: d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d
+  avx2:
+    uses: ./.github/workflows/stringzilla-candidate-build.yml
+    with:
+      source: bdeb6ba8bb5663cf3592221fdaff5da382cbc496
+      backend: avx2
+      runner: ubuntu-26.04
+      platform: linux-x64
+      helper-hash: e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea
+      parent-manifest-hash: d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d
+  neon:
+    uses: ./.github/workflows/stringzilla-candidate-build.yml
+    with:
+      source: bdeb6ba8bb5663cf3592221fdaff5da382cbc496
+      backend: neon
+      runner: ubuntu-26.04-arm
+      platform: linux-aarch64
+      helper-hash: e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea
+      parent-manifest-hash: d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d
+  msvc:
+    uses: ./.github/workflows/stringzilla-candidate-build.yml
+    with:
+      source: bdeb6ba8bb5663cf3592221fdaff5da382cbc496
+      backend: msvc
+      runner: windows-2025
+      platform: windows-x64
+      helper-hash: e07344dcabe1355c0352ad6e171aa4e53bfdf027492197bb65eb1f1d7c8cedea
+      parent-manifest-hash: d94afb1b86132ff7fb5ec6bdfa81f033076b9c1057a6aa0c8fe815b7e4ea760d
