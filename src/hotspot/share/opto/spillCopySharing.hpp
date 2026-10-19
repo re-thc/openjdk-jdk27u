@@ -30,7 +30,7 @@ public:
   static constexpr uint MaxRanges = 65536;
   static constexpr uint MaxInputs = 64;
   static constexpr uint MaxUses = 8;
-  static constexpr uint MaxDistance = 64;
+  static constexpr uint MaxDistance = 8;
   static constexpr uint MaxOrigin = 16;
   static constexpr uint MaxMaskBits = 4096;
   static constexpr uint MaskWords = MaxMaskBits / BitsPerWord;

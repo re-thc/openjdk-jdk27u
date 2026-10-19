@@ -497,6 +497,13 @@ void PhaseChaitin::Register_Allocate() {
           if (!work.spend(current->outcnt() * Sharing::MaxInputs) ||
               !work.spend(source->outcnt()) ||
               !work.spend(block->number_of_nodes() - ni)) break;
+#ifndef PRODUCT
+          if (trace_spilling()) {
+            tty->print_cr("SHARED_RELOAD_PAIR compile_id=%d current=%u previous=%u distance=%u cross_block=%d current_freq=%g previous_freq=%g",
+                          C->compile_id(), current->_idx, previous->_idx, distance + 1,
+                          scan != block, block->_freq, scan->_freq);
+          }
+#endif
           current->replace_by(previous);
           current->disconnect_inputs(C);
           _lrg_map.map(current->_idx, 0);
