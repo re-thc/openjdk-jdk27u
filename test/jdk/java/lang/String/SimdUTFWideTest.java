@@ -47,6 +47,7 @@
  * @modules java.base/jdk.internal.access java.base/jdk.internal.util:+open java.base/java.lang:+open java.base/sun.nio.cs
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 SimdUTFWideTest
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:SIMDUTFMinLength=16 SimdUTFWideTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 SimdUTFWideTest
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:SIMDUTFMinLength=16 SimdUTFWideTest
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=16 SimdUTFWideTest
  */

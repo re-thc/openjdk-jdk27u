@@ -108,8 +108,7 @@ final class StringCodingWide {
         }
         int off = (int)offset;
         if (width == 2) {
-            return big ? (src[off] & 255) << 8 | src[off + 1] & 255
-                    : (src[off + 1] & 255) << 8 | src[off] & 255;
+            return UNSAFE.getCharUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big);
         }
         return big ? src[off] << 24 | (src[off + 1] & 255) << 16
                         | (src[off + 2] & 255) << 8 | src[off + 3] & 255
@@ -150,6 +149,11 @@ final class StringCodingWide {
 
     @ForceInline
     private static String decodeUTF32(byte[] src, int off, int len, boolean big) {
+        return SimdUTF.useUTF32WordReads() ? decodeUTF32Words(src, off, len, big)
+                : decodeUTF32Portable(src, off, len, big);
+    }
+
+    private static String decodeUTF32Portable(byte[] src, int off, int len, boolean big) {
         int words = len >> 2;
         if ((off & 3) != 0 && !SimdUTF.useScalarUTF32StringDecoding(len)) {
             if (!String.COMPACT_STRINGS) return null;
@@ -190,6 +194,55 @@ final class StringCodingWide {
         int lowByte = off + (big ? 3 : 0);
         for (int i = 0; i < words; i++, lowByte += 4) {
             value[i] = src[lowByte];
+        }
+        return new String(value, String.LATIN1);
+    }
+
+    // Keep word loads out of the portable reader so C2 does not parse byte
+    // assembly into its callers. Keep both censuses below in sync: each must
+    // validate the scalar range and fall back for surrogate-valued input.
+    @ForceInline
+    private static int utf32Word(byte[] src, long offset, boolean big) {
+        return UNSAFE.getIntUnaligned(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, big);
+    }
+
+    private static String decodeUTF32Words(byte[] src, int off, int len, boolean big) {
+        int words = len >> 2;
+        if ((off & 3) != 0 && !SimdUTF.useScalarUTF32StringDecoding(len)) {
+            if (!String.COMPACT_STRINGS) return null;
+            for (int i = 0; i < words; i++) {
+                if ((utf32Word(src, off + ((long)i << 2), big) & ~255) != 0) return null;
+            }
+            return decodeLatin1UTF32Words(src, off, words, big);
+        }
+        int units = words;
+        boolean latin1 = String.COMPACT_STRINGS;
+        int nonLatinIndex = -1;
+        for (int i = 0; i < words; i++) {
+            int cp = utf32Word(src, off + ((long)i << 2), big);
+            // Java accepts surrogate-valued UTF-32 through its decoder.
+            if (!Character.isValidCodePoint(cp) || cp >= 0xd800 && cp <= 0xdfff) return null;
+            if (latin1 && cp > 255) {
+                nonLatinIndex = i;
+                latin1 = false;
+            }
+            if (cp >= 0x10000) units++;
+        }
+        if (latin1) return decodeLatin1UTF32Words(src, off, words, big);
+        if (len == 0) return "";
+        if (!SimdUTF.isEligibleUTF32Decoding(len)) return null;
+        byte[] value = StringUTF16.newBytesFor(units);
+        if (SimdUTF.useScalarUTF32StringDecoding(len)) {
+            return decodeShortUTF32(src, off, len, value, units, nonLatinIndex, big);
+        }
+        int written = SimdUTF.decodeUTF32Bytes(src, off, len, value, 0, units, big);
+        return written == units ? newUTF16String(value, nonLatinIndex) : null;
+    }
+
+    private static String decodeLatin1UTF32Words(byte[] src, int off, int words, boolean big) {
+        byte[] value = new byte[words];
+        for (int i = 0; i < words; i++) {
+            value[i] = (byte)utf32Word(src, off + ((long)i << 2), big);
         }
         return new String(value, String.LATIN1);
     }
