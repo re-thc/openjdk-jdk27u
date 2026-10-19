@@ -656,7 +656,11 @@ public class DateFormatSymbols implements Serializable, Cloneable {
                 // concurrently detaches the source's fields for stream hooks.
                 arrays.copyTo(other);
                 other.canShareSymbolArrays = true;
-                other.sharedSymbolArrays = arrays;
+                // Object.clone normally copied the same snapshot already.
+                // Avoid a redundant volatile write on its still-private result.
+                if (other.sharedSymbolArrays != arrays) {
+                    other.sharedSymbolArrays = arrays;
+                }
             } else {
                 // Without a snapshot, exclude partial serialization detachment.
                 synchronized (this) {
