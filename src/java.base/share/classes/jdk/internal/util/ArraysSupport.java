@@ -428,6 +428,15 @@ public class ArraysSupport {
 
     private static final int MISMATCH_INLINE_BYTES = 512;
     private static final int MISMATCH_ADMISSION_BYTES = 128;
+    private static final int MISMATCH_HEAP_STUB_BYTES = 2 * 1024;
+
+    // Large byte-array suffixes cannot use C2's heap leaf. Resume Java after
+    // the two words already checked instead of scanning an admission prefix.
+    private static int mismatchBytePrefixLength(int length) {
+        if (length <= MISMATCH_INLINE_BYTES) return length;
+        return length > MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES
+                ? 2 * Long.BYTES : MISMATCH_ADMISSION_BYTES;
+    }
 
     // The caller has at least one word; compare at most the first two words.
     private static int mismatchPrefix(Object a, long aOffset, Object b, long bOffset,
@@ -829,10 +838,9 @@ public class ArraysSupport {
                     length, LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0) return i;
             if (i < 0 && length <= (16 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) return -1;
-            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE)
-                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE;
-            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
-                    prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE, 16);
+            int prefixLength = mismatchBytePrefixLength(length);
+            int prefixMismatch = prefixLength == 16 ? -1
+                    : mismatchSmall(a, aOffset, b, bOffset, prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE, 16);
             if (prefixMismatch >= 0) return prefixMismatch;
             if (length == prefixLength) return -1;
             int result = mismatchLarge(a, aFromIndex + prefixLength,

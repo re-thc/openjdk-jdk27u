@@ -74,6 +74,7 @@ public class AArch64ArrayMismatchCallBoundaryTest {
         0, 1, 7, 8, 9, 15, 16, 17, 25, 63, 64, 65, 82,
         127, 128, 129, 255, 256, 257, 511, 512, 513, 514, 516, 520,
         2047, 2048, 2049,
+        2168, 2172, 2174, 2175, 2176, 2177, 2178, 2180, 2184,
         4096, 65535, 65536, 65537, 131072
     };
     private static final String MARKER = "ARRAY-CALL-BOUNDARY ";
