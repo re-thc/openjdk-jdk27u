@@ -511,7 +511,7 @@ void PhaseChaitin::Register_Allocate() {
     }
 #ifndef PRODUCT
     if (trace_spilling()) {
-      tty->print("SHARED_RELOAD_SUMMARY ");
+      tty->print("SHARED_RELOAD_SUMMARY compile_id=%d ", C->compile_id());
       if (C->method() != nullptr) C->method()->print_short_name(tty);
       tty->print_cr(" accepted=%u work=%u nodes=%u ranges=%u exhausted=%d",
                     shared, Sharing::MaxWork - work.left(), scheduled, ranges, work.exhausted());
