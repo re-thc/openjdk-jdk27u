@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026, Harry Chan. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
 
 """Exercise real Hex SIMD configure/export/make code with normalized fake tools.
