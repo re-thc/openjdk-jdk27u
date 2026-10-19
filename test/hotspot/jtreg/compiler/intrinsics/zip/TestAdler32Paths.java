@@ -28,7 +28,7 @@
  * @run main/othervm -Xint compiler.intrinsics.zip.TestAdler32Paths
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch compiler.intrinsics.zip.TestAdler32Paths
  * @run main/othervm -XX:-TieredCompilation -Xbatch compiler.intrinsics.zip.TestAdler32Paths
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics -Xcheck:jni compiler.intrinsics.zip.TestAdler32Paths
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseAdler32Intrinsics -Xcheck:jni -Dtest.adler.repetitions=32 compiler.intrinsics.zip.TestAdler32Paths
  */
 
 /**
@@ -76,6 +76,13 @@ public class TestAdler32Paths {
                 .getVMOption("UseAdler32Intrinsics").getValue())) {
             throw new AssertionError("Adler32 intrinsics were disabled without AVX2");
         }
+        // Checked JNI copies the entire backing array on every critical-array
+        // access. Keep its correctness cases while bounding identical repeats;
+        // compiled-path controls retain the full intrinsic warmup.
+        int repetitions = Integer.getInteger("test.adler.repetitions", 10000);
+        if (repetitions <= 0) {
+            throw new IllegalArgumentException("Repetitions must be positive");
+        }
         byte[] data = new byte[131072 + 31];
         new Random(17).nextBytes(data);
         ByteBuffer direct = ByteBuffer.allocateDirect(data.length);
@@ -88,7 +95,7 @@ public class TestAdler32Paths {
             for (int len : sizes) {
                 long expected = reference(data, off, len);
                 // Exercise compiled callers as well as the interpreter entries.
-                for (int repeat = 0; repeat < 10000; repeat++) {
+                for (int repeat = 0; repeat < repetitions; repeat++) {
                     adler.reset();
                     adler.update(data, off, len);
                     check(adler, expected);
