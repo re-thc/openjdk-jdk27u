@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/matched-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:off"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "dense"
+        },
+        "primaryMetric" : {
+            "score" : 217.31926985182463,
+            "scoreError" : 18.650909792459075,
+            "scoreConfidence" : [
+                198.66836005936557,
+                235.9701796442837
+            ],
+            "scorePercentiles" : {
+                "0.0" : 211.13432666928298,
+                "50.0" : 218.76515626104924,
+                "90.0" : 222.10345917562282,
+                "95.0" : 222.10345917562282,
+                "99.0" : 222.10345917562282,
+                "99.9" : 222.10345917562282,
+                "99.99" : 222.10345917562282,
+                "99.999" : 222.10345917562282,
+                "99.9999" : 222.10345917562282,
+                "100.0" : 222.10345917562282
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    218.76515626104924,
+                    222.10345917562282,
+                    221.2087076954414,
+                    213.38469945772675,
+                    211.13432666928298
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

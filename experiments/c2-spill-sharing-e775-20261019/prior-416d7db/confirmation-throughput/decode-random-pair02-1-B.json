@@ -1,0 +1,64 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/master-candidate-release/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 36303.387331625316,
+            "scoreError" : 3203.217474532562,
+            "scoreConfidence" : [
+                33100.169857092755,
+                39506.60480615788
+            ],
+            "scorePercentiles" : {
+                "0.0" : 34956.445563511035,
+                "50.0" : 36367.200930443694,
+                "90.0" : 37224.6276228782,
+                "95.0" : 37224.6276228782,
+                "99.0" : 37224.6276228782,
+                "99.9" : 37224.6276228782,
+                "99.99" : 37224.6276228782,
+                "99.999" : 37224.6276228782,
+                "99.9999" : 37224.6276228782,
+                "100.0" : 37224.6276228782
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    37224.6276228782,
+                    36367.200930443694,
+                    34956.445563511035,
+                    36351.08184368696,
+                    36617.58069760671
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

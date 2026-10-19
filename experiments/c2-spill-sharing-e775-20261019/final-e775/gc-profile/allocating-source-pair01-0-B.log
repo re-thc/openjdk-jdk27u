@@ -1,0 +1,108 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-spillsharing
+# VM invoker: /workspace/work/spill-sharing/images/e775-b/bin/java
+# VM options: --add-modules jdk.incubator.vector -XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4 -Xshare:on
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 5 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: experiment.FrameBench.allocating
+# Parameters: (corpus = source)
+
+# Run progress: 0.00% complete, ETA 00:00:08
+# Fork: 1 of 1
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 98.405 ops/s
+# Warmup Iteration   2: 118.995 ops/s
+# Warmup Iteration   3: 123.855 ops/s
+Iteration   1: 123.296 ops/s
+                 gc.alloc.rate:      582.845 MB/sec
+                 gc.alloc.rate.norm: 4958291.097 B/op
+                 gc.count:           5.000 counts
+                 gc.time:            2.000 ms
+
+Iteration   2: 124.579 ops/s
+                 gc.alloc.rate:      588.894 MB/sec
+                 gc.alloc.rate.norm: 4958290.880 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            2.000 ms
+
+Iteration   3: 122.258 ops/s
+                 gc.alloc.rate:      577.170 MB/sec
+                 gc.alloc.rate.norm: 4958291.317 B/op
+                 gc.count:           5.000 counts
+                 gc.time:            1.000 ms
+
+Iteration   4: 122.051 ops/s
+                 gc.alloc.rate:      569.698 MB/sec
+                 gc.alloc.rate.norm: 4902332.293 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            2.000 ms
+
+Iteration   5: 115.402 ops/s
+                 gc.alloc.rate:      537.419 MB/sec
+                 gc.alloc.rate.norm: 4892740.966 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            1.000 ms
+
+
+
+Result "experiment.FrameBench.allocating":
+  121.517 ±(99.9%) 13.719 ops/s [Average]
+  (min, avg, max) = (115.402, 121.517, 124.579), stdev = 3.563
+  CI (99.9%): [107.798, 135.236] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.allocating:gc.alloc.rate":
+  571.205 ±(99.9%) 77.677 MB/sec [Average]
+  (min, avg, max) = (537.419, 571.205, 588.894), stdev = 20.172
+  CI (99.9%): [493.528, 648.882] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.allocating:gc.alloc.rate.norm":
+  4933989.310 ±(99.9%) 128799.915 B/op [Average]
+  (min, avg, max) = (4892740.966, 4933989.310, 4958291.317), stdev = 33448.929
+  CI (99.9%): [4805189.396, 5062789.225] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.allocating:gc.count":
+  22.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (4.000, 4.400, 5.000), stdev = 0.548
+  CI (99.9%): [22.000, 22.000] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.allocating:gc.time":
+  8.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (1.000, 1.600, 2.000), stdev = 0.548
+  CI (99.9%): [8.000, 8.000] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:08
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                 (corpus)   Mode  Cnt        Score        Error   Units
+FrameBench.allocating                       source  thrpt    5      121.517 ±     13.719   ops/s
+FrameBench.allocating:gc.alloc.rate         source  thrpt    5      571.205 ±     77.677  MB/sec
+FrameBench.allocating:gc.alloc.rate.norm    source  thrpt    5  4933989.310 ± 128799.915    B/op
+FrameBench.allocating:gc.count              source  thrpt    5       22.000               counts
+FrameBench.allocating:gc.time               source  thrpt    5        8.000                   ms
+
+Benchmark result is saved to work/spill-sharing/e775-gc-profile/allocating-source-pair01-0-B.json

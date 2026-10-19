@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.TriggerBench.kernel",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/e775-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on",
+            "-XX:+UseFPUForSpilling",
+            "-XX:CompileCommand=dontinline,experiment.TestSharedSpillSharingTrigger::kernel",
+            "-XX:CompileCommand=dontinline,experiment.TestSharedSpillSharingTrigger::barrier",
+            "-XX:CompileCommand=exclude,experiment.TestSharedSpillSharingTrigger::reference"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 5.71011651383703E7,
+            "scoreError" : 7624150.709183123,
+            "scoreConfidence" : [
+                4.947701442918718E7,
+                6.472531584755342E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.405746000154823E7,
+                "50.0" : 5.7207706105797045E7,
+                "90.0" : 5.932380501143752E7,
+                "95.0" : 5.932380501143752E7,
+                "99.0" : 5.932380501143752E7,
+                "99.9" : 5.932380501143752E7,
+                "99.99" : 5.932380501143752E7,
+                "99.999" : 5.932380501143752E7,
+                "99.9999" : 5.932380501143752E7,
+                "100.0" : 5.932380501143752E7
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    5.932380501143752E7,
+                    5.668054671020434E7,
+                    5.7207706105797045E7,
+                    5.823630786286435E7,
+                    5.405746000154823E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

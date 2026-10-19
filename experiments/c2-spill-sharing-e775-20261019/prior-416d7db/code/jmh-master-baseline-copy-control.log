@@ -1,0 +1,1369 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-spillsharing
+# VM invoker: /workspace/work/spill-sharing/images/master-baseline-release/bin/java
+# VM options: --add-modules jdk.incubator.vector -XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4 -XX:+UnlockDiagnosticVMOptions -XX:PrintAssemblyOptions=intel -XX:CompileCommand=print,experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 1 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: experiment.FrameBench.copyControl
+# Parameters: (corpus = random)
+
+# Run progress: 0.00% complete, ETA 00:00:04
+# Fork: 1 of 1
+CompileCommand: print experiment/jmh_generated/FrameBench_copyControl_jmhTest.copyControl_thrpt_jmhStub intx print = 1111
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 29653.660 ops/s
+# Warmup Iteration   2: 30549.586 ops/s
+# Warmup Iteration   3: 
+============================= C1-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c1) 2250  702 %     3       experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub @ 13 (57 bytes)
+ total in heap  [0x00007fa71842b288,0x00007fa71842b890] = 1544
+ main code      [0x00007fa71842b380,0x00007fa71842b850] = 1232
+ stub code      [0x00007fa71842b850,0x00007fa71842b888] = 56
+ oops           [0x00007fa71842b888,0x00007fa71842b890] = 8
+ mutable data [0x00007fa6f423de60,0x00007fa6f423def8] = 152
+ relocation     [0x00007fa6f423de60,0x00007fa6f423dec8] = 104
+ metadata       [0x00007fa6f423dec8,0x00007fa6f423def8] = 48
+ immutable data [0x00007fa6f423dc60,0x00007fa6f423de54] = 500
+ dependencies   [0x00007fa6f423dc60,0x00007fa6f423dc70] = 16
+ nul chk table  [0x00007fa6f423dc70,0x00007fa6f423dca0] = 48
+ scopes pcs     [0x00007fa6f423dca0,0x00007fa6f423dd60] = 192
+ scopes data    [0x00007fa6f423dd60,0x00007fa6f423de50] = 240
+
+[Disassembly]
+--------------------------------------------------------------------------------
+[Constant Pool (empty)]
+
+--------------------------------------------------------------------------------
+
+[Verified Entry Point]
+  # {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest'
+  0x00007fa71842b380:   code=89842400c0feff mov		dword ptr [rsp - 0x14000], eax
+  0x00007fa71842b387:   code=55 push		rbp
+  0x00007fa71842b388:   code=4881ecd0000000 sub		rsp, 0xd0
+  0x00007fa71842b38f:   code=90 nop		
+  0x00007fa71842b390:   code=41817f2001000000 cmp		dword ptr [r15 + 0x20], 1
+  0x00007fa71842b398:   code=7405 je		0x7fa71842b39f
+  0x00007fa71842b39a:   code=e801e74b07 call		0x7fa71f8e9aa0
+                                                            ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007fa71842b39f:   code=48bb280a098200000000 movabs		rbx, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b3a9:   code=8b4370 mov		eax, dword ptr [rbx + 0x70]
+  0x00007fa71842b3ac:   code=83c002 add		eax, 2
+  0x00007fa71842b3af:   code=894370 mov		dword ptr [rbx + 0x70], eax
+  0x00007fa71842b3b2:   code=25fe070000 and		eax, 0x7fe
+  0x00007fa71842b3b7:   code=85c0 test		eax, eax
+  0x00007fa71842b3b9:   code=0f84d2030000 je		0x7fa71842b791
+  0x00007fa71842b3bf:   code=48897c2448 mov		qword ptr [rsp + 0x48], rdi
+  0x00007fa71842b3c4:   code=4889542440 mov		qword ptr [rsp + 0x40], rdx
+  0x00007fa71842b3c9:   code=4889742450 mov		qword ptr [rsp + 0x50], rsi
+  0x00007fa71842b3ce:   code=48b8280a098200000000 movabs		rax, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b3d8:   code=488380a800000001 add		qword ptr [rax + 0xa8], 1
+  0x00007fa71842b3e0:   code=e83b16c31d call		0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71842b3e5:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71842b3ed:   code=488b542440 mov		rdx, qword ptr [rsp + 0x40]
+  0x00007fa71842b3f2:   code=48894220 mov		qword ptr [rdx + 0x20], rax
+                                                            ; implicit exception: dispatches to 0x00007fa71842b7b2
+  0x00007fa71842b3f6:   code=488bbc24f0000000 mov		rdi, qword ptr [rsp + 0xf0]
+  0x00007fa71842b3fe:   code=488b5c2448 mov		rbx, qword ptr [rsp + 0x48]
+  0x00007fa71842b403:   code=488b742450 mov		rsi, qword ptr [rsp + 0x50]
+  0x00007fa71842b408:   code=b800000000 mov		eax, 0
+  0x00007fa71842b40d:   code=b900000000 mov		ecx, 0
+  0x00007fa71842b412:   code=48898424b0000000 mov		qword ptr [rsp + 0xb0], rax
+  0x00007fa71842b41a:   code=48898c2490000000 mov		qword ptr [rsp + 0x90], rcx
+  0x00007fa71842b422:   code=48899c2488000000 mov		qword ptr [rsp + 0x88], rbx
+  0x00007fa71842b42a:   code=48899424a8000000 mov		qword ptr [rsp + 0xa8], rdx
+  0x00007fa71842b432:   code=e9c9000000 jmp		0x7fa71842b500
+  0x00007fa71842b437:   code=90 nop		
+  0x00007fa71842b438:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842b442:   code=488386c800000001 add		qword ptr [rsi + 0xc8], 1
+  0x00007fa71842b44a:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842b454:   code=ff86d8000000 inc		dword ptr [rsi + 0xd8]
+  0x00007fa71842b45a:   code=488bb42498000000 mov		rsi, qword ptr [rsp + 0x98]
+  0x00007fa71842b462:   code=488b8c2490000000 mov		rcx, qword ptr [rsp + 0x90]
+  0x00007fa71842b46a:   code=41ba01000000 mov		r10d, 1
+  0x00007fa71842b470:   code=4903ca add		rcx, r10
+  0x00007fa71842b473:   code=0fbebe8c000000 movsx		edi, byte ptr [rsi + 0x8c]
+                                                            ; implicit exception: dispatches to 0x00007fa71842b7b7
+  0x00007fa71842b47a:   code=85ff test		edi, edi
+  0x00007fa71842b47c:   code=b802000000 mov		eax, 2
+  0x00007fa71842b481:   code=7405 je		0x7fa71842b488
+  0x00007fa71842b483:   code=b800000000 mov		eax, 0
+  0x00007fa71842b488:   code=48ba280a098200000000 movabs		rdx, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b492:   code=448b4274 mov		r8d, dword ptr [rdx + 0x74]
+  0x00007fa71842b496:   code=4403c0 add		r8d, eax
+  0x00007fa71842b499:   code=44894274 mov		dword ptr [rdx + 0x74], r8d
+  0x00007fa71842b49d:   code=85c0 test		eax, eax
+  0x00007fa71842b49f:   code=7506 jne		0x7fa71842b4a7
+  0x00007fa71842b4a1:   code=41b802000000 mov		r8d, 2
+  0x00007fa71842b4a7:   code=4181e0fe3f0000 and		r8d, 0x3ffe
+  0x00007fa71842b4ae:   code=4585c0 test		r8d, r8d
+  0x00007fa71842b4b1:   code=0f8405030000 je		0x7fa71842b7bc
+  0x00007fa71842b4b7:   code=4d8b5730 mov		r10, qword ptr [r15 + 0x30]
+                                                            ; ImmutableOopMap {rbx=Oop rsi=Oop [160]=Oop [168]=Oop }
+                                                            ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@33 (line 124)
+  0x00007fa71842b4bb:   code=418502 test		dword ptr [r10], eax
+                                                            ;   {poll}
+  0x00007fa71842b4be:   code=85ff test		edi, edi
+  0x00007fa71842b4c0:   code=48bf280a098200000000 movabs		rdi, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b4ca:   code=b828010000 mov		eax, 0x128
+  0x00007fa71842b4cf:   code=7505 jne		0x7fa71842b4d6
+  0x00007fa71842b4d1:   code=b818010000 mov		eax, 0x118
+  0x00007fa71842b4d6:   code=488b1407 mov		rdx, qword ptr [rdi + rax]
+  0x00007fa71842b4da:   code=488d5201 lea		rdx, [rdx + 1]
+  0x00007fa71842b4de:   code=48891407 mov		qword ptr [rdi + rax], rdx
+  0x00007fa71842b4e2:   code=0f8557010000 jne		0x7fa71842b63f
+  0x00007fa71842b4e8:   code=48898c2490000000 mov		qword ptr [rsp + 0x90], rcx
+  0x00007fa71842b4f0:   code=488bbc24a0000000 mov		rdi, qword ptr [rsp + 0xa0]
+  0x00007fa71842b4f8:   code=48899c2488000000 mov		qword ptr [rsp + 0x88], rbx
+  0x00007fa71842b500:   code=4889b42498000000 mov		qword ptr [rsp + 0x98], rsi
+  0x00007fa71842b508:   code=483b07 cmp		rax, qword ptr [rdi]
+                                                            ; implicit exception: dispatches to 0x00007fa71842b7dd
+  0x00007fa71842b50b:   code=4c8bc7 mov		r8, rdi
+  0x00007fa71842b50e:   code=49b9280a098200000000 movabs		r9, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b518:   code=458b00 mov		r8d, dword ptr [r8]
+  0x00007fa71842b51b:   code=41c1e80d shr		r8d, 0xd
+  0x00007fa71842b51f:   code=49c1e00a shl		r8, 0xa
+  0x00007fa71842b523:   code=41ba00000081 mov		r10d, 0x81000000
+  0x00007fa71842b529:   code=4d03c2 add		r8, r10
+  0x00007fa71842b52c:   code=41ba18000000 mov		r10d, 0x18
+  0x00007fa71842b532:   code=4f3b04d1 cmp		r8, qword ptr [r9 + r10*8]
+  0x00007fa71842b536:   code=7436 je		0x7fa71842b56e
+  0x00007fa71842b538:   code=4983c202 add		r10, 2
+  0x00007fa71842b53c:   code=4983fa1c cmp		r10, 0x1c
+  0x00007fa71842b540:   code=75f0 jne		0x7fa71842b532
+  0x00007fa71842b542:   code=41ba18000000 mov		r10d, 0x18
+  0x00007fa71842b548:   code=4b833cd100 cmp		qword ptr [r9 + r10*8], 0
+  0x00007fa71842b54d:   code=7412 je		0x7fa71842b561
+  0x00007fa71842b54f:   code=4983c202 add		r10, 2
+  0x00007fa71842b553:   code=4983fa1c cmp		r10, 0x1c
+  0x00007fa71842b557:   code=75ef jne		0x7fa71842b548
+  0x00007fa71842b559:   code=41ba17000000 mov		r10d, 0x17
+  0x00007fa71842b55f:   code=eb11 jmp		0x7fa71842b572
+  0x00007fa71842b561:   code=50 push		rax
+  0x00007fa71842b562:   code=4833c0 xor		rax, rax
+  0x00007fa71842b565:   code=f04f0fb104d1 lock cmpxchg		qword ptr [r9 + r10*8], r8
+  0x00007fa71842b56b:   code=58 pop		rax
+  0x00007fa71842b56c:   code=ebbe jmp		0x7fa71842b52c
+  0x00007fa71842b56e:   code=4983c201 add		r10, 1
+  0x00007fa71842b572:   code=4b8304d101 add		qword ptr [r9 + r10*8], 1
+  0x00007fa71842b577:   code=488bf7 mov		rsi, rdi
+  0x00007fa71842b57a:   code=4889bc24a0000000 mov		qword ptr [rsp + 0xa0], rdi
+  0x00007fa71842b582:   code=0f1f440000 nop		dword ptr [rax + rax]
+  0x00007fa71842b587:   code=e8d4e84c07 call		0x7fa71f8f9e60
+                                                            ; ImmutableOopMap {[136]=Oop [152]=Oop [160]=Oop [168]=Oop }
+                                                            ;*invokevirtual copyControl {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {optimized virtual_call}
+  0x00007fa71842b58c:   code=0f1f840004030001 nop		dword ptr [rax + rax + 0x1000304]
+                                                            ;   {post_call_nop}
+  0x00007fa71842b594:   code=488b9c2488000000 mov		rbx, qword ptr [rsp + 0x88]
+  0x00007fa71842b59c:   code=483b03 cmp		rax, qword ptr [rbx]
+                                                            ; implicit exception: dispatches to 0x00007fa71842b7e2
+  0x00007fa71842b59f:   code=488bf3 mov		rsi, rbx
+  0x00007fa71842b5a2:   code=48bf280a098200000000 movabs		rdi, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b5ac:   code=8b36 mov		esi, dword ptr [rsi]
+  0x00007fa71842b5ae:   code=c1ee0d shr		esi, 0xd
+  0x00007fa71842b5b1:   code=48c1e60a shl		rsi, 0xa
+  0x00007fa71842b5b5:   code=41ba00000081 mov		r10d, 0x81000000
+  0x00007fa71842b5bb:   code=4903f2 add		rsi, r10
+  0x00007fa71842b5be:   code=41ba1e000000 mov		r10d, 0x1e
+  0x00007fa71842b5c4:   code=4a3b34d7 cmp		rsi, qword ptr [rdi + r10*8]
+  0x00007fa71842b5c8:   code=7436 je		0x7fa71842b600
+  0x00007fa71842b5ca:   code=4983c202 add		r10, 2
+  0x00007fa71842b5ce:   code=4983fa22 cmp		r10, 0x22
+  0x00007fa71842b5d2:   code=75f0 jne		0x7fa71842b5c4
+  0x00007fa71842b5d4:   code=41ba1e000000 mov		r10d, 0x1e
+  0x00007fa71842b5da:   code=4a833cd700 cmp		qword ptr [rdi + r10*8], 0
+  0x00007fa71842b5df:   code=7412 je		0x7fa71842b5f3
+  0x00007fa71842b5e1:   code=4983c202 add		r10, 2
+  0x00007fa71842b5e5:   code=4983fa22 cmp		r10, 0x22
+  0x00007fa71842b5e9:   code=75ef jne		0x7fa71842b5da
+  0x00007fa71842b5eb:   code=41ba1d000000 mov		r10d, 0x1d
+  0x00007fa71842b5f1:   code=eb11 jmp		0x7fa71842b604
+  0x00007fa71842b5f3:   code=50 push		rax
+  0x00007fa71842b5f4:   code=4833c0 xor		rax, rax
+  0x00007fa71842b5f7:   code=f04a0fb134d7 lock cmpxchg		qword ptr [rdi + r10*8], rsi
+  0x00007fa71842b5fd:   code=58 pop		rax
+  0x00007fa71842b5fe:   code=ebbe jmp		0x7fa71842b5be
+  0x00007fa71842b600:   code=4983c201 add		r10, 1
+  0x00007fa71842b604:   code=4a8304d701 add		qword ptr [rdi + r10*8], 1
+  0x00007fa71842b609:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842b613:   code=8b7e70 mov		edi, dword ptr [rsi + 0x70]
+  0x00007fa71842b616:   code=83c702 add		edi, 2
+  0x00007fa71842b619:   code=897e70 mov		dword ptr [rsi + 0x70], edi
+  0x00007fa71842b61c:   code=81e7feff1f00 and		edi, 0x1ffffe
+  0x00007fa71842b622:   code=85ff test		edi, edi
+  0x00007fa71842b624:   code=0f84bd010000 je		0x7fa71842b7e7
+  0x00007fa71842b62a:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842b634:   code=ff86b8000000 inc		dword ptr [rsi + 0xb8]
+  0x00007fa71842b63a:   code=e9f9fdffff jmp		0x7fa71842b438
+  0x00007fa71842b63f:   code=48898c24b8000000 mov		qword ptr [rsp + 0xb8], rcx
+  0x00007fa71842b647:   code=48be280a098200000000 movabs		rsi, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b651:   code=4883863801000001 add		qword ptr [rsi + 0x138], 1
+  0x00007fa71842b659:   code=e8c213c31d call		0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71842b65e:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71842b666:   code=488b9424a8000000 mov		rdx, qword ptr [rsp + 0xa8]
+  0x00007fa71842b66e:   code=48894228 mov		qword ptr [rdx + 0x28], rax
+                                                            ; implicit exception: dispatches to 0x00007fa71842b808
+  0x00007fa71842b672:   code=488b8424b0000000 mov		rax, qword ptr [rsp + 0xb0]
+  0x00007fa71842b67a:   code=48894218 mov		qword ptr [rdx + 0x18], rax
+  0x00007fa71842b67e:   code=488b8c24b8000000 mov		rcx, qword ptr [rsp + 0xb8]
+  0x00007fa71842b686:   code=c4e1fb2ac1 vcvtsi2sd		xmm0, xmm0, rcx
+  0x00007fa71842b68b:   code=c5fb114210 vmovsd		qword ptr [rdx + 0x10], xmm0
+  0x00007fa71842b690:   code=4881c4d0000000 add		rsp, 0xd0
+  0x00007fa71842b697:   code=5d pop		rbp
+  0x00007fa71842b698:   code=493b6728 cmp		rsp, qword ptr [r15 + 0x28]
+                                                            ;   {poll_return}
+  0x00007fa71842b69c:   code=0f876b010000 ja		0x7fa71842b80d
+  0x00007fa71842b6a2:   code=c3 ret		
+  0x00007fa71842b6a3:   code=89842400c0feff mov		dword ptr [rsp - 0x14000], eax
+  0x00007fa71842b6aa:   code=55 push		rbp
+  0x00007fa71842b6ab:   code=4881ecd0000000 sub		rsp, 0xd0
+  0x00007fa71842b6b2:   code=6690 nop		
+  0x00007fa71842b6b4:   code=41817f2000000000 cmp		dword ptr [r15 + 0x20], 0
+  0x00007fa71842b6bc:   code=7405 je		0x7fa71842b6c3
+  0x00007fa71842b6be:   code=e8dde34b07 call		0x7fa71f8e9aa0
+                                                            ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007fa71842b6c3:   code=bf60000000 mov		edi, 0x60
+  0x00007fa71842b6c8:   code=4863ff movsxd		rdi, edi
+  0x00007fa71842b6cb:   code=488b1c3e mov		rbx, qword ptr [rsi + rdi]
+  0x00007fa71842b6cf:   code=bf58000000 mov		edi, 0x58
+  0x00007fa71842b6d4:   code=4863ff movsxd		rdi, edi
+  0x00007fa71842b6d7:   code=488b043e mov		rax, qword ptr [rsi + rdi]
+  0x00007fa71842b6db:   code=bf38000000 mov		edi, 0x38
+  0x00007fa71842b6e0:   code=4863ff movsxd		rdi, edi
+  0x00007fa71842b6e3:   code=488b143e mov		rdx, qword ptr [rsi + rdi]
+  0x00007fa71842b6e7:   code=bf20000000 mov		edi, 0x20
+  0x00007fa71842b6ec:   code=4863ff movsxd		rdi, edi
+  0x00007fa71842b6ef:   code=488b0c3e mov		rcx, qword ptr [rsi + rdi]
+  0x00007fa71842b6f3:   code=bf10000000 mov		edi, 0x10
+  0x00007fa71842b6f8:   code=4863ff movsxd		rdi, edi
+  0x00007fa71842b6fb:   code=4c8b043e mov		r8, qword ptr [rsi + rdi]
+  0x00007fa71842b6ff:   code=bf00000000 mov		edi, 0
+  0x00007fa71842b704:   code=4863ff movsxd		rdi, edi
+  0x00007fa71842b707:   code=4c8b0c3e mov		r9, qword ptr [rsi + rdi]
+  0x00007fa71842b70b:   code=488bfe mov		rdi, rsi
+  0x00007fa71842b70e:   code=48899c2480000000 mov		qword ptr [rsp + 0x80], rbx
+  0x00007fa71842b716:   code=4889442478 mov		qword ptr [rsp + 0x78], rax
+  0x00007fa71842b71b:   code=4889542470 mov		qword ptr [rsp + 0x70], rdx
+  0x00007fa71842b720:   code=48894c2468 mov		qword ptr [rsp + 0x68], rcx
+  0x00007fa71842b725:   code=4c89442460 mov		qword ptr [rsp + 0x60], r8
+  0x00007fa71842b72a:   code=4c894c2458 mov		qword ptr [rsp + 0x58], r9
+  0x00007fa71842b72f:   code=e88c62d11d call		0x7fa7361419c0
+                                                            ;   {runtime_call SharedRuntime::OSR_migration_end(long*)}
+  0x00007fa71842b734:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71842b73c:   code=4c8b4c2458 mov		r9, qword ptr [rsp + 0x58]
+  0x00007fa71842b741:   code=498bc1 mov		rax, r9
+  0x00007fa71842b744:   code=4c8b442460 mov		r8, qword ptr [rsp + 0x60]
+  0x00007fa71842b749:   code=498bc8 mov		rcx, r8
+  0x00007fa71842b74c:   code=488b742468 mov		rsi, qword ptr [rsp + 0x68]
+  0x00007fa71842b751:   code=488bfe mov		rdi, rsi
+  0x00007fa71842b754:   code=488b542470 mov		rdx, qword ptr [rsp + 0x70]
+  0x00007fa71842b759:   code=488bda mov		rbx, rdx
+  0x00007fa71842b75c:   code=488b742478 mov		rsi, qword ptr [rsp + 0x78]
+  0x00007fa71842b761:   code=488bd6 mov		rdx, rsi
+  0x00007fa71842b764:   code=488bb42480000000 mov		rsi, qword ptr [rsp + 0x80]
+  0x00007fa71842b76c:   code=48898424b0000000 mov		qword ptr [rsp + 0xb0], rax
+  0x00007fa71842b774:   code=48898c2490000000 mov		qword ptr [rsp + 0x90], rcx
+  0x00007fa71842b77c:   code=48899c2488000000 mov		qword ptr [rsp + 0x88], rbx
+  0x00007fa71842b784:   code=48899424a8000000 mov		qword ptr [rsp + 0xa8], rdx
+  0x00007fa71842b78c:   code=e96ffdffff jmp		0x7fa71842b500
+  0x00007fa71842b791:   code=49ba80944408a77f0000 movabs		r10, 0x7fa708449480
+                                                            ;   {metadata({method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b79b:   code=4c89542408 mov		qword ptr [rsp + 8], r10
+  0x00007fa71842b7a0:   code=48c70424ffffffff mov		qword ptr [rsp], 0xffffffffffffffff
+  0x00007fa71842b7a8:   code=e8b36d5907 call		0x7fa71f9c2560
+                                                            ; ImmutableOopMap {rsi=Oop rdx=Oop rcx=Oop r8=Oop r9=Oop rdi=Oop [224]=Oop [240]=Oop }
+                                                            ;*synchronization entry
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@-1 (line 118)
+                                                            ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007fa71842b7ad:   code=e90dfcffff jmp		0x7fa71842b3bf
+  0x00007fa71842b7b2:   code=e829055907 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdx=Oop [72]=Oop [80]=Oop [240]=Oop }
+                                                            ;*putfield startTime {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@10 (line 120)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842b7b7:   code=e824055907 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rbx=Oop rsi=Oop [160]=Oop [168]=Oop }
+                                                            ;*getfield isDone {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@30 (line 124)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842b7bc:   code=49ba80944408a77f0000 movabs		r10, 0x7fa708449480
+                                                            ;   {metadata({method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842b7c6:   code=4c89542408 mov		qword ptr [rsp + 8], r10
+  0x00007fa71842b7cb:   code=48c7042421000000 mov		qword ptr [rsp], 0x21
+  0x00007fa71842b7d3:   code=e8886d5907 call		0x7fa71f9c2560
+                                                            ; ImmutableOopMap {rbx=Oop rsi=Oop [160]=Oop [168]=Oop }
+                                                            ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@33 (line 124)
+                                                            ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007fa71842b7d8:   code=e9dafcffff jmp		0x7fa71842b4b7
+  0x00007fa71842b7dd:   code=e8fe045907 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdi=Oop [136]=Oop [152]=Oop [168]=Oop }
+                                                            ;*invokevirtual copyControl {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842b7e2:   code=e8f9045907 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rbx=Oop [152]=Oop [160]=Oop [168]=Oop }
+                                                            ;*invokevirtual consume {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@20 (line 122)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842b7e7:   code=49baf8734508a77f0000 movabs		r10, 0x7fa7084573f8
+                                                            ;   {metadata({method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842b7f1:   code=4c89542408 mov		qword ptr [rsp + 8], r10
+  0x00007fa71842b7f6:   code=48c70424ffffffff mov		qword ptr [rsp], 0xffffffffffffffff
+  0x00007fa71842b7fe:   code=e85d6d5907 call		0x7fa71f9c2560
+                                                            ; ImmutableOopMap {rbx=Oop [152]=Oop [160]=Oop [168]=Oop }
+                                                            ;*synchronization entry
+                                                            ; - org.openjdk.jmh.infra.Blackhole::consume@-1 (line 387)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@20 (line 122)
+                                                            ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007fa71842b803:   code=e922feffff jmp		0x7fa71842b62a
+  0x00007fa71842b808:   code=e8d3045907 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdx=Oop }
+                                                            ;*putfield stopTime {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@40 (line 125)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842b80d:   code=49ba98b64218a77f0000 movabs		r10, 0x7fa71842b698
+                                                            ;   {internal_word}
+  0x00007fa71842b817:   code=4d899710050000 mov		qword ptr [r15 + 0x510], r10
+  0x00007fa71842b81e:   code=e9bd164d07 jmp		0x7fa71f8fcee0
+                                                            ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007fa71842b823:   code=498b8778050000 mov		rax, qword ptr [r15 + 0x578]
+  0x00007fa71842b82a:   code=49c7877805000000000000 mov		qword ptr [r15 + 0x578], 0
+  0x00007fa71842b835:   code=49c7878005000000000000 mov		qword ptr [r15 + 0x580], 0
+  0x00007fa71842b840:   code=4881c4d0000000 add		rsp, 0xd0
+  0x00007fa71842b847:   code=5d pop		rbp
+  0x00007fa71842b848:   code=e993f25807 jmp		0x7fa71f9baae0
+                                                            ;   {runtime_call unwind_exception_blob (C1 runtime)}
+  0x00007fa71842b84d:   code=f4 hlt		
+  0x00007fa71842b84e:   code=f4 hlt		
+  0x00007fa71842b84f:   code=f4 hlt		
+[Stub Code]
+  0x00007fa71842b850:   code=0f1f440000 nop		dword ptr [rax + rax]
+                                                            ;   {other}
+  0x00007fa71842b855:   code=48bb0000000000000000 movabs		rbx, 0
+                                                            ;   {static_stub}
+  0x00007fa71842b85f:   code=e9fbffffff jmp		0x7fa71842b85f
+                                                            ;   {runtime_call nmethod}
+[Exception Handler]
+  0x00007fa71842b864:   code=e877295907 call		0x7fa71f9be1e0
+                                                            ;   {runtime_call handle_exception_from_callee_blob (C1 runtime)}
+  0x00007fa71842b869:   code=48bfe9914635a77f0000 movabs		rdi, 0x7fa7354691e9
+                                                            ;   {external_word}
+  0x00007fa71842b873:   code=4883e4f0 and		rsp, 0xfffffffffffffff0
+  0x00007fa71842b877:   code=e8f42daf1d call		0x7fa735f1e670
+                                                            ;   {runtime_call MacroAssembler::debug64(char*, long, long*)}
+  0x00007fa71842b87c:   code=f4 hlt		
+  0x00007fa71842b87d:   code=e8defd4c07 call		0x7fa71f8fb660
+                                                            ;   {runtime_call DeoptimizationBlob}
+[Deopt Handler Entry Point]
+  0x00007fa71842b882:   code=ebf9 jmp		0x7fa71842b87d
+  0x00007fa71842b884:   code=f4 hlt		
+  0x00007fa71842b885:   code=f4 hlt		
+  0x00007fa71842b886:   code=f4 hlt		
+  0x00007fa71842b887:   code=f4 hlt		
+--------------------------------------------------------------------------------
+[/Disassembly]
+
+============================= C1-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c1) 2283  703       3       experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub (57 bytes)
+ total in heap  [0x00007fa71842b908,0x00007fa71842bdb0] = 1192
+ main code      [0x00007fa71842ba00,0x00007fa71842bd70] = 880
+ stub code      [0x00007fa71842bd70,0x00007fa71842bda8] = 56
+ oops           [0x00007fa71842bda8,0x00007fa71842bdb0] = 8
+ mutable data [0x00007fa6f423e290,0x00007fa6f423e318] = 136
+ relocation     [0x00007fa6f423e290,0x00007fa6f423e2f0] = 96
+ metadata       [0x00007fa6f423e2f0,0x00007fa6f423e318] = 40
+ immutable data [0x00007fa6f4244350,0x00007fa6f4244524] = 468
+ dependencies   [0x00007fa6f4244350,0x00007fa6f4244360] = 16
+ nul chk table  [0x00007fa6f4244360,0x00007fa6f4244388] = 40
+ scopes pcs     [0x00007fa6f4244388,0x00007fa6f4244438] = 176
+ scopes data    [0x00007fa6f4244438,0x00007fa6f4244520] = 232
+
+[Disassembly]
+--------------------------------------------------------------------------------
+[Constant Pool (empty)]
+
+--------------------------------------------------------------------------------
+
+[Verified Entry Point]
+  # {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest'
+  # parm0:    rsi:rsi   = 'org/openjdk/jmh/runner/InfraControl'
+  # parm1:    rdx:rdx   = 'org/openjdk/jmh/results/RawResults'
+  # parm2:    rcx:rcx   = 'org/openjdk/jmh/infra/BenchmarkParams'
+  # parm3:    r8:r8     = 'org/openjdk/jmh/infra/IterationParams'
+  # parm4:    r9:r9     = 'org/openjdk/jmh/infra/ThreadParams'
+  # parm5:    rdi:rdi   = 'org/openjdk/jmh/infra/Blackhole'
+  # parm6:    [sp+0x80]   = 'org/openjdk/jmh/infra/Control'  (sp of caller)
+  # parm7:    [sp+0x88]   = int
+  # parm8:    [sp+0x90]   = 'experiment/jmh_generated/FrameBench_jmhType'
+  0x00007fa71842ba00:   code=89842400c0feff mov		dword ptr [rsp - 0x14000], eax
+  0x00007fa71842ba07:   code=55 push		rbp
+  0x00007fa71842ba08:   code=4883ec70 sub		rsp, 0x70
+  0x00007fa71842ba0c:   code=41817f2001000000 cmp		dword ptr [r15 + 0x20], 1
+  0x00007fa71842ba14:   code=7405 je		0x7fa71842ba1b
+  0x00007fa71842ba16:   code=e885e04b07 call		0x7fa71f8e9aa0
+                                                            ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007fa71842ba1b:   code=4889742450 mov		qword ptr [rsp + 0x50], rsi
+  0x00007fa71842ba20:   code=4889542440 mov		qword ptr [rsp + 0x40], rdx
+  0x00007fa71842ba25:   code=48897c2448 mov		qword ptr [rsp + 0x48], rdi
+  0x00007fa71842ba2a:   code=48bb280a098200000000 movabs		rbx, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842ba34:   code=8b4370 mov		eax, dword ptr [rbx + 0x70]
+  0x00007fa71842ba37:   code=83c002 add		eax, 2
+  0x00007fa71842ba3a:   code=894370 mov		dword ptr [rbx + 0x70], eax
+  0x00007fa71842ba3d:   code=25fe070000 and		eax, 0x7fe
+  0x00007fa71842ba42:   code=85c0 test		eax, eax
+  0x00007fa71842ba44:   code=0f8470020000 je		0x7fa71842bcba
+  0x00007fa71842ba4a:   code=48bb280a098200000000 movabs		rbx, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842ba54:   code=488383a800000001 add		qword ptr [rbx + 0xa8], 1
+  0x00007fa71842ba5c:   code=e8bf0fc31d call		0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71842ba61:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71842ba69:   code=488b542440 mov		rdx, qword ptr [rsp + 0x40]
+  0x00007fa71842ba6e:   code=48894220 mov		qword ptr [rdx + 0x20], rax
+                                                            ; implicit exception: dispatches to 0x00007fa71842bcdb
+  0x00007fa71842ba72:   code=bf00000000 mov		edi, 0
+  0x00007fa71842ba77:   code=48897c2458 mov		qword ptr [rsp + 0x58], rdi
+  0x00007fa71842ba7c:   code=e9b6000000 jmp		0x7fa71842bb37
+  0x00007fa71842ba81:   code=0f1f8000000000 nop		dword ptr [rax]
+  0x00007fa71842ba88:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842ba92:   code=488386c800000001 add		qword ptr [rsi + 0xc8], 1
+  0x00007fa71842ba9a:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842baa4:   code=ff86d8000000 inc		dword ptr [rsi + 0xd8]
+  0x00007fa71842baaa:   code=488b742450 mov		rsi, qword ptr [rsp + 0x50]
+  0x00007fa71842baaf:   code=488b5c2458 mov		rbx, qword ptr [rsp + 0x58]
+  0x00007fa71842bab4:   code=41ba01000000 mov		r10d, 1
+  0x00007fa71842baba:   code=4903da add		rbx, r10
+  0x00007fa71842babd:   code=0fbe868c000000 movsx		eax, byte ptr [rsi + 0x8c]
+                                                            ; implicit exception: dispatches to 0x00007fa71842bce0
+  0x00007fa71842bac4:   code=85c0 test		eax, eax
+  0x00007fa71842bac6:   code=ba02000000 mov		edx, 2
+  0x00007fa71842bacb:   code=7405 je		0x7fa71842bad2
+  0x00007fa71842bacd:   code=ba00000000 mov		edx, 0
+  0x00007fa71842bad2:   code=48b9280a098200000000 movabs		rcx, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842badc:   code=448b4174 mov		r8d, dword ptr [rcx + 0x74]
+  0x00007fa71842bae0:   code=4403c2 add		r8d, edx
+  0x00007fa71842bae3:   code=44894174 mov		dword ptr [rcx + 0x74], r8d
+  0x00007fa71842bae7:   code=85d2 test		edx, edx
+  0x00007fa71842bae9:   code=7506 jne		0x7fa71842baf1
+  0x00007fa71842baeb:   code=41b802000000 mov		r8d, 2
+  0x00007fa71842baf1:   code=4181e0fe3f0000 and		r8d, 0x3ffe
+  0x00007fa71842baf8:   code=4585c0 test		r8d, r8d
+  0x00007fa71842bafb:   code=0f84e4010000 je		0x7fa71842bce5
+  0x00007fa71842bb01:   code=4d8b5730 mov		r10, qword ptr [r15 + 0x30]
+                                                            ; ImmutableOopMap {rdi=Oop rsi=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@33 (line 124)
+  0x00007fa71842bb05:   code=418502 test		dword ptr [r10], eax
+                                                            ;   {poll}
+  0x00007fa71842bb08:   code=85c0 test		eax, eax
+  0x00007fa71842bb0a:   code=48b8280a098200000000 movabs		rax, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842bb14:   code=ba28010000 mov		edx, 0x128
+  0x00007fa71842bb19:   code=7505 jne		0x7fa71842bb20
+  0x00007fa71842bb1b:   code=ba18010000 mov		edx, 0x118
+  0x00007fa71842bb20:   code=488b0c10 mov		rcx, qword ptr [rax + rdx]
+  0x00007fa71842bb24:   code=488d4901 lea		rcx, [rcx + 1]
+  0x00007fa71842bb28:   code=48890c10 mov		qword ptr [rax + rdx], rcx
+  0x00007fa71842bb2c:   code=0f8532010000 jne		0x7fa71842bc64
+  0x00007fa71842bb32:   code=48895c2458 mov		qword ptr [rsp + 0x58], rbx
+  0x00007fa71842bb37:   code=488bbc2490000000 mov		rdi, qword ptr [rsp + 0x90]
+  0x00007fa71842bb3f:   code=483b07 cmp		rax, qword ptr [rdi]
+                                                            ; implicit exception: dispatches to 0x00007fa71842bd06
+  0x00007fa71842bb42:   code=488bcf mov		rcx, rdi
+  0x00007fa71842bb45:   code=49b8280a098200000000 movabs		r8, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842bb4f:   code=8b09 mov		ecx, dword ptr [rcx]
+  0x00007fa71842bb51:   code=c1e90d shr		ecx, 0xd
+  0x00007fa71842bb54:   code=48c1e10a shl		rcx, 0xa
+  0x00007fa71842bb58:   code=41ba00000081 mov		r10d, 0x81000000
+  0x00007fa71842bb5e:   code=4903ca add		rcx, r10
+  0x00007fa71842bb61:   code=41ba18000000 mov		r10d, 0x18
+  0x00007fa71842bb67:   code=4b3b0cd0 cmp		rcx, qword ptr [r8 + r10*8]
+  0x00007fa71842bb6b:   code=7436 je		0x7fa71842bba3
+  0x00007fa71842bb6d:   code=4983c202 add		r10, 2
+  0x00007fa71842bb71:   code=4983fa1c cmp		r10, 0x1c
+  0x00007fa71842bb75:   code=75f0 jne		0x7fa71842bb67
+  0x00007fa71842bb77:   code=41ba18000000 mov		r10d, 0x18
+  0x00007fa71842bb7d:   code=4b833cd000 cmp		qword ptr [r8 + r10*8], 0
+  0x00007fa71842bb82:   code=7412 je		0x7fa71842bb96
+  0x00007fa71842bb84:   code=4983c202 add		r10, 2
+  0x00007fa71842bb88:   code=4983fa1c cmp		r10, 0x1c
+  0x00007fa71842bb8c:   code=75ef jne		0x7fa71842bb7d
+  0x00007fa71842bb8e:   code=41ba17000000 mov		r10d, 0x17
+  0x00007fa71842bb94:   code=eb11 jmp		0x7fa71842bba7
+  0x00007fa71842bb96:   code=50 push		rax
+  0x00007fa71842bb97:   code=4833c0 xor		rax, rax
+  0x00007fa71842bb9a:   code=f04b0fb10cd0 lock cmpxchg		qword ptr [r8 + r10*8], rcx
+  0x00007fa71842bba0:   code=58 pop		rax
+  0x00007fa71842bba1:   code=ebbe jmp		0x7fa71842bb61
+  0x00007fa71842bba3:   code=4983c201 add		r10, 1
+  0x00007fa71842bba7:   code=4b8304d001 add		qword ptr [r8 + r10*8], 1
+  0x00007fa71842bbac:   code=488bf7 mov		rsi, rdi
+  0x00007fa71842bbaf:   code=e8ace24c07 call		0x7fa71f8f9e60
+                                                            ; ImmutableOopMap {[64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*invokevirtual copyControl {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {optimized virtual_call}
+  0x00007fa71842bbb4:   code=0f1f8400ac020001 nop		dword ptr [rax + rax + 0x10002ac]
+                                                            ;   {post_call_nop}
+  0x00007fa71842bbbc:   code=488b7c2448 mov		rdi, qword ptr [rsp + 0x48]
+  0x00007fa71842bbc1:   code=483b07 cmp		rax, qword ptr [rdi]
+                                                            ; implicit exception: dispatches to 0x00007fa71842bd0b
+  0x00007fa71842bbc4:   code=488bf7 mov		rsi, rdi
+  0x00007fa71842bbc7:   code=48bb280a098200000000 movabs		rbx, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842bbd1:   code=8b36 mov		esi, dword ptr [rsi]
+  0x00007fa71842bbd3:   code=c1ee0d shr		esi, 0xd
+  0x00007fa71842bbd6:   code=48c1e60a shl		rsi, 0xa
+  0x00007fa71842bbda:   code=41ba00000081 mov		r10d, 0x81000000
+  0x00007fa71842bbe0:   code=4903f2 add		rsi, r10
+  0x00007fa71842bbe3:   code=41ba1e000000 mov		r10d, 0x1e
+  0x00007fa71842bbe9:   code=4a3b34d3 cmp		rsi, qword ptr [rbx + r10*8]
+  0x00007fa71842bbed:   code=7436 je		0x7fa71842bc25
+  0x00007fa71842bbef:   code=4983c202 add		r10, 2
+  0x00007fa71842bbf3:   code=4983fa22 cmp		r10, 0x22
+  0x00007fa71842bbf7:   code=75f0 jne		0x7fa71842bbe9
+  0x00007fa71842bbf9:   code=41ba1e000000 mov		r10d, 0x1e
+  0x00007fa71842bbff:   code=4a833cd300 cmp		qword ptr [rbx + r10*8], 0
+  0x00007fa71842bc04:   code=7412 je		0x7fa71842bc18
+  0x00007fa71842bc06:   code=4983c202 add		r10, 2
+  0x00007fa71842bc0a:   code=4983fa22 cmp		r10, 0x22
+  0x00007fa71842bc0e:   code=75ef jne		0x7fa71842bbff
+  0x00007fa71842bc10:   code=41ba1d000000 mov		r10d, 0x1d
+  0x00007fa71842bc16:   code=eb11 jmp		0x7fa71842bc29
+  0x00007fa71842bc18:   code=50 push		rax
+  0x00007fa71842bc19:   code=4833c0 xor		rax, rax
+  0x00007fa71842bc1c:   code=f04a0fb134d3 lock cmpxchg		qword ptr [rbx + r10*8], rsi
+  0x00007fa71842bc22:   code=58 pop		rax
+  0x00007fa71842bc23:   code=ebbe jmp		0x7fa71842bbe3
+  0x00007fa71842bc25:   code=4983c201 add		r10, 1
+  0x00007fa71842bc29:   code=4a8304d301 add		qword ptr [rbx + r10*8], 1
+  0x00007fa71842bc2e:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842bc38:   code=8b5e70 mov		ebx, dword ptr [rsi + 0x70]
+  0x00007fa71842bc3b:   code=83c302 add		ebx, 2
+  0x00007fa71842bc3e:   code=895e70 mov		dword ptr [rsi + 0x70], ebx
+  0x00007fa71842bc41:   code=81e3feff1f00 and		ebx, 0x1ffffe
+  0x00007fa71842bc47:   code=85db test		ebx, ebx
+  0x00007fa71842bc49:   code=0f84c1000000 je		0x7fa71842bd10
+  0x00007fa71842bc4f:   code=48be20be088200000000 movabs		rsi, 0x8208be20
+                                                            ;   {metadata(method data for {method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842bc59:   code=ff86b8000000 inc		dword ptr [rsi + 0xb8]
+  0x00007fa71842bc5f:   code=e924feffff jmp		0x7fa71842ba88
+  0x00007fa71842bc64:   code=48895c2460 mov		qword ptr [rsp + 0x60], rbx
+  0x00007fa71842bc69:   code=48be280a098200000000 movabs		rsi, 0x82090a28
+                                                            ;   {metadata(method data for {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842bc73:   code=4883863801000001 add		qword ptr [rsi + 0x138], 1
+  0x00007fa71842bc7b:   code=e8a00dc31d call		0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71842bc80:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71842bc88:   code=488b542440 mov		rdx, qword ptr [rsp + 0x40]
+  0x00007fa71842bc8d:   code=48894228 mov		qword ptr [rdx + 0x28], rax
+  0x00007fa71842bc91:   code=41ba00000000 mov		r10d, 0
+  0x00007fa71842bc97:   code=4c895218 mov		qword ptr [rdx + 0x18], r10
+  0x00007fa71842bc9b:   code=488b5c2460 mov		rbx, qword ptr [rsp + 0x60]
+  0x00007fa71842bca0:   code=c4e1fb2ac3 vcvtsi2sd		xmm0, xmm0, rbx
+  0x00007fa71842bca5:   code=c5fb114210 vmovsd		qword ptr [rdx + 0x10], xmm0
+  0x00007fa71842bcaa:   code=4883c470 add		rsp, 0x70
+  0x00007fa71842bcae:   code=5d pop		rbp
+  0x00007fa71842bcaf:   code=493b6728 cmp		rsp, qword ptr [r15 + 0x28]
+                                                            ;   {poll_return}
+  0x00007fa71842bcb3:   code=0f8778000000 ja		0x7fa71842bd31
+  0x00007fa71842bcb9:   code=c3 ret		
+  0x00007fa71842bcba:   code=49ba80944408a77f0000 movabs		r10, 0x7fa708449480
+                                                            ;   {metadata({method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842bcc4:   code=4c89542408 mov		qword ptr [rsp + 8], r10
+  0x00007fa71842bcc9:   code=48c70424ffffffff mov		qword ptr [rsp], 0xffffffffffffffff
+  0x00007fa71842bcd1:   code=e88a685907 call		0x7fa71f9c2560
+                                                            ; ImmutableOopMap {rsi=Oop rdx=Oop rcx=Oop r8=Oop r9=Oop rdi=Oop [64]=Oop [72]=Oop [80]=Oop [128]=Oop [144]=Oop }
+                                                            ;*synchronization entry
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@-1 (line 118)
+                                                            ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007fa71842bcd6:   code=e96ffdffff jmp		0x7fa71842ba4a
+  0x00007fa71842bcdb:   code=e800005907 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdx=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*putfield startTime {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@10 (line 120)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842bce0:   code=e8fbff5807 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdi=Oop rsi=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*getfield isDone {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@30 (line 124)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842bce5:   code=49ba80944408a77f0000 movabs		r10, 0x7fa708449480
+                                                            ;   {metadata({method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest')}
+  0x00007fa71842bcef:   code=4c89542408 mov		qword ptr [rsp + 8], r10
+  0x00007fa71842bcf4:   code=48c7042421000000 mov		qword ptr [rsp], 0x21
+  0x00007fa71842bcfc:   code=e85f685907 call		0x7fa71f9c2560
+                                                            ; ImmutableOopMap {rdi=Oop rsi=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@33 (line 124)
+                                                            ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007fa71842bd01:   code=e9fbfdffff jmp		0x7fa71842bb01
+  0x00007fa71842bd06:   code=e8d5ff5807 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdi=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*invokevirtual copyControl {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842bd0b:   code=e8d0ff5807 call		0x7fa71f9bbce0
+                                                            ; ImmutableOopMap {rdi=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*invokevirtual consume {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@20 (line 122)
+                                                            ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007fa71842bd10:   code=49baf8734508a77f0000 movabs		r10, 0x7fa7084573f8
+                                                            ;   {metadata({method} {0x00007fa7084573f8} 'consume' '(I)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71842bd1a:   code=4c89542408 mov		qword ptr [rsp + 8], r10
+  0x00007fa71842bd1f:   code=48c70424ffffffff mov		qword ptr [rsp], 0xffffffffffffffff
+  0x00007fa71842bd27:   code=e834685907 call		0x7fa71f9c2560
+                                                            ; ImmutableOopMap {rdi=Oop [64]=Oop [72]=Oop [80]=Oop [144]=Oop }
+                                                            ;*synchronization entry
+                                                            ; - org.openjdk.jmh.infra.Blackhole::consume@-1 (line 387)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@20 (line 122)
+                                                            ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007fa71842bd2c:   code=e91effffff jmp		0x7fa71842bc4f
+  0x00007fa71842bd31:   code=49baafbc4218a77f0000 movabs		r10, 0x7fa71842bcaf
+                                                            ;   {internal_word}
+  0x00007fa71842bd3b:   code=4d899710050000 mov		qword ptr [r15 + 0x510], r10
+  0x00007fa71842bd42:   code=e999114d07 jmp		0x7fa71f8fcee0
+                                                            ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007fa71842bd47:   code=498b8778050000 mov		rax, qword ptr [r15 + 0x578]
+  0x00007fa71842bd4e:   code=49c7877805000000000000 mov		qword ptr [r15 + 0x578], 0
+  0x00007fa71842bd59:   code=49c7878005000000000000 mov		qword ptr [r15 + 0x580], 0
+  0x00007fa71842bd64:   code=4883c470 add		rsp, 0x70
+  0x00007fa71842bd68:   code=5d pop		rbp
+  0x00007fa71842bd69:   code=e972ed5807 jmp		0x7fa71f9baae0
+                                                            ;   {runtime_call unwind_exception_blob (C1 runtime)}
+  0x00007fa71842bd6e:   code=f4 hlt		
+  0x00007fa71842bd6f:   code=f4 hlt		
+[Stub Code]
+  0x00007fa71842bd70:   code=0f1f440000 nop		dword ptr [rax + rax]
+                                                            ;   {other}
+  0x00007fa71842bd75:   code=48bb0000000000000000 movabs		rbx, 0
+                                                            ;   {static_stub}
+  0x00007fa71842bd7f:   code=e9fbffffff jmp		0x7fa71842bd7f
+                                                            ;   {runtime_call nmethod}
+[Exception Handler]
+  0x00007fa71842bd84:   code=e857245907 call		0x7fa71f9be1e0
+                                                            ;   {runtime_call handle_exception_from_callee_blob (C1 runtime)}
+  0x00007fa71842bd89:   code=48bfe9914635a77f0000 movabs		rdi, 0x7fa7354691e9
+                                                            ;   {external_word}
+  0x00007fa71842bd93:   code=4883e4f0 and		rsp, 0xfffffffffffffff0
+  0x00007fa71842bd97:   code=e8d428af1d call		0x7fa735f1e670
+                                                            ;   {runtime_call MacroAssembler::debug64(char*, long, long*)}
+  0x00007fa71842bd9c:   code=f4 hlt		
+  0x00007fa71842bd9d:   code=e8bef84c07 call		0x7fa71f8fb660
+                                                            ;   {runtime_call DeoptimizationBlob}
+[Deopt Handler Entry Point]
+  0x00007fa71842bda2:   code=ebf9 jmp		0x7fa71842bd9d
+  0x00007fa71842bda4:   code=f4 hlt		
+  0x00007fa71842bda5:   code=f4 hlt		
+  0x00007fa71842bda6:   code=f4 hlt		
+  0x00007fa71842bda7:   code=f4 hlt		
+--------------------------------------------------------------------------------
+[/Disassembly]
+31411.917 ops/s
+Iteration   1: 
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c2) 3558  706 %     4       experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub @ 13 (57 bytes)
+ total in heap  [0x00007fa71fe71888,0x00007fa71fe71ca8] = 1056
+ main code      [0x00007fa71fe71980,0x00007fa71fe71c98] = 792
+ stub code      [0x00007fa71fe71c98,0x00007fa71fe71ca0] = 8
+ oops           [0x00007fa71fe71ca0,0x00007fa71fe71ca8] = 8
+ mutable data [0x00007fa6f009c420,0x00007fa6f009c4a8] = 136
+ relocation     [0x00007fa6f009c420,0x00007fa6f009c470] = 80
+ metadata       [0x00007fa6f009c470,0x00007fa6f009c4a8] = 56
+ immutable data [0x00007fa6f009c200,0x00007fa6f009c40c] = 524
+ dependencies   [0x00007fa6f009c200,0x00007fa6f009c218] = 24
+ nul chk table  [0x00007fa6f009c218,0x00007fa6f009c248] = 48
+ scopes pcs     [0x00007fa6f009c248,0x00007fa6f009c2e8] = 160
+ scopes data    [0x00007fa6f009c2e8,0x00007fa6f009c408] = 288
+
+[Disassembly]
+--------------------------------------------------------------------------------
+[Constant Pool (empty)]
+
+--------------------------------------------------------------------------------
+
+[Verified Entry Point]
+  # {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest'
+  0x00007fa71fe71980:   code=e8fb981e16 call		0x7fa73605b280
+                                                            ;   {runtime_call os::breakpoint()}
+  0x00007fa71fe71985:   code=6666660f1f840000000000 nop		word ptr [rax + rax]
+  0x00007fa71fe71990:   code=89842400c0feff mov		dword ptr [rsp - 0x14000], eax
+  0x00007fa71fe71997:   code=55 push		rbp
+  0x00007fa71fe71998:   code=4883ec60 sub		rsp, 0x60
+  0x00007fa71fe7199c:   code=41817f2001000000 cmp		dword ptr [r15 + 0x20], 1
+  0x00007fa71fe719a4:   code=0f85e4020000 jne		0x7fa71fe71c8e
+  0x00007fa71fe719aa:   code=488b5e60 mov		rbx, qword ptr [rsi + 0x60]
+  0x00007fa71fe719ae:   code=4c8b5658 mov		r10, qword ptr [rsi + 0x58]
+  0x00007fa71fe719b2:   code=4c891424 mov		qword ptr [rsp], r10
+  0x00007fa71fe719b6:   code=4c8b16 mov		r10, qword ptr [rsi]
+  0x00007fa71fe719b9:   code=4c89542420 mov		qword ptr [rsp + 0x20], r10
+  0x00007fa71fe719be:   code=488b6e38 mov		rbp, qword ptr [rsi + 0x38]
+  0x00007fa71fe719c2:   code=4c8b7620 mov		r14, qword ptr [rsi + 0x20]
+  0x00007fa71fe719c6:   code=4c8b5610 mov		r10, qword ptr [rsi + 0x10]
+  0x00007fa71fe719ca:   code=4c89542418 mov		qword ptr [rsp + 0x18], r10
+  0x00007fa71fe719cf:   code=488bfe mov		rdi, rsi
+  0x00007fa71fe719d2:   code=c5f877 vzeroupper		
+  0x00007fa71fe719d5:   code=49bac0191436a77f0000 movabs		r10, 0x7fa7361419c0
+                                                            ;   {runtime_call SharedRuntime::OSR_migration_end(long*)}
+  0x00007fa71fe719df:   code=41ffd2 call		r10
+  0x00007fa71fe719e2:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe719ea:   code=4885db test		rbx, rbx
+  0x00007fa71fe719ed:   code=0f84a1010000 je		0x7fa71fe71b94
+  0x00007fa71fe719f3:   code=4c8bd3 mov		r10, rbx
+  0x00007fa71fe719f6:   code=448b1b mov		r11d, dword ptr [rbx]
+  0x00007fa71fe719f9:   code=41c1eb0d shr		r11d, 0xd
+  0x00007fa71fe719fd:   code=4181fb66410000 cmp		r11d, 0x4166
+                                                            ;   {metadata('org/openjdk/jmh/runner/InfraControl')}
+  0x00007fa71fe71a04:   code=0f85ce010000 jne		0x7fa71fe71bd8
+  0x00007fa71fe71a0a:   code=4c8beb mov		r13, rbx
+  0x00007fa71fe71a0d:   code=4c8b0424 mov		r8, qword ptr [rsp]
+  0x00007fa71fe71a11:   code=4d85c0 test		r8, r8
+  0x00007fa71fe71a14:   code=0f8485010000 je		0x7fa71fe71b9f
+  0x00007fa71fe71a1a:   code=458b18 mov		r11d, dword ptr [r8]
+  0x00007fa71fe71a1d:   code=41c1eb0d shr		r11d, 0xd
+  0x00007fa71fe71a21:   code=4181fb67410000 cmp		r11d, 0x4167
+                                                            ;   {metadata('org/openjdk/jmh/results/RawResults')}
+  0x00007fa71fe71a28:   code=0f85ae010000 jne		0x7fa71fe71bdc
+  0x00007fa71fe71a2e:   code=498bd8 mov		rbx, r8
+  0x00007fa71fe71a31:   code=4885ed test		rbp, rbp
+  0x00007fa71fe71a34:   code=0f846c010000 je		0x7fa71fe71ba6
+  0x00007fa71fe71a3a:   code=448b4d00 mov		r9d, dword ptr [rbp]
+  0x00007fa71fe71a3e:   code=41c1e90d shr		r9d, 0xd
+  0x00007fa71fe71a42:   code=4181f97b410000 cmp		r9d, 0x417b
+                                                            ;   {metadata('org/openjdk/jmh/infra/Blackhole')}
+  0x00007fa71fe71a49:   code=0f858d010000 jne		0x7fa71fe71bdc
+  0x00007fa71fe71a4f:   code=488bcd mov		rcx, rbp
+  0x00007fa71fe71a52:   code=458b1e mov		r11d, dword ptr [r14]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe71bad
+  0x00007fa71fe71a55:   code=41c1eb0d shr		r11d, 0xd
+  0x00007fa71fe71a59:   code=4181fb71410000 cmp		r11d, 0x4171
+                                                            ;   {metadata('experiment/jmh_generated/FrameBench_jmhType')}
+  0x00007fa71fe71a60:   code=0f8576010000 jne		0x7fa71fe71bdc
+  0x00007fa71fe71a66:   code=4885c9 test		rcx, rcx
+  0x00007fa71fe71a69:   code=0f8441010000 je		0x7fa71fe71bb0
+  0x00007fa71fe71a6f:   code=4d85ed test		r13, r13
+  0x00007fa71fe71a72:   code=0f8438010000 je		0x7fa71fe71bb0
+  0x00007fa71fe71a78:   code=eb49 jmp		0x7fa71fe71ac3
+  0x00007fa71fe71a7a:   code=4d63d0 movsxd		r10, r8d
+  0x00007fa71fe71a7d:   code=49c7c3ffffffff mov		r11, 0xffffffffffffffff
+  0x00007fa71fe71a84:   code=c442a8f5db bzhi		r11, r11, r10
+  0x00007fa71fe71a89:   code=c4c1fb92fb kmovq		k7, r11
+  0x00007fa71fe71a8e:   code=62f17faf6f07 vmovdqu8		ymm0 {k7} {z}, ymmword ptr [rdi]
+  0x00007fa71fe71a94:   code=62f17f2f7f06 vmovdqu8		ymmword ptr [rsi] {k7}, ymm0
+  0x00007fa71fe71a9a:   code=458b5e10 mov		r11d, dword ptr [r14 + 0x10]
+  0x00007fa71fe71a9e:   code=458b5304 mov		r10d, dword ptr [r11 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe71c48
+  0x00007fa71fe71aa2:   code=450fb6858c000000 movzx		r8d, byte ptr [r13 + 0x8c]
+  0x00007fa71fe71aaa:   code=4d8b5730 mov		r10, qword ptr [r15 + 0x30]
+  0x00007fa71fe71aae:   code=4c8b5c2418 mov		r11, qword ptr [rsp + 0x18]
+  0x00007fa71fe71ab3:   code=49ffc3 inc		r11
+  0x00007fa71fe71ab6:   code=4c895c2418 mov		qword ptr [rsp + 0x18], r11
+                                                            ; ImmutableOopMap {rcx=Oop rbx=Oop r13=Oop r14=Oop }
+                                                            ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@33 (line 124)
+  0x00007fa71fe71abb:   code=418502 test		dword ptr [r10], eax
+                                                            ;   {poll}
+  0x00007fa71fe71abe:   code=4585c0 test		r8d, r8d
+  0x00007fa71fe71ac1:   code=754f jne		0x7fa71fe71b12
+  0x00007fa71fe71ac3:   code=458b5608 mov		r10d, dword ptr [r14 + 8]
+  0x00007fa71fe71ac7:   code=458b4204 mov		r8d, dword ptr [r10 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe71c14
+  0x00007fa71fe71acb:   code=458b5e10 mov		r11d, dword ptr [r14 + 0x10]
+  0x00007fa71fe71acf:   code=458b4b04 mov		r9d, dword ptr [r11 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe71c2c
+  0x00007fa71fe71ad3:   code=453bc8 cmp		r9d, r8d
+  0x00007fa71fe71ad6:   code=0f8281000000 jb		0x7fa71fe71b5d
+  0x00007fa71fe71adc:   code=4585c0 test		r8d, r8d
+  0x00007fa71fe71adf:   code=76b9 jbe		0x7fa71fe71a9a
+  0x00007fa71fe71ae1:   code=4963d0 movsxd		rdx, r8d
+  0x00007fa71fe71ae4:   code=498d7308 lea		rsi, [r11 + 8]
+  0x00007fa71fe71ae8:   code=498d7a08 lea		rdi, [r10 + 8]
+  0x00007fa71fe71aec:   code=4883fa20 cmp		rdx, 0x20
+  0x00007fa71fe71af0:   code=7688 jbe		0x7fa71fe71a7a
+  0x00007fa71fe71af2:   code=488be9 mov		rbp, rcx
+  0x00007fa71fe71af5:   code=c5f877 vzeroupper		
+  0x00007fa71fe71af8:   code=49ba60378e1fa77f0000 movabs		r10, 0x7fa71f8e3760
+                                                            ;   {runtime_call Stub::jbyte_disjoint_arraycopy_stub (stub gen)}
+  0x00007fa71fe71b02:   code=41ffd2 call		r10
+  0x00007fa71fe71b05:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71b0d:   code=488bcd mov		rcx, rbp
+  0x00007fa71fe71b10:   code=eb88 jmp		0x7fa71fe71a9a
+  0x00007fa71fe71b12:   code=c5f877 vzeroupper		
+  0x00007fa71fe71b15:   code=49ba20ca0536a77f0000 movabs		r10, 0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71fe71b1f:   code=41ffd2 call		r10
+  0x00007fa71fe71b22:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71b2a:   code=48894328 mov		qword ptr [rbx + 0x28], rax
+                                                            ; implicit exception: dispatches to 0x00007fa71fe71c60
+  0x00007fa71fe71b2e:   code=4c8b542420 mov		r10, qword ptr [rsp + 0x20]
+  0x00007fa71fe71b33:   code=4c895318 mov		qword ptr [rbx + 0x18], r10
+  0x00007fa71fe71b37:   code=4c8b542418 mov		r10, qword ptr [rsp + 0x18]
+  0x00007fa71fe71b3c:   code=c5f9efc0 vpxor		xmm0, xmm0, xmm0
+  0x00007fa71fe71b40:   code=c4c1fb2ac2 vcvtsi2sd		xmm0, xmm0, r10
+  0x00007fa71fe71b45:   code=c5fb114310 vmovsd		qword ptr [rbx + 0x10], xmm0
+  0x00007fa71fe71b4a:   code=c5f877 vzeroupper		
+  0x00007fa71fe71b4d:   code=4883c460 add		rsp, 0x60
+  0x00007fa71fe71b51:   code=5d pop		rbp
+  0x00007fa71fe71b52:   code=493b6728 cmp		rsp, qword ptr [r15 + 0x28]
+                                                            ;   {poll_return}
+  0x00007fa71fe71b56:   code=0f871c010000 ja		0x7fa71fe71c78
+  0x00007fa71fe71b5c:   code=c3 ret		
+  0x00007fa71fe71b5d:   code=beccffffff mov		esi, 0xffffffcc
+  0x00007fa71fe71b62:   code=498bed mov		rbp, r13
+  0x00007fa71fe71b65:   code=48891c24 mov		qword ptr [rsp], rbx
+  0x00007fa71fe71b69:   code=48894c2428 mov		qword ptr [rsp + 0x28], rcx
+  0x00007fa71fe71b6e:   code=4c89742430 mov		qword ptr [rsp + 0x30], r14
+  0x00007fa71fe71b73:   code=4489542438 mov		dword ptr [rsp + 0x38], r10d
+  0x00007fa71fe71b78:   code=44895c243c mov		dword ptr [rsp + 0x3c], r11d
+  0x00007fa71fe71b7d:   code=4489442440 mov		dword ptr [rsp + 0x40], r8d
+  0x00007fa71fe71b82:   code=6690 nop		
+  0x00007fa71fe71b84:   code=c5f877 vzeroupper		
+  0x00007fa71fe71b87:   code=e85432b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=Oop [0]=Oop [40]=Oop [48]=Oop [56]=NarrowOop [60]=NarrowOop }
+                                                            ;*invokestatic arraycopy {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@15 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71b8c:   code=0f1f840004030001 nop		dword ptr [rax + rax + 0x1000304]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71b94:   code=4c8bd3 mov		r10, rbx
+  0x00007fa71fe71b97:   code=4533ed xor		r13d, r13d
+  0x00007fa71fe71b9a:   code=e96efeffff jmp		0x7fa71fe71a0d
+  0x00007fa71fe71b9f:   code=33db xor		ebx, ebx
+  0x00007fa71fe71ba1:   code=e98bfeffff jmp		0x7fa71fe71a31
+  0x00007fa71fe71ba6:   code=33c9 xor		ecx, ecx
+  0x00007fa71fe71ba8:   code=e9a5feffff jmp		0x7fa71fe71a52
+  0x00007fa71fe71bad:   code=4533f6 xor		r14d, r14d
+  0x00007fa71fe71bb0:   code=be6effffff mov		esi, 0xffffff6e
+  0x00007fa71fe71bb5:   code=498bed mov		rbp, r13
+  0x00007fa71fe71bb8:   code=48891c24 mov		qword ptr [rsp], rbx
+  0x00007fa71fe71bbc:   code=48894c2408 mov		qword ptr [rsp + 8], rcx
+  0x00007fa71fe71bc1:   code=4c89742410 mov		qword ptr [rsp + 0x10], r14
+  0x00007fa71fe71bc6:   code=6690 nop		
+  0x00007fa71fe71bc8:   code=c5f877 vzeroupper		
+  0x00007fa71fe71bcb:   code=e81032b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop [16]=Oop }
+                                                            ;*aload {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@13 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71bd0:   code=0f1f840048030002 nop		dword ptr [rax + rax + 0x2000348]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71bd8:   code=4c8b0424 mov		r8, qword ptr [rsp]
+  0x00007fa71fe71bdc:   code=be85ffffff mov		esi, 0xffffff85
+  0x00007fa71fe71be1:   code=4c893424 mov		qword ptr [rsp], r14
+  0x00007fa71fe71be5:   code=4c8b5c2418 mov		r11, qword ptr [rsp + 0x18]
+  0x00007fa71fe71bea:   code=4c895c2408 mov		qword ptr [rsp + 8], r11
+  0x00007fa71fe71bef:   code=48ff742420 push		qword ptr [rsp + 0x20]
+  0x00007fa71fe71bf4:   code=488f442410 pop		qword ptr [rsp + 0x10]
+  0x00007fa71fe71bf9:   code=4c89542418 mov		qword ptr [rsp + 0x18], r10
+  0x00007fa71fe71bfe:   code=4c89442420 mov		qword ptr [rsp + 0x20], r8
+  0x00007fa71fe71c03:   code=90 nop		
+  0x00007fa71fe71c04:   code=c5f877 vzeroupper		
+  0x00007fa71fe71c07:   code=e8d431b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=Oop [0]=Oop [24]=Oop [32]=Oop }
+                                                            ;*aload {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@13 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71c0c:   code=0f1f840084030003 nop		dword ptr [rax + rax + 0x3000384]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71c14:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe71c19:   code=666690 nop		
+  0x00007fa71fe71c1c:   code=c5f877 vzeroupper		
+  0x00007fa71fe71c1f:   code=e8bc31b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@14 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71c24:   code=0f1f84009c030004 nop		dword ptr [rax + rax + 0x400039c]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71c2c:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe71c31:   code=418bea mov		ebp, r10d
+  0x00007fa71fe71c34:   code=44890424 mov		dword ptr [rsp], r8d
+  0x00007fa71fe71c38:   code=c5f877 vzeroupper		
+  0x00007fa71fe71c3b:   code=e8a031b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=NarrowOop }
+                                                            ;*invokestatic arraycopy {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@15 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71c40:   code=0f1f8400b8030005 nop		dword ptr [rax + rax + 0x50003b8]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71c48:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe71c4d:   code=666690 nop		
+  0x00007fa71fe71c50:   code=c5f877 vzeroupper		
+  0x00007fa71fe71c53:   code=e88831b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@22 (line 39)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71c58:   code=0f1f8400d0030006 nop		dword ptr [rax + rax + 0x60003d0]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71c60:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe71c65:   code=488be8 mov		rbp, rax
+  0x00007fa71fe71c68:   code=c5f877 vzeroupper		
+  0x00007fa71fe71c6b:   code=e87031b5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*putfield stopTime {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@40 (line 125)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71c70:   code=0f1f8400e8030007 nop		dword ptr [rax + rax + 0x70003e8]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71c78:   code=49ba521be71fa77f0000 movabs		r10, 0x7fa71fe71b52
+                                                            ;   {internal_word}
+  0x00007fa71fe71c82:   code=4d899710050000 mov		qword ptr [r15 + 0x510], r10
+  0x00007fa71fe71c89:   code=e952b2a8ff jmp		0x7fa71f8fcee0
+                                                            ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007fa71fe71c8e:   code=e80d7ea7ff call		0x7fa71f8e9aa0
+                                                            ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007fa71fe71c93:   code=e912fdffff jmp		0x7fa71fe719aa
+[Stub Code]
+  0x00007fa71fe71c98:   code=e8c399a8ff call		0x7fa71f8fb660
+                                                            ;   {runtime_call DeoptimizationBlob}
+[Deopt Handler Entry Point]
+  0x00007fa71fe71c9d:   code=ebf9 jmp		0x7fa71fe71c98
+  0x00007fa71fe71c9f:   code=f4 hlt		
+--------------------------------------------------------------------------------
+[/Disassembly]
+
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c2) 3821  707       4       experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub (57 bytes)
+ total in heap  [0x00007fa71fe71d08,0x00007fa71fe72158] = 1104
+ main code      [0x00007fa71fe71e00,0x00007fa71fe72148] = 840
+ stub code      [0x00007fa71fe72148,0x00007fa71fe72150] = 8
+ oops           [0x00007fa71fe72150,0x00007fa71fe72158] = 8
+ mutable data [0x00007fa6f009c9d0,0x00007fa6f009ca40] = 112
+ relocation     [0x00007fa6f009c9d0,0x00007fa6f009ca20] = 80
+ metadata       [0x00007fa6f009ca20,0x00007fa6f009ca40] = 32
+ immutable data [0x00007fa6f009c740,0x00007fa6f009c9c4] = 644
+ dependencies   [0x00007fa6f009c740,0x00007fa6f009c750] = 16
+ nul chk table  [0x00007fa6f009c750,0x00007fa6f009c798] = 72
+ scopes pcs     [0x00007fa6f009c798,0x00007fa6f009c888] = 240
+ scopes data    [0x00007fa6f009c888,0x00007fa6f009c9c0] = 312
+
+[Disassembly]
+--------------------------------------------------------------------------------
+[Constant Pool (empty)]
+
+--------------------------------------------------------------------------------
+
+[Verified Entry Point]
+  # {method} {0x00007fa708449480} 'copyControl_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V' in 'experiment/jmh_generated/FrameBench_copyControl_jmhTest'
+  # parm0:    rsi:rsi   = 'org/openjdk/jmh/runner/InfraControl'
+  # parm1:    rdx:rdx   = 'org/openjdk/jmh/results/RawResults'
+  # parm2:    rcx:rcx   = 'org/openjdk/jmh/infra/BenchmarkParams'
+  # parm3:    r8:r8     = 'org/openjdk/jmh/infra/IterationParams'
+  # parm4:    r9:r9     = 'org/openjdk/jmh/infra/ThreadParams'
+  # parm5:    rdi:rdi   = 'org/openjdk/jmh/infra/Blackhole'
+  # parm6:    [sp+0x50]   = 'org/openjdk/jmh/infra/Control'  (sp of caller)
+  # parm7:    [sp+0x58]   = int
+  # parm8:    [sp+0x60]   = 'experiment/jmh_generated/FrameBench_jmhType'
+  0x00007fa71fe71e00:   code=89842400c0feff mov		dword ptr [rsp - 0x14000], eax
+  0x00007fa71fe71e07:   code=55 push		rbp
+  0x00007fa71fe71e08:   code=4883ec40 sub		rsp, 0x40
+  0x00007fa71fe71e0c:   code=41817f2001000000 cmp		dword ptr [r15 + 0x20], 1
+  0x00007fa71fe71e14:   code=0f8520030000 jne		0x7fa71fe7213a
+  0x00007fa71fe71e1a:   code=4c8bf7 mov		r14, rdi
+  0x00007fa71fe71e1d:   code=488bde mov		rbx, rsi
+  0x00007fa71fe71e20:   code=4889542458 mov		qword ptr [rsp + 0x58], rdx
+  0x00007fa71fe71e25:   code=c5f877 vzeroupper		
+  0x00007fa71fe71e28:   code=49ba20ca0536a77f0000 movabs		r10, 0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71fe71e32:   code=41ffd2 call		r10
+  0x00007fa71fe71e35:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71e3d:   code=488be8 mov		rbp, rax
+  0x00007fa71fe71e40:   code=4c8b542458 mov		r10, qword ptr [rsp + 0x58]
+  0x00007fa71fe71e45:   code=4d85d2 test		r10, r10
+  0x00007fa71fe71e48:   code=0f84a6010000 je		0x7fa71fe71ff4
+  0x00007fa71fe71e4e:   code=49894220 mov		qword ptr [r10 + 0x20], rax
+  0x00007fa71fe71e52:   code=4c8b6c2460 mov		r13, qword ptr [rsp + 0x60]
+  0x00007fa71fe71e57:   code=458b4508 mov		r8d, dword ptr [r13 + 8]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe720a4
+  0x00007fa71fe71e5b:   code=458b5004 mov		r10d, dword ptr [r8 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe720bc
+  0x00007fa71fe71e5f:   code=418b6d10 mov		ebp, dword ptr [r13 + 0x10]
+  0x00007fa71fe71e63:   code=448b5d04 mov		r11d, dword ptr [rbp + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe720d4
+  0x00007fa71fe71e67:   code=453bda cmp		r11d, r10d
+  0x00007fa71fe71e6a:   code=0f82b4010000 jb		0x7fa71fe72024
+  0x00007fa71fe71e70:   code=4585d2 test		r10d, r10d
+  0x00007fa71fe71e73:   code=7631 jbe		0x7fa71fe71ea6
+  0x00007fa71fe71e75:   code=4963d2 movsxd		rdx, r10d
+  0x00007fa71fe71e78:   code=488d7508 lea		rsi, [rbp + 8]
+  0x00007fa71fe71e7c:   code=498d7808 lea		rdi, [r8 + 8]
+  0x00007fa71fe71e80:   code=4883fa20 cmp		rdx, 0x20
+  0x00007fa71fe71e84:   code=774c ja		0x7fa71fe71ed2
+  0x00007fa71fe71e86:   code=4d63d2 movsxd		r10, r10d
+  0x00007fa71fe71e89:   code=49c7c3ffffffff mov		r11, 0xffffffffffffffff
+  0x00007fa71fe71e90:   code=c442a8f5db bzhi		r11, r11, r10
+  0x00007fa71fe71e95:   code=c4c1fb92fb kmovq		k7, r11
+  0x00007fa71fe71e9a:   code=62f17faf6f07 vmovdqu8		ymm0 {k7} {z}, ymmword ptr [rdi]
+  0x00007fa71fe71ea0:   code=62f17f2f7f06 vmovdqu8		ymmword ptr [rsi] {k7}, ymm0
+  0x00007fa71fe71ea6:   code=458b5d10 mov		r11d, dword ptr [r13 + 0x10]
+  0x00007fa71fe71eaa:   code=418b6b04 mov		ebp, dword ptr [r11 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe720f4
+  0x00007fa71fe71eae:   code=4d85f6 test		r14, r14
+  0x00007fa71fe71eb1:   code=0f8455010000 je		0x7fa71fe7200c
+  0x00007fa71fe71eb7:   code=488beb mov		rbp, rbx
+  0x00007fa71fe71eba:   code=440fb69b8c000000 movzx		r11d, byte ptr [rbx + 0x8c]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe7210c
+  0x00007fa71fe71ec2:   code=bb01000000 mov		ebx, 1
+  0x00007fa71fe71ec7:   code=4585db test		r11d, r11d
+  0x00007fa71fe71eca:   code=0f85a0000000 jne		0x7fa71fe71f70
+  0x00007fa71fe71ed0:   code=eb59 jmp		0x7fa71fe71f2b
+  0x00007fa71fe71ed2:   code=c5f877 vzeroupper		
+  0x00007fa71fe71ed5:   code=49ba60378e1fa77f0000 movabs		r10, 0x7fa71f8e3760
+                                                            ;   {runtime_call Stub::jbyte_disjoint_arraycopy_stub (stub gen)}
+  0x00007fa71fe71edf:   code=41ffd2 call		r10
+  0x00007fa71fe71ee2:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71eea:   code=ebba jmp		0x7fa71fe71ea6
+  0x00007fa71fe71eec:   code=4d63d2 movsxd		r10, r10d
+  0x00007fa71fe71eef:   code=49c7c3ffffffff mov		r11, 0xffffffffffffffff
+  0x00007fa71fe71ef6:   code=c442a8f5db bzhi		r11, r11, r10
+  0x00007fa71fe71efb:   code=c4c1fb92fb kmovq		k7, r11
+  0x00007fa71fe71f00:   code=62f17faf6f07 vmovdqu8		ymm0 {k7} {z}, ymmword ptr [rdi]
+  0x00007fa71fe71f06:   code=62f17f2f7f06 vmovdqu8		ymmword ptr [rsi] {k7}, ymm0
+  0x00007fa71fe71f0c:   code=458b5d10 mov		r11d, dword ptr [r13 + 0x10]
+  0x00007fa71fe71f10:   code=458b5b04 mov		r11d, dword ptr [r11 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe7208c
+  0x00007fa71fe71f14:   code=440fb6958c000000 movzx		r10d, byte ptr [rbp + 0x8c]
+  0x00007fa71fe71f1c:   code=4d8b5f30 mov		r11, qword ptr [r15 + 0x30]
+  0x00007fa71fe71f20:   code=48ffc3 inc		rbx         ; ImmutableOopMap {rbp=Oop r13=Oop r14=Oop [88]=Oop }
+                                                            ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@33 (line 124)
+  0x00007fa71fe71f23:   code=418503 test		dword ptr [r11], eax
+                                                            ;   {poll}
+  0x00007fa71fe71f26:   code=4585d2 test		r10d, r10d
+  0x00007fa71fe71f29:   code=7545 jne		0x7fa71fe71f70
+  0x00007fa71fe71f2b:   code=458b4d08 mov		r9d, dword ptr [r13 + 8]
+  0x00007fa71fe71f2f:   code=458b5104 mov		r10d, dword ptr [r9 + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe72054
+  0x00007fa71fe71f33:   code=418b4d10 mov		ecx, dword ptr [r13 + 0x10]
+  0x00007fa71fe71f37:   code=448b5904 mov		r11d, dword ptr [rcx + 4]
+                                                            ; implicit exception: dispatches to 0x00007fa71fe7206c
+  0x00007fa71fe71f3b:   code=453bda cmp		r11d, r10d
+  0x00007fa71fe71f3e:   code=7277 jb		0x7fa71fe71fb7
+  0x00007fa71fe71f40:   code=4585d2 test		r10d, r10d
+  0x00007fa71fe71f43:   code=76c7 jbe		0x7fa71fe71f0c
+  0x00007fa71fe71f45:   code=488d7108 lea		rsi, [rcx + 8]
+  0x00007fa71fe71f49:   code=498d7908 lea		rdi, [r9 + 8]
+  0x00007fa71fe71f4d:   code=4963d2 movsxd		rdx, r10d
+  0x00007fa71fe71f50:   code=4883fa20 cmp		rdx, 0x20
+  0x00007fa71fe71f54:   code=7696 jbe		0x7fa71fe71eec
+  0x00007fa71fe71f56:   code=c5f877 vzeroupper		
+  0x00007fa71fe71f59:   code=49ba60378e1fa77f0000 movabs		r10, 0x7fa71f8e3760
+                                                            ;   {runtime_call Stub::jbyte_disjoint_arraycopy_stub (stub gen)}
+  0x00007fa71fe71f63:   code=41ffd2 call		r10
+  0x00007fa71fe71f66:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71f6e:   code=eb9c jmp		0x7fa71fe71f0c
+  0x00007fa71fe71f70:   code=c5f877 vzeroupper		
+  0x00007fa71fe71f73:   code=49ba20ca0536a77f0000 movabs		r10, 0x7fa73605ca20
+                                                            ;   {runtime_call os::javaTimeNanos()}
+  0x00007fa71fe71f7d:   code=41ffd2 call		r10
+  0x00007fa71fe71f80:   code=0f1f840000000000 nop		dword ptr [rax + rax]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71f88:   code=4c8b542458 mov		r10, qword ptr [rsp + 0x58]
+  0x00007fa71fe71f8d:   code=49894228 mov		qword ptr [r10 + 0x28], rax
+  0x00007fa71fe71f91:   code=4d896218 mov		qword ptr [r10 + 0x18], r12
+  0x00007fa71fe71f95:   code=c5f9efc0 vpxor		xmm0, xmm0, xmm0
+  0x00007fa71fe71f99:   code=c4e1fb2ac3 vcvtsi2sd		xmm0, xmm0, rbx
+  0x00007fa71fe71f9e:   code=c4c17b114210 vmovsd		qword ptr [r10 + 0x10], xmm0
+  0x00007fa71fe71fa4:   code=c5f877 vzeroupper		
+  0x00007fa71fe71fa7:   code=4883c440 add		rsp, 0x40
+  0x00007fa71fe71fab:   code=5d pop		rbp
+  0x00007fa71fe71fac:   code=493b6728 cmp		rsp, qword ptr [r15 + 0x28]
+                                                            ;   {poll_return}
+  0x00007fa71fe71fb0:   code=0f876e010000 ja		0x7fa71fe72124
+  0x00007fa71fe71fb6:   code=c3 ret		
+  0x00007fa71fe71fb7:   code=beccffffff mov		esi, 0xffffffcc
+  0x00007fa71fe71fbc:   code=48ff742458 push		qword ptr [rsp + 0x58]
+  0x00007fa71fe71fc1:   code=488f442450 pop		qword ptr [rsp + 0x50]
+  0x00007fa71fe71fc6:   code=4c896c2460 mov		qword ptr [rsp + 0x60], r13
+  0x00007fa71fe71fcb:   code=48891c24 mov		qword ptr [rsp], rbx
+  0x00007fa71fe71fcf:   code=4c89742408 mov		qword ptr [rsp + 8], r14
+  0x00007fa71fe71fd4:   code=44894c2418 mov		dword ptr [rsp + 0x18], r9d
+  0x00007fa71fe71fd9:   code=894c241c mov		dword ptr [rsp + 0x1c], ecx
+  0x00007fa71fe71fdd:   code=4489542420 mov		dword ptr [rsp + 0x20], r10d
+  0x00007fa71fe71fe2:   code=6690 nop		
+  0x00007fa71fe71fe4:   code=c5f877 vzeroupper		
+  0x00007fa71fe71fe7:   code=e8f42db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=Oop [8]=Oop [24]=NarrowOop [28]=NarrowOop [80]=Oop [96]=Oop }
+                                                            ;*invokestatic arraycopy {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@15 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe71fec:   code=0f1f8400e4020001 nop		dword ptr [rax + rax + 0x10002e4]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe71ff4:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe71ff9:   code=666690 nop		
+  0x00007fa71fe71ffc:   code=c5f877 vzeroupper		
+  0x00007fa71fe71fff:   code=e8dc2db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*putfield startTime {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@10 (line 120)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe72004:   code=0f1f8400fc020002 nop		dword ptr [rax + rax + 0x20002fc]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe7200c:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe72011:   code=666690 nop		
+  0x00007fa71fe72014:   code=c5f877 vzeroupper		
+  0x00007fa71fe72017:   code=e8c42db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*invokevirtual consume {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@20 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe7201c:   code=0f1f840014030003 nop		dword ptr [rax + rax + 0x3000314]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe72024:   code=beccffffff mov		esi, 0xffffffcc
+  0x00007fa71fe72029:   code=48895c2450 mov		qword ptr [rsp + 0x50], rbx
+  0x00007fa71fe7202e:   code=4c89742408 mov		qword ptr [rsp + 8], r14
+  0x00007fa71fe72033:   code=4c896c2410 mov		qword ptr [rsp + 0x10], r13
+  0x00007fa71fe72038:   code=4489442418 mov		dword ptr [rsp + 0x18], r8d
+  0x00007fa71fe7203d:   code=448954241c mov		dword ptr [rsp + 0x1c], r10d
+  0x00007fa71fe72042:   code=6690 nop		
+  0x00007fa71fe72044:   code=c5f877 vzeroupper		
+  0x00007fa71fe72047:   code=e8942db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=NarrowOop [8]=Oop [16]=Oop [24]=NarrowOop [80]=Oop [88]=Oop }
+                                                            ;*invokestatic arraycopy {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@15 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe7204c:   code=0f1f840044030004 nop		dword ptr [rax + rax + 0x4000344]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe72054:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe72059:   code=666690 nop		
+  0x00007fa71fe7205c:   code=c5f877 vzeroupper		
+  0x00007fa71fe7205f:   code=e87c2db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@14 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe72064:   code=0f1f84005c030005 nop		dword ptr [rax + rax + 0x500035c]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe7206c:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe72071:   code=418be9 mov		ebp, r9d
+  0x00007fa71fe72074:   code=4489542450 mov		dword ptr [rsp + 0x50], r10d
+  0x00007fa71fe72079:   code=666690 nop		
+  0x00007fa71fe7207c:   code=c5f877 vzeroupper		
+  0x00007fa71fe7207f:   code=e85c2db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=NarrowOop }
+                                                            ;*invokestatic arraycopy {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@15 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe72084:   code=0f1f84007c030006 nop		dword ptr [rax + rax + 0x600037c]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe7208c:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe72091:   code=666690 nop		
+  0x00007fa71fe72094:   code=c5f877 vzeroupper		
+  0x00007fa71fe72097:   code=e8442db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@22 (line 39)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe7209c:   code=0f1f840094030007 nop		dword ptr [rax + rax + 0x7000394]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe720a4:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe720a9:   code=666690 nop		
+  0x00007fa71fe720ac:   code=c5f877 vzeroupper		
+  0x00007fa71fe720af:   code=e82c2db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*invokevirtual copyControl {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe720b4:   code=0f1f8400ac030008 nop		dword ptr [rax + rax + 0x80003ac]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe720bc:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe720c1:   code=666690 nop		
+  0x00007fa71fe720c4:   code=c5f877 vzeroupper		
+  0x00007fa71fe720c7:   code=e8142db5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@14 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe720cc:   code=0f1f8400c4030009 nop		dword ptr [rax + rax + 0x90003c4]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe720d4:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe720d9:   code=418be8 mov		ebp, r8d
+  0x00007fa71fe720dc:   code=4489542450 mov		dword ptr [rsp + 0x50], r10d
+  0x00007fa71fe720e1:   code=666690 nop		
+  0x00007fa71fe720e4:   code=c5f877 vzeroupper		
+  0x00007fa71fe720e7:   code=e8f42cb5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {rbp=NarrowOop }
+                                                            ;*invokestatic arraycopy {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@15 (line 38)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe720ec:   code=0f1f8400e403000a nop		dword ptr [rax + rax + 0xa0003e4]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe720f4:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe720f9:   code=666690 nop		
+  0x00007fa71fe720fc:   code=c5f877 vzeroupper		
+  0x00007fa71fe720ff:   code=e8dc2cb5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*arraylength {reexecute=0 rethrow=0 return_oop=0}
+                                                            ; - experiment.FrameBench::copyControl@22 (line 39)
+                                                            ; - experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@17 (line 122)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe72104:   code=0f1f8400fc03000b nop		dword ptr [rax + rax + 0xb0003fc]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe7210c:   code=bef6ffffff mov		esi, 0xfffffff6
+  0x00007fa71fe72111:   code=666690 nop		
+  0x00007fa71fe72114:   code=c5f877 vzeroupper		
+  0x00007fa71fe72117:   code=e8c42cb5ff call		0x7fa71f9c4de0
+                                                            ; ImmutableOopMap {}
+                                                            ;*getfield isDone {reexecute=1 rethrow=0 return_oop=0}
+                                                            ; - (reexecute) experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub@30 (line 124)
+                                                            ;   {runtime_call UncommonTrapBlob}
+  0x00007fa71fe7211c:   code=0f1f84001404000c nop		dword ptr [rax + rax + 0xc000414]
+                                                            ;   {post_call_nop}
+  0x00007fa71fe72124:   code=49baac1fe71fa77f0000 movabs		r10, 0x7fa71fe71fac
+                                                            ;   {internal_word}
+  0x00007fa71fe7212e:   code=4d899710050000 mov		qword ptr [r15 + 0x510], r10
+  0x00007fa71fe72135:   code=e9a6ada8ff jmp		0x7fa71f8fcee0
+                                                            ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007fa71fe7213a:   code=e86179a7ff call		0x7fa71f8e9aa0
+                                                            ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007fa71fe7213f:   code=e9d6fcffff jmp		0x7fa71fe71e1a
+  0x00007fa71fe72144:   code=f4 hlt		
+  0x00007fa71fe72145:   code=f4 hlt		
+  0x00007fa71fe72146:   code=f4 hlt		
+  0x00007fa71fe72147:   code=f4 hlt		
+[Stub Code]
+  0x00007fa71fe72148:   code=e81395a8ff call		0x7fa71f8fb660
+                                                            ;   {runtime_call DeoptimizationBlob}
+[Deopt Handler Entry Point]
+  0x00007fa71fe7214d:   code=ebf9 jmp		0x7fa71fe72148
+  0x00007fa71fe7214f:   code=f4 hlt		
+--------------------------------------------------------------------------------
+[/Disassembly]
+31300.068 ops/s
+------------------------------------------------------------------------
+static experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/FrameBench_jmhType;)V
+  interpreter_invocation_count:           4
+  invocation_counter:                     4
+  backedge_counter:                  110593
+  decompile_count:                        0
+  mdo size: 456 bytes
+
+   0 lconst_0
+   1 lstore #9
+   3 lconst_0
+   4 lstore #11
+   6 aload_1
+   7 invokestatic 177 <java/lang/System.nanoTime()J> 
+  0    bci: 7    CounterData        count(1)
+  10 fast_lputfield 182 <org/openjdk/jmh/results/RawResults.startTime:J> 
+  13 aload #5
+  15 aload #8
+  17 invokevirtual 64 <experiment/jmh_generated/FrameBench_jmhType.copyControl()I> 
+  16   bci: 17   VirtualCallData    count(0) entries(1)
+                                    'experiment/jmh_generated/FrameBench_jmhType'(49152 1.00)
+  20 invokevirtual 69 <org/openjdk/jmh/infra/Blackhole.consume(I)V> 
+  64   bci: 20   VirtualCallData    count(1023) entries(1)
+                                    'org/openjdk/jmh/infra/Blackhole'(48129 0.98)
+  23 lload #9
+  25 lconst_1
+  26 ladd
+  27 lstore #9
+  29 fast_aload_0
+  30 fast_bgetfield 186 <org/openjdk/jmh/runner/InfraControl.isDone:Z> 
+  33 ifeq 13
+  112  bci: 33   BranchData         taken(49151) displacement(-96)
+                                    not taken(1)
+  36 aload_1
+  37 invokestatic 177 <java/lang/System.nanoTime()J> 
+  144  bci: 37   CounterData        count(1)
+  40 fast_lputfield 189 <org/openjdk/jmh/results/RawResults.stopTime:J> 
+  43 aload_1
+  44 lload #11
+  46 fast_lputfield 192 <org/openjdk/jmh/results/RawResults.realTime:J> 
+  49 aload_1
+  50 lload #9
+  52 l2d
+  53 fast_dputfield 125 <org/openjdk/jmh/results/RawResults.measuredOps:D> 
+  56 return
+------------------------------------------------------------------------
+Total MDO size: 456 bytes
+
+
+Result "experiment.FrameBench.copyControl":
+  31300.068 ops/s
+
+
+# Run complete. Total time: 00:00:04
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark               (corpus)   Mode  Cnt      Score   Error  Units
+FrameBench.copyControl    random  thrpt       31300.068          ops/s
+
+Benchmark result is saved to /workspace/work/spill-sharing/code/jmh-master-baseline-copy-control.json

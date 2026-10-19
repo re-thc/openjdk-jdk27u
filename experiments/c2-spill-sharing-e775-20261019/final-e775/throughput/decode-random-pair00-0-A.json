@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/e775-a/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 39419.509818306935,
+            "scoreError" : 2890.753877339438,
+            "scoreConfidence" : [
+                36528.755940967494,
+                42310.263695646376
+            ],
+            "scorePercentiles" : {
+                "0.0" : 38341.219282788916,
+                "50.0" : 39343.144260396904,
+                "90.0" : 40372.040829090045,
+                "95.0" : 40372.040829090045,
+                "99.0" : 40372.040829090045,
+                "99.9" : 40372.040829090045,
+                "99.99" : 40372.040829090045,
+                "99.999" : 40372.040829090045,
+                "99.9999" : 40372.040829090045,
+                "100.0" : 40372.040829090045
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    39239.47192860787,
+                    38341.219282788916,
+                    39343.144260396904,
+                    39801.67279065095,
+                    40372.040829090045
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

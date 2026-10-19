@@ -1,0 +1,63 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/master-baseline-release/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:PrintAssemblyOptions=intel",
+            "-XX:CompileCommand=print,experiment.jmh_generated.FrameBench_copyControl_jmhTest::copyControl_thrpt_jmhStub"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 1,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 31300.068161419054,
+            "scoreError" : "NaN",
+            "scoreConfidence" : [
+                "NaN",
+                "NaN"
+            ],
+            "scorePercentiles" : {
+                "0.0" : 31300.068161419054,
+                "50.0" : 31300.068161419054,
+                "90.0" : 31300.068161419054,
+                "95.0" : 31300.068161419054,
+                "99.0" : 31300.068161419054,
+                "99.9" : 31300.068161419054,
+                "99.99" : 31300.068161419054,
+                "99.999" : 31300.068161419054,
+                "99.9999" : 31300.068161419054,
+                "100.0" : 31300.068161419054
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    31300.068161419054
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

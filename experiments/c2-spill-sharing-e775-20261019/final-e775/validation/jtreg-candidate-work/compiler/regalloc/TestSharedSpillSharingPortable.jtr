@@ -1,0 +1,214 @@
+#Test Results (version 2)
+#Sun Oct 18 23:53:00 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=othervm
+requires=vm.debug \=\= true & vm.compiler2.enabled
+run=USER_SPECIFIED build TestSharedSpillLoads\nUSER_SPECIFIED main/othervm -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+VerifyRegisterAllocator -XX\:-OmitStackTraceInFastThrow -XX\:CompileCommand\=dontinline,TestSharedSpillLoads\:\:kernel* -XX\:CompileCommand\=dontinline,TestSharedSpillLoads\:\:cold -XX\:CompileCommand\=exclude,TestSharedSpillLoads\:\:reference TestSharedSpillSharingPortable\n
+source=TestSharedSpillSharingPortable.java
+title=Run the generated accumulator oracle with platform-neutral C2 options.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java
+elapsed=4965 0\:00\:04.965
+end=Sun Oct 18 23\:53\:00 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile main
+start=Sun Oct 18 23\:52\:55 UTC 2026
+test=compiler/regalloc/TestSharedSpillSharingPortable.java
+testJDK=/workspace/work/spill-sharing/images/e775-candidate-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=4965
+user.name=agent
+work=/workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(4/291)----------
+JDK under test: /workspace/work/spill-sharing/images/e775-candidate-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+
+#section:build
+----------messages:(7/262)----------
+command: build TestSharedSpillLoads
+reason: User specified action: run build TestSharedSpillLoads 
+started: Sun Oct 18 23:52:55.451 UTC 2026
+Test directory:
+  compile: TestSharedSpillLoads
+finished: Sun Oct 18 23:52:57.435 UTC 2026
+elapsed time (seconds): 1.984
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/311)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillLoads.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:55.451 UTC 2026
+Mode: othervm
+Process id: 462539
+finished: Sun Oct 18 23:52:57.435 UTC 2026
+elapsed time (seconds): 1.984
+----------configuration:(5/331)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d
+
+----------rerun:(26/2037)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillSharingPortable.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java \\
+        -J-Dtest.main.class=TestSharedSpillSharingPortable \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillLoads.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/258)----------
+command: build TestSharedSpillSharingPortable
+reason: Named class compiled on demand
+started: Sun Oct 18 23:52:57.435 UTC 2026
+Test directory:
+  compile: TestSharedSpillSharingPortable
+finished: Sun Oct 18 23:52:59.381 UTC 2026
+elapsed time (seconds): 1.946
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/321)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:57.436 UTC 2026
+Mode: othervm
+Process id: 462566
+finished: Sun Oct 18 23:52:59.381 UTC 2026
+elapsed time (seconds): 1.945
+----------configuration:(5/331)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d
+
+----------rerun:(26/2047)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillSharingPortable.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java \\
+        -J-Dtest.main.class=TestSharedSpillSharingPortable \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/844)----------
+command: main -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+VerifyRegisterAllocator -XX:-OmitStackTraceInFastThrow -XX:CompileCommand=dontinline,TestSharedSpillLoads::kernel* -XX:CompileCommand=dontinline,TestSharedSpillLoads::cold -XX:CompileCommand=exclude,TestSharedSpillLoads::reference TestSharedSpillSharingPortable
+reason: User specified action: run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+VerifyRegisterAllocator -XX:-OmitStackTraceInFastThrow -XX:CompileCommand=dontinline,TestSharedSpillLoads::kernel* -XX:CompileCommand=dontinline,TestSharedSpillLoads::cold -XX:CompileCommand=exclude,TestSharedSpillLoads::reference TestSharedSpillSharingPortable 
+started: Sun Oct 18 23:52:59.381 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 462593
+finished: Sun Oct 18 23:53:00.413 UTC 2026
+elapsed time (seconds): 1.032
+----------configuration:(0/0)----------
+----------System.out:(5/350)----------
+CompileCommand: dontinline TestSharedSpillLoads.kernel* bool dontinline = true
+CompileCommand: dontinline TestSharedSpillLoads.cold bool dontinline = true
+CompileCommand: exclude TestSharedSpillLoads.reference intx exclude = 1111
+generated accumulator oracle checks=120 sink=1430026939510651243
+alias checks=80 boundary-and-complete-output checks=60
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(32/2292)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestSharedSpillSharingPortable.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingPortable.java \\
+        -Dtest.main.class=TestSharedSpillSharingPortable \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestSharedSpillSharingPortable.d \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+VerifyRegisterAllocator \\
+        -XX:-OmitStackTraceInFastThrow \\
+        -XX:CompileCommand=dontinline,TestSharedSpillLoads::kernel* \\
+        -XX:CompileCommand=dontinline,TestSharedSpillLoads::cold \\
+        -XX:CompileCommand=exclude,TestSharedSpillLoads::reference \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/TestSharedSpillSharingPortable.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

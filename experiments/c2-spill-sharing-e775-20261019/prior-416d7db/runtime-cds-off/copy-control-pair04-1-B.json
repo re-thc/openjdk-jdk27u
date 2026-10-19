@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/matched-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:off"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 29738.933634984947,
+            "scoreError" : 3321.489694349362,
+            "scoreConfidence" : [
+                26417.443940635585,
+                33060.423329334306
+            ],
+            "scorePercentiles" : {
+                "0.0" : 28274.123846964692,
+                "50.0" : 30047.577467128605,
+                "90.0" : 30483.183198157312,
+                "95.0" : 30483.183198157312,
+                "99.0" : 30483.183198157312,
+                "99.9" : 30483.183198157312,
+                "99.99" : 30483.183198157312,
+                "99.999" : 30483.183198157312,
+                "99.9999" : 30483.183198157312,
+                "100.0" : 30483.183198157312
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    30047.577467128605,
+                    28274.123846964692,
+                    30164.557001447276,
+                    29725.22666122684,
+                    30483.183198157312
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

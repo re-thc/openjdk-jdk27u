@@ -1,0 +1,151 @@
+[
+  {
+    "corpus": "source",
+    "command": [
+      "/workspace/work/spill-sharing/v5/build/spill-v5-fastdebug/images/jdk/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:CompileCommand=TraceSpilling,dev.jzstd.internal.*::*",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "CodecProbe",
+      "decode",
+      "/workspace/work/spill-sharing/corpus/source.bin",
+      "3",
+      "/workspace/work/spill-sharing/corpus/source.zst"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/diagnostic-jzstd-source.log",
+    "summaries": [
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::loadReverseWord accepted=0 work=452 nodes=121 ranges=59 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::executeSequencesDirect accepted=5 work=38518 nodes=4748 ranges=3976 exhausted=0"
+    ]
+  },
+  {
+    "corpus": "repetitive",
+    "command": [
+      "/workspace/work/spill-sharing/v5/build/spill-v5-fastdebug/images/jdk/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:CompileCommand=TraceSpilling,dev.jzstd.internal.*::*",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "CodecProbe",
+      "decode",
+      "/workspace/work/spill-sharing/corpus/repetitive.bin",
+      "3",
+      "/workspace/work/spill-sharing/corpus/repetitive.zst"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/diagnostic-jzstd-repetitive.log",
+    "summaries": [
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::executeSequencesDirect accepted=10 work=38049 nodes=3253 ranges=2677 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.InputBuffer::tryEnsure accepted=0 work=701 nodes=207 ranges=85 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.InputBuffer::ensure accepted=0 work=760 nodes=216 ranges=95 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::parseSeqTable accepted=0 work=452 nodes=113 ranges=61 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::executeSequencesDirect accepted=1 work=13432 nodes=2144 ranges=1708 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.FrameDecoder::advance accepted=0 work=3884 nodes=1062 ranges=496 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.FrameDecoder::drainTo accepted=0 work=626 nodes=161 ranges=85 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::decodeBlock accepted=0 work=3092 nodes=737 ranges=434 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::decodeLiterals accepted=0 work=1051 nodes=271 ranges=141 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::execute accepted=0 work=419 nodes=106 ranges=57 exhausted=0"
+    ]
+  },
+  {
+    "corpus": "dense",
+    "command": [
+      "/workspace/work/spill-sharing/v5/build/spill-v5-fastdebug/images/jdk/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:CompileCommand=TraceSpilling,dev.jzstd.internal.*::*",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "CodecProbe",
+      "decode",
+      "/workspace/work/spill-sharing/corpus/dense.bin",
+      "3",
+      "/workspace/work/spill-sharing/corpus/dense.zst"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/diagnostic-jzstd-dense.log",
+    "summaries": [
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::loadReverseWord accepted=0 work=452 nodes=121 ranges=59 exhausted=0"
+    ]
+  },
+  {
+    "corpus": "long-offset",
+    "command": [
+      "/workspace/work/spill-sharing/v5/build/spill-v5-fastdebug/images/jdk/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:CompileCommand=TraceSpilling,dev.jzstd.internal.*::*",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "CodecProbe",
+      "decode",
+      "/workspace/work/spill-sharing/corpus/long-offset.bin",
+      "3",
+      "/workspace/work/spill-sharing/corpus/long-offset.zst"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/diagnostic-jzstd-long-offset.log",
+    "summaries": [
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.InputBuffer::tryEnsure accepted=0 work=701 nodes=207 ranges=85 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.InputBuffer::ensure accepted=0 work=760 nodes=216 ranges=95 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::append accepted=0 work=654 nodes=181 ranges=84 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::executeSequenceTail accepted=0 work=1109 nodes=314 ranges=141 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.BlockDecoder::decodeBlock accepted=0 work=3092 nodes=737 ranges=434 exhausted=0"
+    ]
+  },
+  {
+    "corpus": "random",
+    "command": [
+      "/workspace/work/spill-sharing/v5/build/spill-v5-fastdebug/images/jdk/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:CompileCommand=TraceSpilling,dev.jzstd.internal.*::*",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "CodecProbe",
+      "decode",
+      "/workspace/work/spill-sharing/corpus/random.bin",
+      "3",
+      "/workspace/work/spill-sharing/corpus/random.zst"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/diagnostic-jzstd-random.log",
+    "summaries": [
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.InputBuffer::tryEnsure accepted=0 work=701 nodes=207 ranges=85 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.InputBuffer::ensure accepted=0 work=760 nodes=216 ranges=95 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.FrameDecoder::ensureWholeBlock accepted=0 work=2179 nodes=591 ranges=282 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.FrameDecoder::advance accepted=0 work=3732 nodes=1020 ranges=477 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::append accepted=0 work=654 nodes=181 ranges=84 exhausted=0",
+      "SHARED_RELOAD_SUMMARY  dev.jzstd.internal.WindowBuffer::startDirect accepted=0 work=479 nodes=122 ranges=63 exhausted=0"
+    ]
+  }
+]

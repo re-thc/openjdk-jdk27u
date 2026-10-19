@@ -1,0 +1,312 @@
+#Test Results (version 2)
+#Sun Oct 18 23:52:35 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=bug8183543 othervm driver
+library=/test/lib
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-Inline -XX\:-TieredCompilation -XX\:+PreserveFramePointer -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -Xbootclasspath/a\:. compiler.regalloc.TestC2IntPressure\n
+source=TestC2IntPressure.java
+title=C2 compilation often fails on aarch64 with "failed spill-split-recycle sanity check"
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
+elapsed=7968 0\:00\:07.968
+end=Sun Oct 18 23\:52\:35 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver build compile main
+start=Sun Oct 18 23\:52\:27 UTC 2026
+test=compiler/regalloc/TestC2IntPressure.java
+testJDK=/workspace/work/spill-sharing/images/e775-candidate-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=7970
+user.name=agent
+work=/workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(7/519)----------
+JDK under test: /workspace/work/spill-sharing/images/e775-candidate-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/lib
+   class directory: /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Sun Oct 18 23:52:27.927 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Sun Oct 18 23:52:30.945 UTC 2026
+elapsed time (seconds): 3.018
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/289)----------
+command: compile /workspace/work/spill-sharing/v5/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:27.927 UTC 2026
+Mode: othervm
+Process id: 462075
+finished: Sun Oct 18 23:52:30.944 UTC 2026
+elapsed time (seconds): 3.017
+----------configuration:(5/331)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib
+
+----------rerun:(26/2117)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestC2IntPressure.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java \\
+        -J-Dtest.main.class=compiler.regalloc.TestC2IntPressure \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib /workspace/work/spill-sharing/v5/test/lib/jdk/test/whitebox/WhiteBox.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Sun Oct 18 23:52:30.945 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Sun Oct 18 23:52:33.234 UTC 2026
+elapsed time (seconds): 2.289
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/302)----------
+command: compile /workspace/work/spill-sharing/v5/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:30.945 UTC 2026
+Mode: othervm
+Process id: 462102
+finished: Sun Oct 18 23:52:33.233 UTC 2026
+elapsed time (seconds): 2.288
+----------configuration:(5/331)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib
+
+----------rerun:(26/2130)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestC2IntPressure.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java \\
+        -J-Dtest.main.class=compiler.regalloc.TestC2IntPressure \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib /workspace/work/spill-sharing/v5/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(7/341)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Sun Oct 18 23:52:33.234 UTC 2026
+Mode: othervm
+Process id: 462129
+finished: Sun Oct 18 23:52:33.533 UTC 2026
+elapsed time (seconds): 0.299
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(25/2202)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestC2IntPressure.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java \\
+        -Dtest.main.class=compiler.regalloc.TestC2IntPressure \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/TestC2IntPressure.d/driver.0.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/268)----------
+command: build compiler.regalloc.TestC2IntPressure
+reason: Named class compiled on demand
+started: Sun Oct 18 23:52:33.533 UTC 2026
+Test directory:
+  compile: compiler.regalloc.TestC2IntPressure
+finished: Sun Oct 18 23:52:35.537 UTC 2026
+elapsed time (seconds): 2.004
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/308)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:33.534 UTC 2026
+Mode: othervm
+Process id: 462152
+finished: Sun Oct 18 23:52:35.537 UTC 2026
+elapsed time (seconds): 2.003
+----------configuration:(7/501)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib
+
+----------rerun:(26/2267)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestC2IntPressure.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java \\
+        -J-Dtest.main.class=compiler.regalloc.TestC2IntPressure \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/578)----------
+command: main -Xbatch -XX:-Inline -XX:-TieredCompilation -XX:+PreserveFramePointer -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. compiler.regalloc.TestC2IntPressure
+reason: User specified action: run main/othervm -Xbatch -XX:-Inline -XX:-TieredCompilation -XX:+PreserveFramePointer -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. compiler.regalloc.TestC2IntPressure 
+started: Sun Oct 18 23:52:35.537 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 462179
+finished: Sun Oct 18 23:52:35.893 UTC 2026
+elapsed time (seconds): 0.356
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(32/2387)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestC2IntPressure.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC2IntPressure.java \\
+        -Dtest.main.class=compiler.regalloc.TestC2IntPressure \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestC2IntPressure.d/test/lib \\
+        -Xbatch \\
+        -XX:-Inline \\
+        -XX:-TieredCompilation \\
+        -XX:+PreserveFramePointer \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -Xbootclasspath/a:. \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/TestC2IntPressure.d/main.1.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

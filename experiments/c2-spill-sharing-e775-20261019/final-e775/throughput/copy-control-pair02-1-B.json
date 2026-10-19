@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/e775-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 32287.85456959072,
+            "scoreError" : 4589.744886843093,
+            "scoreConfidence" : [
+                27698.10968274763,
+                36877.59945643381
+            ],
+            "scorePercentiles" : {
+                "0.0" : 30365.923323254166,
+                "50.0" : 32719.843155986648,
+                "90.0" : 33254.750355610915,
+                "95.0" : 33254.750355610915,
+                "99.0" : 33254.750355610915,
+                "99.9" : 33254.750355610915,
+                "99.99" : 33254.750355610915,
+                "99.999" : 33254.750355610915,
+                "99.9999" : 33254.750355610915,
+                "100.0" : 33254.750355610915
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    30365.923323254166,
+                    33254.750355610915,
+                    32719.843155986648,
+                    31944.89714183495,
+                    33153.858871266915
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

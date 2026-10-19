@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/matched-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 30738.599221423687,
+            "scoreError" : 1342.0886491747171,
+            "scoreConfidence" : [
+                29396.510572248968,
+                32080.687870598405
+            ],
+            "scorePercentiles" : {
+                "0.0" : 30320.061918626947,
+                "50.0" : 30761.84373721162,
+                "90.0" : 31264.641492332816,
+                "95.0" : 31264.641492332816,
+                "99.0" : 31264.641492332816,
+                "99.9" : 31264.641492332816,
+                "99.99" : 31264.641492332816,
+                "99.999" : 31264.641492332816,
+                "99.9999" : 31264.641492332816,
+                "100.0" : 31264.641492332816
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    30761.84373721162,
+                    30784.866438394296,
+                    30320.061918626947,
+                    30561.582520552765,
+                    31264.641492332816
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

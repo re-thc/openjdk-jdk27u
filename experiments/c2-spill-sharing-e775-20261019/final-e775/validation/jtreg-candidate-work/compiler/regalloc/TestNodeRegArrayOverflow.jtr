@@ -1,0 +1,204 @@
+#Test Results (version 2)
+#Sun Oct 18 23:52:41 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=bug8317507 othervm
+run=USER_SPECIFIED main/othervm -Xcomp -XX\:CompileOnly\=compiler.regalloc.TestNodeRegArrayOverflow\:\:testWithCompilerUnrolling -XX\:CompileCommand\=dontinline,compiler.regalloc.TestNodeRegArrayOverflow\:\:dontInline compiler.regalloc.TestNodeRegArrayOverflow compiler\nUSER_SPECIFIED main/othervm -Xcomp -XX\:CompileOnly\=compiler.regalloc.TestNodeRegArrayOverflow\:\:testWithManualUnrolling -XX\:CompileCommand\=dontinline,compiler.regalloc.TestNodeRegArrayOverflow\:\:dontInline compiler.regalloc.TestNodeRegArrayOverflow manual\n
+source=TestNodeRegArrayOverflow.java
+title=Test that C2's PhaseRegAlloc\:\:_node_regs (a post-register-allocation mapping from machine nodes to assigned registers) does not overflow in the face of a program with a high-density of CISC spilling candidate nodes.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java
+elapsed=2636 0\:00\:02.636
+end=Sun Oct 18 23\:52\:41 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main build main
+start=Sun Oct 18 23\:52\:38 UTC 2026
+test=compiler/regalloc/TestNodeRegArrayOverflow.java
+testJDK=/workspace/work/spill-sharing/images/e775-candidate-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=2637
+user.name=agent
+work=/workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(4/291)----------
+JDK under test: /workspace/work/spill-sharing/images/e775-candidate-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+
+#section:build
+----------messages:(7/282)----------
+command: build compiler.regalloc.TestNodeRegArrayOverflow
+reason: Named class compiled on demand
+started: Sun Oct 18 23:52:38.434 UTC 2026
+Test directory:
+  compile: compiler.regalloc.TestNodeRegArrayOverflow
+finished: Sun Oct 18 23:52:40.552 UTC 2026
+elapsed time (seconds): 2.118
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/315)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:38.435 UTC 2026
+Mode: othervm
+Process id: 462249
+finished: Sun Oct 18 23:52:40.551 UTC 2026
+elapsed time (seconds): 2.116
+----------configuration:(5/325)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d
+
+----------rerun:(26/2017)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestNodeRegArrayOverflow.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java \\
+        -J-Dtest.main.class=compiler.regalloc.TestNodeRegArrayOverflow \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/691)----------
+command: main -Xcomp -XX:CompileOnly=compiler.regalloc.TestNodeRegArrayOverflow::testWithCompilerUnrolling -XX:CompileCommand=dontinline,compiler.regalloc.TestNodeRegArrayOverflow::dontInline compiler.regalloc.TestNodeRegArrayOverflow compiler
+reason: User specified action: run main/othervm -Xcomp -XX:CompileOnly=compiler.regalloc.TestNodeRegArrayOverflow::testWithCompilerUnrolling -XX:CompileCommand=dontinline,compiler.regalloc.TestNodeRegArrayOverflow::dontInline compiler.regalloc.TestNodeRegArrayOverflow compiler 
+started: Sun Oct 18 23:52:40.552 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 462276
+finished: Sun Oct 18 23:52:40.802 UTC 2026
+elapsed time (seconds): 0.25
+----------configuration:(0/0)----------
+----------System.out:(2/225)----------
+CompileCommand: dontinline compiler/regalloc/TestNodeRegArrayOverflow.dontInline bool dontinline = true
+CompileCommand: compileonly compiler/regalloc/TestNodeRegArrayOverflow.testWithCompilerUnrolling intx compileonly = 1111
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(28/2136)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestNodeRegArrayOverflow.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java \\
+        -Dtest.main.class=compiler.regalloc.TestNodeRegArrayOverflow \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -Xcomp \\
+        -XX:CompileOnly=compiler.regalloc.TestNodeRegArrayOverflow::testWithCompilerUnrolling \\
+        -XX:CompileCommand=dontinline,compiler.regalloc.TestNodeRegArrayOverflow::dontInline \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/TestNodeRegArrayOverflow.d/main.0.jta compiler
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/212)----------
+command: build compiler.regalloc.TestNodeRegArrayOverflow
+reason: Named class compiled on demand
+started: Sun Oct 18 23:52:40.802 UTC 2026
+finished: Sun Oct 18 23:52:40.803 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/684)----------
+command: main -Xcomp -XX:CompileOnly=compiler.regalloc.TestNodeRegArrayOverflow::testWithManualUnrolling -XX:CompileCommand=dontinline,compiler.regalloc.TestNodeRegArrayOverflow::dontInline compiler.regalloc.TestNodeRegArrayOverflow manual
+reason: User specified action: run main/othervm -Xcomp -XX:CompileOnly=compiler.regalloc.TestNodeRegArrayOverflow::testWithManualUnrolling -XX:CompileCommand=dontinline,compiler.regalloc.TestNodeRegArrayOverflow::dontInline compiler.regalloc.TestNodeRegArrayOverflow manual 
+started: Sun Oct 18 23:52:40.803 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 462298
+finished: Sun Oct 18 23:52:41.069 UTC 2026
+elapsed time (seconds): 0.266
+----------configuration:(0/0)----------
+----------System.out:(2/223)----------
+CompileCommand: dontinline compiler/regalloc/TestNodeRegArrayOverflow.dontInline bool dontinline = true
+CompileCommand: compileonly compiler/regalloc/TestNodeRegArrayOverflow.testWithManualUnrolling intx compileonly = 1111
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(28/2132)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestNodeRegArrayOverflow.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestNodeRegArrayOverflow.java \\
+        -Dtest.main.class=compiler.regalloc.TestNodeRegArrayOverflow \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestNodeRegArrayOverflow.d \\
+        -Xcomp \\
+        -XX:CompileOnly=compiler.regalloc.TestNodeRegArrayOverflow::testWithManualUnrolling \\
+        -XX:CompileCommand=dontinline,compiler.regalloc.TestNodeRegArrayOverflow::dontInline \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/TestNodeRegArrayOverflow.d/main.1.jta manual
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

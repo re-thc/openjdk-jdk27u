@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/matched-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:off"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "dense"
+        },
+        "primaryMetric" : {
+            "score" : 208.44429125476736,
+            "scoreError" : 34.89986545623658,
+            "scoreConfidence" : [
+                173.54442579853077,
+                243.34415671100396
+            ],
+            "scorePercentiles" : {
+                "0.0" : 199.25645898130745,
+                "50.0" : 204.40003928149983,
+                "90.0" : 220.94862942474873,
+                "95.0" : 220.94862942474873,
+                "99.0" : 220.94862942474873,
+                "99.9" : 220.94862942474873,
+                "99.99" : 220.94862942474873,
+                "99.999" : 220.94862942474873,
+                "99.9999" : 220.94862942474873,
+                "100.0" : 220.94862942474873
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    199.25645898130745,
+                    204.40003928149983,
+                    202.84225201471517,
+                    214.77407657156544,
+                    220.94862942474873
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

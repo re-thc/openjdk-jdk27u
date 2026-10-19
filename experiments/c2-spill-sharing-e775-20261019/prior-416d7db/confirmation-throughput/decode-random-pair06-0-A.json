@@ -1,0 +1,64 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/master-baseline-release/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 38189.045291258604,
+            "scoreError" : 4656.880871896714,
+            "scoreConfidence" : [
+                33532.16441936189,
+                42845.926163155316
+            ],
+            "scorePercentiles" : {
+                "0.0" : 36846.98680576695,
+                "50.0" : 38856.71579303106,
+                "90.0" : 39201.5312148086,
+                "95.0" : 39201.5312148086,
+                "99.0" : 39201.5312148086,
+                "99.9" : 39201.5312148086,
+                "99.99" : 39201.5312148086,
+                "99.999" : 39201.5312148086,
+                "99.9999" : 39201.5312148086,
+                "100.0" : 39201.5312148086
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    36846.98680576695,
+                    36897.235246253425,
+                    39201.5312148086,
+                    39142.75739643297,
+                    38856.71579303106
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

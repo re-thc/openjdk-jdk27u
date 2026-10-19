@@ -1,0 +1,61 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-spillsharing
+# VM invoker: /workspace/work/spill-sharing/images/master-candidate-release/bin/java
+# VM options: --add-modules jdk.incubator.vector -XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4 -XX:CompileCommand=dontinline,experiment.TestSharedSpillLoads::kernel* -XX:CompileCommand=dontinline,experiment.TestSharedSpillLoads::cold -XX:CompileCommand=exclude,experiment.TestSharedSpillLoads::reference
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 5 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: experiment.SpillBench.kernel4
+
+# Run progress: 0.00% complete, ETA 00:00:08
+# Fork: 1 of 1
+CompileCommand: dontinline experiment/TestSharedSpillLoads.kernel* bool dontinline = true
+CompileCommand: dontinline experiment/TestSharedSpillLoads.cold bool dontinline = true
+CompileCommand: exclude experiment/TestSharedSpillLoads.reference intx exclude = 1111
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 441894.027 ops/s
+# Warmup Iteration   2: 454802.490 ops/s
+# Warmup Iteration   3: 439501.464 ops/s
+Iteration   1: 431926.321 ops/s
+Iteration   2: 462761.635 ops/s
+Iteration   3: 474962.365 ops/s
+Iteration   4: 457774.498 ops/s
+Iteration   5: 453479.202 ops/s
+
+
+Result "experiment.SpillBench.kernel4":
+  456180.804 ±(99.9%) 60706.377 ops/s [Average]
+  (min, avg, max) = (431926.321, 456180.804, 474962.365), stdev = 15765.253
+  CI (99.9%): [395474.427, 516887.182] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:08
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark            Mode  Cnt       Score       Error  Units
+SpillBench.kernel4  thrpt    5  456180.804 ± 60706.377  ops/s
+
+Benchmark result is saved to work/spill-sharing/final-throughput/spill-kernel4-pair04-1-B.json

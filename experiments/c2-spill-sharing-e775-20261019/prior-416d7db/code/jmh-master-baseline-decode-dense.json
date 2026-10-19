@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/master-baseline-release/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:PrintAssemblyOptions=intel",
+            "-XX:CompileCommand=print,experiment.jmh_generated.FrameBench_direct_jmhTest::direct_thrpt_jmhStub",
+            "-XX:CompileCommand=print,dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+            "-XX:CompileCommand=print,dev.jzstd.internal.BlockDecoder::decodeSequencesRolling"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 1,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "dense"
+        },
+        "primaryMetric" : {
+            "score" : 213.807290993702,
+            "scoreError" : "NaN",
+            "scoreConfidence" : [
+                "NaN",
+                "NaN"
+            ],
+            "scorePercentiles" : {
+                "0.0" : 213.807290993702,
+                "50.0" : 213.807290993702,
+                "90.0" : 213.807290993702,
+                "95.0" : 213.807290993702,
+                "99.0" : 213.807290993702,
+                "99.9" : 213.807290993702,
+                "99.99" : 213.807290993702,
+                "99.999" : 213.807290993702,
+                "99.9999" : 213.807290993702,
+                "100.0" : 213.807290993702
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    213.807290993702
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

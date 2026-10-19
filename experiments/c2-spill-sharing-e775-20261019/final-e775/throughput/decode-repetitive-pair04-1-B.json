@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/e775-b/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "repetitive"
+        },
+        "primaryMetric" : {
+            "score" : 2644.4418577590477,
+            "scoreError" : 456.6580211656512,
+            "scoreConfidence" : [
+                2187.7838365933967,
+                3101.0998789246987
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2577.5869565549956,
+                "50.0" : 2599.2034974810285,
+                "90.0" : 2855.4495384827765,
+                "95.0" : 2855.4495384827765,
+                "99.0" : 2855.4495384827765,
+                "99.9" : 2855.4495384827765,
+                "99.99" : 2855.4495384827765,
+                "99.999" : 2855.4495384827765,
+                "99.9999" : 2855.4495384827765,
+                "100.0" : 2855.4495384827765
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2582.2469967560896,
+                    2577.5869565549956,
+                    2607.7222995203488,
+                    2599.2034974810285,
+                    2855.4495384827765
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

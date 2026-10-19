@@ -1,0 +1,36 @@
+[
+  {
+    "cell": "startup",
+    "pair": 0,
+    "order": "AB",
+    "position": 0,
+    "arm": "A",
+    "command": [
+      "taskset",
+      "-c",
+      "0-3",
+      "/usr/bin/time",
+      "-o",
+      "work/spill-sharing/final-costs/startup-pair00-0-A-resource.json",
+      "-f",
+      "{\"wall_s\":%e,\"user_s\":%U,\"system_s\":%S,\"max_rss_kib\":%M}",
+      "/workspace/work/spill-sharing/images/master-baseline-release/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Dprobe.checkOnly=true",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "CodecProbe",
+      "decode",
+      "/workspace/work/spill-sharing/corpus/source.bin",
+      "3",
+      "/workspace/work/spill-sharing/corpus/source.zst"
+    ],
+    "elapsed_s": 0.0014760909998585703,
+    "exit_code": 127
+  }
+]

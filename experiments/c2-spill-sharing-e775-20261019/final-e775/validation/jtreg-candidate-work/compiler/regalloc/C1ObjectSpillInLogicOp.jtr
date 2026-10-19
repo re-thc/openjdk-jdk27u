@@ -1,0 +1,150 @@
+#Test Results (version 2)
+#Sun Oct 18 23:52:25 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=bug8027751 othervm
+requires=vm.gc.G1
+run=USER_SPECIFIED main/othervm -XX\:+UseG1GC compiler.regalloc.C1ObjectSpillInLogicOp\n
+source=C1ObjectSpillInLogicOp.java
+title=C1 crashes generating G1 post-barrier in Unsafe.getAndSetReference() intrinsic because of the new value spill
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java
+elapsed=2395 0\:00\:02.395
+end=Sun Oct 18 23\:52\:25 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Sun Oct 18 23\:52\:22 UTC 2026
+test=compiler/regalloc/C1ObjectSpillInLogicOp.java
+testJDK=/workspace/work/spill-sharing/images/e775-candidate-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=2512
+user.name=agent
+work=/workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(4/291)----------
+JDK under test: /workspace/work/spill-sharing/images/e775-candidate-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+
+#section:build
+----------messages:(7/278)----------
+command: build compiler.regalloc.C1ObjectSpillInLogicOp
+reason: Named class compiled on demand
+started: Sun Oct 18 23:52:23.016 UTC 2026
+Test directory:
+  compile: compiler.regalloc.C1ObjectSpillInLogicOp
+finished: Sun Oct 18 23:52:25.072 UTC 2026
+elapsed time (seconds): 2.056
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/313)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:52:23.017 UTC 2026
+Mode: othervm
+Process id: 461976
+finished: Sun Oct 18 23:52:25.072 UTC 2026
+elapsed time (seconds): 2.055
+----------configuration:(5/323)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d
+
+----------rerun:(26/2001)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/C1ObjectSpillInLogicOp.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java \\
+        -J-Dtest.main.class=compiler.regalloc.C1ObjectSpillInLogicOp \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java
+----------System.out:(0/0)----------
+----------System.err:(4/385)----------
+Note: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/340)----------
+command: main -XX:+UseG1GC compiler.regalloc.C1ObjectSpillInLogicOp
+reason: User specified action: run main/othervm -XX:+UseG1GC compiler.regalloc.C1ObjectSpillInLogicOp 
+started: Sun Oct 18 23:52:25.072 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 462003
+finished: Sun Oct 18 23:52:25.408 UTC 2026
+elapsed time (seconds): 0.336
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(26/1926)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/C1ObjectSpillInLogicOp.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/C1ObjectSpillInLogicOp.java \\
+        -Dtest.main.class=compiler.regalloc.C1ObjectSpillInLogicOp \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/C1ObjectSpillInLogicOp.d \\
+        -XX:+UseG1GC \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/C1ObjectSpillInLogicOp.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

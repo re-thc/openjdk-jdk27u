@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/matched-a/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 30908.233280184628,
+            "scoreError" : 3395.4895085059197,
+            "scoreConfidence" : [
+                27512.74377167871,
+                34303.722788690546
+            ],
+            "scorePercentiles" : {
+                "0.0" : 29411.56816462793,
+                "50.0" : 31211.650432365663,
+                "90.0" : 31695.580278483154,
+                "95.0" : 31695.580278483154,
+                "99.0" : 31695.580278483154,
+                "99.9" : 31695.580278483154,
+                "99.99" : 31695.580278483154,
+                "99.999" : 31695.580278483154,
+                "99.9999" : 31695.580278483154,
+                "100.0" : 31695.580278483154
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    31306.001897754963,
+                    30916.365627691437,
+                    29411.56816462793,
+                    31695.580278483154,
+                    31211.650432365663
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

@@ -1,0 +1,290 @@
+[
+  {
+    "corpus": "source",
+    "method": "dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+    "baseline_compilation": "472",
+    "candidate_compilation": "472",
+    "baseline": {
+      "main_bytes": 13424,
+      "frame_bytes": 224,
+      "nonpadding_instructions": 2524,
+      "stack_loads": 782,
+      "stack_stores": 748,
+      "register_moves": 151,
+      "gpr_vector_moves": 0,
+      "calls": 57
+    },
+    "candidate": {
+      "main_bytes": 13368,
+      "frame_bytes": 224,
+      "nonpadding_instructions": 2522,
+      "stack_loads": 780,
+      "stack_stores": 748,
+      "register_moves": 151,
+      "gpr_vector_moves": 0,
+      "calls": 57
+    },
+    "delta": {
+      "main_bytes": -56,
+      "frame_bytes": 0,
+      "nonpadding_instructions": -2,
+      "stack_loads": -2,
+      "stack_stores": 0,
+      "register_moves": 0,
+      "gpr_vector_moves": 0,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "source",
+    "method": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+    "baseline_compilation": "442",
+    "candidate_compilation": "442",
+    "baseline": {
+      "main_bytes": 8272,
+      "frame_bytes": 288,
+      "nonpadding_instructions": 1537,
+      "stack_loads": 526,
+      "stack_stores": 549,
+      "register_moves": 55,
+      "gpr_vector_moves": 0,
+      "calls": 50
+    },
+    "candidate": {
+      "main_bytes": 8272,
+      "frame_bytes": 288,
+      "nonpadding_instructions": 1534,
+      "stack_loads": 523,
+      "stack_stores": 549,
+      "register_moves": 56,
+      "gpr_vector_moves": 0,
+      "calls": 50
+    },
+    "delta": {
+      "main_bytes": 0,
+      "frame_bytes": 0,
+      "nonpadding_instructions": -3,
+      "stack_loads": -3,
+      "stack_stores": 0,
+      "register_moves": 1,
+      "gpr_vector_moves": 0,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "repetitive",
+    "method": "dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+    "baseline_compilation": "349",
+    "candidate_compilation": "349",
+    "baseline": {
+      "main_bytes": 9552,
+      "frame_bytes": 208,
+      "nonpadding_instructions": 1794,
+      "stack_loads": 509,
+      "stack_stores": 438,
+      "register_moves": 110,
+      "gpr_vector_moves": 2,
+      "calls": 62
+    },
+    "candidate": {
+      "main_bytes": 9600,
+      "frame_bytes": 208,
+      "nonpadding_instructions": 1801,
+      "stack_loads": 523,
+      "stack_stores": 441,
+      "register_moves": 102,
+      "gpr_vector_moves": 0,
+      "calls": 62
+    },
+    "delta": {
+      "main_bytes": 48,
+      "frame_bytes": 0,
+      "nonpadding_instructions": 7,
+      "stack_loads": 14,
+      "stack_stores": 3,
+      "register_moves": -8,
+      "gpr_vector_moves": -2,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "repetitive",
+    "method": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+    "baseline_compilation": "467",
+    "candidate_compilation": "467",
+    "baseline": {
+      "main_bytes": 7856,
+      "frame_bytes": 224,
+      "nonpadding_instructions": 1460,
+      "stack_loads": 478,
+      "stack_stores": 229,
+      "register_moves": 228,
+      "gpr_vector_moves": 112,
+      "calls": 41
+    },
+    "candidate": {
+      "main_bytes": 7856,
+      "frame_bytes": 224,
+      "nonpadding_instructions": 1460,
+      "stack_loads": 478,
+      "stack_stores": 229,
+      "register_moves": 228,
+      "gpr_vector_moves": 112,
+      "calls": 41
+    },
+    "delta": {
+      "main_bytes": 0,
+      "frame_bytes": 0,
+      "nonpadding_instructions": 0,
+      "stack_loads": 0,
+      "stack_stores": 0,
+      "register_moves": 0,
+      "gpr_vector_moves": 0,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "dense",
+    "method": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+    "baseline_compilation": "383",
+    "candidate_compilation": "383",
+    "baseline": {
+      "main_bytes": 8544,
+      "frame_bytes": 288,
+      "nonpadding_instructions": 1582,
+      "stack_loads": 550,
+      "stack_stores": 571,
+      "register_moves": 55,
+      "gpr_vector_moves": 0,
+      "calls": 51
+    },
+    "candidate": {
+      "main_bytes": 8520,
+      "frame_bytes": 288,
+      "nonpadding_instructions": 1579,
+      "stack_loads": 545,
+      "stack_stores": 571,
+      "register_moves": 56,
+      "gpr_vector_moves": 0,
+      "calls": 51
+    },
+    "delta": {
+      "main_bytes": -24,
+      "frame_bytes": 0,
+      "nonpadding_instructions": -3,
+      "stack_loads": -5,
+      "stack_stores": 0,
+      "register_moves": 1,
+      "gpr_vector_moves": 0,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "dense",
+    "method": "dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+    "baseline_compilation": "406",
+    "candidate_compilation": "406",
+    "baseline": {
+      "main_bytes": 10344,
+      "frame_bytes": 240,
+      "nonpadding_instructions": 1913,
+      "stack_loads": 613,
+      "stack_stores": 511,
+      "register_moves": 103,
+      "gpr_vector_moves": 2,
+      "calls": 60
+    },
+    "candidate": {
+      "main_bytes": 10280,
+      "frame_bytes": 240,
+      "nonpadding_instructions": 1901,
+      "stack_loads": 597,
+      "stack_stores": 513,
+      "register_moves": 104,
+      "gpr_vector_moves": 0,
+      "calls": 60
+    },
+    "delta": {
+      "main_bytes": -64,
+      "frame_bytes": 0,
+      "nonpadding_instructions": -12,
+      "stack_loads": -16,
+      "stack_stores": 2,
+      "register_moves": 1,
+      "gpr_vector_moves": -2,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "long-offset",
+    "method": "dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+    "baseline_compilation": "399",
+    "candidate_compilation": "399",
+    "baseline": {
+      "main_bytes": 7856,
+      "frame_bytes": 224,
+      "nonpadding_instructions": 1460,
+      "stack_loads": 478,
+      "stack_stores": 229,
+      "register_moves": 228,
+      "gpr_vector_moves": 112,
+      "calls": 41
+    },
+    "candidate": {
+      "main_bytes": 7856,
+      "frame_bytes": 224,
+      "nonpadding_instructions": 1460,
+      "stack_loads": 478,
+      "stack_stores": 229,
+      "register_moves": 228,
+      "gpr_vector_moves": 112,
+      "calls": 41
+    },
+    "delta": {
+      "main_bytes": 0,
+      "frame_bytes": 0,
+      "nonpadding_instructions": 0,
+      "stack_loads": 0,
+      "stack_stores": 0,
+      "register_moves": 0,
+      "gpr_vector_moves": 0,
+      "calls": 0
+    }
+  },
+  {
+    "corpus": "long-offset",
+    "method": "dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+    "baseline_compilation": "420",
+    "candidate_compilation": "420",
+    "baseline": {
+      "main_bytes": 4320,
+      "frame_bytes": 176,
+      "nonpadding_instructions": 844,
+      "stack_loads": 216,
+      "stack_stores": 296,
+      "register_moves": 51,
+      "gpr_vector_moves": 0,
+      "calls": 28
+    },
+    "candidate": {
+      "main_bytes": 4328,
+      "frame_bytes": 176,
+      "nonpadding_instructions": 845,
+      "stack_loads": 219,
+      "stack_stores": 296,
+      "register_moves": 49,
+      "gpr_vector_moves": 0,
+      "calls": 28
+    },
+    "delta": {
+      "main_bytes": 8,
+      "frame_bytes": 0,
+      "nonpadding_instructions": 1,
+      "stack_loads": 3,
+      "stack_stores": 0,
+      "register_moves": -2,
+      "gpr_vector_moves": 0,
+      "calls": 0
+    }
+  }
+]

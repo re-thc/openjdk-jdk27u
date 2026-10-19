@@ -1,0 +1,64 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/master-baseline-release/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "dense"
+        },
+        "primaryMetric" : {
+            "score" : 219.42226474399754,
+            "scoreError" : 20.245105283979353,
+            "scoreConfidence" : [
+                199.1771594600182,
+                239.6673700279769
+            ],
+            "scorePercentiles" : {
+                "0.0" : 210.50312148544276,
+                "50.0" : 220.30994562892099,
+                "90.0" : 223.58027431608832,
+                "95.0" : 223.58027431608832,
+                "99.0" : 223.58027431608832,
+                "99.9" : 223.58027431608832,
+                "99.99" : 223.58027431608832,
+                "99.999" : 223.58027431608832,
+                "99.9999" : 223.58027431608832,
+                "100.0" : 223.58027431608832
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    210.50312148544276,
+                    220.30994562892099,
+                    219.70989505456996,
+                    223.58027431608832,
+                    223.00808723496553
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

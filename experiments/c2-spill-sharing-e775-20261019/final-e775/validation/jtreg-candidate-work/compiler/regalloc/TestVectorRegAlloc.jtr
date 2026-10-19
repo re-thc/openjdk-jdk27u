@@ -1,0 +1,145 @@
+#Test Results (version 2)
+#Sun Oct 18 23:53:12 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestVectorRegAlloc.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=bug8131969 othervm
+run=USER_SPECIFIED main/othervm -Xbatch compiler.regalloc.TestVectorRegAlloc\n
+source=TestVectorRegAlloc.java
+title=assert in register allocation code when vector Phi for a loop is processed because code assumes all inputs already processed
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestVectorRegAlloc.java
+elapsed=2345 0\:00\:02.345
+end=Sun Oct 18 23\:53\:12 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Sun Oct 18 23\:53\:09 UTC 2026
+test=compiler/regalloc/TestVectorRegAlloc.java
+testJDK=/workspace/work/spill-sharing/images/e775-candidate-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=2346
+user.name=agent
+work=/workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(4/291)----------
+JDK under test: /workspace/work/spill-sharing/images/e775-candidate-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+
+#section:build
+----------messages:(7/269)----------
+command: build compiler.regalloc.TestVectorRegAlloc
+reason: Named class compiled on demand
+started: Sun Oct 18 23:53:09.925 UTC 2026
+Test directory:
+  compile: compiler.regalloc.TestVectorRegAlloc
+finished: Sun Oct 18 23:53:11.635 UTC 2026
+elapsed time (seconds): 1.71
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/308)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestVectorRegAlloc.java
+reason: .class file out of date or does not exist
+started: Sun Oct 18 23:53:09.925 UTC 2026
+Mode: othervm
+Process id: 462737
+finished: Sun Oct 18 23:53:11.635 UTC 2026
+elapsed time (seconds): 1.71
+----------configuration:(5/319)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d
+
+----------rerun:(26/1969)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -J-Dtest.timeout.factor=2.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestVectorRegAlloc.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestVectorRegAlloc.java \\
+        -J-Dtest.main.class=compiler.regalloc.TestVectorRegAlloc \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d \\
+        -d /workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestVectorRegAlloc.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/322)----------
+command: main -Xbatch compiler.regalloc.TestVectorRegAlloc
+reason: User specified action: run main/othervm -Xbatch compiler.regalloc.TestVectorRegAlloc 
+started: Sun Oct 18 23:53:11.636 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 462764
+finished: Sun Oct 18 23:53:12.268 UTC 2026
+elapsed time (seconds): 0.632
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(26/1893)*----------
+cd /workspace/work/spill-sharing/jtreg-e775-candidate-work/scratch && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/e775-candidate-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/e775-candidate-fastdebug \\
+        -Dtest.timeout.factor=2.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestVectorRegAlloc.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=SUMMARY,e=SUMMARY,t=false,m=false] \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestVectorRegAlloc.java \\
+        -Dtest.main.class=compiler.regalloc.TestVectorRegAlloc \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.classes=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/jtreg-e775-candidate-work/classes/compiler/regalloc/TestVectorRegAlloc.d \\
+        -Xbatch \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/jtreg-e775-candidate-work/compiler/regalloc/TestVectorRegAlloc.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

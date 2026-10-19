@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.direct",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/master-candidate-release/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:PrintAssemblyOptions=intel",
+            "-XX:CompileCommand=print,experiment.jmh_generated.FrameBench_direct_jmhTest::direct_thrpt_jmhStub",
+            "-XX:CompileCommand=print,dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+            "-XX:CompileCommand=print,dev.jzstd.internal.BlockDecoder::decodeSequencesRolling"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 1,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "dense"
+        },
+        "primaryMetric" : {
+            "score" : 239.2468699930116,
+            "scoreError" : "NaN",
+            "scoreConfidence" : [
+                "NaN",
+                "NaN"
+            ],
+            "scorePercentiles" : {
+                "0.0" : 239.2468699930116,
+                "50.0" : 239.2468699930116,
+                "90.0" : 239.2468699930116,
+                "95.0" : 239.2468699930116,
+                "99.0" : 239.2468699930116,
+                "99.9" : 239.2468699930116,
+                "99.99" : 239.2468699930116,
+                "99.999" : 239.2468699930116,
+                "99.9999" : 239.2468699930116,
+                "100.0" : 239.2468699930116
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    239.2468699930116
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

@@ -1,0 +1,95 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-spillsharing
+# VM invoker: /workspace/work/spill-sharing/images/e775-b/bin/java
+# VM options: --add-modules jdk.incubator.vector -XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4 -Xshare:on
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 5 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: experiment.FrameBench.direct
+# Parameters: (corpus = source)
+
+# Run progress: 0.00% complete, ETA 00:00:08
+# Fork: 1 of 1
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 113.587 ops/s
+# Warmup Iteration   2: 114.214 ops/s
+# Warmup Iteration   3: 118.388 ops/s
+Iteration   1: 114.525 ops/s
+                 gc.alloc.rate:      7.173 MB/sec
+                 gc.alloc.rate.norm: 65693.217 B/op
+                 gc.count:           ≈ 0 counts
+
+Iteration   2: 120.900 ops/s
+                 gc.alloc.rate:      7.572 MB/sec
+                 gc.alloc.rate.norm: 65690.843 B/op
+                 gc.count:           ≈ 0 counts
+
+Iteration   3: 125.143 ops/s
+                 gc.alloc.rate:      7.837 MB/sec
+                 gc.alloc.rate.norm: 65690.159 B/op
+                 gc.count:           ≈ 0 counts
+
+Iteration   4: 120.641 ops/s
+                 gc.alloc.rate:      1.563 MB/sec
+                 gc.alloc.rate.norm: 13585.508 B/op
+                 gc.count:           ≈ 0 counts
+
+Iteration   5: 118.832 ops/s
+                 gc.alloc.rate:      0.016 MB/sec
+                 gc.alloc.rate.norm: 139.467 B/op
+                 gc.count:           ≈ 0 counts
+
+
+
+Result "experiment.FrameBench.direct":
+  120.008 ±(99.9%) 14.790 ops/s [Average]
+  (min, avg, max) = (114.525, 120.008, 125.143), stdev = 3.841
+  CI (99.9%): [105.218, 134.799] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.direct:gc.alloc.rate":
+  4.832 ±(99.9%) 14.395 MB/sec [Average]
+  (min, avg, max) = (0.016, 4.832, 7.837), stdev = 3.738
+  CI (99.9%): [≈ 0, 19.227] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.direct:gc.alloc.rate.norm":
+  42159.839 ±(99.9%) 125418.258 B/op [Average]
+  (min, avg, max) = (139.467, 42159.839, 65693.217), stdev = 32570.723
+  CI (99.9%): [≈ 0, 167578.097] (assumes normal distribution)
+
+Secondary result "experiment.FrameBench.direct:gc.count":
+  ≈ 0 counts
+
+
+# Run complete. Total time: 00:00:08
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                             (corpus)   Mode  Cnt      Score        Error   Units
+FrameBench.direct                       source  thrpt    5    120.008 ±     14.790   ops/s
+FrameBench.direct:gc.alloc.rate         source  thrpt    5      4.832 ±     14.395  MB/sec
+FrameBench.direct:gc.alloc.rate.norm    source  thrpt    5  42159.839 ± 125418.258    B/op
+FrameBench.direct:gc.count              source  thrpt    5        ≈ 0               counts
+
+Benchmark result is saved to work/spill-sharing/e775-gc-profile/decode-source-pair01-0-B.json
