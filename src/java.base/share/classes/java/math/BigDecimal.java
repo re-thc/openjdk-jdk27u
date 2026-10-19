@@ -25,6 +25,7 @@
 
 /*
  * Portions Copyright IBM Corporation, 2001. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  */
 
 package java.math;
