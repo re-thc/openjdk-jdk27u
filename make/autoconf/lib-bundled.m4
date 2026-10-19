@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@
 #
 # For libjpeg, giflib, libpng, lcms2 and zlib the source is present in the
 # OpenJDK repository (referred to as "bundled"). Default is to use libjpeg,
-# giflib, libpng and lcms2 libraries as "bundled". The default for zlib is
-# to use the bundled zlib on Windows and AIX, otherwise the external ("system")
-# zlib, if present. However the libs may be replaced by an external ("system")
-# version by the user.
+# giflib, libpng and lcms2 libraries as "bundled"; these may be replaced by
+# external libraries. Compression always uses bundled zlib-ng where supported
+# by this integration, with bundled stock zlib on other targets.
 ################################################################################
 AC_DEFUN_ONCE([LIB_SETUP_BUNDLED_LIBS],
 [
@@ -201,88 +200,48 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBPNG],
 ################################################################################
 # Setup zlib
 ################################################################################
+AC_DEFUN([LIB_SELECT_ZLIB_BACKEND],
+[
+  $1=false
+  case "$2:$3" in
+    linux:x86_64 | linux:aarch64 | macosx:x86_64 | macosx:aarch64 | windows:x86_64 | windows:aarch64)
+      $1=true
+      ;;
+  esac
+])
+
 AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
 [
-  AC_ARG_WITH(zlib, [AS_HELP_STRING([--with-zlib],
-      [use zlib from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+  # Recognize obsolete spellings only to reject them, without advertising an
+  # option that no longer selects a backend.
+  AC_ARG_WITH(zlib, [], [
+    AC_MSG_ERROR([--with-zlib has been removed; this build uses bundled zlib-ng on supported targets and bundled zlib elsewhere])
+  ])
 
-  AC_CHECK_LIB(z, compress,
-      [ ZLIB_FOUND=yes ],
-      [ ZLIB_FOUND=no ])
+  LIB_SELECT_ZLIB_BACKEND([USE_ZLIBNG], [$OPENJDK_TARGET_OS], [$OPENJDK_TARGET_CPU])
+  LIB_SELECT_ZLIB_BACKEND([BUILD_USE_ZLIBNG], [$OPENJDK_BUILD_OS], [$OPENJDK_BUILD_CPU])
 
-  AC_MSG_CHECKING([for which zlib to use])
-
-  DEFAULT_ZLIB=system
-  if test "x$OPENJDK_TARGET_OS" = xwindows -o "x$OPENJDK_TARGET_OS" = xaix; then
-    # On windows and aix default is bundled
-    DEFAULT_ZLIB=bundled
-  elif test "x$OPENJDK_TARGET_OS" = xmacosx -a "x$OPENJDK_TARGET_CPU" = xaarch64; then
-    DEFAULT_ZLIB=bundled
+  LIBZ_CFLAGS="-I$TOPDIR/src/java.base/share/native/libzip/zlib"
+  if test "x$OPENJDK_TARGET_OS" = xmacosx -o "x$OPENJDK_TARGET_OS" = xaix -o "x$OPENJDK_TARGET_OS" = xlinux; then
+    LIBZ_CFLAGS="$LIBZ_CFLAGS -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1"
   fi
 
-  if test "x${ZLIB_FOUND}" != "xyes"; then
-    # If we don't find any system...set default to bundled
-    DEFAULT_ZLIB=bundled
-  fi
-
-  # If user didn't specify, use DEFAULT_ZLIB
-  if test "x${with_zlib}" = "x"; then
-    with_zlib=${DEFAULT_ZLIB}
-  fi
-
-  if test "x${with_zlib}" = "xbundled"; then
-    USE_EXTERNAL_LIBZ=false
-    AC_MSG_RESULT([bundled])
-  elif test "x${with_zlib}" = "xsystem"; then
-    if test "x${ZLIB_FOUND}" = "xyes"; then
-      USE_EXTERNAL_LIBZ=true
-      AC_MSG_RESULT([system])
-
-      if test "x$USE_EXTERNAL_LIBPNG" != "xtrue"; then
-        # If we use bundled libpng, we must verify that we have a proper zlib.
-        # For instance zlib-ng has had issues with inflateValidate().
-        AC_MSG_CHECKING([for system zlib functionality])
-        AC_COMPILE_IFELSE(
-            [AC_LANG_PROGRAM([#include "zlib.h"], [
-                #if ZLIB_VERNUM >= 0x1281
-                  inflateValidate(NULL, 0);
-                #endif
-            ])],
-            [AC_MSG_RESULT([ok])],
-            [
-                AC_MSG_RESULT([not ok])
-                AC_MSG_ERROR([System zlib not working correctly])
-            ]
-        )
-      fi
-    else
-      AC_MSG_RESULT([system not found])
-      AC_MSG_ERROR([--with-zlib=system specified, but no zlib found!])
-    fi
+  AC_MSG_CHECKING([for bundled compression backend])
+  if test "x$USE_ZLIBNG" = xtrue; then
+    AC_MSG_RESULT([zlib-ng])
   else
-    AC_MSG_ERROR([Invalid value for --with-zlib: ${with_zlib}, use 'system' or 'bundled'])
+    AC_MSG_RESULT([stock zlib (target not supported by the zlib-ng integration)])
   fi
 
-  LIBZ_CFLAGS=""
-  LIBZ_LIBS=""
-  if test "x$USE_EXTERNAL_LIBZ" = "xfalse"; then
-    LIBZ_CFLAGS="$LIBZ_CFLAGS -I$TOPDIR/src/java.base/share/native/libzip/zlib"
-    if test "x$OPENJDK_TARGET_OS" = xmacosx -o "x$OPENJDK_TARGET_OS" = xaix -o "x$OPENJDK_TARGET_OS" = xlinux; then
-        LIBZ_CFLAGS="$LIBZ_CFLAGS -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1"
-    fi
-  else
-    LIBZ_LIBS="-lz"
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+  if test "x$OPENJDK_TARGET_OS:$USE_ZLIBNG" = xwindows:true \
+      || test "x$OPENJDK_BUILD_OS:$BUILD_USE_ZLIBNG" = xwindows:true; then
     UTIL_CHECK_NONEMPTY(CMAKE)
     UTIL_REQUIRE_TOOLCHAIN_PROGS(NMAKE, nmake)
   fi
   AC_SUBST(NMAKE)
-
-  AC_SUBST(USE_EXTERNAL_LIBZ)
+  AC_SUBST(USE_ZLIBNG)
+  AC_SUBST(BUILD_USE_ZLIBNG)
   AC_SUBST(LIBZ_CFLAGS)
-  AC_SUBST(LIBZ_LIBS)
 ])
 
 ################################################################################

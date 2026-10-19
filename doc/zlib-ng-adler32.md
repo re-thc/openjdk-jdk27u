@@ -1,6 +1,6 @@
 # Adler32 call selection
 
-Adler32 uses the same zlib-ng backend through three distinct call paths:
+Adler32 uses the configured ZIP backend through three distinct call paths:
 
 - A C1 intrinsic emits a native leaf call inside the compiled method.
 - A default native invocation can pass through the c2i adapter to the interpreter
@@ -13,7 +13,7 @@ call, and linear scan creates clobber intervals for all 32 FP registers from
 `FrameMap`. The allocator therefore treats every FP register as clobbered at the
 call. The C function must still obey the platform ABI for
 reserved registers and stack alignment; this is not a custom register convention.
-The `ZIP_Adler32` leaf calls zlib-ng without entering Java or safepointing.
+The `ZIP_Adler32` leaf calls that backend without entering Java or safepointing.
 
 Disabling `UseZipIntrinsics` does not select an Adler32 call path.
 

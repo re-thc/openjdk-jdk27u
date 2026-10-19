@@ -168,8 +168,8 @@ TARGETS += $(COPY_JDK_NOTICES)
 # Copy and filter the legal files depending on what 3rd party components are
 # bundled or linked from the OS.
 #
-ifeq ($(USE_EXTERNAL_LIBZ), true)
-  LEGAL_EXCLUDES += zlib.md
+ifneq ($(USE_ZLIBNG), true)
+  LEGAL_EXCLUDES += zlib-ng.md
 endif
 
 ifneq ($(TOOLCHAIN_TYPE), gcc)

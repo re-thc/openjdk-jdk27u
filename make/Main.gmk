@@ -1049,6 +1049,12 @@ else
   $(foreach m, $(filter $(JAVA_MODULES), $(STATIC_LIBS_MODULES)), \
     $(eval $m-static-libs: $m-java java.base-copy))
 
+  ifeq ($(USE_ZLIBNG), true)
+    # Both modules consume the same private archive. Build its static variant
+    # in java.base before java.desktop can start a competing sub-build.
+    java.desktop-static-libs: java.base-static-libs
+  endif
+
   # Jmods cannot be created until we have the jmod tool ready to run. During
   # a normal build we run it from the exploded image, but when cross compiling
   # it's run from the buildjdk, which is either created at build time or user

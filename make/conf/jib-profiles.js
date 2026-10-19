@@ -413,7 +413,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
             configure_args: [
-                "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
                 // Use system SetFile instead of the one in the devkit as the
@@ -452,7 +451,6 @@ var getJibProfilesProfiles = function (input, common, data) {
           target_cpu: "x64",
           dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
           configure_args: concat(
-              "--with-zlib=system",
               "--disable-dtrace",
               (cross_compiling ? [ "--openjdk-target=x86_64-linux-gnu" ] : []),
               (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
@@ -464,7 +462,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
             configure_args: [
-                "--with-zlib=system",
                 "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
 	    ].concat(cross_compiling ? ["--openjdk-target=aarch64-linux-gnu"] : []),
@@ -576,7 +573,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "libffi"],
             configure_args: [
-                "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling",
@@ -588,7 +584,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "libffi"],
             configure_args: [
-                "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
@@ -602,7 +597,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "gtest", "libffi"],
             configure_args: [
                 "--with-target-bits=32",
-                "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
@@ -626,7 +620,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest"],
             configure_args: [
-                "--with-zlib=system",
                 "--disable-precompiled-headers"
             ],
         },
