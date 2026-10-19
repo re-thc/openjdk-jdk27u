@@ -192,8 +192,8 @@ final class StringUTF16 {
             }
         }
         for (; i < endIndex - 1; ) {
-            if (((getChar(value, i++) & 0xfc00) == 0xd800) &&
-                ((getChar(value, i) & 0xfc00) == 0xdc00)) {
+            if (Character.isHighSurrogate(getChar(value, i++)) &&
+                Character.isLowSurrogate(getChar(value, i))) {
                 count--;
                 i++;
             }
