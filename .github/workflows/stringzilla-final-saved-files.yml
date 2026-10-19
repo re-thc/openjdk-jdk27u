@@ -8,17 +8,19 @@ permissions:
   actions: read
 jobs:
   bindings:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       actions: write
     outputs:
       matrix: ${{ steps.proof.outputs.matrix }}
+      copy_needed: ${{ steps.stop.outputs.copy_needed }}
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           sparse-checkout: .github/scripts
-      - name: Stop only the obsolete saved-file reader before replacement
+      - id: stop
+        name: Preserve completed exports and stop only the two queued readers
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/scripts/stringzilla-final-saved-predecessor.py
@@ -40,7 +42,8 @@ jobs:
         run: python3 .github/scripts/stringzilla-final-saved-files.py proof
   export:
     needs: bindings
-    runs-on: ubuntu-24.04
+    if: needs.bindings.outputs.copy_needed == 'true'
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.bindings.outputs.matrix) }}
