@@ -1,0 +1,1877 @@
+--- ProcessLog ---
+cmd: /workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-ir-network-work/classes/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-ir-network-work/classes/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Djava.library.path=. -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Dir.framework.server.port=39349 -XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+LogCompilation -XX:CompilerDirectivesFile=test-vm-compile-commands-pid-498310.log -XX:CompilerDirectivesLimit=281 -XX:-OmitStackTraceInFastThrow -DShouldDoIRVerification=true -XX:-BackgroundCompilation -XX:CompileCommand=quiet compiler.lib.ir_framework.test.TestVM compiler.c2.irTests.TestIfConstantThreshold
+exitvalue: 0
+stderr: 
+stdout: 28 compiler directives added
+60    1    b  3       java.lang.Object::<init> (1 bytes)
+61    2    b  3       java.lang.Byte::toUnsignedInt (6 bytes)
+70    3    b  4       java.lang.Byte::toUnsignedInt (6 bytes)
+70    2       3       java.lang.Byte::toUnsignedInt (6 bytes)   made not entrant: not used
+70    4    b  3       java.lang.String::hashCode (60 bytes)
+71    5    b  3       jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)
+79    6     n 0       jdk.internal.misc.Unsafe::getReferenceVolatile (native)   
+84    7    b  3       java.lang.String::isLatin1 (19 bytes)
+88    8    b  3       java.lang.String::charAt (25 bytes)
+89    9    b  3       jdk.internal.util.Preconditions::checkIndex (18 bytes)
+95   10    b  3       java.util.Objects::requireNonNull (14 bytes)
+98   11    b  3       java.util.concurrent.ConcurrentHashMap::tabAt (21 bytes)
+104   12    b  3       java.lang.String::coder (15 bytes)
+116   13     n 0       java.lang.Object::hashCode (native)   
+116   14     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLLLLLL)L (native)   (static)
+123   15    b  1       java.lang.Enum::ordinal (5 bytes)
+134   16    b  3       java.lang.Enum::<init> (15 bytes)
+135   17    b  3       java.lang.String::length (11 bytes)
+136   18     n 0       java.lang.System::arraycopy (native)   (static)
+143   19    b  1       jdk.internal.classfile.impl.AbstractPoolEntry::index (5 bytes)
+144   20     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLL)L (native)   (static)
+145   21    b  1       jdk.internal.classfile.impl.AbstractPoolEntry::width (2 bytes)
+146   22    b  1       java.lang.Class::isPrimitive (5 bytes)
+146   23     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLLLLL)L (native)   
+149   24    b  1       jdk.internal.classfile.impl.SplitConstantPool::size (5 bytes)
+150   25    b  3       jdk.internal.classfile.impl.BufWriterImpl::reserveSpace (22 bytes)
+151   26     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLL)V (native)   (static)
+151   27    b  3       jdk.internal.classfile.impl.SplitConstantPool::map (160 bytes)
+153   28    b  3       jdk.internal.util.ArraysSupport::hashCodeOfUnsigned (55 bytes)
+155   29    b  1       jdk.internal.classfile.impl.AbstractPoolEntry::constantPool (5 bytes)
+155   30    b  1       jdk.internal.classfile.impl.RawBytecodeHelper::bci (5 bytes)
+157   31     n 0       java.lang.invoke.MethodHandle::invokeBasic(LL)L (native)   
+157   32     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLL)L (native)   (static)
+157   33    b  1       jdk.internal.constant.ClassOrInterfaceDescImpl::descriptorString (5 bytes)
+158   34    b  3       jdk.internal.classfile.impl.AbstractPoolEntry::hashString (5 bytes)
+158   35    b  3       java.lang.StringCoding::countNonZeroAsciiLatin1 (33 bytes)
+159   36    b  4       java.lang.Object::<init> (1 bytes)
+160    1       3       java.lang.Object::<init> (1 bytes)   made not entrant: not used
+160   37    b  3       jdk.internal.classfile.impl.SplitConstantPool::entryByIndex (59 bytes)
+163   38    b  1       java.lang.String::value (5 bytes)
+168   39    b  3       java.util.concurrent.ConcurrentHashMap::spread (10 bytes)
+168   40    b  1       jdk.internal.util.StrongReferenceKey::get (5 bytes)
+169   41    b  1       java.lang.invoke.MethodType::returnType (5 bytes)
+170   42     n 0       jdk.internal.misc.Unsafe::compareAndSetLong (native)   
+171   43    b  3       java.lang.invoke.MethodTypeForm::canonicalize (74 bytes)
+172   44    b  3       jdk.internal.util.ReferencedKeyMap::removeStaleReferences (30 bytes)
+173   45     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLIL)I (native)   (static)
+179   46     n 0       jdk.internal.misc.Unsafe::compareAndSetReference (native)   
+179   47     n 0       java.lang.invoke.MethodHandle::linkToStatic(LL)L (native)   (static)
+179   48     n 0       java.lang.Object::clone (native)   
+179   49    b  3       jdk.internal.classfile.impl.EntryMap::firstToken (50 bytes)
+180   50    b  3       jdk.internal.classfile.impl.AbstractPoolEntry::<init> (20 bytes)
+181   51    b  3       jdk.internal.classfile.impl.EntryMap::put (186 bytes)
+182   52     n 0       java.lang.Object::getClass (native)   
+182   53    b  3       jdk.internal.classfile.impl.SplitConstantPool::internalAdd (12 bytes)
+183   54    b  3       jdk.internal.classfile.impl.AbstractPoolEntry::maybeClone (26 bytes)
+184   55    b  3       jdk.internal.classfile.impl.SplitConstantPool::canWriteDirect (24 bytes)
+185   56    b  3       jdk.internal.util.Preconditions::checkFromToIndex (24 bytes)
+185   57    b  3       java.lang.String::checkBoundsBeginEnd (11 bytes)
+186   58    b  3       jdk.internal.util.Preconditions::checkFromIndexSize (25 bytes)
+186   59    b  1       java.lang.invoke.MethodType::ptypes (5 bytes)
+187   60    b  3       java.util.concurrent.ConcurrentHashMap::get (162 bytes)
+188   61    b  3       java.lang.invoke.MethodType::hashCode (53 bytes)
+189   62     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLL)V (native)   (static)
+189   63    b  3       jdk.internal.util.ArraysSupport::vectorizedHashCode (158 bytes)
+191   64    b  1       java.lang.Class::getClassLoader (5 bytes)
+191   65    b  1       jdk.internal.classfile.impl.BufWriterImpl::size (5 bytes)
+192   66     n 0       java.lang.invoke.MethodHandle::invokeBasic(L)L (native)   
+192   67    b  3       jdk.internal.util.ReferencedKeyMap::lookupKey (9 bytes)
+192   68    b  3       jdk.internal.util.StrongReferenceKey::hashCode (8 bytes)
+193   69    b  3       jdk.internal.classfile.impl.RawBytecodeHelper::opcode (9 bytes)
+194   70    b  3       jdk.internal.classfile.impl.RawBytecodeHelper::next (81 bytes)
+194   71    b  3       jdk.internal.classfile.impl.SplitConstantPool::tryFindUtf8 (103 bytes)
+197   72    b  3       java.lang.AbstractStringBuilder::needsNewBuffer (33 bytes)
+198   73    b  3       sun.nio.fs.UnixPath::checkNotNul (16 bytes)
+200   74    b  3       java.lang.String::getBytes (44 bytes)
+201   75    b  3       jdk.internal.classfile.impl.SplitConstantPool::internalAdd (78 bytes)
+202   76    b  3       jdk.internal.util.ModifiedUtf::isValidLengthInConstantPool (41 bytes)
+206   77    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::<init> (86 bytes)
+211   78    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::contentHash (19 bytes)
+212   79    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::hashCode (8 bytes)
+213   80    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::writeTo (44 bytes)
+213   81    b  3       java.lang.System$1::countNonZeroAscii (5 bytes)
+214   82    b  3       java.lang.String::getBytes (60 bytes)
+217   83    b  3       java.lang.Math::min (11 bytes)
+219   84    b  3       java.lang.AbstractStringBuilder::isLatin1 (16 bytes)
+219   85    b  3       java.lang.StringLatin1::canEncode (17 bytes)
+220   86     n 0       jdk.internal.misc.Unsafe::getShort (native)   
+220   87    b  3       java.io.BufferedInputStream::getBufIfOpen (61 bytes)
+221   88    b  3       java.io.BufferedInputStream::getBufIfOpen (6 bytes)
+221   89    b  3       java.lang.String::checkIndex (10 bytes)
+222   90    b  3       java.util.Objects::checkFromIndexSize (8 bytes)
+223   91    b  3       java.io.BufferedInputStream::ensureOpen (18 bytes)
+223   92    b  3       java.util.AbstractCollection::<init> (5 bytes)
+224   93    b  3       java.lang.Math::floorMod (20 bytes)
+224   94    b  3       java.lang.StringBuilder::append (8 bytes)
+225   95    b  3       java.lang.StringLatin1::coderFromChar (10 bytes)
+225   96    b  3       sun.nio.fs.UnixUriUtils::match (50 bytes)
+226   97    b  1       java.lang.AbstractStringBuilder::length (5 bytes)
+226   98    b  3       java.lang.StringLatin1::indexOf (24 bytes)
+227   99    b  3       java.lang.String::indexOf (41 bytes)
+228  100    b  3       java.net.URI::match (56 bytes)
+229  101    b  3       java.io.DataInputStream::readFully (59 bytes)
+230  102  s b  3       java.io.BufferedInputStream::read (112 bytes)
+232  103    b  3       java.lang.invoke.VarHandleGuards::guard_LI_I (78 bytes)
+233  104     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLI)I (native)   
+235  105    b  3       java.util.HashMap::hash (20 bytes)
+236  106    b  3       jdk.internal.module.ModuleInfo$CountingDataInput::readUnsignedShort (24 bytes)
+236  107    b  3       java.io.DataInputStream::readUnsignedShort (19 bytes)
+237  108    b  3       jdk.internal.misc.Unsafe::getShortUnaligned (33 bytes)
+238  109    b  3       jdk.internal.misc.Unsafe::convEndian (16 bytes)
+239  110    b  3       java.lang.AbstractStringBuilder::append (102 bytes)
+240  111    b  3       java.lang.StringLatin1::indexOfChar0 (33 bytes)
+240  112    b  3       java.lang.String::<init> (15 bytes)
+241  113    b  3       java.io.BufferedInputStream::read1 (121 bytes)
+243  114    b  3       java.lang.Character::charCount (12 bytes)
+243  115     n 0       java.lang.Double::doubleToRawLongBits (native)   (static)
+243  116    b  3       java.lang.String::codePointAt (50 bytes)
+244  117    b  3       java.util.HashMap::putVal (300 bytes)
+247  118    b  3       java.util.HashMap$Node::<init> (26 bytes)
+247  119    b  3       java.util.HashMap::put (13 bytes)
+248  120    b  3       java.lang.StringLatin1::equals (16 bytes)
+249  121    b  3       jdk.internal.misc.Unsafe::getShortUnaligned (12 bytes)
+249  122    b  3       java.util.HashMap$HashIterator::hasNext (13 bytes)
+250  123    b  3       java.util.Objects::requireNonNull (15 bytes)
+251  124    b  3       java.lang.String::equals (56 bytes)
+252  125    b  3       java.lang.StringCoding::countPositives0 (33 bytes)
+253  126    b  3       java.util.HashMap::newNode (13 bytes)
+254  127    b  3       java.util.HashSet::add (20 bytes)
+254  128    b  3       java.util.HashMap$HashIterator::nextNode (100 bytes)
+255  129    b  3       java.util.ImmutableCollections$SetN::probe (56 bytes)
+257  130    b  3       java.util.AbstractSet::<init> (5 bytes)
+257  131    b  1       java.util.HashMap::size (5 bytes)
+258  132    b  3       java.util.AbstractMap::<init> (5 bytes)
+258  133    b  3       jdk.internal.module.ModuleInfo$ConstantPool::checkIndex (21 bytes)
+259  134    b  3       jdk.internal.module.ModuleInfo$CountingDataInput::readUnsignedByte (22 bytes)
+259  135    b  3       java.io.DataInputStream::readUnsignedByte (22 bytes)
+260  136  s b  3       java.io.BufferedInputStream::read (49 bytes)
+261  137    b  3       jdk.internal.module.ModuleInfo$ConstantPool$Entry::<init> (10 bytes)
+262  138    b  1       sun.nio.fs.UnixPath::getFileSystem (5 bytes)
+262  139    b  3       java.util.HashMap::resize (356 bytes)
+265  140    b  4       java.lang.String::charAt (25 bytes)
+268    8       3       java.lang.String::charAt (25 bytes)   made not entrant: not used
+268  141    b  3       java.lang.StringLatin1::equals0 (36 bytes)
+269  142    b  3       java.lang.StringLatin1::replace (197 bytes)
+272  143    b  3       java.lang.Math::max (11 bytes)
+273  144    b  3       java.lang.CharacterData::of (136 bytes)
+274  145    b  3       jdk.internal.module.ModuleInfo$ConstantPool::checkUnqualifiedName (131 bytes)
+277  146    b  3       jdk.internal.module.ModuleInfo$ConstantPool::getUtf8 (54 bytes)
+278  147    b  3       java.util.HashMap$KeyIterator::next (8 bytes)
+279  148    b  1       sun.nio.fs.NativeBuffer::address (5 bytes)
+279  149    b  1       java.lang.Class::getComponentType (5 bytes)
+280  150    b  3       java.lang.StringCoding::countPositives (18 bytes)
+281  151    b  3       java.lang.Character::codePointAt (51 bytes)
+281  152    b  3       java.lang.CharacterDataLatin1::getProperties (11 bytes)
+282  153     n 0       java.lang.Thread::currentCarrierThread (native)   (static)
+282  154     n 0       java.lang.ref.Reference::refersTo0 (native)   
+282  155    b  3       java.util.HashMap::getNode (150 bytes)
+284  156    b  3       java.util.HashMap::keysToArray (81 bytes)
+285  157    b  3       java.util.Arrays::copyOfRange (82 bytes)
+287  158    b  3       java.lang.String::newStringWithLatin1Bytes (42 bytes)
+288  159    b  3       jdk.internal.module.ModuleInfo$ConstantPool$ValueEntry::<init> (11 bytes)
+288  160    b  3       jdk.internal.module.ModuleInfo$CountingDataInput::readUTF (5 bytes)
+289  161    b  3       jdk.internal.module.ModuleInfo$CountingDataInput::readFully (24 bytes)
+289  162    b  3       java.lang.System$1::countPositives (7 bytes)
+290  163    b  3       java.lang.System$1::uncheckedNewStringWithLatin1Bytes (5 bytes)
+290  164    b  3       java.util.HashMap::containsKey (14 bytes)
+291  165    b  3       java.lang.Integer::numberOfLeadingZeros (78 bytes)
+291  166    b  3       java.lang.Math::ceil (5 bytes)
+292  167    b  3       java.lang.StrictMath::floorOrCeil (128 bytes)
+293  168    b  3       java.util.HashMap$HashIterator::<init> (84 bytes)
+294  169    b  3       java.util.Set::copyOf (40 bytes)
+295  170    b  3       java.lang.Character::isJavaIdentifierPart (9 bytes)
+296  171    b  3       java.lang.CharacterDataLatin1::isJavaIdentifierPart (20 bytes)
+296  172    b  3       java.lang.Float::isNaN (12 bytes)
+297  173    b  3       java.util.HashMap::tableSizeFor (32 bytes)
+297  174    b  3       java.util.HashMap::<init> (8 bytes)
+298  175    b  3       java.util.HashMap::calculateHashMapCapacity (11 bytes)
+298  176    b  3       java.lang.module.ModuleDescriptor::modsHashCode (43 bytes)
+299  177    b  1       java.lang.Enum::name (5 bytes)
+299  178    b  3       java.util.ImmutableCollections$Set12$1::hasNext (13 bytes)
+300  179    b  1       java.lang.Thread::threadId (5 bytes)
+301  180    b  1       jdk.internal.module.ModuleInfo$CountingDataInput::count (5 bytes)
+302  181    b  3       java.util.HashMap::<init> (11 bytes)
+302  182    b  3       jdk.internal.misc.Unsafe::allocateUninitializedArray0 (90 bytes)
+303  183    b  3       jdk.internal.module.ModuleInfo$ConstantPool$IndexEntry::<init> (11 bytes)
+304  184    b  3       java.util.HashMap::isEmpty (13 bytes)
+304  185    b  3       java.util.HashSet::isEmpty (8 bytes)
+305  186    b  3       jdk.internal.misc.Unsafe::allocateUninitializedArray (55 bytes)
+306  187    b  3       java.lang.String::replace (42 bytes)
+307  188    b  3       java.util.ImmutableCollections$AbstractImmutableCollection::<init> (5 bytes)
+307  189    b  3       java.io.DataInputStream::readUTF (597 bytes)
+313  190    b  3       java.util.Set::of (4 bytes)
+313  191    b  1       java.lang.module.ModuleDescriptor$Exports::source (5 bytes)
+314  192    b  3       java.util.HashSet::iterator (13 bytes)
+315  193    b  3       java.util.HashMap$KeySet::iterator (12 bytes)
+316  194    b  3       java.lang.StrictMath::ceil (10 bytes)
+316  195    b  3       jdk.internal.module.ModuleInfo$ConstantPool::decodeModuleName (142 bytes)
+318  196    b  3       java.util.HashMap::<init> (98 bytes)
+321  197    b  4       jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)
+328    5       3       jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)   made not entrant: not used
+328  198    b  3       java.util.AbstractCollection::addAll (42 bytes)
+329  199    b  3       jdk.internal.module.ModuleInfo$ConstantPool::getPackageName (73 bytes)
+330  200    b  3       java.util.HashMap::newHashMap (44 bytes)
+332  201    b  3       java.util.HashSet::size (8 bytes)
+332  202    b  3       jdk.internal.module.ModuleInfo$ConstantPool::getModuleName (63 bytes)
+334  203    b  3       java.util.ImmutableCollections$AbstractImmutableSet::<init> (5 bytes)
+334  204    b  3       java.lang.String::substring (58 bytes)
+336  205    b  3       java.util.HashSet::contains (9 bytes)
+336  206    b  3       java.lang.String::isEmpty (14 bytes)
+337  207    b  3       java.util.ImmutableCollections$SetN::iterator (9 bytes)
+338  208    b  3       java.util.ImmutableCollections$SetN$SetNIterator::hasNext (13 bytes)
+338  209    b  3       java.lang.module.ModuleDescriptor$Exports::hashCode (36 bytes)
+339  210    b  3       java.util.HashMap$ValueIterator::next (8 bytes)
+339  211    b  3       java.util.ImmutableCollections$SetN$SetNIterator::<init> (41 bytes)
+340  212    b  3       java.util.ImmutableCollections$SetN::hashCode (46 bytes)
+341  213    b  3       java.util.Objects::equals (23 bytes)
+341  214    b  4       java.lang.String::hashCode (60 bytes)
+345    4       3       java.lang.String::hashCode (60 bytes)   made not entrant: not used
+346  215    b  4       java.io.BufferedInputStream::getBufIfOpen (61 bytes)
+349   87       3       java.io.BufferedInputStream::getBufIfOpen (61 bytes)   made not entrant: not used
+350  216    b  3       java.util.Set::of (68 bytes)
+351  217    b  3       java.lang.StringBuilder::length (5 bytes)
+352  218    b  3       java.lang.ThreadLocal::getMap (17 bytes)
+353  219    b  3       jdk.internal.misc.CarrierThreadLocal::get (10 bytes)
+354  220    b  3       java.lang.ThreadLocal$ThreadLocalMap::getEntry (42 bytes)
+355  221    b  3       jdk.internal.misc.Unsafe::checkPrimitivePointer (19 bytes)
+356  222     n 0       jdk.internal.misc.Unsafe::copyMemory0 (native)   
+356  223     n 0       jdk.internal.misc.Unsafe::getInt (native)   
+356  224    b  3       java.lang.StringLatin1::newString (24 bytes)
+357  225    b  4       java.lang.StringCoding::countPositives0 (33 bytes)
+364  125       3       java.lang.StringCoding::countPositives0 (33 bytes)   made not entrant: not used
+365  226    b  4       java.lang.StringLatin1::replace (197 bytes)
+392  142       3       java.lang.StringLatin1::replace (197 bytes)   made not entrant: not used
+393  227    b  3       java.util.Collections$UnmodifiableCollection$1::hasNext (10 bytes)
+394  228    b  3       java.lang.StringLatin1::lastIndexOf (40 bytes)
+396  229    b  4       java.util.Objects::requireNonNull (14 bytes)
+397   10       3       java.util.Objects::requireNonNull (14 bytes)   made not entrant: not used
+397  230    b  3       java.lang.ref.Reference::reachabilityFence (1 bytes)
+398  231     n 0       jdk.internal.misc.Unsafe::putByte (native)   
+398  232    b  3       java.util.ImmutableCollections$SetN::contains (26 bytes)
+399  233    b  3       java.lang.Enum::hashCode (21 bytes)
+399  234    b  4       java.io.BufferedInputStream::read1 (121 bytes)
+408  113       3       java.io.BufferedInputStream::read1 (121 bytes)   made not entrant: not used
+408  235    b  4       java.io.DataInputStream::readFully (59 bytes)
+426  101       3       java.io.DataInputStream::readFully (59 bytes)   made not entrant: not used
+427  236  s b  4       java.io.BufferedInputStream::read (112 bytes)
+439  102  s    3       java.io.BufferedInputStream::read (112 bytes)   made not entrant: not used
+439  237    b  4       jdk.internal.module.ModuleInfo$ConstantPool::checkUnqualifiedName (131 bytes)
+447  145       3       jdk.internal.module.ModuleInfo$ConstantPool::checkUnqualifiedName (131 bytes)   made not entrant: not used
+448  238    b  1       sun.nio.fs.UnixFileSystem::provider (5 bytes)
+449  239    b  1       java.nio.Buffer::position (5 bytes)
+449  240    b  1       java.nio.Buffer::limit (5 bytes)
+449  241    b  3       java.util.Collections$UnmodifiableCollection$1::next (10 bytes)
+450  242    b  3       java.util.ImmutableCollections$Set12::hashCode (30 bytes)
+451  243    b  1       sun.nio.fs.UnixFileSystem::needToResolveAgainstDefaultDirectory (5 bytes)
+451  244    b  1       sun.nio.fs.NativeBuffer::size (5 bytes)
+452  245    b  1       java.nio.Buffer::capacity (5 bytes)
+452  246    b  3       java.lang.module.ModuleDescriptor$Exports::<init> (26 bytes)
+453  247    b  3       java.lang.module.ModuleDescriptor$Builder::exports (92 bytes)
+454  248    b  3       java.lang.String::indexOf (65 bytes)
+456  249    b  3       jdk.internal.module.Checks::isJavaIdentifier (76 bytes)
+458  250    b  3       java.lang.CharacterDataLatin1::isJavaIdentifierStart (23 bytes)
+460  251    b  3       java.net.URI$Parser::scan (76 bytes)
+461  252    b  3       java.net.URI$Parser::at (23 bytes)
+462  253    b  3       java.lang.Thread::isVirtual (5 bytes)
+463  254    b  3       java.util.HashSet::<init> (16 bytes)
+464  255    b  3       java.lang.module.ModuleDescriptor$Requires::hashCode (61 bytes)
+465  256    b  4       jdk.internal.misc.Unsafe::getShortUnaligned (12 bytes)
+466  121       3       jdk.internal.misc.Unsafe::getShortUnaligned (12 bytes)   made not entrant: not used
+466  257    b  4       jdk.internal.module.ModuleInfo$CountingDataInput::readUnsignedShort (24 bytes)
+470  106       3       jdk.internal.module.ModuleInfo$CountingDataInput::readUnsignedShort (24 bytes)   made not entrant: not used
+470  258    b  4       java.io.DataInputStream::readUnsignedShort (19 bytes)
+474  107       3       java.io.DataInputStream::readUnsignedShort (19 bytes)   made not entrant: not used
+474  259    b  3       java.lang.ThreadLocal::get (35 bytes)
+476  260     n 0       jdk.internal.misc.Unsafe::allocateInstance (native)   
+476  261    b  3       java.nio.Buffer::position (52 bytes)
+477  262    b  4       java.lang.String::codePointAt (50 bytes)
+479  116       3       java.lang.String::codePointAt (50 bytes)   made not entrant: not used
+479  263    b  3       java.nio.ByteBuffer::position (8 bytes)
+480  264    b  3       jdk.internal.module.ModuleInfo$ConstantPool::getClassName (73 bytes)
+481  265    b  4       java.lang.StringLatin1::equals0 (36 bytes)
+490  141       3       java.lang.StringLatin1::equals0 (36 bytes)   made not entrant: not used
+490  266    b  4       java.util.HashMap::putVal (300 bytes)
+509  117       3       java.util.HashMap::putVal (300 bytes)   made not entrant: not used
+510  267    b  3       java.util.Objects::hashCode (13 bytes)
+511  268    b  4       java.util.HashMap::put (13 bytes)
+528  119       3       java.util.HashMap::put (13 bytes)   made not entrant: not used
+529  269    b  4       java.lang.StringLatin1::indexOfChar0 (33 bytes)
+535  111       3       java.lang.StringLatin1::indexOfChar0 (33 bytes)   made not entrant: not used
+535  270    b  3       java.nio.Buffer::session (20 bytes)
+537  271    b  3       java.lang.String::lastIndexOf (12 bytes)
+538  272    b  4       java.lang.String::indexOf (41 bytes)
+540   99       3       java.lang.String::indexOf (41 bytes)   made not entrant: not used
+540  273    b  1       java.lang.module.ModuleDescriptor$Requires::name (5 bytes)
+541  274    b  4       java.util.HashSet::add (20 bytes)
+557  127       3       java.util.HashSet::add (20 bytes)   made not entrant: not used
+558  275    b  3       java.net.URI$Parser::scan (41 bytes)
+560  276    b  3       java.lang.module.ModuleDescriptor::packageName (25 bytes)
+561  277    b  3       java.util.ImmutableCollections$Set12::iterator (9 bytes)
+562  278    b  3       java.util.ImmutableCollections$Set12$1::next (95 bytes)
+563  279    b  4       java.lang.AbstractStringBuilder::needsNewBuffer (33 bytes)
+564   72       3       java.lang.AbstractStringBuilder::needsNewBuffer (33 bytes)   made not entrant: not used
+564  280    b  4       java.net.URI::match (56 bytes)
+566  100       3       java.net.URI::match (56 bytes)   made not entrant: not used
+566  281    b  3       jdk.internal.module.ModuleInfo$CountingDataInput::readInt (24 bytes)
+567  282    b  3       java.io.DataInputStream::readInt (19 bytes)
+568  283    b  3       jdk.internal.misc.Unsafe::getIntUnaligned (83 bytes)
+569  284    b  3       jdk.internal.misc.Unsafe::convEndian (16 bytes)
+569  285    b  4       java.lang.AbstractStringBuilder::append (102 bytes)
+573  110       3       java.lang.AbstractStringBuilder::append (102 bytes)   made not entrant: not used
+573  286    b  4       java.lang.StringBuilder::append (8 bytes)
+577   94       3       java.lang.StringBuilder::append (8 bytes)   made not entrant: not used
+578  287    b  1       java.util.concurrent.locks.AbstractQueuedLongSynchronizer::getState (5 bytes)
+578  288    b  1       java.util.concurrent.locks.ReentrantReadWriteLock::readLock (5 bytes)
+579  289    b  3       sun.nio.fs.UnixPath::toUnixPath (32 bytes)
+579  290    b  3       jdk.internal.misc.Unsafe::checkSize (32 bytes)
+580  291    b  3       sun.nio.fs.UnixPath::getFileSystem (5 bytes)
+580  292    b  3       sun.nio.fs.UnixPath::<init> (15 bytes)
+581  293    b  3       jdk.internal.misc.Unsafe::checkOffset (32 bytes)
+582  294    b  1       java.nio.HeapByteBuffer::isReadOnly (2 bytes)
+582  295    b  3       jdk.internal.misc.Unsafe::copyMemory (33 bytes)
+584  296    b  4       sun.nio.fs.UnixUriUtils::match (50 bytes)
+586   96       3       sun.nio.fs.UnixUriUtils::match (50 bytes)   made not entrant: not used
+586  297    b  3       java.util.HashMap::values (25 bytes)
+587  298    b  3       java.util.HashMap$Values::size (8 bytes)
+588  299    b  3       java.util.HashMap$Values::iterator (12 bytes)
+588  300    b  1       java.lang.module.ModuleReference::descriptor (5 bytes)
+589  301    b  1       java.lang.module.ModuleDescriptor::name (5 bytes)
+590  302    b  1       java.lang.invoke.MemberName::getDeclaringClass (5 bytes)
+591  303    b  1       jdk.internal.classfile.impl.AbstractDirectBuilder::constantPool (5 bytes)
+591  304    b  3       jdk.internal.classfile.impl.BufWriterImpl::cpIndex (33 bytes)
+594  305    b  1       java.util.HashMap$Node::getKey (5 bytes)
+594  306    b  1       java.util.HashMap$Node::getValue (5 bytes)
+597  307    b  1       java.lang.AbstractStringBuilder::getValue (5 bytes)
+602  308   !b  3       java.lang.ref.ReferenceQueue::poll (44 bytes)
+604  309    b  3       java.lang.StringBuilder::append (8 bytes)
+604  310    b  3       java.lang.AbstractStringBuilder::append (100 bytes)
+607  311    b  3       java.util.concurrent.ConcurrentHashMap$Node::<init> (20 bytes)
+608  312    b  3       java.util.concurrent.ConcurrentHashMap::addCount (280 bytes)
+611  313   !b  3       java.util.concurrent.ConcurrentHashMap::putVal (432 bytes)
+616  314    b  3       java.util.concurrent.ConcurrentHashMap::putIfAbsent (8 bytes)
+616  315    b  3       java.util.ImmutableCollections$SetN$SetNIterator::next (90 bytes)
+630  316     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LL)V (native)   (static)
+630  317    b  3       java.util.Arrays::copyOf (40 bytes)
+631  318    b  3       jdk.internal.classfile.impl.SplitConstantPool::utf8Entry (45 bytes)
+634  319     n 0       java.lang.invoke.MethodHandle::invokeBasic()L (native)   
+639  320    b  3       java.lang.invoke.MethodType::parameterType (7 bytes)
+640  214       4       java.lang.String::hashCode (60 bytes)   made not entrant: uncommon trap
+641  321     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLL)L (native)   (static)
+641  322    b  3       java.lang.invoke.MemberName::isInvocable (8 bytes)
+642  323    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU2 (38 bytes)
+643  324     n 0       java.lang.Class::isInstance (native)   
+643  325    b  3       jdk.internal.classfile.impl.Util::checkU2 (18 bytes)
+645  326     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLLL)L (native)   (static)
+645  327    b  3       java.lang.Class::isArray (13 bytes)
+646  328    b  3       jdk.internal.classfile.impl.AbstractPoolEntry::hash2 (15 bytes)
+647  329    b  3       jdk.internal.util.ModifiedUtf::utfLen (65 bytes)
+649  330    b  3       jdk.internal.util.ReferencedKeyMap::get (10 bytes)
+651  331    b  1       jdk.internal.classfile.impl.AbstractPoolEntry::hashCode (5 bytes)
+651  332    b  1       jdk.internal.constant.ClassOrInterfaceDescImpl::isClassOrInterface (2 bytes)
+651  333    b  3       java.util.ImmutableCollections$ListN::get (7 bytes)
+652  334    b  1       jdk.internal.classfile.impl.AbstractPoolEntry$ClassEntryImpl::tag (3 bytes)
+652  335    b  1       java.util.ArrayList::size (5 bytes)
+652  336    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeUtfEntry (156 bytes)
+657  337    b  3       java.lang.StringLatin1::getBytes (12 bytes)
+659  338    b  3       java.lang.String::hashCode (60 bytes)
+660  339    b  3       java.lang.Record::<init> (5 bytes)
+661  340     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LL)L (native)   (static)
+661  341    b  3       jdk.internal.classfile.impl.AbstractPoolEntry::hash1 (10 bytes)
+662  342    b  3       jdk.internal.classfile.impl.SplitConstantPool::utf8Entry (6 bytes)
+663  343    b  3       java.lang.invoke.MethodType::checkSlotCount (33 bytes)
+665  344     n 0       java.lang.invoke.MethodHandle::linkToInterface(LLL)I (native)   (static)
+665  345    b  3       java.util.ImmutableCollections$ListItr::hasNext (17 bytes)
+665  346    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU1U2 (50 bytes)
+667  347    b  3       java.lang.invoke.MethodType::parameterCount (6 bytes)
+668  348    b  3       java.lang.StringConcatHelper::newArray (28 bytes)
+672  349    b  1       java.lang.invoke.MethodType::form (5 bytes)
+676  350    b  3       java.util.ImmutableCollections$Set12$1::<init> (37 bytes)
+677  351    b  3       java.net.URI::toLower (19 bytes)
+677  352    b  3       java.net.URI::hash (33 bytes)
+678  353     n 0       java.lang.invoke.MethodHandle::linkToStatic(LL)I (native)   (static)
+679  354     n 0       java.lang.reflect.Array::newArray (native)   (static)
+679  355    b  3       jdk.internal.classfile.impl.StackMapGenerator::processBlock (2767 bytes)
+847  356    b  1       jdk.internal.classfile.impl.AbstractDirectBuilder::setOriginal (6 bytes)
+849  357     n 0       java.lang.Class::isAssignableFrom (native)   
+851  358     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLL)I (native)   (static)
+851  359    b  3       java.lang.invoke.MemberName::allFlagsSet (16 bytes)
+852  360    b  3       jdk.internal.constant.MethodTypeDescImpl::parameterType (7 bytes)
+853  361    b  1       jdk.internal.util.WeakReferenceKey::hashCode (5 bytes)
+853  362    b  3       java.util.Arrays::copyOf (10 bytes)
+854  363    b  3       java.util.concurrent.ConcurrentHashMap::casTabAt (20 bytes)
+854  364     n 0       java.lang.Class::isHidden (native)   
+859  365     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LL)I (native)   (static)
+859  366    b  3       java.util.AbstractList::<init> (10 bytes)
+860  367    b  3       jdk.internal.classfile.impl.AbstractElement::<init> (5 bytes)
+860  368    b  3       jdk.internal.constant.MethodTypeDescImpl::parameterCount (6 bytes)
+861  369     n 0       jdk.internal.misc.Unsafe::getByte (native)   
+861  370    b  3       jdk.internal.classfile.impl.SplitConstantPool::maybeCloneUtf8Entry (65 bytes)
+863  371    b  1       jdk.internal.classfile.impl.UnboundAttribute::attributeMapper (5 bytes)
+866  372    b  1       java.util.stream.FindOps$FindSink::cancellationRequested (5 bytes)
+866  373    b  4       java.util.HashMap$HashIterator::hasNext (13 bytes)
+867  122       3       java.util.HashMap$HashIterator::hasNext (13 bytes)   made not entrant: not used
+870  374    b  3       java.util.Optional::<init> (10 bytes)
+870  375    b  3       java.util.Optional::of (12 bytes)
+871  376    b  3       java.util.HashMap::get (19 bytes)
+871  377    b  1       jdk.internal.module.ModuleReferenceImpl::moduleResolution (5 bytes)
+872  378    b  1       java.lang.module.ModuleDescriptor$Requires::modifiers (5 bytes)
+873  169       3       java.util.Set::copyOf (40 bytes)   made not entrant: marked for deoptimization
+873  254       3       java.util.HashSet::<init> (16 bytes)   made not entrant: marked for deoptimization
+874  164       3       java.util.HashMap::containsKey (14 bytes)   made not entrant: marked for deoptimization
+874  174       3       java.util.HashMap::<init> (8 bytes)   made not entrant: marked for deoptimization
+874  181       3       java.util.HashMap::<init> (11 bytes)   made not entrant: marked for deoptimization
+874  185       3       java.util.HashSet::isEmpty (8 bytes)   made not entrant: marked for deoptimization
+874  192       3       java.util.HashSet::iterator (13 bytes)   made not entrant: marked for deoptimization
+874  196       3       java.util.HashMap::<init> (98 bytes)   made not entrant: marked for deoptimization
+874  201       3       java.util.HashSet::size (8 bytes)   made not entrant: marked for deoptimization
+874  205       3       java.util.HashSet::contains (9 bytes)   made not entrant: marked for deoptimization
+874  376       3       java.util.HashMap::get (19 bytes)   made not entrant: marked for deoptimization
+875  266       4       java.util.HashMap::putVal (300 bytes)   made not entrant: marked for deoptimization
+875  268       4       java.util.HashMap::put (13 bytes)   made not entrant: marked for deoptimization
+875  274       4       java.util.HashSet::add (20 bytes)   made not entrant: marked for deoptimization
+875  379    b  3       java.util.HashSet::contains (9 bytes)
+876  380    b  3       java.lang.module.ModuleDescriptor::hashCode (170 bytes)
+878  381    b  3       java.util.HashMap::afterNodeInsertion (1 bytes)
+878  382    b  3       java.util.HashMap::get (19 bytes)
+879  383    b  4       java.util.HashMap::put (13 bytes)
+900  384    b  4       java.util.HashMap::putVal (300 bytes)
+924  385    b  4       java.util.HashSet::add (20 bytes)
+925  386    b  1       java.lang.module.ModuleDescriptor::requires (5 bytes)
+926  387    b  3       jdk.internal.module.ModuleReferenceImpl::hashCode (56 bytes)
+927  388    b  3       java.util.HashMap::<init> (11 bytes)
+927  389    b  3       java.lang.Object::equals (11 bytes)
+928  390    b  3       java.util.HashSet::<init> (16 bytes)
+929  391    b  3       java.lang.module.ResolvedModule::hashCode (16 bytes)
+929  392    b  3       java.util.HashMap$KeySet::<init> (15 bytes)
+930  393    b  1       java.lang.module.ModuleDescriptor::isAutomatic (5 bytes)
+930  394    b  3       java.util.HashMap::keySet (25 bytes)
+931  395    b  3       java.util.HashSet::iterator (13 bytes)
+931  396    b  3       java.util.ArrayList::isEmpty (13 bytes)
+932  397    b  3       java.util.HashMap$EntryIterator::next (5 bytes)
+932  398    b  1       java.util.ImmutableCollections$Set12::isEmpty (2 bytes)
+933  399    b  3       java.lang.module.ModuleDescriptor$Exports::isQualified (18 bytes)
+933  400    b  3       java.util.ImmutableCollections$SetN::isEmpty (13 bytes)
+933  401    b  3       java.util.ImmutableCollections$Set12::contains (28 bytes)
+934  402    b  4       java.util.HashMap::hash (20 bytes)
+936  105       3       java.util.HashMap::hash (20 bytes)   made not entrant: not used
+937  403    b  1       java.lang.module.ModuleDescriptor$Exports::targets (5 bytes)
+937  404    b  3       java.util.HashMap::putIfAbsent (13 bytes)
+937  405    b  3       java.util.HashMap::containsKey (14 bytes)
+938  406    b  4       java.lang.String::hashCode (60 bytes)
+941  338       3       java.lang.String::hashCode (60 bytes)   made not entrant: not used
+941  407    b  1       java.lang.module.ModuleDescriptor$Provides::service (5 bytes)
+942  408    b  4       java.lang.String::equals (56 bytes)
+945  124       3       java.lang.String::equals (56 bytes)   made not entrant: not used
+946  409    b  4       java.util.ImmutableCollections$SetN$SetNIterator::hasNext (13 bytes)
+946  208       3       java.util.ImmutableCollections$SetN$SetNIterator::hasNext (13 bytes)   made not entrant: not used
+947  410    b  1       java.lang.module.ModuleDescriptor::exports (5 bytes)
+947  411    b  1       java.lang.module.ModuleDescriptor::provides (5 bytes)
+947  412    b  4       java.util.HashMap$HashIterator::nextNode (100 bytes)
+956  128       3       java.util.HashMap$HashIterator::nextNode (100 bytes)   made not entrant: not used
+957  413    b  4       java.util.ImmutableCollections$SetN$SetNIterator::next (90 bytes)
+960  315       3       java.util.ImmutableCollections$SetN$SetNIterator::next (90 bytes)   made not entrant: not used
+960  414    b  3       java.lang.module.ResolvedModule::descriptor (8 bytes)
+961  415    b  4       java.lang.module.ModuleDescriptor$Exports::isQualified (18 bytes)
+962  399       3       java.lang.module.ModuleDescriptor$Exports::isQualified (18 bytes)   made not entrant: not used
+962  416    b  3       java.lang.StringLatin1::lastIndexOf (125 bytes)
+963  417    b  1       java.lang.module.ModuleDescriptor::uses (5 bytes)
+965  418    b  4       java.util.HashMap::resize (356 bytes)
+983  139       3       java.util.HashMap::resize (356 bytes)   made not entrant: not used
+984  419    b  1       java.lang.module.ModuleDescriptor::packages (5 bytes)
+984  420     n 0       jdk.internal.misc.Unsafe::getLong (native)   
+985  421    b  4       java.lang.String::length (11 bytes)
+985   17       3       java.lang.String::length (11 bytes)   made not entrant: not used
+986  422    b  3       jdk.internal.misc.Unsafe::getLongUnaligned (173 bytes)
+988  383       4       java.util.HashMap::put (13 bytes)   made not entrant: uncommon trap
+988  384       4       java.util.HashMap::putVal (300 bytes)   made not entrant: uncommon trap
+988  423    b  3       java.util.Optional::orElse (16 bytes)
+988  424    b  1       java.lang.module.ResolvedModule::reference (5 bytes)
+990  425    b  3       java.util.HashMap::put (13 bytes)
+991  426    b  3       java.util.HashMap::putVal (300 bytes)
+994  427    b  3       java.lang.module.ResolvedModule::name (11 bytes)
+994  428    b  3       java.util.HashSet::size (8 bytes)
+995  429    b  3       java.util.HashSet::toArray (18 bytes)
+995  430    b  3       java.util.HashSet::isEmpty (8 bytes)
+996  431    b  4       java.util.HashMap::newNode (13 bytes)
+997  126       3       java.util.HashMap::newNode (13 bytes)   made not entrant: not used
+997  432    b  4       java.util.HashMap::afterNodeInsertion (1 bytes)
+998  381       3       java.util.HashMap::afterNodeInsertion (1 bytes)   made not entrant: not used
+998  433     n 0       java.lang.Module::addExportsToAll0 (native)   (static)
+998  434     n 0       java.lang.Module::addExports0 (native)   (static)
+999  435    b  3       java.util.Set::copyOf (40 bytes)
+1000  436    b  3       java.util.HashMap::<init> (98 bytes)
+1003  437    b  1       java.lang.module.ResolvedModule::configuration (5 bytes)
+1003  438     n 0       java.lang.Module::addReads0 (native)   (static)
+1003  439    b  3       java.util.ImmutableCollections$SetN::<init> (90 bytes)
+1008  440    b  3       java.util.ImmutableCollections$List12::get (35 bytes)
+1008  441    b  3       java.util.ImmutableCollections$List12::size (16 bytes)
+1010  442     n 0       jdk.internal.vm.Continuation::enterSpecial (native)   (static)
+1010  443     n 0       jdk.internal.vm.Continuation::doYield (native)   (static)
+1014  444    b  1       java.net.URL::getProtocol (5 bytes)
+1021  445    b  3       java.lang.String::startsWith (123 bytes)
+1027  446     n 0       java.lang.invoke.MethodHandle::linkToVirtual(LLL)L (native)   (static)
+1028  447    b  3       java.lang.invoke.InvokerBytecodeGenerator::classDesc (88 bytes)
+1030  448    b  1       java.lang.invoke.LambdaForm$BasicType::basicTypeKind (5 bytes)
+1030  449    b  3       jdk.internal.classfile.impl.SplitConstantPool::findEntry (130 bytes)
+1032  450    b  3       jdk.internal.classfile.impl.Util::isDoubleSlot (20 bytes)
+1032  451    b  1       jdk.internal.classfile.impl.AbstractPoolEntry$NameAndTypeEntryImpl::tag (3 bytes)
+1033  452    b  1       java.lang.constant.ClassDesc::isPrimitive (2 bytes)
+1034  453   !b  3       java.lang.invoke.MemberName::getMethodType (213 bytes)
+1036  454    b  3       java.lang.invoke.MethodType::<init> (15 bytes)
+1037  455    b  3       java.lang.Class::getName (18 bytes)
+1038  456     n 0       java.lang.invoke.MethodHandleNatives::resolve (native)   (static)
+1038  457    b  3       java.lang.ref.Reference::get (5 bytes)
+1038  458    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractRefsEntry::<init> (37 bytes)
+1039  459    b  3       jdk.internal.classfile.impl.AbstractPoolEntry::hashClassFromDescriptor (7 bytes)
+1039  460    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$ClassEntryImpl::hashCode (37 bytes)
+1041  461    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractRefsEntry::writeTo (27 bytes)
+1042  462    b  3       java.lang.invoke.MethodType::makeImpl (109 bytes)
+1044  463    b  4       java.lang.String::coder (15 bytes)
+1045   12       3       java.lang.String::coder (15 bytes)   made not entrant: not used
+1045  464    b  1       java.lang.invoke.MethodTypeForm::parameterSlotCount (5 bytes)
+1046  465    b  3       java.lang.invoke.MemberName::initResolved (53 bytes)
+1047  466    b  1       java.lang.classfile.Opcode::bytecode (5 bytes)
+1048  467     n 0       jdk.internal.misc.Unsafe::putReferenceVolatile (native)   
+1048  468    b  1       jdk.internal.classfile.impl.DirectMethodBuilder::methodFlags (5 bytes)
+1048  469    b  1       jdk.internal.classfile.impl.DirectMethodBuilder::methodType (5 bytes)
+1049  470    b  1       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::tag (2 bytes)
+1049  471    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractNamedEntry::<init> (10 bytes)
+1050  472    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU1 (24 bytes)
+1051  473    b  1       java.lang.invoke.MethodHandles$Lookup::lookupClass (5 bytes)
+1051  474    b  3       jdk.internal.classfile.impl.SplitConstantPool::classEntry (68 bytes)
+1053  475    b  3       jdk.internal.classfile.impl.SplitConstantPool::tryFindClassOrInterface (138 bytes)
+1055  476    b  1       jdk.internal.classfile.impl.AbstractAttributeMapper::allowMultiple (5 bytes)
+1056  477    b  3       java.lang.invoke.MemberName::getReferenceKind (12 bytes)
+1057  478    b  4       java.lang.StringCoding::countNonZeroAsciiLatin1 (33 bytes)
+1065   35       3       java.lang.StringCoding::countNonZeroAsciiLatin1 (33 bytes)   made not entrant: not used
+1067  479    b  3       jdk.internal.constant.ClassOrInterfaceDescImpl::<init> (10 bytes)
+1067  480    b  3       jdk.internal.classfile.impl.AbstractDirectBuilder::<init> (26 bytes)
+1068  481    b  3       jdk.internal.classfile.impl.AttributeHolder::writeTo (41 bytes)
+1071  482    b  3       java.lang.ref.Reference::<init> (25 bytes)
+1071  483     n 0       java.lang.invoke.MethodHandle::linkToVirtual(LLLL)L (native)   (static)
+1071  484    b  1       java.lang.invoke.MethodTypeForm::erasedType (5 bytes)
+1072  485    b  3       jdk.internal.classfile.impl.DirectClassBuilder::constantPool (5 bytes)
+1072  486    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$ClassEntryImpl::<init> (22 bytes)
+1073  487    b  3       java.lang.AbstractStringBuilder::isLatin1 (8 bytes)
+1073  488    b  3       java.util.ImmutableCollections$ListN::size (6 bytes)
+1074  489    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractRefEntry::writeTo (18 bytes)
+1075  490    b  3       java.lang.String::toString (2 bytes)
+1076  491    b  3       java.lang.String::startsWith (7 bytes)
+1078  492    b  3       java.lang.Class::isInterface (8 bytes)
+1078  493    b  1       java.lang.classfile.Opcode::kind (5 bytes)
+1079  494    b  3       java.lang.StringConcatHelper::concat (24 bytes)
+1082  495    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeIndex (11 bytes)
+1085  496   !b  3       sun.invoke.util.VerifyAccess::ensureTypeVisible (99 bytes)
+1086  497    b  3       jdk.internal.constant.ClassOrInterfaceDescImpl::ofValidated (64 bytes)
+1087  498    b  3       sun.invoke.util.Wrapper::stackSlots (9 bytes)
+1090  499    b  1       java.lang.invoke.MethodHandle::type (5 bytes)
+1091  500     n 0       java.lang.String::intern (native)   
+1094  501    b  3       java.lang.Number::<init> (5 bytes)
+1094  502    b  3       java.lang.Long::<init> (10 bytes)
+1096  503     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLLLLL)L (native)   (static)
+1097  504    b  3       jdk.internal.classfile.impl.EntryMap::nextToken (37 bytes)
+1098  505    b  1       jdk.internal.classfile.impl.AbstractPoolEntry$MethodRefEntryImpl::tag (3 bytes)
+1103  506    b  1       jdk.internal.util.ClassFileDumper::isEnabled (5 bytes)
+1106  507     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLLLL)L (native)   
+1106  508     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLLLLL)L (native)   (static)
+1106  509    b  1       java.lang.invoke.LambdaForm$Name::index (5 bytes)
+1107  510    b  3       jdk.internal.classfile.impl.StackMapGenerator$Type::<init> (20 bytes)
+1108  511    b  1       java.lang.invoke.LambdaForm$Name::type (5 bytes)
+1109  512    b  3       java.lang.Class::descriptorString (137 bytes)
+1115  513    b  1       java.lang.invoke.LambdaForm$BasicType::basicTypeClass (5 bytes)
+1116  514    b  3       jdk.internal.classfile.impl.StackMapGenerator$Frame::checkStack (96 bytes)
+1121  515     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LIL)L (native)   (static)
+1122  516    b  3       java.lang.StringBuilder::toString (20 bytes)
+1122  517    b  3       java.lang.String::<init> (98 bytes)
+1123  518    b  3       java.lang.invoke.LambdaForm$BasicType::basicType (187 bytes)
+1125  519    b  3       java.lang.invoke.LambdaForm$BasicType::basicType (8 bytes)
+1126  520   !b  3       java.lang.invoke.MemberName::clone (14 bytes)
+1127  521     n 0       java.lang.invoke.MethodHandle::invokeBasic(LI)L (native)   
+1127  522     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLIL)L (native)   (static)
+1128  523    b  3       jdk.internal.classfile.impl.SplitConstantPool::utf8Entry (25 bytes)
+1128  524    b  3       jdk.internal.classfile.impl.Util::methodTypeSymbol (8 bytes)
+1129  525    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU1U2U2 (75 bytes)
+1131  526    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU2U2 (61 bytes)
+1132  527    b  3       jdk.internal.classfile.impl.Util::parameterSlots (39 bytes)
+1133  528    b  3       java.util.Arrays::copyOf (33 bytes)
+1141  529    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::aload (32 bytes)
+1145  530    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::toString (88 bytes)
+1146  531    b  3       jdk.internal.classfile.impl.SplitConstantPool::classEntryForClassOrInterface (111 bytes)
+1149  532    b  3       jdk.internal.classfile.impl.StackMapGenerator$Frame::pushStack (27 bytes)
+1150  533    b  3       jdk.internal.classfile.impl.StackMapGenerator$Type::referenceType (12 bytes)
+1151  534    b  3       jdk.internal.classfile.impl.StackMapGenerator$Frame::checkLocal (97 bytes)
+1152  535    b  3       jdk.internal.classfile.impl.AttributeHolder::withAttribute (124 bytes)
+1154  536    b  3       jdk.internal.classfile.impl.StackMapGenerator$Frame::decStack (29 bytes)
+1154  537    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeIndex (10 bytes)
+1157  538     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLLLL)L (native)   (static)
+1158  539    b  3       jdk.internal.classfile.impl.LabelImpl::<init> (15 bytes)
+1158  540    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractRefEntry::<init> (24 bytes)
+1159  541    b  3       jdk.internal.classfile.impl.SplitConstantPool::nameAndTypeEntry (7 bytes)
+1159  542    b  1       jdk.internal.classfile.impl.LabelImpl::labelContext (5 bytes)
+1160  543    b  1       jdk.internal.classfile.impl.LabelImpl::getBCI (5 bytes)
+1160  544    b  1       jdk.internal.classfile.impl.LabelImpl::setBCI (6 bytes)
+1160  545    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::curPc (8 bytes)
+1161  546    b  1       jdk.internal.classfile.impl.BufWriterImpl::constantPool (5 bytes)
+1161  547    b  1       jdk.internal.classfile.impl.AbstractAttributeMapper::name (5 bytes)
+1162  548    b  3       jdk.internal.classfile.impl.BufWriterImpl::setLabelContext (11 bytes)
+1163  549     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLLL)L (native)   
+1164  550    b  3       java.lang.invoke.MemberName::isConstructor (8 bytes)
+1165  551     n 0       java.lang.invoke.MethodHandle::invokeBasic(I)L (native)   
+1166  552    b  1       java.lang.classfile.ClassFile::latestMajorVersion (3 bytes)
+1166  553    b  3       jdk.internal.classfile.impl.BufWriterImpl::<init> (39 bytes)
+1167  554    b  3       sun.invoke.util.Wrapper::forPrimitiveType (122 bytes)
+1170  555    b  3       java.lang.Class::getPackageName (81 bytes)
+1174  556    b  3       jdk.internal.util.ArraysSupport::mismatch (103 bytes)
+1177  557    b  3       java.lang.AbstractStringBuilder::<init> (39 bytes)
+1180  558    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractMemberRefEntry::nameAndType (5 bytes)
+1180  559    b  3       jdk.internal.classfile.impl.Util::checkFlags (7 bytes)
+1181  560    b  4       jdk.internal.classfile.impl.RawBytecodeHelper::opcode (9 bytes)
+1182   69       3       jdk.internal.classfile.impl.RawBytecodeHelper::opcode (9 bytes)   made not entrant: not used
+1182  561    b  3       jdk.internal.classfile.impl.RawBytecodeHelper::getU2Unchecked (21 bytes)
+1182  562    b  3       jdk.internal.classfile.impl.RawBytecodeHelper::getIndexU2 (11 bytes)
+1184  563    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU2U2U2 (89 bytes)
+1199  564    b  3       jdk.internal.misc.Unsafe::putReferenceRelease (9 bytes)
+1200  565    b  3       java.util.concurrent.ConcurrentHashMap::setTabAt (19 bytes)
+1201  566    b  3       java.lang.String::checkBoundsOffCount (10 bytes)
+1203  567 %  b  3       java.util.Properties$LineReader::readLine @ 224 (584 bytes)
+1210  568    b  3       java.util.Properties$LineReader::readLine (584 bytes)
+1229  569    b  3       java.lang.invoke.MethodHandles$Lookup::lookupClassOrNull (17 bytes)
+1230  570    b  3       java.lang.invoke.MemberName::isResolved (13 bytes)
+1246  571     n 0       java.lang.Class::desiredAssertionStatus0 (native)   (static)
+1255  572    b  3       java.lang.invoke.LambdaForm$Name::<init> (126 bytes)
+1256  573    b  3       jdk.internal.misc.Unsafe::getCharUnaligned (34 bytes)
+1257  574    b  3       jdk.internal.misc.Unsafe::convEndian (16 bytes)
+1259  280       4       java.net.URI::match (56 bytes)   made not entrant: uncommon trap
+1268  575     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLLLL)I (native)   (static)
+1272  576    b  1       java.lang.Class::getModule (5 bytes)
+1273  577    b  1       java.lang.module.ModuleDescriptor::isOpen (5 bytes)
+1273  578    b  3       java.lang.invoke.MemberName::getName (25 bytes)
+1274  579    b  1       java.lang.invoke.MethodTypeForm::basicType (5 bytes)
+TestVM main() called - about to run tests in class compiler.c2.irTests.TestIfConstantThreshold
+1277  580    b  3       java.lang.StringLatin1::indexOf0 (137 bytes)
+1279  581    b  1       java.io.File::getPath (5 bytes)
+1280  582    b  3       java.lang.invoke.MethodType::methodType (69 bytes)
+1283  583    b  3       sun.invoke.util.VerifyAccess::isSamePackage (37 bytes)
+1284  584    b  3       java.lang.reflect.Modifier::isPublic (12 bytes)
+1285  585    b  3       java.lang.invoke.MethodType::equals (27 bytes)
+1286  586    b  3       java.lang.invoke.MethodType::parameterSlotCount (8 bytes)
+1287  587    b  4       java.lang.invoke.MethodType::parameterType (7 bytes)
+1288  320       3       java.lang.invoke.MethodType::parameterType (7 bytes)   made not entrant: not used
+1289  588    b  3       jdk.internal.classfile.impl.Util::powerOctal (21 bytes)
+1295  418       4       java.util.HashMap::resize (356 bytes)   made not entrant: uncommon trap
+1302  589    b  3       java.lang.reflect.Modifier::isStatic (13 bytes)
+1302  590    b  3       java.lang.invoke.MemberName::isStatic (8 bytes)
+1303  591    b  3       java.lang.reflect.Modifier::isProtected (12 bytes)
+1303  592    b  3       java.lang.StringConcatHelper::prepend (62 bytes)
+1305  593    b  3       java.lang.invoke.MemberName::flagsMods (45 bytes)
+1306  594    b  3       java.lang.invoke.MemberName::init (53 bytes)
+1311  595    b  3       java.lang.invoke.MethodType::checkPtypes (76 bytes)
+1314  596    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractMemberRefEntry::<init> (12 bytes)
+1315  597     n 0       java.lang.Class::initClassName (native)   
+1318  598    b  3       jdk.internal.constant.MethodTypeDescImpl::ofValidated (27 bytes)
+1318  599    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$NameAndTypeEntryImpl::<init> (12 bytes)
+1322  600    b  4       jdk.internal.classfile.impl.SplitConstantPool::map (160 bytes)
+1328   27       3       jdk.internal.classfile.impl.SplitConstantPool::map (160 bytes)   made not entrant: not used
+1336  601    b  3       java.lang.invoke.InnerClassLambdaMetafactory::classDesc (25 bytes)
+1338  602    b  3       jdk.internal.access.SharedSecrets::getJavaLangAccess (4 bytes)
+1339  603    b  3       java.lang.invoke.MemberName::getModifiers (8 bytes)
+1339  604    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::loadLocal (126 bytes)
+1343  605    b  3       sun.invoke.util.Wrapper::forBasicType (103 bytes)
+1344  606    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::methodTypeSymbol (8 bytes)
+1345  607    b  3       java.lang.invoke.MethodHandleNatives::refKindIsField (32 bytes)
+1345  608    b  3       sun.invoke.util.VerifyAccess::isClassAccessible (230 bytes)
+1348  609   !b  3       java.lang.invoke.MemberName$Factory::resolve (159 bytes)
+1349  610    b  3       jdk.internal.util.StrongReferenceKey::equals (28 bytes)
+1351  611    b  3       java.lang.invoke.LambdaForm$Name::withIndex (35 bytes)
+1351  612    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::constantPool (5 bytes)
+1353  613    b  1       jdk.internal.classfile.impl.AbstractPoolEntry$FieldRefEntryImpl::tag (3 bytes)
+1354  614    b  3       java.lang.invoke.MemberName::getMethodOrFieldType (72 bytes)
+1357  615    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeInt (58 bytes)
+1358  616    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::methodTypeSymbol (34 bytes)
+1365  617    b  3       jdk.internal.classfile.impl.AbstractDirectBuilder::writeAttribute (20 bytes)
+1366  618    b  3       java.util.ArrayList::add (25 bytes)
+1368  619    b  1       jdk.internal.constant.PrimitiveClassDescImpl::descriptorString (5 bytes)
+1368  620    b  4       java.lang.invoke.MethodType::parameterCount (6 bytes)
+1369  347       3       java.lang.invoke.MethodType::parameterCount (6 bytes)   made not entrant: not used
+1372  489       3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractRefEntry::writeTo (18 bytes)   made not entrant: marked for deoptimization
+1373  621    b  3       jdk.internal.classfile.impl.BufWriterImpl::skip (22 bytes)
+1373  622    b  3       jdk.internal.classfile.impl.BufWriterImpl::patchInt (41 bytes)
+1374  623    b  3       java.lang.invoke.MemberName::getType (19 bytes)
+1375  624    b  3       jdk.internal.classfile.impl.Util::writeAttribute (67 bytes)
+1380  625    b  3       java.util.ArrayList$Itr::hasNext (20 bytes)
+1381  626    b  3       java.util.ArrayList::<init> (12 bytes)
+1382  627    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$NameAndTypeEntryImpl::type (8 bytes)
+1382  628    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$AbstractRefEntry::writeTo (18 bytes)
+1385  629    b  3       jdk.internal.classfile.impl.Util::checkKind (15 bytes)
+1386  630    b  3       jdk.internal.classfile.impl.SplitConstantPool::nameAndTypeEntry (60 bytes)
+1387  631    b  3       jdk.internal.classfile.impl.UnboundAttribute::<init> (10 bytes)
+1389  632     n 0       java.lang.System::identityHashCode (native)   (static)
+1390  633    b  1       java.lang.reflect.Method::getName (5 bytes)
+1390  634    b  3       java.lang.invoke.DirectMethodHandle::allocateInstance (16 bytes)
+1390  635    b  3       java.lang.invoke.DirectMethodHandle::constructorMethod (10 bytes)
+1391  636    b  3       jdk.internal.constant.ClassOrInterfaceDescImpl::equals (33 bytes)
+1392  637    b  3       java.util.ImmutableCollections$AbstractImmutableList::<init> (5 bytes)
+1392  638    b  3       java.util.ImmutableCollections$AbstractImmutableList::iterator (13 bytes)
+1393  639   !b  3       java.util.ImmutableCollections$ListItr::next (34 bytes)
+1396  640    b  3       java.lang.AbstractStringBuilder::newCapacity (49 bytes)
+1398  641    b  1       java.net.URL::getAuthority (5 bytes)
+1398  642    b  1       java.net.URL::getPath (5 bytes)
+1401  643    b  1       java.lang.reflect.Method::getReturnType (5 bytes)
+1402  644    b  3       java.lang.classfile.constantpool.ConstantPoolBuilder::nameAndTypeEntry (21 bytes)
+1402  645    b  3       jdk.internal.classfile.impl.SplitConstantPool::methodRefEntry (72 bytes)
+1405  646    b  1       java.lang.reflect.Method::getSharedParameterTypes (5 bytes)
+1405  647    b  1       java.lang.reflect.Method::getModifiers (5 bytes)
+1406  648    b  1       java.util.LinkedHashMap::removeEldestEntry (2 bytes)
+1406  649    b  3       jdk.internal.constant.MethodTypeDescImpl::buildDescriptorString (205 bytes)
+1414  650    b  3       java.util.List::copyOf (5 bytes)
+1415  651    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::setLabelTarget (47 bytes)
+1416  652    b  3       java.util.ArrayList$Itr::next (66 bytes)
+1417  653    b  3       jdk.internal.constant.ConstantUtils::referenceClassDesc (20 bytes)
+1418  654    b  3       jdk.internal.classfile.impl.Util::sanitizeU2List (19 bytes)
+1419  655    b  1       jdk.internal.classfile.impl.AbstractPseudoInstruction$ExceptionCatchImpl::catchTypeEntry (5 bytes)
+1419  656    b  1       jdk.internal.classfile.impl.StackMapDecoder$StackMapFrameImpl::stack (5 bytes)
+1419  657    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::labelToBci (27 bytes)
+1420  658    b  1       jdk.internal.classfile.impl.StackMapDecoder$StackMapFrameImpl::locals (5 bytes)
+1421  659    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::clone (6 bytes)
+1424  660    b  3       java.lang.PublicMethods$Key::matches (31 bytes)
+1428  661    b  3       java.lang.StringConcatHelper::doConcat (62 bytes)
+1431  662    b  3       java.lang.invoke.LambdaForm$BasicType::basicTypeSlots (8 bytes)
+1432  663    b  3       java.lang.String::concat (15 bytes)
+1436  664    b  3       java.lang.AbstractStringBuilder::ensureCapacityNewCoder (125 bytes)
+1437  665    b  3       java.util.HashMap::resize (356 bytes)
+1440  666    b  3       java.util.LinkedHashMap$LinkedHashIterator::hasNext (13 bytes)
+1440  667    b  1       jdk.internal.loader.AbstractClassLoaderValue$Sub::parent (5 bytes)
+1441  668    b  3       java.nio.Buffer::limit (65 bytes)
+1442  669    b  3       java.util.LinkedHashMap::newNode (23 bytes)
+1442  670    b  3       java.util.LinkedHashMap::afterNodeInsertion (40 bytes)
+1443  671    b  3       java.util.LinkedHashMap$LinkedHashIterator::nextNode (68 bytes)
+1444  672    b  3       java.util.LinkedHashMap$LinkedValueIterator::next (8 bytes)
+1444  673    b  1       java.lang.Class::getModifiers (5 bytes)
+1445  674    b  3       java.nio.ByteBuffer::limit (8 bytes)
+1445  675    b  3       java.util.LinkedHashMap$Entry::<init> (10 bytes)
+1446  676    b  3       java.util.LinkedHashMap::linkNodeAtEnd (76 bytes)
+1447  677    b  3       sun.reflect.annotation.AnnotationInvocationHandler::hasUnresolvedEnumConstant (170 bytes)
+1451  678    b  1       java.lang.reflect.Method::getDeclaringClass (5 bytes)
+1451  679     n 0       jdk.internal.reflect.ConstantPool::getUTF8At0 (native)   
+1452  680    b  3       java.lang.ref.SoftReference::get (29 bytes)
+1452  681    b  3       java.nio.HeapByteBuffer::getShort (29 bytes)
+1454  682    b  4       java.lang.String::<init> (15 bytes)
+1455  112       3       java.lang.String::<init> (15 bytes)   made not entrant: not used
+1455  683    b  3       java.lang.StringBuilder::<init> (7 bytes)
+1456  684    b  3       sun.invoke.util.BytecodeDescriptor::nextNonIdentifier (44 bytes)
+1457  685    b  3       java.lang.reflect.Array::newInstance (6 bytes)
+1460  686    b  3       jdk.internal.classfile.impl.Util::isAttributeAllowed (45 bytes)
+1461  687    b  3       java.util.Optional::ofNullable (19 bytes)
+1461  688    b  1       jdk.internal.classfile.impl.StackMapDecoder$StackMapFrameImpl::target (5 bytes)
+1465  689    b  1       java.lang.Class::getAnnotationType (5 bytes)
+1465  690    b  3       jdk.internal.classfile.impl.SplitConstantPool::utf8Entry (6 bytes)
+1466  691    b  3       java.util.ImmutableCollections::listCopy (54 bytes)
+1467  692    b  3       java.util.ArrayList::iterator (9 bytes)
+1468  693    b  1       java.lang.classfile.TypeKind::slotSize (5 bytes)
+1468  694    b  1       java.lang.classfile.Opcode::sizeIfFixed (5 bytes)
+1468  695    b  1       jdk.internal.classfile.impl.BufWriterImpl::thisClass (5 bytes)
+1469  696    b  1       jdk.internal.classfile.impl.DirectMethodBuilder::methodName (5 bytes)
+1470  697    b  3       java.util.Arrays::equals (57 bytes)
+1472  698    b  3       java.lang.ref.WeakReference::<init> (7 bytes)
+1473  699    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::stringValue (5 bytes)
+1475  700     n 0       java.lang.invoke.MethodHandle::linkToStatic(IL)L (native)   (static)
+1475  701    b  1       jdk.internal.constant.MethodTypeDescImpl::returnType (5 bytes)
+1476  702    b  3       java.util.ImmutableCollections$List12::<init> (20 bytes)
+1487  703    b  3       java.util.stream.ReferencePipeline$2$1::accept (24 bytes)
+1490  704    b  3       java.lang.invoke.MethodTypeForm::canonicalizeAll (63 bytes)
+1492  705     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLLL)V (native)   (static)
+1492  706    b  3       java.lang.classfile.constantpool.ConstantPoolBuilder::methodRefEntry (22 bytes)
+1493  707     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLL)L (native)   
+1494  708    b  4       java.util.concurrent.ConcurrentHashMap::casTabAt (20 bytes)
+1495  363       3       java.util.concurrent.ConcurrentHashMap::casTabAt (20 bytes)   made not entrant: not used
+1495  709     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLLL)L (native)   (static)
+1495  710    b  1       jdk.internal.classfile.impl.AnnotationImpl::elements (5 bytes)
+1496  711    b  1       jdk.internal.classfile.impl.AnnotationImpl::className (5 bytes)
+1496  712    b  4       jdk.internal.classfile.impl.SplitConstantPool::entryByIndex (59 bytes)
+1499   37       3       jdk.internal.classfile.impl.SplitConstantPool::entryByIndex (59 bytes)   made not entrant: not used
+1500  713    b  3       java.lang.classfile.ClassBuilder::withMethod (34 bytes)
+1501  714    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::<init> (45 bytes)
+1503  715    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::run (9 bytes)
+1503  716    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::withCode (7 bytes)
+1503  717   !b  3       jdk.internal.classfile.impl.DirectCodeBuilder::build (78 bytes)
+1505  718    b  3       jdk.internal.classfile.impl.BufWriterImpl::<init> (11 bytes)
+1505  719    b  3       jdk.internal.classfile.impl.TerminalCodeBuilder::setupTopLocal (93 bytes)
+1508  720    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::setLabelTarget (10 bytes)
+1508  721    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::processDeferredLabels (109 bytes)
+1509  722    b  3       jdk.internal.classfile.impl.ClassFileImpl::passDebugElements (23 bytes)
+1510  723    b  3       java.lang.classfile.Attributes::code (4 bytes)
+1510  724    b  3       jdk.internal.classfile.impl.DirectCodeBuilder$4::<init> (16 bytes)
+1511  725    b  3       jdk.internal.classfile.impl.DirectClassBuilder::withMethod (54 bytes)
+1512  726    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::writeTo (33 bytes)
+1516  727    b  3       jdk.internal.classfile.impl.UnboundAttribute$AdHocAttribute::writeTo (49 bytes)
+1517  728    b  3       jdk.internal.classfile.impl.ClassFileImpl::stackMapsWhenRequired (23 bytes)
+1518  729    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeBytes (14 bytes)
+1518  730    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::writeExceptionHandlers (39 bytes)
+1522  731    b  1       java.lang.invoke.MethodHandles$Lookup::previousLookupClass (5 bytes)
+1525  732    b  3       jdk.internal.util.ReferencedKeyMap::entryKey (33 bytes)
+1533  733    b  3       java.util.Arrays::fill (21 bytes)
+1534  734    b  3       java.lang.Class::cast (27 bytes)
+1535  735     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLILLL)L (native)   (static)
+1535  736    b  3       java.lang.invoke.LambdaForm::argument (27 bytes)
+1536  737    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeU1U1 (39 bytes)
+1539  738     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLILL)L (native)   
+1539  739     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLILLL)L (native)   (static)
+1539  740    b  4       jdk.internal.classfile.impl.EntryMap::firstToken (50 bytes)
+1542   49       3       jdk.internal.classfile.impl.EntryMap::firstToken (50 bytes)   made not entrant: not used
+1542  741    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::fieldAccess (15 bytes)
+1544  742    b  3       java.lang.invoke.InvokerBytecodeGenerator::emitImplicitConversion (166 bytes)
+1547  743    b  3       java.util.ArrayList::<init> (61 bytes)
+1548  744    b  3       jdk.internal.misc.Unsafe::getCharUnaligned (12 bytes)
+1548  745    b  3       jdk.internal.classfile.impl.SplitConstantPool::writeTo (95 bytes)
+1551  746    b  3       jdk.internal.classfile.impl.StackMapGenerator$Frame::getLocalRawInternal (13 bytes)
+1553  747    b  3       java.lang.invoke.MethodType::erase (8 bytes)
+1553  748     n 0       java.lang.invoke.MethodHandle::invokeBasic(LILL)L (native)   
+1554  749    b  3       java.lang.invoke.MethodTypeForm::cachedLambdaForm (23 bytes)
+1555  750    b  3       jdk.internal.classfile.impl.BufWriterImpl::writeBytes (30 bytes)
+1557  751    b  3       java.lang.invoke.LambdaForm$NamedFunction::methodType (28 bytes)
+1557  752    b  4       java.lang.String::toString (2 bytes)
+1558  490       3       java.lang.String::toString (2 bytes)   made not entrant: not used
+1570  753    b  3       jdk.internal.classfile.impl.AbstractAttributeMapper::writeAttribute (48 bytes)
+1575  754    b  3       java.lang.invoke.MethodTypeForm::canonicalize (59 bytes)
+1576  755    b  3       jdk.internal.util.ReferencedKeyMap::existingKey (32 bytes)
+1577  756    b  3       jdk.internal.util.ReferencedKeyMap::internKey (57 bytes)
+1580  757     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLL)I (native)   (static)
+1580  758    b  3       java.lang.invoke.LambdaForm::forceInterpretation (14 bytes)
+1587  759    b  3       java.lang.invoke.MethodType::basicType (8 bytes)
+1588  760    b  3       java.lang.ClassLoader::checkName (37 bytes)
+1590  761    b  3       java.lang.invoke.LambdaForm$DMH/0x0000000035101800::newInvokeSpecial (21 bytes)
+1591  762     n 0       java.lang.ClassLoader::findLoadedClass0 (native)   
+1592  763    b  1       java.security.ProtectionDomain::getCodeSource (5 bytes)
+1593  764    b  1       java.net.URL::getQuery (5 bytes)
+1593  765    b  1       java.net.URL::getRef (5 bytes)
+1595  766    b  3       java.lang.reflect.Executable::<init> (5 bytes)
+1596  767    b  3       jdk.internal.reflect.ReflectionFactory::copyMethod (11 bytes)
+1596  768    b  3       java.lang.reflect.Method::<init> (68 bytes)
+1597  769    b  4       java.lang.String::getBytes (44 bytes)
+1600   74       3       java.lang.String::getBytes (44 bytes)   made not entrant: not used
+1600  770    b  3       java.util.StringJoiner::checkAddLength (50 bytes)
+1602  771    b  3       java.util.stream.AbstractPipeline::isParallel (8 bytes)
+1602  772    b  1       java.util.stream.AbstractPipeline::getStreamAndOpFlags (5 bytes)
+1602  773   !b  3       java.lang.Class::getTypeName (46 bytes)
+1606  774    b  1       java.util.Spliterators$ArraySpliterator::characteristics (5 bytes)
+1606  775    b  3       java.lang.String::valueOf (15 bytes)
+1607  776    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035101c00::linkToTargetMethod (9 bytes)
+1607  777    b  3       java.lang.invoke.DirectMethodHandle::internalMemberName (8 bytes)
+1608  778    b  1       java.util.stream.FindOps$FindOp::getOpFlags (5 bytes)
+1608  779    b  3       java.lang.reflect.Method::copy (92 bytes)
+1609  780    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035103c00::linkToTargetMethod (8 bytes)
+1609  781    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035103400::constant (8 bytes)
+1610  782    b  3       java.lang.StringConcatHelper::stringOf (20 bytes)
+1610  783    b  3       java.lang.reflect.Modifier::isFinal (13 bytes)
+1611  784    b  3       java.util.stream.PipelineHelper::<init> (5 bytes)
+1611  785    b  3       compiler.lib.ir_framework.test.TestVM$$Lambda/0x0000000035117800::test (12 bytes)
+1612  786    b  3       java.lang.StringConcatHelper::checkOverflow (16 bytes)
+1613  787    b  3       java.util.StringJoiner::add (110 bytes)
+1615  788    b  3       java.util.stream.StreamOpFlag::combineOpFlags (9 bytes)
+1615  789    b  3       java.lang.reflect.Modifier::isPrivate (12 bytes)
+1616  790    b  3       java.util.LinkedHashMap::get (29 bytes)
+1617  791    b  3       java.lang.reflect.Method::equals (65 bytes)
+1618  792    b  3       java.util.StringJoiner::<init> (63 bytes)
+1619  793    b  3       java.util.StringJoiner::toString (53 bytes)
+1620  794    b  3       java.lang.String::join (282 bytes)
+1625  795    b  3       java.util.stream.StreamOpFlag::isKnown (19 bytes)
+1625  796    b  3       java.lang.reflect.Modifier::isAbstract (14 bytes)
+1626  797    b  3       java.util.stream.StreamSupport::stream (19 bytes)
+1627  798    b  3       java.util.stream.AbstractPipeline::sourceSpliterator (262 bytes)
+1629  799    b  3       java.util.stream.AbstractPipeline::wrapAndCopyInto (18 bytes)
+1630  800    b  3       java.util.Spliterator::getExactSizeIfKnown (25 bytes)
+1630  801    b  3       java.lang.StringConcatHelper::newArrayWithSuffix (35 bytes)
+1632  802    b  3       java.lang.reflect.Method::toString (13 bytes)
+1632  803    b  3       java.lang.reflect.Method::appendModifiers (109 bytes)
+1635  804    b  3       java.lang.reflect.Method::specificToStringHeader (44 bytes)
+1636  805    b  3       java.lang.reflect.Executable::joinTypeNames (62 bytes)
+1637  806    b  3       java.util.stream.AbstractPipeline::evaluate (94 bytes)
+1638  807    b  3       java.util.stream.Sink::end (1 bytes)
+1638  808    b  3       java.util.stream.AbstractPipeline::copyIntoWithCancel (46 bytes)
+1639  809    b  3       java.util.stream.Sink::begin (1 bytes)
+1639  810    b  3       java.util.stream.ReferencePipeline::forEachWithCancel (23 bytes)
+1640  811    b  3       java.lang.System$1::join (11 bytes)
+1645  812    b  3       java.util.Spliterators$ArraySpliterator::tryAdvance (58 bytes)
+1646  813    b  3       java.lang.reflect.Executable::declaredAnnotations (92 bytes)
+1648  814    b  3       compiler.lib.ir_framework.shared.TestFormat::check (9 bytes)
+1649  815    b  3       java.lang.StringConcatHelper::stringSize (10 bytes)
+1650  816    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035101000::linkToTargetMethod (10 bytes)
+1652  817    b  3       java.util.stream.FindOps::makeRef (14 bytes)
+1653  818    b  3       java.util.stream.FindOps$FindOp::evaluateSequential (39 bytes)
+1654  819    b  3       java.util.stream.FindOps$FindSink$OfRef$$Lambda/0x0000000035150000::get (8 bytes)
+1654  820    b  3       java.util.stream.FindOps$FindSink$OfRef::get (5 bytes)
+1655  821    b  3       java.lang.invoke.LambdaForm$DMH/0x0000000035102800::invokeStatic (15 bytes)
+1656  822    b  3       java.lang.StringConcatHelper::simpleConcat (48 bytes)
+1661  823     n 0       java.lang.Class::forName0 (native)   (static)
+1662  824    b  4       jdk.internal.classfile.impl.EntryMap::put (186 bytes)
+1672   51       3       jdk.internal.classfile.impl.EntryMap::put (186 bytes)   made not entrant: not used
+1672  825    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$MethodRefEntryImpl::<init> (12 bytes)
+1673  826    b  1       jdk.internal.classfile.impl.AbstractPseudoInstruction$ExceptionCatchImpl::tryStart (5 bytes)
+1673  827    b  1       jdk.internal.classfile.impl.AbstractPseudoInstruction$ExceptionCatchImpl::tryEnd (5 bytes)
+1673  828    b  1       jdk.internal.classfile.impl.AbstractPseudoInstruction$ExceptionCatchImpl::handler (5 bytes)
+1674  829    b  3       jdk.internal.classfile.impl.BufWriterImpl::cpIndexOrZero (21 bytes)
+1676  830    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$Utf8EntryImpl::clone (65 bytes)
+1680  831    b  3       jdk.internal.reflect.ConstantPool::getUTF8At (6 bytes)
+1681  832    b  3       jdk.internal.loader.AbstractClassLoaderValue::map (20 bytes)
+1682  833    b  3       jdk.internal.loader.AbstractClassLoaderValue::sub (10 bytes)
+1683  834    b  3       jdk.internal.loader.AbstractClassLoaderValue$Sub::<init> (20 bytes)
+1684  835    b  3       jdk.internal.loader.AbstractClassLoaderValue::<init> (5 bytes)
+1684  836    b  3       jdk.internal.loader.AbstractClassLoaderValue::extractValue (17 bytes)
+1684  837    b  3       java.util.Spliterators$ArraySpliterator::<init> (40 bytes)
+1685  838    b  3       java.util.Spliterators$ArraySpliterator::estimateSize (27 bytes)
+1687  839   !b  3       java.lang.reflect.Executable::sharedToString (84 bytes)
+1689  840    b  3       jdk.internal.reflect.Reflection::appendAccessControlModifiers (46 bytes)
+1690  841    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035111000::invoke (25 bytes)
+1690  842    b  3       java.util.Arrays::stream (8 bytes)
+1691  843    b  3       java.util.Spliterators::checkFromToBounds (74 bytes)
+1693  844    b  3       java.lang.invoke.MemberName$Factory::resolveOrFail (83 bytes)
+1695  845    b  3       java.lang.invoke.LambdaForm::uncustomize (57 bytes)
+1701  846    b  3       java.util.stream.StreamOpFlag::fromCharacteristics (51 bytes)
+1701  847    b  3       java.util.stream.AbstractPipeline::<init> (55 bytes)
+1702  848    b  3       java.util.stream.AbstractPipeline::wrapSink (37 bytes)
+1703  849    b  3       java.util.stream.AbstractPipeline::copyInto (54 bytes)
+1704  850    b  3       java.util.ArrayList::toArray (57 bytes)
+1705  851    b  1       java.util.stream.MatchOps$BooleanTerminalSink::cancellationRequested (5 bytes)
+1705  852    b  3       java.lang.Class::annotationData (61 bytes)
+1706  853    b  3       compiler.lib.ir_framework.test.TestVM::getAnnotation (48 bytes)
+1713  854    b  3       sun.reflect.annotation.AnnotationSupport::getDirectlyAndIndirectlyPresent (117 bytes)
+1716  855    b  3       java.lang.Class::getDeclaredAnnotation (22 bytes)
+1716  856    b  3       java.lang.reflect.Executable::getAnnotationsByType (14 bytes)
+1717  857    b  3       java.util.Spliterators::spliterator (25 bytes)
+1719  858    b  4       java.lang.AbstractStringBuilder::append (100 bytes)
+1734  310       3       java.lang.AbstractStringBuilder::append (100 bytes)   made not entrant: not used
+1735  859    b  3       sun.reflect.annotation.AnnotationSupport::getIndirectlyPresent (60 bytes)
+1736  860    b  1       java.lang.reflect.Method::getRoot (5 bytes)
+1737  861    b  4       jdk.internal.misc.Unsafe::allocateUninitializedArray (55 bytes)
+1740  186       3       jdk.internal.misc.Unsafe::allocateUninitializedArray (55 bytes)   made not entrant: not used
+1740  861       4       jdk.internal.misc.Unsafe::allocateUninitializedArray (55 bytes)   made not entrant: uncommon trap
+1740  862    b  4       java.util.HashMap::getNode (150 bytes)
+1751  155       3       java.util.HashMap::getNode (150 bytes)   made not entrant: not used
+1752  863    b  4       jdk.internal.misc.Unsafe::allocateUninitializedArray0 (90 bytes)
+1754  182       3       jdk.internal.misc.Unsafe::allocateUninitializedArray0 (90 bytes)   made not entrant: not used
+1754  864    b  4       jdk.internal.misc.Unsafe::allocateUninitializedArray (55 bytes)
+1760  865    b  3       jdk.internal.classfile.impl.StackMapGenerator$Frame::pushStack (84 bytes)
+1762  866    b  4       jdk.internal.constant.MethodTypeDescImpl::parameterCount (6 bytes)
+1763  368       3       jdk.internal.constant.MethodTypeDescImpl::parameterCount (6 bytes)   made not entrant: not used
+1764  867     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLLLL)L (native)   (static)
+1765  868    b  1       jdk.internal.classfile.impl.BufWriterImpl::getMajorVersion (5 bytes)
+1766  869    b  1       jdk.internal.classfile.impl.RawBytecodeHelper$CodeRange::length (5 bytes)
+1766  870    b  3       jdk.internal.classfile.impl.RawBytecodeHelper$CodeRange::start (9 bytes)
+1766  871    b  1       jdk.internal.classfile.impl.StackMapGenerator::maxStack (5 bytes)
+1767  872    b  1       jdk.internal.classfile.impl.StackMapGenerator::maxLocals (5 bytes)
+1768  873    b  3       java.lang.invoke.MethodHandle::<init> (37 bytes)
+1770  874    b  3       java.lang.invoke.InvokerBytecodeGenerator::emitLoadInsn (15 bytes)
+1770  875    b  3       java.lang.invoke.InvokerBytecodeGenerator::emitPushArgument (145 bytes)
+1773  876    b  4       jdk.internal.classfile.impl.SplitConstantPool::canWriteDirect (24 bytes)
+1774   55       3       jdk.internal.classfile.impl.SplitConstantPool::canWriteDirect (24 bytes)   made not entrant: not used
+1776  877    b  3       java.lang.classfile.constantpool.MemberRefEntry::type (12 bytes)
+made not OSR compilable on all levels  compiler.c2.irTests.TestIfConstantThreshold::runInt (758 bytes)   WhiteBox
+made not compilable on all levels  compiler.c2.irTests.TestIfConstantThreshold::runInt (758 bytes)   WhiteBox
+1779  878    b  1       jdk.internal.loader.URLClassPath$Loader::getBaseURL (5 bytes)
+1781  879    b  1       java.security.CodeSource::getLocationNoFragString (5 bytes)
+1783  880    b  3       java.lang.Module::isNamed (13 bytes)
+1797  881     n 0       java.lang.ClassLoader::findBootstrapClass (native)   (static)
+1808  882     n 0       java.lang.invoke.MethodHandle::linkToStatic(IL)I (native)   (static)
+1810  883    b  1       java.lang.classfile.ClassFile::latestMinorVersion (2 bytes)
+1810  884    b  1       jdk.internal.classfile.impl.DirectClassBuilder::setFlags (6 bytes)
+1811  885    b  3       jdk.internal.constant.ConstantUtils::dropFirstAndLastChar (12 bytes)
+1811  886    b  3       jdk.internal.classfile.impl.Util::writeList (36 bytes)
+1812  887    b  3       jdk.internal.classfile.impl.BufWriterImpl::copyTo (15 bytes)
+1819  888    b  3       java.lang.Byte::<init> (10 bytes)
+1820  889    b  3       java.lang.Short::<init> (10 bytes)
+For random generator using seed: -1478601232397099729
+To re-run test with same seed value please add "-Djdk.test.lib.random.seed=-1478601232397099729" to command line.
+1835  890    b  1       jdk.internal.classfile.impl.DirectCodeBuilder::startLabel (5 bytes)
+1837  891    b  4       java.util.concurrent.ConcurrentHashMap::tabAt (21 bytes)
+1838   11       3       java.util.concurrent.ConcurrentHashMap::tabAt (21 bytes)   made not entrant: not used
+1839  892    b  3       java.lang.classfile.constantpool.ConstantPoolBuilder::nameAndTypeEntry (21 bytes)
+1840  893    b  3       jdk.internal.classfile.impl.SplitConstantPool::fieldRefEntry (72 bytes)
+1845  894     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LILL)L (native)   (static)
+1846  895     n 0       java.lang.invoke.MethodHandle::invokeBasic(LIL)L (native)   
+1846  896     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLILL)L (native)   (static)
+1846  897    b  3       java.lang.invoke.MemberName::<init> (50 bytes)
+1847  898    b  3       jdk.internal.classfile.impl.SplitConstantPool::entryByIndex (11 bytes)
+1848  899    b  3       jdk.internal.classfile.impl.ClassReaderImpl::checkType (23 bytes)
+1850  900    b  3       jdk.internal.classfile.impl.UnboundAttribute::writeTo (12 bytes)
+1852  901    b  3       java.lang.classfile.CodeBuilder::checkcast (19 bytes)
+1853  902     n 0       java.lang.ClassLoader::defineClass0 (native)   (static)
+1854  903     n 0       java.lang.invoke.MethodHandle::invokeBasic(IL)L (native)   
+1855  862       4       java.util.HashMap::getNode (150 bytes)   made not entrant: uncommon trap
+1865  904    b  3       java.lang.invoke.LambdaForm$MH/0x000000003510a800::invoke (25 bytes)
+1868  905    b  3       java.lang.invoke.LambdaForm$DMH/0x0000000035100400::invokeSpecial (15 bytes)
+1870  906    b  3       java.lang.StringConcatHelper$Concat1::concat (9 bytes)
+1873  907    b  3       compiler.lib.ir_framework.driver.irmatching.mapping.SingleRegexEntry::<init> (15 bytes)
+1874  908    b  3       compiler.lib.ir_framework.driver.irmatching.mapping.RegexTypeEntry::<init> (84 bytes)
+1875  909    b  3       java.lang.invoke.MemberName::isCallerSensitive (8 bytes)
+1876  910    b  3       java.lang.invoke.MethodType::insertParameterTypes (121 bytes)
+1880  911    b  3       java.lang.invoke.MethodHandles$Lookup::isClassAccessible (53 bytes)
+1881  912    b  3       java.lang.reflect.Method::getParameterCount (6 bytes)
+1881  913    b  3       sun.reflect.annotation.AnnotationInvocationHandler::invoke (182 bytes)
+1884  914    b  3       java.util.ArrayList::grow (60 bytes)
+1886  915    b  4       java.util.HashMap::getNode (150 bytes)
+1896  916     n 0       java.lang.reflect.Array::getLength (native)   (static)
+1897  917    b  3       jdk.internal.util.DecimalDigits::uncheckedPutCharLatin1 (40 bytes)
+1897  918    b  3       java.lang.Integer::valueOf (32 bytes)
+made not OSR compilable on all levels  compiler.c2.irTests.TestIfConstantThreshold::runLong (432 bytes)   WhiteBox
+made not compilable on all levels  compiler.c2.irTests.TestIfConstantThreshold::runLong (432 bytes)   WhiteBox
+1900  919    b  3       compiler.lib.ir_framework.shared.TestFormat::checkNoThrow (9 bytes)
+1901  920    b  3       jdk.internal.util.DecimalDigits::stringSize (47 bytes)
+1901  921    b  3       jdk.internal.util.DecimalDigits::uncheckedGetCharsLatin1 (105 bytes)
+1909  922     n 0       java.lang.invoke.MethodHandle::linkToStatic(L)V (native)   (static)
+1911  923     n 0       java.lang.invoke.MethodHandle::invokeBasic()V (native)   
+1911  924    b  4       jdk.internal.classfile.impl.SplitConstantPool::internalAdd (78 bytes)
+1936   75       3       jdk.internal.classfile.impl.SplitConstantPool::internalAdd (78 bytes)   made not entrant: not used
+1937  924       4       jdk.internal.classfile.impl.SplitConstantPool::internalAdd (78 bytes)   made not entrant: uncommon trap
+1940  925    b  3       java.lang.invoke.MethodHandleStatics::dumper (4 bytes)
+1941  926    b  3       jdk.internal.classfile.impl.BufWriterImpl::grow (33 bytes)
+1943  927    b  3       java.lang.invoke.MemberName::ensureTypeVisible (180 bytes)
+1950  928    b  4       jdk.internal.classfile.impl.SplitConstantPool::internalAdd (78 bytes)
+1982  929    b  3       java.lang.Long::valueOf (40 bytes)
+1982  930    b  1       java.lang.Long::longValue (5 bytes)
+1983  931    b  3       jdk.test.lib.Asserts::assertEQ (6 bytes)
+1983  932    b  3       jdk.test.lib.Asserts::assertEquals (44 bytes)
+1985  933    b  3       compiler.c2.irTests.TestIfConstantThreshold::mask64 (18 bytes)
+1994  934    b  3       java.lang.Long::equals (32 bytes)
+1995  935    b  3       compiler.c2.irTests.TestIfConstantThreshold::testDifferentValue (17 bytes)
+1996  936    b  3       java.lang.Integer::compare (20 bytes)
+1996  937    b  3       java.lang.Integer::compareUnsigned (12 bytes)
+1997  938    b  3       compiler.c2.irTests.TestIfConstantThreshold::testMask (17 bytes)
+1997  939    b  3       compiler.c2.irTests.TestIfConstantThreshold::testSwapped (17 bytes)
+1998  940    b  3       compiler.c2.irTests.TestIfConstantThreshold::testReverse (30 bytes)
+1998  941    b  3       compiler.c2.irTests.TestIfConstantThreshold::testIfFalse (17 bytes)
+1998  942    b  3       compiler.c2.irTests.TestIfConstantThreshold::testInterveningDiamond (46 bytes)
+1999  943    b  4       java.lang.Long::valueOf (40 bytes)
+2002  929       3       java.lang.Long::valueOf (40 bytes)   made not entrant: not used
+2003  944    b  3       java.lang.Integer::toUnsignedLong (7 bytes)
+2003  945    b  4       jdk.test.lib.Asserts::assertEquals (44 bytes)
+2006  932       3       jdk.test.lib.Asserts::assertEquals (44 bytes)   made not entrant: not used
+2006  946    b  4       jdk.test.lib.Asserts::assertEQ (6 bytes)
+2008  931       3       jdk.test.lib.Asserts::assertEQ (6 bytes)   made not entrant: not used
+2010  947    b  3       compiler.c2.irTests.TestIfConstantThreshold::testTrap (28 bytes)
+2010  948    b  3       compiler.c2.irTests.TestIfConstantThreshold::testMerged (47 bytes)
+2011  949    b  3       compiler.c2.irTests.TestIfConstantThreshold::testDifferentThreshold (17 bytes)
+2012  950    b  3       compiler.c2.irTests.TestIfConstantThreshold::testDifferentDomain (31 bytes)
+2012  951    b  3       compiler.c2.irTests.TestIfConstantThreshold::testIntEndpoints (71 bytes)
+2014  952    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntSwapped (34 bytes)
+2014  953    b  3       compiler.c2.irTests.TestIfConstantThreshold::testIntNegative (27 bytes)
+2015  954    b  3       compiler.c2.irTests.TestIfConstantThreshold::testIntZero (25 bytes)
+2015  955    b  3       compiler.c2.irTests.TestIfConstantThreshold::testIntMin (28 bytes)
+2016  956    b  3       compiler.c2.irTests.TestIfConstantThreshold::testIntMax (28 bytes)
+2016  957    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntMask (34 bytes)
+2017  958    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntSign (34 bytes)
+2018  959    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntMax (33 bytes)
+2018  960    b  4       compiler.c2.irTests.TestIfConstantThreshold::testDifferentValue (17 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 60  [[ 0 1 3 25 33 44 52 54 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:int, 7:long, 8:half}
+  5  Parm  === 3  [[ 28 ]] Control !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+  6  Parm  === 3  [[ 60 ]] I_O !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+  7  Parm  === 3  [[ 60 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+  8  Parm  === 3  [[ 60 ]] FramePtr !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+  9  Parm  === 3  [[ 60 ]] ReturnAdr !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+ 10  Parm  === 3  [[ 26 ]] Parm0: int !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+ 11  Parm  === 3  [[ 45 55 ]] Parm1: int !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+ 12  Parm  === 3  [[ 61 62 ]] Parm2: long !jvms: TestIfConstantThreshold::testDifferentValue @ bci:-1 (line 173)
+ 16  Region  === 16 30 53  [[ 16 20 60 ]] 
+ 20  Phi  === 16 33 61  [[ 60 ]]  #long
+ 25  ConI  === 0  [[ 26 ]]  #int:63
+ 26  CmpI  === _ 10 25  [[ 27 ]]  !jvms: TestIfConstantThreshold::testDifferentValue @ bci:3 (line 173)
+ 27  Bool  === _ 26  [[ 28 ]] [le] !jvms: TestIfConstantThreshold::testDifferentValue @ bci:3 (line 173)
+ 28  If  === 5 27  [[ 29 30 ]] P=0.695256, C=5375.000000 !jvms: TestIfConstantThreshold::testDifferentValue @ bci:3 (line 173)
+ 29  IfTrue  === 28  [[ 47 ]] #1 !jvms: TestIfConstantThreshold::testDifferentValue @ bci:3 (line 173)
+ 30  IfFalse  === 28  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testDifferentValue @ bci:3 (line 173)
+ 33  ConL  === 0  [[ 20 ]]  #long:minlong
+ 44  ConI  === 0  [[ 45 ]]  #int:64
+ 45  CmpI  === _ 11 44  [[ 46 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 46  Bool  === _ 45  [[ 47 ]] [lt] !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 47  If  === 29 46  [[ 48 49 ]] P=0.793060, C=7925.000000 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 48  IfTrue  === 47  [[ 53 ]] #1 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 49  IfFalse  === 47  [[ 53 ]] #0 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 52  ConL  === 0  [[ 57 ]]  #long:-1
+ 53  Region  === 53 48 49  [[ 53 16 61 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:17 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 54  ConL  === 0  [[ 55 ]]  #long:1
+ 55  LShiftL  === _ 54 11  [[ 57 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:14 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 57  AddL  === _ 55 52  [[ 62 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:16 (line 58) TestIfConstantThreshold::testDifferentValue @ bci:12 (line 174)
+ 60  Return  === 16 6 7 8 9 returns 20  [[ 0 ]] 
+ 61  Phi  === 53 62 12  [[ 20 ]]  #long !orig=[59] !jvms: TestIfConstantThreshold::testDifferentValue @ bci:15 (line 174)
+ 62  AndL  === _ 57 12  [[ 61 ]]  !orig=[59] !jvms: TestIfConstantThreshold::testDifferentValue @ bci:15 (line 174)
+2019  935       3       compiler.c2.irTests.TestIfConstantThreshold::testDifferentValue (17 bytes)   made not entrant: not used
+2020  961    b  4       java.lang.Integer::toUnsignedLong (7 bytes)
+2021  944       3       java.lang.Integer::toUnsignedLong (7 bytes)   made not entrant: not used
+2025  962    b  1       java.lang.invoke.MethodHandleImpl::isCompileConstant (2 bytes)
+2025  963    b  4       compiler.c2.irTests.TestIfConstantThreshold::testMask (17 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 59  [[ 0 1 3 24 32 53 51 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+  6  Parm  === 3  [[ 59 ]] I_O !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+  7  Parm  === 3  [[ 59 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+  8  Parm  === 3  [[ 59 ]] FramePtr !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+  9  Parm  === 3  [[ 59 ]] ReturnAdr !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+ 10  Parm  === 3  [[ 25 54 ]] Parm0: int !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+ 11  Parm  === 3  [[ 58 ]] Parm1: long !jvms: TestIfConstantThreshold::testMask @ bci:-1 (line 64)
+ 15  Region  === 15 29 28  [[ 15 19 59 ]] 
+ 19  Phi  === 15 32 58  [[ 59 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:63
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.701395, C=5375.000000 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)
+ 28  IfTrue  === 27  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testMask @ bci:3 (line 64)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 51  ConL  === 0  [[ 56 ]]  #long:-1
+ 53  ConL  === 0  [[ 54 ]]  #long:1
+ 54  LShiftL  === _ 53 10  [[ 56 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:14 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)
+ 56  AddL  === _ 54 51  [[ 58 ]]  !orig=[57] !jvms: TestIfConstantThreshold::mask64 @ bci:16 (line 58) TestIfConstantThreshold::testMask @ bci:12 (line 65)
+ 58  AndL  === _ 11 56  [[ 19 ]]  !jvms: TestIfConstantThreshold::testMask @ bci:15 (line 65)
+ 59  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2026  938       3       compiler.c2.irTests.TestIfConstantThreshold::testMask (17 bytes)   made not entrant: not used
+2026  964    b  4       compiler.c2.irTests.TestIfConstantThreshold::testSwapped (17 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 62  [[ 0 1 3 24 35 56 54 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 30 ]] Control !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+  6  Parm  === 3  [[ 62 ]] I_O !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+  7  Parm  === 3  [[ 62 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+  8  Parm  === 3  [[ 62 ]] FramePtr !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+  9  Parm  === 3  [[ 62 ]] ReturnAdr !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+ 10  Parm  === 3  [[ 27 57 ]] Parm0: int !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+ 11  Parm  === 3  [[ 61 ]] Parm1: long !jvms: TestIfConstantThreshold::testSwapped @ bci:-1 (line 71)
+ 15  Region  === 15 32 31  [[ 15 19 62 ]] 
+ 19  Phi  === 15 35 61  [[ 62 ]]  #long
+ 24  ConI  === 0  [[ 27 ]]  #int:63
+ 27  CmpI  === _ 10 24  [[ 29 ]]  !orig=25 !jvms: TestIfConstantThreshold::testSwapped @ bci:3 (line 71)
+ 29  Bool  === _ 27  [[ 30 ]] [le] !jvms: TestIfConstantThreshold::testSwapped @ bci:3 (line 71)
+ 30  If  === 5 29  [[ 31 32 ]] P=0.701395, C=5375.000000 !jvms: TestIfConstantThreshold::testSwapped @ bci:3 (line 71)
+ 31  IfTrue  === 30  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testSwapped @ bci:3 (line 71)
+ 32  IfFalse  === 30  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testSwapped @ bci:3 (line 71)
+ 35  ConL  === 0  [[ 19 ]]  #long:minlong
+ 54  ConL  === 0  [[ 59 ]]  #long:-1
+ 56  ConL  === 0  [[ 57 ]]  #long:1
+ 57  LShiftL  === _ 56 10  [[ 59 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:14 (line 58) TestIfConstantThreshold::testSwapped @ bci:12 (line 72)
+ 59  AddL  === _ 57 54  [[ 61 ]]  !orig=[60] !jvms: TestIfConstantThreshold::mask64 @ bci:16 (line 58) TestIfConstantThreshold::testSwapped @ bci:12 (line 72)
+ 61  AndL  === _ 11 59  [[ 19 ]]  !jvms: TestIfConstantThreshold::testSwapped @ bci:15 (line 72)
+ 62  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2027  939       3       compiler.c2.irTests.TestIfConstantThreshold::testSwapped (17 bytes)   made not entrant: not used
+2027  965    b  4       compiler.c2.irTests.TestIfConstantThreshold::testReverse (30 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 54  [[ 0 1 3 24 32 50 47 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+  6  Parm  === 3  [[ 54 ]] I_O !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+  7  Parm  === 3  [[ 54 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+  8  Parm  === 3  [[ 54 ]] FramePtr !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+  9  Parm  === 3  [[ 54 ]] ReturnAdr !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+ 10  Parm  === 3  [[ 48 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+ 11  Parm  === 3  [[ 53 ]] Parm1: long !jvms: TestIfConstantThreshold::testReverse @ bci:-1 (line 131)
+ 15  Region  === 15 29 28  [[ 15 19 54 ]] 
+ 19  Phi  === 15 32 53  [[ 54 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:64
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testReverse @ bci:3 (line 131)
+ 26  Bool  === _ 25  [[ 27 ]] [lt] !jvms: TestIfConstantThreshold::testReverse @ bci:3 (line 131)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.701395, C=5375.000000 !jvms: TestIfConstantThreshold::testReverse @ bci:3 (line 131)
+ 28  IfTrue  === 27  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testReverse @ bci:3 (line 131)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testReverse @ bci:3 (line 131)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 47  ConL  === 0  [[ 48 ]]  #long:1
+ 48  LShiftL  === _ 47 10  [[ 51 ]]  !jvms: TestIfConstantThreshold::testReverse @ bci:25 (line 132)
+ 50  ConL  === 0  [[ 51 ]]  #long:-1
+ 51  AddL  === _ 48 50  [[ 53 ]]  !jvms: TestIfConstantThreshold::testReverse @ bci:27 (line 132)
+ 53  AndL  === _ 11 51  [[ 19 ]]  !jvms: TestIfConstantThreshold::testReverse @ bci:28 (line 132)
+ 54  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2028  940       3       compiler.c2.irTests.TestIfConstantThreshold::testReverse (30 bytes)   made not entrant: not used
+2028  966    b  4       compiler.c2.irTests.TestIfConstantThreshold::testIfFalse (17 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 59  [[ 0 1 3 24 32 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 59 ]] Control !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+  6  Parm  === 3  [[ 59 ]] I_O !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+  7  Parm  === 3  [[ 59 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+  8  Parm  === 3  [[ 59 ]] FramePtr !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+  9  Parm  === 3  [[ 59 ]] ReturnAdr !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+ 10  Parm  === 3  [[ 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+ 11  Parm  === 3  [[ 61 ]] Parm1: long !orig=[58] !jvms: TestIfConstantThreshold::testIfFalse @ bci:-1 (line 97)
+ 24  ConI  === 0  [[ 25 ]]  #int:63
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testIfFalse @ bci:3 (line 97)
+ 26  Bool  === _ 25  [[ 61 ]] [le] !jvms: TestIfConstantThreshold::testIfFalse @ bci:3 (line 97)
+ 32  ConL  === 0  [[ 61 ]]  #long:minlong
+ 59  Return  === 5 6 7 8 9 returns 61  [[ 0 ]] 
+ 61  CMoveL  === _ 26 11 32  [[ 59 ]]  #long !orig=[19]
+2028  941       3       compiler.c2.irTests.TestIfConstantThreshold::testIfFalse (17 bytes)   made not entrant: not used
+2028  967    b  4       compiler.c2.irTests.TestIfConstantThreshold::testInterveningDiamond (46 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 90  [[ 0 1 3 24 32 33 82 44 45 46 49 52 80 57 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+  6  Parm  === 3  [[ 90 ]] I_O !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+  7  Parm  === 3  [[ 18 89 54 48 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+  8  Parm  === 3  [[ 90 ]] FramePtr !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+  9  Parm  === 3  [[ 90 ]] ReturnAdr !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+ 10  Parm  === 3  [[ 25 83 ]] Parm0: int !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+ 11  Parm  === 3  [[ 58 50 37 ]] Parm1: long !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:-1 (line 139)
+ 15  Region  === 15 29 51  [[ 15 89 90 19 ]] 
+ 18  MergeMem  === _ 1 7 1 89  [[ 90 ]]  { - N89:instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot }  Memory: @ptr:BotPTR+bot, idx=Bot;
+ 19  Phi  === 15 32 88  [[ 90 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:63
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:3 (line 139)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:3 (line 139)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.701395, C=5375.000000 !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:3 (line 139)
+ 28  IfTrue  === 27  [[ 39 ]] #1 !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:3 (line 139)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:3 (line 139)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 33  ConL  === 0  [[ 37 ]]  #long:0
+ 37  CmpL  === _ 11 33  [[ 38 ]]  !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:13 (line 141)
+ 38  Bool  === _ 37  [[ 39 ]] [lt] !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:13 (line 141)
+ 39  If  === 28 38  [[ 40 41 ]] P=0.500000, C=3770.000000 !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:13 (line 141)
+ 40  IfTrue  === 39  [[ 51 48 ]] #1 !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:13 (line 141)
+ 41  IfFalse  === 39  [[ 51 54 ]] #0 !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:13 (line 141)
+ 44  ConI  === 0  [[ 48 ]]  #int:1
+ 45  ConP  === 0  [[ 47 47 ]]  #instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+0,iid=bot  Oop:instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+0,iid=bot
+ 46  ConL  === 0  [[ 47 ]]  #long:136
+ 47  AddP  === _ 45 45 46  [[ 48 54 ]]   Oop:instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:17 (line 142)
+ 48  StoreI  === 40 7 47 44  [[ 59 ]]  @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; barrier(0x0)  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:17 (line 142)
+ 49  ConL  === 0  [[ 50 ]]  #long:17
+ 50  AddL  === _ 11 49  [[ 60 ]]  !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:24 (line 143)
+ 51  Region  === 51 41 40  [[ 51 15 59 60 ]] #reducible  !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:39 (line 148)
+ 52  ConI  === 0  [[ 54 ]]  #int:2
+ 54  StoreI  === 41 7 47 52  [[ 59 ]]  @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; barrier(0x0)  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:30 (line 145)
+ 57  ConL  === 0  [[ 58 ]]  #long:-19
+ 58  AddL  === _ 11 57  [[ 60 ]]  !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:37 (line 146)
+ 59  Phi  === 51 54 48  [[ 89 ]]  #memory  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:39 (line 148)
+ 60  Phi  === 51 58 50  [[ 88 ]]  #long !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:39 (line 148)
+ 80  ConL  === 0  [[ 85 ]]  #long:-1
+ 82  ConL  === 0  [[ 83 ]]  #long:1
+ 83  LShiftL  === _ 82 10  [[ 85 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:14 (line 58) TestIfConstantThreshold::testInterveningDiamond @ bci:41 (line 148)
+ 85  AddL  === _ 83 80  [[ 88 ]]  !orig=[86] !jvms: TestIfConstantThreshold::mask64 @ bci:16 (line 58) TestIfConstantThreshold::testInterveningDiamond @ bci:41 (line 148)
+ 88  AndL  === _ 60 85  [[ 19 ]]  !jvms: TestIfConstantThreshold::testInterveningDiamond @ bci:44 (line 148)
+ 89  Phi  === 15 7 59  [[ 18 ]]  #memory  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !orig=17
+ 90  Return  === 15 6 18 8 9 returns 19  [[ 0 ]] 
+2029  942       3       compiler.c2.irTests.TestIfConstantThreshold::testInterveningDiamond (46 bytes)   made not entrant: not used
+2049  968    b  4       java.lang.Integer::valueOf (32 bytes)
+2051  918       3       java.lang.Integer::valueOf (32 bytes)   made not entrant: not used
+2054  969    b  3       java.util.ArrayList::elementData (7 bytes)
+2055  970    b  3       jdk.internal.classfile.impl.AbstractPoolEntry$ClassEntryImpl::asSymbol (53 bytes)
+2069  971    b  3       java.lang.invoke.Invokers::checkExactType (17 bytes)
+2070  972    b  3       java.lang.invoke.Invokers::checkCustomized (23 bytes)
+2071  973    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035110c00::invokeExact_MT (23 bytes)
+2085  974    b  3       java.lang.reflect.Method::isCallerSensitive (38 bytes)
+2087  975   !b  3       compiler.lib.ir_framework.test.CustomRunTest::invokeTest (79 bytes)
+2090  976   !b  3       jdk.internal.reflect.DirectMethodHandleAccessor::invoke (92 bytes)
+2093  977    b  3       java.lang.invoke.LambdaForm$DMH/0x000000003518a800::invokeStatic (13 bytes)
+2096  978    b  4       compiler.c2.irTests.TestIfConstantThreshold::testTrap (28 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 47  [[ 0 1 3 24 32 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 47 ]] Control !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+  6  Parm  === 3  [[ 47 ]] I_O !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+  7  Parm  === 3  [[ 47 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+  8  Parm  === 3  [[ 47 ]] FramePtr !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+  9  Parm  === 3  [[ 47 ]] ReturnAdr !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+ 10  Parm  === 3  [[ 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+ 11  Parm  === 3  [[ 51 ]] Parm1: long !jvms: TestIfConstantThreshold::testTrap @ bci:-1 (line 87)
+ 24  ConI  === 0  [[ 25 ]]  #int:63
+ 25  CmpI  === _ 10 24  [[ 50 ]]  !jvms: TestIfConstantThreshold::testTrap @ bci:3 (line 87)
+ 32  ConL  === 0  [[ 51 ]]  #long:minlong
+ 47  Return  === 5 6 7 8 9 returns 51  [[ 0 ]] 
+ 50  Bool  === _ 25  [[ 51 ]] [gt]
+ 51  CMoveL  === _ 50 11 32  [[ 47 ]]  #long !orig=[49],[19]
+2097  947       3       compiler.c2.irTests.TestIfConstantThreshold::testTrap (28 bytes)   made not entrant: not used
+2097  979    b  4       compiler.c2.irTests.TestIfConstantThreshold::testMerged (47 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 70  [[ 0 1 3 24 32 33 34 50 38 41 46 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+  6  Parm  === 3  [[ 70 ]] I_O !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+  7  Parm  === 3  [[ 18 43 37 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+  8  Parm  === 3  [[ 70 ]] FramePtr !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+  9  Parm  === 3  [[ 70 ]] ReturnAdr !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+ 10  Parm  === 3  [[ 25 51 ]] Parm0: int !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+ 11  Parm  === 3  [[ 47 39 ]] Parm1: long !jvms: TestIfConstantThreshold::testMerged @ bci:-1 (line 117)
+ 15  Region  === 15 55 54  [[ 15 70 19 ]] 
+ 18  MergeMem  === _ 1 7 1 48  [[ 70 ]]  { - N48:instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot }  Memory: @ptr:BotPTR+bot, idx=Bot;
+ 19  Phi  === 15 63 69  [[ 70 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:63
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:3 (line 117)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testMerged @ bci:3 (line 117)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.700093, C=5375.000000 !jvms: TestIfConstantThreshold::testMerged @ bci:3 (line 117)
+ 28  IfTrue  === 27  [[ 40 43 ]] #1 !jvms: TestIfConstantThreshold::testMerged @ bci:3 (line 117)
+ 29  IfFalse  === 27  [[ 40 37 ]] #0 !jvms: TestIfConstantThreshold::testMerged @ bci:3 (line 117)
+ 32  ConI  === 0  [[ 37 62 ]]  #int:1
+ 33  ConP  === 0  [[ 36 36 ]]  #instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+0,iid=bot  Oop:instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+0,iid=bot
+ 34  ConL  === 0  [[ 36 ]]  #long:136
+ 36  AddP  === _ 33 33 34  [[ 37 43 ]]   Oop:instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot !jvms: TestIfConstantThreshold::testMerged @ bci:7 (line 118)
+ 37  StoreI  === 29 7 36 32  [[ 48 ]]  @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; barrier(0x0)  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !jvms: TestIfConstantThreshold::testMerged @ bci:7 (line 118)
+ 38  ConL  === 0  [[ 39 ]]  #long:17
+ 39  AddL  === _ 11 38  [[ 49 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:14 (line 119)
+ 40  Region  === 40 28 29  [[ 40 53 48 49 ]] #reducible  !jvms: TestIfConstantThreshold::testMerged @ bci:29 (line 124)
+ 41  ConI  === 0  [[ 43 68 ]]  #int:2
+ 43  StoreI  === 28 7 36 41  [[ 48 ]]  @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; barrier(0x0)  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !jvms: TestIfConstantThreshold::testMerged @ bci:20 (line 121)
+ 46  ConL  === 0  [[ 47 ]]  #long:-19
+ 47  AddL  === _ 11 46  [[ 49 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:27 (line 122)
+ 48  Phi  === 40 43 37  [[ 18 ]]  #memory  Memory: @instptr:java/lang/Class (java/io/Serializable,java/lang/constant/Constable,java/lang/reflect/AnnotatedElement,java/lang/invoke/TypeDescriptor,java/lang/reflect/GenericDeclaration,java/lang/reflect/Type,java/lang/invoke/TypeDescriptor$OfField):Constant:exact+136,iid=bot, name=sink, idx=4; !jvms: TestIfConstantThreshold::testMerged @ bci:29 (line 124)
+ 49  Phi  === 40 47 39  [[ 62 68 63 69 ]]  #long !jvms: TestIfConstantThreshold::testMerged @ bci:29 (line 124)
+ 50  ConI  === 0  [[ 51 ]]  #int:64
+ 51  CmpI  === _ 10 50  [[ 52 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:32 (line 124)
+ 52  Bool  === _ 51  [[ 53 ]] [lt] !jvms: TestIfConstantThreshold::testMerged @ bci:32 (line 124)
+ 53  If  === 40 52  [[ 54 55 ]] P=0.700093, C=5375.000000 !jvms: TestIfConstantThreshold::testMerged @ bci:32 (line 124)
+ 54  IfTrue  === 53  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testMerged @ bci:32 (line 124)
+ 55  IfFalse  === 53  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testMerged @ bci:32 (line 124)
+ 62  LShiftL  === _ 49 32  [[ 63 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:39 (line 124)
+ 63  AddL  === _ 62 49  [[ 19 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:39 (line 124)
+ 68  LShiftL  === _ 49 41  [[ 69 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:45 (line 125)
+ 69  AddL  === _ 68 49  [[ 19 ]]  !jvms: TestIfConstantThreshold::testMerged @ bci:45 (line 125)
+ 70  Return  === 15 6 18 8 9 returns 19  [[ 0 ]] 
+2098  948       3       compiler.c2.irTests.TestIfConstantThreshold::testMerged (47 bytes)   made not entrant: not used
+2098  980    b  4       compiler.c2.irTests.TestIfConstantThreshold::testDifferentThreshold (17 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 58  [[ 0 1 3 24 32 50 52 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+  6  Parm  === 3  [[ 58 ]] I_O !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+  7  Parm  === 3  [[ 58 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+  8  Parm  === 3  [[ 58 ]] FramePtr !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+  9  Parm  === 3  [[ 58 ]] ReturnAdr !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+ 10  Parm  === 3  [[ 53 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+ 11  Parm  === 3  [[ 59 60 ]] Parm1: long !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:-1 (line 156)
+ 15  Region  === 15 29 51  [[ 15 19 58 ]] 
+ 19  Phi  === 15 32 59  [[ 58 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:64
+ 25  CmpI  === _ 10 24  [[ 26 44 ]]  !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:3 (line 156)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:3 (line 156)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.750140, C=5375.000000 !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:3 (line 156)
+ 28  IfTrue  === 27  [[ 45 ]] #1 !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:3 (line 156)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:3 (line 156)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 44  Bool  === _ 25  [[ 45 ]] [lt] !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 45  If  === 28 44  [[ 46 47 ]] P=0.854867, C=20774.000000 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 46  IfTrue  === 45  [[ 51 ]] #1 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 47  IfFalse  === 45  [[ 51 ]] #0 !jvms: TestIfConstantThreshold::mask64 @ bci:3 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 50  ConL  === 0  [[ 55 ]]  #long:-1
+ 51  Region  === 51 46 47  [[ 51 15 59 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:17 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 52  ConL  === 0  [[ 53 ]]  #long:1
+ 53  LShiftL  === _ 52 10  [[ 55 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:14 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 55  AddL  === _ 53 50  [[ 60 ]]  !jvms: TestIfConstantThreshold::mask64 @ bci:16 (line 58) TestIfConstantThreshold::testDifferentThreshold @ bci:12 (line 157)
+ 58  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+ 59  Phi  === 51 60 11  [[ 19 ]]  #long !orig=[57] !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:15 (line 157)
+ 60  AndL  === _ 55 11  [[ 59 ]]  !orig=[57] !jvms: TestIfConstantThreshold::testDifferentThreshold @ bci:15 (line 157)
+2099  949       3       compiler.c2.irTests.TestIfConstantThreshold::testDifferentThreshold (17 bytes)   made not entrant: not used
+2099  981    b  4       compiler.c2.irTests.TestIfConstantThreshold::testDifferentDomain (31 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 50  [[ 0 1 3 24 32 33 48 44 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+  6  Parm  === 3  [[ 50 ]] I_O !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+  7  Parm  === 3  [[ 50 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+  8  Parm  === 3  [[ 50 ]] FramePtr !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+  9  Parm  === 3  [[ 50 ]] ReturnAdr !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+ 10  Parm  === 3  [[ 37 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+ 11  Parm  === 3  [[ 49 45 ]] Parm1: long !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:-1 (line 165)
+ 15  Region  === 15 29 41 40  [[ 15 19 50 ]] 
+ 19  Phi  === 15 32 45 49  [[ 50 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:63
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:3 (line 165)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:3 (line 165)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.700093, C=5375.000000 !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:3 (line 165)
+ 28  IfTrue  === 27  [[ 39 ]] #1 !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:3 (line 165)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:3 (line 165)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 33  ConI  === 0  [[ 37 ]]  #int:64
+ 37  CmpU  === _ 10 33  [[ 38 ]]  !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:16 (line 166)
+ 38  Bool  === _ 37  [[ 39 ]] [lt] !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:16 (line 166)
+ 39  If  === 28 38  [[ 40 41 ]] P=0.357162, C=3763.000000 !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:16 (line 166)
+ 40  IfTrue  === 39  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:16 (line 166)
+ 41  IfFalse  === 39  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:16 (line 166)
+ 44  ConL  === 0  [[ 45 ]]  #long:7
+ 45  AddL  === _ 11 44  [[ 19 ]]  !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:23 (line 166)
+ 48  ConL  === 0  [[ 49 ]]  #long:-11
+ 49  AddL  === _ 11 48  [[ 19 ]]  !jvms: TestIfConstantThreshold::testDifferentDomain @ bci:29 (line 167)
+ 50  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2100  950       3       compiler.c2.irTests.TestIfConstantThreshold::testDifferentDomain (31 bytes)   made not entrant: not used
+2100  982    b  4       compiler.c2.irTests.TestIfConstantThreshold::testIntEndpoints (71 bytes)
+2101  951       3       compiler.c2.irTests.TestIfConstantThreshold::testIntEndpoints (71 bytes)   made not entrant: not used
+2101  983    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntSwapped (34 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 62  [[ 0 1 3 24 60 38 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 62 ]] Control !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+  6  Parm  === 3  [[ 62 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+  7  Parm  === 3  [[ 62 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+  8  Parm  === 3  [[ 62 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+  9  Parm  === 3  [[ 62 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+ 10  Parm  === 3  [[ 30 ]] Parm0: int !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+ 11  Parm  === 3  [[ 61 ]] Parm1: long !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:-1 (line 292)
+ 24  ConI  === 0  [[ 30 ]]  #int:63
+ 30  CmpU  === _ 10 24  [[ 65 ]]  !orig=28 !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:6 (line 292)
+ 38  ConL  === 0  [[ 66 ]]  #long:minlong
+ 60  ConL  === 0  [[ 61 ]]  #long:-11
+ 61  AddL  === _ 11 60  [[ 66 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntSwapped @ bci:32 (line 294)
+ 62  Return  === 5 6 7 8 9 returns 66  [[ 0 ]] 
+ 65  Bool  === _ 30  [[ 66 ]] [gt]
+ 66  CMoveL  === _ 65 61 38  [[ 62 ]]  #long !orig=[64],[19]
+2101  952       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntSwapped (34 bytes)   made not entrant: not used
+2102  984    b  4       compiler.c2.irTests.TestIfConstantThreshold::testIntNegative (27 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 51  [[ 0 1 3 24 32 49 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 51 ]] Control !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+  6  Parm  === 3  [[ 51 ]] I_O !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+  7  Parm  === 3  [[ 51 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+  8  Parm  === 3  [[ 51 ]] FramePtr !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+  9  Parm  === 3  [[ 51 ]] ReturnAdr !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+ 10  Parm  === 3  [[ 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+ 11  Parm  === 3  [[ 50 ]] Parm1: long !jvms: TestIfConstantThreshold::testIntNegative @ bci:-1 (line 180)
+ 24  ConI  === 0  [[ 25 ]]  #int:-2
+ 25  CmpI  === _ 10 24  [[ 54 ]]  !jvms: TestIfConstantThreshold::testIntNegative @ bci:3 (line 180)
+ 32  ConL  === 0  [[ 55 ]]  #long:minlong
+ 49  ConL  === 0  [[ 50 ]]  #long:-11
+ 50  AddL  === _ 11 49  [[ 55 ]]  !jvms: TestIfConstantThreshold::testIntNegative @ bci:25 (line 182)
+ 51  Return  === 5 6 7 8 9 returns 55  [[ 0 ]] 
+ 54  Bool  === _ 25  [[ 55 ]] [gt]
+ 55  CMoveL  === _ 54 50 32  [[ 51 ]]  #long !orig=[53],[19]
+2102  953       3       compiler.c2.irTests.TestIfConstantThreshold::testIntNegative (27 bytes)   made not entrant: not used
+2102  985    b  4       compiler.c2.irTests.TestIfConstantThreshold::testIntZero (25 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 51  [[ 0 1 3 24 32 49 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 51 ]] Control !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+  6  Parm  === 3  [[ 51 ]] I_O !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+  7  Parm  === 3  [[ 51 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+  8  Parm  === 3  [[ 51 ]] FramePtr !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+  9  Parm  === 3  [[ 51 ]] ReturnAdr !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+ 10  Parm  === 3  [[ 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+ 11  Parm  === 3  [[ 50 ]] Parm1: long !jvms: TestIfConstantThreshold::testIntZero @ bci:-1 (line 188)
+ 24  ConI  === 0  [[ 25 ]]  #int:0
+ 25  CmpI  === _ 10 24  [[ 54 ]]  !jvms: TestIfConstantThreshold::testIntZero @ bci:1 (line 188)
+ 32  ConL  === 0  [[ 55 ]]  #long:minlong
+ 49  ConL  === 0  [[ 50 ]]  #long:-11
+ 50  AddL  === _ 11 49  [[ 55 ]]  !jvms: TestIfConstantThreshold::testIntZero @ bci:23 (line 190)
+ 51  Return  === 5 6 7 8 9 returns 55  [[ 0 ]] 
+ 54  Bool  === _ 25  [[ 55 ]] [gt]
+ 55  CMoveL  === _ 54 50 32  [[ 51 ]]  #long !orig=[53],[19]
+2103  954       3       compiler.c2.irTests.TestIfConstantThreshold::testIntZero (25 bytes)   made not entrant: not used
+2103  986    b  4       compiler.c2.irTests.TestIfConstantThreshold::testIntMin (28 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 51  [[ 0 1 3 24 32 49 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+  6  Parm  === 3  [[ 51 ]] I_O !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+  7  Parm  === 3  [[ 51 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+  8  Parm  === 3  [[ 51 ]] FramePtr !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+  9  Parm  === 3  [[ 51 ]] ReturnAdr !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+ 10  Parm  === 3  [[ 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+ 11  Parm  === 3  [[ 50 ]] Parm1: long !jvms: TestIfConstantThreshold::testIntMin @ bci:-1 (line 196)
+ 15  Region  === 15 29 28  [[ 15 19 51 ]] 
+ 19  Phi  === 15 32 50  [[ 51 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:minint
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testIntMin @ bci:3 (line 196)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testIntMin @ bci:3 (line 196)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.050047, C=5375.000000 !jvms: TestIfConstantThreshold::testIntMin @ bci:3 (line 196)
+ 28  IfTrue  === 27  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testIntMin @ bci:3 (line 196)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testIntMin @ bci:3 (line 196)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 49  ConL  === 0  [[ 50 ]]  #long:-11
+ 50  AddL  === _ 11 49  [[ 19 ]]  !jvms: TestIfConstantThreshold::testIntMin @ bci:26 (line 198)
+ 51  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2103  955       3       compiler.c2.irTests.TestIfConstantThreshold::testIntMin (28 bytes)   made not entrant: not used
+2104  987    b  4       compiler.c2.irTests.TestIfConstantThreshold::testIntMax (28 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 51  [[ 0 1 3 24 32 49 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 27 ]] Control !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+  6  Parm  === 3  [[ 51 ]] I_O !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+  7  Parm  === 3  [[ 51 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+  8  Parm  === 3  [[ 51 ]] FramePtr !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+  9  Parm  === 3  [[ 51 ]] ReturnAdr !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+ 10  Parm  === 3  [[ 25 ]] Parm0: int !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+ 11  Parm  === 3  [[ 50 ]] Parm1: long !jvms: TestIfConstantThreshold::testIntMax @ bci:-1 (line 204)
+ 15  Region  === 15 29 28  [[ 15 19 51 ]] 
+ 19  Phi  === 15 32 50  [[ 51 ]]  #long
+ 24  ConI  === 0  [[ 25 ]]  #int:maxint-1
+ 25  CmpI  === _ 10 24  [[ 26 ]]  !jvms: TestIfConstantThreshold::testIntMax @ bci:3 (line 204)
+ 26  Bool  === _ 25  [[ 27 ]] [le] !jvms: TestIfConstantThreshold::testIntMax @ bci:3 (line 204)
+ 27  If  === 5 26  [[ 28 29 ]] P=0.949953, C=5375.000000 !jvms: TestIfConstantThreshold::testIntMax @ bci:3 (line 204)
+ 28  IfTrue  === 27  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testIntMax @ bci:3 (line 204)
+ 29  IfFalse  === 27  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testIntMax @ bci:3 (line 204)
+ 32  ConL  === 0  [[ 19 ]]  #long:minlong
+ 49  ConL  === 0  [[ 50 ]]  #long:-11
+ 50  AddL  === _ 11 49  [[ 19 ]]  !jvms: TestIfConstantThreshold::testIntMax @ bci:26 (line 206)
+ 51  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2104  956       3       compiler.c2.irTests.TestIfConstantThreshold::testIntMax (28 bytes)   made not entrant: not used
+2104  988    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntMask (34 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 56  [[ 0 1 3 24 54 35 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 56 ]] Control !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+  6  Parm  === 3  [[ 56 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+  7  Parm  === 3  [[ 56 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+  8  Parm  === 3  [[ 56 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+  9  Parm  === 3  [[ 56 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+ 10  Parm  === 3  [[ 28 ]] Parm0: int !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+ 11  Parm  === 3  [[ 55 ]] Parm1: long !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:-1 (line 244)
+ 24  ConI  === 0  [[ 28 ]]  #int:63
+ 28  CmpU  === _ 10 24  [[ 59 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:6 (line 244)
+ 35  ConL  === 0  [[ 60 ]]  #long:minlong
+ 54  ConL  === 0  [[ 55 ]]  #long:-11
+ 55  AddL  === _ 11 54  [[ 60 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntMask @ bci:32 (line 246)
+ 56  Return  === 5 6 7 8 9 returns 60  [[ 0 ]] 
+ 59  Bool  === _ 28  [[ 60 ]] [gt]
+ 60  CMoveL  === _ 59 55 35  [[ 56 ]]  #long !orig=[58],[19]
+2105  957       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntMask (34 bytes)   made not entrant: not used
+2105  989    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntSign (34 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 56  [[ 0 1 3 24 54 35 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 56 ]] Control !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+  6  Parm  === 3  [[ 56 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+  7  Parm  === 3  [[ 56 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+  8  Parm  === 3  [[ 56 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+  9  Parm  === 3  [[ 56 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+ 10  Parm  === 3  [[ 28 ]] Parm0: int !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+ 11  Parm  === 3  [[ 55 ]] Parm1: long !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:-1 (line 252)
+ 24  ConI  === 0  [[ 28 ]]  #int:maxint
+ 28  CmpU  === _ 10 24  [[ 59 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:6 (line 252)
+ 35  ConL  === 0  [[ 60 ]]  #long:minlong
+ 54  ConL  === 0  [[ 55 ]]  #long:-11
+ 55  AddL  === _ 11 54  [[ 60 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntSign @ bci:32 (line 254)
+ 56  Return  === 5 6 7 8 9 returns 60  [[ 0 ]] 
+ 59  Bool  === _ 28  [[ 60 ]] [gt]
+ 60  CMoveL  === _ 59 55 35  [[ 56 ]]  #long !orig=[58],[19]
+2106  958       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntSign (34 bytes)   made not entrant: not used
+2106  990    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntMax (33 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 56  [[ 0 1 3 24 54 35 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 11 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:int, 6:long, 7:half}
+  5  Parm  === 3  [[ 30 ]] Control !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+  6  Parm  === 3  [[ 56 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+  7  Parm  === 3  [[ 56 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+  8  Parm  === 3  [[ 56 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+  9  Parm  === 3  [[ 56 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+ 10  Parm  === 3  [[ 28 ]] Parm0: int !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+ 11  Parm  === 3  [[ 55 ]] Parm1: long !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:-1 (line 260)
+ 15  Region  === 15 32 31  [[ 15 19 56 ]] 
+ 19  Phi  === 15 35 55  [[ 56 ]]  #long
+ 24  ConI  === 0  [[ 28 ]]  #int:-2
+ 28  CmpU  === _ 10 24  [[ 29 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:6 (line 260)
+ 29  Bool  === _ 28  [[ 30 ]] [le] !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:6 (line 260)
+ 30  If  === 5 29  [[ 31 32 ]] P=0.949953, C=5375.000000 !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:6 (line 260)
+ 31  IfTrue  === 30  [[ 15 ]] #1 !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:6 (line 260)
+ 32  IfFalse  === 30  [[ 15 ]] #0 !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:6 (line 260)
+ 35  ConL  === 0  [[ 19 ]]  #long:minlong
+ 54  ConL  === 0  [[ 55 ]]  #long:-11
+ 55  AddL  === _ 11 54  [[ 19 ]]  !jvms: TestIfConstantThreshold::testUnsignedIntMax @ bci:31 (line 262)
+ 56  Return  === 15 6 7 8 9 returns 19  [[ 0 ]] 
+2107  959       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedIntMax (33 bytes)   made not entrant: not used
+2122  991    b  3       jdk.internal.reflect.DirectMethodHandleAccessor::checkArgumentCount (53 bytes)
+2124  992    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035190000::invoke (21 bytes)
+2349  993    b  4       java.util.Objects::requireNonNull (15 bytes)
+2350  123       3       java.util.Objects::requireNonNull (15 bytes)   made not entrant: not used
+2360  994    b  3       java.lang.invoke.LambdaForm::prepare (92 bytes)
+2363  997     n 0       jdk.internal.misc.Unsafe::compareAndSetInt (native)   
+2365  995    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::parameterSlot (11 bytes)
+2365 1001     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLIIL)L (native)   (static)
+2366 1003     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLLII)L (native)   
+2366 1002    b  4       java.util.ImmutableCollections$ListN::size (6 bytes)
+2366  998    b  3       java.lang.classfile.TypeKind::from (25 bytes)
+2367 1006     n 0       java.lang.invoke.MethodHandle::linkToSpecial(LLLLIIL)L (native)   (static)
+2367  999    b  3       jdk.internal.classfile.impl.DirectClassBuilder::withMethod (29 bytes)
+2379  488       3       java.util.ImmutableCollections$ListN::size (6 bytes)   made not entrant: not used
+2379 1010     n 0       java.lang.invoke.MethodHandle::invokeBasic(LLII)L (native)   
+2384 1011     n 0       jdk.internal.misc.Unsafe::fullFence (native)   
+2385  996    b  1       jdk.internal.constant.PrimitiveClassDescImpl::isPrimitive (2 bytes)
+2389 1008    b  3       jdk.internal.classfile.impl.DirectCodeBuilder::localAccess (37 bytes)
+2393 1000    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::withCode (22 bytes)
+2393 1015    b  4       jdk.internal.classfile.impl.RawBytecodeHelper::next (81 bytes)
+2394 1005    b  3       jdk.internal.classfile.impl.DirectCodeBuilder$4::writeBody (243 bytes)
+2396   70       3       jdk.internal.classfile.impl.RawBytecodeHelper::next (81 bytes)   made not entrant: not used
+2399 1016    b  3       jdk.internal.classfile.impl.DirectMethodBuilder::parameterSlot (49 bytes)
+2399 1017    b  4       jdk.internal.classfile.impl.SplitConstantPool::tryFindUtf8 (103 bytes)
+2400 1014    b  1       java.util.concurrent.atomic.AtomicInteger::get (5 bytes)
+2400 1013    b  1       java.util.concurrent.locks.AbstractOwnableSynchronizer::setExclusiveOwnerThread (6 bytes)
+2400 1012    b  1       jdk.internal.classfile.impl.UnboundAttribute$UnboundRuntimeVisibleAnnotationsAttribute::annotations (5 bytes)
+2400 1018    b  3       jdk.internal.classfile.impl.StackMapGenerator::processInvokeInstructions (262 bytes)
+2407 1007    b  1       compiler.lib.ir_framework.CompLevel::getValue (5 bytes)
+2407 1019    b  3       jdk.internal.classfile.impl.StackMapGenerator$Type::equals (54 bytes)
+2408 1004    b  1       sun.invoke.util.Wrapper::basicClassDescriptor (5 bytes)
+2408 1009    b  1       java.lang.invoke.MethodHandleNatives::isPullModeBSM (2 bytes)
+2410 1021    b  3       java.lang.invoke.ConstantCallSite::getTarget (20 bytes)
+2411 1020    b  1       compiler.lib.ir_framework.test.DeclaredTest::getCompLevel (5 bytes)
+2415   71       3       jdk.internal.classfile.impl.SplitConstantPool::tryFindUtf8 (103 bytes)   made not entrant: not used
+2417 1022     n 0       java.lang.invoke.MethodHandle::linkToStatic(LLIIL)I (native)   (static)
+2417 1023    b  1       java.util.concurrent.locks.AbstractQueuedSynchronizer::setState (6 bytes)
+2418 1024    b  3       java.lang.Long::compareUnsigned (14 bytes)
+2419 1025    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongMask (35 bytes)
+2420 1026    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongEndpoints (83 bytes)
+2420 1027    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongDifferentDomain (34 bytes)
+2421 1028    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongSwapped (36 bytes)
+2422 1029    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongNegative (32 bytes)
+2422 1030    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongZero (28 bytes)
+2423 1031    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongMin (32 bytes)
+2423 1032    b  3       compiler.c2.irTests.TestIfConstantThreshold::testLongMax (32 bytes)
+2423 1033    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongMask (36 bytes)
+2424 1034    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongSign (36 bytes)
+2424 1035    b  3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongMax (36 bytes)
+2426 1036    b  4       java.lang.Long::compareUnsigned (14 bytes)
+2427 1024       3       java.lang.Long::compareUnsigned (14 bytes)   made not entrant: not used
+2427 1037    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongMask (35 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 61  [[ 0 1 3 25 57 36 53 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 31 ]] Control !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+  6  Parm  === 3  [[ 61 ]] I_O !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+  7  Parm  === 3  [[ 61 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+  8  Parm  === 3  [[ 61 ]] FramePtr !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+  9  Parm  === 3  [[ 61 ]] ReturnAdr !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+ 10  Parm  === 3  [[ 54 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+ 12  Parm  === 3  [[ 60 ]] Parm2: long !jvms: TestIfConstantThreshold::testLongMask @ bci:-1 (line 78)
+ 16  Region  === 16 33 32  [[ 16 20 61 ]] 
+ 20  Phi  === 16 36 60  [[ 61 ]]  #long
+ 25  ConL  === 0  [[ 29 ]]  #long:63
+ 29  CmpL  === _ 10 25  [[ 30 ]]  !jvms: TestIfConstantThreshold::testLongMask @ bci:5 (line 78)
+ 30  Bool  === _ 29  [[ 31 ]] [le] !jvms: TestIfConstantThreshold::testLongMask @ bci:5 (line 78)
+ 31  If  === 5 30  [[ 32 33 ]] P=0.685767, C=5375.000000 !jvms: TestIfConstantThreshold::testLongMask @ bci:5 (line 78)
+ 32  IfTrue  === 31  [[ 16 ]] #1 !jvms: TestIfConstantThreshold::testLongMask @ bci:5 (line 78)
+ 33  IfFalse  === 31  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testLongMask @ bci:5 (line 78)
+ 36  ConL  === 0  [[ 20 ]]  #long:minlong
+ 53  ConL  === 0  [[ 55 ]]  #long:1
+ 54  ConvL2I  === _ 10  [[ 55 ]]  #int !jvms: TestIfConstantThreshold::testLongMask @ bci:29 (line 79)
+ 55  LShiftL  === _ 53 54  [[ 58 ]]  !jvms: TestIfConstantThreshold::testLongMask @ bci:30 (line 79)
+ 57  ConL  === 0  [[ 58 ]]  #long:-1
+ 58  AddL  === _ 55 57  [[ 60 ]]  !jvms: TestIfConstantThreshold::testLongMask @ bci:32 (line 79)
+ 60  AndL  === _ 12 58  [[ 20 ]]  !jvms: TestIfConstantThreshold::testLongMask @ bci:33 (line 79)
+ 61  Return  === 16 6 7 8 9 returns 20  [[ 0 ]] 
+2428 1025       3       compiler.c2.irTests.TestIfConstantThreshold::testLongMask (35 bytes)   made not entrant: not used
+2428 1038    b  3       java.lang.invoke.Invokers::maybeCustomize (5 bytes)
+2439 1039    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongEndpoints (83 bytes)
+2440 1026       3       compiler.c2.irTests.TestIfConstantThreshold::testLongEndpoints (83 bytes)   made not entrant: not used
+2440 1040    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongDifferentDomain (34 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 53  [[ 0 1 3 25 51 36 37 47 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 31 ]] Control !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+  6  Parm  === 3  [[ 53 ]] I_O !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+  7  Parm  === 3  [[ 53 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+  8  Parm  === 3  [[ 53 ]] FramePtr !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+  9  Parm  === 3  [[ 53 ]] ReturnAdr !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+ 10  Parm  === 3  [[ 40 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+ 12  Parm  === 3  [[ 52 48 ]] Parm2: long !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:-1 (line 106)
+ 16  Region  === 16 33 44 43  [[ 16 20 53 ]] 
+ 20  Phi  === 16 36 48 52  [[ 53 ]]  #long
+ 25  ConL  === 0  [[ 29 ]]  #long:63
+ 29  CmpL  === _ 10 25  [[ 30 ]]  !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:5 (line 106)
+ 30  Bool  === _ 29  [[ 31 ]] [le] !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:5 (line 106)
+ 31  If  === 5 30  [[ 32 33 ]] P=0.681302, C=5375.000000 !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:5 (line 106)
+ 32  IfTrue  === 31  [[ 42 ]] #1 !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:5 (line 106)
+ 33  IfFalse  === 31  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:5 (line 106)
+ 36  ConL  === 0  [[ 20 ]]  #long:minlong
+ 37  ConL  === 0  [[ 40 ]]  #long:64
+ 40  CmpUL  === _ 10 37  [[ 41 ]]  !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:19 (line 107)
+ 41  Bool  === _ 40  [[ 42 ]] [lt] !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:19 (line 107)
+ 42  If  === 32 41  [[ 43 44 ]] P=0.332605, C=3662.000000 !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:19 (line 107)
+ 43  IfTrue  === 42  [[ 16 ]] #1 !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:19 (line 107)
+ 44  IfFalse  === 42  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:19 (line 107)
+ 47  ConL  === 0  [[ 48 ]]  #long:7
+ 48  AddL  === _ 12 47  [[ 20 ]]  !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:26 (line 107)
+ 51  ConL  === 0  [[ 52 ]]  #long:-11
+ 52  AddL  === _ 12 51  [[ 20 ]]  !jvms: TestIfConstantThreshold::testLongDifferentDomain @ bci:32 (line 108)
+ 53  Return  === 16 6 7 8 9 returns 20  [[ 0 ]] 
+2441 1027       3       compiler.c2.irTests.TestIfConstantThreshold::testLongDifferentDomain (34 bytes)   made not entrant: not used
+2441 1041    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongSwapped (36 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 63  [[ 0 1 3 25 61 39 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 63 ]] Control !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+  6  Parm  === 3  [[ 63 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+  7  Parm  === 3  [[ 63 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+  8  Parm  === 3  [[ 63 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+  9  Parm  === 3  [[ 63 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+ 10  Parm  === 3  [[ 31 ]] Parm0: long !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+ 12  Parm  === 3  [[ 62 ]] Parm2: long !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:-1 (line 300)
+ 25  ConL  === 0  [[ 31 ]]  #long:63
+ 31  CmpUL  === _ 10 25  [[ 66 ]]  !orig=29 !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:7 (line 300)
+ 39  ConL  === 0  [[ 67 ]]  #long:minlong
+ 61  ConL  === 0  [[ 62 ]]  #long:-11
+ 62  AddL  === _ 12 61  [[ 67 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongSwapped @ bci:34 (line 302)
+ 63  Return  === 5 6 7 8 9 returns 67  [[ 0 ]] 
+ 66  Bool  === _ 31  [[ 67 ]] [gt]
+ 67  CMoveL  === _ 66 62 39  [[ 63 ]]  #long !orig=[65],[20]
+2442 1028       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongSwapped (36 bytes)   made not entrant: not used
+2442 1042    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongNegative (32 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 57  [[ 0 1 3 25 55 36 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 57 ]] Control !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+  6  Parm  === 3  [[ 57 ]] I_O !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+  7  Parm  === 3  [[ 57 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+  8  Parm  === 3  [[ 57 ]] FramePtr !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+  9  Parm  === 3  [[ 57 ]] ReturnAdr !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+ 12  Parm  === 3  [[ 56 ]] Parm2: long !jvms: TestIfConstantThreshold::testLongNegative @ bci:-1 (line 212)
+ 25  ConL  === 0  [[ 29 ]]  #long:-2
+ 29  CmpL  === _ 10 25  [[ 60 ]]  !jvms: TestIfConstantThreshold::testLongNegative @ bci:5 (line 212)
+ 36  ConL  === 0  [[ 61 ]]  #long:minlong
+ 55  ConL  === 0  [[ 56 ]]  #long:-11
+ 56  AddL  === _ 12 55  [[ 61 ]]  !jvms: TestIfConstantThreshold::testLongNegative @ bci:30 (line 214)
+ 57  Return  === 5 6 7 8 9 returns 61  [[ 0 ]] 
+ 60  Bool  === _ 29  [[ 61 ]] [gt]
+ 61  CMoveL  === _ 60 56 36  [[ 57 ]]  #long !orig=[59],[20]
+2443 1029       3       compiler.c2.irTests.TestIfConstantThreshold::testLongNegative (32 bytes)   made not entrant: not used
+2443 1043    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongZero (28 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 57  [[ 0 1 3 25 55 36 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 57 ]] Control !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+  6  Parm  === 3  [[ 57 ]] I_O !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+  7  Parm  === 3  [[ 57 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+  8  Parm  === 3  [[ 57 ]] FramePtr !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+  9  Parm  === 3  [[ 57 ]] ReturnAdr !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+ 12  Parm  === 3  [[ 56 ]] Parm2: long !jvms: TestIfConstantThreshold::testLongZero @ bci:-1 (line 220)
+ 25  ConL  === 0  [[ 29 ]]  #long:0
+ 29  CmpL  === _ 10 25  [[ 60 ]]  !jvms: TestIfConstantThreshold::testLongZero @ bci:3 (line 220)
+ 36  ConL  === 0  [[ 61 ]]  #long:minlong
+ 55  ConL  === 0  [[ 56 ]]  #long:-11
+ 56  AddL  === _ 12 55  [[ 61 ]]  !jvms: TestIfConstantThreshold::testLongZero @ bci:26 (line 222)
+ 57  Return  === 5 6 7 8 9 returns 61  [[ 0 ]] 
+ 60  Bool  === _ 29  [[ 61 ]] [gt]
+ 61  CMoveL  === _ 60 56 36  [[ 57 ]]  #long !orig=[59],[20]
+2443 1030       3       compiler.c2.irTests.TestIfConstantThreshold::testLongZero (28 bytes)   made not entrant: not used
+2444 1044    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongMin (32 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 56  [[ 0 1 3 25 54 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 31 ]] Control !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+  6  Parm  === 3  [[ 56 ]] I_O !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+  7  Parm  === 3  [[ 56 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+  8  Parm  === 3  [[ 56 ]] FramePtr !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+  9  Parm  === 3  [[ 56 ]] ReturnAdr !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+ 12  Parm  === 3  [[ 55 ]] Parm2: long !jvms: TestIfConstantThreshold::testLongMin @ bci:-1 (line 228)
+ 16  Region  === 16 33 32  [[ 16 20 56 ]] 
+ 20  Phi  === 16 25 55  [[ 56 ]]  #long
+ 25  ConL  === 0  [[ 29 20 ]]  #long:minlong
+ 29  CmpL  === _ 10 25  [[ 30 ]]  !jvms: TestIfConstantThreshold::testLongMin @ bci:5 (line 228)
+ 30  Bool  === _ 29  [[ 31 ]] [le] !jvms: TestIfConstantThreshold::testLongMin @ bci:5 (line 228)
+ 31  If  === 5 30  [[ 32 33 ]] P=0.045581, C=5375.000000 !jvms: TestIfConstantThreshold::testLongMin @ bci:5 (line 228)
+ 32  IfTrue  === 31  [[ 16 ]] #1 !jvms: TestIfConstantThreshold::testLongMin @ bci:5 (line 228)
+ 33  IfFalse  === 31  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testLongMin @ bci:5 (line 228)
+ 54  ConL  === 0  [[ 55 ]]  #long:-11
+ 55  AddL  === _ 12 54  [[ 20 ]]  !jvms: TestIfConstantThreshold::testLongMin @ bci:30 (line 230)
+ 56  Return  === 16 6 7 8 9 returns 20  [[ 0 ]] 
+2444 1031       3       compiler.c2.irTests.TestIfConstantThreshold::testLongMin (32 bytes)   made not entrant: not used
+2445 1045    b  4       compiler.c2.irTests.TestIfConstantThreshold::testLongMax (32 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 57  [[ 0 1 3 25 55 36 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 31 ]] Control !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+  6  Parm  === 3  [[ 57 ]] I_O !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+  7  Parm  === 3  [[ 57 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+  8  Parm  === 3  [[ 57 ]] FramePtr !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+  9  Parm  === 3  [[ 57 ]] ReturnAdr !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+ 12  Parm  === 3  [[ 56 ]] Parm2: long !jvms: TestIfConstantThreshold::testLongMax @ bci:-1 (line 236)
+ 16  Region  === 16 33 32  [[ 16 20 57 ]] 
+ 20  Phi  === 16 36 56  [[ 57 ]]  #long
+ 25  ConL  === 0  [[ 29 ]]  #long:maxlong-1
+ 29  CmpL  === _ 10 25  [[ 30 ]]  !jvms: TestIfConstantThreshold::testLongMax @ bci:5 (line 236)
+ 30  Bool  === _ 29  [[ 31 ]] [le] !jvms: TestIfConstantThreshold::testLongMax @ bci:5 (line 236)
+ 31  If  === 5 30  [[ 32 33 ]] P=0.954419, C=5375.000000 !jvms: TestIfConstantThreshold::testLongMax @ bci:5 (line 236)
+ 32  IfTrue  === 31  [[ 16 ]] #1 !jvms: TestIfConstantThreshold::testLongMax @ bci:5 (line 236)
+ 33  IfFalse  === 31  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testLongMax @ bci:5 (line 236)
+ 36  ConL  === 0  [[ 20 ]]  #long:minlong
+ 55  ConL  === 0  [[ 56 ]]  #long:-11
+ 56  AddL  === _ 12 55  [[ 20 ]]  !jvms: TestIfConstantThreshold::testLongMax @ bci:30 (line 238)
+ 57  Return  === 16 6 7 8 9 returns 20  [[ 0 ]] 
+2445 1032       3       compiler.c2.irTests.TestIfConstantThreshold::testLongMax (32 bytes)   made not entrant: not used
+2446 1046    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongMask (36 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 57  [[ 0 1 3 25 55 36 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 57 ]] Control !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+  6  Parm  === 3  [[ 57 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+  7  Parm  === 3  [[ 57 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+  8  Parm  === 3  [[ 57 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+  9  Parm  === 3  [[ 57 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+ 12  Parm  === 3  [[ 56 ]] Parm2: long !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:-1 (line 268)
+ 25  ConL  === 0  [[ 29 ]]  #long:63
+ 29  CmpUL  === _ 10 25  [[ 60 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:7 (line 268)
+ 36  ConL  === 0  [[ 61 ]]  #long:minlong
+ 55  ConL  === 0  [[ 56 ]]  #long:-11
+ 56  AddL  === _ 12 55  [[ 61 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongMask @ bci:34 (line 270)
+ 57  Return  === 5 6 7 8 9 returns 61  [[ 0 ]] 
+ 60  Bool  === _ 29  [[ 61 ]] [gt]
+ 61  CMoveL  === _ 60 56 36  [[ 57 ]]  #long !orig=[59],[20]
+2446 1033       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongMask (36 bytes)   made not entrant: not used
+2446 1047    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongSign (36 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 56  [[ 0 1 3 25 54 36 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 56 ]] Control !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+  6  Parm  === 3  [[ 56 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+  7  Parm  === 3  [[ 56 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+  8  Parm  === 3  [[ 56 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+  9  Parm  === 3  [[ 56 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+ 12  Parm  === 3  [[ 55 ]] Parm2: long !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:-1 (line 276)
+ 25  ConL  === 0  [[ 29 ]]  #long:maxlong
+ 29  CmpUL  === _ 10 25  [[ 59 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:7 (line 276)
+ 36  ConL  === 0  [[ 60 ]]  #long:minlong
+ 54  ConL  === 0  [[ 55 ]]  #long:-11
+ 55  AddL  === _ 12 54  [[ 60 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongSign @ bci:34 (line 278)
+ 56  Return  === 5 6 7 8 9 returns 60  [[ 0 ]] 
+ 59  Bool  === _ 29  [[ 60 ]] [gt]
+ 60  CMoveL  === _ 59 55 36  [[ 56 ]]  #long !orig=[58],[20]
+2447 1034       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongSign (36 bytes)   made not entrant: not used
+2447 1048    b  4       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongMax (36 bytes)
+AFTER: PrintIdeal
+  0  Root  === 0 57  [[ 0 1 3 25 55 36 ]] inner 
+  1  Con  === 0  [[ ]]  #top
+  3  Start  === 3 0  [[ 3 5 6 7 8 9 10 12 ]]  #{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address, 5:long, 6:half, 7:long, 8:half}
+  5  Parm  === 3  [[ 31 ]] Control !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+  6  Parm  === 3  [[ 57 ]] I_O !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+  7  Parm  === 3  [[ 57 ]] Memory  Memory: @ptr:BotPTR+bot, idx=Bot; !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+  8  Parm  === 3  [[ 57 ]] FramePtr !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+  9  Parm  === 3  [[ 57 ]] ReturnAdr !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+ 10  Parm  === 3  [[ 29 ]] Parm0: long !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+ 12  Parm  === 3  [[ 56 ]] Parm2: long !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:-1 (line 284)
+ 16  Region  === 16 33 32  [[ 16 20 57 ]] 
+ 20  Phi  === 16 36 56  [[ 57 ]]  #long
+ 25  ConL  === 0  [[ 29 ]]  #long:-2
+ 29  CmpUL  === _ 10 25  [[ 30 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:7 (line 284)
+ 30  Bool  === _ 29  [[ 31 ]] [le] !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:7 (line 284)
+ 31  If  === 5 30  [[ 32 33 ]] P=0.954605, C=5375.000000 !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:7 (line 284)
+ 32  IfTrue  === 31  [[ 16 ]] #1 !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:7 (line 284)
+ 33  IfFalse  === 31  [[ 16 ]] #0 !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:7 (line 284)
+ 36  ConL  === 0  [[ 20 ]]  #long:minlong
+ 55  ConL  === 0  [[ 56 ]]  #long:-11
+ 56  AddL  === _ 12 55  [[ 20 ]]  !jvms: TestIfConstantThreshold::testUnsignedLongMax @ bci:34 (line 286)
+ 57  Return  === 16 6 7 8 9 returns 20  [[ 0 ]] 
+2448 1035       3       compiler.c2.irTests.TestIfConstantThreshold::testUnsignedLongMax (36 bytes)   made not entrant: not used
+2453 1049    b  3       java.lang.invoke.LambdaForm$MH/0x0000000035197400::invoke (21 bytes)
+2514 1050    b  1       compiler.lib.ir_framework.test.DeclaredTest::getTestMethod (5 bytes)
+2526 1051    b  1       java.util.concurrent.locks.AbstractQueuedSynchronizer::getState (5 bytes)
+2526 1052    b  1       java.util.concurrent.locks.AbstractOwnableSynchronizer::getExclusiveOwnerThread (5 bytes)
+

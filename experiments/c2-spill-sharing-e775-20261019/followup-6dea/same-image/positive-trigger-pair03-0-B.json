@@ -1,0 +1,67 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.TriggerBench.kernel",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/diag-v/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on",
+            "-XX:CompileCommandFile=/workspace/work/spill-sharing/followup/toggle-directives/positive-trigger-B.txt",
+            "-XX:+UseFPUForSpilling",
+            "-XX:CompileCommand=dontinline,experiment.TestSharedSpillSharingTrigger::kernel",
+            "-XX:CompileCommand=dontinline,experiment.TestSharedSpillSharingTrigger::barrier",
+            "-XX:CompileCommand=exclude,experiment.TestSharedSpillSharingTrigger::reference"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 4.794651582652321E7,
+            "scoreError" : 2151067.385834872,
+            "scoreConfidence" : [
+                4.5795448440688334E7,
+                5.009758321235808E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 4.7306734729931004E7,
+                "50.0" : 4.812728031928385E7,
+                "90.0" : 4.86544030172249E7,
+                "95.0" : 4.86544030172249E7,
+                "99.0" : 4.86544030172249E7,
+                "99.9" : 4.86544030172249E7,
+                "99.99" : 4.86544030172249E7,
+                "99.999" : 4.86544030172249E7,
+                "99.9999" : 4.86544030172249E7,
+                "100.0" : 4.86544030172249E7
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    4.7306734729931004E7,
+                    4.81923378755665E7,
+                    4.86544030172249E7,
+                    4.812728031928385E7,
+                    4.74518231906098E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/workspace/toolchains/jdk27/bin/java",
+    "-jar",
+    "/workspace/toolchains/jtreg83/lib/jtreg.jar",
+    "-jdk:/workspace/work/spill-sharing/images/toggle-fastdebug",
+    "-vmoption:-XX:CompileCommandFile=/workspace/work/spill-sharing/followup/toggle-directives/state-negative.txt",
+    "-w:/workspace/work/spill-sharing/followup/jtreg-activation-negative-work",
+    "-r:/workspace/work/spill-sharing/followup/jtreg-activation-negative-report",
+    "test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingState.java"
+  ],
+  "expected_nonzero_exit": 2,
+  "expected_failure": "No positive unexhausted rewrite in exercised C2 compilation",
+  "child_state_checks_passed": true,
+  "no_rewrite": true
+}

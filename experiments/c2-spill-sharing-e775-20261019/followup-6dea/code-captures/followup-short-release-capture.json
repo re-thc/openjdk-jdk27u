@@ -1,0 +1,62 @@
+[
+  {
+    "corpus": "source",
+    "command": [
+      "/workspace/work/spill-sharing/images/test-s/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Xbatch",
+      "-XX:CICompilerCount=2",
+      "-Xshare:on",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:PrintAssemblyOptions=intel",
+      "-XX:CompileCommand=print,dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+      "-XX:CompileCommand=print,dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "DecodeCapture",
+      "/workspace/work/spill-sharing/corpus/source.bin",
+      "/workspace/work/spill-sharing/corpus/source.zst",
+      "2000"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/followup-short-release-source.log",
+    "activation": [],
+    "libjvm_sha256": "dc55d5ce2e0882ffe5915c792736d14319ef79205ff6f250bef6080d2cff207c"
+  },
+  {
+    "corpus": "dense",
+    "command": [
+      "/workspace/work/spill-sharing/images/test-s/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Xbatch",
+      "-XX:CICompilerCount=2",
+      "-Xshare:on",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:PrintAssemblyOptions=intel",
+      "-XX:CompileCommand=print,dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+      "-XX:CompileCommand=print,dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "DecodeCapture",
+      "/workspace/work/spill-sharing/corpus/dense.bin",
+      "/workspace/work/spill-sharing/corpus/dense.zst",
+      "2000"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/followup-short-release-dense.log",
+    "activation": [],
+    "libjvm_sha256": "dc55d5ce2e0882ffe5915c792736d14319ef79205ff6f250bef6080d2cff207c"
+  }
+]

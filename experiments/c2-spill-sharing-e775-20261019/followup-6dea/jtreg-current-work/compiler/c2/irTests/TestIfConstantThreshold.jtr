@@ -1,0 +1,166 @@
+#Test Results (version 2)
+#Mon Oct 19 02:22:34 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=driver
+library=/test/lib /
+requires=vm.compiler2.enabled
+run=USER_SPECIFIED driver compiler.c2.irTests.TestIfConstantThreshold\n
+source=TestIfConstantThreshold.java
+title=Equivalent finite integer thresholds should share a comparison
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+elapsed=12903 0\:00\:12.903
+end=Mon Oct 19 02\:22\:34 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile driver
+start=Mon Oct 19 02\:22\:21 UTC 2026
+test=compiler/c2/irTests/TestIfConstantThreshold.java
+testJDK=/workspace/work/spill-sharing/images/current-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=12904
+user.name=agent
+work=/workspace/work/spill-sharing/followup/jtreg-current-work/compiler/c2/irTests
+
+#section:script_messages
+----------messages:(10/757)----------
+JDK under test: /workspace/work/spill-sharing/images/current-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/lib
+   class directory: /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib
+Library /; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/hotspot/jtreg
+   class directory: /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d
+
+#section:build
+----------messages:(7/284)----------
+command: build compiler.c2.irTests.TestIfConstantThreshold
+reason: Named class compiled on demand
+started: Mon Oct 19 02:22:21.637 UTC 2026
+Test directory:
+  compile: compiler.c2.irTests.TestIfConstantThreshold
+finished: Mon Oct 19 02:22:31.216 UTC 2026
+elapsed time (seconds): 9.579
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/316)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 02:22:21.645 UTC 2026
+Mode: othervm
+Process id: 519493
+finished: Mon Oct 19 02:22:31.216 UTC 2026
+elapsed time (seconds): 9.571
+----------configuration:(8/596)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests
+               /workspace/work/spill-sharing/v5/test/lib
+               /workspace/work/spill-sharing/v5/test/hotspot/jtreg
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib
+
+----------rerun:(25/2497)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -J-Dtest.main.class=compiler.c2.irTests.TestIfConstantThreshold \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -d /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(7/295)----------
+command: driver compiler.c2.irTests.TestIfConstantThreshold
+reason: User specified action: run driver compiler.c2.irTests.TestIfConstantThreshold 
+started: Mon Oct 19 02:22:31.216 UTC 2026
+Mode: othervm
+Process id: 519668
+finished: Mon Oct 19 02:22:34.409 UTC 2026
+elapsed time (seconds): 3.193
+----------configuration:(0/0)----------
+----------System.out:(13/2894)----------
+Run Flag VM:
+Command line: [/workspace/work/spill-sharing/images/current-fastdebug/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug -Djava.library.path=. -cp /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.lib.ir_framework.flag.FlagVM compiler.c2.irTests.TestIfConstantThreshold ]
+[2026-10-19T02:22:31.670533290Z] Gathering output for process 519690
+[2026-10-19T02:22:31.707423989Z] Waiting for completion for process 519690
+[2026-10-19T02:22:32.028716264Z] Waiting for completion finished for process 519690
+Output and diagnostic info for process 519690 was saved into 'pid-519690-output.log'
+Run Test VM:
+Command line: [/workspace/work/spill-sharing/images/current-fastdebug/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Djava.library.path=. -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Dir.framework.server.port=34357 -XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+LogCompilation -XX:CompilerDirectivesFile=test-vm-compile-commands-pid-519690.log -XX:CompilerDirectivesLimit=281 -XX:-OmitStackTraceInFastThrow -DShouldDoIRVerification=true -XX:-BackgroundCompilation -XX:CompileCommand=quiet compiler.lib.ir_framework.test.TestVM compiler.c2.irTests.TestIfConstantThreshold ]
+[2026-10-19T02:22:32.090029593Z] Gathering output for process 519713
+[2026-10-19T02:22:32.093267904Z] Waiting for completion for process 519713
+[2026-10-19T02:22:34.012256310Z] Waiting for completion finished for process 519713
+Output and diagnostic info for process 519713 was saved into 'pid-519713-output.log'
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(24/2395)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -Dtest.main.class=compiler.c2.irTests.TestIfConstantThreshold \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/followup/jtreg-current-work/compiler/c2/irTests/TestIfConstantThreshold.d/driver.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

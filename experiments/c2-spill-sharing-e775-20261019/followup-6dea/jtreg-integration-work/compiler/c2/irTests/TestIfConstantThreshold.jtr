@@ -1,0 +1,191 @@
+#Test Results (version 2)
+#Mon Oct 19 02:08:53 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=driver
+library=/test/lib /
+requires=vm.compiler2.enabled
+run=USER_SPECIFIED driver compiler.c2.irTests.TestIfConstantThreshold\n
+source=TestIfConstantThreshold.java
+title=Equivalent finite integer thresholds should share a comparison
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+elapsed=12817 0\:00\:12.817
+end=Mon Oct 19 02\:08\:53 UTC 2026
+environment=regtest
+execStatus=Failed. Execution failed\: `main' threw exception\: compiler.lib.ir_framework.shared.TestFrameworkException\: Internal Test Framework exception - please file a bug\: Failed to create TestFramework server socket
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile driver
+start=Mon Oct 19 02\:08\:40 UTC 2026
+test=compiler/c2/irTests/TestIfConstantThreshold.java
+testJDK=/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=12819
+user.name=agent
+work=/workspace/work/spill-sharing/followup/jtreg-integration-work/compiler/c2/irTests
+
+#section:script_messages
+----------messages:(10/767)----------
+JDK under test: /workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode)
+Library /test/lib; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/lib
+   class directory: /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib
+Library /; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/hotspot/jtreg
+   class directory: /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d
+
+#section:build
+----------messages:(7/285)----------
+command: build compiler.c2.irTests.TestIfConstantThreshold
+reason: Named class compiled on demand
+started: Mon Oct 19 02:08:41.347 UTC 2026
+Test directory:
+  compile: compiler.c2.irTests.TestIfConstantThreshold
+finished: Mon Oct 19 02:08:52.180 UTC 2026
+elapsed time (seconds): 10.833
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/317)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 02:08:41.354 UTC 2026
+Mode: othervm
+Process id: 496859
+finished: Mon Oct 19 02:08:52.179 UTC 2026
+elapsed time (seconds): 10.825
+----------configuration:(8/604)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests
+               /workspace/work/spill-sharing/v5/test/lib
+               /workspace/work/spill-sharing/v5/test/hotspot/jtreg
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests
+               /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d
+               /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib
+
+----------rerun:(25/2562)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-integration-work/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -J-Dtest.main.class=compiler.c2.irTests.TestIfConstantThreshold \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -d /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(7/295)----------
+command: driver compiler.c2.irTests.TestIfConstantThreshold
+reason: User specified action: run driver compiler.c2.irTests.TestIfConstantThreshold 
+started: Mon Oct 19 02:08:52.180 UTC 2026
+Mode: othervm
+Process id: 497027
+finished: Mon Oct 19 02:08:53.801 UTC 2026
+elapsed time (seconds): 1.621
+----------configuration:(0/0)----------
+----------System.out:(8/1554)----------
+Run Flag VM:
+Command line: [/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Dtest.jdk=/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk -Djava.library.path=. -cp /workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.lib.ir_framework.flag.FlagVM compiler.c2.irTests.TestIfConstantThreshold ]
+[2026-10-19T02:08:53.023224327Z] Gathering output for process 497052
+[2026-10-19T02:08:53.102596600Z] Waiting for completion for process 497052
+[2026-10-19T02:08:53.674413036Z] Waiting for completion finished for process 497052
+Output and diagnostic info for process 497052 was saved into 'pid-497052-output.log'
+Run Test VM:
+
+----------System.err:(31/2219)----------
+compiler.lib.ir_framework.shared.TestFrameworkException: Internal Test Framework exception - please file a bug:
+Failed to create TestFramework server socket
+	at compiler.lib.ir_framework.shared.TestFrameworkSocket.<init>(TestFrameworkSocket.java:60)
+	at compiler.lib.ir_framework.driver.TestVMProcess.<init>(TestVMProcess.java:69)
+	at compiler.lib.ir_framework.TestFramework.runTestVM(TestFramework.java:882)
+	at compiler.lib.ir_framework.TestFramework.start(TestFramework.java:842)
+	at compiler.lib.ir_framework.TestFramework.start(TestFramework.java:434)
+	at compiler.lib.ir_framework.TestFramework.run(TestFramework.java:237)
+	at compiler.lib.ir_framework.TestFramework.run(TestFramework.java:226)
+	at compiler.c2.irTests.TestIfConstantThreshold.main(TestIfConstantThreshold.java:53)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:583)
+	at com.sun.javatest.regtest.agent.MainMethodHelper.executeModernMainClass(MainMethodHelper.java:56)
+	at com.sun.javatest.regtest.agent.MainWrapper$MainTask.run(MainWrapper.java:140)
+	at java.base/java.lang.Thread.run(Thread.java:1527)
+Caused by: java.net.SocketException: Operation not permitted
+	at java.base/sun.nio.ch.Net.socket0(Native Method)
+	at java.base/sun.nio.ch.Net.serverSocket(Net.java:507)
+	at java.base/sun.nio.ch.Net.serverSocket(Net.java:501)
+	at java.base/sun.nio.ch.NioSocketImpl.create(NioSocketImpl.java:477)
+	at java.base/java.net.ServerSocket.getImpl(ServerSocket.java:255)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:325)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:284)
+	at compiler.lib.ir_framework.shared.TestFrameworkSocket.<init>(TestFrameworkSocket.java:58)
+	... 12 more
+
+JavaTest Message: Test threw exception: compiler.lib.ir_framework.shared.TestFrameworkException: Internal Test Framework exception - please file a bug:
+Failed to create TestFramework server socket
+JavaTest Message: shutting down test
+
+STATUS:Failed.`main' threw exception: compiler.lib.ir_framework.shared.TestFrameworkException: Internal Test Framework exception - please file a bug: Failed to create TestFramework server socket
+----------rerun:(24/2460)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-integration-work/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/v5/build/spill-master-fastdebug/jdk \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests/TestIfConstantThreshold.java \\
+        -Dtest.main.class=compiler.c2.irTests.TestIfConstantThreshold \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/c2/irTests:/workspace/work/spill-sharing/v5/test/lib:/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d/test/lib:/workspace/work/spill-sharing/followup/jtreg-integration-work/classes/0/compiler/c2/irTests/TestIfConstantThreshold.d \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/followup/jtreg-integration-work/compiler/c2/irTests/TestIfConstantThreshold.d/driver.0.jta
+result: Failed. Execution failed: `main' threw exception: compiler.lib.ir_framework.shared.TestFrameworkException: Internal Test Framework exception - please file a bug: Failed to create TestFramework server socket
+
+
+test result: Failed. Execution failed: `main' threw exception: compiler.lib.ir_framework.shared.TestFrameworkException: Internal Test Framework exception - please file a bug: Failed to create TestFramework server socket

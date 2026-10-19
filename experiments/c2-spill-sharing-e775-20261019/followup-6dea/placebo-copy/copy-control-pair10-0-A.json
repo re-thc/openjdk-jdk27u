@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/diag-v/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on",
+            "-XX:CompileCommandFile=/workspace/work/spill-sharing/followup/toggle-directives/copy-control-B.txt"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 29381.332208042615,
+            "scoreError" : 6860.331946131449,
+            "scoreConfidence" : [
+                22521.000261911166,
+                36241.66415417406
+            ],
+            "scorePercentiles" : {
+                "0.0" : 26968.673690105345,
+                "50.0" : 29811.20018087461,
+                "90.0" : 31323.092109519846,
+                "95.0" : 31323.092109519846,
+                "99.0" : 31323.092109519846,
+                "99.9" : 31323.092109519846,
+                "99.99" : 31323.092109519846,
+                "99.999" : 31323.092109519846,
+                "99.9999" : 31323.092109519846,
+                "100.0" : 31323.092109519846
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    30610.049681832297,
+                    31323.092109519846,
+                    29811.20018087461,
+                    26968.673690105345,
+                    28193.64537788099
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

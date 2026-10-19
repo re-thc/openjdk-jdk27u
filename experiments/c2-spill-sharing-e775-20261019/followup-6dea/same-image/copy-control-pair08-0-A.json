@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/diag-v/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on",
+            "-XX:CompileCommandFile=/workspace/work/spill-sharing/followup/toggle-directives/copy-control-A.txt"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 32753.07830507413,
+            "scoreError" : 3977.7909071694585,
+            "scoreConfidence" : [
+                28775.28739790467,
+                36730.86921224359
+            ],
+            "scorePercentiles" : {
+                "0.0" : 31599.36092682179,
+                "50.0" : 33295.37497300281,
+                "90.0" : 33811.317990307325,
+                "95.0" : 33811.317990307325,
+                "99.0" : 33811.317990307325,
+                "99.9" : 33811.317990307325,
+                "99.99" : 33811.317990307325,
+                "99.999" : 33811.317990307325,
+                "99.9999" : 33811.317990307325,
+                "100.0" : 33811.317990307325
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    31685.96441688786,
+                    31599.36092682179,
+                    33373.37321835087,
+                    33811.317990307325,
+                    33295.37497300281
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

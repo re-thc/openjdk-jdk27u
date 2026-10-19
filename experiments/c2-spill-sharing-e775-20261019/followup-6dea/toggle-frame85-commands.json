@@ -1,0 +1,44 @@
+[
+  {
+    "arm": "A",
+    "command": [
+      "/workspace/work/spill-sharing/images/diag-v/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Xshare:on",
+      "-Xbatch",
+      "-XX:-TieredCompilation",
+      "-XX:CompileCommandFile=/workspace/work/spill-sharing/followup/toggle-directives/decode-source-A.txt",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "DecodeOverlayCheck",
+      "/workspace/work/spill-sharing/corpus/frames.tsv"
+    ],
+    "exit_code": 0
+  },
+  {
+    "arm": "B",
+    "command": [
+      "/workspace/work/spill-sharing/images/diag-v/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Xshare:on",
+      "-Xbatch",
+      "-XX:-TieredCompilation",
+      "-XX:CompileCommandFile=/workspace/work/spill-sharing/followup/toggle-directives/decode-source-B.txt",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "DecodeOverlayCheck",
+      "/workspace/work/spill-sharing/corpus/frames.tsv"
+    ],
+    "exit_code": 0
+  }
+]

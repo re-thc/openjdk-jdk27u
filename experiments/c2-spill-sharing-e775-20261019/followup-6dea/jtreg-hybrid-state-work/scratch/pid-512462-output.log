@@ -1,0 +1,10 @@
+--- ProcessLog ---
+cmd: /workspace/work/spill-sharing/images/hybrid-fastdebug/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-hybrid-state-work/classes/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-hybrid-state-work/classes/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Xbatch -Xshare:off -XX:+UnlockDiagnosticVMOptions -XX:+VerifyRegisterAllocator -XX:-OmitStackTraceInFastThrow -XX:+UseBMI2Instructions -XX:+UseFPUForSpilling -XX:CompileCommand=dontinline,TestSharedSpillLoads::kernel* -XX:CompileCommand=dontinline,TestSharedSpillLoads::cold -XX:CompileCommand=exclude,TestSharedSpillLoads::reference TestSharedSpillLoads
+exitvalue: 0
+stderr: 
+stdout: CompileCommand: dontinline TestSharedSpillLoads.kernel* bool dontinline = true
+CompileCommand: dontinline TestSharedSpillLoads.cold bool dontinline = true
+CompileCommand: exclude TestSharedSpillLoads.reference intx exclude = 1111
+generated accumulator oracle checks=120 sink=1430026939510651243
+alias checks=80 boundary-and-complete-output checks=60
+

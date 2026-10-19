@@ -1,0 +1,38 @@
+{
+  "command": [
+    "/workspace/work/spill-sharing/images/current-fastdebug/bin/java",
+    "-Xbootclasspath/a:/workspace/work/spill-sharing/focused-master-classes",
+    "-cp",
+    "/workspace/work/spill-sharing/followup/jtreg-state-v2-work/classes/compiler/regalloc/TestSharedSpillSharingState.d",
+    "-Xbatch",
+    "-Xshare:off",
+    "-XX:-UseOnStackReplacement",
+    "-XX:+UnlockDiagnosticVMOptions",
+    "-XX:+WhiteBoxAPI",
+    "-XX:+UseSerialGC",
+    "-Xms128m",
+    "-Xmx128m",
+    "-XX:+VerifyRegisterAllocator",
+    "-XX:+VerifyOops",
+    "-XX:+VerifyBeforeGC",
+    "-XX:+VerifyAfterGC",
+    "-XX:-OmitStackTraceInFastThrow",
+    "-XX:+UseBMI2Instructions",
+    "-XX:-UseFPUForSpilling",
+    "-XX:CompileCommand=compileonly,TestSharedSpillSharingState$Worker::kernel",
+    "-XX:CompileCommand=dontinline,TestSharedSpillSharingState$Worker::barrier",
+    "-XX:CompileCommand=TraceSpilling,TestSharedSpillSharingState$Worker::kernel",
+    "TestSharedSpillSharingState$Worker"
+  ],
+  "exit_code": 0,
+  "summaries": [
+    "SHARED_RELOAD_SUMMARY compile_id=11  TestSharedSpillSharingState$Worker::kernel accepted=8 work=20332 nodes=534 ranges=374 exhausted=0",
+    "SHARED_RELOAD_SUMMARY compile_id=32  TestSharedSpillSharingState$Worker::kernel accepted=8 work=20332 nodes=534 ranges=374 exhausted=0",
+    "SHARED_RELOAD_SUMMARY compile_id=37  TestSharedSpillSharingState$Worker::kernel accepted=8 work=20332 nodes=534 ranges=374 exhausted=0",
+    "SHARED_RELOAD_SUMMARY compile_id=38  TestSharedSpillSharingState$Worker::kernel accepted=8 work=17573 nodes=859 ranges=441 exhausted=0",
+    "SHARED_RELOAD_SUMMARY compile_id=39  TestSharedSpillSharingState$Worker::kernel accepted=8 work=17591 nodes=861 ranges=443 exhausted=0",
+    "SHARED_RELOAD_SUMMARY compile_id=40  TestSharedSpillSharingState$Worker::kernel accepted=8 work=17591 nodes=861 ranges=443 exhausted=0",
+    "SHARED_RELOAD_SUMMARY compile_id=41  TestSharedSpillSharingState$Worker::kernel accepted=8 work=17641 nodes=865 ranges=447 exhausted=0",
+    "activated state checks: gc=3 deopt=2 aliases=40 exceptions=16 moved=33"
+  ]
+}

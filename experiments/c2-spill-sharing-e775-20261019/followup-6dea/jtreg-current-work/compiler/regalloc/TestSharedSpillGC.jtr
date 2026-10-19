@@ -1,0 +1,320 @@
+#Test Results (version 2)
+#Mon Oct 19 02:22:45 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=othervm driver
+library=/test/lib
+requires=vm.debug \=\= true & vm.compiler2.enabled
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:-TieredCompilation -XX\:-UseOnStackReplacement -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:+VerifyRegisterAllocator -XX\:+VerifyOops -XX\:+VerifyBeforeGC -XX\:+VerifyAfterGC -XX\:CompileCommand\=compileonly,TestSharedSpillGC\:\:outer -XX\:CompileCommand\=compileonly,TestSharedSpillGC\:\:caller -XX\:CompileCommand\=dontinline,TestSharedSpillGC\:\:outer -XX\:CompileCommand\=dontinline,TestSharedSpillGC\:\:leaf TestSharedSpillGC\n
+source=TestSharedSpillGC.java
+title=Preserve caller roots, integer state and deoptimization state through GC in a C2 callee.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java
+elapsed=8196 0\:00\:08.196
+end=Mon Oct 19 02\:22\:45 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver build compile main
+start=Mon Oct 19 02\:22\:37 UTC 2026
+test=compiler/regalloc/TestSharedSpillGC.java
+testJDK=/workspace/work/spill-sharing/images/current-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=8196
+user.name=agent
+work=/workspace/work/spill-sharing/followup/jtreg-current-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(7/516)----------
+JDK under test: /workspace/work/spill-sharing/images/current-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/lib
+   class directory: /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 02:22:37.103 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Mon Oct 19 02:22:40.279 UTC 2026
+elapsed time (seconds): 3.176
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/289)----------
+command: compile /workspace/work/spill-sharing/v5/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 02:22:37.104 UTC 2026
+Mode: othervm
+Process id: 519918
+finished: Mon Oct 19 02:22:40.278 UTC 2026
+elapsed time (seconds): 3.174
+----------configuration:(5/339)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib
+
+----------rerun:(25/2023)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillGC.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java \\
+        -J-Dtest.main.class=TestSharedSpillGC \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        -d /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib /workspace/work/spill-sharing/v5/test/lib/jdk/test/whitebox/WhiteBox.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Mon Oct 19 02:22:40.279 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Mon Oct 19 02:22:42.387 UTC 2026
+elapsed time (seconds): 2.108
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/302)----------
+command: compile /workspace/work/spill-sharing/v5/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 02:22:40.279 UTC 2026
+Mode: othervm
+Process id: 520036
+finished: Mon Oct 19 02:22:42.387 UTC 2026
+elapsed time (seconds): 2.108
+----------configuration:(5/339)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib
+
+----------rerun:(25/2036)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillGC.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java \\
+        -J-Dtest.main.class=TestSharedSpillGC \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        -d /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib /workspace/work/spill-sharing/v5/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(7/341)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Mon Oct 19 02:22:42.387 UTC 2026
+Mode: othervm
+Process id: 520095
+finished: Mon Oct 19 02:22:42.692 UTC 2026
+elapsed time (seconds): 0.305
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(24/2108)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestSharedSpillGC.java \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java \\
+        -Dtest.main.class=TestSharedSpillGC \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/followup/jtreg-current-work/compiler/regalloc/TestSharedSpillGC.d/driver.0.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/232)----------
+command: build TestSharedSpillGC
+reason: Named class compiled on demand
+started: Mon Oct 19 02:22:42.692 UTC 2026
+Test directory:
+  compile: TestSharedSpillGC
+finished: Mon Oct 19 02:22:44.777 UTC 2026
+elapsed time (seconds): 2.085
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/308)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 02:22:42.693 UTC 2026
+Mode: othervm
+Process id: 520128
+finished: Mon Oct 19 02:22:44.777 UTC 2026
+elapsed time (seconds): 2.084
+----------configuration:(7/509)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib
+
+----------rerun:(25/2173)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillGC.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java \\
+        -J-Dtest.main.class=TestSharedSpillGC \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        -d /workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/1131)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+VerifyRegisterAllocator -XX:+VerifyOops -XX:+VerifyBeforeGC -XX:+VerifyAfterGC -XX:CompileCommand=compileonly,TestSharedSpillGC::outer -XX:CompileCommand=compileonly,TestSharedSpillGC::caller -XX:CompileCommand=dontinline,TestSharedSpillGC::outer -XX:CompileCommand=dontinline,TestSharedSpillGC::leaf TestSharedSpillGC
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+VerifyRegisterAllocator -XX:+VerifyOops -XX:+VerifyBeforeGC -XX:+VerifyAfterGC -XX:CompileCommand=compileonly,TestSharedSpillGC::outer -XX:CompileCommand=compileonly,TestSharedSpillGC::caller -XX:CompileCommand=dontinline,TestSharedSpillGC::outer -XX:CompileCommand=dontinline,TestSharedSpillGC::leaf TestSharedSpillGC 
+started: Mon Oct 19 02:22:44.777 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 520180
+finished: Mon Oct 19 02:22:45.297 UTC 2026
+elapsed time (seconds): 0.52
+----------configuration:(0/0)----------
+----------System.out:(5/358)----------
+CompileCommand: compileonly TestSharedSpillGC.outer intx compileonly = 1111
+CompileCommand: compileonly TestSharedSpillGC.caller intx compileonly = 1111
+CompileCommand: dontinline TestSharedSpillGC.outer bool dontinline = true
+CompileCommand: dontinline TestSharedSpillGC.leaf bool dontinline = true
+GC/deoptimization state checks=4 forcedGC=3 activeDeopt=2
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/2665)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestSharedSpillGC.java \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillGC.java \\
+        -Dtest.main.class=TestSharedSpillGC \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/0/compiler/regalloc/TestSharedSpillGC.d/test/lib \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:-TieredCompilation \\
+        -XX:-UseOnStackReplacement \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:+VerifyRegisterAllocator \\
+        -XX:+VerifyOops \\
+        -XX:+VerifyBeforeGC \\
+        -XX:+VerifyAfterGC \\
+        -XX:CompileCommand=compileonly,TestSharedSpillGC::outer \\
+        -XX:CompileCommand=compileonly,TestSharedSpillGC::caller \\
+        -XX:CompileCommand=dontinline,TestSharedSpillGC::outer \\
+        -XX:CompileCommand=dontinline,TestSharedSpillGC::leaf \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/followup/jtreg-current-work/compiler/regalloc/TestSharedSpillGC.d/main.1.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

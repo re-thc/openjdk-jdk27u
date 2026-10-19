@@ -1,0 +1,218 @@
+#Test Results (version 2)
+#Mon Oct 19 04:26:53 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=driver
+library=/test/lib
+requires=(vm.debug \=\= true & vm.compiler2.enabled & (os.arch \=\= "amd64" | os.arch \=\= "x86_64")) & (vm.cpu.features ~\= ".*bmi2.*")
+run=USER_SPECIFIED build TestSharedSpillLoads TestSharedSpillSharingTrigger\nUSER_SPECIFIED driver TestSharedSpillSharingTrace\n
+source=TestSharedSpillSharingTrace.java
+title=Assert that the sibling sharing rule actually changes a C2 graph.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java
+elapsed=9869 0\:00\:09.869
+end=Mon Oct 19 04\:26\:53 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver
+start=Mon Oct 19 04\:26\:43 UTC 2026
+test=compiler/regalloc/TestSharedSpillSharingTrace.java
+testJDK=/workspace/work/spill-sharing/images/current-gcc16-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=9870
+user.name=agent
+work=/workspace/work/spill-sharing/followup/jtreg-ci16-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(7/529)----------
+JDK under test: /workspace/work/spill-sharing/images/current-gcc16-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/work/spill-sharing/v5/test/lib
+   class directory: /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib
+
+#section:build
+----------messages:(7/353)----------
+command: build TestSharedSpillLoads TestSharedSpillSharingTrigger
+reason: User specified action: run build TestSharedSpillLoads TestSharedSpillSharingTrigger 
+started: Mon Oct 19 04:26:43.417 UTC 2026
+Test directory:
+  compile: TestSharedSpillLoads, TestSharedSpillSharingTrigger
+finished: Mon Oct 19 04:26:45.921 UTC 2026
+elapsed time (seconds): 2.504
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/416)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillLoads.java /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrigger.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 04:26:43.417 UTC 2026
+Mode: othervm
+Process id: 639941
+finished: Mon Oct 19 04:26:45.921 UTC 2026
+elapsed time (seconds): 2.504
+----------configuration:(7/523)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d
+               /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib
+
+----------rerun:(25/2368)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-ci16-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-gcc16-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-gcc16-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-gcc16-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillSharingTrace.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java \\
+        -J-Dtest.main.class=TestSharedSpillSharingTrace \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib \\
+        -d /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillLoads.java /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrigger.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/252)----------
+command: build TestSharedSpillSharingTrace
+reason: Named class compiled on demand
+started: Mon Oct 19 04:26:45.922 UTC 2026
+Test directory:
+  compile: TestSharedSpillSharingTrace
+finished: Mon Oct 19 04:26:51.598 UTC 2026
+elapsed time (seconds): 5.676
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/318)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 04:26:45.923 UTC 2026
+Mode: othervm
+Process id: 640012
+finished: Mon Oct 19 04:26:51.597 UTC 2026
+elapsed time (seconds): 5.674
+----------configuration:(7/523)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/v5/test/lib
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d
+               /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib
+
+----------rerun:(25/2270)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-ci16-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-gcc16-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-gcc16-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-gcc16-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestSharedSpillSharingTrace.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java \\
+        -J-Dtest.main.class=TestSharedSpillSharingTrace \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib \\
+        -d /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(7/263)----------
+command: driver TestSharedSpillSharingTrace
+reason: User specified action: run driver TestSharedSpillSharingTrace 
+started: Mon Oct 19 04:26:51.598 UTC 2026
+Mode: othervm
+Process id: 640090
+finished: Mon Oct 19 04:26:53.284 UTC 2026
+elapsed time (seconds): 1.686
+----------configuration:(0/0)----------
+----------System.out:(11/2626)----------
+Command line: [/workspace/work/spill-sharing/images/current-gcc16-fastdebug/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Xbatch -Xshare:off -XX:+UnlockDiagnosticVMOptions -XX:+VerifyRegisterAllocator -XX:-OmitStackTraceInFastThrow -XX:+UseBMI2Instructions -XX:+UseFPUForSpilling -XX:CompileCommand=dontinline,TestSharedSpillLoads::kernel* -XX:CompileCommand=dontinline,TestSharedSpillLoads::cold -XX:CompileCommand=exclude,TestSharedSpillLoads::reference TestSharedSpillLoads ]
+[2026-10-19T04:26:51.879441441Z] Gathering output for process 640113
+[2026-10-19T04:26:51.908884890Z] Waiting for completion for process 640113
+[2026-10-19T04:26:52.750072091Z] Waiting for completion finished for process 640113
+Output and diagnostic info for process 640113 was saved into 'pid-640113-output.log'
+Command line: [/workspace/work/spill-sharing/images/current-gcc16-fastdebug/bin/java -cp /workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar -Xbatch -Xshare:off -XX:+UnlockDiagnosticVMOptions -XX:+VerifyRegisterAllocator -XX:+UseBMI2Instructions -XX:+UseFPUForSpilling -XX:CICompilerCount=2 -XX:CompileCommand=dontinline,TestSharedSpillSharingTrigger::kernel -XX:CompileCommand=dontinline,TestSharedSpillSharingTrigger::barrier -XX:CompileCommand=exclude,TestSharedSpillSharingTrigger::reference -XX:CompileCommand=TraceSpilling,TestSharedSpillSharingTrigger::kernel TestSharedSpillSharingTrigger ]
+[2026-10-19T04:26:52.770814641Z] Gathering output for process 640148
+[2026-10-19T04:26:52.775378290Z] Waiting for completion for process 640148
+[2026-10-19T04:26:53.166537284Z] Waiting for completion finished for process 640148
+Output and diagnostic info for process 640148 was saved into 'pid-640148-output.log'
+SHARED_RELOAD_SUMMARY compile_id=96  TestSharedSpillSharingTrigger::kernel accepted=7 work=15982 nodes=527 ranges=446 exhausted=0
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(24/2168)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-ci16-work/scratch/1 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib:/workspace/work/spill-sharing/v5/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/current-gcc16-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/current-gcc16-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/current-gcc16-fastdebug \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestSharedSpillSharingTrace.java \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestSharedSpillSharingTrace.java \\
+        -Dtest.main.class=TestSharedSpillSharingTrace \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/v5/test/lib \\
+        -Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d:/workspace/work/spill-sharing/followup/jtreg-ci16-work/classes/1/compiler/regalloc/TestSharedSpillSharingTrace.d/test/lib \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/followup/jtreg-ci16-work/compiler/regalloc/TestSharedSpillSharingTrace.d/driver.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

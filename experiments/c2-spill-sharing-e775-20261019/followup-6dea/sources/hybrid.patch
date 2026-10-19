@@ -1,0 +1,48 @@
+diff --git a/src/hotspot/share/opto/chaitin.cpp b/src/hotspot/share/opto/chaitin.cpp
+index 82ce5d55b59..5f35d20f0cf 100644
+--- a/src/hotspot/share/opto/chaitin.cpp
++++ b/src/hotspot/share/opto/chaitin.cpp
+@@ -450,6 +450,20 @@ void PhaseChaitin::Register_Allocate() {
+       }
+       return !need.is_empty();
+     };
++    auto no_lifetime_extension = [&](Node* retained, Node* redundant, Block* block, uint from) {
++      uint last_retained = 0;
++      uint last_redundant = 0;
++      uint seen = 0;
++      for (uint at = from + 1; at < block->number_of_nodes(); at++) {
++        Node* use = block->get_node(at);
++        if (use->req() > Sharing::MaxInputs || !work.spend(use->req() + 1)) return false;
++        for (uint edge = 0; edge < use->req(); edge++) {
++          if (use->in(edge) == retained) last_retained = at;
++          if (use->in(edge) == redundant) { last_redundant = at; seen++; }
++        }
++      }
++      return seen == redundant->outcnt() && last_redundant != 0 && last_retained >= last_redundant;
++    };
+     NOT_PRODUCT(uint shared = 0;)
+     for (uint bi = 0; bi < _cfg.number_of_blocks() && !work.exhausted(); bi++) {
+       Block* block = _cfg.get_block(bi);
+@@ -492,11 +506,22 @@ void PhaseChaitin::Register_Allocate() {
+           if (!equal_masks(previous->out_RegMask(), current->out_RegMask()) ||
+               !equal_masks(previous->in_RegMask(1), current->in_RegMask(1)) ||
+               !equal_masks(previous_need, current_need)) break;
++          // Short extensions remain bounded; farther pairs must fit entirely
++          // inside the retained reload's existing same-block live interval.
++          if (distance >= 8 && (scan != block ||
++              !no_lifetime_extension(previous, current, block, ni))) break;
+           // Charge mutation walks too: DU replacement, source-edge removal
+           // and the block list shift. Exhaustion leaves this pair untouched.
+           if (!work.spend(current->outcnt() * Sharing::MaxInputs) ||
+               !work.spend(source->outcnt()) ||
+               !work.spend(block->number_of_nodes() - ni)) break;
++#ifndef PRODUCT
++          if (trace_spilling()) {
++            tty->print_cr("SHARED_RELOAD_PAIR compile_id=%d current=%u previous=%u distance=%u cross_block=%d current_freq=%g previous_freq=%g",
++                          C->compile_id(), current->_idx, previous->_idx, distance + 1,
++                          scan != block, block->_freq, scan->_freq);
++          }
++#endif
+           current->replace_by(previous);
+           current->disconnect_inputs(C);
+           _lrg_map.map(current->_idx, 0);

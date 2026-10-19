@@ -1,0 +1,132 @@
+Building target 'images' in configuration 'spill-ci16-fastdebug'
+Compiling up to 1 files for BUILD_TOOLS_HOTSPOT
+Compiling up to 9 files for BUILD_TOOLS_LANGTOOLS
+Creating hotspot/variant-server/tools/adlc/adlc from 13 file(s)
+Compiling up to 2 files for BUILD_JVMTI_TOOLS
+Generating classes for compiler.properties launcher.properties
+Generating FlagsEnum
+Compiling 18 properties into resource bundles for jdk.compiler
+Compiling 19 properties into resource bundles for jdk.javadoc
+Compiling 15 properties into resource bundles for jdk.jdeps
+Compiling 10 properties into resource bundles for jdk.jshell
+Compiling up to 359 files for BUILD_jdk.compiler.interim
+Compiling up to 145 files for BUILD_jdk.internal.md.interim
+Compiling up to 215 files for BUILD_jdk.javadoc.interim
+Compiling up to 17 files for BUILD_JAVAC_SERVER
+Compiling up to 136 files for BUILD_java.compiler.interim
+/workspace/work/spill-sharing/v5/make/langtools/tools/previewfeature/SetupPreviewFeature.java:72: warning: [removal] getStartPosition(CompilationUnitTree,Tree) in SourcePositions has been deprecated and marked for removal
+                                                    .getStartPosition(elPath.getCompilationUnit(),
+                                                    ^
+1 warning
+Creating support/modules_libs/java.base/server/libjvm.so from 1231 file(s)
+Creating hotspot/variant-server/libjvm/libgtest/libgtest.a from 2 file(s)
+Creating hotspot/variant-server/libjvm/gtest/libjvm.so from 226 file(s)
+Creating hotspot/variant-server/libjvm/gtest/gtestLauncher from 1 file(s)
+Compiling up to 33 files for BUILD_JRTFS
+Compiling up to 190 files for BUILD_TOOLS_JDK
+Compiling up to 2 files for COMPILE_DEPEND
+javacserver server process failed to initialize: No port file values materialized. Giving up after 60066 ms
+Process output:
+java.net.SocketException: Operation not permitted
+	at java.base/sun.nio.ch.Net.socket0(Native Method)
+	at java.base/sun.nio.ch.Net.serverSocket(Net.java:504)
+	at java.base/sun.nio.ch.Net.serverSocket(Net.java:498)
+	at java.base/sun.nio.ch.NioSocketImpl.create(NioSocketImpl.java:477)
+	at java.base/java.net.ServerSocket.getImpl(ServerSocket.java:255)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:325)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:284)
+	at javacserver.server.Server.start(Server.java:144)
+	at javacserver.server.Server.main(Server.java:81)
+<End of process output>
+Process exit code: 1
+IOException caught during compilation: Server failed to initialize: No port file values materialized. Giving up after 60066 ms
+gmake[3]: *** [JrtfsJar.gmk:53: /workspace/work/spill-sharing/v5/build/spill-ci16-fastdebug/support/jrtfs_classes/_the.BUILD_JRTFS_batch] Error 1
+gmake[2]: *** [make/Main.gmk:442: jrtfs-jar] Error 2
+gmake[2]: *** Waiting for unfinished jobs....
+javacserver server process failed to initialize: No port file values materialized. Giving up after 60084 ms
+Process output:
+java.net.SocketException: Operation not permitted
+	at java.base/sun.nio.ch.Net.socket0(Native Method)
+	at java.base/sun.nio.ch.Net.serverSocket(Net.java:504)
+	at java.base/sun.nio.ch.Net.serverSocket(Net.java:498)
+	at java.base/sun.nio.ch.NioSocketImpl.create(NioSocketImpl.java:477)
+	at java.base/java.net.ServerSocket.getImpl(ServerSocket.java:255)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:325)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:284)
+	at javacserver.server.Server.start(Server.java:144)
+	at javacserver.server.Server.main(Server.java:81)
+<End of process output>
+Process exit code: 1
+IOException caught during compilation: Server failed to initialize: No port file values materialized. Giving up after 60084 ms
+gmake[3]: *** [CompileToolsJdk.gmk:41: /workspace/work/spill-sharing/v5/build/spill-ci16-fastdebug/buildtools/jdk_tools_classes/_the.BUILD_TOOLS_JDK_batch] Error 1
+gmake[2]: *** [make/Main.gmk:83: buildtools-jdk] Error 2
+In file included from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrThreadLocal.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrThreadId.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrThreadExtension.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/runtime/thread.hpp:45,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/runtime/javaThread.hpp:47,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/memory/resourceArea.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/vmatree.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/regionsTree.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/virtualMemoryTracker.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/memBaseline.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/memTracker.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/utilities/jfrHashtable.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/leakprofiler/chains/edgeStore.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/leakprofiler/chains/edgeStore.cpp:25:
+/workspace/work/spill-sharing/v5/src/hotspot/share/jfr/utilities/jfrTypes.hpp:28:10: fatal error: jfrfiles/jfrEventIds.hpp: No such file or directory
+   28 | #include "jfrfiles/jfrEventIds.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+cp: cannot stat '/workspace/work/spill-sharing/v5/build/spill-ci16-fastdebug/hotspot/variant-server/libjvm/objs/edgeStore.o.cmdline': No such file or directory
+gmake[3]: *** [lib/CompileJvm.gmk:182: /workspace/work/spill-sharing/v5/build/spill-ci16-fastdebug/hotspot/variant-server/libjvm/objs/edgeStore.o] Error 1
+gmake[3]: *** Waiting for unfinished jobs....
+gmake[2]: *** [make/Main.gmk:242: hotspot-server-libs] Error 2
+
+ERROR: Build failed for target 'images' in configuration 'spill-ci16-fastdebug' (exit code 2)
+Stopping javac server
+
+=== Output from failing command(s) repeated here ===
+* For target hotspot_variant-server_libjvm_objs_edgeQueue.o:
+In file included from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/recorder/checkpoint/types/traceid/jfrTraceId.hpp:28,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrTraceIdExtension.hpp:28,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/oops/klass.hpp:35,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/oops/arrayKlass.hpp:28,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/oops/objArrayKlass.hpp:28,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/oops/objArrayKlass.inline.hpp:28,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/oops/objArrayOop.inline.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/gc/shared/barrierSet.inline.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/oops/access.inline.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/leakprofiler/chains/edgeQueue.cpp:26:
+/workspace/work/spill-sharing/v5/src/hotspot/share/jfr/utilities/jfrTypes.hpp:28:10: fatal error: jfrfiles/jfrEventIds.hpp: No such file or directory
+   28 | #include "jfrfiles/jfrEventIds.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+* For target hotspot_variant-server_libjvm_objs_edgeStore.o:
+In file included from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrThreadLocal.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrThreadId.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/support/jfrThreadExtension.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/runtime/thread.hpp:45,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/runtime/javaThread.hpp:47,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/memory/resourceArea.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/vmatree.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/regionsTree.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/virtualMemoryTracker.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/memBaseline.hpp:32,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/nmt/memTracker.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/utilities/jfrHashtable.hpp:29,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/leakprofiler/chains/edgeStore.hpp:30,
+                 from /workspace/work/spill-sharing/v5/src/hotspot/share/jfr/leakprofiler/chains/edgeStore.cpp:25:
+/workspace/work/spill-sharing/v5/src/hotspot/share/jfr/utilities/jfrTypes.hpp:28:10: fatal error: jfrfiles/jfrEventIds.hpp: No such file or directory
+   ... (rest of output omitted)
+
+* All command lines available in /workspace/work/spill-sharing/v5/build/spill-ci16-fastdebug/make-support/failure-logs.
+=== End of repeated output ===
+
+No indication of failed target found.
+HELP: Try searching the build log for '] Error'.
+HELP: Run 'make doctor' to diagnose build problems.
+
+make[1]: *** [/workspace/work/spill-sharing/v5/make/Init.gmk:151: main] Error 2
+make: *** [/workspace/work/spill-sharing/v5/make/PreInit.gmk:160: images] Error 2

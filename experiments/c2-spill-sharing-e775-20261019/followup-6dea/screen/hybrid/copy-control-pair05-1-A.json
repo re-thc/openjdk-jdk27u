@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/test-v/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 28736.67826770896,
+            "scoreError" : 4598.542576744687,
+            "scoreConfidence" : [
+                24138.135690964275,
+                33335.22084445365
+            ],
+            "scorePercentiles" : {
+                "0.0" : 26834.777813281537,
+                "50.0" : 29113.285021399293,
+                "90.0" : 30058.896909718143,
+                "95.0" : 30058.896909718143,
+                "99.0" : 30058.896909718143,
+                "99.9" : 30058.896909718143,
+                "99.99" : 30058.896909718143,
+                "99.999" : 30058.896909718143,
+                "99.9999" : 30058.896909718143,
+                "100.0" : 30058.896909718143
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    26834.777813281537,
+                    29135.513399938,
+                    30058.896909718143,
+                    29113.285021399293,
+                    28540.918194207847
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

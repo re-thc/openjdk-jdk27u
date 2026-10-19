@@ -1,0 +1,145 @@
+#Test Results (version 2)
+#Mon Oct 19 02:22:26 UTC 2026
+#-----testdescription-----
+$file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC1OverlappingRegisterHint.java
+$root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg
+keywords=bug8249603 othervm
+run=USER_SPECIFIED main/othervm -Xcomp -XX\:CompileCommand\=compileonly,compiler.regalloc.TestC1OverlappingRegisterHint\:\:* compiler.regalloc.TestC1OverlappingRegisterHint\n
+source=TestC1OverlappingRegisterHint.java
+title=The C1 register allocator uses a register hint interval i as spill location for an interval j which overlaps with one of i's split children which has the same spill location which lets verification fail.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC1OverlappingRegisterHint.java
+elapsed=2352 0\:00\:02.352
+end=Mon Oct 19 02\:22\:26 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=f20f3bff8e09
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Mon Oct 19 02\:22\:24 UTC 2026
+test=compiler/regalloc/TestC1OverlappingRegisterHint.java
+testJDK=/workspace/work/spill-sharing/images/current-fastdebug
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=2354
+user.name=agent
+work=/workspace/work/spill-sharing/followup/jtreg-current-work/compiler/regalloc
+
+#section:script_messages
+----------messages:(4/284)----------
+JDK under test: /workspace/work/spill-sharing/images/current-fastdebug
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (fastdebug build 27.0.2-internal-spillsharing)
+OpenJDK 64-Bit Server VM (fastdebug build 27.0.2-internal-spillsharing, mixed mode, sharing)
+
+#section:build
+----------messages:(7/292)----------
+command: build compiler.regalloc.TestC1OverlappingRegisterHint
+reason: Named class compiled on demand
+started: Mon Oct 19 02:22:24.421 UTC 2026
+Test directory:
+  compile: compiler.regalloc.TestC1OverlappingRegisterHint
+finished: Mon Oct 19 02:22:26.418 UTC 2026
+elapsed time (seconds): 1.997
+result: Passed. Build successful
+
+#section:compile
+----------messages:(7/320)----------
+command: compile /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC1OverlappingRegisterHint.java
+reason: .class file out of date or does not exist
+started: Mon Oct 19 02:22:24.422 UTC 2026
+Mode: othervm
+Process id: 519568
+finished: Mon Oct 19 02:22:26.418 UTC 2026
+elapsed time (seconds): 1.996
+----------configuration:(5/334)----------
+javac compilation environment
+  source path: /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+  class path:  /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc
+               /workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d
+
+----------rerun:(25/1973)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/javac \\
+        -J-Dtest.vm.opts= \\
+        -J-Dtest.tool.vm.opts= \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -J-Dtest.timeout.factor=1.0 \\
+        -J-Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/regalloc/TestC1OverlappingRegisterHint.java \\
+        -J-Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC1OverlappingRegisterHint.java \\
+        -J-Dtest.main.class=compiler.regalloc.TestC1OverlappingRegisterHint \\
+        -J-Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -J-Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d \\
+        -J-Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d \\
+        -d /workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d \\
+        -sourcepath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -classpath /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d /workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC1OverlappingRegisterHint.java
+----------System.out:(0/0)----------
+----------System.err:(0/0)----------
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/506)----------
+command: main -Xcomp -XX:CompileCommand=compileonly,compiler.regalloc.TestC1OverlappingRegisterHint::* compiler.regalloc.TestC1OverlappingRegisterHint
+reason: User specified action: run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.regalloc.TestC1OverlappingRegisterHint::* compiler.regalloc.TestC1OverlappingRegisterHint 
+started: Mon Oct 19 02:22:26.418 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 519594
+finished: Mon Oct 19 02:22:26.770 UTC 2026
+elapsed time (seconds): 0.352
+----------configuration:(0/0)----------
+----------System.out:(1/102)----------
+CompileCommand: compileonly compiler/regalloc/TestC1OverlappingRegisterHint.* intx compileonly = 1111
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(26/1978)*----------
+cd /workspace/work/spill-sharing/followup/jtreg-current-work/scratch/0 && \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+CLASSPATH=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d:/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/work/spill-sharing/images/current-fastdebug/bin/java \\
+        -Dtest.vm.opts= \\
+        -Dtest.tool.vm.opts= \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dcompile.jdk=/workspace/work/spill-sharing/images/current-fastdebug \\
+        -Dtest.timeout.factor=1.0 \\
+        -Dtest.root=/workspace/work/spill-sharing/v5/test/hotspot/jtreg \\
+        -Dtest.name=compiler/regalloc/TestC1OverlappingRegisterHint.java \\
+        -Dtest.file=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc/TestC1OverlappingRegisterHint.java \\
+        -Dtest.main.class=compiler.regalloc.TestC1OverlappingRegisterHint \\
+        -Dtest.src=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.src.path=/workspace/work/spill-sharing/v5/test/hotspot/jtreg/compiler/regalloc \\
+        -Dtest.classes=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d \\
+        -Dtest.class.path=/workspace/work/spill-sharing/followup/jtreg-current-work/classes/1/compiler/regalloc/TestC1OverlappingRegisterHint.d \\
+        -Xcomp \\
+        -XX:CompileCommand=compileonly,compiler.regalloc.TestC1OverlappingRegisterHint::* \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/work/spill-sharing/followup/jtreg-current-work/compiler/regalloc/TestC1OverlappingRegisterHint.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "experiment.FrameBench.copyControl",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/workspace/work/spill-sharing/images/test-h/bin/java",
+        "jvmArgs" : [
+            "--add-modules",
+            "jdk.incubator.vector",
+            "-XX:+UseSerialGC",
+            "-Xms512m",
+            "-Xmx512m",
+            "-XX:ActiveProcessorCount=4",
+            "-Xshare:on"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-spillsharing",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "corpus" : "random"
+        },
+        "primaryMetric" : {
+            "score" : 31710.7814864798,
+            "scoreError" : 1599.6933549435305,
+            "scoreConfidence" : [
+                30111.088131536268,
+                33310.474841423325
+            ],
+            "scorePercentiles" : {
+                "0.0" : 31213.68070541647,
+                "50.0" : 31836.68915964163,
+                "90.0" : 32138.401022118127,
+                "95.0" : 32138.401022118127,
+                "99.0" : 32138.401022118127,
+                "99.9" : 32138.401022118127,
+                "99.99" : 32138.401022118127,
+                "99.999" : 32138.401022118127,
+                "99.9999" : 32138.401022118127,
+                "100.0" : 32138.401022118127
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    31213.68070541647,
+                    31334.047444882694,
+                    32138.401022118127,
+                    32031.08910034007,
+                    31836.68915964163
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

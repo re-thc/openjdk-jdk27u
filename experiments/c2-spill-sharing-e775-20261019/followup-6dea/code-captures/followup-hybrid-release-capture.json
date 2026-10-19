@@ -1,0 +1,62 @@
+[
+  {
+    "corpus": "source",
+    "command": [
+      "/workspace/work/spill-sharing/images/test-h/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Xbatch",
+      "-XX:CICompilerCount=2",
+      "-Xshare:on",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:PrintAssemblyOptions=intel",
+      "-XX:CompileCommand=print,dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+      "-XX:CompileCommand=print,dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "DecodeCapture",
+      "/workspace/work/spill-sharing/corpus/source.bin",
+      "/workspace/work/spill-sharing/corpus/source.zst",
+      "2000"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/followup-hybrid-release-source.log",
+    "activation": [],
+    "libjvm_sha256": "4a55f660b1ec4ff2fb6edc9c30c3ecc00b02bea1bf482058e87f3d4334b57193"
+  },
+  {
+    "corpus": "dense",
+    "command": [
+      "/workspace/work/spill-sharing/images/test-h/bin/java",
+      "--add-modules",
+      "jdk.incubator.vector",
+      "-XX:+UseSerialGC",
+      "-Xms512m",
+      "-Xmx512m",
+      "-XX:ActiveProcessorCount=4",
+      "-Xbatch",
+      "-XX:CICompilerCount=2",
+      "-Xshare:on",
+      "-Dprobe.warmup=3",
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:PrintAssemblyOptions=intel",
+      "-XX:CompileCommand=print,dev.jzstd.internal.WindowBuffer::executeSequencesDirect",
+      "-XX:CompileCommand=print,dev.jzstd.internal.BlockDecoder::decodeSequencesRolling",
+      "-cp",
+      "/workspace/work/spill-sharing/classes",
+      "DecodeCapture",
+      "/workspace/work/spill-sharing/corpus/dense.bin",
+      "/workspace/work/spill-sharing/corpus/dense.zst",
+      "2000"
+    ],
+    "exit_code": 0,
+    "log": "/workspace/work/spill-sharing/code/followup-hybrid-release-dense.log",
+    "activation": [],
+    "libjvm_sha256": "4a55f660b1ec4ff2fb6edc9c30c3ecc00b02bea1bf482058e87f3d4334b57193"
+  }
+]

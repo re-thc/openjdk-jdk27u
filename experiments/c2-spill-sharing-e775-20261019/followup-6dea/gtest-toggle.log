@@ -1,0 +1,38 @@
+Note: Google Test filter = SpillCopySharing.*:opto.constant_threshold_*
+[==========] Running 13 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 4 tests from opto
+[ RUN      ] opto.constant_threshold_signed_int
+[       OK ] opto.constant_threshold_signed_int (0 ms)
+[ RUN      ] opto.constant_threshold_unsigned_int
+[       OK ] opto.constant_threshold_unsigned_int (0 ms)
+[ RUN      ] opto.constant_threshold_signed_long
+[       OK ] opto.constant_threshold_signed_long (0 ms)
+[ RUN      ] opto.constant_threshold_unsigned_long
+[       OK ] opto.constant_threshold_unsigned_long (0 ms)
+[----------] 4 tests from opto (0 ms total)
+
+[----------] 9 tests from SpillCopySharing
+[ RUN      ] SpillCopySharing.ordinary_origin_and_copy_chain_vm
+[       OK ] SpillCopySharing.ordinary_origin_and_copy_chain_vm (0 ms)
+[ RUN      ] SpillCopySharing.save_on_entry_and_phi_origins_are_rejected_vm
+[       OK ] SpillCopySharing.save_on_entry_and_phi_origins_are_rejected_vm (0 ms)
+[ RUN      ] SpillCopySharing.copy_cycle_and_overlong_origin_are_rejected_vm
+[       OK ] SpillCopySharing.copy_cycle_and_overlong_origin_are_rejected_vm (0 ms)
+[ RUN      ] SpillCopySharing.precedence_edges_and_spare_capacity_vm
+[       OK ] SpillCopySharing.precedence_edges_and_spare_capacity_vm (0 ms)
+[ RUN      ] SpillCopySharing.oversized_input_capacity_is_rejected_without_walking_it_vm
+[       OK ] SpillCopySharing.oversized_input_capacity_is_rejected_without_walking_it_vm (0 ms)
+[ RUN      ] SpillCopySharing.user_guards_and_actual_input_positions_vm
+[       OK ] SpillCopySharing.user_guards_and_actual_input_positions_vm (0 ms)
+[ RUN      ] SpillCopySharing.definition_after_block_end_counts_vm
+[       OK ] SpillCopySharing.definition_after_block_end_counts_vm (0 ms)
+[ RUN      ] SpillCopySharing.high_range_ids_saturate_in_one_table_vm
+[       OK ] SpillCopySharing.high_range_ids_saturate_in_one_table_vm (0 ms)
+[ RUN      ] SpillCopySharing.work_exhaustion_never_underflows_vm
+[       OK ] SpillCopySharing.work_exhaustion_never_underflows_vm (0 ms)
+[----------] 9 tests from SpillCopySharing (313 ms total)
+
+[----------] Global test environment tear-down
+[==========] 13 tests from 2 test suites ran. (313 ms total)
+[  PASSED  ] 13 tests.

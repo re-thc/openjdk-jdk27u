@@ -1,0 +1,2984 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-spillsharing
+# VM invoker: /workspace/work/spill-sharing/images/e775-b/bin/java
+# VM options: --add-modules jdk.incubator.vector -XX:+UseSerialGC -Xms512m -Xmx512m -XX:ActiveProcessorCount=4 -Xshare:on -XX:+UseFPUForSpilling -XX:CompileCommand=dontinline,experiment.TestSharedSpillSharingTrigger::kernel -XX:CompileCommand=dontinline,experiment.TestSharedSpillSharingTrigger::barrier -XX:CompileCommand=exclude,experiment.TestSharedSpillSharingTrigger::reference -XX:+UnlockDiagnosticVMOptions -XX:PrintAssemblyOptions=intel -XX:CompileCommand=print,experiment.TestSharedSpillSharingTrigger::kernel -XX:CompileCommand=print,experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 5 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: experiment.TriggerBench.kernel
+
+# Run progress: 0.00% complete, ETA 00:00:08
+# Fork: 1 of 1
+CompileCommand: dontinline experiment/TestSharedSpillSharingTrigger.kernel bool dontinline = true
+CompileCommand: dontinline experiment/TestSharedSpillSharingTrigger.barrier bool dontinline = true
+CompileCommand: exclude experiment/TestSharedSpillSharingTrigger.reference intx exclude = 1111
+CompileCommand: print experiment/TestSharedSpillSharingTrigger.kernel intx print = 1111
+CompileCommand: print experiment/jmh_generated/TriggerBench_kernel_jmhTest.kernel_thrpt_jmhStub intx print = 1111
+WARNING: Using incubator modules: jdk.incubator.vector
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/work/spill-sharing/deps/jars/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 
+============================= C1-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+[0.205s][warning][os] Loading hsdis library failed
+
+Compiled method (c1) 204  673       3       experiment.TestSharedSpillSharingTrigger::kernel (531 bytes)
+ total in heap  [0x00007f57ec424588,0x00007f57ec425310] = 3464
+ main code      [0x00007f57ec424680,0x00007f57ec4252c8] = 3144
+ stub code      [0x00007f57ec4252c8,0x00007f57ec425308] = 64
+ oops           [0x00007f57ec425308,0x00007f57ec425310] = 8
+ mutable data [0x00007f57c8563660,0x00007f57c8563810] = 432
+ relocation     [0x00007f57c8563660,0x00007f57c8563808] = 424
+ metadata       [0x00007f57c8563808,0x00007f57c8563810] = 8
+ immutable data [0x00007f57c85622e0,0x00007f57c8563654] = 4980
+ dependencies   [0x00007f57c85622e0,0x00007f57c85622e8] = 8
+ nul chk table  [0x00007f57c85622e8,0x00007f57c8562340] = 88
+ scopes pcs     [0x00007f57c8562340,0x00007f57c8562760] = 1056
+ scopes data    [0x00007f57c8562760,0x00007f57c8563650] = 3824
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger'
+  # parm0:    rsi:rsi   = '[J'
+  # parm1:    rdx:rdx   = '[I'
+  # parm2:    rcx:rcx   = '[I'
+  # parm3:    r8:r8     = '[I'
+  # parm4:    r9:r9     = '[I'
+  #           [sp+0x1f0]  (sp of caller)
+  0x00007f57ec424680: 8984 2400 | c0fe ff55 | 4881 ece0 | 0100 0090 | 4181 7f20 | 0100 0000 
+0x00007f57ec424680: code=89842400c0feff554881ece00100009041817f2001000000
+
+  0x00007f57ec424698: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57ec424698: 7405 e801 | 544c 0748 | 8954 2430 | 4889 4c24 | 384c 8944 | 2440 4c89 
+0x00007f57ec424698: code=7405e801544c07488954243048894c24384c894424404c89
+
+  0x00007f57ec4246b0: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec4246b0: 4c24 4848 | bfa8 7648 | dc57 7f00 | 008b 5f70 | 83c3 0289 | 5f70 81e3 | fe07 0000 | 85db 0f84 
+0x00007f57ec4246b0: code=4c244848bfa87648dc577f00008b5f7083c302895f7081e3fe07000085db0f84
+  0x00007f57ec4246d0: 7909 0000 
+0x00007f57ec4246d0: code=79090000
+
+  0x00007f57ec4246d4: ; implicit exception: dispatches to 0x00007f57ec42506e
+  0x00007f57ec4246d4: 837e 0400 | 0f86 9a09 | 0000 488b | 7e08 4889 | bc24 c000 | 0000 837e | 0401 0f86 | 9609 0000 
+0x00007f57ec4246d4: code=837e04000f869a090000488b7e084889bc24c0000000837e04010f8696090000
+  0x00007f57ec4246f4: 488b 5e10 | 837e 0402 | 0f86 9a09 | 0000 488b | 4618 837e | 0403 0f86 | 9e09 0000 | 4c8b 5e20 
+0x00007f57ec4246f4: code=488b5e10837e04020f869a090000488b4618837e04030f869e0900004c8b5e20
+  0x00007f57ec424714: 837e 0404 | 0f86 a209 | 0000 4c8b | 6e28 837e | 0405 0f86 | a609 0000 | 4c8b 7630 | 837e 0406 
+0x00007f57ec424714: code=837e04040f86a20900004c8b6e28837e04050f86a60900004c8b7630837e0406
+  0x00007f57ec424734: 0f86 aa09 | 0000 488b | 5638 837e | 0407 0f86 | ae09 0000 | 488b 4e40 | 837e 0408 | 0f86 b209 
+0x00007f57ec424734: code=0f86aa090000488b5638837e04070f86ae090000488b4e40837e04080f86b209
+  0x00007f57ec424754: 0000 4c8b | 4648 837e | 0409 0f86 | b609 0000 | 4c8b 4e50 | 4c89 4c24 | 5083 7e04 | 0a0f 86b5 
+0x00007f57ec424754: code=00004c8b4648837e04090f86b60900004c8b4e504c894c2450837e040a0f86b5
+  0x00007f57ec424774: 0900 004c | 8b4e 584c | 894c 2458 | 837e 040b | 0f86 b409 | 0000 4c8b | 4e60 4c89 | 4c24 6083 
+0x00007f57ec424774: code=0900004c8b4e584c894c2458837e040b0f86b40900004c8b4e604c894c246083
+  0x00007f57ec424794: 7e04 0c0f | 86b3 0900 | 004c 8b4e | 684c 894c | 2468 837e | 040d 0f86 | b209 0000 
+0x00007f57ec424794: code=7e040c0f86b30900004c8b4e684c894c2468837e040d0f86b2090000
+
+  0x00007f57ec4247b0: ;   {other}
+  0x00007f57ec4247b0: 4c8b 4e70 | 4c89 4c24 | 7083 7e04 | 0e0f 86b1 | 0900 004c | 8b4e 784c | 894c 2478 | 837e 040f 
+0x00007f57ec4247b0: code=4c8b4e704c894c2470837e040e0f86b10900004c8b4e784c894c2478837e040f
+  0x00007f57ec4247d0: 0f86 b009 | 0000 4c8b | 8e80 0000 | 004c 898c | 2480 0000 | 0083 7e04 | 100f 86a9 | 0900 004c 
+0x00007f57ec4247d0: code=0f86b00900004c8b8e800000004c898c2480000000837e04100f86a90900004c
+  0x00007f57ec4247f0: 8b8e 8800 | 0000 4c89 | 8c24 8800 | 0000 837e | 0411 0f86 | a209 0000 | 4c8b 8e90 | 0000 004c 
+0x00007f57ec4247f0: code=8b8e880000004c898c2488000000837e04110f86a20900004c8b8e900000004c
+  0x00007f57ec424810: 898c 2490 | 0000 0083 | 7e04 120f | 869b 0900 | 004c 8b8e | 9800 0000 | 4c89 8c24 | 9800 0000 
+0x00007f57ec424810: code=898c2490000000837e04120f869b0900004c8b8e980000004c898c2498000000
+  0x00007f57ec424830: 837e 0413 | 0f86 9409 | 0000 4c8b | 8ea0 0000 | 004c 898c | 24a0 0000 | 0083 7e04 | 140f 868d 
+0x00007f57ec424830: code=837e04130f86940900004c8b8ea00000004c898c24a0000000837e04140f868d
+  0x00007f57ec424850: 0900 004c | 8b8e a800 | 0000 4c89 | 8c24 a800 | 0000 837e | 0415 0f86 | 8609 0000 | 4c8b 8eb0 
+0x00007f57ec424850: code=0900004c8b8ea80000004c898c24a8000000837e04150f86860900004c8b8eb0
+  0x00007f57ec424870: 0000 004c | 898c 24b0 | 0000 0083 | 7e04 160f | 867f 0900 | 004c 8b8e | b800 0000 | 4c89 8c24 
+0x00007f57ec424870: code=0000004c898c24b0000000837e04160f867f0900004c8b8eb80000004c898c24
+  0x00007f57ec424890: b800 0000 | 837e 0417 | 0f86 7809 | 0000 4c8b | 8ec0 0000 | 0048 8bf7 | 4833 f348 | 33f0 4933 
+0x00007f57ec424890: code=b8000000837e04170f86780900004c8b8ec0000000488bf74833f34833f04933
+  0x00007f57ec4248b0: ;   {other}
+  0x00007f57ec4248b0: f349 33f5 | 4933 f648 | 33f2 4833 | f149 33f0 | 488b 7c24 | 5048 33f7 | 488b 7c24 | 5848 33f7 
+0x00007f57ec4248b0: code=f34933f54933f64833f24833f14933f0488b7c24504833f7488b7c24584833f7
+  0x00007f57ec4248d0: 488b 7c24 | 6048 33f7 | 488b 7c24 | 6848 33f7 | 488b 7c24 | 7048 33f7 | 488b 7c24 | 7848 33f7 
+0x00007f57ec4248d0: code=488b7c24604833f7488b7c24684833f7488b7c24704833f7488b7c24784833f7
+  0x00007f57ec4248f0: 488b bc24 | 8000 0000 | 4833 f748 | 8bbc 2488 | 0000 0048 | 33f7 488b | bc24 9000 | 0000 4833 
+0x00007f57ec4248f0: code=488bbc24800000004833f7488bbc24880000004833f7488bbc24900000004833
+  0x00007f57ec424910: f748 8bbc | 2498 0000 | 0048 33f7 | 488b bc24 | a000 0000 | 4833 f748 | 8bbc 24a8 | 0000 0048 
+0x00007f57ec424910: code=f7488bbc24980000004833f7488bbc24a00000004833f7488bbc24a800000048
+  0x00007f57ec424930: 33f7 488b | bc24 b000 | 0000 4833 | f748 8bbc | 24b8 0000 | 0048 33f7 | 4933 f18b | f681 e6ff 
+0x00007f57ec424930: code=33f7488bbc24b00000004833f7488bbc24b80000004833f74933f18bf681e6ff
+  0x00007f57ec424950: 0300 0089 | b424 c800 
+0x00007f57ec424950: code=03000089b424c800
+
+  0x00007f57ec424958: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424958: 0000 48be | a876 48dc | 577f 0000 | 4883 86a8 | 0000 0001 | 4c89 8c24 | 1001 0000 | 4c89 8424 
+0x00007f57ec424958: code=000048bea87648dc577f0000488386a8000000014c898c24100100004c898424
+  0x00007f57ec424978: 0801 0000 | 4889 8c24 | 0001 0000 | 4889 9424 | f800 0000 | 4c89 b424 | f000 0000 | 4c89 ac24 
+0x00007f57ec424978: code=0801000048898c240001000048899424f80000004c89b424f00000004c89ac24
+  0x00007f57ec424998: e800 0000 | 4c89 9c24 | e000 0000 | 4889 8424 | d800 0000 | 4889 9c24 | d000 0000 
+0x00007f57ec424998: code=e80000004c899c24e000000048898424d800000048899c24d0000000
+
+  0x00007f57ec4249b4: ;   {static_call}
+  0x00007f57ec4249b4: 6666 90e8 
+0x00007f57ec4249b4: code=666690e8
+
+  0x00007f57ec4249b8: ; ImmutableOopMap {[48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*invokestatic barrier {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@216 (line 59)
+  0x00007f57ec4249b8: 0c09 0000 
+0x00007f57ec4249b8: code=0c090000
+
+  0x00007f57ec4249bc: ;   {post_call_nop}
+  0x00007f57ec4249bc: 0f1f 8400 | 3404 0000 | 8bb4 24c8 | 0000 0048 | 8b54 2430 
+0x00007f57ec4249bc: code=0f1f8400340400008bb424c8000000488b542430
+
+  0x00007f57ec4249d0: ; implicit exception: dispatches to 0x00007f57ec425228
+  0x00007f57ec4249d0: 3b72 040f | 8359 0800 | 0048 63fe | 8b54 ba08 | 488b 4c24 | 383b 7104 | 0f83 5c08 | 0000 4863 
+0x00007f57ec4249d0: code=3b72040f83590800004863fe8b54ba08488b4c24383b71040f835c0800004863
+  0x00007f57ec4249f0: fe8b 7cb9 | 084c 8b44 | 2440 413b | 7004 0f83 | 5e08 0000 | 4863 de41 | 8b5c 9808 | 4c8b 4c24 
+0x00007f57ec4249f0: code=fe8b7cb9084c8b442440413b70040f835e0800004863de418b5c98084c8b4c24
+  0x00007f57ec424a10: 4841 3b71 | 040f 835f | 0800 0048 | 63f6 418b 
+0x00007f57ec424a10: code=48413b71040f835f0800004863f6418b
+
+  0x00007f57ec424a20: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424a20: 74b1 0848 | b8a8 7648 | dc57 7f00 | 0048 8380 | b800 0000 | 0148 63d2 | 4863 ff48 | 03d7 4863 
+0x00007f57ec424a20: code=74b10848b8a87648dc577f0000488380b8000000014863d24863ff4803d74863
+  0x00007f57ec424a40: db48 03d3 | 4863 f648 | 03d6 488b | b424 c000 | 0000 4889 | 9424 1801 | 0000 ba01 
+0x00007f57ec424a40: code=db4803d34863f64803d6488bb424c00000004889942418010000ba01
+
+  0x00007f57ec424a5c: ;   {static_call}
+  0x00007f57ec424a5c: 0000 00e8 
+0x00007f57ec424a5c: code=000000e8
+
+  0x00007f57ec424a60: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@250 (line 61)
+  0x00007f57ec424a60: 9c9a a407 
+0x00007f57ec424a60: code=9c9aa407
+
+  0x00007f57ec424a64: ;   {post_call_nop}
+  0x00007f57ec424a64: 0f1f 8400 | dc04 0001 
+0x00007f57ec424a64: code=0f1f8400dc040001
+
+  0x00007f57ec424a6c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424a6c: 48be a876 | 48dc 577f | 0000 4883 | 86c8 0000 | 0001 488b | 9424 1801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424a6c: code=48bea87648dc577f0000488386c800000001488b9424180100004803d0488bb4
+  0x00007f57ec424a8c: 24d0 0000 | 0048 8994 | 2420 0100 | 00ba 0200 
+0x00007f57ec424a8c: code=24d00000004889942420010000ba0200
+
+  0x00007f57ec424a9c: ;   {static_call}
+  0x00007f57ec424a9c: 0000 90e8 
+0x00007f57ec424a9c: code=000090e8
+
+  0x00007f57ec424aa0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@261 (line 62)
+  0x00007f57ec424aa0: 5c9a a407 
+0x00007f57ec424aa0: code=5c9aa407
+
+  0x00007f57ec424aa4: ;   {post_call_nop}
+  0x00007f57ec424aa4: 0f1f 8400 | 1c05 0002 
+0x00007f57ec424aa4: code=0f1f84001c050002
+
+  0x00007f57ec424aac: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424aac: 48be a876 | 48dc 577f | 0000 4883 | 86d8 0000 | 0001 488b | 9424 2001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424aac: code=48bea87648dc577f0000488386d800000001488b9424200100004803d0488bb4
+  0x00007f57ec424acc: 24d8 0000 | 0048 8994 | 2428 0100 | 00ba 0300 
+0x00007f57ec424acc: code=24d80000004889942428010000ba0300
+
+  0x00007f57ec424adc: ;   {static_call}
+  0x00007f57ec424adc: 0000 90e8 
+0x00007f57ec424adc: code=000090e8
+
+  0x00007f57ec424ae0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@272 (line 63)
+  0x00007f57ec424ae0: 1c9a a407 
+0x00007f57ec424ae0: code=1c9aa407
+
+  0x00007f57ec424ae4: ;   {post_call_nop}
+  0x00007f57ec424ae4: 0f1f 8400 | 5c05 0003 
+0x00007f57ec424ae4: code=0f1f84005c050003
+
+  0x00007f57ec424aec: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424aec: 48be a876 | 48dc 577f | 0000 4883 | 86e8 0000 | 0001 488b | 9424 2801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424aec: code=48bea87648dc577f0000488386e800000001488b9424280100004803d0488bb4
+  0x00007f57ec424b0c: 24e0 0000 | 0048 8994 | 2430 0100 | 00ba 0400 
+0x00007f57ec424b0c: code=24e00000004889942430010000ba0400
+
+  0x00007f57ec424b1c: ;   {static_call}
+  0x00007f57ec424b1c: 0000 90e8 
+0x00007f57ec424b1c: code=000090e8
+
+  0x00007f57ec424b20: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@283 (line 64)
+  0x00007f57ec424b20: dc99 a407 
+0x00007f57ec424b20: code=dc99a407
+
+  0x00007f57ec424b24: ;   {post_call_nop}
+  0x00007f57ec424b24: 0f1f 8400 | 9c05 0004 | 488b 9424 | 3001 0000 
+0x00007f57ec424b24: code=0f1f84009c050004488b942430010000
+
+  0x00007f57ec424b34: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424b34: 4803 d048 | bea8 7648 | dc57 7f00 | 0048 8386 | f800 0000 | 0148 8bb4 | 24e8 0000 | 0048 8994 
+0x00007f57ec424b34: code=4803d048bea87648dc577f0000488386f800000001488bb424e8000000488994
+  0x00007f57ec424b54: 2438 0100 | 00ba 0500 
+0x00007f57ec424b54: code=2438010000ba0500
+
+  0x00007f57ec424b5c: ;   {static_call}
+  0x00007f57ec424b5c: 0000 90e8 
+0x00007f57ec424b5c: code=000090e8
+
+  0x00007f57ec424b60: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@294 (line 65)
+  0x00007f57ec424b60: 9c99 a407 
+0x00007f57ec424b60: code=9c99a407
+
+  0x00007f57ec424b64: ;   {post_call_nop}
+  0x00007f57ec424b64: 0f1f 8400 | dc05 0005 
+0x00007f57ec424b64: code=0f1f8400dc050005
+
+  0x00007f57ec424b6c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424b6c: 48be a876 | 48dc 577f | 0000 4883 | 8608 0100 | 0001 488b | 9424 3801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424b6c: code=48bea87648dc577f00004883860801000001488b9424380100004803d0488bb4
+  0x00007f57ec424b8c: 24f0 0000 | 0048 8994 | 2440 0100 | 00ba 0600 
+0x00007f57ec424b8c: code=24f00000004889942440010000ba0600
+
+  0x00007f57ec424b9c: ;   {static_call}
+  0x00007f57ec424b9c: 0000 90e8 
+0x00007f57ec424b9c: code=000090e8
+
+  0x00007f57ec424ba0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@306 (line 66)
+  0x00007f57ec424ba0: 5c99 a407 
+0x00007f57ec424ba0: code=5c99a407
+
+  0x00007f57ec424ba4: ;   {post_call_nop}
+  0x00007f57ec424ba4: 0f1f 8400 | 1c06 0006 
+0x00007f57ec424ba4: code=0f1f84001c060006
+
+  0x00007f57ec424bac: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424bac: 48be a876 | 48dc 577f | 0000 4883 | 8618 0100 | 0001 488b | 9424 4001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424bac: code=48bea87648dc577f00004883861801000001488b9424400100004803d0488bb4
+  0x00007f57ec424bcc: 24f8 0000 | 0048 8994 | 2448 0100 | 00ba 0700 
+0x00007f57ec424bcc: code=24f80000004889942448010000ba0700
+
+  0x00007f57ec424bdc: ;   {static_call}
+  0x00007f57ec424bdc: 0000 90e8 
+0x00007f57ec424bdc: code=000090e8
+
+  0x00007f57ec424be0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@318 (line 67)
+  0x00007f57ec424be0: 1c99 a407 
+0x00007f57ec424be0: code=1c99a407
+
+  0x00007f57ec424be4: ;   {post_call_nop}
+  0x00007f57ec424be4: 0f1f 8400 | 5c06 0007 
+0x00007f57ec424be4: code=0f1f84005c060007
+
+  0x00007f57ec424bec: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424bec: 48be a876 | 48dc 577f | 0000 4883 | 8628 0100 | 0001 488b | 9424 4801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424bec: code=48bea87648dc577f00004883862801000001488b9424480100004803d0488bb4
+  0x00007f57ec424c0c: 2400 0100 | 0048 8994 | 2450 0100 | 00ba 0800 
+0x00007f57ec424c0c: code=24000100004889942450010000ba0800
+
+  0x00007f57ec424c1c: ;   {static_call}
+  0x00007f57ec424c1c: 0000 90e8 
+0x00007f57ec424c1c: code=000090e8
+
+  0x00007f57ec424c20: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@330 (line 68)
+  0x00007f57ec424c20: dc98 a407 
+0x00007f57ec424c20: code=dc98a407
+
+  0x00007f57ec424c24: ;   {post_call_nop}
+  0x00007f57ec424c24: 0f1f 8400 | 9c06 0008 
+0x00007f57ec424c24: code=0f1f84009c060008
+
+  0x00007f57ec424c2c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424c2c: 48be a876 | 48dc 577f | 0000 4883 | 8638 0100 | 0001 488b | 9424 5001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424c2c: code=48bea87648dc577f00004883863801000001488b9424500100004803d0488bb4
+  0x00007f57ec424c4c: 2408 0100 | 0048 8994 | 2458 0100 | 00ba 0900 
+0x00007f57ec424c4c: code=24080100004889942458010000ba0900
+
+  0x00007f57ec424c5c: ;   {static_call}
+  0x00007f57ec424c5c: 0000 90e8 
+0x00007f57ec424c5c: code=000090e8
+
+  0x00007f57ec424c60: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@342 (line 69)
+  0x00007f57ec424c60: 9c98 a407 
+0x00007f57ec424c60: code=9c98a407
+
+  0x00007f57ec424c64: ;   {post_call_nop}
+  0x00007f57ec424c64: 0f1f 8400 | dc06 0009 
+0x00007f57ec424c64: code=0f1f8400dc060009
+
+  0x00007f57ec424c6c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424c6c: 48be a876 | 48dc 577f | 0000 4883 | 8648 0100 | 0001 488b | 9424 5801 | 0000 4803 | d048 8b74 
+0x00007f57ec424c6c: code=48bea87648dc577f00004883864801000001488b9424580100004803d0488b74
+  0x00007f57ec424c8c: 2450 4889 | 9424 6001 | 0000 ba0a | 0000 000f 
+0x00007f57ec424c8c: code=24504889942460010000ba0a0000000f
+
+  0x00007f57ec424c9c: ;   {static_call}
+  0x00007f57ec424c9c: 1f40 00e8 
+0x00007f57ec424c9c: code=1f4000e8
+
+  0x00007f57ec424ca0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@354 (line 70)
+  0x00007f57ec424ca0: 5c98 a407 
+0x00007f57ec424ca0: code=5c98a407
+
+  0x00007f57ec424ca4: ;   {post_call_nop}
+  0x00007f57ec424ca4: 0f1f 8400 | 1c07 000a 
+0x00007f57ec424ca4: code=0f1f84001c07000a
+
+  0x00007f57ec424cac: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424cac: 48be a876 | 48dc 577f | 0000 4883 | 8658 0100 | 0001 488b | 9424 6001 | 0000 4803 | d048 8b74 
+0x00007f57ec424cac: code=48bea87648dc577f00004883865801000001488b9424600100004803d0488b74
+  0x00007f57ec424ccc: 2458 4889 | 9424 6801 | 0000 ba0b | 0000 000f 
+0x00007f57ec424ccc: code=24584889942468010000ba0b0000000f
+
+  0x00007f57ec424cdc: ;   {static_call}
+  0x00007f57ec424cdc: 1f40 00e8 
+0x00007f57ec424cdc: code=1f4000e8
+
+  0x00007f57ec424ce0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@366 (line 71)
+  0x00007f57ec424ce0: 1c98 a407 
+0x00007f57ec424ce0: code=1c98a407
+
+  0x00007f57ec424ce4: ;   {post_call_nop}
+  0x00007f57ec424ce4: 0f1f 8400 | 5c07 000b 
+0x00007f57ec424ce4: code=0f1f84005c07000b
+
+  0x00007f57ec424cec: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424cec: 48be a876 | 48dc 577f | 0000 4883 | 8668 0100 | 0001 488b | 9424 6801 | 0000 4803 | d048 8b74 
+0x00007f57ec424cec: code=48bea87648dc577f00004883866801000001488b9424680100004803d0488b74
+  0x00007f57ec424d0c: 2460 4889 | 9424 7001 | 0000 ba0c | 0000 000f 
+0x00007f57ec424d0c: code=24604889942470010000ba0c0000000f
+
+  0x00007f57ec424d1c: ;   {static_call}
+  0x00007f57ec424d1c: 1f40 00e8 
+0x00007f57ec424d1c: code=1f4000e8
+
+  0x00007f57ec424d20: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@378 (line 72)
+  0x00007f57ec424d20: dc97 a407 
+0x00007f57ec424d20: code=dc97a407
+
+  0x00007f57ec424d24: ;   {post_call_nop}
+  0x00007f57ec424d24: 0f1f 8400 | 9c07 000c 
+0x00007f57ec424d24: code=0f1f84009c07000c
+
+  0x00007f57ec424d2c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424d2c: 48be a876 | 48dc 577f | 0000 4883 | 8678 0100 | 0001 488b | 9424 7001 | 0000 4803 | d048 8b74 
+0x00007f57ec424d2c: code=48bea87648dc577f00004883867801000001488b9424700100004803d0488b74
+  0x00007f57ec424d4c: 2468 4889 | 9424 7801 | 0000 ba0d | 0000 000f 
+0x00007f57ec424d4c: code=24684889942478010000ba0d0000000f
+
+  0x00007f57ec424d5c: ;   {static_call}
+  0x00007f57ec424d5c: 1f40 00e8 
+0x00007f57ec424d5c: code=1f4000e8
+
+  0x00007f57ec424d60: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@390 (line 73)
+  0x00007f57ec424d60: 9c97 a407 
+0x00007f57ec424d60: code=9c97a407
+
+  0x00007f57ec424d64: ;   {post_call_nop}
+  0x00007f57ec424d64: 0f1f 8400 | dc07 000d 
+0x00007f57ec424d64: code=0f1f8400dc07000d
+
+  0x00007f57ec424d6c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424d6c: 48be a876 | 48dc 577f | 0000 4883 | 8688 0100 | 0001 488b | 9424 7801 | 0000 4803 | d048 8b74 
+0x00007f57ec424d6c: code=48bea87648dc577f00004883868801000001488b9424780100004803d0488b74
+  0x00007f57ec424d8c: 2470 4889 | 9424 8001 | 0000 ba0e | 0000 000f 
+0x00007f57ec424d8c: code=24704889942480010000ba0e0000000f
+
+  0x00007f57ec424d9c: ;   {static_call}
+  0x00007f57ec424d9c: 1f40 00e8 
+0x00007f57ec424d9c: code=1f4000e8
+
+  0x00007f57ec424da0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@402 (line 74)
+  0x00007f57ec424da0: 5c97 a407 
+0x00007f57ec424da0: code=5c97a407
+
+  0x00007f57ec424da4: ;   {post_call_nop}
+  0x00007f57ec424da4: 0f1f 8400 | 1c08 000e 
+0x00007f57ec424da4: code=0f1f84001c08000e
+
+  0x00007f57ec424dac: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424dac: 48be a876 | 48dc 577f | 0000 4883 | 8698 0100 | 0001 488b | 9424 8001 | 0000 4803 | d048 8b74 
+0x00007f57ec424dac: code=48bea87648dc577f00004883869801000001488b9424800100004803d0488b74
+  0x00007f57ec424dcc: 2478 4889 | 9424 8801 | 0000 ba0f | 0000 000f 
+0x00007f57ec424dcc: code=24784889942488010000ba0f0000000f
+
+  0x00007f57ec424ddc: ;   {static_call}
+  0x00007f57ec424ddc: 1f40 00e8 
+0x00007f57ec424ddc: code=1f4000e8
+
+  0x00007f57ec424de0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@414 (line 75)
+  0x00007f57ec424de0: 1c97 a407 
+0x00007f57ec424de0: code=1c97a407
+
+  0x00007f57ec424de4: ;   {post_call_nop}
+  0x00007f57ec424de4: 0f1f 8400 | 5c08 000f 
+0x00007f57ec424de4: code=0f1f84005c08000f
+
+  0x00007f57ec424dec: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424dec: 48be a876 | 48dc 577f | 0000 4883 | 86a8 0100 | 0001 488b | 9424 8801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424dec: code=48bea87648dc577f0000488386a801000001488b9424880100004803d0488bb4
+  0x00007f57ec424e0c: 2480 0000 | 0048 8994 | 2490 0100 | 00ba 1000 
+0x00007f57ec424e0c: code=24800000004889942490010000ba1000
+
+  0x00007f57ec424e1c: ;   {static_call}
+  0x00007f57ec424e1c: 0000 90e8 
+0x00007f57ec424e1c: code=000090e8
+
+  0x00007f57ec424e20: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@426 (line 76)
+  0x00007f57ec424e20: dc96 a407 
+0x00007f57ec424e20: code=dc96a407
+
+  0x00007f57ec424e24: ;   {post_call_nop}
+  0x00007f57ec424e24: 0f1f 8400 | 9c08 0010 
+0x00007f57ec424e24: code=0f1f84009c080010
+
+  0x00007f57ec424e2c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424e2c: 48be a876 | 48dc 577f | 0000 4883 | 86b8 0100 | 0001 488b | 9424 9001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424e2c: code=48bea87648dc577f0000488386b801000001488b9424900100004803d0488bb4
+  0x00007f57ec424e4c: 2488 0000 | 0048 8994 | 2498 0100 | 00ba 1100 
+0x00007f57ec424e4c: code=24880000004889942498010000ba1100
+
+  0x00007f57ec424e5c: ;   {static_call}
+  0x00007f57ec424e5c: 0000 90e8 
+0x00007f57ec424e5c: code=000090e8
+
+  0x00007f57ec424e60: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@438 (line 77)
+  0x00007f57ec424e60: 9c96 a407 
+0x00007f57ec424e60: code=9c96a407
+
+  0x00007f57ec424e64: ;   {post_call_nop}
+  0x00007f57ec424e64: 0f1f 8400 | dc08 0011 
+0x00007f57ec424e64: code=0f1f8400dc080011
+
+  0x00007f57ec424e6c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424e6c: 48be a876 | 48dc 577f | 0000 4883 | 86c8 0100 | 0001 488b | 9424 9801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424e6c: code=48bea87648dc577f0000488386c801000001488b9424980100004803d0488bb4
+  0x00007f57ec424e8c: 2490 0000 | 0048 8994 | 24a0 0100 | 00ba 1200 
+0x00007f57ec424e8c: code=249000000048899424a0010000ba1200
+
+  0x00007f57ec424e9c: ;   {static_call}
+  0x00007f57ec424e9c: 0000 90e8 
+0x00007f57ec424e9c: code=000090e8
+
+  0x00007f57ec424ea0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@450 (line 78)
+  0x00007f57ec424ea0: 5c96 a407 
+0x00007f57ec424ea0: code=5c96a407
+
+  0x00007f57ec424ea4: ;   {post_call_nop}
+  0x00007f57ec424ea4: 0f1f 8400 | 1c09 0012 
+0x00007f57ec424ea4: code=0f1f84001c090012
+
+  0x00007f57ec424eac: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424eac: 48be a876 | 48dc 577f | 0000 4883 | 86d8 0100 | 0001 488b | 9424 a001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424eac: code=48bea87648dc577f0000488386d801000001488b9424a00100004803d0488bb4
+  0x00007f57ec424ecc: 2498 0000 | 0048 8994 | 24a8 0100 | 00ba 1300 
+0x00007f57ec424ecc: code=249800000048899424a8010000ba1300
+
+  0x00007f57ec424edc: ;   {static_call}
+  0x00007f57ec424edc: 0000 90e8 
+0x00007f57ec424edc: code=000090e8
+
+  0x00007f57ec424ee0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@462 (line 79)
+  0x00007f57ec424ee0: 1c96 a407 
+0x00007f57ec424ee0: code=1c96a407
+
+  0x00007f57ec424ee4: ;   {post_call_nop}
+  0x00007f57ec424ee4: 0f1f 8400 | 5c09 0013 
+0x00007f57ec424ee4: code=0f1f84005c090013
+
+  0x00007f57ec424eec: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424eec: 48be a876 | 48dc 577f | 0000 4883 | 86e8 0100 | 0001 488b | 9424 a801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424eec: code=48bea87648dc577f0000488386e801000001488b9424a80100004803d0488bb4
+  0x00007f57ec424f0c: 24a0 0000 | 0048 8994 | 24b0 0100 | 00ba 1400 
+0x00007f57ec424f0c: code=24a000000048899424b0010000ba1400
+
+  0x00007f57ec424f1c: ;   {static_call}
+  0x00007f57ec424f1c: 0000 90e8 
+0x00007f57ec424f1c: code=000090e8
+
+  0x00007f57ec424f20: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@474 (line 80)
+  0x00007f57ec424f20: dc95 a407 
+0x00007f57ec424f20: code=dc95a407
+
+  0x00007f57ec424f24: ;   {post_call_nop}
+  0x00007f57ec424f24: 0f1f 8400 | 9c09 0014 
+0x00007f57ec424f24: code=0f1f84009c090014
+
+  0x00007f57ec424f2c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424f2c: 48be a876 | 48dc 577f | 0000 4883 | 86f8 0100 | 0001 488b | 9424 b001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424f2c: code=48bea87648dc577f0000488386f801000001488b9424b00100004803d0488bb4
+  0x00007f57ec424f4c: 24a8 0000 | 0048 8994 | 24b8 0100 | 00ba 1500 
+0x00007f57ec424f4c: code=24a800000048899424b8010000ba1500
+
+  0x00007f57ec424f5c: ;   {static_call}
+  0x00007f57ec424f5c: 0000 90e8 
+0x00007f57ec424f5c: code=000090e8
+
+  0x00007f57ec424f60: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@486 (line 81)
+  0x00007f57ec424f60: 9c95 a407 
+0x00007f57ec424f60: code=9c95a407
+
+  0x00007f57ec424f64: ;   {post_call_nop}
+  0x00007f57ec424f64: 0f1f 8400 | dc09 0015 
+0x00007f57ec424f64: code=0f1f8400dc090015
+
+  0x00007f57ec424f6c: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424f6c: 48be a876 | 48dc 577f | 0000 4883 | 8608 0200 | 0001 488b | 9424 b801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424f6c: code=48bea87648dc577f00004883860802000001488b9424b80100004803d0488bb4
+  0x00007f57ec424f8c: 24b0 0000 | 0048 8994 | 24c0 0100 | 00ba 1600 
+0x00007f57ec424f8c: code=24b000000048899424c0010000ba1600
+
+  0x00007f57ec424f9c: ;   {static_call}
+  0x00007f57ec424f9c: 0000 90e8 
+0x00007f57ec424f9c: code=000090e8
+
+  0x00007f57ec424fa0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@498 (line 82)
+  0x00007f57ec424fa0: 5c95 a407 
+0x00007f57ec424fa0: code=5c95a407
+
+  0x00007f57ec424fa4: ;   {post_call_nop}
+  0x00007f57ec424fa4: 0f1f 8400 | 1c0a 0016 
+0x00007f57ec424fa4: code=0f1f84001c0a0016
+
+  0x00007f57ec424fac: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424fac: 48be a876 | 48dc 577f | 0000 4883 | 8618 0200 | 0001 488b | 9424 c001 | 0000 4803 | d048 8bb4 
+0x00007f57ec424fac: code=48bea87648dc577f00004883861802000001488b9424c00100004803d0488bb4
+  0x00007f57ec424fcc: 24b8 0000 | 0048 8994 | 24c8 0100 | 00ba 1700 
+0x00007f57ec424fcc: code=24b800000048899424c8010000ba1700
+
+  0x00007f57ec424fdc: ;   {static_call}
+  0x00007f57ec424fdc: 0000 90e8 
+0x00007f57ec424fdc: code=000090e8
+
+  0x00007f57ec424fe0: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@510 (line 83)
+  0x00007f57ec424fe0: 1c95 a407 
+0x00007f57ec424fe0: code=1c95a407
+
+  0x00007f57ec424fe4: ;   {post_call_nop}
+  0x00007f57ec424fe4: 0f1f 8400 | 5c0a 0017 
+0x00007f57ec424fe4: code=0f1f84005c0a0017
+
+  0x00007f57ec424fec: ;   {metadata(method data for {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec424fec: 48be a876 | 48dc 577f | 0000 4883 | 8628 0200 | 0001 488b | 9424 c801 | 0000 4803 | d048 8bb4 
+0x00007f57ec424fec: code=48bea87648dc577f00004883862802000001488b9424c80100004803d0488bb4
+  0x00007f57ec42500c: 2410 0100 | 0048 8994 | 24d0 0100 | 00ba 1800 
+0x00007f57ec42500c: code=241001000048899424d0010000ba1800
+
+  0x00007f57ec42501c: ;   {static_call}
+  0x00007f57ec42501c: 0000 90e8 
+0x00007f57ec42501c: code=000090e8
+
+  0x00007f57ec425020: ; ImmutableOopMap {}
+                      ;*invokestatic rotateLeft {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@522 (line 84)
+  0x00007f57ec425020: dc94 a407 
+0x00007f57ec425020: code=dc94a407
+
+  0x00007f57ec425024: ;   {post_call_nop}
+  0x00007f57ec425024: 0f1f 8400 | 9c0a 0018 | 488b 9424 | d001 0000 | 4803 d048 | 8bc2 4881 | c4e0 0100 
+0x00007f57ec425024: code=0f1f84009c0a0018488b9424d00100004803d0488bc24881c4e00100
+
+  0x00007f57ec425040: ;   {poll_return}
+  0x00007f57ec425040: 005d 493b | 6728 0f87 | 3c02 0000 
+0x00007f57ec425040: code=005d493b67280f873c020000
+
+  0x00007f57ec42504c: ;   {metadata({method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger')}
+  0x00007f57ec42504c: c349 ba18 | 7048 dc57 | 7f00 004c | 8954 2408 | 48c7 0424 | ffff ffff 
+0x00007f57ec42504c: code=c349ba187048dc577f00004c8954240848c70424ffffffff
+
+  0x00007f57ec425064: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec425064: e8f7 d159 
+0x00007f57ec425064: code=e8f7d159
+
+  0x00007f57ec425068: ; ImmutableOopMap {rsi=Oop rdx=Oop rcx=Oop r8=Oop r9=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*synchronization entry
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@-1 (line 34)
+  0x00007f57ec425068: 07e9 66f6 
+0x00007f57ec425068: code=07e966f6
+
+  0x00007f57ec42506c: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec42506c: ffff e86d 
+0x00007f57ec42506c: code=ffffe86d
+
+  0x00007f57ec425070: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@2 (line 34)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425070: 6959 07e8 
+0x00007f57ec425070: code=695907e8
+
+  0x00007f57ec425074: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@2 (line 34)
+  0x00007f57ec425074: 6869 5907 | 48c7 0424 | 0000 0000 | 4889 7424 
+0x00007f57ec425074: code=6869590748c704240000000048897424
+
+  0x00007f57ec425084: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425084: 08e8 5660 
+0x00007f57ec425084: code=08e85660
+
+  0x00007f57ec425088: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@2 (line 34)
+  0x00007f57ec425088: 5907 48c7 | 0424 0100 | 0000 4889 
+0x00007f57ec425088: code=590748c70424010000004889
+
+  0x00007f57ec425094: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425094: 7424 08e8 
+0x00007f57ec425094: code=742408e8
+
+  0x00007f57ec425098: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@7 (line 35)
+  0x00007f57ec425098: 4460 5907 | 48c7 0424 | 0200 0000 | 4889 7424 
+0x00007f57ec425098: code=4460590748c704240200000048897424
+
+  0x00007f57ec4250a8: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4250a8: 08e8 3260 
+0x00007f57ec4250a8: code=08e83260
+
+  0x00007f57ec4250ac: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@12 (line 36)
+  0x00007f57ec4250ac: 5907 48c7 | 0424 0300 | 0000 4889 
+0x00007f57ec4250ac: code=590748c70424030000004889
+
+  0x00007f57ec4250b8: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4250b8: 7424 08e8 
+0x00007f57ec4250b8: code=742408e8
+
+  0x00007f57ec4250bc: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@17 (line 37)
+  0x00007f57ec4250bc: 2060 5907 | 48c7 0424 | 0400 0000 | 4889 7424 
+0x00007f57ec4250bc: code=2060590748c704240400000048897424
+
+  0x00007f57ec4250cc: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4250cc: 08e8 0e60 
+0x00007f57ec4250cc: code=08e80e60
+
+  0x00007f57ec4250d0: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@22 (line 38)
+  0x00007f57ec4250d0: 5907 48c7 | 0424 0500 | 0000 4889 
+0x00007f57ec4250d0: code=590748c70424050000004889
+
+  0x00007f57ec4250dc: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4250dc: 7424 08e8 
+0x00007f57ec4250dc: code=742408e8
+
+  0x00007f57ec4250e0: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@27 (line 39)
+  0x00007f57ec4250e0: fc5f 5907 | 48c7 0424 | 0600 0000 | 4889 7424 
+0x00007f57ec4250e0: code=fc5f590748c704240600000048897424
+
+  0x00007f57ec4250f0: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4250f0: 08e8 ea5f 
+0x00007f57ec4250f0: code=08e8ea5f
+
+  0x00007f57ec4250f4: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@33 (line 40)
+  0x00007f57ec4250f4: 5907 48c7 | 0424 0700 | 0000 4889 
+0x00007f57ec4250f4: code=590748c70424070000004889
+
+  0x00007f57ec425100: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425100: 7424 08e8 
+0x00007f57ec425100: code=742408e8
+
+  0x00007f57ec425104: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@39 (line 41)
+  0x00007f57ec425104: d85f 5907 | 48c7 0424 | 0800 0000 | 4889 7424 
+0x00007f57ec425104: code=d85f590748c704240800000048897424
+
+  0x00007f57ec425114: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425114: 08e8 c65f 
+0x00007f57ec425114: code=08e8c65f
+
+  0x00007f57ec425118: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@45 (line 42)
+  0x00007f57ec425118: 5907 48c7 | 0424 0900 | 0000 4889 
+0x00007f57ec425118: code=590748c70424090000004889
+
+  0x00007f57ec425124: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425124: 7424 08e8 
+0x00007f57ec425124: code=742408e8
+
+  0x00007f57ec425128: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@51 (line 43)
+  0x00007f57ec425128: b45f 5907 | 48c7 0424 | 0a00 0000 | 4889 7424 
+0x00007f57ec425128: code=b45f590748c704240a00000048897424
+
+  0x00007f57ec425138: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425138: 08e8 a25f 
+0x00007f57ec425138: code=08e8a25f
+
+  0x00007f57ec42513c: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@57 (line 44)
+  0x00007f57ec42513c: 5907 48c7 | 0424 0b00 | 0000 4889 
+0x00007f57ec42513c: code=590748c704240b0000004889
+
+  0x00007f57ec425148: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425148: 7424 08e8 
+0x00007f57ec425148: code=742408e8
+
+  0x00007f57ec42514c: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@63 (line 45)
+  0x00007f57ec42514c: 905f 5907 | 48c7 0424 | 0c00 0000 | 4889 7424 
+0x00007f57ec42514c: code=905f590748c704240c00000048897424
+
+  0x00007f57ec42515c: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec42515c: 08e8 7e5f 
+0x00007f57ec42515c: code=08e87e5f
+
+  0x00007f57ec425160: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@69 (line 46)
+  0x00007f57ec425160: 5907 48c7 | 0424 0d00 | 0000 4889 
+0x00007f57ec425160: code=590748c704240d0000004889
+
+  0x00007f57ec42516c: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec42516c: 7424 08e8 
+0x00007f57ec42516c: code=742408e8
+
+  0x00007f57ec425170: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@75 (line 47)
+  0x00007f57ec425170: 6c5f 5907 | 48c7 0424 | 0e00 0000 | 4889 7424 
+0x00007f57ec425170: code=6c5f590748c704240e00000048897424
+
+  0x00007f57ec425180: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425180: 08e8 5a5f 
+0x00007f57ec425180: code=08e85a5f
+
+  0x00007f57ec425184: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@81 (line 48)
+  0x00007f57ec425184: 5907 48c7 | 0424 0f00 | 0000 4889 
+0x00007f57ec425184: code=590748c704240f0000004889
+
+  0x00007f57ec425190: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425190: 7424 08e8 
+0x00007f57ec425190: code=742408e8
+
+  0x00007f57ec425194: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@87 (line 49)
+  0x00007f57ec425194: 485f 5907 | 48c7 0424 | 1000 0000 | 4889 7424 
+0x00007f57ec425194: code=485f590748c704241000000048897424
+
+  0x00007f57ec4251a4: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4251a4: 08e8 365f 
+0x00007f57ec4251a4: code=08e8365f
+
+  0x00007f57ec4251a8: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@93 (line 50)
+  0x00007f57ec4251a8: 5907 48c7 | 0424 1100 | 0000 4889 
+0x00007f57ec4251a8: code=590748c70424110000004889
+
+  0x00007f57ec4251b4: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4251b4: 7424 08e8 
+0x00007f57ec4251b4: code=742408e8
+
+  0x00007f57ec4251b8: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@99 (line 51)
+  0x00007f57ec4251b8: 245f 5907 | 48c7 0424 | 1200 0000 | 4889 7424 
+0x00007f57ec4251b8: code=245f590748c704241200000048897424
+
+  0x00007f57ec4251c8: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4251c8: 08e8 125f 
+0x00007f57ec4251c8: code=08e8125f
+
+  0x00007f57ec4251cc: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@105 (line 52)
+  0x00007f57ec4251cc: 5907 48c7 | 0424 1300 | 0000 4889 
+0x00007f57ec4251cc: code=590748c70424130000004889
+
+  0x00007f57ec4251d8: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4251d8: 7424 08e8 
+0x00007f57ec4251d8: code=742408e8
+
+  0x00007f57ec4251dc: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@111 (line 53)
+  0x00007f57ec4251dc: 005f 5907 | 48c7 0424 | 1400 0000 | 4889 7424 
+0x00007f57ec4251dc: code=005f590748c704241400000048897424
+
+  0x00007f57ec4251ec: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4251ec: 08e8 ee5e 
+0x00007f57ec4251ec: code=08e8ee5e
+
+  0x00007f57ec4251f0: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@117 (line 54)
+  0x00007f57ec4251f0: 5907 48c7 | 0424 1500 | 0000 4889 
+0x00007f57ec4251f0: code=590748c70424150000004889
+
+  0x00007f57ec4251fc: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec4251fc: 7424 08e8 
+0x00007f57ec4251fc: code=742408e8
+
+  0x00007f57ec425200: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@123 (line 55)
+  0x00007f57ec425200: dc5e 5907 | 48c7 0424 | 1600 0000 | 4889 7424 
+0x00007f57ec425200: code=dc5e590748c704241600000048897424
+
+  0x00007f57ec425210: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425210: 08e8 ca5e 
+0x00007f57ec425210: code=08e8ca5e
+
+  0x00007f57ec425214: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@129 (line 56)
+  0x00007f57ec425214: 5907 48c7 | 0424 1700 | 0000 4889 
+0x00007f57ec425214: code=590748c70424170000004889
+
+  0x00007f57ec425220: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425220: 7424 08e8 
+0x00007f57ec425220: code=742408e8
+
+  0x00007f57ec425224: ; ImmutableOopMap {rsi=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@135 (line 57)
+  0x00007f57ec425224: b85e 5907 
+0x00007f57ec425224: code=b85e5907
+
+  0x00007f57ec425228: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425228: e8b3 6759 
+0x00007f57ec425228: code=e8b36759
+
+  0x00007f57ec42522c: ; ImmutableOopMap {rdx=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@222 (line 60)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec42522c: 07e8 ae67 
+0x00007f57ec42522c: code=07e8ae67
+
+  0x00007f57ec425230: ; ImmutableOopMap {rdx=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@222 (line 60)
+  0x00007f57ec425230: 5907 4889 | 3424 4889 
+0x00007f57ec425230: code=5907488934244889
+
+  0x00007f57ec425238: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425238: 5424 08e8 
+0x00007f57ec425238: code=542408e8
+
+  0x00007f57ec42523c: ; ImmutableOopMap {rdx=Oop [48]=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@222 (line 60)
+  0x00007f57ec42523c: a05e 5907 
+0x00007f57ec42523c: code=a05e5907
+
+  0x00007f57ec425240: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425240: e89b 6759 
+0x00007f57ec425240: code=e89b6759
+
+  0x00007f57ec425244: ; ImmutableOopMap {rcx=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@227 (line 60)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425244: 07e8 9667 
+0x00007f57ec425244: code=07e89667
+
+  0x00007f57ec425248: ; ImmutableOopMap {rcx=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@227 (line 60)
+  0x00007f57ec425248: 5907 4889 | 3424 4889 
+0x00007f57ec425248: code=5907488934244889
+
+  0x00007f57ec425250: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425250: 4c24 08e8 
+0x00007f57ec425250: code=4c2408e8
+
+  0x00007f57ec425254: ; ImmutableOopMap {rcx=Oop [56]=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@227 (line 60)
+  0x00007f57ec425254: 885e 5907 
+0x00007f57ec425254: code=885e5907
+
+  0x00007f57ec425258: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425258: e883 6759 
+0x00007f57ec425258: code=e8836759
+
+  0x00007f57ec42525c: ; ImmutableOopMap {r8=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@233 (line 60)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec42525c: 07e8 7e67 
+0x00007f57ec42525c: code=07e87e67
+
+  0x00007f57ec425260: ; ImmutableOopMap {r8=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@233 (line 60)
+  0x00007f57ec425260: 5907 4889 | 3424 4c89 
+0x00007f57ec425260: code=5907488934244c89
+
+  0x00007f57ec425268: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425268: 4424 08e8 
+0x00007f57ec425268: code=442408e8
+
+  0x00007f57ec42526c: ; ImmutableOopMap {r8=Oop [64]=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@233 (line 60)
+  0x00007f57ec42526c: 705e 5907 
+0x00007f57ec42526c: code=705e5907
+
+  0x00007f57ec425270: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425270: e86b 6759 
+0x00007f57ec425270: code=e86b6759
+
+  0x00007f57ec425274: ; ImmutableOopMap {r9=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@240 (line 60)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec425274: 07e8 6667 
+0x00007f57ec425274: code=07e86667
+
+  0x00007f57ec425278: ; ImmutableOopMap {r9=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@240 (line 60)
+  0x00007f57ec425278: 5907 4889 | 3424 4c89 
+0x00007f57ec425278: code=5907488934244c89
+
+  0x00007f57ec425280: ;   {runtime_call throw_range_check_failed_blob (C1 runtime)}
+  0x00007f57ec425280: 4c24 08e8 
+0x00007f57ec425280: code=4c2408e8
+
+  0x00007f57ec425284: ; ImmutableOopMap {r9=Oop [72]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@240 (line 60)
+  0x00007f57ec425284: 585e 5907 
+0x00007f57ec425284: code=585e5907
+
+  0x00007f57ec425288: ;   {internal_word}
+  0x00007f57ec425288: 49ba 4250 | 42ec 577f | 0000 4d89 | 9710 0500 
+0x00007f57ec425288: code=49ba425042ec577f00004d8997100500
+
+  0x00007f57ec425298: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007f57ec425298: 00e9 427c | 4d07 498b | 8778 0500 | 0049 c787 | 7805 0000 | 0000 0000 | 49c7 8780 | 0500 0000 
+0x00007f57ec425298: code=00e9427c4d07498b877805000049c787780500000000000049c7878005000000
+  0x00007f57ec4252b8: 0000 0048 | 81c4 e001 
+0x00007f57ec4252b8: code=0000004881c4e001
+
+  0x00007f57ec4252c0: ;   {runtime_call unwind_exception_blob (C1 runtime)}
+  0x00007f57ec4252c0: 0000 5de9 | 1858 5907 
+0x00007f57ec4252c0: code=00005de918585907
+[Stub Code]
+  0x00007f57ec4252c8: ;   {static_stub}
+  0x00007f57ec4252c8: 48bb 386d | 48dc 577f 
+0x00007f57ec4252c8: code=48bb386d48dc577f
+
+  0x00007f57ec4252d0: ;   {runtime_call I2C/C2I adapters}
+  0x00007f57ec4252d0: 0000 e9da 
+0x00007f57ec4252d0: code=0000e9da
+
+  0x00007f57ec4252d4: ;   {static_stub}
+  0x00007f57ec4252d4: 3e4d 0748 | bb00 0000 | 0000 0000 
+0x00007f57ec4252d4: code=3e4d0748bb00000000000000
+
+  0x00007f57ec4252e0: ;   {runtime_call nmethod}
+  0x00007f57ec4252e0: 00e9 fbff 
+0x00007f57ec4252e0: code=00e9fbff
+
+  0x00007f57ec4252e4: ;   {runtime_call handle_exception_from_callee_blob (C1 runtime)}
+  0x00007f57ec4252e4: ffff e8f5 
+0x00007f57ec4252e4: code=ffffe8f5
+
+  0x00007f57ec4252e8: ;   {external_word}
+  0x00007f57ec4252e8: 8e59 0748 | bf29 33f7 | 0b58 7f00 | 0048 83e4 
+0x00007f57ec4252e8: code=8e590748bf2933f70b587f00004883e4
+
+  0x00007f57ec4252f8: ;   {runtime_call MacroAssembler::debug64(char*, long, long*)}
+  0x00007f57ec4252f8: f0e8 3257 
+0x00007f57ec4252f8: code=f0e83257
+
+  0x00007f57ec4252fc: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57ec4252fc: 6020 f4e8 | 5c63 4d07 
+0x00007f57ec4252fc: code=6020f4e85c634d07
+[Deopt Handler Entry Point]
+  0x00007f57ec425304: ebf9 f4f4 
+0x00007f57ec425304: code=ebf9f4f4
+[/MachCode]
+
+============================= C1-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c1) 218  683 %     3       experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub @ 13 (57 bytes)
+ total in heap  [0x00007f57ec425f88,0x00007f57ec426608] = 1664
+ main code      [0x00007f57ec426080,0x00007f57ec4265d0] = 1360
+ stub code      [0x00007f57ec4265d0,0x00007f57ec426600] = 48
+ oops           [0x00007f57ec426600,0x00007f57ec426608] = 8
+ mutable data [0x00007f57b8002a90,0x00007f57b8002b30] = 160
+ relocation     [0x00007f57b8002a90,0x00007f57b8002b00] = 112
+ metadata       [0x00007f57b8002b00,0x00007f57b8002b30] = 48
+ immutable data [0x00007f57c80d7910,0x00007f57c80d7b54] = 580
+ dependencies   [0x00007f57c80d7910,0x00007f57c80d7920] = 16
+ nul chk table  [0x00007f57c80d7920,0x00007f57c80d7950] = 48
+ scopes pcs     [0x00007f57c80d7950,0x00007f57c80d7a20] = 208
+ scopes data    [0x00007f57c80d7a20,0x00007f57c80d7b50] = 304
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest'
+  0x00007f57ec426080: 8984 2400 | c0fe ff55 | 4881 ece0 | 0000 0090 | 4181 7f20 | 0100 0000 
+0x00007f57ec426080: code=89842400c0feff554881ece00000009041817f2001000000
+
+  0x00007f57ec426098: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57ec426098: 7405 e801 
+0x00007f57ec426098: code=7405e801
+
+  0x00007f57ec42609c: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec42609c: 3a4c 0748 | bbc0 7b48 | dc57 7f00 | 008b 4370 | 83c0 0289 | 4370 25fe | 0700 0085 | c00f 8434 
+0x00007f57ec42609c: code=3a4c0748bbc07b48dc577f00008b437083c00289437025fe07000085c00f8434
+  0x00007f57ec4260bc: 0400 0048 | 897c 2460 | 4889 5424 | 5848 8974 
+0x00007f57ec4260bc: code=04000048897c24604889542458488974
+
+  0x00007f57ec4260cc: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4260cc: 2468 48b8 | c07b 48dc | 577f 0000 | 4883 80a8 | 0000 0001 
+0x00007f57ec4260cc: code=246848b8c07b48dc577f0000488380a800000001
+
+  0x00007f57ec4260e0: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57ec4260e0: e8fb 2c74 
+0x00007f57ec4260e0: code=e8fb2c74
+
+  0x00007f57ec4260e4: ;   {post_call_nop}
+  0x00007f57ec4260e4: 200f 1f84 | 0000 0000 | 0048 8b54 | 2458 4889 | 4220 488b | bc24 0001 | 0000 488b | 5c24 6048 
+0x00007f57ec4260e4: code=200f1f840000000000488b54245848894220488bbc2400010000488b5c246048
+  0x00007f57ec426104: 8b74 2468 | b800 0000 | 0041 bb00 | 0000 0048 | 8984 24c8 | 0000 004c | 899c 24b0 | 0000 0048 
+0x00007f57ec426104: code=8b742468b80000000041bb0000000048898424c80000004c899c24b000000048
+  0x00007f57ec426124: 899c 24a8 | 0000 0048 | 8994 24c0 | 0000 00e9 | c200 0000 
+0x00007f57ec426124: code=899c24a800000048899424c0000000e9c2000000
+
+  0x00007f57ec426138: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426138: 48be 187e | 08a2 0000 | 0000 4883 | 86c8 0000 
+0x00007f57ec426138: code=48be187e08a200000000488386c80000
+
+  0x00007f57ec426148: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426148: 0001 48be | 187e 08a2 | 0000 0000 | ff86 d800 | 0000 488b | b424 b800 | 0000 4c8b | 9c24 b000 
+0x00007f57ec426148: code=000148be187e08a200000000ff86d8000000488bb424b80000004c8b9c24b000
+  0x00007f57ec426168: 0000 41ba | 0100 0000 | 4d03 da0f | bebe 8c00 | 0000 85ff | b802 0000 | 0074 05b8 | 0000 0000 
+0x00007f57ec426168: code=000041ba010000004d03da0fbebe8c00000085ffb8020000007405b800000000
+  0x00007f57ec426188: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426188: 48ba c07b | 48dc 577f | 0000 8b4a | 7403 c889 | 4a74 85c0 | 7505 b902 | 0000 0081 | e1fe 3f00 
+0x00007f57ec426188: code=48bac07b48dc577f00008b4a7403c8894a7485c07505b90200000081e1fe3f00
+  0x00007f57ec4261a8: 0085 c90f | 846d 0300 | 004d 8b57 
+0x00007f57ec4261a8: code=0085c90f846d0300004d8b57
+
+  0x00007f57ec4261b4: ; ImmutableOopMap {rbx=Oop rsi=Oop [160]=Oop [192]=Oop }
+                      ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@33 (line 124)
+                      ;   {poll}
+  0x00007f57ec4261b4: 3041 8502 
+0x00007f57ec4261b4: code=30418502
+
+  0x00007f57ec4261b8: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4261b8: 85ff 48bf | c07b 48dc | 577f 0000 | b828 0100 | 0075 05b8 | 1801 0000 | 488b 1407 | 488d 5201 
+0x00007f57ec4261b8: code=85ff48bfc07b48dc577f0000b8280100007505b818010000488b1407488d5201
+  0x00007f57ec4261d8: 4889 1407 | 0f85 ad01 | 0000 4c89 | 9c24 b000 | 0000 488b | bc24 a000 | 0000 4889 | 9c24 a800 
+0x00007f57ec4261d8: code=488914070f85ad0100004c899c24b0000000488bbc24a000000048899c24a800
+  0x00007f57ec4261f8: 0000 4889 | b424 b800 | 0000 483b | 0748 8bcf 
+0x00007f57ec4261f8: code=00004889b424b8000000483b07488bcf
+
+  0x00007f57ec426208: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426208: 49b8 c07b | 48dc 577f | 0000 8b09 | c1e9 0d48 | c1e1 0a41 | ba00 0000 | a149 03ca | 41ba 1800 
+0x00007f57ec426208: code=49b8c07b48dc577f00008b09c1e90d48c1e10a41ba000000a14903ca41ba1800
+  0x00007f57ec426228: 0000 4b3b | 0cd0 7436 | 4983 c202 | 4983 fa1c | 75f0 41ba | 1800 0000 | 4b83 3cd0 | 0074 1249 
+0x00007f57ec426228: code=00004b3b0cd074364983c2024983fa1c75f041ba180000004b833cd000741249
+  0x00007f57ec426248: 83c2 0249 | 83fa 1c75 | ef41 ba17 | 0000 00eb | 1150 4833 | c0f0 4b0f | b10c d058 | ebbe 4983 
+0x00007f57ec426248: code=83c2024983fa1c75ef41ba17000000eb11504833c0f04b0fb10cd058ebbe4983
+  0x00007f57ec426268: c201 4b83 
+0x00007f57ec426268: code=c2014b83
+
+  0x00007f57ec42626c: ;   {metadata(method data for {method} {0x00007f57dc45c0d0} 'kernel' '()J' in 'experiment/TriggerBench')}
+  0x00007f57ec42626c: 04d0 0148 | b900 7a48 | dc57 7f00 | 0044 8b41 | 7041 83c0 | 0244 8941 | 7041 81e0 | feff 1f00 
+0x00007f57ec42626c: code=04d00148b9007a48dc577f0000448b41704183c002448941704181e0feff1f00
+  0x00007f57ec42628c: 4585 c00f | 84af 0200 | 008b 4f04 | 448b 4710 | 448b 4f14 | 448b 6f18 | 448b 771c | 4889 bc24 
+0x00007f57ec42628c: code=4585c00f84af0200008b4f04448b4710448b4f14448b6f18448b771c4889bc24
+  0x00007f57ec4262ac: a000 0000 
+0x00007f57ec4262ac: code=a0000000
+
+  0x00007f57ec4262b0: ;   {metadata(method data for {method} {0x00007f57dc45c0d0} 'kernel' '()J' in 'experiment/TriggerBench')}
+  0x00007f57ec4262b0: 48bf 007a | 48dc 577f | 0000 4883 | 87a8 0000 | 0001 488b | f149 8bd0 | 498b c94d | 8bc5 4d8b 
+0x00007f57ec4262b0: code=48bf007a48dc577f0000488387a800000001488bf1498bd0498bc94d8bc54d8b
+  0x00007f57ec4262d0: ce66 0f1f 
+0x00007f57ec4262d0: code=ce660f1f
+
+  0x00007f57ec4262d4: ;   {static_call}
+  0x00007f57ec4262d4: 4400 00e8 
+0x00007f57ec4262d4: code=440000e8
+
+  0x00007f57ec4262d8: ; ImmutableOopMap {[160]=Oop [168]=Oop [184]=Oop [192]=Oop }
+                      ;*invokestatic kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TriggerBench::kernel@20 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57ec4262d8: a4e3 ffff 
+0x00007f57ec4262d8: code=a4e3ffff
+
+  0x00007f57ec4262dc: ;   {post_call_nop}
+  0x00007f57ec4262dc: 0f1f 8400 | 5403 0001 | 488b 9c24 | a800 0000 
+0x00007f57ec4262dc: code=0f1f840054030001488b9c24a8000000
+
+  0x00007f57ec4262ec: ; implicit exception: dispatches to 0x00007f57ec426565
+  0x00007f57ec4262ec: 483b 0348 
+0x00007f57ec4262ec: code=483b0348
+
+  0x00007f57ec4262f0: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4262f0: 8bf3 48bf | c07b 48dc | 577f 0000 | 8b36 c1ee | 0d48 c1e6 | 0a41 ba00 | 0000 a149 | 03f2 41ba 
+0x00007f57ec4262f0: code=8bf348bfc07b48dc577f00008b36c1ee0d48c1e60a41ba000000a14903f241ba
+  0x00007f57ec426310: 1e00 0000 | 4a3b 34d7 | 7436 4983 | c202 4983 | fa22 75f0 | 41ba 1e00 | 0000 4a83 | 3cd7 0074 
+0x00007f57ec426310: code=1e0000004a3b34d774364983c2024983fa2275f041ba1e0000004a833cd70074
+  0x00007f57ec426330: 1249 83c2 | 0249 83fa | 2275 ef41 | ba1d 0000 | 00eb 1150 | 4833 c0f0 | 4a0f b134 | d758 ebbe 
+0x00007f57ec426330: code=124983c2024983fa2275ef41ba1d000000eb11504833c0f04a0fb134d758ebbe
+  0x00007f57ec426350: 4983 c201 | 4a83 04d7 
+0x00007f57ec426350: code=4983c2014a8304d7
+
+  0x00007f57ec426358: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426358: 0148 be18 | 7e08 a200 | 0000 008b | 7e70 83c7 | 0289 7e70 | 81e7 feff | 1f00 85ff | 0f84 f001 
+0x00007f57ec426358: code=0148be187e08a2000000008b7e7083c702897e7081e7feff1f0085ff0f84f001
+  0x00007f57ec426378: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426378: 0000 48be | 187e 08a2 | 0000 0000 | ff86 b800 | 0000 e9a9 | fdff ff4c | 899c 24d0 
+0x00007f57ec426378: code=000048be187e08a200000000ff86b8000000e9a9fdffff4c899c24d0
+
+  0x00007f57ec426394: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426394: 0000 0048 | bec0 7b48 | dc57 7f00 | 0048 8386 | 3801 0000 
+0x00007f57ec426394: code=00000048bec07b48dc577f000048838638010000
+
+  0x00007f57ec4263a8: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57ec4263a8: 01e8 322a 
+0x00007f57ec4263a8: code=01e8322a
+
+  0x00007f57ec4263ac: ;   {post_call_nop}
+  0x00007f57ec4263ac: 7420 0f1f | 8400 0000 | 0000 488b | 9424 c000 | 0000 4889 | 4228 488b | 8424 c800 | 0000 4889 
+0x00007f57ec4263ac: code=74200f1f840000000000488b9424c000000048894228488b8424c80000004889
+  0x00007f57ec4263cc: 4218 4c8b | 9c24 d000 | 0000 c4c1 | fb2a c3c5 | fb11 4210 | 4881 c4e0 | 0000 005d 
+0x00007f57ec4263cc: code=42184c8b9c24d0000000c4c1fb2ac3c5fb1142104881c4e00000005d
+
+  0x00007f57ec4263e8: ;   {poll_return}
+  0x00007f57ec4263e8: 493b 6728 | 0f87 9e01 | 0000 c389 | 8424 00c0 | feff 5548 | 81ec e000 | 0000 6690 | 4181 7f20 
+0x00007f57ec4263e8: code=493b67280f879e010000c389842400c0feff554881ece0000000669041817f20
+  0x00007f57ec426408: 0000 0000 
+0x00007f57ec426408: code=00000000
+
+  0x00007f57ec42640c: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57ec42640c: 7405 e88d | 364c 07bf | 6000 0000 | 4863 ff48 | 8b1c 3ebf | 5800 0000 | 4863 ff48 | 8b04 3ebf 
+0x00007f57ec42640c: code=7405e88d364c07bf600000004863ff488b1c3ebf580000004863ff488b043ebf
+  0x00007f57ec42642c: 3800 0000 | 4863 ff48 | 8b14 3ebf | 2000 0000 | 4863 ff48 | 8b0c 3ebf | 1000 0000 | 4863 ff4c 
+0x00007f57ec42642c: code=380000004863ff488b143ebf200000004863ff488b0c3ebf100000004863ff4c
+  0x00007f57ec42644c: 8b04 3ebf | 0000 0000 | 4863 ff4c | 8b0c 3e48 | 8bfe 4889 | 9c24 9800 | 0000 4889 | 8424 9000 
+0x00007f57ec42644c: code=8b043ebf000000004863ff4c8b0c3e488bfe48899c2498000000488984249000
+  0x00007f57ec42646c: 0000 4889 | 9424 8800 | 0000 4889 | 8c24 8000 | 0000 4c89 | 4424 784c | 894c 2470 
+0x00007f57ec42646c: code=0000488994248800000048898c24800000004c894424784c894c2470
+
+  0x00007f57ec426488: ;   {runtime_call SharedRuntime::OSR_migration_end(long*)}
+  0x00007f57ec426488: e8f3 7882 
+0x00007f57ec426488: code=e8f37882
+
+  0x00007f57ec42648c: ;   {post_call_nop}
+  0x00007f57ec42648c: 200f 1f84 | 0000 0000 | 004c 8b4c | 2470 498b | c14c 8b44 | 2478 4d8b | d848 8b8c | 2480 0000 
+0x00007f57ec42648c: code=200f1f8400000000004c8b4c2470498bc14c8b4424784d8bd8488b8c24800000
+  0x00007f57ec4264ac: 0048 8bf9 | 488b 9424 | 8800 0000 | 488b da48 | 8bb4 2490 | 0000 0048 | 8bd6 488b | b424 9800 
+0x00007f57ec4264ac: code=00488bf9488b942488000000488bda488bb42490000000488bd6488bb4249800
+  0x00007f57ec4264cc: 0000 4889 | 8424 c800 | 0000 4c89 | 9c24 b000 | 0000 4889 | 9c24 a800 | 0000 4889 | 9424 c000 
+0x00007f57ec4264cc: code=000048898424c80000004c899c24b000000048899c24a800000048899424c000
+  0x00007f57ec4264ec: 0000 e907 
+0x00007f57ec4264ec: code=0000e907
+
+  0x00007f57ec4264f0: ;   {metadata({method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4264f0: fdff ff49 | baa0 9344 | dc57 7f00 | 004c 8954 | 2408 48c7 | 0424 ffff 
+0x00007f57ec4264f0: code=fdffff49baa09344dc577f00004c8954240848c70424ffff
+
+  0x00007f57ec426508: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426508: ffff e851 
+0x00007f57ec426508: code=ffffe851
+
+  0x00007f57ec42650c: ; ImmutableOopMap {rsi=Oop rdx=Oop rcx=Oop r8=Oop r9=Oop rdi=Oop [240]=Oop [256]=Oop }
+                      ;*synchronization entry
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@-1 (line 118)
+  0x00007f57ec42650c: bd59 07e9 | abfb ffff 
+0x00007f57ec42650c: code=bd5907e9abfbffff
+
+  0x00007f57ec426514: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426514: e8c7 5459 
+0x00007f57ec426514: code=e8c75459
+
+  0x00007f57ec426518: ; ImmutableOopMap {rdx=Oop [96]=Oop [104]=Oop [256]=Oop }
+                      ;*putfield startTime {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@10 (line 120)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426518: 07e8 c254 
+0x00007f57ec426518: code=07e8c254
+
+  0x00007f57ec42651c: ; ImmutableOopMap {rbx=Oop rsi=Oop [160]=Oop [192]=Oop }
+                      ;*getfield isDone {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@30 (line 124)
+                      ;   {metadata({method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec42651c: 5907 49ba | a093 44dc | 577f 0000 | 4c89 5424 | 0848 c704 | 2421 0000 
+0x00007f57ec42651c: code=590749baa09344dc577f00004c8954240848c70424210000
+
+  0x00007f57ec426534: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426534: 00e8 26bd 
+0x00007f57ec426534: code=00e826bd
+
+  0x00007f57ec426538: ; ImmutableOopMap {rbx=Oop rsi=Oop [160]=Oop [192]=Oop }
+                      ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@33 (line 124)
+  0x00007f57ec426538: 5907 e972 
+0x00007f57ec426538: code=5907e972
+
+  0x00007f57ec42653c: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec42653c: fcff ffe8 
+0x00007f57ec42653c: code=fcffffe8
+
+  0x00007f57ec426540: ; ImmutableOopMap {rdi=Oop [168]=Oop [184]=Oop [192]=Oop }
+                      ;*invokevirtual kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57ec426540: 9c54 5907 
+0x00007f57ec426540: code=9c545907
+
+  0x00007f57ec426544: ;   {metadata({method} {0x00007f57dc45c0d0} 'kernel' '()J' in 'experiment/TriggerBench')}
+  0x00007f57ec426544: 49ba d0c0 | 45dc 577f | 0000 4c89 | 5424 0848 | c704 24ff 
+0x00007f57ec426544: code=49bad0c045dc577f00004c8954240848c70424ff
+
+  0x00007f57ec426558: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426558: ffff ffe8 
+0x00007f57ec426558: code=ffffffe8
+
+  0x00007f57ec42655c: ; ImmutableOopMap {rdi=Oop [168]=Oop [184]=Oop [192]=Oop }
+                      ;*synchronization entry
+                      ; - experiment.TriggerBench::kernel@-1 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57ec42655c: 00bd 5907 | e930 fdff 
+0x00007f57ec42655c: code=00bd5907e930fdff
+
+  0x00007f57ec426564: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426564: ffe8 7654 
+0x00007f57ec426564: code=ffe87654
+
+  0x00007f57ec426568: ; ImmutableOopMap {rbx=Oop [160]=Oop [184]=Oop [192]=Oop }
+                      ;*invokevirtual consume {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@20 (line 122)
+                      ;   {metadata({method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426568: 5907 49ba | a870 45dc | 577f 0000 | 4c89 5424 | 0848 c704 | 24ff ffff 
+0x00007f57ec426568: code=590749baa87045dc577f00004c8954240848c70424ffffff
+
+  0x00007f57ec426580: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426580: ffe8 dabc 
+0x00007f57ec426580: code=ffe8dabc
+
+  0x00007f57ec426584: ; ImmutableOopMap {rbx=Oop [160]=Oop [184]=Oop [192]=Oop }
+                      ;*synchronization entry
+                      ; - org.openjdk.jmh.infra.Blackhole::consume@-1 (line 400)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@20 (line 122)
+  0x00007f57ec426584: 5907 e9ef 
+0x00007f57ec426584: code=5907e9ef
+
+  0x00007f57ec426588: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426588: fdff ffe8 
+0x00007f57ec426588: code=fdffffe8
+
+  0x00007f57ec42658c: ; ImmutableOopMap {rdx=Oop }
+                      ;*putfield stopTime {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@40 (line 125)
+  0x00007f57ec42658c: 5054 5907 
+0x00007f57ec42658c: code=50545907
+
+  0x00007f57ec426590: ;   {internal_word}
+  0x00007f57ec426590: 49ba e863 | 42ec 577f | 0000 4d89 | 9710 0500 
+0x00007f57ec426590: code=49bae86342ec577f00004d8997100500
+
+  0x00007f57ec4265a0: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007f57ec4265a0: 00e9 3a69 | 4d07 498b | 8778 0500 | 0049 c787 | 7805 0000 | 0000 0000 | 49c7 8780 | 0500 0000 
+0x00007f57ec4265a0: code=00e93a694d07498b877805000049c787780500000000000049c7878005000000
+  0x00007f57ec4265c0: 0000 0048 | 81c4 e000 
+0x00007f57ec4265c0: code=0000004881c4e000
+
+  0x00007f57ec4265c8: ;   {runtime_call unwind_exception_blob (C1 runtime)}
+  0x00007f57ec4265c8: 0000 5de9 | 1045 5907 
+0x00007f57ec4265c8: code=00005de910455907
+[Stub Code]
+  0x00007f57ec4265d0: ;   {static_stub}
+  0x00007f57ec4265d0: 48bb 0000 | 0000 0000 
+0x00007f57ec4265d0: code=48bb000000000000
+
+  0x00007f57ec4265d8: ;   {runtime_call nmethod}
+  0x00007f57ec4265d8: 0000 e9fb 
+0x00007f57ec4265d8: code=0000e9fb
+
+  0x00007f57ec4265dc: ;   {runtime_call handle_exception_from_callee_blob (C1 runtime)}
+  0x00007f57ec4265dc: ffff ffe8 | fc7b 5907 
+0x00007f57ec4265dc: code=ffffffe8fc7b5907
+
+  0x00007f57ec4265e4: ;   {external_word}
+  0x00007f57ec4265e4: 48bf 2933 | f70b 587f | 0000 4883 
+0x00007f57ec4265e4: code=48bf2933f70b587f00004883
+
+  0x00007f57ec4265f0: ;   {runtime_call MacroAssembler::debug64(char*, long, long*)}
+  0x00007f57ec4265f0: e4f0 e839 | 4460 20f4 
+0x00007f57ec4265f0: code=e4f0e839446020f4
+
+  0x00007f57ec4265f8: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57ec4265f8: e863 504d | 07eb f9f4 
+0x00007f57ec4265f8: code=e863504d07ebf9f4
+[/MachCode]
+
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c2) 220  679       4       experiment.TestSharedSpillSharingTrigger::kernel (531 bytes)
+ total in heap  [0x00007f57f3e6f008,0x00007f57f3e6fae8] = 2784
+ main code      [0x00007f57f3e6f100,0x00007f57f3e6fac8] = 2504
+ stub code      [0x00007f57f3e6fac8,0x00007f57f3e6fae0] = 24
+ oops           [0x00007f57f3e6fae0,0x00007f57f3e6fae8] = 8
+ mutable data [0x00007f57b4005710,0x00007f57b4005778] = 104
+ relocation     [0x00007f57b4005710,0x00007f57b4005768] = 88
+ metadata       [0x00007f57b4005768,0x00007f57b4005778] = 16
+ immutable data [0x00007f57b400dad0,0x00007f57b400e02c] = 1372
+ dependencies   [0x00007f57b400dad0,0x00007f57b400dad8] = 8
+ nul chk table  [0x00007f57b400dad8,0x00007f57b400db08] = 48
+ handler table  [0x00007f57b400db08,0x00007f57b400db20] = 24
+ scopes pcs     [0x00007f57b400db20,0x00007f57b400dbf0] = 208
+ scopes data    [0x00007f57b400dbf0,0x00007f57b400e028] = 1080
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc487018} 'kernel' '([J[I[I[I[I)J' in 'experiment/TestSharedSpillSharingTrigger'
+  # parm0:    rsi:rsi   = '[J'
+  # parm1:    rdx:rdx   = '[I'
+  # parm2:    rcx:rcx   = '[I'
+  # parm3:    r8:r8     = '[I'
+  # parm4:    r9:r9     = '[I'
+  #           [sp+0x110]  (sp of caller)
+  0x00007f57f3e6f100: 8984 2400 | c0fe ff55 | 4881 ec00 | 0100 0090 | 4181 7f20 | 0100 0000 | 0f85 9c09 | 0000 4c89 
+0x00007f57f3e6f100: code=89842400c0feff554881ec000100009041817f20010000000f859c0900004c89
+  0x00007f57f3e6f120: 4c24 204c | 8944 2418 | 4889 4c24 | 0848 8954 | 2410 448b | 5e04 4183 | fb17 0f86 | b408 0000 
+0x00007f57f3e6f120: code=4c24204c8944241848894c24084889542410448b5e044183fb170f86b4080000
+  0x00007f57f3e6f140: 4c8b 5608 | 4c8b 5e10 | 4c8b 4618 | 4c89 5424 | 284c 895c | 2430 4d33 | d34c 8b5e | 204c 8944 
+0x00007f57f3e6f140: code=4c8b56084c8b5e104c8b46184c895424284c895c24304d33d34c8b5e204c8944
+  0x00007f57f3e6f160: 2438 4d33 | d04c 8b4e | 284c 895c | 2440 4d33 | d34c 8b46 | 304c 894c | 2448 4d33 | d14c 8b5e 
+0x00007f57f3e6f160: code=24384d33d04c8b4e284c895c24404d33d34c8b46304c894c24484d33d14c8b5e
+  0x00007f57f3e6f180: 384c 8944 | 2450 4d33 | d04c 8b46 | 404c 895c | 2458 4d33 | d34c 8944 | 2460 4d33 | d04c 8b5e 
+0x00007f57f3e6f180: code=384c894424504d33d04c8b46404c895c24584d33d34c894424604d33d04c8b5e
+  0x00007f57f3e6f1a0: 484c 895c | 2468 4d33 | d34c 8b5e | 504c 895c | 2470 4d33 | d34c 8b5e | 584c 895c | 2478 4d33 
+0x00007f57f3e6f1a0: code=484c895c24684d33d34c8b5e504c895c24704d33d34c8b5e584c895c24784d33
+  0x00007f57f3e6f1c0: d34c 8b5e | 604c 899c | 2480 0000 | 004d 33d3 | 4c8b 5e68 | 4c89 9c24 | 8800 0000 | 4d33 d34c 
+0x00007f57f3e6f1c0: code=d34c8b5e604c899c24800000004d33d34c8b5e684c899c24880000004d33d34c
+  0x00007f57f3e6f1e0: 8b5e 704c | 899c 2490 | 0000 004d | 33d3 4c8b | 5e78 4c89 | 9c24 9800 | 0000 4d33 
+0x00007f57f3e6f1e0: code=8b5e704c899c24900000004d33d34c8b5e784c899c24980000004d33
+
+  0x00007f57f3e6f1fc: ;   {other}
+  0x00007f57f3e6f1fc: d34c 8b9e | 8000 0000 | 4c89 9c24 | a000 0000 | 4d33 d34c | 8b9e 8800 | 0000 4c89 | 9c24 a800 
+0x00007f57f3e6f1fc: code=d34c8b9e800000004c899c24a00000004d33d34c8b9e880000004c899c24a800
+  0x00007f57f3e6f21c: 0000 4d33 | d34c 8b9e | 9000 0000 | 4c89 9c24 | b000 0000 | 4d33 d34c | 8b9e 9800 | 0000 4c89 
+0x00007f57f3e6f21c: code=00004d33d34c8b9e900000004c899c24b00000004d33d34c8b9e980000004c89
+  0x00007f57f3e6f23c: 9c24 b800 | 0000 4d33 | d34c 8b9e | a000 0000 | 4c89 9c24 | c000 0000 | 4d33 d34c | 8b9e a800 
+0x00007f57f3e6f23c: code=9c24b80000004d33d34c8b9ea00000004c899c24c00000004d33d34c8b9ea800
+  0x00007f57f3e6f25c: 0000 4c89 | 9c24 c800 | 0000 4d33 | d34c 8b9e | b000 0000 | 4c89 9c24 | d000 0000 | 4d33 d34c 
+0x00007f57f3e6f25c: code=00004c899c24c80000004d33d34c8b9eb00000004c899c24d00000004d33d34c
+  0x00007f57f3e6f27c: 8b9e b800 | 0000 4c89 | 9c24 d800 | 0000 4d33 | d34c 8b9e | c000 0000 | 4c89 9c24 | e000 0000 
+0x00007f57f3e6f27c: code=8b9eb80000004c899c24d80000004d33d34c8b9ec00000004c899c24e0000000
+  0x00007f57f3e6f29c: 4d33 d345 | 8bda 4181 | e3ff 0300 | 0044 899c | 24e8 0000 
+0x00007f57f3e6f29c: code=4d33d3458bda4181e3ff03000044899c24e80000
+
+  0x00007f57f3e6f2b0: ;   {static_call}
+  0x00007f57f3e6f2b0: 0066 90e8 
+0x00007f57f3e6f2b0: code=006690e8
+
+  0x00007f57f3e6f2b4: ; ImmutableOopMap {[8]=Oop [16]=Oop [24]=Oop [32]=Oop }
+                      ;*invokestatic barrier {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@216 (line 59)
+  0x00007f57f3e6f2b4: 48f5 ffff 
+0x00007f57f3e6f2b4: code=48f5ffff
+
+  0x00007f57f3e6f2b8: ;   {post_call_nop}
+  0x00007f57f3e6f2b8: 0f1f 8400 | b002 0000 | 4c8b 5424 | 1045 8b52 | 0444 8b84 | 24e8 0000 | 0045 3bc2 | 0f83 fb01 
+0x00007f57f3e6f2b8: code=0f1f8400b00200004c8b542410458b5204448b8424e8000000453bc20f83fb01
+  0x00007f57f3e6f2d8: 0000 4c8b | 5424 0845 | 8b5a 044c | 8b54 2410 | 4f63 4c82 | 0845 3bc3 | 0f83 3e03 | 0000 4c8b 
+0x00007f57f3e6f2d8: code=00004c8b542408458b5a044c8b5424104f634c8208453bc30f833e0300004c8b
+  0x00007f57f3e6f2f8: 5424 1845 | 8b52 044c | 8b5c 2408 | 4f63 5c83 | 084d 03d9 | 453b c20f | 8377 0400 | 004c 8b54 
+0x00007f57f3e6f2f8: code=542418458b52044c8b5c24084f635c83084d03d9453bc20f83770400004c8b54
+  0x00007f57f3e6f318: 2420 458b | 5204 4c8b | 4c24 184b | 636c 8108 | 4903 eb45 | 3bc2 0f83 | a005 0000 | 4c8b 5424 
+0x00007f57f3e6f318: code=2420458b52044c8b4c24184b636c81084903eb453bc20f83a00500004c8b5424
+  0x00007f57f3e6f338: 204b 6344 | 8208 4803 | c5c4 63fb | f05c 2430 | 3ec4 63fb | f044 2438 | 3dc4 63fb | f04c 2440 
+0x00007f57f3e6f338: code=204b634482084803c5c463fbf05c24303ec463fbf04424383dc463fbf04c2440
+  0x00007f57f3e6f358: 3cc4 e3fb | f04c 2448 | 3bc4 e3fb | f05c 2450 | 3ac4 e3fb | f07c 2458 | 39c4 e3fb | f054 2460 
+0x00007f57f3e6f358: code=3cc4e3fbf04c24483bc4e3fbf05c24503ac4e3fbf07c245839c4e3fbf0542460
+  0x00007f57f3e6f378: 38c4 e3fb | f074 2468 | 37c4 e3fb | f06c 2470 | 36c4 63fb | f06c 2478 | 35c4 63fb | f0b4 2480 
+0x00007f57f3e6f378: code=38c4e3fbf074246837c4e3fbf06c247036c463fbf06c247835c463fbf0b42480
+  0x00007f57f3e6f398: 0000 0034 | c463 fbf0 | 9424 8800 | 0000 334c | 8914 24c4 | 63fb f094 | 2490 0000 
+0x00007f57f3e6f398: code=00000034c463fbf0942488000000334c891424c463fbf09424900000
+
+  0x00007f57f3e6f3b4: ;   {other}
+  0x00007f57f3e6f3b4: 0032 4c89 | 5424 08c4 | 63fb f094 | 2498 0000 | 0031 4c89 | 5424 10c4 | 63fb f094 | 24a0 0000 
+0x00007f57f3e6f3b4: code=00324c89542408c463fbf0942498000000314c89542410c463fbf09424a00000
+  0x00007f57f3e6f3d4: 0030 4c89 | 5424 18c4 | 63fb f094 | 24a8 0000 | 002f 4c89 | 5424 20c4 | 63fb f094 | 24b0 0000 
+0x00007f57f3e6f3d4: code=00304c89542418c463fbf09424a80000002f4c89542420c463fbf09424b00000
+  0x00007f57f3e6f3f4: 002e 4c89 | 5424 30c4 | 63fb f094 | 24b8 0000 | 002d 4c89 | 5424 38c4 | 63fb f094 | 24c0 0000 
+0x00007f57f3e6f3f4: code=002e4c89542430c463fbf09424b80000002d4c89542438c463fbf09424c00000
+  0x00007f57f3e6f414: 002c 4c89 | 5424 40c4 | 63fb f094 | 24c8 0000 | 002b 4c89 | 5424 48c4 | 63fb f094 | 24d0 0000 
+0x00007f57f3e6f414: code=002c4c89542440c463fbf09424c80000002b4c89542448c463fbf09424d00000
+  0x00007f57f3e6f434: 002a 4c89 | 5424 50c4 | 63fb f094 | 24d8 0000 | 0029 4c89 | 5424 58c4 | 63fb f094 | 24e0 0000 
+0x00007f57f3e6f434: code=002a4c89542450c463fbf09424d8000000294c89542458c463fbf09424e00000
+  0x00007f57f3e6f454: 0028 4c89 | 5424 60c4 | 63fb f054 | 2428 3f49 | 03c2 4903 | c349 03c0 | 4903 c148 | 03c1 4803 
+0x00007f57f3e6f454: code=00284c89542460c463fbf05424283f4903c24903c34903c04903c14803c14803
+  0x00007f57f3e6f474: c348 03c7 | 4803 c248 | 03c6 4803 | c549 03c5 | 4903 c648 | 0304 2448 | 0344 2408 | 4803 4424 
+0x00007f57f3e6f474: code=c34803c74803c24803c64803c54903c54903c648030424480344240848034424
+  0x00007f57f3e6f494: 1048 0344 | 2418 4803 | 4424 2048 | 0344 2430 | 4803 4424 | 3848 0344 | 2440 4803 | 4424 4848 
+0x00007f57f3e6f494: code=1048034424184803442420480344243048034424384803442440480344244848
+  0x00007f57f3e6f4b4: ;   {other}
+  0x00007f57f3e6f4b4: 0344 2450 | 4803 4424 | 5848 0344 | 2460 4881 | c400 0100 
+0x00007f57f3e6f4b4: code=03442450480344245848034424604881c4000100
+
+  0x00007f57f3e6f4c8: ;   {poll_return}
+  0x00007f57f3e6f4c8: 005d 493b | 6728 0f87 | d005 0000 | c3be e4ff | ffff 488b | 6c24 084c | 8b54 2418 | 4c89 1424 
+0x00007f57f3e6f4c8: code=005d493b67280f87d0050000c3bee4ffffff488b6c24084c8b5424184c891424
+  0x00007f57f3e6f4e8: 4c8b 5424 | 204c 8954 | 2408 4c8b | 5424 284c | 8954 2418 | 4c8b 5424 | 304c 8954 | 2420 4c8b 
+0x00007f57f3e6f4e8: code=4c8b5424204c895424084c8b5424284c895424184c8b5424304c895424204c8b
+  0x00007f57f3e6f508: 5424 384c | 8954 2428 | 4c8b 5424 | 404c 8954 | 2430 4c8b | 5424 484c | 8954 2438 | 4c8b 5424 
+0x00007f57f3e6f508: code=5424384c895424284c8b5424404c895424304c8b5424484c895424384c8b5424
+  0x00007f57f3e6f528: 504c 8954 | 2440 4c8b | 5424 584c | 8954 2448 | 4c8b 5424 | 604c 8954 | 2450 4c8b | 5424 684c 
+0x00007f57f3e6f528: code=504c895424404c8b5424584c895424484c8b5424604c895424504c8b5424684c
+  0x00007f57f3e6f548: 8954 2458 | 4c8b 5424 | 704c 8954 | 2460 4c8b | 5424 784c | 8954 2468 | 4c8b 9424 | 8000 0000 
+0x00007f57f3e6f548: code=895424584c8b5424704c895424604c8b5424784c895424684c8b942480000000
+  0x00007f57f3e6f568: 4c89 5424 | 704c 8b94 | 2488 0000 | 004c 8954 | 2478 4c8b | 9424 9000 | 0000 4c89 | 9424 8000 
+0x00007f57f3e6f568: code=4c895424704c8b9424880000004c895424784c8b9424900000004c8994248000
+  0x00007f57f3e6f588: 0000 4c8b | 9424 9800 | 0000 4c89 | 9424 8800 | 0000 4c8b | 9424 a000 | 0000 4c89 | 9424 9000 
+0x00007f57f3e6f588: code=00004c8b9424980000004c899424880000004c8b9424a00000004c8994249000
+  0x00007f57f3e6f5a8: 0000 4c8b | 9424 a800 | 0000 4c89 | 9424 9800 | 0000 4c8b | 9424 b000 | 0000 4c89 | 9424 a000 
+0x00007f57f3e6f5a8: code=00004c8b9424a80000004c899424980000004c8b9424b00000004c899424a000
+  0x00007f57f3e6f5c8: ;   {other}
+  0x00007f57f3e6f5c8: 0000 4c8b | 9424 b800 | 0000 4c89 | 9424 a800 | 0000 4c8b | 9424 c000 | 0000 4c89 | 9424 b000 
+0x00007f57f3e6f5c8: code=00004c8b9424b80000004c899424a80000004c8b9424c00000004c899424b000
+  0x00007f57f3e6f5e8: 0000 4c8b | 9424 c800 | 0000 4c89 | 9424 b800 | 0000 4c8b | 9424 d000 | 0000 4c89 | 9424 c000 
+0x00007f57f3e6f5e8: code=00004c8b9424c80000004c899424b80000004c8b9424d00000004c899424c000
+  0x00007f57f3e6f608: 0000 4c8b | 9424 d800 | 0000 4c89 | 9424 c800 | 0000 458b | d844 899c | 24dc 0000 
+0x00007f57f3e6f608: code=00004c8b9424d80000004c899424c8000000458bd844899c24dc0000
+
+  0x00007f57f3e6f624: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6f624: 0066 90e8 
+0x00007f57f3e6f624: code=006690e8
+
+  0x00007f57f3e6f628: ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop [16]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@222 (line 60)
+  0x00007f57f3e6f628: 3448 b5ff 
+0x00007f57f3e6f628: code=3448b5ff
+
+  0x00007f57f3e6f62c: ;   {post_call_nop}
+  0x00007f57f3e6f62c: 0f1f 8400 | 2406 0001 | bee4 ffff | ff48 8b6c | 2418 4c8b | 5424 204c | 8914 244c | 8b54 2428 
+0x00007f57f3e6f62c: code=0f1f840024060001bee4ffffff488b6c24184c8b5424204c8914244c8b542428
+  0x00007f57f3e6f64c: 4c89 5424 | 104c 8b54 | 2430 4c89 | 5424 184c | 8b54 2438 | 4c89 5424 | 204c 8b54 | 2440 4c89 
+0x00007f57f3e6f64c: code=4c895424104c8b5424304c895424184c8b5424384c895424204c8b5424404c89
+  0x00007f57f3e6f66c: 5424 284c | 8b54 2448 | 4c89 5424 | 304c 8b54 | 2450 4c89 | 5424 384c | 8b54 2458 | 4c89 5424 
+0x00007f57f3e6f66c: code=5424284c8b5424484c895424304c8b5424504c895424384c8b5424584c895424
+  0x00007f57f3e6f68c: 404c 8b54 | 2460 4c89 | 5424 484c | 8b54 2468 | 4c89 5424 | 504c 8b54 | 2470 4c89 | 5424 584c 
+0x00007f57f3e6f68c: code=404c8b5424604c895424484c8b5424684c895424504c8b5424704c895424584c
+  0x00007f57f3e6f6ac: 8b54 2478 | 4c89 5424 | 604c 8b94 | 2480 0000 | 004c 8954 | 2468 4c8b | 9424 8800 | 0000 4c89 
+0x00007f57f3e6f6ac: code=8b5424784c895424604c8b9424800000004c895424684c8b9424880000004c89
+  0x00007f57f3e6f6cc: 5424 704c | 8b94 2490 | 0000 004c | 8954 2478 | 4c8b 9424 | 9800 0000 | 4c89 9424 | 8000 0000 
+0x00007f57f3e6f6cc: code=5424704c8b9424900000004c895424784c8b9424980000004c89942480000000
+  0x00007f57f3e6f6ec: 4c8b 9424 | a000 0000 | 4c89 9424 | 8800 0000 | 4c8b 9424 | a800 0000 | 4c89 9424 | 9000 0000 
+0x00007f57f3e6f6ec: code=4c8b9424a00000004c899424880000004c8b9424a80000004c89942490000000
+  0x00007f57f3e6f70c: 4c8b 9424 | b000 0000 | 4c89 9424 | 9800 0000 | 4c8b 9424 | b800 0000 | 4c89 9424 
+0x00007f57f3e6f70c: code=4c8b9424b00000004c899424980000004c8b9424b80000004c899424
+
+  0x00007f57f3e6f728: ;   {other}
+  0x00007f57f3e6f728: a000 0000 | 4c8b 9424 | c000 0000 | 4c89 9424 | a800 0000 | 4c8b 9424 | c800 0000 | 4c89 9424 
+0x00007f57f3e6f728: code=a00000004c8b9424c00000004c899424a80000004c8b9424c80000004c899424
+  0x00007f57f3e6f748: b000 0000 | 4c8b 9424 | d000 0000 | 4c89 9424 | b800 0000 | 4c8b 9424 | d800 0000 | 4c89 9424 
+0x00007f57f3e6f748: code=b00000004c8b9424d00000004c899424b80000004c8b9424d80000004c899424
+  0x00007f57f3e6f768: c000 0000 | 458b d84c | 898c 24d8 | 0000 0044 | 899c 24d4 
+0x00007f57f3e6f768: code=c0000000458bd84c898c24d800000044899c24d4
+
+  0x00007f57f3e6f77c: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6f77c: 0000 00e8 
+0x00007f57f3e6f77c: code=000000e8
+
+  0x00007f57f3e6f780: ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@227 (line 60)
+  0x00007f57f3e6f780: dc46 b5ff 
+0x00007f57f3e6f780: code=dc46b5ff
+
+  0x00007f57f3e6f784: ;   {post_call_nop}
+  0x00007f57f3e6f784: 0f1f 8400 | 7c07 0002 | bee4 ffff | ff48 8b6c | 2420 4c8b | 5424 184c | 8914 244c | 8b54 2428 
+0x00007f57f3e6f784: code=0f1f84007c070002bee4ffffff488b6c24204c8b5424184c8914244c8b542428
+  0x00007f57f3e6f7a4: 4c89 5424 | 084c 8b54 | 2430 4c89 | 5424 104c | 8b54 2438 | 4c89 5424 | 184c 8b54 | 2440 4c89 
+0x00007f57f3e6f7a4: code=4c895424084c8b5424304c895424104c8b5424384c895424184c8b5424404c89
+  0x00007f57f3e6f7c4: 5424 204c | 8b54 2448 | 4c89 5424 | 284c 8b54 | 2450 4c89 | 5424 304c | 8b54 2458 | 4c89 5424 
+0x00007f57f3e6f7c4: code=5424204c8b5424484c895424284c8b5424504c895424304c8b5424584c895424
+  0x00007f57f3e6f7e4: 384c 8b54 | 2460 4c89 | 5424 404c | 8b54 2468 | 4c89 5424 | 484c 8b54 | 2470 4c89 | 5424 504c 
+0x00007f57f3e6f7e4: code=384c8b5424604c895424404c8b5424684c895424484c8b5424704c895424504c
+  0x00007f57f3e6f804: 8b54 2478 | 4c89 5424 | 584c 8b94 | 2480 0000 | 004c 8954 | 2460 4c8b | 9424 8800 | 0000 4c89 
+0x00007f57f3e6f804: code=8b5424784c895424584c8b9424800000004c895424604c8b9424880000004c89
+  0x00007f57f3e6f824: 5424 684c | 8b94 2490 | 0000 004c | 8954 2470 | 4c8b 9424 | 9800 0000 | 4c89 5424 | 784c 8b94 
+0x00007f57f3e6f824: code=5424684c8b9424900000004c895424704c8b9424980000004c895424784c8b94
+  0x00007f57f3e6f844: 24a0 0000 | 004c 8994 | 2480 0000 | 004c 8b94 | 24a8 0000 | 004c 8994 | 2488 0000 | 004c 8b94 
+0x00007f57f3e6f844: code=24a00000004c899424800000004c8b9424a80000004c899424880000004c8b94
+  0x00007f57f3e6f864: 24b0 0000 | 004c 8994 | 2490 0000 | 004c 8b94 | 24b8 0000 | 004c 8994 | 2498 0000 
+0x00007f57f3e6f864: code=24b00000004c899424900000004c8b9424b80000004c899424980000
+
+  0x00007f57f3e6f880: ;   {other}
+  0x00007f57f3e6f880: 004c 8b94 | 24c0 0000 | 004c 8994 | 24a0 0000 | 004c 8b94 | 24c8 0000 | 004c 8994 | 24a8 0000 
+0x00007f57f3e6f880: code=004c8b9424c00000004c899424a00000004c8b9424c80000004c899424a80000
+  0x00007f57f3e6f8a0: 004c 8b94 | 24d0 0000 | 004c 8994 | 24b0 0000 | 004c 899c | 24d0 0000 | 0045 8bd8 | 4489 9c24 
+0x00007f57f3e6f8a0: code=004c8b9424d00000004c899424b00000004c899c24d0000000458bd844899c24
+  0x00007f57f3e6f8c0: cc00 0000 
+0x00007f57f3e6f8c0: code=cc000000
+
+  0x00007f57f3e6f8c4: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6f8c4: 6666 90e8 
+0x00007f57f3e6f8c4: code=666690e8
+
+  0x00007f57f3e6f8c8: ; ImmutableOopMap {rbp=Oop [0]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@233 (line 60)
+  0x00007f57f3e6f8c8: 9445 b5ff 
+0x00007f57f3e6f8c8: code=9445b5ff
+
+  0x00007f57f3e6f8cc: ;   {post_call_nop}
+  0x00007f57f3e6f8cc: 0f1f 8400 | c408 0003 | bee4 ffff | ff4c 8b54 | 2420 4c89 | 1424 4c8b | 5424 284c | 8954 2408 
+0x00007f57f3e6f8cc: code=0f1f8400c4080003bee4ffffff4c8b5424204c8914244c8b5424284c89542408
+  0x00007f57f3e6f8ec: 4c8b 5424 | 304c 8954 | 2410 4c8b | 5424 384c | 8954 2418 | 4c8b 5424 | 404c 8954 | 2420 4c8b 
+0x00007f57f3e6f8ec: code=4c8b5424304c895424104c8b5424384c895424184c8b5424404c895424204c8b
+  0x00007f57f3e6f90c: 5424 484c | 8954 2428 | 4c8b 5424 | 504c 8954 | 2430 4c8b | 5424 584c | 8954 2438 | 4c8b 5424 
+0x00007f57f3e6f90c: code=5424484c895424284c8b5424504c895424304c8b5424584c895424384c8b5424
+  0x00007f57f3e6f92c: 604c 8954 | 2440 4c8b | 5424 684c | 8954 2448 | 4c8b 5424 | 704c 8954 | 2450 4c8b | 5424 784c 
+0x00007f57f3e6f92c: code=604c895424404c8b5424684c895424484c8b5424704c895424504c8b5424784c
+  0x00007f57f3e6f94c: 8954 2458 | 4c8b 9424 | 8000 0000 | 4c89 5424 | 604c 8b94 | 2488 0000 | 004c 8954 | 2468 4c8b 
+0x00007f57f3e6f94c: code=895424584c8b9424800000004c895424604c8b9424880000004c895424684c8b
+  0x00007f57f3e6f96c: 9424 9000 | 0000 4c89 | 5424 704c | 8b94 2498 | 0000 004c | 8954 2478 | 4c8b 9424 | a000 0000 
+0x00007f57f3e6f96c: code=9424900000004c895424704c8b9424980000004c895424784c8b9424a0000000
+  0x00007f57f3e6f98c: 4c89 9424 | 8000 0000 | 4c8b 9424 | a800 0000 | 4c89 9424 | 8800 0000 | 4c8b 9424 | b000 0000 
+0x00007f57f3e6f98c: code=4c899424800000004c8b9424a80000004c899424880000004c8b9424b0000000
+  0x00007f57f3e6f9ac: 4c89 9424 | 9000 0000 | 4c8b 9424 | b800 0000 | 4c89 9424 | 9800 0000 | 4c8b 9424 
+0x00007f57f3e6f9ac: code=4c899424900000004c8b9424b80000004c899424980000004c8b9424
+
+  0x00007f57f3e6f9c8: ;   {other}
+  0x00007f57f3e6f9c8: c000 0000 | 4c89 9424 | a000 0000 | 4c8b 9424 | c800 0000 | 4c89 9424 | a800 0000 
+0x00007f57f3e6f9c8: code=c00000004c899424a00000004c8b9424c80000004c899424a8000000
+
+  0x00007f57f3e6f9e4: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6f9e4: 6666 90e8 
+0x00007f57f3e6f9e4: code=666690e8
+
+  0x00007f57f3e6f9e8: ; ImmutableOopMap {[0]=Oop }
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@240 (line 60)
+  0x00007f57f3e6f9e8: 7444 b5ff 
+0x00007f57f3e6f9e8: code=7444b5ff
+
+  0x00007f57f3e6f9ec: ;   {post_call_nop}
+  0x00007f57f3e6f9ec: 0f1f 8400 | e409 0004 | 4889 1424 | 4c89 4424 | 104c 894c | 2418 4889 | 7424 20be | e4ff ffff 
+0x00007f57f3e6f9ec: code=0f1f8400e4090004488914244c894424104c894c24184889742420bee4ffffff
+  0x00007f57f3e6fa0c: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fa0c: 6666 90e8 
+0x00007f57f3e6fa0c: code=666690e8
+
+  0x00007f57f3e6fa10: ; ImmutableOopMap {[0]=Oop [8]=Oop [16]=Oop [24]=Oop [32]=Oop }
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@2 (line 34)
+  0x00007f57f3e6fa10: 4c44 b5ff 
+0x00007f57f3e6fa10: code=4c44b5ff
+
+  0x00007f57f3e6fa14: ;   {post_call_nop}
+  0x00007f57f3e6fa14: 0f1f 8400 | 0c0a 0005 | 488b f048 | 81c4 0001 
+0x00007f57f3e6fa14: code=0f1f84000c0a0005488bf04881c40001
+
+  0x00007f57f3e6fa24: ;   {runtime_call rethrow_blob (C2 runtime)}
+  0x00007f57f3e6fa24: 0000 5de9 | b45b b5ff | bef6 ffff 
+0x00007f57f3e6fa24: code=00005de9b45bb5ffbef6ffff
+
+  0x00007f57f3e6fa30: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fa30: ff66 90e8 
+0x00007f57f3e6fa30: code=ff6690e8
+
+  0x00007f57f3e6fa34: ; ImmutableOopMap {}
+                      ;*laload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@2 (line 34)
+  0x00007f57f3e6fa34: 2844 b5ff 
+0x00007f57f3e6fa34: code=2844b5ff
+
+  0x00007f57f3e6fa38: ;   {post_call_nop}
+  0x00007f57f3e6fa38: 0f1f 8400 | 300a 0006 | bef6 ffff | ff8b ac24 | e800 0000 
+0x00007f57f3e6fa38: code=0f1f8400300a0006bef6ffffff8bac24e8000000
+
+  0x00007f57f3e6fa4c: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fa4c: 6666 90e8 
+0x00007f57f3e6fa4c: code=666690e8
+
+  0x00007f57f3e6fa50: ; ImmutableOopMap {}
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@222 (line 60)
+  0x00007f57f3e6fa50: 0c44 b5ff 
+0x00007f57f3e6fa50: code=0c44b5ff
+
+  0x00007f57f3e6fa54: ;   {post_call_nop}
+  0x00007f57f3e6fa54: 0f1f 8400 | 4c0a 0007 | bef6 ffff | ff41 8be8 
+0x00007f57f3e6fa54: code=0f1f84004c0a0007bef6ffffff418be8
+
+  0x00007f57f3e6fa64: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fa64: 6666 90e8 
+0x00007f57f3e6fa64: code=666690e8
+
+  0x00007f57f3e6fa68: ; ImmutableOopMap {}
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@227 (line 60)
+  0x00007f57f3e6fa68: f443 b5ff 
+0x00007f57f3e6fa68: code=f443b5ff
+
+  0x00007f57f3e6fa6c: ;   {post_call_nop}
+  0x00007f57f3e6fa6c: 0f1f 8400 | 640a 0008 | bef6 ffff | ff41 8be8 
+0x00007f57f3e6fa6c: code=0f1f8400640a0008bef6ffffff418be8
+
+  0x00007f57f3e6fa7c: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fa7c: 6666 90e8 
+0x00007f57f3e6fa7c: code=666690e8
+
+  0x00007f57f3e6fa80: ; ImmutableOopMap {}
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@233 (line 60)
+  0x00007f57f3e6fa80: dc43 b5ff 
+0x00007f57f3e6fa80: code=dc43b5ff
+
+  0x00007f57f3e6fa84: ;   {post_call_nop}
+  0x00007f57f3e6fa84: 0f1f 8400 | 7c0a 0009 | bef6 ffff | ff41 8be8 
+0x00007f57f3e6fa84: code=0f1f84007c0a0009bef6ffffff418be8
+
+  0x00007f57f3e6fa94: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fa94: 6666 90e8 
+0x00007f57f3e6fa94: code=666690e8
+
+  0x00007f57f3e6fa98: ; ImmutableOopMap {}
+                      ;*iaload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TestSharedSpillSharingTrigger::kernel@240 (line 60)
+  0x00007f57f3e6fa98: c443 b5ff 
+0x00007f57f3e6fa98: code=c443b5ff
+
+  0x00007f57f3e6fa9c: ;   {post_call_nop}
+  0x00007f57f3e6fa9c: 0f1f 8400 | 940a 000a 
+0x00007f57f3e6fa9c: code=0f1f8400940a000a
+
+  0x00007f57f3e6faa4: ;   {internal_word}
+  0x00007f57f3e6faa4: 49ba caf4 | e6f3 577f | 0000 4d89 | 9710 0500 
+0x00007f57f3e6faa4: code=49bacaf4e6f3577f00004d8997100500
+
+  0x00007f57f3e6fab4: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007f57f3e6fab4: 00e9 26d4 
+0x00007f57f3e6fab4: code=00e926d4
+
+  0x00007f57f3e6fab8: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57f3e6fab8: a8ff e8e1 | 9fa7 ffe9 | 5af6 ffff | f4f4 f4f4 
+0x00007f57f3e6fab8: code=a8ffe8e19fa7ffe95af6fffff4f4f4f4
+[Stub Code]
+  0x00007f57f3e6fac8: ;   {static_stub}
+  0x00007f57f3e6fac8: 48bb 0000 | 0000 0000 
+0x00007f57f3e6fac8: code=48bb000000000000
+
+  0x00007f57f3e6fad0: ;   {runtime_call nmethod}
+  0x00007f57f3e6fad0: 0000 e9fb 
+0x00007f57f3e6fad0: code=0000e9fb
+
+  0x00007f57f3e6fad4: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57f3e6fad4: ffff ffe8 | 84bb a8ff 
+0x00007f57f3e6fad4: code=ffffffe884bba8ff
+[Deopt Handler Entry Point]
+  0x00007f57f3e6fadc: ebf9 f4f4 
+0x00007f57f3e6fadc: code=ebf9f4f4
+[/MachCode]
+
+============================= C1-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c1) 222  684       3       experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub (57 bytes)
+ total in heap  [0x00007f57ec426688,0x00007f57ec426ba8] = 1312
+ main code      [0x00007f57ec426780,0x00007f57ec426b70] = 1008
+ stub code      [0x00007f57ec426b70,0x00007f57ec426ba0] = 48
+ oops           [0x00007f57ec426ba0,0x00007f57ec426ba8] = 8
+ mutable data [0x00007f57c80d9e00,0x00007f57c80d9e98] = 152
+ relocation     [0x00007f57c80d9e00,0x00007f57c80d9e68] = 104
+ metadata       [0x00007f57c80d9e68,0x00007f57c80d9e98] = 48
+ immutable data [0x00007f57c80d9bd0,0x00007f57c80d9df4] = 548
+ dependencies   [0x00007f57c80d9bd0,0x00007f57c80d9be0] = 16
+ nul chk table  [0x00007f57c80d9be0,0x00007f57c80d9c08] = 40
+ scopes pcs     [0x00007f57c80d9c08,0x00007f57c80d9cc8] = 192
+ scopes data    [0x00007f57c80d9cc8,0x00007f57c80d9df0] = 296
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest'
+  # parm0:    rsi:rsi   = 'org/openjdk/jmh/runner/InfraControl'
+  # parm1:    rdx:rdx   = 'org/openjdk/jmh/results/RawResults'
+  # parm2:    rcx:rcx   = 'org/openjdk/jmh/infra/BenchmarkParams'
+  # parm3:    r8:r8     = 'org/openjdk/jmh/infra/IterationParams'
+  # parm4:    r9:r9     = 'org/openjdk/jmh/infra/ThreadParams'
+  # parm5:    rdi:rdi   = 'org/openjdk/jmh/infra/Blackhole'
+  # parm6:    [sp+0xa0]   = 'org/openjdk/jmh/infra/Control'  (sp of caller)
+  # parm7:    [sp+0xa8]   = int
+  # parm8:    [sp+0xb0]   = 'experiment/jmh_generated/TriggerBench_jmhType'
+  0x00007f57ec426780: 8984 2400 | c0fe ff55 | 4881 ec90 | 0000 0090 | 4181 7f20 | 0100 0000 
+0x00007f57ec426780: code=89842400c0feff554881ec900000009041817f2001000000
+
+  0x00007f57ec426798: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57ec426798: 7405 e801 | 334c 0748 | 8974 2468 | 4889 5424 | 5848 897c 
+0x00007f57ec426798: code=7405e801334c074889742468488954245848897c
+
+  0x00007f57ec4267ac: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4267ac: 2460 48bb | c07b 48dc | 577f 0000 | 8b43 7083 | c002 8943 | 7025 fe07 | 0000 85c0 | 0f84 c702 
+0x00007f57ec4267ac: code=246048bbc07b48dc577f00008b437083c00289437025fe07000085c00f84c702
+  0x00007f57ec4267cc: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4267cc: 0000 48bb | c07b 48dc | 577f 0000 | 4883 83a8 | 0000 0001 
+0x00007f57ec4267cc: code=000048bbc07b48dc577f0000488383a800000001
+
+  0x00007f57ec4267e0: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57ec4267e0: e8fb 2574 
+0x00007f57ec4267e0: code=e8fb2574
+
+  0x00007f57ec4267e4: ;   {post_call_nop}
+  0x00007f57ec4267e4: 200f 1f84 | 0000 0000 | 0048 8b54 | 2458 4889 | 4220 bf00 | 0000 0048 | 897c 2470 | e9b2 0000 
+0x00007f57ec4267e4: code=200f1f840000000000488b54245848894220bf0000000048897c2470e9b20000
+  0x00007f57ec426804: 0066 6690 
+0x00007f57ec426804: code=00666690
+
+  0x00007f57ec426808: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426808: 48be 187e | 08a2 0000 | 0000 4883 | 86c8 0000 
+0x00007f57ec426808: code=48be187e08a200000000488386c80000
+
+  0x00007f57ec426818: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426818: 0001 48be | 187e 08a2 | 0000 0000 | ff86 d800 | 0000 488b | 7424 6848 | 8b5c 2470 | 41ba 0100 
+0x00007f57ec426818: code=000148be187e08a200000000ff86d8000000488b742468488b5c247041ba0100
+  0x00007f57ec426838: 0000 4903 | da0f be86 | 8c00 0000 | 85c0 ba02 | 0000 0074 | 05ba 0000 
+0x00007f57ec426838: code=00004903da0fbe868c00000085c0ba020000007405ba0000
+
+  0x00007f57ec426850: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426850: 0000 48b9 | c07b 48dc | 577f 0000 | 448b 4174 | 4403 c244 | 8941 7485 | d275 0641 | b802 0000 
+0x00007f57ec426850: code=000048b9c07b48dc577f0000448b41744403c24489417485d2750641b8020000
+  0x00007f57ec426870: 0041 81e0 | fe3f 0000 | 4585 c00f | 843f 0200 | 004d 8b57 
+0x00007f57ec426870: code=004181e0fe3f00004585c00f843f0200004d8b57
+
+  0x00007f57ec426884: ; ImmutableOopMap {rdi=Oop rsi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@33 (line 124)
+                      ;   {poll}
+  0x00007f57ec426884: 3041 8502 
+0x00007f57ec426884: code=30418502
+
+  0x00007f57ec426888: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426888: 85c0 48b8 | c07b 48dc | 577f 0000 | ba28 0100 | 0075 05ba | 1801 0000 | 488b 0c10 | 488d 4901 
+0x00007f57ec426888: code=85c048b8c07b48dc577f0000ba280100007505ba18010000488b0c10488d4901
+  0x00007f57ec4268a8: 4889 0c10 | 0f85 8a01 | 0000 4889 | 5c24 7048 | 8bbc 24b0 | 0000 0048 | 3b07 488b 
+0x00007f57ec4268a8: code=48890c100f858a01000048895c2470488bbc24b0000000483b07488b
+
+  0x00007f57ec4268c4: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec4268c4: cf49 b8c0 | 7b48 dc57 | 7f00 008b | 09c1 e90d | 48c1 e10a | 41ba 0000 | 00a1 4903 | ca41 ba18 
+0x00007f57ec4268c4: code=cf49b8c07b48dc577f00008b09c1e90d48c1e10a41ba000000a14903ca41ba18
+  0x00007f57ec4268e4: 0000 004b | 3b0c d074 | 3649 83c2 | 0249 83fa | 1c75 f041 | ba18 0000 | 004b 833c | d000 7412 
+0x00007f57ec4268e4: code=0000004b3b0cd074364983c2024983fa1c75f041ba180000004b833cd0007412
+  0x00007f57ec426904: 4983 c202 | 4983 fa1c | 75ef 41ba | 1700 0000 | eb11 5048 | 33c0 f04b | 0fb1 0cd0 | 58eb be49 
+0x00007f57ec426904: code=4983c2024983fa1c75ef41ba17000000eb11504833c0f04b0fb10cd058ebbe49
+  0x00007f57ec426924: 83c2 014b | 8304 d001 
+0x00007f57ec426924: code=83c2014b8304d001
+
+  0x00007f57ec42692c: ;   {metadata(method data for {method} {0x00007f57dc45c0d0} 'kernel' '()J' in 'experiment/TriggerBench')}
+  0x00007f57ec42692c: 48b9 007a | 48dc 577f | 0000 448b | 4170 4183 | c002 4489 | 4170 4181 | e0fe ff1f | 0045 85c0 
+0x00007f57ec42692c: code=48b9007a48dc577f0000448b41704183c002448941704181e0feff1f004585c0
+  0x00007f57ec42694c: 0f84 9401 | 0000 8b4f | 0444 8b47 | 1044 8b4f | 1444 8b5f | 1844 8b6f 
+0x00007f57ec42694c: code=0f84940100008b4f04448b4710448b4f14448b5f18448b6f
+
+  0x00007f57ec426964: ;   {metadata(method data for {method} {0x00007f57dc45c0d0} 'kernel' '()J' in 'experiment/TriggerBench')}
+  0x00007f57ec426964: 1c49 be00 | 7a48 dc57 | 7f00 0049 | 8386 a800 | 0000 0148 | 8bf1 498b | d049 8bc9 | 4d8b c34d 
+0x00007f57ec426964: code=1c49be007a48dc577f0000498386a800000001488bf1498bd0498bc94d8bc34d
+  0x00007f57ec426984: ;   {static_call}
+  0x00007f57ec426984: 8bcd 90e8 
+0x00007f57ec426984: code=8bcd90e8
+
+  0x00007f57ec426988: ; ImmutableOopMap {[88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*invokestatic kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TriggerBench::kernel@20 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57ec426988: d43e 4d07 
+0x00007f57ec426988: code=d43e4d07
+
+  0x00007f57ec42698c: ;   {post_call_nop}
+  0x00007f57ec42698c: 0f1f 8400 | 0403 0001 | 488b 7c24 | 6048 3b07 
+0x00007f57ec42698c: code=0f1f840004030001488b7c2460483b07
+
+  0x00007f57ec42699c: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec42699c: 488b f748 | bbc0 7b48 | dc57 7f00 | 008b 36c1 | ee0d 48c1 | e60a 41ba | 0000 00a1 | 4903 f241 
+0x00007f57ec42699c: code=488bf748bbc07b48dc577f00008b36c1ee0d48c1e60a41ba000000a14903f241
+  0x00007f57ec4269bc: ba1e 0000 | 004a 3b34 | d374 3649 | 83c2 0249 | 83fa 2275 | f041 ba1e | 0000 004a | 833c d300 
+0x00007f57ec4269bc: code=ba1e0000004a3b34d374364983c2024983fa2275f041ba1e0000004a833cd300
+  0x00007f57ec4269dc: 7412 4983 | c202 4983 | fa22 75ef | 41ba 1d00 | 0000 eb11 | 5048 33c0 | f04a 0fb1 | 34d3 58eb 
+0x00007f57ec4269dc: code=74124983c2024983fa2275ef41ba1d000000eb11504833c0f04a0fb134d358eb
+  0x00007f57ec4269fc: be49 83c2 | 014a 8304 
+0x00007f57ec4269fc: code=be4983c2014a8304
+
+  0x00007f57ec426a04: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426a04: d301 48be | 187e 08a2 | 0000 0000 | 8b5e 7083 | c302 895e | 7081 e3fe | ff1f 0085 | db0f 84e5 
+0x00007f57ec426a04: code=d30148be187e08a2000000008b5e7083c302895e7081e3feff1f0085db0f84e5
+  0x00007f57ec426a24: ;   {metadata(method data for {method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426a24: 0000 0048 | be18 7e08 | a200 0000 | 00ff 86b8 | 0000 00e9 | ccfd ffff | 4889 5c24 
+0x00007f57ec426a24: code=00000048be187e08a200000000ff86b8000000e9ccfdffff48895c24
+
+  0x00007f57ec426a40: ;   {metadata(method data for {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426a40: 7848 bec0 | 7b48 dc57 | 7f00 0048 | 8386 3801 
+0x00007f57ec426a40: code=7848bec07b48dc577f00004883863801
+
+  0x00007f57ec426a50: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57ec426a50: 0000 01e8 | 8823 7420 
+0x00007f57ec426a50: code=000001e888237420
+
+  0x00007f57ec426a58: ;   {post_call_nop}
+  0x00007f57ec426a58: 0f1f 8400 | 0000 0000 | 488b 5424 | 5848 8942 | 2841 ba00 | 0000 004c | 8952 1848 | 8b5c 2478 
+0x00007f57ec426a58: code=0f1f840000000000488b5424584889422841ba000000004c895218488b5c2478
+  0x00007f57ec426a78: c4e1 fb2a | c3c5 fb11 | 4210 4881 | c490 0000 
+0x00007f57ec426a78: code=c4e1fb2ac3c5fb1142104881c4900000
+
+  0x00007f57ec426a88: ;   {poll_return}
+  0x00007f57ec426a88: 005d 493b | 6728 0f87 | 9900 0000 
+0x00007f57ec426a88: code=005d493b67280f8799000000
+
+  0x00007f57ec426a94: ;   {metadata({method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426a94: c349 baa0 | 9344 dc57 | 7f00 004c | 8954 2408 | 48c7 0424 | ffff ffff 
+0x00007f57ec426a94: code=c349baa09344dc577f00004c8954240848c70424ffffffff
+
+  0x00007f57ec426aac: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426aac: e8af b759 
+0x00007f57ec426aac: code=e8afb759
+
+  0x00007f57ec426ab0: ; ImmutableOopMap {rsi=Oop rdx=Oop rcx=Oop r8=Oop r9=Oop rdi=Oop [88]=Oop [96]=Oop [104]=Oop [160]=Oop [176]=Oop }
+                      ;*synchronization entry
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@-1 (line 118)
+  0x00007f57ec426ab0: 07e9 18fd 
+0x00007f57ec426ab0: code=07e918fd
+
+  0x00007f57ec426ab4: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426ab4: ffff e825 
+0x00007f57ec426ab4: code=ffffe825
+
+  0x00007f57ec426ab8: ; ImmutableOopMap {rdx=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*putfield startTime {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@10 (line 120)
+                      ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426ab8: 4f59 07e8 
+0x00007f57ec426ab8: code=4f5907e8
+
+  0x00007f57ec426abc: ; ImmutableOopMap {rdi=Oop rsi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*getfield isDone {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@30 (line 124)
+  0x00007f57ec426abc: 204f 5907 
+0x00007f57ec426abc: code=204f5907
+
+  0x00007f57ec426ac0: ;   {metadata({method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest')}
+  0x00007f57ec426ac0: 49ba a093 | 44dc 577f | 0000 4c89 | 5424 0848 | c704 2421 
+0x00007f57ec426ac0: code=49baa09344dc577f00004c8954240848c7042421
+
+  0x00007f57ec426ad4: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426ad4: 0000 00e8 
+0x00007f57ec426ad4: code=000000e8
+
+  0x00007f57ec426ad8: ; ImmutableOopMap {rdi=Oop rsi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@33 (line 124)
+  0x00007f57ec426ad8: 84b7 5907 | e9a0 fdff 
+0x00007f57ec426ad8: code=84b75907e9a0fdff
+
+  0x00007f57ec426ae0: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426ae0: ffe8 fa4e 
+0x00007f57ec426ae0: code=ffe8fa4e
+
+  0x00007f57ec426ae4: ; ImmutableOopMap {rdi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*invokevirtual kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+                      ;   {metadata({method} {0x00007f57dc45c0d0} 'kernel' '()J' in 'experiment/TriggerBench')}
+  0x00007f57ec426ae4: 5907 49ba | d0c0 45dc | 577f 0000 | 4c89 5424 | 0848 c704 | 24ff ffff 
+0x00007f57ec426ae4: code=590749bad0c045dc577f00004c8954240848c70424ffffff
+
+  0x00007f57ec426afc: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426afc: ffe8 5eb7 
+0x00007f57ec426afc: code=ffe85eb7
+
+  0x00007f57ec426b00: ; ImmutableOopMap {rdi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*synchronization entry
+                      ; - experiment.TriggerBench::kernel@-1 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57ec426b00: 5907 e94b 
+0x00007f57ec426b00: code=5907e94b
+
+  0x00007f57ec426b04: ;   {runtime_call throw_null_pointer_exception_blob (C1 runtime)}
+  0x00007f57ec426b04: feff ffe8 
+0x00007f57ec426b04: code=feffffe8
+
+  0x00007f57ec426b08: ; ImmutableOopMap {rdi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*invokevirtual consume {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@20 (line 122)
+  0x00007f57ec426b08: d44e 5907 
+0x00007f57ec426b08: code=d44e5907
+
+  0x00007f57ec426b0c: ;   {metadata({method} {0x00007f57dc4570a8} 'consume' '(J)V' in 'org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57ec426b0c: 49ba a870 | 45dc 577f | 0000 4c89 | 5424 0848 | c704 24ff 
+0x00007f57ec426b0c: code=49baa87045dc577f00004c8954240848c70424ff
+
+  0x00007f57ec426b20: ;   {runtime_call counter_overflow_blob (C1 runtime)}
+  0x00007f57ec426b20: ffff ffe8 
+0x00007f57ec426b20: code=ffffffe8
+
+  0x00007f57ec426b24: ; ImmutableOopMap {rdi=Oop [88]=Oop [96]=Oop [104]=Oop [176]=Oop }
+                      ;*synchronization entry
+                      ; - org.openjdk.jmh.infra.Blackhole::consume@-1 (line 400)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@20 (line 122)
+  0x00007f57ec426b24: 38b7 5907 | e9fa feff 
+0x00007f57ec426b24: code=38b75907e9fafeff
+
+  0x00007f57ec426b2c: ;   {internal_word}
+  0x00007f57ec426b2c: ff49 ba8a | 6a42 ec57 | 7f00 004d | 8997 1005 
+0x00007f57ec426b2c: code=ff49ba8a6a42ec577f00004d89971005
+
+  0x00007f57ec426b3c: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007f57ec426b3c: 0000 e99d | 634d 0749 | 8b87 7805 | 0000 49c7 | 8778 0500 | 0000 0000 | 0049 c787 | 8005 0000 
+0x00007f57ec426b3c: code=0000e99d634d07498b877805000049c787780500000000000049c78780050000
+  0x00007f57ec426b5c: 0000 0000 | 4881 c490 | 0000 005d 
+0x00007f57ec426b5c: code=000000004881c4900000005d
+
+  0x00007f57ec426b68: ;   {runtime_call unwind_exception_blob (C1 runtime)}
+  0x00007f57ec426b68: e973 3f59 | 07f4 f4f4 
+0x00007f57ec426b68: code=e9733f5907f4f4f4
+[Stub Code]
+  0x00007f57ec426b70: ;   {static_stub}
+  0x00007f57ec426b70: 48bb 0000 | 0000 0000 
+0x00007f57ec426b70: code=48bb000000000000
+
+  0x00007f57ec426b78: ;   {runtime_call nmethod}
+  0x00007f57ec426b78: 0000 e9fb 
+0x00007f57ec426b78: code=0000e9fb
+
+  0x00007f57ec426b7c: ;   {runtime_call handle_exception_from_callee_blob (C1 runtime)}
+  0x00007f57ec426b7c: ffff ffe8 | 5c76 5907 
+0x00007f57ec426b7c: code=ffffffe85c765907
+
+  0x00007f57ec426b84: ;   {external_word}
+  0x00007f57ec426b84: 48bf 2933 | f70b 587f | 0000 4883 
+0x00007f57ec426b84: code=48bf2933f70b587f00004883
+
+  0x00007f57ec426b90: ;   {runtime_call MacroAssembler::debug64(char*, long, long*)}
+  0x00007f57ec426b90: e4f0 e899 | 3e60 20f4 
+0x00007f57ec426b90: code=e4f0e8993e6020f4
+
+  0x00007f57ec426b98: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57ec426b98: e8c3 4a4d | 07eb f9f4 
+0x00007f57ec426b98: code=e8c34a4d07ebf9f4
+[/MachCode]
+
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c2) 225  685 %     4       experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub @ 13 (57 bytes)
+ total in heap  [0x00007f57f3e6fb08,0x00007f57f3e6fe48] = 832
+ main code      [0x00007f57f3e6fc00,0x00007f57f3e6fe28] = 552
+ stub code      [0x00007f57f3e6fe28,0x00007f57f3e6fe40] = 24
+ oops           [0x00007f57f3e6fe40,0x00007f57f3e6fe48] = 8
+ mutable data [0x00007f57c408bc40,0x00007f57c408bcb0] = 112
+ relocation     [0x00007f57c408bc40,0x00007f57c408bc78] = 56
+ metadata       [0x00007f57c408bc78,0x00007f57c408bcb0] = 56
+ immutable data [0x00007f57c408baf0,0x00007f57c408bc34] = 324
+ dependencies   [0x00007f57c408baf0,0x00007f57c408bb08] = 24
+ nul chk table  [0x00007f57c408bb08,0x00007f57c408bb18] = 16
+ handler table  [0x00007f57c408bb18,0x00007f57c408bb30] = 24
+ scopes pcs     [0x00007f57c408bb30,0x00007f57c408bb90] = 96
+ scopes data    [0x00007f57c408bb90,0x00007f57c408bc30] = 160
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest'
+  0x00007f57f3e6fc00: ;   {runtime_call os::breakpoint()}
+  0x00007f57f3e6fc00: e83b 7acf | 1866 6666 | 0f1f 8400 | 0000 0000 | 8984 2400 | c0fe ff55 | 4883 ec40 | 4181 7f20 
+0x00007f57f3e6fc00: code=e83b7acf186666660f1f84000000000089842400c0feff554883ec4041817f20
+  0x00007f57f3e6fc20: 0100 0000 | 0f85 ef01 | 0000 488b | 5e60 488b | 6e58 4c8b | 164c 8954 | 2420 4c8b | 6e38 4c8b 
+0x00007f57f3e6fc20: code=010000000f85ef010000488b5e60488b6e584c8b164c895424204c8b6e384c8b
+  0x00007f57f3e6fc40: 7620 4c8b | 5610 4c89 | 5424 1848 
+0x00007f57f3e6fc40: code=76204c8b56104c8954241848
+
+  0x00007f57f3e6fc4c: ;   {runtime_call SharedRuntime::OSR_migration_end(long*)}
+  0x00007f57f3e6fc4c: 8bfe 49ba | 80dd c40c | 587f 0000 
+0x00007f57f3e6fc4c: code=8bfe49ba80ddc40c587f0000
+
+  0x00007f57f3e6fc58: ;   {post_call_nop}
+  0x00007f57f3e6fc58: 41ff d20f | 1f84 0000 | 0000 0048 | 85db 0f84 | 1c01 0000 | 448b 1b41 
+0x00007f57f3e6fc58: code=41ffd20f1f8400000000004885db0f841c010000448b1b41
+
+  0x00007f57f3e6fc70: ;   {metadata('org/openjdk/jmh/runner/InfraControl')}
+  0x00007f57f3e6fc70: c1eb 0d41 | 81fb 7541 | 0000 0f85 | 4401 0000 | 488b cb4c | 8bcd 4885 | ed0f 8400 | 0100 0044 
+0x00007f57f3e6fc70: code=c1eb0d4181fb754100000f8544010000488bcb4c8bcd4885ed0f840001000044
+  0x00007f57f3e6fc90: 8b55 0041 
+0x00007f57f3e6fc90: code=8b550041
+
+  0x00007f57f3e6fc94: ;   {metadata('org/openjdk/jmh/results/RawResults')}
+  0x00007f57f3e6fc94: c1ea 0d41 | 81fa 7641 | 0000 0f85 | 2801 0000 | 4c8b d54d | 85ed 0f84 | e700 0000 | 458b 4500 
+0x00007f57f3e6fc94: code=c1ea0d4181fa764100000f85280100004c8bd54d85ed0f84e7000000458b4500
+  0x00007f57f3e6fcb4: 41c1 e80d 
+0x00007f57f3e6fcb4: code=41c1e80d
+
+  0x00007f57f3e6fcb8: ;   {metadata('org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57f3e6fcb8: 4181 f86a | 4100 000f | 850c 0100 | 0049 8bfd | 4d8b c645 | 8b1e 41c1 
+0x00007f57f3e6fcb8: code=4181f86a4100000f850c010000498bfd4d8bc6458b1e41c1
+
+  0x00007f57f3e6fcd0: ;   {metadata('experiment/jmh_generated/TriggerBench_jmhType')}
+  0x00007f57f3e6fcd0: eb0d 4181 | fb63 4100 | 000f 85f5 | 0000 0048 | 85ff 0f84 | b900 0000 | 4885 c90f | 84b0 0000 
+0x00007f57f3e6fcd0: code=eb0d4181fb634100000f85f50000004885ff0f84b90000004885c90f84b00000
+  0x00007f57f3e6fcf0: 0048 890c | 244c 8954 | 2408 4889 | 7c24 10eb | 170f 1f84 | 0000 0000 | 000f 1f80 | 0000 0000 
+0x00007f57f3e6fcf0: code=0048890c244c8954240848897c2410eb170f1f8400000000000f1f8000000000
+  0x00007f57f3e6fd10: 4c8b c54c | 894c 2418 | 418b 7810 | 458b 5814 | 458b 5004 | 418b 481c | 458b 4818 | 498b e848 
+0x00007f57f3e6fd10: code=4c8bc54c894c2418418b7810458b5814458b5004418b481c458b4818498be848
+  0x00007f57f3e6fd30: 8bd7 4d8b | c14c 8bc9 | 498b f249 
+0x00007f57f3e6fd30: code=8bd74d8bc14c8bc9498bf249
+
+  0x00007f57f3e6fd3c: ;   {static_call}
+  0x00007f57f3e6fd3c: 8bcb 90e8 
+0x00007f57f3e6fd3c: code=8bcb90e8
+
+  0x00007f57f3e6fd40: ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop [16]=Oop }
+                      ;*invokestatic kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TriggerBench::kernel@20 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57f3e6fd40: 1cab a8ff 
+0x00007f57f3e6fd40: code=1caba8ff
+
+  0x00007f57f3e6fd44: ;   {post_call_nop}
+  0x00007f57f3e6fd44: 0f1f 8400 | 3c02 0000 | 4c8b 1c24 | 450f b693 | 8c00 0000 | 4c8b 4c24 | 1849 ffc1 | 4585 d274 
+0x00007f57f3e6fd44: code=0f1f84003c0200004c8b1c24450fb6938c0000004c8b4c241849ffc14585d274
+  0x00007f57f3e6fd64: abbe 45ff | ffff 488b | 6c24 084c | 890c 2444 | 8954 2410 
+0x00007f57f3e6fd64: code=abbe45ffffff488b6c24084c890c244489542410
+
+  0x00007f57f3e6fd78: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fd78: 6666 90e8 
+0x00007f57f3e6fd78: code=666690e8
+
+  0x00007f57f3e6fd7c: ; ImmutableOopMap {rbp=Oop }
+                      ;*ifeq {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@33 (line 124)
+  0x00007f57f3e6fd7c: e040 b5ff 
+0x00007f57f3e6fd7c: code=e040b5ff
+
+  0x00007f57f3e6fd80: ;   {post_call_nop}
+  0x00007f57f3e6fd80: 0f1f 8400 | 7802 0001 | 33c9 e9f4 | feff ff45 | 33d2 e910 | ffff ff33 | ffe9 2aff | ffff 4533 
+0x00007f57f3e6fd80: code=0f1f84007802000133c9e9f4feffff4533d2e910ffffff33ffe92affffff4533
+  0x00007f57f3e6fda0: c0be 6eff | ffff 488b | e94c 8914 | 2448 897c | 2408 4c89 
+0x00007f57f3e6fda0: code=c0be6effffff488be94c89142448897c24084c89
+
+  0x00007f57f3e6fdb4: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fdb4: 4424 10e8 
+0x00007f57f3e6fdb4: code=442410e8
+
+  0x00007f57f3e6fdb8: ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop [16]=Oop }
+                      ;*aload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@13 (line 122)
+  0x00007f57f3e6fdb8: a440 b5ff 
+0x00007f57f3e6fdb8: code=a440b5ff
+
+  0x00007f57f3e6fdbc: ;   {post_call_nop}
+  0x00007f57f3e6fdbc: 0f1f 8400 | b402 0002 | 4c8b cd4d | 8bc6 eb08 | 4d8b c6eb | 034d 8bc6 | be85 ffff | ff49 8be8 
+0x00007f57f3e6fdbc: code=0f1f8400b40200024c8bcd4d8bc6eb084d8bc6eb034d8bc6be85ffffff498be8
+  0x00007f57f3e6fddc: 48ff 7424 | 1848 8f04 | 2448 ff74 | 2420 488f | 4424 0848 | 895c 2410 | 4c89 4c24 | 184c 896c 
+0x00007f57f3e6fddc: code=48ff742418488f042448ff742420488f44240848895c24104c894c24184c896c
+  0x00007f57f3e6fdfc: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e6fdfc: 2420 90e8 
+0x00007f57f3e6fdfc: code=242090e8
+
+  0x00007f57f3e6fe00: ; ImmutableOopMap {rbp=Oop [16]=Oop [24]=Oop [32]=Oop }
+                      ;*aload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@13 (line 122)
+  0x00007f57f3e6fe00: 5c40 b5ff 
+0x00007f57f3e6fe00: code=5c40b5ff
+
+  0x00007f57f3e6fe04: ;   {post_call_nop}
+  0x00007f57f3e6fe04: 0f1f 8400 | fc02 0003 | 488b f048 | 83c4 405d 
+0x00007f57f3e6fe04: code=0f1f8400fc020003488bf04883c4405d
+
+  0x00007f57f3e6fe14: ;   {runtime_call rethrow_blob (C2 runtime)}
+  0x00007f57f3e6fe14: e9c7 57b5 
+0x00007f57f3e6fe14: code=e9c757b5
+
+  0x00007f57f3e6fe18: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57f3e6fe18: ffe8 829c | a7ff e907 | feff fff4 | f4f4 f4f4 
+0x00007f57f3e6fe18: code=ffe8829ca7ffe907fefffff4f4f4f4f4
+[Stub Code]
+  0x00007f57f3e6fe28: ;   {static_stub}
+  0x00007f57f3e6fe28: 48bb 0000 | 0000 0000 
+0x00007f57f3e6fe28: code=48bb000000000000
+
+  0x00007f57f3e6fe30: ;   {runtime_call nmethod}
+  0x00007f57f3e6fe30: 0000 e9fb 
+0x00007f57f3e6fe30: code=0000e9fb
+
+  0x00007f57f3e6fe34: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57f3e6fe34: ffff ffe8 | 24b8 a8ff 
+0x00007f57f3e6fe34: code=ffffffe824b8a8ff
+[Deopt Handler Entry Point]
+  0x00007f57f3e6fe3c: ebf9 f4f4 
+0x00007f57f3e6fe3c: code=ebf9f4f4
+[/MachCode]
+
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c2) 1213  702 %     4       experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub @ 13 (57 bytes)
+ total in heap  [0x00007f57f3e70d88,0x00007f57f3e71110] = 904
+ main code      [0x00007f57f3e70e80,0x00007f57f3e710f0] = 624
+ stub code      [0x00007f57f3e710f0,0x00007f57f3e71108] = 24
+ oops           [0x00007f57f3e71108,0x00007f57f3e71110] = 8
+ mutable data [0x00007f57c4089b20,0x00007f57c4089ba0] = 128
+ relocation     [0x00007f57c4089b20,0x00007f57c4089b68] = 72
+ metadata       [0x00007f57c4089b68,0x00007f57c4089ba0] = 56
+ immutable data [0x00007f57c40899c0,0x00007f57c4089b14] = 340
+ dependencies   [0x00007f57c40899c0,0x00007f57c40899d8] = 24
+ nul chk table  [0x00007f57c40899d8,0x00007f57c40899f0] = 24
+ handler table  [0x00007f57c40899f0,0x00007f57c4089a08] = 24
+ scopes pcs     [0x00007f57c4089a08,0x00007f57c4089a68] = 96
+ scopes data    [0x00007f57c4089a68,0x00007f57c4089b10] = 168
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest'
+  0x00007f57f3e70e80: ;   {runtime_call os::breakpoint()}
+  0x00007f57f3e70e80: e8bb 67cf | 1866 6666 | 0f1f 8400 | 0000 0000 | 8984 2400 | c0fe ff55 | 4883 ec40 | 4181 7f20 
+0x00007f57f3e70e80: code=e8bb67cf186666660f1f84000000000089842400c0feff554883ec4041817f20
+  0x00007f57f3e70ea0: 0100 0000 | 0f85 3c02 | 0000 488b | 5e60 488b | 6e58 4c8b | 164c 8954 | 2420 4c8b | 6e38 4c8b 
+0x00007f57f3e70ea0: code=010000000f853c020000488b5e60488b6e584c8b164c895424204c8b6e384c8b
+  0x00007f57f3e70ec0: 7620 4c8b | 5610 4c89 | 5424 1848 
+0x00007f57f3e70ec0: code=76204c8b56104c8954241848
+
+  0x00007f57f3e70ecc: ;   {runtime_call SharedRuntime::OSR_migration_end(long*)}
+  0x00007f57f3e70ecc: 8bfe 49ba | 80dd c40c | 587f 0000 
+0x00007f57f3e70ecc: code=8bfe49ba80ddc40c587f0000
+
+  0x00007f57f3e70ed8: ;   {post_call_nop}
+  0x00007f57f3e70ed8: 41ff d20f | 1f84 0000 | 0000 0048 | 85db 0f84 | 3b01 0000 | 448b 1b41 
+0x00007f57f3e70ed8: code=41ffd20f1f8400000000004885db0f843b010000448b1b41
+
+  0x00007f57f3e70ef0: ;   {metadata('org/openjdk/jmh/runner/InfraControl')}
+  0x00007f57f3e70ef0: c1eb 0d41 | 81fb 7541 | 0000 0f85 | 6401 0000 | 488b cb4c | 8bcd 4885 | ed0f 841f | 0100 0044 
+0x00007f57f3e70ef0: code=c1eb0d4181fb754100000f8564010000488bcb4c8bcd4885ed0f841f01000044
+  0x00007f57f3e70f10: 8b5d 0041 
+0x00007f57f3e70f10: code=8b5d0041
+
+  0x00007f57f3e70f14: ;   {metadata('org/openjdk/jmh/results/RawResults')}
+  0x00007f57f3e70f14: c1eb 0d41 | 81fb 7641 | 0000 0f85 | 4801 0000 | 4c8b d54d | 85ed 0f84 | 0601 0000 | 458b 5d00 
+0x00007f57f3e70f14: code=c1eb0d4181fb764100000f85480100004c8bd54d85ed0f8406010000458b5d00
+  0x00007f57f3e70f34: 41c1 eb0d 
+0x00007f57f3e70f34: code=41c1eb0d
+
+  0x00007f57f3e70f38: ;   {metadata('org/openjdk/jmh/infra/Blackhole')}
+  0x00007f57f3e70f38: 4181 fb6a | 4100 000f | 852c 0100 | 0049 8bfd | 4d8b de45 | 8b06 41c1 
+0x00007f57f3e70f38: code=4181fb6a4100000f852c010000498bfd4d8bde458b0641c1
+
+  0x00007f57f3e70f50: ;   {metadata('experiment/jmh_generated/TriggerBench_jmhType')}
+  0x00007f57f3e70f50: e80d 4181 | f863 4100 | 000f 8515 | 0100 0048 | 85ff 0f84 | d800 0000 | 4885 c90f | 84cf 0000 
+0x00007f57f3e70f50: code=e80d4181f8634100000f85150100004885ff0f84d80000004885c90f84cf0000
+  0x00007f57f3e70f70: 0048 890c | 244c 8954 | 2408 4889 | 7c24 10eb | 170f 1f84 | 0000 0000 | 000f 1f80 | 0000 0000 
+0x00007f57f3e70f70: code=0048890c244c8954240848897c2410eb170f1f8400000000000f1f8000000000
+  0x00007f57f3e70f90: 4c8b dd48 | 895c 2418 | 458b 4310 | 458b 5314 | 418b 5b04 | 458b 4b1c | 418b 4b18 | 498b eb49 
+0x00007f57f3e70f90: code=4c8bdd48895c2418458b4310458b5314418b5b04458b4b1c418b4b18498beb49
+  0x00007f57f3e70fb0: 8bd0 4c8b | c148 8bf3 
+0x00007f57f3e70fb0: code=8bd04c8bc1488bf3
+
+  0x00007f57f3e70fb8: ;   {static_call}
+  0x00007f57f3e70fb8: 498b cae8 
+0x00007f57f3e70fb8: code=498bcae8
+
+  0x00007f57f3e70fbc: ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop [16]=Oop }
+                      ;*invokestatic kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TriggerBench::kernel@20 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57f3e70fbc: a098 a8ff 
+0x00007f57f3e70fbc: code=a098a8ff
+
+  0x00007f57f3e70fc0: ;   {post_call_nop}
+  0x00007f57f3e70fc0: 0f1f 8400 | 3802 0000 | 4c8b 1424 | 450f b69a | 8c00 0000 | 488b 5c24 | 1848 ffc3 | 4585 db74 
+0x00007f57f3e70fc0: code=0f1f8400380200004c8b1424450fb69a8c000000488b5c241848ffc34585db74
+  0x00007f57f3e70fe0: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57f3e70fe0: af49 bae0 | 8db6 0c58 | 7f00 0041 
+0x00007f57f3e70fe0: code=af49bae08db60c587f000041
+
+  0x00007f57f3e70fec: ;   {post_call_nop}
+  0x00007f57f3e70fec: ffd2 0f1f | 8400 0000 | 0000 4c8b | 5c24 0849 | 8943 284c | 8b54 2420 | 4d89 5318 | c5f9 efc0 
+0x00007f57f3e70fec: code=ffd20f1f8400000000004c8b5c2408498943284c8b5424204d895318c5f9efc0
+  0x00007f57f3e7100c: c4e1 fb2a | c3c4 c17b | 1143 1048 | 83c4 405d 
+0x00007f57f3e7100c: code=c4e1fb2ac3c4c17b1143104883c4405d
+
+  0x00007f57f3e7101c: ;   {poll_return}
+  0x00007f57f3e7101c: 493b 6728 | 0f87 aa00 | 0000 c333 | c9e9 d5fe | ffff 4533 | d2e9 f1fe | ffff 33ff | e90b ffff 
+0x00007f57f3e7101c: code=493b67280f87aa000000c333c9e9d5feffff4533d2e9f1feffff33ffe90bffff
+  0x00007f57f3e7103c: ff45 33db | be6e ffff | ff48 8be9 | 4c89 1424 | 4889 7c24 | 084c 895c 
+0x00007f57f3e7103c: code=ff4533dbbe6effffff488be94c89142448897c24084c895c
+
+  0x00007f57f3e71054: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e71054: 2410 90e8 
+0x00007f57f3e71054: code=241090e8
+
+  0x00007f57f3e71058: ; ImmutableOopMap {rbp=Oop [0]=Oop [8]=Oop [16]=Oop }
+                      ;*aload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@13 (line 122)
+  0x00007f57f3e71058: 042e b5ff 
+0x00007f57f3e71058: code=042eb5ff
+
+  0x00007f57f3e7105c: ;   {post_call_nop}
+  0x00007f57f3e7105c: 0f1f 8400 | d402 0001 | 4c8b cd4d | 8bde eb08 | 4d8b deeb | 034d 8bde | be85 ffff | ff49 8beb 
+0x00007f57f3e7105c: code=0f1f8400d40200014c8bcd4d8bdeeb084d8bdeeb034d8bdebe85ffffff498beb
+  0x00007f57f3e7107c: 48ff 7424 | 1848 8f04 | 2448 ff74 | 2420 488f | 4424 0848 | 895c 2410 | 4c89 4c24 | 184c 896c 
+0x00007f57f3e7107c: code=48ff742418488f042448ff742420488f44240848895c24104c894c24184c896c
+  0x00007f57f3e7109c: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e7109c: 2420 90e8 
+0x00007f57f3e7109c: code=242090e8
+
+  0x00007f57f3e710a0: ; ImmutableOopMap {rbp=Oop [16]=Oop [24]=Oop [32]=Oop }
+                      ;*aload {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@13 (line 122)
+  0x00007f57f3e710a0: bc2d b5ff 
+0x00007f57f3e710a0: code=bc2db5ff
+
+  0x00007f57f3e710a4: ;   {post_call_nop}
+  0x00007f57f3e710a4: 0f1f 8400 | 1c03 0002 | 488b f048 | 83c4 405d 
+0x00007f57f3e710a4: code=0f1f84001c030002488bf04883c4405d
+
+  0x00007f57f3e710b4: ;   {runtime_call rethrow_blob (C2 runtime)}
+  0x00007f57f3e710b4: e927 45b5 | ffbe f6ff | ffff 488b 
+0x00007f57f3e710b4: code=e92745b5ffbef6ffffff488b
+
+  0x00007f57f3e710c0: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e710c0: e866 90e8 
+0x00007f57f3e710c0: code=e86690e8
+
+  0x00007f57f3e710c4: ; ImmutableOopMap {}
+                      ;*putfield stopTime {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@40 (line 125)
+  0x00007f57f3e710c4: 982d b5ff 
+0x00007f57f3e710c4: code=982db5ff
+
+  0x00007f57f3e710c8: ;   {post_call_nop}
+  0x00007f57f3e710c8: 0f1f 8400 | 4003 0003 
+0x00007f57f3e710c8: code=0f1f840040030003
+
+  0x00007f57f3e710d0: ;   {internal_word}
+  0x00007f57f3e710d0: 49ba 1c10 | e7f3 577f | 0000 4d89 | 9710 0500 
+0x00007f57f3e710d0: code=49ba1c10e7f3577f00004d8997100500
+
+  0x00007f57f3e710e0: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007f57f3e710e0: 00e9 fabd 
+0x00007f57f3e710e0: code=00e9fabd
+
+  0x00007f57f3e710e4: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57f3e710e4: a8ff e8b5 | 89a7 ffe9 | bafd ffff 
+0x00007f57f3e710e4: code=a8ffe8b589a7ffe9bafdffff
+[Stub Code]
+  0x00007f57f3e710f0: ;   {static_stub}
+  0x00007f57f3e710f0: 48bb 0000 | 0000 0000 
+0x00007f57f3e710f0: code=48bb000000000000
+
+  0x00007f57f3e710f8: ;   {runtime_call nmethod}
+  0x00007f57f3e710f8: 0000 e9fb 
+0x00007f57f3e710f8: code=0000e9fb
+
+  0x00007f57f3e710fc: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57f3e710fc: ffff ffe8 | 5ca5 a8ff 
+0x00007f57f3e710fc: code=ffffffe85ca5a8ff
+[Deopt Handler Entry Point]
+  0x00007f57f3e71104: ebf9 f4f4 
+0x00007f57f3e71104: code=ebf9f4f4
+[/MachCode]
+59075445.014 ops/s
+# Warmup Iteration   2: 
+============================= C2-compiled nmethod ==============================
+----------------------------------- Assembly -----------------------------------
+
+Compiled method (c2) 1221  703       4       experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub (57 bytes)
+ total in heap  [0x00007f57f3e71188,0x00007f57f3e71470] = 744
+ main code      [0x00007f57f3e71280,0x00007f57f3e71450] = 464
+ stub code      [0x00007f57f3e71450,0x00007f57f3e71468] = 24
+ oops           [0x00007f57f3e71468,0x00007f57f3e71470] = 8
+ mutable data [0x00007f57c4089870,0x00007f57c40898d0] = 96
+ relocation     [0x00007f57c4089870,0x00007f57c40898b0] = 64
+ metadata       [0x00007f57c40898b0,0x00007f57c40898d0] = 32
+ immutable data [0x00007f57c4089c80,0x00007f57c4089e04] = 388
+ dependencies   [0x00007f57c4089c80,0x00007f57c4089c90] = 16
+ nul chk table  [0x00007f57c4089c90,0x00007f57c4089ca8] = 24
+ handler table  [0x00007f57c4089ca8,0x00007f57c4089cd8] = 48
+ scopes pcs     [0x00007f57c4089cd8,0x00007f57c4089d58] = 128
+ scopes data    [0x00007f57c4089d58,0x00007f57c4089e00] = 168
+
+[Constant Pool (empty)]
+
+
+Loading hsdis library failed, undisassembled code is shown in MachCode section
+[MachCode]
+[Verified Entry Point]
+  # {method} {0x00007f57dc4493a0} 'kernel_thrpt_jmhStub' '(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V' in 'experiment/jmh_generated/TriggerBench_kernel_jmhTest'
+  # parm0:    rsi:rsi   = 'org/openjdk/jmh/runner/InfraControl'
+  # parm1:    rdx:rdx   = 'org/openjdk/jmh/results/RawResults'
+  # parm2:    rcx:rcx   = 'org/openjdk/jmh/infra/BenchmarkParams'
+  # parm3:    r8:r8     = 'org/openjdk/jmh/infra/IterationParams'
+  # parm4:    r9:r9     = 'org/openjdk/jmh/infra/ThreadParams'
+  # parm5:    rdi:rdi   = 'org/openjdk/jmh/infra/Blackhole'
+  # parm6:    [sp+0x30]   = 'org/openjdk/jmh/infra/Control'  (sp of caller)
+  # parm7:    [sp+0x38]   = int
+  # parm8:    [sp+0x40]   = 'experiment/jmh_generated/TriggerBench_jmhType'
+  0x00007f57f3e71280: 8984 2400 | c0fe ff55 | 4883 ec20 | 4181 7f20 | 0100 0000 | 0f85 a801 | 0000 4889 | 3c24 4889 
+0x00007f57f3e71280: code=89842400c0feff554883ec2041817f20010000000f85a801000048893c244889
+  0x00007f57f3e712a0: 7424 3848 | 8954 2430 
+0x00007f57f3e712a0: code=7424384889542430
+
+  0x00007f57f3e712a8: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57f3e712a8: 49ba e08d | b60c 587f | 0000 41ff 
+0x00007f57f3e712a8: code=49bae08db60c587f000041ff
+
+  0x00007f57f3e712b4: ;   {post_call_nop}
+  0x00007f57f3e712b4: d20f 1f84 | 0000 0000 | 004c 8b54 | 2430 4d85 | d20f 84fb | 0000 0049 | 8942 204c | 8b54 2440 
+0x00007f57f3e712b4: code=d20f1f8400000000004c8b5424304d85d20f84fb000000498942204c8b542440
+  0x00007f57f3e712d4: ; implicit exception: dispatches to 0x00007f57f3e71406
+  0x00007f57f3e712d4: 458b 5204 | 4c8b 5c24 | 4041 8b5b | 1c45 8b4b | 1045 8b5b | 184c 8b44 | 2440 418b | 4814 498b 
+0x00007f57f3e712d4: code=458b52044c8b5c2440418b5b1c458b4b10458b5b184c8b442440418b4814498b
+  0x00007f57f3e712f4: f24d 8bc3 | 498b d14c | 8bcb 488b 
+0x00007f57f3e712f4: code=f24d8bc3498bd14c8bcb488b
+
+  0x00007f57f3e71300: ;   {static_call}
+  0x00007f57f3e71300: 2c24 90e8 
+0x00007f57f3e71300: code=2c2490e8
+
+  0x00007f57f3e71304: ; ImmutableOopMap {rbp=Oop [0]=Oop [48]=Oop [56]=Oop [64]=Oop }
+                      ;*invokestatic kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TriggerBench::kernel@20 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57f3e71304: 5895 a8ff 
+0x00007f57f3e71304: code=5895a8ff
+
+  0x00007f57f3e71308: ;   {post_call_nop}
+  0x00007f57f3e71308: 0f1f 8400 | 8001 0000 | 4885 ed0f | 84c3 0000 | 004c 8b54 | 2438 450f | b692 8c00 | 0000 bd01 
+0x00007f57f3e71308: code=0f1f8400800100004885ed0f84c30000004c8b542438450fb6928c000000bd01
+  0x00007f57f3e71328: 0000 0045 | 85d2 7555 | 4c8b 5424 | 4041 8b5a | 0445 8b52 | 104c 8b5c | 2440 458b | 5b1c 4c8b 
+0x00007f57f3e71328: code=0000004585d275554c8b542440418b5a04458b52104c8b5c2440458b5b1c4c8b
+  0x00007f57f3e71348: 4424 4045 | 8b40 184c | 8b4c 2440 | 418b 4914 | 488b f34d | 8bcb 498b 
+0x00007f57f3e71348: code=442440458b40184c8b4c2440418b4914488bf34d8bcb498b
+
+  0x00007f57f3e71360: ;   {static_call}
+  0x00007f57f3e71360: d266 90e8 
+0x00007f57f3e71360: code=d26690e8
+
+  0x00007f57f3e71364: ; ImmutableOopMap {[0]=Oop [48]=Oop [56]=Oop [64]=Oop }
+                      ;*invokestatic kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.TriggerBench::kernel@20 (line 35)
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57f3e71364: f894 a8ff 
+0x00007f57f3e71364: code=f894a8ff
+
+  0x00007f57f3e71368: ;   {post_call_nop}
+  0x00007f57f3e71368: 0f1f 8400 | e001 0001 | 4c8b 5424 | 3845 0fb6 | 9a8c 0000 | 0048 ffc5 | 4585 db74 
+0x00007f57f3e71368: code=0f1f8400e00100014c8b542438450fb69a8c00000048ffc54585db74
+
+  0x00007f57f3e71384: ;   {runtime_call os::javaTimeNanos()}
+  0x00007f57f3e71384: ab49 bae0 | 8db6 0c58 | 7f00 0041 
+0x00007f57f3e71384: code=ab49bae08db60c587f000041
+
+  0x00007f57f3e71390: ;   {post_call_nop}
+  0x00007f57f3e71390: ffd2 0f1f | 8400 0000 | 0000 4c8b | 5424 3049 | 8942 284d | 8962 18c5 | f9ef c0c4 | e1fb 2ac5 
+0x00007f57f3e71390: code=ffd20f1f8400000000004c8b542430498942284d896218c5f9efc0c4e1fb2ac5
+  0x00007f57f3e713b0: c4c1 7b11 | 4210 4883 
+0x00007f57f3e713b0: code=c4c17b1142104883
+
+  0x00007f57f3e713b8: ;   {poll_return}
+  0x00007f57f3e713b8: c420 5d49 | 3b67 280f | 8767 0000 | 00c3 bef6 | ffff ff48 
+0x00007f57f3e713b8: code=c4205d493b67280f8767000000c3bef6ffffff48
+
+  0x00007f57f3e713cc: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e713cc: 8be8 90e8 
+0x00007f57f3e713cc: code=8be890e8
+
+  0x00007f57f3e713d0: ; ImmutableOopMap {}
+                      ;*putfield startTime {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@10 (line 120)
+  0x00007f57f3e713d0: 8c2a b5ff 
+0x00007f57f3e713d0: code=8c2ab5ff
+
+  0x00007f57f3e713d4: ;   {post_call_nop}
+  0x00007f57f3e713d4: 0f1f 8400 | 4c02 0002 | bef6 ffff | ff48 8be8 
+0x00007f57f3e713d4: code=0f1f84004c020002bef6ffffff488be8
+
+  0x00007f57f3e713e4: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e713e4: 6666 90e8 
+0x00007f57f3e713e4: code=666690e8
+
+  0x00007f57f3e713e8: ; ImmutableOopMap {}
+                      ;*invokevirtual consume {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@20 (line 122)
+  0x00007f57f3e713e8: 742a b5ff 
+0x00007f57f3e713e8: code=742ab5ff
+
+  0x00007f57f3e713ec: ;   {post_call_nop}
+  0x00007f57f3e713ec: 0f1f 8400 | 6402 0003 | 488b f0eb | 0348 8bf0 | 4883 c420 
+0x00007f57f3e713ec: code=0f1f840064020003488bf0eb03488bf04883c420
+
+  0x00007f57f3e71400: ;   {runtime_call rethrow_blob (C2 runtime)}
+  0x00007f57f3e71400: 5de9 da41 | b5ff bef6 
+0x00007f57f3e71400: code=5de9da41b5ffbef6
+
+  0x00007f57f3e71408: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e71408: ffff ffe8 
+0x00007f57f3e71408: code=ffffffe8
+
+  0x00007f57f3e7140c: ; ImmutableOopMap {}
+                      ;*invokevirtual kernel {reexecute=0 rethrow=0 return_oop=0}
+                      ; - experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@17 (line 122)
+  0x00007f57f3e7140c: 502a b5ff 
+0x00007f57f3e7140c: code=502ab5ff
+
+  0x00007f57f3e71410: ;   {post_call_nop}
+  0x00007f57f3e71410: 0f1f 8400 | 8802 0004 | bef6 ffff 
+0x00007f57f3e71410: code=0f1f840088020004bef6ffff
+
+  0x00007f57f3e7141c: ;   {runtime_call UncommonTrapBlob}
+  0x00007f57f3e7141c: ff66 90e8 
+0x00007f57f3e7141c: code=ff6690e8
+
+  0x00007f57f3e71420: ; ImmutableOopMap {}
+                      ;*getfield isDone {reexecute=1 rethrow=0 return_oop=0}
+                      ; - (reexecute) experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub@30 (line 124)
+  0x00007f57f3e71420: 3c2a b5ff 
+0x00007f57f3e71420: code=3c2ab5ff
+
+  0x00007f57f3e71424: ;   {post_call_nop}
+  0x00007f57f3e71424: 0f1f 8400 | 9c02 0005 
+0x00007f57f3e71424: code=0f1f84009c020005
+
+  0x00007f57f3e7142c: ;   {internal_word}
+  0x00007f57f3e7142c: 49ba bb13 | e7f3 577f | 0000 4d89 | 9710 0500 
+0x00007f57f3e7142c: code=49babb13e7f3577f00004d8997100500
+
+  0x00007f57f3e7143c: ;   {runtime_call polling_page_return_handler_blob (shared runtime)}
+  0x00007f57f3e7143c: 00e9 9eba 
+0x00007f57f3e7143c: code=00e99eba
+
+  0x00007f57f3e71440: ;   {runtime_call Stub::method_entry_barrier_stub (stub gen)}
+  0x00007f57f3e71440: a8ff e859 | 86a7 ffe9 | 4efe ffff | f4f4 f4f4 
+0x00007f57f3e71440: code=a8ffe85986a7ffe94efefffff4f4f4f4
+[Stub Code]
+  0x00007f57f3e71450: ;   {static_stub}
+  0x00007f57f3e71450: 48bb 0000 | 0000 0000 
+0x00007f57f3e71450: code=48bb000000000000
+
+  0x00007f57f3e71458: ;   {runtime_call nmethod}
+  0x00007f57f3e71458: 0000 e9fb 
+0x00007f57f3e71458: code=0000e9fb
+
+  0x00007f57f3e7145c: ;   {runtime_call DeoptimizationBlob}
+  0x00007f57f3e7145c: ffff ffe8 | fca1 a8ff 
+0x00007f57f3e7145c: code=ffffffe8fca1a8ff
+[Deopt Handler Entry Point]
+  0x00007f57f3e71464: ebf9 f4f4 
+0x00007f57f3e71464: code=ebf9f4f4
+[/MachCode]
+58723692.669 ops/s
+# Warmup Iteration   3: 56929559.124 ops/s
+Iteration   1: 56555337.538 ops/s
+Iteration   2: 57745055.854 ops/s
+Iteration   3: 57541343.822 ops/s
+Iteration   4: 57082713.319 ops/s
+Iteration   5: 57185482.768 ops/s
+------------------------------------------------------------------------
+static experiment.TestSharedSpillSharingTrigger::kernel([J[I[I[I[I)J
+  interpreter_invocation_count:       79493
+  invocation_counter:                 79493
+  backedge_counter:                       0
+  decompile_count:                        0
+  mdo size: 672 bytes
+
+   0 fast_aload_0
+   1 iconst_0
+   2 laload
+   3 lstore #5
+   5 fast_aload_0
+   6 iconst_1
+   7 laload
+   8 lstore #7
+  10 fast_aload_0
+  11 iconst_2
+  12 laload
+  13 lstore #9
+  15 fast_aload_0
+  16 iconst_3
+  17 laload
+  18 lstore #11
+  20 fast_aload_0
+  21 iconst_4
+  22 laload
+  23 lstore #13
+  25 fast_aload_0
+  26 iconst_5
+  27 laload
+  28 lstore #15
+  30 fast_aload_0
+  31 bipush 6
+  33 laload
+  34 lstore #17
+  36 fast_aload_0
+  37 bipush 7
+  39 laload
+  40 lstore #19
+  42 fast_aload_0
+  43 bipush 8
+  45 laload
+  46 lstore #21
+  48 fast_aload_0
+  49 bipush 9
+  51 laload
+  52 lstore #23
+  54 fast_aload_0
+  55 bipush 10
+  57 laload
+  58 lstore #25
+  60 fast_aload_0
+  61 bipush 11
+  63 laload
+  64 lstore #27
+  66 fast_aload_0
+  67 bipush 12
+  69 laload
+  70 lstore #29
+  72 fast_aload_0
+  73 bipush 13
+  75 laload
+  76 lstore #31
+  78 fast_aload_0
+  79 bipush 14
+  81 laload
+  82 lstore #33
+  84 fast_aload_0
+  85 bipush 15
+  87 laload
+  88 lstore #35
+  90 fast_aload_0
+  91 bipush 16
+  93 laload
+  94 lstore #37
+  96 fast_aload_0
+  97 bipush 17
+  99 laload
+ 100 lstore #39
+ 102 fast_aload_0
+ 103 bipush 18
+ 105 laload
+ 106 lstore #41
+ 108 fast_aload_0
+ 109 bipush 19
+ 111 laload
+ 112 lstore #43
+ 114 fast_aload_0
+ 115 bipush 20
+ 117 laload
+ 118 lstore #45
+ 120 fast_aload_0
+ 121 bipush 21
+ 123 laload
+ 124 lstore #47
+ 126 fast_aload_0
+ 127 bipush 22
+ 129 laload
+ 130 lstore #49
+ 132 fast_aload_0
+ 133 bipush 23
+ 135 laload
+ 136 lstore #51
+ 138 lload #5
+ 140 lload #7
+ 142 lxor
+ 143 lload #9
+ 145 lxor
+ 146 lload #11
+ 148 lxor
+ 149 lload #13
+ 151 lxor
+ 152 lload #15
+ 154 lxor
+ 155 lload #17
+ 157 lxor
+ 158 lload #19
+ 160 lxor
+ 161 lload #21
+ 163 lxor
+ 164 lload #23
+ 166 lxor
+ 167 lload #25
+ 169 lxor
+ 170 lload #27
+ 172 lxor
+ 173 lload #29
+ 175 lxor
+ 176 lload #31
+ 178 lxor
+ 179 lload #33
+ 181 lxor
+ 182 lload #35
+ 184 lxor
+ 185 lload #37
+ 187 lxor
+ 188 lload #39
+ 190 lxor
+ 191 lload #41
+ 193 lxor
+ 194 lload #43
+ 196 lxor
+ 197 lload #45
+ 199 lxor
+ 200 lload #47
+ 202 lxor
+ 203 lload #49
+ 205 lxor
+ 206 lload #51
+ 208 lxor
+ 209 l2i
+ 210 sipush 1023
+ 213 iand
+ 214 istore #53
+ 216 invokestatic 13 <experiment/TestSharedSpillSharingTrigger.barrier()V> 
+  0    bci: 216  CounterData        count(78982)
+ 219 aload_1
+ 220 fast_iload #53
+ 222 iaload
+ 223 i2l
+ 224 aload_2
+ 225 fast_iload #53
+ 227 iaload
+ 228 i2l
+ 229 ladd
+ 230 aload_3
+ 231 fast_iload #53
+ 233 iaload
+ 234 i2l
+ 235 ladd
+ 236 aload #4
+ 238 fast_iload #53
+ 240 iaload
+ 241 i2l
+ 242 ladd
+ 243 lstore #54
+ 245 lload #54
+ 247 lload #5
+ 249 iconst_1
+ 250 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  16   bci: 250  CounterData        count(78982)
+ 253 ladd
+ 254 lstore #54
+ 256 lload #54
+ 258 lload #7
+ 260 iconst_2
+ 261 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  32   bci: 261  CounterData        count(78982)
+ 264 ladd
+ 265 lstore #54
+ 267 lload #54
+ 269 lload #9
+ 271 iconst_3
+ 272 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  48   bci: 272  CounterData        count(78982)
+ 275 ladd
+ 276 lstore #54
+ 278 lload #54
+ 280 lload #11
+ 282 iconst_4
+ 283 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  64   bci: 283  CounterData        count(78982)
+ 286 ladd
+ 287 lstore #54
+ 289 lload #54
+ 291 lload #13
+ 293 iconst_5
+ 294 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  80   bci: 294  CounterData        count(78982)
+ 297 ladd
+ 298 lstore #54
+ 300 lload #54
+ 302 lload #15
+ 304 bipush 6
+ 306 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  96   bci: 306  CounterData        count(78982)
+ 309 ladd
+ 310 lstore #54
+ 312 lload #54
+ 314 lload #17
+ 316 bipush 7
+ 318 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  112  bci: 318  CounterData        count(78982)
+ 321 ladd
+ 322 lstore #54
+ 324 lload #54
+ 326 lload #19
+ 328 bipush 8
+ 330 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  128  bci: 330  CounterData        count(78982)
+ 333 ladd
+ 334 lstore #54
+ 336 lload #54
+ 338 lload #21
+ 340 bipush 9
+ 342 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  144  bci: 342  CounterData        count(78982)
+ 345 ladd
+ 346 lstore #54
+ 348 lload #54
+ 350 lload #23
+ 352 bipush 10
+ 354 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  160  bci: 354  CounterData        count(78982)
+ 357 ladd
+ 358 lstore #54
+ 360 lload #54
+ 362 lload #25
+ 364 bipush 11
+ 366 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  176  bci: 366  CounterData        count(78982)
+ 369 ladd
+ 370 lstore #54
+ 372 lload #54
+ 374 lload #27
+ 376 bipush 12
+ 378 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  192  bci: 378  CounterData        count(78982)
+ 381 ladd
+ 382 lstore #54
+ 384 lload #54
+ 386 lload #29
+ 388 bipush 13
+ 390 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  208  bci: 390  CounterData        count(78982)
+ 393 ladd
+ 394 lstore #54
+ 396 lload #54
+ 398 lload #31
+ 400 bipush 14
+ 402 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  224  bci: 402  CounterData        count(78982)
+ 405 ladd
+ 406 lstore #54
+ 408 lload #54
+ 410 lload #33
+ 412 bipush 15
+ 414 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  240  bci: 414  CounterData        count(78982)
+ 417 ladd
+ 418 lstore #54
+ 420 lload #54
+ 422 lload #35
+ 424 bipush 16
+ 426 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  256  bci: 426  CounterData        count(78982)
+ 429 ladd
+ 430 lstore #54
+ 432 lload #54
+ 434 lload #37
+ 436 bipush 17
+ 438 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  272  bci: 438  CounterData        count(78982)
+ 441 ladd
+ 442 lstore #54
+ 444 lload #54
+ 446 lload #39
+ 448 bipush 18
+ 450 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  288  bci: 450  CounterData        count(78982)
+ 453 ladd
+ 454 lstore #54
+ 456 lload #54
+ 458 lload #41
+ 460 bipush 19
+ 462 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  304  bci: 462  CounterData        count(78982)
+ 465 ladd
+ 466 lstore #54
+ 468 lload #54
+ 470 lload #43
+ 472 bipush 20
+ 474 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  320  bci: 474  CounterData        count(78982)
+ 477 ladd
+ 478 lstore #54
+ 480 lload #54
+ 482 lload #45
+ 484 bipush 21
+ 486 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  336  bci: 486  CounterData        count(78982)
+ 489 ladd
+ 490 lstore #54
+ 492 lload #54
+ 494 lload #47
+ 496 bipush 22
+ 498 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  352  bci: 498  CounterData        count(78982)
+ 501 ladd
+ 502 lstore #54
+ 504 lload #54
+ 506 lload #49
+ 508 bipush 23
+ 510 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  368  bci: 510  CounterData        count(78982)
+ 513 ladd
+ 514 lstore #54
+ 516 lload #54
+ 518 lload #51
+ 520 bipush 24
+ 522 invokestatic 16 <java/lang/Long.rotateLeft(JI)J> 
+  384  bci: 522  CounterData        count(78982)
+ 525 ladd
+ 526 lstore #54
+ 528 lload #54
+ 530 lreturn
+------------------------------------------------------------------------
+static experiment.jmh_generated.TriggerBench_kernel_jmhTest::kernel_thrpt_jmhStub(Lorg/openjdk/jmh/runner/InfraControl;Lorg/openjdk/jmh/results/RawResults;Lorg/openjdk/jmh/infra/BenchmarkParams;Lorg/openjdk/jmh/infra/IterationParams;Lorg/openjdk/jmh/infra/ThreadParams;Lorg/openjdk/jmh/infra/Blackhole;Lorg/openjdk/jmh/infra/Control;ILexperiment/jmh_generated/TriggerBench_jmhType;)V
+  interpreter_invocation_count:           2
+  invocation_counter:                     2
+  backedge_counter:                  430534
+  decompile_count:                        1
+  mdo size: 456 bytes
+
+   0 lconst_0
+   1 lstore #9
+   3 lconst_0
+   4 lstore #11
+   6 aload_1
+   7 invokestatic 177 <java/lang/System.nanoTime()J> 
+  0    bci: 7    CounterData        count(1)
+  10 fast_lputfield 182 <org/openjdk/jmh/results/RawResults.startTime:J> 
+  13 aload #5
+  15 aload #8
+  17 invokevirtual 64 <experiment/jmh_generated/TriggerBench_jmhType.kernel()J> 
+  16   bci: 17   VirtualCallData    count(0) entries(1)
+                                    'experiment/jmh_generated/TriggerBench_jmhType'(366590 1.00)
+  20 invokevirtual 70 <org/openjdk/jmh/infra/Blackhole.consume(J)V> 
+  64   bci: 20   VirtualCallData    count(2046) entries(1)
+                                    'org/openjdk/jmh/infra/Blackhole'(364544 0.99)
+  23 lload #9
+  25 lconst_1
+  26 ladd
+  27 lstore #9
+  29 fast_aload_0
+  30 fast_bgetfield 186 <org/openjdk/jmh/runner/InfraControl.isDone:Z> 
+  33 ifeq 13
+  112  bci: 33   BranchData         trap(intrinsic recompiled) taken(366590) displacement(-96)
+                                    not taken(1)
+  36 aload_1
+  37 invokestatic 177 <java/lang/System.nanoTime()J> 
+  144  bci: 37   CounterData        count(1)
+  40 fast_lputfield 189 <org/openjdk/jmh/results/RawResults.stopTime:J> 
+  43 aload_1
+  44 lload #11
+  46 fast_lputfield 192 <org/openjdk/jmh/results/RawResults.realTime:J> 
+  49 aload_1
+  50 lload #9
+  52 l2d
+  53 fast_dputfield 126 <org/openjdk/jmh/results/RawResults.measuredOps:D> 
+  56 return
+------------------------------------------------------------------------
+Total MDO size: 1128 bytes
+
+
+Result "experiment.TriggerBench.kernel":
+  57221986.660 ±(99.9%) 1765364.894 ops/s [Average]
+  (min, avg, max) = (56555337.538, 57221986.660, 57745055.854), stdev = 458459.657
+  CI (99.9%): [55456621.766, 58987351.555] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:08
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark             Mode  Cnt         Score         Error  Units
+TriggerBench.kernel  thrpt    5  57221986.660 ± 1765364.894  ops/s
+
+Benchmark result is saved to /workspace/work/spill-sharing/followup/negative-diagnostics/positive-B-r1.json

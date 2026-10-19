@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>JT Harness : Tests that passed</title>
+<link rel=stylesheet href="report.css" type="text/css">
+</head>
+<body>
+<h1>JT Harness : Tests that passed</h1>
+<a href="../../jtreg-current-work/compiler/c2/irTests/TestIfConstantThreshold.jtr">compiler/c2/irTests/TestIfConstantThreshold.java</a>: Equivalent finite integer thresholds should share a comparison
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/C1ObjectSpillInLogicOp.jtr">compiler/regalloc/C1ObjectSpillInLogicOp.java</a>: C1 crashes generating G1 post-barrier in Unsafe.getAndSetReference() intrinsic because of the new value spill
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestC1OverlappingRegisterHint.jtr">compiler/regalloc/TestC1OverlappingRegisterHint.java</a>: The C1 register allocator uses a register hint interval i as spill location for an interval j which overlaps with one of i's split children which has the same spill location which lets verification fail.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestC2IntPressure.jtr">compiler/regalloc/TestC2IntPressure.java</a>: C2 compilation often fails on aarch64 with "failed spill-split-recycle sanity check"
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestGCMRecalcPressureNodes.jtr">compiler/regalloc/TestGCMRecalcPressureNodes.java</a>: crash in PhaseCFG::global_code_motion
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestNodeRegArrayOverflow.jtr">compiler/regalloc/TestNodeRegArrayOverflow.java</a>: Test that C2's PhaseRegAlloc::_node_regs (a post-register-allocation mapping from machine nodes to assigned registers) does not overflow in the face of a program with a high-density of CISC spilling candidate nodes.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestSharedSpillGC.jtr">compiler/regalloc/TestSharedSpillGC.java</a>: Preserve caller roots, integer state and deoptimization state through GC in a C2 callee.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestSharedSpillLoads.jtr">compiler/regalloc/TestSharedSpillLoads.java</a>: Equal primitive spill reloads must preserve loop values, aliases, exception ordering, cold calls, and tied two-address uses.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestSharedSpillSharingPortable.jtr">compiler/regalloc/TestSharedSpillSharingPortable.java</a>: Run the generated accumulator oracle with platform-neutral C2 options.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestSharedSpillSharingState.jtr">compiler/regalloc/TestSharedSpillSharingState.java</a>: Check GC, deoptimization, aliases and exceptional output in an activated C2 compilation.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestSharedSpillSharingTrace.jtr">compiler/regalloc/TestSharedSpillSharingTrace.java</a>: Assert that the sibling sharing rule actually changes a C2 graph.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestVectorRegAlloc.jtr">compiler/regalloc/TestVectorRegAlloc.java</a>: assert in register allocation code when vector Phi for a loop is processed because code assumes all inputs already processed
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/TestVerifyRegisterAllocator.jtr">compiler/regalloc/TestVerifyRegisterAllocator.java</a>: Sanity check the -XX:+VerifyRegisterAllocator flag in a hello world program.
+<br
+>
+<a href="../../jtreg-current-work/compiler/regalloc/VolatileLoadMemBarsOnlyUses.jtr">compiler/regalloc/VolatileLoadMemBarsOnlyUses.java</a>: C2: assert(n-&gt;outcnt() != 0 || C-&gt;top() == n || n-&gt;is_Proj()) failed: No dead instructions after post-alloc
+<br
+>
+<hr>
+<small>Report generated on Oct 19, 2026 2:23:17 AM
+<br>Using JT Harness 6.0 b24; built on September 11, 2026, 12:00:00 AM UTC with openjdk version "17.0.20" 2026-07-21</small></body></html>
