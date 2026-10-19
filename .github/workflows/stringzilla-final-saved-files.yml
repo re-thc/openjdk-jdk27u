@@ -1,0 +1,48 @@
+name: Preserve exact final StringZilla benchmark files
+on:
+  push:
+    branches: [codex/stringzilla-final-saved-files]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  bindings:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.proof.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - name: Check saved-byte transport without a JVM
+        run: |
+          python3 -m py_compile .github/scripts/stringzilla-final-saved-files.py .github/scripts/stringzilla-final-saved-files-test.py .github/scripts/stringzilla-raw-jmh.py .github/scripts/stringzilla-final-sky-election.py .github/scripts/single-host-validation/stringzilla-single-sky.py .github/scripts/single-host-validation/stringzilla-final.py
+          python3 .github/scripts/stringzilla-final-saved-files-test.py .github/scripts/stringzilla-final-saved-files.py
+      - id: proof
+        name: Verify immutable projections and only the selected completed archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/stringzilla-final-saved-files.py proof
+  export:
+    needs: bindings
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.bindings.outputs.matrix) }}
+    name: Preserve original ${{ matrix.id }} JSON files
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          sparse-checkout: .github/scripts
+      - name: Authenticate and copy existing saved files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/stringzilla-final-saved-files.py read --index ${{ matrix.index }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: stringzilla-final-saved-files-${{ matrix.id }}-${{ github.sha }}
+          path: evidence-output
+          if-no-files-found: error
+          retention-days: 30
