@@ -28,10 +28,11 @@ PRAGMA_DIAG_PUSH
 PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
 #include "utilities/klib/khash.h"
 
-template<typename V, MemTag MEM_TAG, bool IS_MAP = true>
+template<typename V, MemTag MEM_TAG, bool IS_MAP = true, typename K = uintptr_t>
 class KHashTable : public AnyObj {
   NONCOPYABLE(KHashTable);
   static_assert(std::is_scalar<V>::value, "khash stores scalar values");
+  static_assert(std::is_unsigned<K>::value, "khash keys are unsigned integers");
 
   static void* allocate_zeroed(size_t n, size_t size) {
     void* p = AllocateHeap(n * size, MEM_TAG);
@@ -39,19 +40,19 @@ class KHashTable : public AnyObj {
     return p;
   }
 
-  KHASH_INIT(hotspot, uintptr_t, V, IS_MAP, primitive_hash<uintptr_t>, primitive_equals<uintptr_t>)
+  KHASH_INIT(hotspot, K, V, IS_MAP, primitive_hash<K>, primitive_equals<K>)
   khash_t(hotspot)* _table;
 
 public:
   KHashTable() : _table(kh_init(hotspot)) {}
   ~KHashTable() { kh_destroy(hotspot, _table); }
 
-  bool contains(uintptr_t key) const {
+  bool contains(K key) const {
     return kh_get(hotspot, _table, key) != kh_end(_table);
   }
 
   // Returns a copied scalar. No pointer into the movable storage escapes.
-  bool get(uintptr_t key, V* value) const {
+  bool get(K key, V* value) const {
     khiter_t index = kh_get(hotspot, _table, key);
     if (index == kh_end(_table)) {
       return false;
@@ -60,22 +61,22 @@ public:
     return true;
   }
 
-  bool put_if_absent(uintptr_t key, V value) {
+  bool put_if_absent(K key, V value) {
     // Check the next doubled arrays before khash's 32-bit capacity rounding
     // or size_t allocation arithmetic can overflow (including on ILP32).
     if (_table->n_occupied >= _table->upper_bound &&
         (_table->n_buckets == (khint_t(1) << 31) ||
-         size_t(_table->n_buckets) > SIZE_MAX / 2 / sizeof(uintptr_t) ||
+         size_t(_table->n_buckets) > SIZE_MAX / 2 / sizeof(K) ||
          (IS_MAP && size_t(_table->n_buckets) > SIZE_MAX / 2 / sizeof(V)))) {
       if (contains(key)) {
         return false;
       }
-      vm_exit_out_of_memory(sizeof(uintptr_t), OOM_MALLOC_ERROR, "khash capacity");
+      vm_exit_out_of_memory(sizeof(K), OOM_MALLOC_ERROR, "khash capacity");
     }
     int result;
     khiter_t index = kh_put(hotspot, _table, key, &result);
     if (result < 0) {
-      vm_exit_out_of_memory(sizeof(uintptr_t), OOM_MALLOC_ERROR, "khash capacity");
+      vm_exit_out_of_memory(sizeof(K), OOM_MALLOC_ERROR, "khash capacity");
     }
     if (result != 0 && IS_MAP) {
       kh_value(_table, index) = value;

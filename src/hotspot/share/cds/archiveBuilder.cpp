@@ -64,6 +64,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/khashTable.inline.hpp"
 
@@ -167,11 +168,37 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
   _ptrmap.iterate(&relocator, start, end);
 }
 
-// Values are copied out on lookup; entries never escape or get iterated.
-class ArchiveBuilder::BufferedToSrcTable : public KHashTable<address, mtClassShared> {
+// The output buffer is at most 3.5 GB on LP64; on ILP32 any address difference
+// fits in uint32_t. Store byte offsets as keys and keep source addresses full width.
+// Dynamic dumps retain address keys; the measured offset-hash tradeoff is not
+// useful there. Values are copied out; entries never escape or get iterated.
+STATIC_ASSERT(AOTCompressedPointers::MaxMetadataOffsetBytes <= UINT32_MAX);
+static uint32_t buffered_address_offset(address buffered_addr, address buffer_bottom) {
+  assert(buffer_bottom != nullptr && buffered_addr >= buffer_bottom, "must be in the output buffer");
+  return checked_cast<uint32_t>((uintptr_t)buffered_addr - (uintptr_t)buffer_bottom);
+}
+
+class ArchiveBuilder::BufferedToSrcTable : public AnyObj {
+  KHashTable<address, mtClassShared, true, uint32_t> _static_archive;
+  KHashTable<address, mtClassShared> _dynamic_archive;
+
 public:
   // Preserve AnyObj's allocation marker during value-initialization.
   BufferedToSrcTable() {}
+
+  bool put_if_absent(address buffered_addr, address buffer_bottom, address source_addr) {
+    if (CDSConfig::is_dumping_static_archive()) {
+      return _static_archive.put_if_absent(buffered_address_offset(buffered_addr, buffer_bottom), source_addr);
+    }
+    return _dynamic_archive.put_if_absent((uintptr_t)buffered_addr, source_addr);
+  }
+
+  bool get(address buffered_addr, address buffer_bottom, address* source_addr) const {
+    if (CDSConfig::is_dumping_static_archive()) {
+      return _static_archive.get(buffered_address_offset(buffered_addr, buffer_bottom), source_addr);
+    }
+    return _dynamic_archive.get((uintptr_t)buffered_addr, source_addr);
+  }
 };
 
 ArchiveBuilder::ArchiveBuilder() :
@@ -665,7 +692,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   }
 
   {
-    bool created = _buffered_to_src_table->put_if_absent((uintptr_t)dest, src);
+    bool created = _buffered_to_src_table->put_if_absent((address)dest, _buffer_bottom, src);
     assert(created, "must be");
   }
 
@@ -737,7 +764,7 @@ address ArchiveBuilder::get_buffered_addr(address src_addr) const {
 address ArchiveBuilder::get_source_addr(address buffered_addr) const {
   assert(is_in_buffer_space(buffered_addr), "must be");
   address src = nullptr;
-  bool found = _buffered_to_src_table->get((uintptr_t)buffered_addr, &src);
+  bool found = _buffered_to_src_table->get(buffered_addr, _buffer_bottom, &src);
   assert(found && src != nullptr, "must be");
   return src;
 }

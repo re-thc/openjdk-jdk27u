@@ -42,6 +42,27 @@ TEST_VM(KHashTable, scalar_map) {
   }
 }
 
+TEST_VM(KHashTable, narrow_keys_and_full_width_values) {
+  KHashTable<address, mtTest, true, uint32_t> table;
+  const uintptr_t high = (uintptr_t)1 << (BitsPerWord - 2);
+  const uint32_t offsets[] = {0, 8, UINT32_MAX / 2, UINT32_MAX / 2 + 1, UINT32_MAX - 8, UINT32_MAX};
+  for (size_t i = 0; i < ARRAY_SIZE(offsets); ++i) {
+    address value = (address)(high + i * 8);
+    ASSERT_TRUE(table.put_if_absent(offsets[i], value));
+    ASSERT_FALSE(table.put_if_absent(offsets[i], nullptr));
+  }
+  // Force multiple growths around the retained boundary keys.
+  for (uint32_t i = 16; i < 200000; i += 8) {
+    ASSERT_TRUE(table.put_if_absent(i, (address)(high + i)));
+  }
+  for (size_t i = 0; i < ARRAY_SIZE(offsets); ++i) {
+    address value = nullptr;
+    ASSERT_TRUE(table.get(offsets[i], &value));
+    ASSERT_EQ((address)(high + i * 8), value);
+    ASSERT_FALSE(table.put_if_absent(offsets[i], nullptr));
+  }
+}
+
 TEST_VM(KHashTable, address_set) {
   KHashTable<char, mtTest, false> table;
   ASSERT_FALSE(table.contains(0));
