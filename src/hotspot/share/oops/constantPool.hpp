@@ -785,18 +785,15 @@ private:
 
  private:
   class SymbolHash: public CHeapObj<mtSymbol> {
-    HashTable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+    class Table;
+    Table* _table;
+    NONCOPYABLE(SymbolHash);
 
    public:
-    void add_if_absent(const Symbol* sym, u2 value) {
-      bool created;
-      _table.put_if_absent(sym, value, &created);
-    }
-
-    u2 symbol_to_value(const Symbol* sym) {
-      u2* value = _table.get(sym);
-      return (value == nullptr) ? 0 : *value;
-    }
+    SymbolHash();
+    ~SymbolHash();
+    void add_if_absent(const Symbol* sym, u2 value);
+    u2 symbol_to_value(const Symbol* sym);
   }; // End SymbolHash class
 
   jint cpool_entry_size(jint idx);

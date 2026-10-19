@@ -57,6 +57,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbolIndexMap.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -1938,6 +1939,19 @@ jint ConstantPool::cpool_entry_size(jint idx) {
   return 1;
 } /* end cpool_entry_size */
 
+
+class ConstantPool::SymbolHash::Table : public SymbolIndexMap {};
+
+ConstantPool::SymbolHash::SymbolHash() : _table(new (mtSymbol) Table()) {}
+ConstantPool::SymbolHash::~SymbolHash() { delete _table; }
+
+void ConstantPool::SymbolHash::add_if_absent(const Symbol* sym, u2 value) {
+  _table->add_if_absent(sym, value);
+}
+
+u2 ConstantPool::SymbolHash::symbol_to_value(const Symbol* sym) {
+  return _table->symbol_to_value(sym);
+}
 
 // SymbolHash is used to find a constant pool index from a string.
 // This function fills in SymbolHashs, one for utf8s and one for
