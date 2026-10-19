@@ -4,11 +4,11 @@ Product: [`7048d6f2c74e25737850789812da063900ec18c0`](https://github.com/re-thc/
 Independent original: `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`.
 
 **Do not merge yet.** The source corrections and fourteen local targeted test
-descriptions pass. Final x64 measurements complete 58 triplets with all eight
-loss-table rows retained. Windows reports a successful complete-image build,
-native contracts and targeted bounds/safepoint tests; its comparisons are
-running. The 40 native-platform triplets remain pending completion, while ARM
-and ordinary CI await runners. This is incomplete qualification, not evidence
+descriptions pass. Final measurements complete 84 triplets on serial, AVX2,
+AVX-512 and MSVC, with all fourteen loss-table rows retained. Windows completes
+26 comparisons, native contracts and thirteen targeted bounds/safepoint test
+descriptions. The fourteen ARM triplets and ordinary CI await runners. This is
+incomplete qualification, not evidence
 that the implementation failed. Preceding measurements retain their original
 revisions.
 
@@ -59,7 +59,7 @@ its perturbed timing is excluded from the comparisons.
 | [First correction pilot](diagnostic-b963d752/COMPARISONS.md) | `b963d752` | Three triplets; UTF-16 improves, Latin-1 still loses |
 | [Focused five-backend campaign](final77-summary/COMPARISONS.md) | `77a60d0f` | 290 triplets, 2,610 JMH files, 13,050 samples; all 71 loss-table rows retained |
 | [Copyright-only complete-image pass](finale45-summary/COMPARISONS.md) | `e45ff201` | 13 triplets, 117 JMH files, 585 samples; two loss-table rows |
-| [Final physical-range guard, x64](final7048-summary/COMPARISONS.md) | `7048d6f2` | 58 of 98 planned triplets, 522 JMH files, 2,610 samples; all eight loss-table rows |
+| [Final physical-range guard, four backends](final7048-summary/COMPARISONS.md) | `7048d6f2` | 84 of 98 planned triplets, 756 JMH files, 3,780 samples; all fourteen loss-table rows |
 
 The historical AVX-512 interpreter/C1 deficit stays 262 triplets in its original
 campaign. Later focused work does not retroactively fill it. Both diagnostic
@@ -106,8 +106,8 @@ diagnostic workload selection.
 
 ## Gains, losses and practical scope
 
-The [final-head x64 comparisons](final7048-summary/COMPARISONS.md) and
-[all eight loss rows](final7048-summary/LOSSES.md) retain 58 triplets. Selected
+The [final-head comparisons](final7048-summary/COMPARISONS.md) and
+[all fourteen loss rows](final7048-summary/LOSSES.md) retain 84 triplets. Selected
 final-head values below show control medians in ns/op and paired original/enabled
 ratios, rather than ratios of those control medians:
 
@@ -123,12 +123,21 @@ ratios, rather than ratios of those control medians:
 | Serial C2 dense-suffix miss, needle 65 | 15,608.586 | 16,187.882 | 15,406.619 | 0.9210 [0.9088, 1.0545] |
 
 The final losses also include the scalar C1 minimum-overlap case and variable
-equality controls. Seven rows lose by paired-ratio median, six by control
-median and seven by pooled mean; their union contains eight rows. These counts
+equality controls. Twelve rows lose by paired-ratio median, eleven by control
+median and thirteen by pooled mean; their union contains fourteen rows. These counts
 are distinct measures. In particular, the AVX-512 short C1 loss against original
 has disabled/enabled paired median 1.0017, whereas AVX2's corresponding value is
 0.9653. Neither an enabled/disabled comparison nor a single summary statistic
 captures the full original-versus-product cost.
+
+MSVC's current nine-byte immediate match is nearly flat: 5.206 to 5.208 ns,
+paired O/E 0.9997 [0.9013, 1.0553]. Its width-25 immediate case retains O/E
+0.9945 [0.9711, 1.0052]. Its short C1 miss loses against original in all three
+rounds: 18.123 to 20.259 ns, O/E 0.9164 [0.8554, 0.9915]. These remain losses
+without a threshold. The MSVC C1 minimum-overlap case improves over original
+625.082 to 352.161 ns, while disabled is 349.428 ns; both comparisons remain
+visible. The raw Windows JMH file bytes were checked against the artifact and
+per-file digests before acceptance.
 
 The completed preceding campaign establishes large interpreter/C1 and selected
 bulk reverse-search gains. Examples include C1 equality on 4,096 Latin-1 bytes:
@@ -185,12 +194,15 @@ counted as successful checks of this head. No duplicate jobs are dispatched.
 
 The checked [scope receipt](scope7048.json) identifies every pending native case.
 The first retained status snapshot has no assigned runners. Windows subsequently
-completed its build, compiler-command check, contracts and targeted tests and is
-measuring; its [job snapshot](native7048-windows-active-job.json) and
+completed its build, compiler-command check, contracts, thirteen targeted tests
+and 26 paired comparisons; its [job snapshots](native7048-latest-jobs.json),
+[raw validation](final7048-msvc/validation) and
 [retained complete image](native7048-artifacts.json) record that progress. ARM
 and CI's Prepare job still have `runner_id: 0` and empty steps. The queued actions
-were accepted; none was denied. There is no failed native test or accepted
-final-head native measurement to diagnose yet. Rerunning would duplicate work.
+were accepted; none was denied. Its shipped `StringLatin1` has identical
+[instruction listings](final7048-cross-platform-bytecode/receipt.json) to the
+measured Linux image, including the final range guard. Rerunning completed
+Windows work or queued ARM work would duplicate scope.
 
 ## Decision
 
@@ -201,7 +213,7 @@ unbounded tuning campaign, a universal performance claim or a zero-loss gate.
 
 **PR4 remains draft and is not ready to merge.** The concrete remaining blocker
 is completion and review of the existing exact-head native jobs and ordinary CI,
-including ARM physical-bounds tests and the 40 pending paired comparisons.
+including ARM physical-bounds tests and the fourteen pending paired comparisons.
 A green preceding revision does not satisfy that requirement. If those jobs
 complete, add their original artifacts and losses to this report and assess
 their actual result; do not automatically promote the PR. No merge or upstream

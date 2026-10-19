@@ -1,0 +1,66 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaTailSearch.lastIndexOf",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork\\bin\\java.exe",
+        "jvmArgs" : [
+            "-XX:ActiveProcessorCount=1",
+            "-XX:+UseSerialGC",
+            "-Xshare:off",
+            "-XX:UseAVX=0",
+            "-XX:-TieredCompilation",
+            "-XX:-UseStringZillaIntrinsics"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-stringzilla-benchmark",
+        "warmupIterations" : 3,
+        "warmupTime" : "300 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 5,
+        "measurementTime" : "300 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "length" : "4096",
+            "needleLength" : "65",
+            "shape" : "LATIN_FIFTH_FROM_END_MISS"
+        },
+        "primaryMetric" : {
+            "score" : 10076.148586416197,
+            "scoreError" : 1699.9245895591625,
+            "scoreConfidence" : [
+                8376.223996857034,
+                11776.07317597536
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9704.954680941662,
+                "50.0" : 9787.291717716245,
+                "90.0" : 10580.155414951778,
+                "95.0" : 10580.155414951778,
+                "99.0" : 10580.155414951778,
+                "99.9" : 10580.155414951778,
+                "99.99" : 10580.155414951778,
+                "99.999" : 10580.155414951778,
+                "99.9999" : 10580.155414951778,
+                "100.0" : 10580.155414951778
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    10580.155414951778,
+                    9771.976563215234,
+                    9704.954680941662,
+                    10536.364555256065,
+                    9787.291717716245
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

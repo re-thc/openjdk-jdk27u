@@ -1,0 +1,1920 @@
+﻿2026-10-19T16:08:38.4774861Z Current runner version: '2.337.0'
+2026-10-19T16:08:38.4795829Z ##[group]Runner Image Provisioner
+2026-10-19T16:08:38.4796387Z Hosted Compute Agent
+2026-10-19T16:08:38.4796775Z Version: 20261002.596
+2026-10-19T16:08:38.4797113Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-19T16:08:38.4797664Z Build Date: 2026-10-02T22:28:27Z
+2026-10-19T16:08:38.4798161Z Worker ID: {c348b253-1705-4e4e-adf6-140db678647f}
+2026-10-19T16:08:38.4798748Z Region: centralus
+2026-10-19T16:08:38.4799424Z Cloud: Azure
+2026-10-19T16:08:38.4799826Z ##[endgroup]
+2026-10-19T16:08:38.4800970Z ##[group]Operating System
+2026-10-19T16:08:38.4801451Z Microsoft Windows Server 2025
+2026-10-19T16:08:38.4801912Z 10.0.26100
+2026-10-19T16:08:38.4802335Z Datacenter
+2026-10-19T16:08:38.4802681Z ##[endgroup]
+2026-10-19T16:08:38.4802990Z ##[group]Runner Image
+2026-10-19T16:08:38.4803318Z Image: windows-2025-vs2026
+2026-10-19T16:08:38.4803675Z Version: 20261007.264.1
+2026-10-19T16:08:38.4804754Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261007.264/images/windows/Windows2025-VS2026-Readme.md
+2026-10-19T16:08:38.4805745Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261007.264
+2026-10-19T16:08:38.4806339Z ##[endgroup]
+2026-10-19T16:08:38.4807196Z ##[group]GITHUB_TOKEN Permissions
+2026-10-19T16:08:38.4809113Z Actions: read
+2026-10-19T16:08:38.4809452Z Contents: read
+2026-10-19T16:08:38.4809756Z Metadata: read
+2026-10-19T16:08:38.4810047Z ##[endgroup]
+2026-10-19T16:08:38.4811593Z Secret source: Actions
+2026-10-19T16:08:38.4812104Z Cache mode: write
+2026-10-19T16:08:38.4812580Z Prepare workflow directory
+2026-10-19T16:08:38.5085626Z Prepare all required actions
+2026-10-19T16:08:38.5119810Z Getting action download info
+2026-10-19T16:08:38.7180710Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-19T16:08:38.8104005Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-10-19T16:08:38.9794778Z Complete job name: msvc
+2026-10-19T16:08:39.0837108Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-19T16:08:39.0838050Z with:
+2026-10-19T16:08:39.0838303Z   ref: 7048d6f2c74e25737850789812da063900ec18c0
+2026-10-19T16:08:39.0838620Z   persist-credentials: false
+2026-10-19T16:08:39.0838907Z   repository: re-thc/openjdk-jdk27u
+2026-10-19T16:08:39.0841321Z   token: ***
+2026-10-19T16:08:39.0841538Z   ssh-strict: true
+2026-10-19T16:08:39.0841758Z   ssh-user: git
+2026-10-19T16:08:39.0841969Z   clean: true
+2026-10-19T16:08:39.0842200Z   sparse-checkout-cone-mode: true
+2026-10-19T16:08:39.0842469Z   fetch-depth: 1
+2026-10-19T16:08:39.0842691Z   fetch-tags: false
+2026-10-19T16:08:39.0842913Z   show-progress: true
+2026-10-19T16:08:39.0843142Z   lfs: false
+2026-10-19T16:08:39.0843351Z   submodules: false
+2026-10-19T16:08:39.0843576Z   set-safe-directory: true
+2026-10-19T16:08:39.0843875Z   allow-unsafe-pr-checkout: false
+2026-10-19T16:08:39.0844248Z env:
+2026-10-19T16:08:39.0844497Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:08:39.0844760Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:08:39.0845056Z   CHERE_INVOKING: 1
+2026-10-19T16:08:39.0845360Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:08:39.0845603Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:08:39.0845840Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:08:39.0846104Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:08:39.0846340Z ##[endgroup]
+2026-10-19T16:08:39.1947361Z Syncing repository: re-thc/openjdk-jdk27u
+2026-10-19T16:08:39.1948648Z ##[group]Getting Git version info
+2026-10-19T16:08:39.1949179Z Working directory is 'D:\a\openjdk-jdk27u\openjdk-jdk27u'
+2026-10-19T16:08:39.2398943Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-19T16:08:39.5933270Z git version 2.56.0.windows.2
+2026-10-19T16:08:39.5968151Z ##[endgroup]
+2026-10-19T16:08:39.5981277Z Temporarily overriding HOME='D:\a\_temp\af298348-a3b8-4f02-8a83-ba0d5f6951ae' before making global git config changes
+2026-10-19T16:08:39.5984139Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-19T16:08:39.5989400Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\openjdk-jdk27u\openjdk-jdk27u
+2026-10-19T16:08:39.6591899Z Deleting the contents of 'D:\a\openjdk-jdk27u\openjdk-jdk27u'
+2026-10-19T16:08:39.6596049Z ##[group]Determining repository object format
+2026-10-19T16:08:39.6597624Z ##[endgroup]
+2026-10-19T16:08:39.6598117Z ##[group]Initializing the repository
+2026-10-19T16:08:39.6604579Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\openjdk-jdk27u\openjdk-jdk27u
+2026-10-19T16:08:39.7407846Z Initialized empty Git repository in D:/a/openjdk-jdk27u/openjdk-jdk27u/.git/
+2026-10-19T16:08:39.7448926Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/re-thc/openjdk-jdk27u
+2026-10-19T16:08:39.8093694Z ##[endgroup]
+2026-10-19T16:08:39.8094351Z ##[group]Disabling automatic garbage collection
+2026-10-19T16:08:39.8101132Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-10-19T16:08:39.8413238Z ##[endgroup]
+2026-10-19T16:08:39.8413760Z ##[group]Setting up auth
+2026-10-19T16:08:39.8414213Z Removing SSH command configuration
+2026-10-19T16:08:39.8421410Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-19T16:08:39.8730787Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-19T16:08:41.2241466Z Removing HTTP extra header
+2026-10-19T16:08:41.2255808Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-19T16:08:41.2565851Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-19T16:08:41.7538557Z Removing includeIf entries pointing to credentials config files
+2026-10-19T16:08:41.7547735Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-19T16:08:41.7856458Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-19T16:08:42.2620759Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-10-19T16:08:42.2977151Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git.path D:\a\_temp\git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:08:42.3294242Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git/worktrees/*.path D:\a\_temp\git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:08:42.3681733Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:08:42.3995214Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:08:42.4297446Z ##[endgroup]
+2026-10-19T16:08:42.4297841Z ##[group]Fetching the repository
+2026-10-19T16:08:42.4307680Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 7048d6f2c74e25737850789812da063900ec18c0
+2026-10-19T16:09:11.5402853Z From https://github.com/re-thc/openjdk-jdk27u
+2026-10-19T16:09:11.5405247Z  * branch                7048d6f2c74e25737850789812da063900ec18c0 -> FETCH_HEAD
+2026-10-19T16:09:11.5452637Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet 7048d6f2c74e25737850789812da063900ec18c0^{object}
+2026-10-19T16:09:11.5790273Z 7048d6f2c74e25737850789812da063900ec18c0
+2026-10-19T16:09:11.5834941Z ##[endgroup]
+2026-10-19T16:09:11.5835401Z ##[group]Determining the checkout info
+2026-10-19T16:09:11.5835894Z ##[endgroup]
+2026-10-19T16:09:11.5843312Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-10-19T16:09:11.6239260Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-10-19T16:09:11.6542991Z ##[group]Checking out the ref
+2026-10-19T16:09:11.6549846Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force 7048d6f2c74e25737850789812da063900ec18c0
+2026-10-19T16:09:13.1933652Z Updating files:   5% (4198/70925)
+2026-10-19T16:09:13.2951095Z Updating files:   6% (4256/70925)
+2026-10-19T16:09:13.4132832Z Updating files:   7% (4965/70925)
+2026-10-19T16:09:13.6122978Z Updating files:   8% (5674/70925)
+2026-10-19T16:09:13.7406688Z Updating files:   9% (6384/70925)
+2026-10-19T16:09:13.8098891Z Updating files:  10% (7093/70925)
+2026-10-19T16:09:13.8658393Z Updating files:  10% (7453/70925)
+2026-10-19T16:09:14.0004429Z Updating files:  11% (7802/70925)
+2026-10-19T16:09:14.4539870Z Updating files:  12% (8511/70925)
+2026-10-19T16:09:14.6109415Z Updating files:  13% (9221/70925)
+2026-10-19T16:09:14.7884522Z Updating files:  14% (9930/70925)
+2026-10-19T16:09:14.8163516Z Updating files:  15% (10639/70925)
+2026-10-19T16:09:14.9404805Z Updating files:  15% (10748/70925)
+2026-10-19T16:09:15.0937824Z Updating files:  16% (11348/70925)
+2026-10-19T16:09:15.2497600Z Updating files:  17% (12058/70925)
+2026-10-19T16:09:15.4119082Z Updating files:  18% (12767/70925)
+2026-10-19T16:09:15.8676812Z Updating files:  19% (13476/70925)
+2026-10-19T16:09:15.8956573Z Updating files:  19% (13994/70925)
+2026-10-19T16:09:16.0172863Z Updating files:  20% (14185/70925)
+2026-10-19T16:09:16.1343960Z Updating files:  21% (14895/70925)
+2026-10-19T16:09:16.3222856Z Updating files:  22% (15604/70925)
+2026-10-19T16:09:16.4472353Z Updating files:  23% (16313/70925)
+2026-10-19T16:09:16.5603692Z Updating files:  24% (17022/70925)
+2026-10-19T16:09:16.6688791Z Updating files:  25% (17732/70925)
+2026-10-19T16:09:16.7930947Z Updating files:  26% (18441/70925)
+2026-10-19T16:09:16.8181926Z Updating files:  27% (19150/70925)
+2026-10-19T16:09:17.2373170Z Updating files:  27% (19296/70925)
+2026-10-19T16:09:17.3619142Z Updating files:  28% (19859/70925)
+2026-10-19T16:09:17.4687813Z Updating files:  29% (20569/70925)
+2026-10-19T16:09:17.5891000Z Updating files:  30% (21278/70925)
+2026-10-19T16:09:17.7189360Z Updating files:  31% (21987/70925)
+2026-10-19T16:09:17.8152834Z Updating files:  32% (22696/70925)
+2026-10-19T16:09:17.8274593Z Updating files:  33% (23406/70925)
+2026-10-19T16:09:17.9111245Z Updating files:  33% (23494/70925)
+2026-10-19T16:09:18.0158135Z Updating files:  34% (24115/70925)
+2026-10-19T16:09:18.3188370Z Updating files:  35% (24824/70925)
+2026-10-19T16:09:18.6560087Z Updating files:  36% (25533/70925)
+2026-10-19T16:09:18.7512697Z Updating files:  37% (26243/70925)
+2026-10-19T16:09:18.8325494Z Updating files:  38% (26952/70925)
+2026-10-19T16:09:18.8401139Z Updating files:  38% (27606/70925)
+2026-10-19T16:09:18.9282662Z Updating files:  39% (27661/70925)
+2026-10-19T16:09:19.0164996Z Updating files:  40% (28370/70925)
+2026-10-19T16:09:19.1933329Z Updating files:  41% (29080/70925)
+2026-10-19T16:09:19.2796919Z Updating files:  42% (29789/70925)
+2026-10-19T16:09:19.3807832Z Updating files:  43% (30498/70925)
+2026-10-19T16:09:19.4792069Z Updating files:  44% (31207/70925)
+2026-10-19T16:09:19.8214047Z Updating files:  45% (31917/70925)
+2026-10-19T16:09:19.8395716Z Updating files:  46% (32626/70925)
+2026-10-19T16:09:19.9224502Z Updating files:  46% (32752/70925)
+2026-10-19T16:09:20.0225435Z Updating files:  47% (33335/70925)
+2026-10-19T16:09:20.1227755Z Updating files:  48% (34044/70925)
+2026-10-19T16:09:20.2974264Z Updating files:  49% (34754/70925)
+2026-10-19T16:09:20.3957221Z Updating files:  50% (35463/70925)
+2026-10-19T16:09:20.4857050Z Updating files:  51% (36172/70925)
+2026-10-19T16:09:20.5706815Z Updating files:  52% (36881/70925)
+2026-10-19T16:09:20.7079243Z Updating files:  53% (37591/70925)
+2026-10-19T16:09:20.8032787Z Updating files:  54% (38300/70925)
+2026-10-19T16:09:20.8398949Z Updating files:  55% (39009/70925)
+2026-10-19T16:09:20.8919705Z Updating files:  55% (39286/70925)
+2026-10-19T16:09:21.2182059Z Updating files:  56% (39718/70925)
+2026-10-19T16:09:21.3020892Z Updating files:  57% (40428/70925)
+2026-10-19T16:09:21.3924631Z Updating files:  58% (41137/70925)
+2026-10-19T16:09:21.5234055Z Updating files:  59% (41846/70925)
+2026-10-19T16:09:21.7035163Z Updating files:  60% (42555/70925)
+2026-10-19T16:09:21.7926350Z Updating files:  61% (43265/70925)
+2026-10-19T16:09:21.8447172Z Updating files:  62% (43974/70925)
+2026-10-19T16:09:21.8904849Z Updating files:  62% (44338/70925)
+2026-10-19T16:09:21.9795745Z Updating files:  63% (44683/70925)
+2026-10-19T16:09:22.0851099Z Updating files:  64% (45392/70925)
+2026-10-19T16:09:22.1811295Z Updating files:  65% (46102/70925)
+2026-10-19T16:09:22.2783788Z Updating files:  66% (46811/70925)
+2026-10-19T16:09:22.6914948Z Updating files:  67% (47520/70925)
+2026-10-19T16:09:22.7889495Z Updating files:  68% (48229/70925)
+2026-10-19T16:09:22.8462255Z Updating files:  69% (48939/70925)
+2026-10-19T16:09:22.8873212Z Updating files:  69% (49318/70925)
+2026-10-19T16:09:22.9816512Z Updating files:  70% (49648/70925)
+2026-10-19T16:09:23.0896996Z Updating files:  71% (50357/70925)
+2026-10-19T16:09:23.1868822Z Updating files:  72% (51066/70925)
+2026-10-19T16:09:23.2885989Z Updating files:  73% (51776/70925)
+2026-10-19T16:09:23.3886238Z Updating files:  74% (52485/70925)
+2026-10-19T16:09:23.4864801Z Updating files:  75% (53194/70925)
+2026-10-19T16:09:23.7219130Z Updating files:  76% (53903/70925)
+2026-10-19T16:09:23.9023329Z Updating files:  77% (54613/70925)
+2026-10-19T16:09:24.0863428Z Updating files:  77% (54777/70925)
+2026-10-19T16:09:24.1811243Z Updating files:  78% (55322/70925)
+2026-10-19T16:09:24.2777198Z Updating files:  79% (56031/70925)
+2026-10-19T16:09:24.3767379Z Updating files:  80% (56740/70925)
+2026-10-19T16:09:24.5057354Z Updating files:  81% (57450/70925)
+2026-10-19T16:09:24.6371568Z Updating files:  82% (58159/70925)
+2026-10-19T16:09:24.8453270Z Updating files:  83% (58868/70925)
+2026-10-19T16:09:24.8666018Z Updating files:  84% (59577/70925)
+2026-10-19T16:09:24.9503367Z Updating files:  84% (59667/70925)
+2026-10-19T16:09:25.0519759Z Updating files:  85% (60287/70925)
+2026-10-19T16:09:25.1470616Z Updating files:  86% (60996/70925)
+2026-10-19T16:09:25.5517340Z Updating files:  87% (61705/70925)
+2026-10-19T16:09:25.6293180Z Updating files:  88% (62414/70925)
+2026-10-19T16:09:25.7672075Z Updating files:  89% (63124/70925)
+2026-10-19T16:09:25.8443936Z Updating files:  90% (63833/70925)
+2026-10-19T16:09:25.8600330Z Updating files:  91% (64542/70925)
+2026-10-19T16:09:25.9226026Z Updating files:  91% (64677/70925)
+2026-10-19T16:09:26.0062141Z Updating files:  92% (65251/70925)
+2026-10-19T16:09:26.0820629Z Updating files:  93% (65961/70925)
+2026-10-19T16:09:26.1559771Z Updating files:  94% (66670/70925)
+2026-10-19T16:09:26.2369551Z Updating files:  95% (67379/70925)
+2026-10-19T16:09:26.3199394Z Updating files:  96% (68088/70925)
+2026-10-19T16:09:26.4030358Z Updating files:  97% (68798/70925)
+2026-10-19T16:09:26.4953350Z Updating files:  98% (69507/70925)
+2026-10-19T16:09:26.5783083Z Updating files:  99% (70216/70925)
+2026-10-19T16:09:26.5783383Z Updating files: 100% (70925/70925)
+2026-10-19T16:09:26.5783600Z Updating files: 100% (70925/70925), done.
+2026-10-19T16:09:26.6870976Z Note: switching to '7048d6f2c74e25737850789812da063900ec18c0'.
+2026-10-19T16:09:26.6871629Z 
+2026-10-19T16:09:26.6871757Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-19T16:09:26.6872044Z changes and commit them, and you can discard any commits you make in this
+2026-10-19T16:09:26.6872300Z state without impacting any branches by switching back to a branch.
+2026-10-19T16:09:26.6872447Z 
+2026-10-19T16:09:26.6872552Z If you want to create a new branch to retain commits you create, you may
+2026-10-19T16:09:26.6872802Z do so (now or later) by using -c with the switch command. Example:
+2026-10-19T16:09:26.6872987Z 
+2026-10-19T16:09:26.6873115Z   git switch -c <new-branch-name>
+2026-10-19T16:09:26.6873218Z 
+2026-10-19T16:09:26.6873275Z Or undo this operation with:
+2026-10-19T16:09:26.6873368Z 
+2026-10-19T16:09:26.6873413Z   git switch -
+2026-10-19T16:09:26.6873484Z 
+2026-10-19T16:09:26.6873604Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-19T16:09:26.6873769Z 
+2026-10-19T16:09:26.6873901Z HEAD is now at 7048d6f2c Validate Latin1 reverse-search ranges before native dispatch
+2026-10-19T16:09:26.7166993Z ##[endgroup]
+2026-10-19T16:09:26.7931234Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-10-19T16:09:26.8524470Z 7048d6f2c74e25737850789812da063900ec18c0
+2026-10-19T16:09:26.8560286Z ##[group]Removing auth
+2026-10-19T16:09:26.8560555Z Removing SSH command configuration
+2026-10-19T16:09:26.8568220Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-19T16:09:26.8834582Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-19T16:09:27.3438757Z Removing HTTP extra header
+2026-10-19T16:09:27.3447466Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-19T16:09:27.3754996Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-19T16:09:27.7984963Z Removing includeIf entries pointing to credentials config files
+2026-10-19T16:09:27.7992536Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-19T16:09:27.8228639Z includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git.path
+2026-10-19T16:09:27.8228945Z includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git/worktrees/*.path
+2026-10-19T16:09:27.8229232Z includeif.gitdir:/github/workspace/.git.path
+2026-10-19T16:09:27.8229587Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-19T16:09:27.8259161Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git.path
+2026-10-19T16:09:27.8488267Z D:\a\_temp\git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:09:27.8517719Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git.path D\:\\a\\_temp\\git\-credentials\-5a7abd7a\-5676\-440c\-b77b\-38bd550a153f\.config
+2026-10-19T16:09:27.8784658Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git/worktrees/*.path
+2026-10-19T16:09:27.9013628Z D:\a\_temp\git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:09:27.9047918Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.git/worktrees/*.path D\:\\a\\_temp\\git\-credentials\-5a7abd7a\-5676\-440c\-b77b\-38bd550a153f\.config
+2026-10-19T16:09:27.9314809Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-19T16:09:27.9530940Z /github/runner_temp/git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:09:27.9558055Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-5a7abd7a\-5676\-440c\-b77b\-38bd550a153f\.config
+2026-10-19T16:09:28.0131178Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-19T16:09:28.0358035Z /github/runner_temp/git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config
+2026-10-19T16:09:28.0385611Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-5a7abd7a\-5676\-440c\-b77b\-38bd550a153f\.config
+2026-10-19T16:09:28.0638679Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-19T16:09:28.4644092Z Removing credentials config 'D:\a\_temp\git-credentials-5a7abd7a-5676-440c-b77b-38bd550a153f.config'
+2026-10-19T16:09:28.4652929Z ##[endgroup]
+2026-10-19T16:09:28.4948235Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-19T16:09:28.4948491Z with:
+2026-10-19T16:09:28.4948633Z   ref: 3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:09:28.4948793Z   path: .stringzilla-driver
+2026-10-19T16:09:28.4948932Z   persist-credentials: false
+2026-10-19T16:09:28.4949097Z   sparse-checkout: doc/stringzilla/qualification-20261019
+2026-10-19T16:09:28.4949283Z   repository: re-thc/openjdk-jdk27u
+2026-10-19T16:09:28.4950610Z   token: ***
+2026-10-19T16:09:28.4950719Z   ssh-strict: true
+2026-10-19T16:09:28.4950828Z   ssh-user: git
+2026-10-19T16:09:28.4950933Z   clean: true
+2026-10-19T16:09:28.4951053Z   sparse-checkout-cone-mode: true
+2026-10-19T16:09:28.4951188Z   fetch-depth: 1
+2026-10-19T16:09:28.4951301Z   fetch-tags: false
+2026-10-19T16:09:28.4951408Z   show-progress: true
+2026-10-19T16:09:28.4951534Z   lfs: false
+2026-10-19T16:09:28.4951636Z   submodules: false
+2026-10-19T16:09:28.4951786Z   set-safe-directory: true
+2026-10-19T16:09:28.4951919Z   allow-unsafe-pr-checkout: false
+2026-10-19T16:09:28.4952048Z env:
+2026-10-19T16:09:28.4952158Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:09:28.4952292Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:09:28.4952429Z   CHERE_INVOKING: 1
+2026-10-19T16:09:28.4952535Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:09:28.4952899Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:09:28.4953021Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:09:28.4953153Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:09:28.4953282Z ##[endgroup]
+2026-10-19T16:09:28.5683969Z Syncing repository: re-thc/openjdk-jdk27u
+2026-10-19T16:09:28.5686822Z ##[group]Getting Git version info
+2026-10-19T16:09:28.5687074Z Working directory is 'D:\a\openjdk-jdk27u\openjdk-jdk27u\.stringzilla-driver'
+2026-10-19T16:09:28.6016228Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-19T16:09:28.6252993Z git version 2.56.0.windows.2
+2026-10-19T16:09:28.6283592Z ##[endgroup]
+2026-10-19T16:09:28.6292114Z Temporarily overriding HOME='D:\a\_temp\952a5b90-57db-419a-ab25-ac8436c2cf70' before making global git config changes
+2026-10-19T16:09:28.6292500Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-19T16:09:28.6297803Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\openjdk-jdk27u\openjdk-jdk27u\.stringzilla-driver
+2026-10-19T16:09:28.6541467Z ##[group]Determining repository object format
+2026-10-19T16:09:28.6542897Z ##[endgroup]
+2026-10-19T16:09:28.6543145Z ##[group]Initializing the repository
+2026-10-19T16:09:28.6548217Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\openjdk-jdk27u\openjdk-jdk27u\.stringzilla-driver
+2026-10-19T16:09:28.6841825Z Initialized empty Git repository in D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git/
+2026-10-19T16:09:28.6870540Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/re-thc/openjdk-jdk27u
+2026-10-19T16:09:28.7113236Z ##[endgroup]
+2026-10-19T16:09:28.7113477Z ##[group]Disabling automatic garbage collection
+2026-10-19T16:09:28.7119154Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-10-19T16:09:28.7356745Z ##[endgroup]
+2026-10-19T16:09:28.7357032Z ##[group]Setting up auth
+2026-10-19T16:09:28.7357466Z Removing SSH command configuration
+2026-10-19T16:09:28.7363580Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-19T16:09:28.7600763Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-19T16:09:29.1778224Z Removing HTTP extra header
+2026-10-19T16:09:29.1790666Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-19T16:09:29.2038466Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-19T16:09:29.6117903Z Removing includeIf entries pointing to credentials config files
+2026-10-19T16:09:29.6126071Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-19T16:09:29.6371167Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-19T16:09:30.0327053Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-10-19T16:09:30.0579592Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git.path D:\a\_temp\git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:30.0830750Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git/worktrees/*.path D:\a\_temp\git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:30.1087546Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.stringzilla-driver/.git.path /github/runner_temp/git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:30.1329971Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.stringzilla-driver/.git/worktrees/*.path /github/runner_temp/git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:30.1600648Z ##[endgroup]
+2026-10-19T16:09:30.1600881Z ##[group]Fetching the repository
+2026-10-19T16:09:30.1608317Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin 3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:09:30.9754270Z From https://github.com/re-thc/openjdk-jdk27u
+2026-10-19T16:09:30.9754577Z  * branch              3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0 -> FETCH_HEAD
+2026-10-19T16:09:30.9789598Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse --verify --quiet 3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0^{object}
+2026-10-19T16:09:31.0020869Z 3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:09:31.0044000Z ##[endgroup]
+2026-10-19T16:09:31.0044299Z ##[group]Determining the checkout info
+2026-10-19T16:09:31.0045160Z ##[endgroup]
+2026-10-19T16:09:31.0045439Z ##[group]Setting up sparse checkout
+2026-10-19T16:09:31.0051087Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout set doc/stringzilla/qualification-20261019
+2026-10-19T16:09:31.0318180Z ##[endgroup]
+2026-10-19T16:09:31.0318862Z ##[group]Checking out the ref
+2026-10-19T16:09:31.0324093Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force 3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:09:32.1954318Z Updating files:   0% (1/6511)
+2026-10-19T16:09:32.2031762Z Updating files:   1% (66/6511)
+2026-10-19T16:09:32.2101896Z Updating files:   2% (131/6511)
+2026-10-19T16:09:32.2175259Z Updating files:   3% (196/6511)
+2026-10-19T16:09:32.2248063Z Updating files:   4% (261/6511)
+2026-10-19T16:09:32.2326681Z Updating files:   5% (326/6511)
+2026-10-19T16:09:32.2409789Z Updating files:   6% (391/6511)
+2026-10-19T16:09:32.2488910Z Updating files:   7% (456/6511)
+2026-10-19T16:09:32.2562147Z Updating files:   8% (521/6511)
+2026-10-19T16:09:32.2637386Z Updating files:   9% (586/6511)
+2026-10-19T16:09:32.2707830Z Updating files:  10% (652/6511)
+2026-10-19T16:09:32.2780206Z Updating files:  11% (717/6511)
+2026-10-19T16:09:32.2861307Z Updating files:  12% (782/6511)
+2026-10-19T16:09:32.2932526Z Updating files:  13% (847/6511)
+2026-10-19T16:09:32.3001845Z Updating files:  14% (912/6511)
+2026-10-19T16:09:32.3070082Z Updating files:  15% (977/6511)
+2026-10-19T16:09:32.3147237Z Updating files:  16% (1042/6511)
+2026-10-19T16:09:32.3219360Z Updating files:  17% (1107/6511)
+2026-10-19T16:09:32.3290091Z Updating files:  18% (1172/6511)
+2026-10-19T16:09:32.3363578Z Updating files:  19% (1238/6511)
+2026-10-19T16:09:32.3436570Z Updating files:  20% (1303/6511)
+2026-10-19T16:09:32.3542043Z Updating files:  21% (1368/6511)
+2026-10-19T16:09:32.3612448Z Updating files:  22% (1433/6511)
+2026-10-19T16:09:32.3679421Z Updating files:  23% (1498/6511)
+2026-10-19T16:09:32.3751974Z Updating files:  24% (1563/6511)
+2026-10-19T16:09:32.3818674Z Updating files:  25% (1628/6511)
+2026-10-19T16:09:32.3887134Z Updating files:  26% (1693/6511)
+2026-10-19T16:09:32.3953687Z Updating files:  27% (1758/6511)
+2026-10-19T16:09:32.4022945Z Updating files:  28% (1824/6511)
+2026-10-19T16:09:32.4089269Z Updating files:  29% (1889/6511)
+2026-10-19T16:09:32.4154294Z Updating files:  30% (1954/6511)
+2026-10-19T16:09:32.4222914Z Updating files:  31% (2019/6511)
+2026-10-19T16:09:32.4293038Z Updating files:  32% (2084/6511)
+2026-10-19T16:09:32.4361104Z Updating files:  33% (2149/6511)
+2026-10-19T16:09:32.4431040Z Updating files:  34% (2214/6511)
+2026-10-19T16:09:32.4500306Z Updating files:  35% (2279/6511)
+2026-10-19T16:09:32.4589222Z Updating files:  36% (2344/6511)
+2026-10-19T16:09:32.4674887Z Updating files:  37% (2410/6511)
+2026-10-19T16:09:32.4744850Z Updating files:  38% (2475/6511)
+2026-10-19T16:09:32.4826130Z Updating files:  39% (2540/6511)
+2026-10-19T16:09:32.4892498Z Updating files:  40% (2605/6511)
+2026-10-19T16:09:32.4960441Z Updating files:  41% (2670/6511)
+2026-10-19T16:09:32.5025243Z Updating files:  42% (2735/6511)
+2026-10-19T16:09:32.5095170Z Updating files:  43% (2800/6511)
+2026-10-19T16:09:32.5166404Z Updating files:  44% (2865/6511)
+2026-10-19T16:09:32.5234641Z Updating files:  45% (2930/6511)
+2026-10-19T16:09:32.5308830Z Updating files:  46% (2996/6511)
+2026-10-19T16:09:32.5382461Z Updating files:  47% (3061/6511)
+2026-10-19T16:09:32.5457968Z Updating files:  48% (3126/6511)
+2026-10-19T16:09:32.5532810Z Updating files:  49% (3191/6511)
+2026-10-19T16:09:32.5603793Z Updating files:  50% (3256/6511)
+2026-10-19T16:09:32.5680781Z Updating files:  51% (3321/6511)
+2026-10-19T16:09:32.5754222Z Updating files:  52% (3386/6511)
+2026-10-19T16:09:32.5824622Z Updating files:  53% (3451/6511)
+2026-10-19T16:09:32.5898605Z Updating files:  54% (3516/6511)
+2026-10-19T16:09:32.5976310Z Updating files:  55% (3582/6511)
+2026-10-19T16:09:32.6046965Z Updating files:  56% (3647/6511)
+2026-10-19T16:09:32.6154386Z Updating files:  57% (3712/6511)
+2026-10-19T16:09:32.6225673Z Updating files:  58% (3777/6511)
+2026-10-19T16:09:32.6298460Z Updating files:  59% (3842/6511)
+2026-10-19T16:09:32.6366838Z Updating files:  60% (3907/6511)
+2026-10-19T16:09:32.6436723Z Updating files:  61% (3972/6511)
+2026-10-19T16:09:32.6507494Z Updating files:  62% (4037/6511)
+2026-10-19T16:09:32.6578508Z Updating files:  63% (4102/6511)
+2026-10-19T16:09:32.6647446Z Updating files:  64% (4168/6511)
+2026-10-19T16:09:32.6714499Z Updating files:  65% (4233/6511)
+2026-10-19T16:09:32.6785417Z Updating files:  66% (4298/6511)
+2026-10-19T16:09:32.6855359Z Updating files:  67% (4363/6511)
+2026-10-19T16:09:32.6924310Z Updating files:  68% (4428/6511)
+2026-10-19T16:09:32.6993695Z Updating files:  69% (4493/6511)
+2026-10-19T16:09:32.7068822Z Updating files:  70% (4558/6511)
+2026-10-19T16:09:32.7144962Z Updating files:  71% (4623/6511)
+2026-10-19T16:09:32.7221033Z Updating files:  72% (4688/6511)
+2026-10-19T16:09:32.7302612Z Updating files:  73% (4754/6511)
+2026-10-19T16:09:32.7379560Z Updating files:  74% (4819/6511)
+2026-10-19T16:09:32.7437860Z Updating files:  75% (4884/6511)
+2026-10-19T16:09:32.7509607Z Updating files:  76% (4949/6511)
+2026-10-19T16:09:32.7579731Z Updating files:  77% (5014/6511)
+2026-10-19T16:09:32.7649324Z Updating files:  78% (5079/6511)
+2026-10-19T16:09:32.7715812Z Updating files:  79% (5144/6511)
+2026-10-19T16:09:32.7782302Z Updating files:  80% (5209/6511)
+2026-10-19T16:09:32.7848567Z Updating files:  81% (5274/6511)
+2026-10-19T16:09:32.7921107Z Updating files:  82% (5340/6511)
+2026-10-19T16:09:32.7990240Z Updating files:  83% (5405/6511)
+2026-10-19T16:09:32.8057710Z Updating files:  84% (5470/6511)
+2026-10-19T16:09:32.8128182Z Updating files:  85% (5535/6511)
+2026-10-19T16:09:32.8201087Z Updating files:  86% (5600/6511)
+2026-10-19T16:09:32.8276488Z Updating files:  87% (5665/6511)
+2026-10-19T16:09:32.8345732Z Updating files:  88% (5730/6511)
+2026-10-19T16:09:32.8415964Z Updating files:  89% (5795/6511)
+2026-10-19T16:09:32.8511487Z Updating files:  90% (5860/6511)
+2026-10-19T16:09:32.8655337Z Updating files:  91% (5926/6511)
+2026-10-19T16:09:32.8733009Z Updating files:  92% (5991/6511)
+2026-10-19T16:09:32.8790088Z Updating files:  93% (6056/6511)
+2026-10-19T16:09:32.8840593Z Updating files:  94% (6121/6511)
+2026-10-19T16:09:32.8906415Z Updating files:  95% (6186/6511)
+2026-10-19T16:09:32.8980599Z Updating files:  96% (6251/6511)
+2026-10-19T16:09:32.9054771Z Updating files:  97% (6316/6511)
+2026-10-19T16:09:32.9171213Z Updating files:  98% (6381/6511)
+2026-10-19T16:09:32.9277232Z Updating files:  99% (6446/6511)
+2026-10-19T16:09:32.9280535Z Updating files: 100% (6511/6511)
+2026-10-19T16:09:32.9280677Z Updating files: 100% (6511/6511), done.
+2026-10-19T16:09:32.9973091Z Note: switching to '3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0'.
+2026-10-19T16:09:32.9973456Z 
+2026-10-19T16:09:32.9973600Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-19T16:09:32.9973861Z changes and commit them, and you can discard any commits you make in this
+2026-10-19T16:09:32.9974113Z state without impacting any branches by switching back to a branch.
+2026-10-19T16:09:32.9974255Z 
+2026-10-19T16:09:32.9974357Z If you want to create a new branch to retain commits you create, you may
+2026-10-19T16:09:32.9974633Z do so (now or later) by using -c with the switch command. Example:
+2026-10-19T16:09:32.9974770Z 
+2026-10-19T16:09:32.9974843Z   git switch -c <new-branch-name>
+2026-10-19T16:09:32.9974939Z 
+2026-10-19T16:09:32.9974991Z Or undo this operation with:
+2026-10-19T16:09:32.9975078Z 
+2026-10-19T16:09:32.9975124Z   git switch -
+2026-10-19T16:09:32.9975184Z 
+2026-10-19T16:09:32.9975299Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-19T16:09:32.9975453Z 
+2026-10-19T16:09:32.9975603Z HEAD is now at 3b318ed7 Retain completed paired evidence and qualify physical-range guard scope
+2026-10-19T16:09:33.0043226Z ##[endgroup]
+2026-10-19T16:09:33.0315684Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-10-19T16:09:33.0533557Z 3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:09:33.0560847Z ##[group]Removing auth
+2026-10-19T16:09:33.0561050Z Removing SSH command configuration
+2026-10-19T16:09:33.0566250Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-19T16:09:33.0809753Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-19T16:09:33.6001450Z Removing HTTP extra header
+2026-10-19T16:09:33.6009015Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-19T16:09:33.6574898Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-19T16:09:34.0622855Z Removing includeIf entries pointing to credentials config files
+2026-10-19T16:09:34.0629071Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-19T16:09:34.0872884Z includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git.path
+2026-10-19T16:09:34.0873806Z includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git/worktrees/*.path
+2026-10-19T16:09:34.0874318Z includeif.gitdir:/github/workspace/.stringzilla-driver/.git.path
+2026-10-19T16:09:34.0875016Z includeif.gitdir:/github/workspace/.stringzilla-driver/.git/worktrees/*.path
+2026-10-19T16:09:34.0906401Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git.path
+2026-10-19T16:09:34.1135402Z D:\a\_temp\git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:34.1164720Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git.path D\:\\a\\_temp\\git\-credentials\-77588fde\-6017\-440d\-aec7\-d15d6aeedda0\.config
+2026-10-19T16:09:34.1474472Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git/worktrees/*.path
+2026-10-19T16:09:34.1705197Z D:\a\_temp\git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:34.1733642Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/openjdk-jdk27u/openjdk-jdk27u/.stringzilla-driver/.git/worktrees/*.path D\:\\a\\_temp\\git\-credentials\-77588fde\-6017\-440d\-aec7\-d15d6aeedda0\.config
+2026-10-19T16:09:34.1992009Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.stringzilla-driver/.git.path
+2026-10-19T16:09:34.2217970Z /github/runner_temp/git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:34.2244228Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.stringzilla-driver/.git.path \/github\/runner_temp\/git\-credentials\-77588fde\-6017\-440d\-aec7\-d15d6aeedda0\.config
+2026-10-19T16:09:34.2495291Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.stringzilla-driver/.git/worktrees/*.path
+2026-10-19T16:09:34.2712577Z /github/runner_temp/git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config
+2026-10-19T16:09:34.2739059Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.stringzilla-driver/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-77588fde\-6017\-440d\-aec7\-d15d6aeedda0\.config
+2026-10-19T16:09:34.2997335Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-19T16:09:34.7014704Z Removing credentials config 'D:\a\_temp\git-credentials-77588fde-6017-440d-aec7-d15d6aeedda0.config'
+2026-10-19T16:09:34.7016006Z ##[endgroup]
+2026-10-19T16:09:34.7249435Z ##[group]Run import subprocess
+2026-10-19T16:09:34.7249910Z [36;1mimport subprocess[0m
+2026-10-19T16:09:34.7250321Z [36;1msubprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py','restore','--backend','msvc'],check=True)[0m
+2026-10-19T16:09:34.7267578Z shell: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.EXE {0}
+2026-10-19T16:09:34.7267797Z env:
+2026-10-19T16:09:34.7267924Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:09:34.7268076Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:09:34.7268211Z   CHERE_INVOKING: 1
+2026-10-19T16:09:34.7268333Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:09:34.7268468Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:09:34.7268604Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:09:34.7268753Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:09:34.7270402Z   GH_TOKEN: ***
+2026-10-19T16:09:34.7270526Z ##[endgroup]
+2026-10-19T16:09:47.8093715Z Prepare all required actions
+2026-10-19T16:09:47.8094122Z Getting action download info
+2026-10-19T16:09:47.9021471Z Download action repository 'msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e' (SHA:ec48f7c5447b3140e2b088413ae3a55687bccb6e)
+2026-10-19T16:09:48.2213703Z ##[group]Run ./.github/actions/get-msys2
+2026-10-19T16:09:48.2213863Z with:
+2026-10-19T16:09:48.2213972Z   architecture: x86.x64
+2026-10-19T16:09:48.2214090Z env:
+2026-10-19T16:09:48.2214200Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:09:48.2214333Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:09:48.2214454Z   CHERE_INVOKING: 1
+2026-10-19T16:09:48.2214563Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:09:48.2214680Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:09:48.2214795Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:09:48.2214928Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:09:48.2215048Z ##[endgroup]
+2026-10-19T16:09:48.2256441Z ##[start-action display=Install MSYS2 on x86.x64;id=__self.msys2-x64]
+2026-10-19T16:09:48.2387241Z ##[group]Run msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+2026-10-19T16:09:48.2387455Z with:
+2026-10-19T16:09:48.2387573Z   install: autoconf tar unzip zip make
+2026-10-19T16:09:48.2387730Z   path-type: minimal
+2026-10-19T16:09:48.2387841Z   release: false
+2026-10-19T16:09:48.2387950Z   msystem: MINGW64
+2026-10-19T16:09:48.2388051Z   update: false
+2026-10-19T16:09:48.2388168Z   platform-check-severity: fatal
+2026-10-19T16:09:48.2388298Z   cache: true
+2026-10-19T16:09:48.2388399Z env:
+2026-10-19T16:09:48.2388505Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:09:48.2388639Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:09:48.2388761Z   CHERE_INVOKING: 1
+2026-10-19T16:09:48.2388868Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:09:48.2388992Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:09:48.2389107Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:09:48.2389244Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:09:48.2389364Z ##[endgroup]
+2026-10-19T16:09:48.3388007Z ##[warning][msystem-mingw64] MINGW64 is deprecated. Migrate to UCRT64 or CLANG64. To acknowledge and suppress this warning, add 'msystem-mingw64' to 'suppress-deprecation-warnings'.
+2026-10-19T16:09:48.3495484Z ##[group]Restoring package cache...
+2026-10-19T16:09:48.5577319Z Cache restore for msys2-pkgs-upd:false-conf:b3a1ce28, got undefined
+2026-10-19T16:09:48.5577783Z Cache restore for msys2-pkgs-upd:false-conf:b3a1ce28, got undefined
+2026-10-19T16:09:48.5578311Z ##[endgroup]
+2026-10-19T16:09:48.5578733Z ##[group]Starting MSYS2 for the first time...
+2026-10-19T16:09:48.6442736Z [command]C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'uname' '-a'"
+2026-10-19T16:09:49.2603480Z [1;32mMSYS2 is starting for the first time. Executing the initial setup.[1;0m
+2026-10-19T16:09:49.4147831Z Copying skeleton files.
+2026-10-19T16:09:49.4148258Z These files are for the users to personalise their msys2 experience.
+2026-10-19T16:09:49.4148539Z 
+2026-10-19T16:09:49.4148780Z They will never be overwritten nor automatically updated.
+2026-10-19T16:09:49.4149014Z 
+2026-10-19T16:09:49.5163817Z './.bashrc' -> '/home/runneradmin/.bashrc'
+2026-10-19T16:09:49.5323719Z './.bash_profile' -> '/home/runneradmin/.bash_profile'
+2026-10-19T16:09:49.5515350Z './.profile' -> '/home/runneradmin/.profile'
+2026-10-19T16:09:49.7354004Z [1;32mInitial setup complete. MSYS2 is now ready to use.[1;0m
+2026-10-19T16:09:49.7488588Z MINGW64_NT-10.0-26100 runnervm0xl3a 3.6.10-3ea87a50.x86_64 2026-09-28 15:20 UTC x86_64 Msys
+2026-10-19T16:09:49.7531299Z ##[endgroup]
+2026-10-19T16:09:49.7531532Z ##[group]Disable CheckSpace...
+2026-10-19T16:09:49.7865461Z [command]C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'sed' '-i' 's/^CheckSpace/#CheckSpace/g' '/etc/pacman.conf'"
+2026-10-19T16:09:49.9698211Z ##[endgroup]
+2026-10-19T16:09:49.9698496Z ##[group]Installing additional packages through pacman...
+2026-10-19T16:09:50.0037745Z [command]C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'autoconf' 'tar' 'unzip' 'zip' 'make'"
+2026-10-19T16:09:52.1280436Z warning: tar-1.35-3 is up to date -- skipping
+2026-10-19T16:09:52.1280830Z resolving dependencies...
+2026-10-19T16:09:52.1604163Z looking for conflicting packages...
+2026-10-19T16:09:52.1623031Z 
+2026-10-19T16:09:52.1623969Z Packages (16) autoconf2.13-2.13-6  autoconf2.69-2.69-4  autoconf2.71-2.71-4  autoconf2.72-2.72-4  autoconf2.73-2.73-1  db-6.2.32-6  diffutils-3.12-1  gdbm-1.26-1  libdb-6.2.32-6  libgdbm-1.26-1  m4-1.4.21-1  perl-5.42.3-2  autoconf-wrapper-20260320-1  make-4.4.1-3  unzip-6.0-3  zip-3.0-5
+2026-10-19T16:09:52.1624539Z 
+2026-10-19T16:09:52.1624603Z Total Download Size:   11.38 MiB
+2026-10-19T16:09:52.1624745Z Total Installed Size:  60.94 MiB
+2026-10-19T16:09:52.1624826Z 
+2026-10-19T16:09:52.1629800Z :: Proceed with installation? [Y/n] 
+2026-10-19T16:09:52.1629987Z :: Retrieving packages...
+2026-10-19T16:09:54.0058665Z  perl-5.42.3-2-x86_64 downloading...
+2026-10-19T16:09:54.0058987Z  libdb-6.2.32-6-x86_64 downloading...
+2026-10-19T16:09:54.0059148Z  autoconf2.73-2.73-1-any downloading...
+2026-10-19T16:09:54.0059299Z  make-4.4.1-3-x86_64 downloading...
+2026-10-19T16:09:54.0059451Z  diffutils-3.12-1-x86_64 downloading...
+2026-10-19T16:09:54.0059595Z  autoconf2.72-2.72-4-any downloading...
+2026-10-19T16:09:54.0059736Z  autoconf2.71-2.71-4-any downloading...
+2026-10-19T16:09:54.0059884Z  autoconf2.69-2.69-4-any downloading...
+2026-10-19T16:09:54.0060029Z  m4-1.4.21-1-x86_64 downloading...
+2026-10-19T16:09:54.0060165Z  gdbm-1.26-1-x86_64 downloading...
+2026-10-19T16:09:54.0060301Z  zip-3.0-5-x86_64 downloading...
+2026-10-19T16:09:54.0060441Z  autoconf2.13-2.13-6-any downloading...
+2026-10-19T16:09:54.0060584Z  unzip-6.0-3-x86_64 downloading...
+2026-10-19T16:09:54.0060718Z  db-6.2.32-6-x86_64 downloading...
+2026-10-19T16:09:54.0060854Z  libgdbm-1.26-1-x86_64 downloading...
+2026-10-19T16:09:54.0061027Z  autoconf-wrapper-20260320-1-any downloading...
+2026-10-19T16:09:54.0061240Z checking keyring...
+2026-10-19T16:09:54.0495009Z checking package integrity...
+2026-10-19T16:09:55.4791563Z loading package files...
+2026-10-19T16:09:55.5126217Z checking for file conflicts...
+2026-10-19T16:09:55.9234320Z :: Processing package changes...
+2026-10-19T16:09:55.9234529Z installing m4...
+2026-10-19T16:09:55.9318917Z installing diffutils...
+2026-10-19T16:09:56.0073155Z installing libdb...
+2026-10-19T16:09:56.0171351Z installing db...
+2026-10-19T16:09:56.0420542Z installing libgdbm...
+2026-10-19T16:09:56.0519803Z installing gdbm...
+2026-10-19T16:09:56.0862960Z installing perl...
+2026-10-19T16:09:59.3469563Z installing autoconf2.73...
+2026-10-19T16:09:59.8903645Z installing autoconf2.72...
+2026-10-19T16:09:59.9545295Z installing autoconf2.71...
+2026-10-19T16:10:00.0237797Z installing autoconf2.69...
+2026-10-19T16:10:00.0882880Z installing autoconf2.13...
+2026-10-19T16:10:00.1097914Z installing autoconf-wrapper...
+2026-10-19T16:10:00.1218638Z installing unzip...
+2026-10-19T16:10:00.1304299Z installing zip...
+2026-10-19T16:10:00.1434430Z installing make...
+2026-10-19T16:10:00.1781597Z :: Running post-transaction hooks...
+2026-10-19T16:10:00.1782110Z (1/1) Updating the info directory file...
+2026-10-19T16:10:01.3848953Z ##[endgroup]
+2026-10-19T16:10:01.3849197Z ##[group]Saving package cache...
+2026-10-19T16:10:01.4203327Z [command]C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'paccache' '-r' '-f' '-u' '-k0'"
+2026-10-19T16:10:02.3182321Z ==> no candidate packages found for pruning
+2026-10-19T16:10:02.3570043Z [command]C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'paccache' '-r' '-f' '-k1'"
+2026-10-19T16:10:02.5731734Z ==> no candidate packages found for pruning
+2026-10-19T16:10:02.6632314Z [command]"C:\Program Files\Git\usr\bin\tar.exe" --posix -cf cache.tzst --exclude cache.tzst -P -C D:/a/openjdk-jdk27u/openjdk-jdk27u --files-from manifest.txt --force-local --use-compress-program "zstd -T0"
+2026-10-19T16:10:03.5116654Z Sent 11924942 of 11924942 (100.0%), 20.1 MBs/sec
+2026-10-19T16:10:03.6858361Z Cache saved as ID 9171397969 using key msys2-pkgs-upd:false-conf:b3a1ce28-files:638048b7053eb02866b32110736fba924fe8076a924435fb49603ea4d6656b0c
+2026-10-19T16:10:03.7267337Z [command]C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-Scc'"
+2026-10-19T16:10:04.2265005Z 
+2026-10-19T16:10:04.2265516Z Cache directory: /var/cache/pacman/pkg/
+2026-10-19T16:10:04.2299427Z :: Do you want to remove ALL files from cache? [Y/n] 
+2026-10-19T16:10:04.2299770Z removing all files from cache...
+2026-10-19T16:10:04.2299926Z 
+2026-10-19T16:10:04.2300027Z Database directory: /var/lib/pacman/
+2026-10-19T16:10:04.2312391Z :: Do you want to remove unused repositories? [Y/n] 
+2026-10-19T16:10:04.2313085Z removing unused sync repositories...
+2026-10-19T16:10:04.2355956Z ##[endgroup]
+2026-10-19T16:10:04.2478877Z ##[end-action id=__self.msys2-x64;outcome=success;conclusion=success;duration_ms=16022]
+2026-10-19T16:10:04.2483277Z ##[start-action display=Install MSYS2 on ARM64;id=__self.msys2-arm64]
+2026-10-19T16:10:04.2540971Z ##[end-action id=__self.msys2-arm64;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-19T16:10:04.2542868Z ##[start-action display=Set Windows PowerShell path;id=__self.__run]
+2026-10-19T16:10:04.2641649Z ##[group]Run $powershell = (Get-Command powershell.exe -CommandType Application -ErrorAction Stop).Source
+2026-10-19T16:10:04.2642079Z [36;1m$powershell = (Get-Command powershell.exe -CommandType Application -ErrorAction Stop).Source[0m
+2026-10-19T16:10:04.2642488Z [36;1mif (-not [System.IO.Path]::IsPathRooted($powershell) -or -not (Test-Path -LiteralPath $powershell -PathType Leaf)) {[0m
+2026-10-19T16:10:04.2642835Z [36;1m  throw "Could not resolve Windows PowerShell: $powershell"[0m
+2026-10-19T16:10:04.2643022Z [36;1m}[0m
+2026-10-19T16:10:04.2643164Z [36;1mWrite-Output "Windows PowerShell: $powershell"[0m
+2026-10-19T16:10:04.2643389Z [36;1mSplit-Path -Parent $powershell >> $env:GITHUB_PATH[0m
+2026-10-19T16:10:04.2885032Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-19T16:10:04.2885246Z env:
+2026-10-19T16:10:04.2885372Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:04.2885525Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:04.2885655Z   CHERE_INVOKING: 1
+2026-10-19T16:10:04.2885772Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:04.2885894Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:04.2886025Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:04.2886169Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:04.2886291Z   MSYSTEM: MINGW64
+2026-10-19T16:10:04.2886402Z ##[endgroup]
+2026-10-19T16:10:04.5891561Z Windows PowerShell: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+2026-10-19T16:10:04.6311385Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=376]
+2026-10-19T16:10:04.6313224Z ##[start-action display=Set MSYS2 path for x64;id=__self.__run_2]
+2026-10-19T16:10:04.6426920Z ##[group]Run echo "C:\msys64/usr/bin" >> $env:GITHUB_PATH
+2026-10-19T16:10:04.6427152Z [36;1mecho "C:\msys64/usr/bin" >> $env:GITHUB_PATH[0m
+2026-10-19T16:10:04.6477565Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-19T16:10:04.6477767Z env:
+2026-10-19T16:10:04.6477891Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:04.6478032Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:04.6478159Z   CHERE_INVOKING: 1
+2026-10-19T16:10:04.6478273Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:04.6478392Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:04.6478513Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:04.6478657Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:04.6478778Z   MSYSTEM: MINGW64
+2026-10-19T16:10:04.6478885Z ##[endgroup]
+2026-10-19T16:10:04.9015283Z ##[end-action id=__self.__run_2;outcome=success;conclusion=success;duration_ms=270]
+2026-10-19T16:10:04.9017061Z ##[start-action display=Set MSYS2 path for ARM64;id=__self.__run_3]
+2026-10-19T16:10:04.9020331Z ##[end-action id=__self.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-19T16:10:04.9021299Z ##[start-action display=Remove default config.site;id=__self.__run_4]
+2026-10-19T16:10:04.9115557Z ##[group]Run echo "Removing default config.site"
+2026-10-19T16:10:04.9115772Z [36;1mecho "Removing default config.site"[0m
+2026-10-19T16:10:04.9115936Z [36;1mrm -f /etc/config.site[0m
+2026-10-19T16:10:04.9169366Z shell: C:\msys64/usr/bin\env.EXE /usr/bin/bash --login -eo pipefail {0}
+2026-10-19T16:10:04.9169573Z env:
+2026-10-19T16:10:04.9169688Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:04.9169831Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:04.9169952Z   CHERE_INVOKING: 1
+2026-10-19T16:10:04.9170062Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:04.9170180Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:04.9170305Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:04.9170440Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:04.9170560Z   MSYSTEM: MINGW64
+2026-10-19T16:10:04.9170682Z ##[endgroup]
+2026-10-19T16:10:05.0607750Z Removing default config.site
+2026-10-19T16:10:05.0851157Z ##[end-action id=__self.__run_4;outcome=success;conclusion=success;duration_ms=182]
+2026-10-19T16:10:05.0984239Z Prepare all required actions
+2026-10-19T16:10:05.0984624Z Getting action download info
+2026-10-19T16:10:05.1880274Z Download action repository 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9' (SHA:55cc8345863c7cc4c66a329aec7e433d2d1c52a9)
+2026-10-19T16:10:05.3022988Z ##[group]Run ./.github/actions/get-bootjdk
+2026-10-19T16:10:05.3023155Z with:
+2026-10-19T16:10:05.3023266Z   platform: windows-x64
+2026-10-19T16:10:05.3023380Z env:
+2026-10-19T16:10:05.3023491Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.3023630Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.3023757Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.3023869Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.3023989Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.3024106Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.3024248Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.3024372Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.3024481Z ##[endgroup]
+2026-10-19T16:10:05.3028497Z ##[start-action display=Determine platform prefix;id=bootjdk.platform-prefix]
+2026-10-19T16:10:05.3117904Z ##[group]Run # Convert platform name to upper case
+2026-10-19T16:10:05.3118112Z [36;1m# Convert platform name to upper case[0m
+2026-10-19T16:10:05.3118322Z [36;1mplatform_prefix="$(echo windows-x64 | tr [a-z-] [A-Z_])"[0m
+2026-10-19T16:10:05.3118554Z [36;1mecho "value=$platform_prefix" >> $GITHUB_OUTPUT[0m
+2026-10-19T16:10:05.3120484Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:05.3120684Z env:
+2026-10-19T16:10:05.3120802Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.3120942Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.3121067Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.3121184Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.3121305Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.3121425Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.3121569Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.3121691Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.3121802Z ##[endgroup]
+2026-10-19T16:10:05.3786935Z ##[end-action id=bootjdk.platform-prefix;outcome=success;conclusion=success;duration_ms=75]
+2026-10-19T16:10:05.3788584Z ##[start-action display=Get URL configuration;id=bootjdk.url]
+2026-10-19T16:10:05.3866109Z Prepare all required actions
+2026-10-19T16:10:05.3890457Z ##[group]Run ./.github/actions/config
+2026-10-19T16:10:05.3890605Z with:
+2026-10-19T16:10:05.3890718Z   var: WINDOWS_X64_BOOT_JDK_URL
+2026-10-19T16:10:05.3890845Z env:
+2026-10-19T16:10:05.3890963Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.3891101Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.3891224Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.3891341Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.3891462Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.3891591Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.3891730Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.3891852Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.3891960Z ##[endgroup]
+2026-10-19T16:10:05.3893979Z ##[start-action display=Read configuration variable from repo;id=bootjdk.url.read-config]
+2026-10-19T16:10:05.3969917Z ##[group]Run # Extract value from configuration file
+2026-10-19T16:10:05.3970130Z [36;1m# Extract value from configuration file[0m
+2026-10-19T16:10:05.3970411Z [36;1mvalue="$(grep -h '^WINDOWS_X64_BOOT_JDK_URL'= make/conf/github-actions.conf | cut -d '=' -f 2-)"[0m
+2026-10-19T16:10:05.3970679Z [36;1mecho "value=$value" >> $GITHUB_OUTPUT[0m
+2026-10-19T16:10:05.3972458Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:05.3972656Z env:
+2026-10-19T16:10:05.3972771Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.3972915Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.3973034Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.3973148Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.3973268Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.3973391Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.3973527Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.3973886Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.3975389Z ##[endgroup]
+2026-10-19T16:10:05.4719154Z ##[end-action id=bootjdk.url.read-config;outcome=success;conclusion=success;duration_ms=82]
+2026-10-19T16:10:05.4740808Z ##[end-action id=bootjdk.url;outcome=success;conclusion=success;duration_ms=95]
+2026-10-19T16:10:05.4742179Z ##[start-action display=Get SHA256 configuration;id=bootjdk.sha256]
+2026-10-19T16:10:05.4819683Z Prepare all required actions
+2026-10-19T16:10:05.4845354Z ##[group]Run ./.github/actions/config
+2026-10-19T16:10:05.4845527Z with:
+2026-10-19T16:10:05.4845643Z   var: WINDOWS_X64_BOOT_JDK_SHA256
+2026-10-19T16:10:05.4845776Z env:
+2026-10-19T16:10:05.4845890Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.4846028Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.4846161Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.4846274Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.4846397Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.4846516Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.4846671Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.4846807Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.4846913Z ##[endgroup]
+2026-10-19T16:10:05.4849039Z ##[start-action display=Read configuration variable from repo;id=bootjdk.sha256.read-config]
+2026-10-19T16:10:05.4925117Z ##[group]Run # Extract value from configuration file
+2026-10-19T16:10:05.4925330Z [36;1m# Extract value from configuration file[0m
+2026-10-19T16:10:05.4925624Z [36;1mvalue="$(grep -h '^WINDOWS_X64_BOOT_JDK_SHA256'= make/conf/github-actions.conf | cut -d '=' -f 2-)"[0m
+2026-10-19T16:10:05.4925905Z [36;1mecho "value=$value" >> $GITHUB_OUTPUT[0m
+2026-10-19T16:10:05.4927889Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:05.4928084Z env:
+2026-10-19T16:10:05.4928200Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.4928342Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.4928463Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.4928575Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.4928697Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.4928975Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.4929115Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.4929237Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.4929344Z ##[endgroup]
+2026-10-19T16:10:05.5363317Z ##[end-action id=bootjdk.sha256.read-config;outcome=success;conclusion=success;duration_ms=51]
+2026-10-19T16:10:05.5367910Z ##[end-action id=bootjdk.sha256;outcome=success;conclusion=success;duration_ms=62]
+2026-10-19T16:10:05.5369171Z ##[start-action display=Get file extension configuration;id=bootjdk.ext]
+2026-10-19T16:10:05.5443269Z Prepare all required actions
+2026-10-19T16:10:05.5466667Z ##[group]Run ./.github/actions/config
+2026-10-19T16:10:05.5466819Z with:
+2026-10-19T16:10:05.5466929Z   var: WINDOWS_X64_BOOT_JDK_EXT
+2026-10-19T16:10:05.5467056Z env:
+2026-10-19T16:10:05.5467167Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.5467307Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.5467428Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.5467551Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.5467681Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.5467803Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.5467939Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.5468061Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.5468169Z ##[endgroup]
+2026-10-19T16:10:05.5470057Z ##[start-action display=Read configuration variable from repo;id=bootjdk.ext.read-config]
+2026-10-19T16:10:05.5543267Z ##[group]Run # Extract value from configuration file
+2026-10-19T16:10:05.5543490Z [36;1m# Extract value from configuration file[0m
+2026-10-19T16:10:05.5543776Z [36;1mvalue="$(grep -h '^WINDOWS_X64_BOOT_JDK_EXT'= make/conf/github-actions.conf | cut -d '=' -f 2-)"[0m
+2026-10-19T16:10:05.5544051Z [36;1mecho "value=$value" >> $GITHUB_OUTPUT[0m
+2026-10-19T16:10:05.5545912Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:05.5546111Z env:
+2026-10-19T16:10:05.5546225Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.5546945Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.5547075Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.5547188Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.5547308Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.5547430Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.5547565Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.5547684Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.5547789Z ##[endgroup]
+2026-10-19T16:10:05.5996206Z ##[end-action id=bootjdk.ext.read-config;outcome=success;conclusion=success;duration_ms=52]
+2026-10-19T16:10:05.6000411Z ##[end-action id=bootjdk.ext;outcome=success;conclusion=success;duration_ms=63]
+2026-10-19T16:10:05.6001638Z ##[start-action display=Check cache for BootJDK;id=bootjdk.get-cached-bootjdk]
+2026-10-19T16:10:05.6107245Z ##[group]Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+2026-10-19T16:10:05.6107438Z with:
+2026-10-19T16:10:05.6107546Z   path: bootjdk/jdk
+2026-10-19T16:10:05.6107788Z   key: boot-jdk-windows-x64-2dd2d92c9374cd49a120fe9d916732840bf6bb9f0e0cc29794917a3c08b99c5f
+2026-10-19T16:10:05.6108063Z   enableCrossOsArchive: false
+2026-10-19T16:10:05.6108200Z   fail-on-cache-miss: false
+2026-10-19T16:10:05.6108329Z   lookup-only: false
+2026-10-19T16:10:05.6108448Z   save-always: false
+2026-10-19T16:10:05.6108554Z env:
+2026-10-19T16:10:05.6108663Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.6108798Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.6108922Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.6109033Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.6109153Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.6109272Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.6109410Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.6109529Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.6109632Z ##[endgroup]
+2026-10-19T16:10:05.9529319Z Cache not found for input keys: boot-jdk-windows-x64-2dd2d92c9374cd49a120fe9d916732840bf6bb9f0e0cc29794917a3c08b99c5f
+2026-10-19T16:10:05.9627425Z ##[end-action id=bootjdk.get-cached-bootjdk;outcome=success;conclusion=success;duration_ms=362]
+2026-10-19T16:10:05.9629466Z ##[start-action display=Install sha256sum;id=bootjdk.__run]
+2026-10-19T16:10:05.9644052Z ##[end-action id=bootjdk.__run;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-10-19T16:10:05.9645219Z ##[start-action display=Download BootJDK;id=bootjdk.__run_2]
+2026-10-19T16:10:05.9735682Z ##[group]Run # Download BootJDK and verify checksum
+2026-10-19T16:10:05.9735891Z [36;1m# Download BootJDK and verify checksum[0m
+2026-10-19T16:10:05.9736070Z [36;1mmkdir -p bootjdk/jdk[0m
+2026-10-19T16:10:05.9736214Z [36;1mmkdir -p bootjdk/unpacked[0m
+2026-10-19T16:10:05.9736792Z [36;1mwget --progress=dot:mega -O bootjdk/jdk.zip 'https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_windows-x64_bin.zip'[0m
+2026-10-19T16:10:05.9737349Z [36;1mecho '2dd2d92c9374cd49a120fe9d916732840bf6bb9f0e0cc29794917a3c08b99c5f bootjdk/jdk.zip' | sha256sum -c >/dev/null -[0m
+2026-10-19T16:10:05.9739553Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:05.9739762Z env:
+2026-10-19T16:10:05.9739880Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:05.9740025Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:05.9740150Z   CHERE_INVOKING: 1
+2026-10-19T16:10:05.9740262Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:05.9740384Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:05.9740504Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:05.9740640Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:05.9740765Z   MSYSTEM: MINGW64
+2026-10-19T16:10:05.9740873Z ##[endgroup]
+2026-10-19T16:10:06.3842142Z --2026-10-19 16:10:06--  https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_windows-x64_bin.zip
+2026-10-19T16:10:06.4707859Z Loaded CA certificate '/usr/ssl/certs/ca-bundle.crt'
+2026-10-19T16:10:06.5624802Z Resolving download.java.net (download.java.net)... 23.50.38.80
+2026-10-19T16:10:06.5888956Z Connecting to download.java.net (download.java.net)|23.50.38.80|:443... connected.
+2026-10-19T16:10:07.3916006Z HTTP request sent, awaiting response... 200 OK
+2026-10-19T16:10:07.3918663Z Length: 226956568 (216M) [application/zip]
+2026-10-19T16:10:07.3918916Z Saving to: 'bootjdk/jdk.zip'
+2026-10-19T16:10:07.4411700Z 
+2026-10-19T16:10:07.7144548Z      0K ........ ........ ........ ........ ........ ........  1% 9.32M 23s
+2026-10-19T16:10:07.7795091Z   3072K ........ ........ ........ ........ ........ ........  2% 47.9M 13s
+2026-10-19T16:10:07.8050267Z   6144K ........ ........ ........ ........ ........ ........  4%  107M 10s
+2026-10-19T16:10:07.8339483Z   9216K ........ ........ ........ ........ ........ ........  5%  104M 8s
+2026-10-19T16:10:07.8645510Z  12288K ........ ........ ........ ........ ........ ........  6% 97.8M 6s
+2026-10-19T16:10:07.8931157Z  15360K ........ ........ ........ ........ ........ ........  8%  122M 5s
+2026-10-19T16:10:07.9211749Z  18432K ........ ........ ........ ........ ........ ........  9% 93.7M 5s
+2026-10-19T16:10:07.9498204Z  21504K ........ ........ ........ ........ ........ ........ 11%  125M 4s
+2026-10-19T16:10:07.9739391Z  24576K ........ ........ ........ ........ ........ ........ 12%  104M 4s
+2026-10-19T16:10:08.0029448Z  27648K ........ ........ ........ ........ ........ ........ 13%  104M 4s
+2026-10-19T16:10:08.0295093Z  30720K ........ ........ ........ ........ ........ ........ 15%  112M 4s
+2026-10-19T16:10:08.0582196Z  33792K ........ ........ ........ ........ ........ ........ 16%  116M 3s
+2026-10-19T16:10:08.0833948Z  36864K ........ ........ ........ ........ ........ ........ 18%  107M 3s
+2026-10-19T16:10:08.1162698Z  39936K ........ ........ ........ ........ ........ ........ 19% 92.8M 3s
+2026-10-19T16:10:08.1449574Z  43008K ........ ........ ........ ........ ........ ........ 20%  103M 3s
+2026-10-19T16:10:08.1827068Z  46080K ........ ........ ........ ........ ........ ........ 22%  106M 3s
+2026-10-19T16:10:08.2075458Z  49152K ........ ........ ........ ........ ........ ........ 23% 87.4M 3s
+2026-10-19T16:10:08.2344931Z  52224K ........ ........ ........ ........ ........ ........ 24%  112M 3s
+2026-10-19T16:10:08.2622943Z  55296K ........ ........ ........ ........ ........ ........ 26%  108M 2s
+2026-10-19T16:10:08.2899463Z  58368K ........ ........ ........ ........ ........ ........ 27%  122M 2s
+2026-10-19T16:10:08.3144197Z  61440K ........ ........ ........ ........ ........ ........ 29%  109M 2s
+2026-10-19T16:10:08.3427429Z  64512K ........ ........ ........ ........ ........ ........ 30%  106M 2s
+2026-10-19T16:10:08.3702607Z  67584K ........ ........ ........ ........ ........ ........ 31%  109M 2s
+2026-10-19T16:10:08.4012889Z  70656K ........ ........ ........ ........ ........ ........ 33% 96.9M 2s
+2026-10-19T16:10:08.4287492Z  73728K ........ ........ ........ ........ ........ ........ 34%  109M 2s
+2026-10-19T16:10:08.4555027Z  76800K ........ ........ ........ ........ ........ ........ 36%  117M 2s
+2026-10-19T16:10:08.4800043Z  79872K ........ ........ ........ ........ ........ ........ 37%  117M 2s
+2026-10-19T16:10:08.7346448Z  82944K ........ ........ ........ ........ ........ ........ 38%  104M 2s
+2026-10-19T16:10:08.7600270Z  86016K ........ ........ ........ ........ ........ ........ 40% 11.9M 2s
+2026-10-19T16:10:08.7865234Z  89088K ........ ........ ........ ........ ........ ........ 41%  114M 2s
+2026-10-19T16:10:08.8146606Z  92160K ........ ........ ........ ........ ........ ........ 42%  107M 2s
+2026-10-19T16:10:08.8454770Z  95232K ........ ........ ........ ........ ........ ........ 44%  115M 2s
+2026-10-19T16:10:08.8699382Z  98304K ........ ........ ........ ........ ........ ........ 45%  102M 2s
+2026-10-19T16:10:08.9047742Z 101376K ........ ........ ........ ........ ........ ........ 47%  108M 2s
+2026-10-19T16:10:08.9294813Z 104448K ........ ........ ........ ........ ........ ........ 48% 94.4M 2s
+2026-10-19T16:10:08.9779028Z 107520K ........ ........ ........ ........ ........ ........ 49%  113M 2s
+2026-10-19T16:10:09.0027730Z 110592K ........ ........ ........ ........ ........ ........ 51% 64.3M 2s
+2026-10-19T16:10:09.0343733Z 113664K ........ ........ ........ ........ ........ ........ 52% 95.2M 1s
+2026-10-19T16:10:09.0587211Z 116736K ........ ........ ........ ........ ........ ........ 54%  123M 1s
+2026-10-19T16:10:09.0839083Z 119808K ........ ........ ........ ........ ........ ........ 55%  123M 1s
+2026-10-19T16:10:09.1080721Z 122880K ........ ........ ........ ........ ........ ........ 56%  120M 1s
+2026-10-19T16:10:09.1388530Z 125952K ........ ........ ........ ........ ........ ........ 58% 97.7M 1s
+2026-10-19T16:10:09.1687191Z 129024K ........ ........ ........ ........ ........ ........ 59%  100M 1s
+2026-10-19T16:10:09.1969845Z 132096K ........ ........ ........ ........ ........ ........ 60%  117M 1s
+2026-10-19T16:10:09.2271620Z 135168K ........ ........ ........ ........ ........ ........ 62% 91.6M 1s
+2026-10-19T16:10:09.2582670Z 138240K ........ ........ ........ ........ ........ ........ 63%  121M 1s
+2026-10-19T16:10:09.2829588Z 141312K ........ ........ ........ ........ ........ ........ 65% 97.1M 1s
+2026-10-19T16:10:09.3097592Z 144384K ........ ........ ........ ........ ........ ........ 66%  112M 1s
+2026-10-19T16:10:09.3399088Z 147456K ........ ........ ........ ........ ........ ........ 67% 99.2M 1s
+2026-10-19T16:10:09.3701993Z 150528K ........ ........ ........ ........ ........ ........ 69%  119M 1s
+2026-10-19T16:10:09.4034432Z 153600K ........ ........ ........ ........ ........ ........ 70% 78.1M 1s
+2026-10-19T16:10:09.4278109Z 156672K ........ ........ ........ ........ ........ ........ 72%  124M 1s
+2026-10-19T16:10:09.4574503Z 159744K ........ ........ ........ ........ ........ ........ 73%  101M 1s
+2026-10-19T16:10:09.4846969Z 162816K ........ ........ ........ ........ ........ ........ 74%  124M 1s
+2026-10-19T16:10:09.9742778Z 165888K ........ ........ ........ ........ ........ ........ 76% 6.09M 1s
+2026-10-19T16:10:10.0027357Z 168960K ........ ........ ........ ........ ........ ........ 77%  105M 1s
+2026-10-19T16:10:10.0296349Z 172032K ........ ........ ........ ........ ........ ........ 79%  111M 1s
+2026-10-19T16:10:10.0557980Z 175104K ........ ........ ........ ........ ........ ........ 80%  115M 1s
+2026-10-19T16:10:10.0807015Z 178176K ........ ........ ........ ........ ........ ........ 81%  120M 1s
+2026-10-19T16:10:10.1081572Z 181248K ........ ........ ........ ........ ........ ........ 83%  110M 1s
+2026-10-19T16:10:10.1350211Z 184320K ........ ........ ........ ........ ........ ........ 84%  111M 1s
+2026-10-19T16:10:10.1624682Z 187392K ........ ........ ........ ........ ........ ........ 85%  113M 0s
+2026-10-19T16:10:10.1893621Z 190464K ........ ........ ........ ........ ........ ........ 87%  108M 0s
+2026-10-19T16:10:10.2168511Z 193536K ........ ........ ........ ........ ........ ........ 88%  112M 0s
+2026-10-19T16:10:10.2429208Z 196608K ........ ........ ........ ........ ........ ........ 90%  113M 0s
+2026-10-19T16:10:10.2696946Z 199680K ........ ........ ........ ........ ........ ........ 91%  115M 0s
+2026-10-19T16:10:10.2958349Z 202752K ........ ........ ........ ........ ........ ........ 92%  112M 0s
+2026-10-19T16:10:10.3256313Z 205824K ........ ........ ........ ........ ........ ........ 94%  101M 0s
+2026-10-19T16:10:10.3538578Z 208896K ........ ........ ........ ........ ........ ........ 95%  106M 0s
+2026-10-19T16:10:10.3814744Z 211968K ........ ........ ........ ........ ........ ........ 97%  121M 0s
+2026-10-19T16:10:10.4138303Z 215040K ........ ........ ........ ........ ........ ........ 98% 85.1M 0s
+2026-10-19T16:10:10.4402219Z 218112K ........ ........ ........ ........ ........ ........ 99%  116M 0s
+2026-10-19T16:10:10.4434690Z 221184K .......                                              100%  105M=3.1s
+2026-10-19T16:10:10.4434829Z 
+2026-10-19T16:10:10.4441759Z 2026-10-19 16:10:10 (70.9 MB/s) - 'bootjdk/jdk.zip' saved [226956568/226956568]
+2026-10-19T16:10:10.4441915Z 
+2026-10-19T16:10:10.9290772Z ##[end-action id=bootjdk.__run_2;outcome=success;conclusion=success;duration_ms=4964]
+2026-10-19T16:10:10.9293432Z ##[start-action display=Unpack BootJDK;id=bootjdk.__run_3]
+2026-10-19T16:10:10.9394846Z ##[group]Run # Unpack the BootJDK and move files to a common location
+2026-10-19T16:10:10.9395133Z [36;1m# Unpack the BootJDK and move files to a common location[0m
+2026-10-19T16:10:10.9395333Z [36;1mif [[ 'zip' == 'tar.gz' ]]; then[0m
+2026-10-19T16:10:10.9395510Z [36;1m  tar -xf bootjdk/jdk.zip -C bootjdk/unpacked[0m
+2026-10-19T16:10:10.9395672Z [36;1melse[0m
+2026-10-19T16:10:10.9395809Z [36;1m  unzip -q bootjdk/jdk.zip -d bootjdk/unpacked[0m
+2026-10-19T16:10:10.9395972Z [36;1mfi[0m
+2026-10-19T16:10:10.9396135Z [36;1mjdk_root="$(dirname $(find bootjdk/unpacked -name bin -type d))"[0m
+2026-10-19T16:10:10.9396343Z [36;1mmv "$jdk_root"/* bootjdk/jdk/[0m
+2026-10-19T16:10:10.9398954Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:10.9399154Z env:
+2026-10-19T16:10:10.9399271Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:10.9399425Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:10.9399560Z   CHERE_INVOKING: 1
+2026-10-19T16:10:10.9399672Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:10.9399790Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:10.9399911Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:10.9400046Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:10.9400168Z   MSYSTEM: MINGW64
+2026-10-19T16:10:10.9400276Z ##[endgroup]
+2026-10-19T16:10:13.2481853Z ##[end-action id=bootjdk.__run_3;outcome=success;conclusion=success;duration_ms=2318]
+2026-10-19T16:10:13.2483561Z ##[start-action display=Export path to where BootJDK is installed;id=bootjdk.path-name]
+2026-10-19T16:10:13.2562445Z ##[group]Run # Export the absolute path
+2026-10-19T16:10:13.2562640Z [36;1m# Export the absolute path[0m
+2026-10-19T16:10:13.2562823Z [36;1mecho "path=`pwd`/bootjdk/jdk" >> $GITHUB_OUTPUT[0m
+2026-10-19T16:10:13.2564577Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:13.2564783Z env:
+2026-10-19T16:10:13.2564920Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:13.2565202Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:13.2565323Z   CHERE_INVOKING: 1
+2026-10-19T16:10:13.2565436Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:13.2565553Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:13.2565678Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:13.2565814Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:13.2565935Z   MSYSTEM: MINGW64
+2026-10-19T16:10:13.2566044Z ##[endgroup]
+2026-10-19T16:10:13.2817528Z ##[end-action id=bootjdk.path-name;outcome=success;conclusion=success;duration_ms=33]
+2026-10-19T16:10:13.2904345Z ##[group]Run set +e
+2026-10-19T16:10:13.2911902Z [36;1mset +e[0m
+2026-10-19T16:10:13.2912173Z [36;1m'/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44[0m
+2026-10-19T16:10:13.2912599Z [36;1mif [ $? -eq 0 ]; then echo 'installed=true' >> "$GITHUB_OUTPUT"; else echo 'installed=false' >> "$GITHUB_OUTPUT"; fi[0m
+2026-10-19T16:10:13.2914501Z shell: C:\msys64/usr/bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-10-19T16:10:13.2914711Z env:
+2026-10-19T16:10:13.2914830Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:13.2914972Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:13.2915103Z   CHERE_INVOKING: 1
+2026-10-19T16:10:13.2915220Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:13.2915342Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:13.2915466Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:13.2915604Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:13.2915732Z   MSYSTEM: MINGW64
+2026-10-19T16:10:13.2915861Z ##[endgroup]
+2026-10-19T16:10:13.7419461Z **********************************************************************
+2026-10-19T16:10:13.7419785Z ** Visual Studio 2026 Developer Command Prompt v18.10.3
+2026-10-19T16:10:13.7419982Z ** Copyright (c) 2026 Microsoft Corporation
+2026-10-19T16:10:13.7420156Z **********************************************************************
+2026-10-19T16:10:15.1123254Z [vcvarsall.bat] Environment initialized for: 'x64'
+2026-10-19T16:10:17.2187905Z ##[group]Run bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
+2026-10-19T16:10:17.2188306Z [36;1mbash bin/configure-dev --with-conf-name=perf --with-debug-level=release \[0m
+2026-10-19T16:10:17.2188606Z [36;1m  --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \[0m
+2026-10-19T16:10:17.2188883Z [36;1m  --with-source-date=1792195200 --with-native-debug-symbols=none \[0m
+2026-10-19T16:10:17.2189209Z [36;1m  --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1[0m
+2026-10-19T16:10:17.2189476Z [36;1mmake CONF=perf JOBS=2 images[0m
+2026-10-19T16:10:17.2191365Z shell: C:\msys64/usr/bin\env.EXE /usr/bin/bash --login -eo pipefail {0}
+2026-10-19T16:10:17.2191564Z env:
+2026-10-19T16:10:17.2191682Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:10:17.2191828Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:10:17.2192036Z   CHERE_INVOKING: 1
+2026-10-19T16:10:17.2192211Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:10:17.2192629Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:10:17.2192782Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:10:17.2192930Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:10:17.2193057Z   MSYSTEM: MINGW64
+2026-10-19T16:10:17.2193172Z   PATH: 
+2026-10-19T16:10:17.2193321Z   BOOT_JDK: /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk
+2026-10-19T16:10:17.2193502Z ##[endgroup]
+2026-10-19T16:10:17.5412764Z Runnable configure script is not present
+2026-10-19T16:10:17.5413176Z Generating runnable configure script at /d/a/openjdk-jdk27u/openjdk-jdk27u/build/.configure-support/generated-configure.sh
+2026-10-19T16:10:17.6212686Z ac-wrapper: autoconf: warning: auto-detected versions not found ( ); falling back to latest available
+2026-10-19T16:10:17.7016375Z Using autoconf at /usr/bin/autoconf [autoconf (GNU Autoconf) 2.73]
+2026-10-19T16:10:17.7900799Z ac-wrapper: autoconf: warning: auto-detected versions not found ( ); falling back to latest available
+2026-10-19T16:10:23.9686627Z configure: Configuration created at Mon Oct 19 16:10:23 UTC 2026.
+2026-10-19T16:10:23.9691460Z checking for basename... /usr/bin/basename
+2026-10-19T16:10:23.9696608Z checking for dirname... /usr/bin/dirname
+2026-10-19T16:10:23.9702499Z checking for file... /usr/bin/file
+2026-10-19T16:10:23.9709394Z checking for ldd... /usr/bin/ldd
+2026-10-19T16:10:23.9796724Z checking for echo... echo [builtin]
+2026-10-19T16:10:24.0224159Z checking for tr... /usr/bin/tr
+2026-10-19T16:10:24.0645305Z checking for uname... /usr/bin/uname
+2026-10-19T16:10:24.1073490Z checking for wc... /usr/bin/wc
+2026-10-19T16:10:24.1293919Z checking for grep that handles long lines and -e... /usr/bin/grep
+2026-10-19T16:10:24.1504636Z checking for egrep... /usr/bin/grep -E
+2026-10-19T16:10:24.1958648Z checking for a sed that does not truncate output... /usr/bin/sed
+2026-10-19T16:10:24.2508292Z checking for locale... /usr/bin/locale
+2026-10-19T16:10:24.2937735Z checking for cygpath... /usr/bin/cygpath
+2026-10-19T16:10:24.3372948Z checking for cmd.exe... /c/Windows/System32/cmd.exe
+2026-10-19T16:10:24.3479533Z checking for lsb_release... [not found]
+2026-10-19T16:10:24.8408624Z checking build system type... x86_64-pc-mingw64
+2026-10-19T16:10:24.8409398Z checking host system type... x86_64-pc-mingw64
+2026-10-19T16:10:24.8411369Z checking target system type... x86_64-pc-mingw64
+2026-10-19T16:10:24.8618083Z checking openjdk-build os-cpu... windows-x86_64
+2026-10-19T16:10:24.9039949Z checking openjdk-target os-cpu... windows-x86_64
+2026-10-19T16:10:24.9041481Z checking compilation type... native
+2026-10-19T16:10:24.9360600Z checking Windows environment type... msys2
+2026-10-19T16:10:24.9648812Z checking msys2 drive prefix... ''
+2026-10-19T16:10:24.9872162Z checking msys2 root directory as Windows path... 'C:\msys64'
+2026-10-19T16:10:25.0398323Z checking msys2 temp directory... /tmp
+2026-10-19T16:10:25.0606000Z checking msys2 release... 3.6.10-3ea87a50.x86_64
+2026-10-19T16:10:25.0811869Z checking msys2 version... 2026-09-28 15:20 UTC
+2026-10-19T16:10:25.1105491Z checking Windows version... 10.0.26100.33438
+2026-10-19T16:10:25.6327533Z checking what kind of 'find' is first on the PATH... unix style
+2026-10-19T16:10:25.8226138Z checking for top-level directory... /d/a/openjdk-jdk27u/openjdk-jdk27u
+2026-10-19T16:10:26.1609901Z checking for bash... /usr/bin/bash
+2026-10-19T16:10:26.3877968Z checking for cat... /usr/bin/cat
+2026-10-19T16:10:26.5319932Z checking for chmod... /usr/bin/chmod
+2026-10-19T16:10:26.6707635Z checking for cp... /usr/bin/cp
+2026-10-19T16:10:26.8181293Z checking for cut... /usr/bin/cut
+2026-10-19T16:10:26.9560232Z checking for date... /usr/bin/date
+2026-10-19T16:10:26.9668090Z checking for gdiff... [not found]
+2026-10-19T16:10:27.1009199Z checking for diff... /usr/bin/diff
+2026-10-19T16:10:27.2402733Z checking for expr... /usr/bin/expr
+2026-10-19T16:10:27.3633355Z checking for find... /usr/bin/find
+2026-10-19T16:10:27.5073982Z checking for gunzip... /usr/bin/gunzip
+2026-10-19T16:10:27.5183926Z checking for pigz... [not found]
+2026-10-19T16:10:27.6537676Z checking for gzip... /usr/bin/gzip
+2026-10-19T16:10:27.7943142Z checking for head... /usr/bin/head
+2026-10-19T16:10:27.9293441Z checking for ln... /usr/bin/ln
+2026-10-19T16:10:28.0555073Z checking for ls... /usr/bin/ls
+2026-10-19T16:10:28.0661828Z checking for gmkdir... [not found]
+2026-10-19T16:10:28.1983034Z checking for mkdir... /usr/bin/mkdir
+2026-10-19T16:10:28.3487708Z checking for mktemp... /usr/bin/mktemp
+2026-10-19T16:10:28.4913313Z checking for mv... /usr/bin/mv
+2026-10-19T16:10:28.6959161Z checking for gawk... /usr/bin/gawk
+2026-10-19T16:10:28.7051959Z checking for printf... printf [builtin]
+2026-10-19T16:10:28.8329266Z checking for rm... /usr/bin/rm
+2026-10-19T16:10:28.9809646Z checking for rmdir... /usr/bin/rmdir
+2026-10-19T16:10:29.1133886Z checking for sh... /usr/bin/sh
+2026-10-19T16:10:29.2621315Z checking for sort... /usr/bin/sort
+2026-10-19T16:10:29.4023248Z checking for tail... /usr/bin/tail
+2026-10-19T16:10:29.4130933Z checking for gtar... [not found]
+2026-10-19T16:10:29.5588395Z checking for tar... /usr/bin/tar
+2026-10-19T16:10:29.6931014Z checking for tee... /usr/bin/tee
+2026-10-19T16:10:29.8579482Z checking for touch... /usr/bin/touch
+2026-10-19T16:10:30.0009544Z checking for xargs... /usr/bin/xargs
+2026-10-19T16:10:30.0216086Z checking for fgrep... /usr/bin/grep -F
+2026-10-19T16:10:30.0324017Z checking for cmake... [not found]
+2026-10-19T16:10:30.1672424Z checking for df... /usr/bin/df
+2026-10-19T16:10:30.1908491Z checking for git... [not found]
+2026-10-19T16:10:30.3358599Z checking for nice... /usr/bin/nice
+2026-10-19T16:10:30.3464907Z checking for greadlink... [not found]
+2026-10-19T16:10:30.4809470Z checking for readlink... /usr/bin/readlink
+2026-10-19T16:10:30.6364832Z checking for whoami... /usr/bin/whoami
+2026-10-19T16:10:30.7854613Z checking for cmp... /usr/bin/cmp
+2026-10-19T16:10:30.9436695Z checking for uniq... /usr/bin/uniq
+2026-10-19T16:10:30.9440349Z configure: CI environment variable set to true
+2026-10-19T16:10:30.9444072Z checking for build environment type... ci, default (calculated from 'auto')
+2026-10-19T16:10:31.1111433Z checking for locale to use... C.UTF-8 (recommended)
+2026-10-19T16:10:31.1114556Z checking if custom source is suppressed (openjdk-only)... disabled, default
+2026-10-19T16:10:31.1116640Z checking for --enable-debug... disabled, default
+2026-10-19T16:10:31.1118013Z checking which debug level to use... release
+2026-10-19T16:10:31.1707605Z checking which variants of the JVM to build... server
+2026-10-19T16:10:31.2598963Z checking if absolute paths should be allowed in the build output... no, release build
+2026-10-19T16:10:31.2602101Z checking for toolchain path... 
+2026-10-19T16:10:31.2640198Z checking for sysroot... 
+2026-10-19T16:10:31.2640922Z checking for extra path... 
+2026-10-19T16:10:31.3585070Z checking where to store configuration... in build directory with custom name
+2026-10-19T16:10:31.3714894Z checking what configuration name to use... perf
+2026-10-19T16:10:31.5991514Z checking for zypper... [not found]
+2026-10-19T16:10:31.6091089Z checking for apt-get... [not found]
+2026-10-19T16:10:31.6192472Z checking for yum... [not found]
+2026-10-19T16:10:31.6290693Z checking for brew... [not found]
+2026-10-19T16:10:31.6390720Z checking for port... [not found]
+2026-10-19T16:10:31.6491661Z checking for pkgutil... [not found]
+2026-10-19T16:10:31.6590745Z checking for pkgadd... [not found]
+2026-10-19T16:10:31.7609933Z checking for pacman... /usr/bin/pacman
+2026-10-19T16:10:31.7718305Z checking for pandoc... [not found]
+2026-10-19T16:10:31.7889124Z checking for gmake... [not found]
+2026-10-19T16:10:31.8956578Z checking for make... /usr/bin/make
+2026-10-19T16:10:31.8957104Z configure: Testing potential make at /usr/bin/make, found using make in PATH
+2026-10-19T16:10:32.1526993Z configure: Using GNU make at /usr/bin/make (version: GNU Make 4.4.1)
+2026-10-19T16:10:32.1659809Z checking if make --output-sync is supported... yes
+2026-10-19T16:10:32.1662577Z checking for make --output-sync value... none, default
+2026-10-19T16:10:32.3039448Z checking if find supports -delete... yes
+2026-10-19T16:10:32.3676003Z checking what type of tar was found... gnu
+2026-10-19T16:10:32.3905683Z checking that grep (/usr/bin/grep) -Fx handles empty lines in the pattern list correctly... yes
+2026-10-19T16:10:32.4939603Z checking for unzip... /usr/bin/unzip
+2026-10-19T16:10:32.5979472Z checking for zip... /usr/bin/zip
+2026-10-19T16:10:32.6091781Z checking for greadelf... [not found]
+2026-10-19T16:10:32.6193651Z checking for readelf... [not found]
+2026-10-19T16:10:32.6303987Z checking for dot... [not found]
+2026-10-19T16:10:32.7506548Z checking for stat... /usr/bin/stat
+2026-10-19T16:10:32.7677418Z checking for time... time [builtin]
+2026-10-19T16:10:32.8927232Z checking for flock... /usr/bin/flock
+2026-10-19T16:10:33.0349900Z checking for dtrace... $FIXPATH /c/windows/system32/dtrace.exe
+2026-10-19T16:10:33.0465988Z checking for gpatch... [not found]
+2026-10-19T16:10:33.0567025Z checking for patch... [not found]
+2026-10-19T16:10:33.1164281Z checking if date is a GNU compatible version... yes
+2026-10-19T16:10:33.1516248Z checking bash version... 5.3.20
+2026-10-19T16:10:33.2407655Z checking if bash supports pipefail... yes
+2026-10-19T16:10:33.2603301Z checking if bash supports errexit (-e)... yes
+2026-10-19T16:10:33.2613900Z checking for pkg-config... no
+2026-10-19T16:10:33.4013909Z checking for default LOG value... 
+2026-10-19T16:10:33.4017777Z checking for JMOD compression type... zip-1, from command line
+2026-10-19T16:10:33.4969852Z checking whether or not a JDK suitable for linking from the run-time image should be produced... disabled, default
+2026-10-19T16:10:33.4971555Z checking if packaged modules are kept... enabled, default
+2026-10-19T16:10:33.4975227Z checking for --with-extra-jlink-flags... <disabled>, default
+2026-10-19T16:10:33.5302085Z checking for --with-build-user... runneradmin, default
+2026-10-19T16:10:33.5305562Z checking for --with-jdk-rc-name... OpenJDK Platform, default
+2026-10-19T16:10:33.5308951Z checking for --with-vendor-name... N/A, default
+2026-10-19T16:10:33.5312616Z checking for --with-jdk-rc-company-name... N/A, default
+2026-10-19T16:10:33.5316009Z checking for --with-vendor-url... https://openjdk.org/, default
+2026-10-19T16:10:33.5319668Z checking for --with-vendor-bug-url... https://bugreport.java.com/bugreport/, default
+2026-10-19T16:10:33.5323100Z checking for --with-vendor-vm-bug-url... https://bugreport.java.com/bugreport/crash.jsp, default
+2026-10-19T16:10:33.5326781Z checking for --with-version-string... <none>, default
+2026-10-19T16:10:33.5630830Z checking for --with-version-feature... 27, default
+2026-10-19T16:10:33.5723291Z checking for --with-version-date... 2027-01-19, default
+2026-10-19T16:10:33.5726704Z checking for --with-vendor-version-string... <disabled>, default
+2026-10-19T16:10:33.5730375Z checking for --with-macosx-bundle-name-base... OpenJDK, default
+2026-10-19T16:10:33.5734346Z checking for --with-macosx-bundle-id-base... net.java.openjdk-internal, default
+2026-10-19T16:10:33.5737955Z checking for --with-macosx-bundle-build-version... 0, default
+2026-10-19T16:10:33.5739487Z checking for version string... 27.0.2-internal-stringzilla-benchmark
+2026-10-19T16:10:33.7811603Z configure: Found potential Boot JDK using configure arguments
+2026-10-19T16:10:34.3427800Z checking for Boot JDK... /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk
+2026-10-19T16:10:34.4271897Z checking Boot JDK version... openjdk version "26" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing)
+2026-10-19T16:10:34.4386224Z checking for java [Boot JDK]... $BOOT_JDK/bin/java
+2026-10-19T16:10:34.5705818Z checking for javac [Boot JDK]... $BOOT_JDK/bin/javac
+2026-10-19T16:10:34.6961043Z checking for javadoc [Boot JDK]... $BOOT_JDK/bin/javadoc
+2026-10-19T16:10:34.8239275Z checking for jar [Boot JDK]... $BOOT_JDK/bin/jar
+2026-10-19T16:10:35.0748337Z checking if Boot JDK jar supports --date=TIMESTAMP... true
+2026-10-19T16:10:35.2090088Z checking if Boot JDK is 32 or 64 bits... 64
+2026-10-19T16:10:35.2096512Z checking for docs-reference JDK... no, using interim javadoc for the docs-reference targets
+2026-10-19T16:10:35.2099801Z checking what source date to use... 1792195200, from timestamp on command line
+2026-10-19T16:10:35.2331274Z checking if we should build desktop modules and tools... disabled, from command line
+2026-10-19T16:10:35.2333933Z checking if we should build headless-only (no GUI)... enabled, from command line
+2026-10-19T16:10:35.2337078Z checking if linker should clean out unused code (linktime-gc)... disabled, default
+2026-10-19T16:10:35.2338550Z checking for graphviz dot... no, cannot generate full docs or man pages
+2026-10-19T16:10:35.2339662Z checking for pandoc... no, cannot generate full docs or man pages
+2026-10-19T16:10:35.2342314Z checking for --enable-full-docs... disabled, from default 'auto'
+2026-10-19T16:10:35.2343263Z checking for cacerts file... default
+2026-10-19T16:10:35.2344957Z checking for cacerts source... default
+2026-10-19T16:10:35.2349671Z checking for --enable-unlimited-crypto... enabled, default
+2026-10-19T16:10:35.2489482Z checking for jni library path... default
+2026-10-19T16:10:35.2497762Z configure: Using default toolchain microsoft (Microsoft Visual Studio)
+2026-10-19T16:10:35.4578408Z configure: Found Visual Studio installation at /c/progra~1/micros~2/18/Enterprise using well-known name
+2026-10-19T16:10:35.5476048Z configure: Found Microsoft Visual Studio 2026
+2026-10-19T16:10:35.5476592Z configure: Trying to extract Visual Studio environment variables for x86_64
+2026-10-19T16:10:35.5477094Z configure: using /c/progra~1/micros~2/18/Enterprise/vc/auxiliary/build/vcvars64.bat 
+2026-10-19T16:10:37.0398814Z configure: Setting extracted environment variables for x86_64
+2026-10-19T16:10:37.3206522Z fixpath: warning: Path '/usr/local/bin' does not exist
+2026-10-19T16:10:39.2026770Z fixpath: warning: Path '/usr/local/bin' does not exist
+2026-10-19T16:10:42.0514143Z checking that Visual Studio variables have been correctly extracted... ok
+2026-10-19T16:10:42.4077770Z checking for cl... $FIXPATH /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+2026-10-19T16:10:42.4088738Z checking resolved symbolic links for CC... no symlink
+2026-10-19T16:10:42.6022905Z configure: Using microsoft C compiler version 19.44.35229 [Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35229 for x64]
+2026-10-19T16:10:46.8277351Z checking whether the C compiler works... yes
+2026-10-19T16:10:46.8277787Z checking for C compiler default output file name... conftest.exe
+2026-10-19T16:10:46.9897434Z checking for suffix of executables... .exe
+2026-10-19T16:10:47.4330676Z checking whether we are cross compiling... no
+2026-10-19T16:10:47.5746098Z checking for suffix of object files... obj
+2026-10-19T16:10:48.0893447Z checking whether /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe accepts -g... yes
+2026-10-19T16:10:48.3043914Z checking for cl... $FIXPATH /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe
+2026-10-19T16:10:48.3056527Z checking resolved symbolic links for CXX... no symlink
+2026-10-19T16:10:48.4313185Z configure: Using microsoft C++ compiler version 19.44.35229 [Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35229 for x64]
+2026-10-19T16:10:50.0679789Z checking whether /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe accepts -g... yes
+2026-10-19T16:10:50.8273141Z checking how to run the C preprocessor... /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+2026-10-19T16:10:51.7304743Z checking how to run the C++ preprocessor... /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/fixpath exec /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe -E
+2026-10-19T16:10:52.3286852Z checking for link... $FIXPATH /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/link.exe
+2026-10-19T16:10:52.3919476Z checking if the found link.exe is actually the Visual Studio linker... yes
+2026-10-19T16:10:52.4883303Z configure: Using microsoft linker version 14.44.35229.0 [Microsoft (R) Incremental Linker Version 14.44.35229.0]
+2026-10-19T16:10:52.7373978Z checking for ml64... $FIXPATH /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/ml64.exe
+2026-10-19T16:10:52.9193017Z checking for lib... $FIXPATH /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/lib.exe
+2026-10-19T16:10:53.1729891Z checking for mt... $FIXPATH /c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/mt.exe
+2026-10-19T16:10:53.4176989Z checking for rc... $FIXPATH /c/progra~2/wi3cf2~1/10/bin/100261~1.0/x64/rc.exe
+2026-10-19T16:10:53.6700516Z checking for dumpbin... $FIXPATH /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/dumpbin.exe
+2026-10-19T16:10:53.7051423Z checking for gobjdump... [not found]
+2026-10-19T16:10:53.7295582Z checking for objdump... [not found]
+2026-10-19T16:10:53.9363765Z checking for jtreg... [not found]
+2026-10-19T16:10:53.9364141Z checking for jtreg test harness... no, not found
+2026-10-19T16:10:53.9369607Z checking for jtreg jdk... no, using BOOT_JDK
+2026-10-19T16:10:54.1311377Z checking for jmh (Java Microbenchmark Harness)... no, disabled
+2026-10-19T16:10:54.1312083Z checking for jib... no
+2026-10-19T16:10:54.1500213Z checking for tidy... [not found]
+2026-10-19T16:10:54.3394917Z checking for stdio.h... yes
+2026-10-19T16:10:54.5489523Z checking for stdlib.h... yes
+2026-10-19T16:10:54.7605965Z checking for string.h... yes
+2026-10-19T16:10:54.9491806Z checking for inttypes.h... yes
+2026-10-19T16:10:55.1380504Z checking for stdint.h... yes
+2026-10-19T16:10:55.3390591Z checking for strings.h... no
+2026-10-19T16:10:55.5358486Z checking for sys/stat.h... yes
+2026-10-19T16:10:55.7262171Z checking for sys/types.h... yes
+2026-10-19T16:10:55.9470753Z checking for unistd.h... no
+2026-10-19T16:10:55.9475444Z checking for stdio.h... (cached) yes
+2026-10-19T16:10:56.1984203Z checking size of int *... 8
+2026-10-19T16:10:56.2159329Z checking for target address size... 64 bits
+2026-10-19T16:10:56.9592007Z checking whether byte ordering is bigendian... no
+2026-10-19T16:10:56.9595120Z checking for --enable-branch-protection... disabled, default
+2026-10-19T16:10:56.9601853Z checking for --with-native-debug-symbols-level... <invalid>, not available
+2026-10-19T16:10:56.9608306Z checking for --enable-warnings-as-errors... enabled, default
+2026-10-19T16:10:57.1270996Z checking if CC supports "-experimental:deterministic"... yes
+2026-10-19T16:10:57.2990601Z checking if CXX supports "-experimental:deterministic"... yes
+2026-10-19T16:10:57.2991061Z checking if both CC and CXX support "-experimental:deterministic"... yes
+2026-10-19T16:10:57.4577340Z checking if CC supports "-pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s"... yes
+2026-10-19T16:10:57.6136404Z checking if CXX supports "-pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s"... yes
+2026-10-19T16:10:57.6136958Z checking if both CC and CXX support "-pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s"... yes
+2026-10-19T16:10:57.7539286Z checking how to prevent absolute paths in output... using compiler options
+2026-10-19T16:10:57.9146217Z checking if BUILD_CC supports "-experimental:deterministic"... yes
+2026-10-19T16:10:58.0746416Z checking if BUILD_CXX supports "-experimental:deterministic"... yes
+2026-10-19T16:10:58.0746920Z checking if both BUILD_CC and BUILD_CXX support "-experimental:deterministic"... yes
+2026-10-19T16:10:58.2281165Z checking if BUILD_CC supports "-pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s"... yes
+2026-10-19T16:10:58.3827490Z checking if BUILD_CXX supports "-pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s"... yes
+2026-10-19T16:10:58.3828163Z checking if both BUILD_CC and BUILD_CXX support "-pathmap:/d/a/openjdk-jdk27u/openjdk-jdk27u=s"... yes
+2026-10-19T16:10:58.5109278Z checking how to prevent absolute paths in output... using compiler options
+2026-10-19T16:10:58.7454925Z checking if linker supports "-experimental:deterministic"... yes
+2026-10-19T16:10:58.7461306Z checking for --enable-aarch64-sve... disabled, from default 'auto'
+2026-10-19T16:10:58.7465389Z checking what type of native debug symbols to use... none
+2026-10-19T16:10:58.7468171Z checking if debuginfo compression with objcopy is done... disabled, default
+2026-10-19T16:10:58.7470487Z checking if we should add external native debug symbols to the shipped bundles... no (default)
+2026-10-19T16:10:58.7472376Z checking if native coverage is available... no
+2026-10-19T16:10:58.7474024Z checking for --enable-native-coverage... disabled, default
+2026-10-19T16:10:58.7479661Z checking for --with-jcov-modules... <disabled>, default
+2026-10-19T16:10:58.7482406Z checking if AddressSanitizer (asan) is available... yes
+2026-10-19T16:10:58.7483746Z checking for --enable-asan... disabled, default
+2026-10-19T16:10:58.7487643Z checking for --with-additional-ubsan-checks... <disabled>, default
+2026-10-19T16:10:58.7490313Z checking if UndefinedBehaviorSanitizer (ubsan) is available... no
+2026-10-19T16:10:58.7491892Z checking for --enable-ubsan... disabled, default
+2026-10-19T16:10:58.7494094Z checking if LeakSanitizer (lsan) is available... no
+2026-10-19T16:10:58.7495628Z checking for --enable-lsan... disabled, default
+2026-10-19T16:10:58.7497622Z checking if static analyzer is available... no
+2026-10-19T16:10:58.7499220Z checking for --enable-static-analyzer... disabled, default
+2026-10-19T16:10:58.7501713Z checking if fallback linker enabled... disabled, default
+2026-10-19T16:10:58.8099930Z configure: Found vcruntime140.dll at /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/vcruntime140.dll using well-known location in VCINSTALLDIR
+2026-10-19T16:10:59.0004870Z checking found vcruntime140.dll architecture... ok
+2026-10-19T16:10:59.0005330Z checking for vcruntime140.dll... /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/vcruntime140.dll
+2026-10-19T16:10:59.0325280Z configure: Found msvcp140.dll at /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/msvcp140.dll using well-known location in VCINSTALLDIR
+2026-10-19T16:10:59.0995180Z checking found msvcp140.dll architecture... ok
+2026-10-19T16:10:59.0996135Z checking for msvcp140.dll... /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/msvcp140.dll
+2026-10-19T16:10:59.1336337Z configure: Found vcruntime140_1.dll at /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/vcruntime140_1.dll using well-known location in VCINSTALLDIR
+2026-10-19T16:10:59.1900982Z checking found vcruntime140_1.dll architecture... ok
+2026-10-19T16:10:59.1902203Z checking for vcruntime140_1.dll... /c/progra~1/micros~2/18/enterprise/vc/redist/msvc/14.51.36231//x64/microsoft.vc145.crt/vcruntime140_1.dll
+2026-10-19T16:10:59.3584569Z checking for UCRT DLL dir... /c/progra~2/wi3cf2~1/10//redist/ucrt/dlls/x64
+2026-10-19T16:10:59.3854080Z checking for which libjpeg to use... bundled
+2026-10-19T16:10:59.3856488Z checking for which giflib to use... bundled
+2026-10-19T16:10:59.3860287Z checking for PNG... checking for which libpng to use... bundled
+2026-10-19T16:10:59.6320678Z checking for compress in -lz... no
+2026-10-19T16:10:59.6322028Z checking for which zlib to use... bundled
+2026-10-19T16:10:59.6324156Z checking for which lcms to use... bundled
+2026-10-19T16:10:59.6326388Z checking for which harfbuzz to use... bundled
+2026-10-19T16:10:59.6674024Z checking for --enable-hsdis-bundling... disabled, default
+2026-10-19T16:10:59.6693605Z checking what hsdis backend to use... 'none', hsdis will not be built
+2026-10-19T16:10:59.6700557Z checking if hsdis should be bundled... no
+2026-10-19T16:10:59.6704233Z checking for --with-print-assembly-options... <none>, default
+2026-10-19T16:10:59.6706534Z checking for --enable-libffi-bundling... disabled, default
+2026-10-19T16:10:59.8911048Z checking for dlopen in -ldl... no
+2026-10-19T16:11:00.1875768Z checking for JVM features enabled by the user... 'g1gc serialgc zgc'
+2026-10-19T16:11:00.2501784Z checking for JVM features disabled by the user... 'epsilongc parallelgc shenandoahgc'
+2026-10-19T16:11:00.2502472Z checking if platform is supported by CDS... yes
+2026-10-19T16:11:00.2503655Z checking if JVM feature 'cds' is available... yes
+2026-10-19T16:11:00.2507108Z checking for dtrace tool and platform support... no
+2026-10-19T16:11:00.4468642Z checking for sys/sdt.h... no
+2026-10-19T16:11:00.4469730Z configure: Cannot enable dtrace with missing dependencies. See above.
+2026-10-19T16:11:00.4471138Z checking if JVM feature 'dtrace' is available... no
+2026-10-19T16:11:00.4472134Z checking if platform is supported by Shenandoah... yes
+2026-10-19T16:11:00.4473134Z checking if JVM feature 'shenandoahgc' is available... yes
+2026-10-19T16:11:00.4474683Z checking if platform is supported by ZGC... yes
+2026-10-19T16:11:02.3222365Z checking if Windows APIs required for ZGC is present... yes
+2026-10-19T16:11:02.3362640Z checking if JVM feature 'zgc' is available... yes
+2026-10-19T16:11:02.6156490Z configure: Default JVM features explicitly enabled for 'server': 'g1gc serialgc zgc'
+2026-10-19T16:11:02.9225527Z checking JVM features to use for variant 'server'... 'cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc'
+2026-10-19T16:11:02.9228494Z checking what hotspot build time to use... 2026-10-17T00:00:00Z (from --with-source-date)
+2026-10-19T16:11:02.9231037Z checking if the jtreg failure handler is available... no (jtreg not present)
+2026-10-19T16:11:02.9232872Z checking if the jtreg failure handler should be built... disabled, from default 'auto'
+2026-10-19T16:11:02.9235078Z checking if the jtreg test thread factory is available... no (jtreg not present)
+2026-10-19T16:11:02.9236706Z checking if the jtreg test thread factory should be built... disabled, from default 'auto'
+2026-10-19T16:11:02.9239804Z checking if the CDS classlist generation should be enabled... enabled, from default 'auto'
+2026-10-19T16:11:02.9241328Z checking if any translations should be excluded... no
+2026-10-19T16:11:02.9243473Z checking if CDS archive is available... yes
+2026-10-19T16:11:02.9245235Z checking if a default CDS archive should be generated... enabled, from default 'auto'
+2026-10-19T16:11:02.9247690Z checking if CDS archive with no compact object headers is available... yes
+2026-10-19T16:11:02.9249625Z checking if default CDS archives for no compact object headers should be generated... enabled, from default 'auto'
+2026-10-19T16:11:02.9251511Z checking if CDS archive is available... yes
+2026-10-19T16:11:02.9253295Z checking if compatible cds region alignment enabled... disabled, default
+2026-10-19T16:11:02.9262771Z checking for --with-signing-hook... <disabled>, default
+2026-10-19T16:11:02.9265921Z checking for signing hook... none
+2026-10-19T16:11:02.9268697Z checking for --enable-java-warnings-as-errors... enabled, default
+2026-10-19T16:11:02.9627152Z checking for number of cores... 4
+2026-10-19T16:11:03.0292838Z checking for memory size... 16378 MB
+2026-10-19T16:11:03.0458308Z checking for appropriate number of jobs to run in parallel... 4
+2026-10-19T16:11:03.0461132Z checking whether to use javac server... enabled, default
+2026-10-19T16:11:03.6209278Z checking flags for boot jdk java command ...  -Duser.language=en -Duser.country=US -Xlog:all=off:stdout -Xlog:all=warning:stderr 
+2026-10-19T16:11:03.9178127Z checking flags for boot jdk java command for big workloads...  -Xms64M -Xmx2048M
+2026-10-19T16:11:03.9178799Z checking flags for bootcycle boot jdk java command for big workloads... -Xms64M -Xmx2048M
+2026-10-19T16:11:04.3479222Z checking flags for boot jdk java command for small workloads...  -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+2026-10-19T16:11:04.3480930Z checking for --enable-icecc... disabled, default
+2026-10-19T16:11:04.3510093Z checking if precompiled headers are available... yes
+2026-10-19T16:11:04.3512277Z checking for --enable-precompiled-headers... enabled, from default 'auto'
+2026-10-19T16:11:04.3764307Z checking for ccache... [not found]
+2026-10-19T16:11:04.3770681Z checking if ccache is available... no, not supported for toolchain type microsoft
+2026-10-19T16:11:04.3772613Z checking if ccache is enabled... disabled, default
+2026-10-19T16:11:04.3917674Z checking if build directory is on local disk... yes
+2026-10-19T16:11:04.6194692Z configure: creating /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/configure-support/config.status
+2026-10-19T16:11:05.6014693Z config.status: creating /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/spec.gmk
+2026-10-19T16:11:05.7738403Z config.status: creating /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/bootcycle-spec.gmk
+2026-10-19T16:11:05.9456283Z config.status: creating /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/buildjdk-spec.gmk
+2026-10-19T16:11:06.1195756Z config.status: creating /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/compare.sh
+2026-10-19T16:11:06.3111655Z config.status: creating /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf/Makefile
+2026-10-19T16:11:06.4791613Z 
+2026-10-19T16:11:06.4792299Z ====================================================
+2026-10-19T16:11:06.4792889Z A new configuration has been successfully created in
+2026-10-19T16:11:06.4793287Z /d/a/openjdk-jdk27u/openjdk-jdk27u/build/perf
+2026-10-19T16:11:06.4795529Z using configure arguments '--disable-desktop --enable-headless-only --enable-jvm-feature-serialgc --enable-jvm-feature-g1gc --enable-jvm-feature-zgc --disable-jvm-feature-epsilongc --disable-jvm-feature-parallelgc --disable-jvm-feature-shenandoahgc --with-extra-cflags=-arch:AVX2 --with-extra-cxxflags=-arch:AVX2 --with-conf-name=perf --with-debug-level=release --with-boot-jdk=/d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk --with-version-opt=stringzilla-benchmark --with-source-date=1792195200 --with-native-debug-symbols=none --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1'.
+2026-10-19T16:11:06.4797527Z 
+2026-10-19T16:11:06.4797612Z Configuration summary:
+2026-10-19T16:11:06.4797979Z * Name:           perf
+2026-10-19T16:11:06.4798152Z * Debug level:    release
+2026-10-19T16:11:06.4798340Z * HS debug level: product
+2026-10-19T16:11:06.4798515Z * JVM variants:   server
+2026-10-19T16:11:06.4798914Z * JVM features:   server: 'cds compiler1 compiler2 g1gc jfr jni-check jvmti management serialgc services vm-structs zgc' 
+2026-10-19T16:11:06.4799454Z * OpenJDK target: OS: windows, CPU architecture: x86, address length: 64
+2026-10-19T16:11:06.4799857Z * Version string: 27.0.2-internal-stringzilla-benchmark (27.0.2-internal)
+2026-10-19T16:11:06.4800184Z * Source date:    1792195200 (2026-10-17T00:00:00Z)
+2026-10-19T16:11:06.4800356Z 
+2026-10-19T16:11:06.4800420Z Tools summary:
+2026-10-19T16:11:06.4801069Z * Environment:    msys2 version 3.6.10-3ea87a50.x86_64, 2026-09-28 15:20 UTC; windows version 10.0.26100.33438; prefix ""; root "C:\msys64"
+2026-10-19T16:11:06.4801968Z * Boot JDK:       openjdk version "26" 2026-03-17 OpenJDK Runtime Environment (build 26+35-2893) OpenJDK 64-Bit Server VM (build 26+35-2893, mixed mode, sharing) (at /d/a/openjdk-jdk27u/openjdk-jdk27u/bootjdk/jdk)
+2026-10-19T16:11:06.4802689Z * Toolchain:      microsoft (Microsoft Visual Studio 2026)
+2026-10-19T16:11:06.4803168Z * C Compiler:     Version 19.44.35229 (at /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe)
+2026-10-19T16:11:06.4803811Z * C++ Compiler:   Version 19.44.35229 (at /c/progra~1/micros~2/18/enterprise/vc/tools/msvc/14.44.35207/bin/hostx64/x64/cl.exe)
+2026-10-19T16:11:06.4804174Z 
+2026-10-19T16:11:06.4804244Z Build performance summary:
+2026-10-19T16:11:06.4804445Z * Build jobs:     4
+2026-10-19T16:11:06.4804607Z * Memory limit:   16378 MB
+2026-10-19T16:11:06.4804731Z 
+2026-10-19T16:11:11.1367646Z Building target 'images' in configuration 'perf'
+2026-10-19T16:11:11.6269129Z Compiling up to 9 files for BUILD_TOOLS_LANGTOOLS
+2026-10-19T16:11:11.8754807Z Compiling up to 1 files for BUILD_TOOLS_HOTSPOT
+2026-10-19T16:11:13.1669246Z Compiling 15 properties into resource bundles for jdk.jdeps
+2026-10-19T16:11:13.1982764Z Compiling 10 properties into resource bundles for jdk.jshell
+2026-10-19T16:11:14.1240359Z Warning: No SCM configuration present and no .src-rev
+2026-10-19T16:11:14.3365128Z Generating classes for compiler.properties launcher.properties
+2026-10-19T16:11:14.3443791Z Generating FlagsEnum
+2026-10-19T16:11:14.4368311Z Compiling 19 properties into resource bundles for jdk.javadoc
+2026-10-19T16:11:14.6678043Z Compiling 18 properties into resource bundles for jdk.compiler
+2026-10-19T16:11:16.5197734Z Compiling up to 359 files for BUILD_jdk.compiler.interim
+2026-10-19T16:11:16.9055428Z Compiling up to 145 files for BUILD_jdk.internal.md.interim
+2026-10-19T16:11:17.1942986Z Compiling up to 215 files for BUILD_jdk.javadoc.interim
+2026-10-19T16:11:17.3687229Z Compiling up to 17 files for BUILD_JAVAC_SERVER
+2026-10-19T16:11:17.4315842Z Compiling up to 136 files for BUILD_java.compiler.interim
+2026-10-19T16:11:30.5713016Z Compiling up to 33 files for BUILD_JRTFS
+2026-10-19T16:11:30.6337215Z Compiling up to 190 files for BUILD_TOOLS_JDK
+2026-10-19T16:11:30.8209069Z Compiling up to 2 files for COMPILE_DEPEND
+2026-10-19T16:11:33.6899379Z Creating support/modules_libs/java.base/jrt-fs.jar
+2026-10-19T16:11:36.4750191Z Compiling up to 2 files for BUILD_BREAKITERATOR_BASE
+2026-10-19T16:11:36.6600407Z Compiling up to 2 files for BUILD_BREAKITERATOR_LD
+2026-10-19T16:11:41.3306510Z Compiling 4 properties into resource bundles for java.logging
+2026-10-19T16:11:47.2006794Z Compiling 4 properties into resource bundles for jdk.httpserver
+2026-10-19T16:11:48.1002947Z Compiling 4 properties into resource bundles for jdk.jartool
+2026-10-19T16:11:48.1357289Z Compiling 4 properties into resource bundles for jdk.jartool
+2026-10-19T16:11:49.8225175Z Compiling 4 properties into resource bundles for jdk.jdi
+2026-10-19T16:11:50.1757393Z Compiling 4 properties into resource bundles for java.base
+2026-10-19T16:11:50.4249925Z Compiling 3 properties into resource bundles for java.base
+2026-10-19T16:11:51.3126373Z Compiling 8 properties into resource bundles for java.base
+2026-10-19T16:11:51.6921225Z Compiling 4 properties into resource bundles for java.base
+2026-10-19T16:11:52.6043816Z Compiling 8 properties into resource bundles for jdk.jlink
+2026-10-19T16:11:52.6428902Z Compiling 4 properties into resource bundles for jdk.jlink
+2026-10-19T16:11:53.1018444Z Compiling 4 properties into resource bundles for jdk.jlink
+2026-10-19T16:12:04.6250212Z Compiling 4 properties into resource bundles for jdk.management.agent
+2026-10-19T16:12:22.5733793Z Compiling up to 3363 files for java.base
+2026-10-19T16:12:26.4078427Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\java.base\java.base <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\java.base
+2026-10-19T16:12:26.5577470Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.base\windows\classes\java.base <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.base\windows\classes
+2026-10-19T16:12:26.7103134Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.base\share\classes\java.base <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.base\share\classes
+2026-10-19T16:12:26.8573260Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.compiler\share\classes\java.compiler <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.compiler\share\classes
+2026-10-19T16:12:27.0018079Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.instrument\share\classes\java.instrument <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.instrument\share\classes
+2026-10-19T16:12:27.1579006Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\java.logging\java.logging <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\java.logging
+2026-10-19T16:12:27.3108670Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.logging\share\classes\java.logging <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.logging\share\classes
+2026-10-19T16:12:27.4564020Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.management\share\classes\java.management <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.management\share\classes
+2026-10-19T16:12:27.6064488Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.management.rmi\share\classes\java.management.rmi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.management.rmi\share\classes
+2026-10-19T16:12:27.7558035Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.naming\share\classes\java.naming <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.naming\share\classes
+2026-10-19T16:12:27.9005681Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.net.http\share\classes\java.net.http <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.net.http\share\classes
+2026-10-19T16:12:28.0557531Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.prefs\windows\classes\java.prefs <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.prefs\windows\classes
+2026-10-19T16:12:28.2072745Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.prefs\share\classes\java.prefs <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.prefs\share\classes
+2026-10-19T16:12:28.3712835Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.rmi\share\classes\java.rmi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.rmi\share\classes
+2026-10-19T16:12:28.5576360Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.scripting\share\classes\java.scripting <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.scripting\share\classes
+2026-10-19T16:12:28.7833959Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.security.jgss\windows\classes\java.security.jgss <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.security.jgss\windows\classes
+2026-10-19T16:12:28.9464528Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.security.jgss\share\classes\java.security.jgss <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.security.jgss\share\classes
+2026-10-19T16:12:29.1020754Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.security.sasl\share\classes\java.security.sasl <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.security.sasl\share\classes
+2026-10-19T16:12:29.2561375Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.smartcardio\windows\classes\java.smartcardio <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.smartcardio\windows\classes
+2026-10-19T16:12:29.4911635Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.smartcardio\share\classes\java.smartcardio <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.smartcardio\share\classes
+2026-10-19T16:12:29.8089530Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.sql\share\classes\java.sql <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.sql\share\classes
+2026-10-19T16:12:30.0768763Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.sql.rowset\share\classes\java.sql.rowset <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.sql.rowset\share\classes
+2026-10-19T16:12:30.3663508Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.transaction.xa\share\classes\java.transaction.xa <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.transaction.xa\share\classes
+2026-10-19T16:12:30.6468771Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.xml\share\classes\java.xml <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.xml\share\classes
+2026-10-19T16:12:30.8909111Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\java.xml.crypto\share\classes\java.xml.crypto <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\java.xml.crypto\share\classes
+2026-10-19T16:12:31.1604452Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.attach\windows\classes\jdk.attach <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.attach\windows\classes
+2026-10-19T16:12:31.3644362Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.attach\share\classes\jdk.attach <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.attach\share\classes
+2026-10-19T16:12:31.6024733Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.charsets\jdk.charsets <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.charsets
+2026-10-19T16:12:31.8395686Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.charsets\share\classes\jdk.charsets <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.charsets\share\classes
+2026-10-19T16:12:32.0336504Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.compiler\jdk.compiler <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.compiler
+2026-10-19T16:12:32.3198661Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.compiler\share\classes\jdk.compiler <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.compiler\share\classes
+2026-10-19T16:12:32.5438099Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.crypto.cryptoki\share\classes\jdk.crypto.cryptoki <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.crypto.cryptoki\share\classes
+2026-10-19T16:12:32.7628031Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.crypto.ec\share\classes\jdk.crypto.ec <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.crypto.ec\share\classes
+2026-10-19T16:12:32.9404061Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.crypto.mscapi\windows\classes\jdk.crypto.mscapi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.crypto.mscapi\windows\classes
+2026-10-19T16:12:33.1144839Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.dynalink\share\classes\jdk.dynalink <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.dynalink\share\classes
+2026-10-19T16:12:33.2815089Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.httpserver\jdk.httpserver <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.httpserver
+2026-10-19T16:12:33.4418627Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.httpserver\windows\classes\jdk.httpserver <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.httpserver\windows\classes
+2026-10-19T16:12:33.6696172Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.httpserver\share\classes\jdk.httpserver <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.httpserver\share\classes
+2026-10-19T16:12:33.9212661Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.incubator.vector\share\classes\jdk.incubator.vector <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.incubator.vector\share\classes
+2026-10-19T16:12:34.2334996Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.internal.ed\share\classes\jdk.internal.ed <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.internal.ed\share\classes
+2026-10-19T16:12:34.5309628Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.internal.jvmstat\share\classes\jdk.internal.jvmstat <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.internal.jvmstat\share\classes
+2026-10-19T16:12:34.8198851Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.internal.le\share\classes\jdk.internal.le <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.internal.le\share\classes
+2026-10-19T16:12:35.0629509Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.internal.md\share\classes\jdk.internal.md <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.internal.md\share\classes
+2026-10-19T16:12:35.3350933Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.internal.opt\share\classes\jdk.internal.opt <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.internal.opt\share\classes
+2026-10-19T16:12:35.6070668Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.jartool\jdk.jartool <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.jartool
+2026-10-19T16:12:35.9386734Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jartool\share\classes\jdk.jartool <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jartool\share\classes
+2026-10-19T16:12:36.2191725Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.javadoc\jdk.javadoc <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.javadoc
+2026-10-19T16:12:36.5929635Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.javadoc\share\classes\jdk.javadoc <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.javadoc\share\classes
+2026-10-19T16:12:36.8719452Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jcmd\share\classes\jdk.jcmd <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jcmd\share\classes
+2026-10-19T16:12:37.1675015Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.jdeps\jdk.jdeps <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.jdeps
+2026-10-19T16:12:37.5610495Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jdeps\share\classes\jdk.jdeps <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jdeps\share\classes
+2026-10-19T16:12:37.8021113Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.jdi\jdk.jdi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.jdi
+2026-10-19T16:12:38.1004794Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jdi\windows\classes\jdk.jdi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jdi\windows\classes
+2026-10-19T16:12:38.3874969Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jdi\share\classes\jdk.jdi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jdi\share\classes
+2026-10-19T16:12:38.6644777Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jdwp.agent\share\classes\jdk.jdwp.agent <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jdwp.agent\share\classes
+2026-10-19T16:12:39.1133722Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jfr\share\classes\jdk.jfr <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jfr\share\classes
+2026-10-19T16:12:39.4625083Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.jlink\jdk.jlink <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.jlink
+2026-10-19T16:12:39.8056815Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jlink\share\classes\jdk.jlink <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jlink\share\classes
+2026-10-19T16:12:40.1309261Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.jshell\jdk.jshell <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.jshell
+2026-10-19T16:12:40.4308807Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jshell\share\classes\jdk.jshell <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jshell\share\classes
+2026-10-19T16:12:40.7679030Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.jstatd\share\classes\jdk.jstatd <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.jstatd\share\classes
+2026-10-19T16:12:41.0511376Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.localedata\jdk.localedata <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.localedata
+2026-10-19T16:12:41.3776126Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.localedata\share\classes\jdk.localedata <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.localedata\share\classes
+2026-10-19T16:12:41.6773525Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.management\windows\classes\jdk.management <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.management\windows\classes
+2026-10-19T16:12:41.9978543Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.management\share\classes\jdk.management <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.management\share\classes
+2026-10-19T16:12:42.3686747Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\gensrc\jdk.management.agent\jdk.management.agent <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\gensrc\jdk.management.agent
+2026-10-19T16:12:42.7216399Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.management.agent\windows\classes\jdk.management.agent <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.management.agent\windows\classes
+2026-10-19T16:12:43.0242006Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.management.agent\share\classes\jdk.management.agent <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.management.agent\share\classes
+2026-10-19T16:12:43.2708876Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.management.jfr\share\classes\jdk.management.jfr <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.management.jfr\share\classes
+2026-10-19T16:12:43.5268780Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.naming.dns\share\classes\jdk.naming.dns <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.naming.dns\share\classes
+2026-10-19T16:12:43.8081766Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.naming.rmi\share\classes\jdk.naming.rmi <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.naming.rmi\share\classes
+2026-10-19T16:12:44.0889586Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.net\windows\classes\jdk.net <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.net\windows\classes
+2026-10-19T16:12:44.3628090Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.net\share\classes\jdk.net <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.net\share\classes
+2026-10-19T16:12:44.6609873Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.nio.mapmode\share\classes\jdk.nio.mapmode <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.nio.mapmode\share\classes
+2026-10-19T16:12:44.9094762Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.sctp\share\classes\jdk.sctp <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.sctp\share\classes
+2026-10-19T16:12:45.1980016Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.security.auth\share\classes\jdk.security.auth <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.security.auth\share\classes
+2026-10-19T16:12:45.4269809Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.security.jgss\share\classes\jdk.security.jgss <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.security.jgss\share\classes
+2026-10-19T16:12:45.7210538Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.unsupported\share\classes\jdk.unsupported <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.unsupported\share\classes
+2026-10-19T16:12:45.9435358Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.xml.dom\share\classes\jdk.xml.dom <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.xml.dom\share\classes
+2026-10-19T16:12:46.1486306Z Junction created for d:\a\openjdk-jdk27u\openjdk-jdk27u\build\perf\support\src\src\jdk.zipfs\share\classes\jdk.zipfs <<===>> d:\a\openjdk-jdk27u\openjdk-jdk27u\src\jdk.zipfs\share\classes
+2026-10-19T16:12:48.6260191Z Updating support/src.zip
+2026-10-19T16:13:01.7966188Z Creating hotspot/variant-server/tools/adlc/adlc.exe from 13 file(s)
+2026-10-19T16:13:02.1370756Z Compiling up to 2 files for BUILD_JVMTI_TOOLS
+2026-10-19T16:13:17.5002571Z Compiling up to 10 files for java.instrument
+2026-10-19T16:13:18.7046822Z Compiling up to 27 files for java.logging
+2026-10-19T16:13:20.4090411Z Compiling up to 328 files for java.management
+2026-10-19T16:13:23.4885580Z Compiling up to 30 files for java.security.sasl
+2026-10-19T16:13:24.9505328Z Compiling up to 105 files for java.rmi
+2026-10-19T16:13:26.4819815Z Compiling up to 313 files for java.net.http
+2026-10-19T16:13:30.0460190Z Compiling up to 14 files for java.scripting
+2026-10-19T16:13:31.1591344Z Compiling up to 22 files for java.smartcardio
+2026-10-19T16:13:32.4264059Z Compiling up to 5 files for java.transaction.xa
+2026-10-19T16:13:33.6790203Z Compiling up to 60 files for jdk.internal.jvmstat
+2026-10-19T16:13:35.2505525Z Compiling up to 130 files for jdk.charsets
+2026-10-19T16:13:37.2292003Z Compiling up to 1800 files for java.xml
+2026-10-19T16:13:37.5056455Z Compiling up to 52 files for jdk.internal.opt
+2026-10-19T16:13:38.7099106Z Compiling up to 14 files for jdk.zipfs
+2026-10-19T16:13:39.9064956Z Compiling up to 82 files for jdk.crypto.cryptoki
+2026-10-19T16:13:41.6670558Z Compiling up to 1 files for jdk.crypto.ec
+2026-10-19T16:13:42.8099681Z Compiling up to 11 files for jdk.crypto.mscapi
+2026-10-19T16:13:44.8505354Z Compiling up to 67 files for jdk.dynalink
+2026-10-19T16:13:46.5927317Z Compiling up to 58 files for jdk.httpserver
+2026-10-19T16:13:47.5646532Z Compiling up to 56 files for jdk.incubator.vector
+2026-10-19T16:13:48.2209205Z Compiling up to 3 files for jdk.internal.ed
+2026-10-19T16:13:50.7654687Z Compiling up to 118 files for jdk.internal.le
+2026-10-19T16:13:50.8933976Z Compiling up to 20 files for jdk.jartool
+2026-10-19T16:13:52.8516179Z Compiling up to 1 files for jdk.jdwp.agent
+2026-10-19T16:13:53.5404796Z Compiling up to 322 files for jdk.jfr
+2026-10-19T16:13:54.0215519Z Compiling up to 11 files for jdk.jstatd
+2026-10-19T16:13:55.5235983Z Compiling up to 1578 files for jdk.localedata
+2026-10-19T16:13:56.5637300Z Compiling up to 29 files for jdk.management
+2026-10-19T16:13:58.2495305Z Compiling up to 9 files for jdk.net
+2026-10-19T16:13:59.6535624Z Compiling up to 3 files for jdk.nio.mapmode
+2026-10-19T16:14:01.5139217Z Compiling up to 26 files for jdk.sctp
+2026-10-19T16:14:03.0596089Z Compiling up to 9 files for jdk.unsupported
+2026-10-19T16:14:04.2116830Z Compiling up to 94 files for jdk.xml.dom
+2026-10-19T16:14:04.6816171Z Compiling up to 136 files for java.compiler
+2026-10-19T16:14:06.3962418Z Compiling up to 204 files for java.naming
+2026-10-19T16:14:06.4073342Z Creating support/modules_libs/java.base/server/jvm.dll from 1103 file(s)
+2026-10-19T16:14:08.7046200Z Compiling up to 15 files for java.prefs
+2026-10-19T16:14:10.1909657Z Compiling up to 215 files for java.security.jgss
+2026-10-19T16:14:14.4485576Z Compiling up to 78 files for java.sql
+2026-10-19T16:14:20.0577337Z Compiling up to 272 files for java.xml.crypto
+2026-10-19T16:14:25.1378438Z Compiling up to 15 files for jdk.attach
+2026-10-19T16:14:27.1161927Z Compiling up to 368 files for jdk.compiler
+2026-10-19T16:14:33.9916639Z Compiling up to 41 files for jdk.jcmd
+2026-10-19T16:14:36.5951766Z Compiling up to 80 files for jdk.jdeps
+2026-10-19T16:14:38.9713455Z Compiling up to 259 files for jdk.jdi
+2026-10-19T16:14:43.0679493Z Compiling up to 98 files for jdk.jlink
+2026-10-19T16:14:45.5988889Z Compiling up to 15 files for jdk.management.jfr
+2026-10-19T16:14:48.1284668Z Compiling up to 16 files for jdk.naming.dns
+2026-10-19T16:14:50.0575484Z Compiling up to 8 files for jdk.naming.rmi
+2026-10-19T16:14:51.7417562Z Compiling up to 30 files for jdk.security.auth
+2026-10-19T16:14:53.4254128Z Compiling up to 16 files for jdk.security.jgss
+2026-10-19T16:14:56.7065011Z Compiling up to 16 files for java.management.rmi
+2026-10-19T16:14:59.6067948Z Compiling up to 56 files for java.sql.rowset
+2026-10-19T16:15:01.9698179Z Compiling up to 145 files for jdk.internal.md
+2026-10-19T16:15:04.7053211Z Compiling up to 22 files for jdk.management.agent
+2026-10-19T16:15:09.3826869Z Compiling up to 215 files for jdk.javadoc
+2026-10-19T16:15:14.0972412Z Compiling up to 103 files for jdk.jshell
+2026-10-19T16:21:09.4013005Z Creating support/modules_libs/java.base/verify.dll from 1 file(s)
+2026-10-19T16:21:09.4335290Z Creating support/modules_libs/java.base/java.dll from 68 file(s)
+2026-10-19T16:21:09.4680906Z Creating support/modules_libs/java.base/zip.dll from 20 file(s)
+2026-10-19T16:21:10.0152966Z Creating support/modules_libs/java.base/jimage.dll from 6 file(s)
+2026-10-19T16:21:10.0595673Z Creating support/modules_libs/java.base/jli.dll from 15 file(s)
+2026-10-19T16:21:10.6470018Z Creating support/modules_libs/java.base/net.dll from 13 file(s)
+2026-10-19T16:21:10.6809253Z Creating support/modules_libs/java.base/nio.dll from 20 file(s)
+2026-10-19T16:21:11.2445306Z Creating support/modules_libs/java.base/syslookup.dll from 2 file(s)
+2026-10-19T16:21:43.7227017Z Creating support/modules_libs/java.instrument/instrument.dll from 12 file(s)
+2026-10-19T16:21:43.7543509Z Creating support/modules_cmds/java.base/java.exe from 1 file(s)
+2026-10-19T16:21:44.3701278Z Creating support/modules_cmds/java.base/keytool.exe from 1 file(s)
+2026-10-19T16:21:47.6334966Z Creating support/modules_libs/java.management/management.dll from 9 file(s)
+2026-10-19T16:21:48.3925460Z Creating support/modules_libs/java.rmi/rmi.dll from 1 file(s)
+2026-10-19T16:21:50.3248903Z Creating support/modules_cmds/java.rmi/rmiregistry.exe from 1 file(s)
+2026-10-19T16:21:50.9743049Z Creating support/modules_libs/java.prefs/prefs.dll from 1 file(s)
+2026-10-19T16:21:52.5919992Z Creating support/modules_libs/java.security.jgss/j2gss.dll from 3 file(s)
+2026-10-19T16:21:52.6371360Z Creating support/modules_libs/java.security.jgss/sspi_bridge.dll from 1 file(s)
+2026-10-19T16:21:52.7531799Z Creating support/modules_cmds/java.security.jgss/kinit.exe from 1 file(s)
+2026-10-19T16:21:53.2362140Z Creating support/modules_libs/java.security.jgss/w2k_lsa_auth.dll from 2 file(s)
+2026-10-19T16:21:53.4007292Z Creating support/modules_cmds/java.security.jgss/klist.exe from 1 file(s)
+2026-10-19T16:21:54.0216076Z Creating support/modules_cmds/java.security.jgss/ktab.exe from 1 file(s)
+2026-10-19T16:21:57.7100758Z Creating support/modules_libs/java.smartcardio/j2pcsc.dll from 2 file(s)
+2026-10-19T16:21:58.9232151Z Creating support/modules_libs/jdk.attach/attach.dll from 2 file(s)
+2026-10-19T16:21:59.7411073Z Creating support/modules_cmds/jdk.compiler/javac.exe from 1 file(s)
+2026-10-19T16:22:00.3718837Z Creating support/modules_cmds/jdk.compiler/serialver.exe from 1 file(s)
+2026-10-19T16:22:00.8575943Z Creating support/modules_libs/jdk.crypto.cryptoki/j2pkcs11.dll from 14 file(s)
+2026-10-19T16:22:03.4474345Z Creating support/modules_libs/jdk.crypto.mscapi/sunmscapi.dll from 1 file(s)
+2026-10-19T16:22:05.6889686Z Creating support/modules_cmds/jdk.httpserver/jwebserver.exe from 1 file(s)
+2026-10-19T16:22:07.4731665Z Creating support/modules_libs/jdk.incubator.vector/jsvml.dll from 36 file(s)
+2026-10-19T16:22:07.9801999Z Creating support/modules_cmds/jdk.jartool/jar.exe from 1 file(s)
+2026-10-19T16:22:08.6640644Z Creating support/modules_cmds/jdk.jartool/jarsigner.exe from 1 file(s)
+2026-10-19T16:22:11.6746976Z Compiling up to 4 files for COMPILE_CREATE_SYMBOLS
+2026-10-19T16:22:12.7183481Z Creating support/modules_cmds/jdk.javadoc/javadoc.exe from 1 file(s)
+2026-10-19T16:22:16.3263253Z Creating support/modules_cmds/jdk.jcmd/jinfo.exe from 1 file(s)
+2026-10-19T16:22:17.0203857Z Creating support/modules_cmds/jdk.jcmd/jmap.exe from 1 file(s)
+2026-10-19T16:22:17.7760486Z Creating support/modules_cmds/jdk.jcmd/jps.exe from 1 file(s)
+2026-10-19T16:22:17.8607569Z Creating support/modules_cmds/jdk.jcmd/jstack.exe from 1 file(s)
+2026-10-19T16:22:18.1336159Z Creating support/modules_cmds/jdk.jdeps/javap.exe from 1 file(s)
+2026-10-19T16:22:18.8046250Z Creating support/modules_cmds/jdk.jdeps/jdeps.exe from 1 file(s)
+2026-10-19T16:22:19.1146348Z Creating support/modules_cmds/jdk.jcmd/jstat.exe from 1 file(s)
+2026-10-19T16:22:19.5186392Z Creating support/modules_cmds/jdk.jdeps/jdeprscan.exe from 1 file(s)
+2026-10-19T16:22:19.8156138Z Creating support/modules_cmds/jdk.jcmd/jcmd.exe from 1 file(s)
+2026-10-19T16:22:20.1668029Z Creating support/modules_cmds/jdk.jdeps/jnativescan.exe from 1 file(s)
+2026-10-19T16:22:24.8689378Z Creating support/modules_libs/jdk.jdwp.agent/dt_socket.dll from 2 file(s)
+2026-10-19T16:22:24.9117230Z Creating support/modules_libs/jdk.jdwp.agent/jdwp.dll from 43 file(s)
+2026-10-19T16:22:26.3645686Z Creating support/modules_libs/jdk.jdi/dt_shmem.dll from 5 file(s)
+2026-10-19T16:22:29.8399634Z Creating support/modules_cmds/jdk.jdi/jdb.exe from 1 file(s)
+2026-10-19T16:22:31.8348868Z Creating support/modules_cmds/jdk.jfr/jfr.exe from 1 file(s)
+2026-10-19T16:22:34.1373378Z Creating support/modules_cmds/jdk.jlink/jimage.exe from 1 file(s)
+2026-10-19T16:22:34.7910418Z Creating support/modules_cmds/jdk.jlink/jlink.exe from 1 file(s)
+2026-10-19T16:22:35.5084883Z Creating support/modules_cmds/jdk.jlink/jmod.exe from 1 file(s)
+2026-10-19T16:22:39.5408419Z Creating support/modules_cmds/jdk.jshell/jshell.exe from 1 file(s)
+2026-10-19T16:22:41.7155839Z Creating support/modules_cmds/jdk.jstatd/jstatd.exe from 1 file(s)
+2026-10-19T16:22:43.8594111Z Creating support/modules_libs/jdk.management/management_ext.dll from 7 file(s)
+2026-10-19T16:22:47.5070680Z Creating support/modules_libs/jdk.management.agent/management_agent.dll from 1 file(s)
+2026-10-19T16:22:47.5263502Z Creating support/modules_libs/jdk.net/extnet.dll from 1 file(s)
+2026-10-19T16:22:49.2113264Z Creating support/modules_libs/jdk.security.auth/jaas.dll from 1 file(s)
+2026-10-19T16:22:49.2718980Z Updating images/sec-bin.zip
+2026-10-19T16:22:49.4188447Z Updating images/sec-windows-bin.zip
+2026-10-19T16:22:50.8610111Z Updating images/jgss-windows-x64-bin.zip
+2026-10-19T16:22:52.2127699Z Compiling up to 4 files for COMPILE_CREATE_SYMBOLS
+2026-10-19T16:22:55.3024614Z Creating ct.sym classes
+2026-10-19T16:22:59.2052229Z Compiling up to 4 files for BUILD_JIGSAW_TOOLS
+2026-10-19T16:23:00.1538746Z Optimizing the exploded image
+2026-10-19T16:23:01.0947339Z Creating java.instrument.jmod
+2026-10-19T16:23:01.1808060Z Creating java.compiler.jmod
+2026-10-19T16:23:02.0283187Z Creating java.logging.jmod
+2026-10-19T16:23:02.1323843Z Creating java.management.jmod
+2026-10-19T16:23:02.9875192Z Creating java.management.rmi.jmod
+2026-10-19T16:23:03.2382587Z Creating java.naming.jmod
+2026-10-19T16:23:04.0242329Z Creating java.net.http.jmod
+2026-10-19T16:23:04.2852995Z Creating java.prefs.jmod
+2026-10-19T16:23:05.1642450Z Creating java.rmi.jmod
+2026-10-19T16:23:05.1826357Z Creating java.scripting.jmod
+2026-10-19T16:23:06.0809154Z Creating java.security.jgss.jmod
+2026-10-19T16:23:06.2077278Z Creating java.security.sasl.jmod
+2026-10-19T16:23:07.0592703Z Creating java.smartcardio.jmod
+2026-10-19T16:23:07.1574091Z Creating java.sql.jmod
+2026-10-19T16:23:07.9597893Z Creating java.sql.rowset.jmod
+2026-10-19T16:23:08.0649817Z Creating java.transaction.xa.jmod
+2026-10-19T16:23:09.0171049Z Creating java.xml.crypto.jmod
+2026-10-19T16:23:09.1307509Z Creating java.xml.jmod
+2026-10-19T16:23:10.1314060Z Creating jdk.attach.jmod
+2026-10-19T16:23:10.8709959Z Creating jdk.charsets.jmod
+2026-10-19T16:23:11.1984313Z Creating jdk.compiler.jmod
+2026-10-19T16:23:11.9534661Z Creating jdk.crypto.cryptoki.jmod
+2026-10-19T16:23:12.8295310Z Creating jdk.crypto.ec.jmod
+2026-10-19T16:23:12.8832462Z Creating jdk.crypto.mscapi.jmod
+2026-10-19T16:23:13.7309839Z Creating jdk.dynalink.jmod
+2026-10-19T16:23:13.8008275Z Creating jdk.httpserver.jmod
+2026-10-19T16:23:14.6548296Z Creating jdk.incubator.vector.jmod
+2026-10-19T16:23:14.7016134Z Creating jdk.internal.ed.jmod
+2026-10-19T16:23:15.5978165Z Creating jdk.internal.jvmstat.jmod
+2026-10-19T16:23:15.6079688Z Creating jdk.internal.le.jmod
+2026-10-19T16:23:16.4949899Z Creating jdk.internal.md.jmod
+2026-10-19T16:23:16.5219618Z Creating jdk.internal.opt.jmod
+2026-10-19T16:23:17.3472628Z Creating jdk.jartool.jmod
+2026-10-19T16:23:17.3965328Z Creating jdk.javadoc.jmod
+2026-10-19T16:23:18.1637272Z Creating jdk.jcmd.jmod
+2026-10-19T16:23:18.4805856Z Creating jdk.jdeps.jmod
+2026-10-19T16:23:19.0242642Z Creating jdk.jdi.jmod
+2026-10-19T16:23:19.3658826Z Creating jdk.jdwp.agent.jmod
+2026-10-19T16:23:20.0196833Z Creating jdk.jfr.jmod
+2026-10-19T16:23:20.8857611Z Creating interim java.base.jmod
+2026-10-19T16:23:20.9184626Z Creating interim java.logging.jmod
+2026-10-19T16:23:21.8457628Z Creating jdk.jshell.jmod
+2026-10-19T16:23:22.7510561Z Creating jdk.jstatd.jmod
+2026-10-19T16:23:22.9414866Z Creating jdk.localedata.jmod
+2026-10-19T16:23:23.6331981Z Creating jdk.management.jmod
+2026-10-19T16:23:24.4040270Z Creating jdk.management.agent.jmod
+2026-10-19T16:23:24.4901758Z Creating jdk.management.jfr.jmod
+2026-10-19T16:23:25.2418255Z Creating jdk.naming.dns.jmod
+2026-10-19T16:23:25.3223323Z Creating jdk.naming.rmi.jmod
+2026-10-19T16:23:26.0509054Z Creating jdk.net.jmod
+2026-10-19T16:23:26.2264326Z Creating jdk.nio.mapmode.jmod
+2026-10-19T16:23:26.8482637Z Creating jdk.sctp.jmod
+2026-10-19T16:23:27.0263915Z Creating jdk.security.auth.jmod
+2026-10-19T16:23:27.6693961Z Creating jdk.security.jgss.jmod
+2026-10-19T16:23:27.8596676Z Creating jdk.unsupported.jmod
+2026-10-19T16:23:28.4951648Z Creating jdk.xml.dom.jmod
+2026-10-19T16:23:28.6934809Z Creating jdk.zipfs.jmod
+2026-10-19T16:23:29.4669344Z Creating interim jimage
+2026-10-19T16:23:30.8853247Z Compiling up to 2 files for CLASSLIST_JAR
+2026-10-19T16:23:31.4722766Z Creating support/classlist.jar
+2026-10-19T16:23:33.6720690Z Creating jdk.jlink.jmod
+2026-10-19T16:23:34.8777583Z Creating java.base.jmod
+2026-10-19T16:23:37.5458796Z Creating jdk image
+2026-10-19T16:23:41.6690827Z Creating CDS archive for jdk image for server
+2026-10-19T16:23:41.6763569Z Creating CDS-NOCOOPS archive for jdk image for server
+2026-10-19T16:23:41.6824089Z Creating CDS archive for jdk image for server
+2026-10-19T16:23:42.5958445Z Creating CDS-NOCOOPS archive for jdk image for server
+2026-10-19T16:23:42.6225052Z Creating CDS-NOCOH archive for jdk image for server
+2026-10-19T16:23:43.4469459Z Creating CDS-NOCOOPS-NOCOH archive for jdk image for server
+2026-10-19T16:23:44.3106594Z Stopping javac server
+2026-10-19T16:23:44.5928185Z Finished building target 'images' in configuration 'perf'
+2026-10-19T16:23:48.5644696Z ##[group]Run import subprocess
+2026-10-19T16:23:48.5645092Z [36;1mimport subprocess[0m
+2026-10-19T16:23:48.5645490Z [36;1msubprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py','seal','--backend','msvc'],check=True)[0m
+2026-10-19T16:23:48.5657777Z shell: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.EXE {0}
+2026-10-19T16:23:48.5658028Z env:
+2026-10-19T16:23:48.5658206Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:23:48.5658383Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:23:48.5658575Z   CHERE_INVOKING: 1
+2026-10-19T16:23:48.5658736Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:23:48.5658921Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:23:48.5659093Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:23:48.5659303Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:23:48.5659478Z   MSYSTEM: MINGW64
+2026-10-19T16:23:48.5659639Z ##[endgroup]
+2026-10-19T16:23:50.8605208Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-10-19T16:23:50.8605552Z with:
+2026-10-19T16:23:50.8605983Z   name: stringzilla-paired-candidate-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:23:50.8606443Z   path: candidate-retained
+build/perf/images/jdk
+
+2026-10-19T16:23:50.8606763Z   retention-days: 30
+2026-10-19T16:23:50.8606966Z   if-no-files-found: error
+2026-10-19T16:23:50.8607151Z   compression-level: 6
+2026-10-19T16:23:50.8607320Z   overwrite: false
+2026-10-19T16:23:50.8607490Z   include-hidden-files: false
+2026-10-19T16:23:50.8607689Z   archive: true
+2026-10-19T16:23:50.8607849Z env:
+2026-10-19T16:23:50.8608011Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:23:50.8608375Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:23:50.8608569Z   CHERE_INVOKING: 1
+2026-10-19T16:23:50.8608734Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:23:50.8608908Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:23:50.8609132Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:23:50.8609320Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:23:50.8609495Z   MSYSTEM: MINGW64
+2026-10-19T16:23:50.8609649Z ##[endgroup]
+2026-10-19T16:23:51.0507337Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-19T16:23:51.0509465Z The least common ancestor is D:\a\openjdk-jdk27u\openjdk-jdk27u. This will be the root directory of the artifact
+2026-10-19T16:23:51.0509790Z With the provided path, there will be 408 files uploaded
+2026-10-19T16:23:51.0513295Z Artifact name is valid!
+2026-10-19T16:23:51.0513986Z Root directory input is valid!
+2026-10-19T16:23:51.3462730Z Uploading artifact: stringzilla-paired-candidate-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0.zip
+2026-10-19T16:23:51.3489857Z Beginning upload of artifact content to blob storage
+2026-10-19T16:23:52.6286140Z Uploaded bytes 8388608
+2026-10-19T16:23:52.8521415Z Uploaded bytes 16777216
+2026-10-19T16:23:53.4816605Z Uploaded bytes 25165824
+2026-10-19T16:23:53.9562911Z Uploaded bytes 33554432
+2026-10-19T16:23:54.2786308Z Uploaded bytes 41943040
+2026-10-19T16:23:54.6029598Z Uploaded bytes 50331648
+2026-10-19T16:23:54.9100288Z Uploaded bytes 58720256
+2026-10-19T16:23:55.0367537Z Uploaded bytes 67108864
+2026-10-19T16:23:55.1948684Z Uploaded bytes 75497472
+2026-10-19T16:23:55.5508188Z Uploaded bytes 83886080
+2026-10-19T16:23:55.6026379Z Uploaded bytes 92274688
+2026-10-19T16:23:55.6284260Z Uploaded bytes 100663296
+2026-10-19T16:23:55.8538336Z Uploaded bytes 109051904
+2026-10-19T16:23:56.1200049Z Uploaded bytes 117440512
+2026-10-19T16:23:56.5467348Z Uploaded bytes 125829120
+2026-10-19T16:23:56.9930538Z Uploaded bytes 134217728
+2026-10-19T16:23:57.3218318Z Uploaded bytes 142606336
+2026-10-19T16:23:57.7470653Z Uploaded bytes 150994944
+2026-10-19T16:23:58.1244971Z Uploaded bytes 159383552
+2026-10-19T16:23:58.3193346Z Uploaded bytes 167772160
+2026-10-19T16:23:58.5121781Z Uploaded bytes 176160768
+2026-10-19T16:23:58.7294334Z Uploaded bytes 184549376
+2026-10-19T16:23:58.8524308Z Uploaded bytes 192937984
+2026-10-19T16:23:58.9382819Z Uploaded bytes 194577292
+2026-10-19T16:23:58.9774004Z Finished uploading artifact content to blob storage!
+2026-10-19T16:23:58.9776795Z SHA256 digest of uploaded artifact is ba26ae5db90972875c991d66c778e358e59142a741ed9b040286335f90df8825
+2026-10-19T16:23:58.9778717Z Finalizing artifact upload
+2026-10-19T16:23:59.2877536Z Artifact stringzilla-paired-candidate-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0 successfully finalized. Artifact ID 12202917393
+2026-10-19T16:23:59.2878704Z Artifact stringzilla-paired-candidate-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0 has been successfully uploaded! Final size is 194577292 bytes. Artifact ID is 12202917393
+2026-10-19T16:23:59.2888165Z Artifact download URL: https://github.com/re-thc/openjdk-jdk27u/actions/runs/39281225979/artifacts/12202917393
+2026-10-19T16:23:59.3190933Z ##[group]Run import subprocess
+2026-10-19T16:23:59.3191173Z [36;1mimport subprocess[0m
+2026-10-19T16:23:59.3191489Z [36;1msubprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/validate-windows.py'],check=True)[0m
+2026-10-19T16:23:59.3204284Z shell: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.EXE {0}
+2026-10-19T16:23:59.3204581Z env:
+2026-10-19T16:23:59.3204755Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:23:59.3204974Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:23:59.3205162Z   CHERE_INVOKING: 1
+2026-10-19T16:23:59.3205337Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:23:59.3205528Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:23:59.3205714Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:23:59.3205930Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:23:59.3206125Z   MSYSTEM: MINGW64
+2026-10-19T16:23:59.3206294Z ##[endgroup]
+2026-10-19T16:24:00.5124073Z STRINGZILLA_MSVC_BASELINE {"compiler_args":["cl.exe","/nologo","/std:c11","/O2","/utf-8","/c","/FAs","/FaD:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\msvc-baseline\\SerialProbe.asm","/FoD:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\msvc-baseline\\SerialProbe.obj","/ID:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\src\\java.base\\share\\native\\libjava\\stringzilla","D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\validation\\msvc-baseline\\SerialProbe.c"],"runtime_passed":true,"forbidden_instructions_absent":true,"files_sha256":{"build-probe.cmd":"468f9e4d58018c67726791277f90cf009fb4b5efa9fab96dde518613656950b1","build.log":"18dac1aade244ae81cc2cc38049b9e66b9f1d1a2551f830c0f59554db9f00c3b","SerialProbe.asm":"b2a1e7764c2ef8b974c6e5c3fa9b668af35dff873088cb6d040529567ff3d150","SerialProbe.c":"1264337fcc5a71d1d4ed2dd4a55f923afdab076e81e1848f4918604af3a1dc66","SerialProbe.exe":"235f7a2d309e38b5819229841c742b60cf394467728e8b2160aa05132f270bca","SerialProbe.obj":"8dacc9db6593a706fe9f547b343d2886d9085f33848eb0fea23dfbd74ee98ed4"}}
+2026-10-19T16:25:02.5208270Z ##[group]Run import subprocess
+2026-10-19T16:25:02.5208501Z [36;1mimport subprocess[0m
+2026-10-19T16:25:02.5208797Z [36;1msubprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/jtreg.py'],check=True)[0m
+2026-10-19T16:25:02.5221168Z shell: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.EXE {0}
+2026-10-19T16:25:02.5221378Z env:
+2026-10-19T16:25:02.5221501Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:25:02.5221654Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:25:02.5221782Z   CHERE_INVOKING: 1
+2026-10-19T16:25:02.5221901Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:25:02.5222060Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:25:02.5222187Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:25:02.5222357Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:25:02.5222495Z   MSYSTEM: MINGW64
+2026-10-19T16:25:02.5222613Z ##[endgroup]
+2026-10-19T16:27:29.2739546Z ##[group]Run import subprocess
+2026-10-19T16:27:29.2739803Z [36;1mimport subprocess[0m
+2026-10-19T16:27:29.2740143Z [36;1msubprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/paired.py',[0m
+2026-10-19T16:27:29.2740466Z [36;1m  '--source','.','--pair','pair','--backend','msvc',[0m
+2026-10-19T16:27:29.2740862Z [36;1m  '--manifest','.stringzilla-driver/doc/stringzilla/qualification-20261019/physical-guard-focus.tsv','--output','paired-results'],check=True)[0m
+2026-10-19T16:27:29.2752583Z shell: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.EXE {0}
+2026-10-19T16:27:29.2752791Z env:
+2026-10-19T16:27:29.2752914Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:27:29.2753060Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:27:29.2753202Z   CHERE_INVOKING: 1
+2026-10-19T16:27:29.2753329Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:27:29.2753469Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:27:29.2753606Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:27:29.2753790Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:27:29.2753919Z   MSYSTEM: MINGW64
+2026-10-19T16:27:29.2754037Z ##[endgroup]
+2026-10-19T16:28:04.8638713Z {"backend": "msvc", "tier": "interpreter", "case": {"id": "immediate-latin", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 208.04725974936036, "enabled": 193.97235813961686, "disabled": 231.72282110940645}, "speedup": {"original": [1.07256137804755, 1.0875983728047887, 1.0764387295927338], "disabled": [1.1946177451872688, 1.1863334340402707, 1.188383369641677]}, "paired_median_speedup": {"original": 1.0764387295927338, "disabled": 1.188383369641677}, "higher_enabled_median": []}
+2026-10-19T16:28:33.5234126Z {"backend": "msvc", "tier": "interpreter", "case": {"id": "bulk-latin1", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "MISS", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 29830.649374883375, "enabled": 1569.6691149377289, "disabled": 27601.979770035447}, "speedup": {"original": [19.021802878520578, 17.346633892871857, 19.581172598326496], "disabled": [15.12389480312477, 17.87429266410194, 18.11824889027222]}, "paired_median_speedup": {"original": 19.021802878520578, "disabled": 17.87429266410194}, "higher_enabled_median": []}
+2026-10-19T16:29:01.9628087Z {"backend": "msvc", "tier": "interpreter", "case": {"id": "overlap-min-latin", "benchmark": "StringZillaLongNeedle.lastIndexOf", "length": "0", "coder": "-", "position": "-", "needleLength": "257", "shape": "OVERLAP_LATIN1", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 4609.850468119093, "enabled": 259.8957244587961, "disabled": 5075.288124801019}, "speedup": {"original": [17.216191878619497, 17.95022079534912, 17.815853197173706], "disabled": [18.954440019288697, 19.30398068244483, 22.068724613324918]}, "paired_median_speedup": {"original": 17.815853197173706, "disabled": 19.30398068244483}, "higher_enabled_median": []}
+2026-10-19T16:29:32.6559235Z {"backend": "msvc", "tier": "c1", "case": {"id": "immediate-latin", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 7.6472159640305035, "enabled": 5.064132418024609, "disabled": 8.052488003229444}, "speedup": {"original": [1.5024600963132306, 1.6185144987603786, 1.4851973920110293], "disabled": [1.572045489401396, 1.6396711706482734, 1.5901021810899878]}, "paired_median_speedup": {"original": 1.5024600963132306, "disabled": 1.5901021810899878}, "higher_enabled_median": []}
+2026-10-19T16:30:04.3733145Z {"backend": "msvc", "tier": "c1", "case": {"id": "bulk-latin1", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "MISS", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 2056.4305287273705, "enabled": 1307.756361778232, "disabled": 1772.5297916655156}, "speedup": {"original": [1.565849058299751, 1.5857629845411891, 1.5628827608787321], "disabled": [1.3797169704554297, 1.3380896603891952, 1.3471188138081125]}, "paired_median_speedup": {"original": 1.565849058299751, "disabled": 1.3471188138081125}, "higher_enabled_median": []}
+2026-10-19T16:30:35.3117824Z {"backend": "msvc", "tier": "c1", "case": {"id": "short-latin-c1-32-miss", "benchmark": "StringZillaSearch.lastIndexOf", "length": "32", "coder": "LATIN1", "position": "MISS", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "c1"}, "medians": {"original": 18.1229463104465, "enabled": 20.258745265973566, "disabled": 18.3998887705439}, "speedup": {"original": [0.9914840222865393, 0.9163904788697579, 0.8554094879900102], "disabled": [1.00663520242997, 0.9919235948816832, 0.8604791253931496]}, "paired_median_speedup": {"original": 0.9163904788697579, "disabled": 0.9919235948816832}, "higher_enabled_median": ["original", "disabled"]}
+2026-10-19T16:31:06.4491530Z {"backend": "msvc", "tier": "c1", "case": {"id": "overlap-min-latin", "benchmark": "StringZillaLongNeedle.lastIndexOf", "length": "0", "coder": "-", "position": "-", "needleLength": "257", "shape": "OVERLAP_LATIN1", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 625.0816934420626, "enabled": 352.1607373483142, "disabled": 349.4280308034647}, "speedup": {"original": [1.7604731558293718, 1.7981763891057003, 1.7162358956741308], "disabled": [0.9922401725830479, 1.005428584987279, 0.9407946837265581]}, "paired_median_speedup": {"original": 1.7604731558293718, "disabled": 0.9922401725830479}, "higher_enabled_median": ["disabled"]}
+2026-10-19T16:31:37.8356944Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-end-9", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "9", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 5.205856837252014, "enabled": 5.207616009597853, "disabled": 5.5436784985927225}, "speedup": {"original": [0.9013067136070163, 1.0552560639102349, 0.9996621923846543], "disabled": [0.9719848099158661, 1.1118291315051847, 1.003161349695653]}, "paired_median_speedup": {"original": 0.9996621923846543, "disabled": 1.003161349695653}, "higher_enabled_median": ["original"]}
+2026-10-19T16:32:10.2730426Z {"backend": "msvc", "tier": "c2", "case": {"id": "immediate-utf16", "benchmark": "StringZillaSearch.lastIndexOf", "length": "128", "coder": "UTF16", "position": "END", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "c2"}, "medians": {"original": 3.892129073506705, "enabled": 2.196115227151544, "disabled": 3.8584970117622666}, "speedup": {"original": [1.742846896193206, 1.831334834214672, 1.8049163540783468], "disabled": [1.7701598369976799, 1.756964736666802, 1.7743858206546326]}, "paired_median_speedup": {"original": 1.8049163540783468, "disabled": 1.7701598369976799}, "higher_enabled_median": []}
+2026-10-19T16:32:41.6825458Z {"backend": "msvc", "tier": "c2", "case": {"id": "final-latin-word-prefix-end-24", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "24", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 10.076084062806, "enabled": 5.6143419214689825, "disabled": 10.292025348448659}, "speedup": {"original": [1.8831111525659958, 1.7205067155477498, 1.7903209818280508], "disabled": [1.9234682437492832, 1.684436090571005, 1.954609836978502]}, "paired_median_speedup": {"original": 1.7903209818280508, "disabled": 1.9234682437492832}, "higher_enabled_median": []}
+2026-10-19T16:33:14.3588772Z {"backend": "msvc", "tier": "c2", "case": {"id": "final-latin-word-prefix-end-25", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "25", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 10.953014329456712, "enabled": 11.279426816079754, "disabled": 11.318681527705303}, "speedup": {"original": [0.9945154543534424, 1.0051970796957932, 0.9710529301546812], "disabled": [1.0057951986444789, 1.0034802044701057, 1.0173720360443903]}, "paired_median_speedup": {"original": 0.9945154543534424, "disabled": 1.0057951986444789}, "higher_enabled_median": ["original"]}
+2026-10-19T16:33:46.0473862Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-end-16", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "16", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 8.576608285257267, "enabled": 5.4863159334491325, "disabled": 8.375920413946096}, "speedup": {"original": [1.4764877645285233, 1.8068627275253626, 1.420533871383024], "disabled": [1.5928707202716461, 1.684741239381102, 1.4493181066920302]}, "paired_median_speedup": {"original": 1.4764877645285233, "disabled": 1.5928707202716461}, "higher_enabled_median": []}
+2026-10-19T16:34:16.9833907Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-end-17", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "17", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 8.348598860527348, "enabled": 5.330703098776649, "disabled": 8.442183872973489}, "speedup": {"original": [1.5832558104505166, 1.5635252519765102, 1.3632776452255335], "disabled": [1.5945428858548967, 1.5780687776770743, 1.3785595335432481]}, "paired_median_speedup": {"original": 1.5635252519765102, "disabled": 1.5780687776770743}, "higher_enabled_median": []}
+2026-10-19T16:34:48.3234163Z {"backend": "msvc", "tier": "c2", "case": {"id": "final-latin-word-prefix-end-32", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "32", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 11.495899807313496, "enabled": 5.524616073780156, "disabled": 11.311203362945824}, "speedup": {"original": [1.9807253030604564, 1.9482655496524246, 2.08085044350377], "disabled": [2.0386068323578312, 2.0557974928089835, 1.981818757661135]}, "paired_median_speedup": {"original": 1.9807253030604564, "disabled": 2.0386068323578312}, "higher_enabled_median": []}
+2026-10-19T16:35:23.5416213Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-end-33", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "33", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 10.90238098214283, "enabled": 9.771239266959377, "disabled": 13.607744686451557}, "speedup": {"original": [1.11576235974574, 1.1423139023858362, 1.0022221167091738], "disabled": [1.1088349727850695, 1.4396518191158352, 1.4885426580246592]}, "paired_median_speedup": {"original": 1.11576235974574, "disabled": 1.4396518191158352}, "higher_enabled_median": []}
+2026-10-19T16:35:55.4311944Z {"backend": "msvc", "tier": "c2", "case": {"id": "immediate-latin", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 3.854488931258414, "enabled": 3.2121155054035855, "disabled": 3.9406813661518694}, "speedup": {"original": [1.1761371745538367, 1.1891521469248347, 1.2449397879832451], "disabled": [1.218467232521446, 1.226818076598632, 1.2702727542244212]}, "paired_median_speedup": {"original": 1.1891521469248347, "disabled": 1.226818076598632}, "higher_enabled_median": []}
+2026-10-19T16:36:26.1791419Z {"backend": "msvc", "tier": "c2", "case": {"id": "equal-latin1-4096", "benchmark": "StringZillaSearch.equals", "length": "4096", "coder": "LATIN1", "position": "EQUAL", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "c2"}, "medians": {"original": 78.87169856809045, "enabled": 84.17946219638152, "disabled": 79.41106048653901}, "speedup": {"original": [0.9369470475362668, 1.0023470718749932, 1.003332371706184], "disabled": [0.9433543338787512, 0.9324267099242648, 1.0459711495632962]}, "paired_median_speedup": {"original": 1.0023470718749932, "disabled": 0.9433543338787512}, "higher_enabled_median": ["disabled"]}
+2026-10-19T16:36:56.6911330Z {"backend": "msvc", "tier": "c2", "case": {"id": "bulk-latin1", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "MISS", "needleLength": "4", "shape": "-", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 376.730333143023, "enabled": 107.96792381619143, "disabled": 375.39664049826126}, "speedup": {"original": [3.4899728760718918, 3.4773894365311833, 3.4892801475406956], "disabled": [3.445001045331932, 3.4757851159071596, 3.4769274728052597]}, "paired_median_speedup": {"original": 3.4892801475406956, "disabled": 3.4757851159071596}, "higher_enabled_median": []}
+2026-10-19T16:37:27.4326193Z {"backend": "msvc", "tier": "c2", "case": {"id": "supp-latin-single-end-257-257", "benchmark": "StringZillaSearch.lastIndexOf", "length": "257", "coder": "LATIN1", "position": "END", "needleLength": "257", "shape": "-", "backends": "serial,neon,msvc", "tiers": "c2"}, "medians": {"original": 45.43167606192573, "enabled": 18.658737570457497, "disabled": 45.231649851236405}, "speedup": {"original": [2.288058214966482, 2.4348740578171806, 2.5561684777413562], "disabled": [2.354407979952772, 2.4241538142886996, 2.4044889990336]}, "paired_median_speedup": {"original": 2.4348740578171806, "disabled": 2.4044889990336}, "higher_enabled_median": []}
+2026-10-19T16:37:58.7354464Z {"backend": "msvc", "tier": "c2", "case": {"id": "long-latin-head-candidate-miss", "benchmark": "StringZillaTailSearch.lastIndexOf", "length": "258", "coder": "-", "position": "-", "needleLength": "257", "shape": "LATIN_HEAD_CANDIDATE_MISS", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "c2"}, "medians": {"original": 105.26785387504538, "enabled": 16.633141772370728, "disabled": 104.43877367292488}, "speedup": {"original": [6.495101889677128, 6.328801576735525, 5.908750582256444], "disabled": [6.537210802635477, 6.2789565015557, 5.73745289534233]}, "paired_median_speedup": {"original": 6.328801576735525, "disabled": 6.2789565015557}, "higher_enabled_median": []}
+2026-10-19T16:38:30.2188227Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-single-32-fifth-from-end", "benchmark": "StringZillaTailSearch.lastIndexOf", "length": "32", "coder": "-", "position": "-", "needleLength": "32", "shape": "LATIN_FIFTH_FROM_END_MISS", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 4.459688978226476, "enabled": 4.310832972781285, "disabled": 4.612170639523557}, "speedup": {"original": [1.0460974022625744, 1.0345306826743395, 0.9623900155662833], "disabled": [1.0652296608215461, 1.0978176615670527, 0.9973178433125294]}, "paired_median_speedup": {"original": 1.0345306826743395, "disabled": 1.0652296608215461}, "higher_enabled_median": []}
+2026-10-19T16:39:01.8579004Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-single-128-fifth-from-end", "benchmark": "StringZillaTailSearch.lastIndexOf", "length": "128", "coder": "-", "position": "-", "needleLength": "128", "shape": "LATIN_FIFTH_FROM_END_MISS", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 4.546940285673032, "enabled": 4.461671304387346, "disabled": 4.60317748261028}, "speedup": {"original": [1.048012370082613, 1.0039698034879931, 1.035707407706417], "disabled": [1.0198022803849276, 1.0949200171582345, 1.0463222043755884]}, "paired_median_speedup": {"original": 1.035707407706417, "disabled": 1.0463222043755884}, "higher_enabled_median": []}
+2026-10-19T16:39:33.6689936Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-bulk-65-fifth-from-end", "benchmark": "StringZillaTailSearch.lastIndexOf", "length": "4096", "coder": "-", "position": "-", "needleLength": "65", "shape": "LATIN_FIFTH_FROM_END_MISS", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 10345.179693528828, "enabled": 9148.714509915822, "disabled": 10214.621743980053}, "speedup": {"original": [1.0956601636042047, 1.1307795955722761, 1.0552978206965038], "disabled": [1.087442151396002, 1.1400878214836683, 1.0377801100275832]}, "paired_median_speedup": {"original": 1.0956601636042047, "disabled": 1.087442151396002}, "higher_enabled_median": []}
+2026-10-19T16:40:05.2617906Z {"backend": "msvc", "tier": "c2", "case": {"id": "overlap-min-latin", "benchmark": "StringZillaLongNeedle.lastIndexOf", "length": "0", "coder": "-", "position": "-", "needleLength": "257", "shape": "OVERLAP_LATIN1", "backends": "serial,avx2,neon,msvc,avx512", "tiers": "interpreter,c1,c2"}, "medians": {"original": 107.41094554139056, "enabled": 15.565213811436603, "disabled": 109.56818369770697}, "speedup": {"original": [6.981715130400904, 7.401039511274225, 6.756454930715985], "disabled": [7.185843549953369, 6.97250247748861, 6.971418728115098]}, "paired_median_speedup": {"original": 6.981715130400904, "disabled": 6.97250247748861}, "higher_enabled_median": []}
+2026-10-19T16:40:36.2647412Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-end-15", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "15", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 7.102320577608996, "enabled": 4.935139050480888, "disabled": 7.275194266434906}, "speedup": {"original": [1.4897386977589142, 1.3121652333933096, 1.4391328197565039], "disabled": [1.4523354107852757, 1.3652204620945796, 1.5362164900030357]}, "paired_median_speedup": {"original": 1.4391328197565039, "disabled": 1.4523354107852757}, "higher_enabled_median": []}
+2026-10-19T16:41:07.3586077Z {"backend": "msvc", "tier": "c2", "case": {"id": "latin-vm-end-31", "benchmark": "StringZillaSearch.lastIndexOf", "length": "4096", "coder": "LATIN1", "position": "END", "needleLength": "31", "shape": "-", "backends": "serial,msvc", "tiers": "c2"}, "medians": {"original": 10.425855468924365, "enabled": 9.284899192408307, "disabled": 10.788582581473324}, "speedup": {"original": [1.1228830009752768, 1.1347238659022407, 1.1618118815076943], "disabled": [1.1619493500041969, 1.2459057092061183, 1.1010569264877699]}, "paired_median_speedup": {"original": 1.1347238659022407, "disabled": 1.1619493500041969}, "higher_enabled_median": []}
+2026-10-19T16:41:08.0016625Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-10-19T16:41:08.0016979Z with:
+2026-10-19T16:41:08.0017231Z   name: stringzilla-paired-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0
+2026-10-19T16:41:08.0017680Z   path: paired-results
+pair/*.json
+pair/*.gmk
+pair/*.cmdline
+build/perf/configure.log
+validation
+jtreg-evidence
+
+2026-10-19T16:41:08.0018035Z   if-no-files-found: error
+2026-10-19T16:41:08.0018219Z   retention-days: 30
+2026-10-19T16:41:08.0018414Z   compression-level: 6
+2026-10-19T16:41:08.0018616Z   overwrite: false
+2026-10-19T16:41:08.0018777Z   include-hidden-files: false
+2026-10-19T16:41:08.0018981Z   archive: true
+2026-10-19T16:41:08.0019153Z env:
+2026-10-19T16:41:08.0019316Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-19T16:41:08.0019519Z   MSYS2_PATH_TYPE: minimal
+2026-10-19T16:41:08.0019684Z   CHERE_INVOKING: 1
+2026-10-19T16:41:08.0019870Z   CONFIGURE_DEV_NO_MOLD: 1
+2026-10-19T16:41:08.0020038Z   GIT_CONFIG_COUNT: 1
+2026-10-19T16:41:08.0020263Z   GIT_CONFIG_KEY_0: core.autocrlf
+2026-10-19T16:41:08.0020447Z   GIT_CONFIG_VALUE_0: false
+2026-10-19T16:41:08.0020629Z   MSYSTEM: MINGW64
+2026-10-19T16:41:08.0020816Z ##[endgroup]
+2026-10-19T16:41:08.3335816Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-10-19T16:41:08.3338184Z The least common ancestor is D:\a\openjdk-jdk27u\openjdk-jdk27u. This will be the root directory of the artifact
+2026-10-19T16:41:08.3338596Z With the provided path, there will be 842 files uploaded
+2026-10-19T16:41:08.3342338Z Artifact name is valid!
+2026-10-19T16:41:08.3343157Z Root directory input is valid!
+2026-10-19T16:41:08.6342718Z Uploading artifact: stringzilla-paired-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0.zip
+2026-10-19T16:41:08.6368831Z Beginning upload of artifact content to blob storage
+2026-10-19T16:41:09.6500948Z Uploaded bytes 4037923
+2026-10-19T16:41:09.6862604Z Finished uploading artifact content to blob storage!
+2026-10-19T16:41:09.6863464Z SHA256 digest of uploaded artifact is 47f83fee34977aa82a45b27d2275ec5473b47d9de6475f3b55e0d3daa6b593f0
+2026-10-19T16:41:09.6863986Z Finalizing artifact upload
+2026-10-19T16:41:10.0265199Z Artifact stringzilla-paired-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0 successfully finalized. Artifact ID 12203902183
+2026-10-19T16:41:10.0265949Z Artifact stringzilla-paired-msvc-3b318ed7cf5b903c1b1065624e91d5d4eadbf4d0 has been successfully uploaded! Final size is 4037923 bytes. Artifact ID is 12203902183
+2026-10-19T16:41:10.0272939Z Artifact download URL: https://github.com/re-thc/openjdk-jdk27u/actions/runs/39281225979/artifacts/12203902183
+2026-10-19T16:41:10.0624110Z Post job cleanup.
+2026-10-19T16:41:10.0627610Z ##[start-action display=Check cache for BootJDK;id=__c5f6c773-fa79-48d8-80c9-39fc0b86bcf2.get-cached-bootjdk]
+2026-10-19T16:41:10.0723592Z Post job cleanup.
+2026-10-19T16:41:10.2290148Z [command]"C:\Program Files\Git\usr\bin\tar.exe" --posix -cf cache.tzst --exclude cache.tzst -P -C D:/a/openjdk-jdk27u/openjdk-jdk27u --files-from manifest.txt --force-local --use-compress-program "zstd -T0"
+2026-10-19T16:41:12.1482357Z Sent 11783955 of 213110547 (5.5%), 11.2 MBs/sec
+2026-10-19T16:41:12.8615847Z Sent 213110547 of 213110547 (100.0%), 118.6 MBs/sec
+2026-10-19T16:41:13.0962784Z Cache saved with key: boot-jdk-windows-x64-2dd2d92c9374cd49a120fe9d916732840bf6bb9f0e0cc29794917a3c08b99c5f
+2026-10-19T16:41:13.1076299Z ##[end-action id=__c5f6c773-fa79-48d8-80c9-39fc0b86bcf2.get-cached-bootjdk;outcome=success;conclusion=success;duration_ms=3044]
+2026-10-19T16:41:13.1203491Z Post job cleanup.
+2026-10-19T16:41:13.2324465Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-19T16:41:13.2602591Z git version 2.56.0.windows.2
+2026-10-19T16:41:13.2655284Z Temporarily overriding HOME='D:\a\_temp\416254d3-b658-453c-affc-4b87daa69af1' before making global git config changes
+2026-10-19T16:41:13.2655940Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-19T16:41:13.2662889Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\openjdk-jdk27u\openjdk-jdk27u\.stringzilla-driver
+2026-10-19T16:41:13.2934953Z Removing SSH command configuration
+2026-10-19T16:41:13.2942661Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-19T16:41:13.3203468Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-19T16:41:13.7458455Z Removing HTTP extra header
+2026-10-19T16:41:13.7465902Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-19T16:41:13.7723522Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-19T16:41:14.1946712Z Removing includeIf entries pointing to credentials config files
+2026-10-19T16:41:14.1956122Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-19T16:41:14.2232780Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-19T16:41:14.6876709Z Post job cleanup.
+2026-10-19T16:41:14.7985576Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-19T16:41:14.8242778Z git version 2.56.0.windows.2
+2026-10-19T16:41:14.8290280Z Temporarily overriding HOME='D:\a\_temp\79d9040c-7394-49cd-a0cb-28ce6cb0e6a8' before making global git config changes
+2026-10-19T16:41:14.8290695Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-19T16:41:14.8297800Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\openjdk-jdk27u\openjdk-jdk27u
+2026-10-19T16:41:14.8584782Z Removing SSH command configuration
+2026-10-19T16:41:14.8593476Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-19T16:41:14.8867869Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-19T16:41:15.2945730Z Removing HTTP extra header
+2026-10-19T16:41:15.2954137Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-19T16:41:15.3221286Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-19T16:41:15.7268720Z Removing includeIf entries pointing to credentials config files
+2026-10-19T16:41:15.7278506Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-19T16:41:15.7560631Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-19T16:41:16.2496749Z Cleaning up orphan processes
