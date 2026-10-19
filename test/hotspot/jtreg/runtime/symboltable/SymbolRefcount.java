@@ -72,22 +72,23 @@ public class SymbolRefcount {
         testDuplicateNames(0);
         testDuplicateNames(6000);
         testDuplicateNames(8192);
-        testParsingLimitsAndErrors();
+        testParsingLimitsAndErrors(8192);
+        testParsingLimitsAndErrors(65535);
         testConcurrentNames();
     }
 
-    // Exercise a maximum-size pool and failures during and after parsing.
-    static void testParsingLimitsAndErrors() throws Exception {
-        byte[] valid = parsingClass(65535, 0);
+    // Exercise both parser paths and failures during and after parsing.
+    static void testParsingLimitsAndErrors(int poolCount) throws Exception {
+        byte[] valid = parsingClass(poolCount, 0);
         WhiteBox wb = WhiteBox.getWhiteBox();
-        String retained = "batchedParsing10";
+        String retained = "batchedParsing" + poolCount + "_10";
         int before = wb.getSymbolRefcount(retained);
         Class<?> parsed = new Loader().define("ParsingLimits", valid);
         Asserts.assertEquals(parsed.getName(), "ParsingLimits");
         int references = wb.getSymbolRefcount(retained);
         Asserts.assertEquals(references, before + 1);
         for (int error = 1; error <= 4; error++) {
-            byte[] malformed = parsingClass(65535, error);
+            byte[] malformed = parsingClass(poolCount, error);
             try {
                 new Loader().define("ParsingLimits", malformed);
                 throw new AssertionError("Accepted malformed class, case " + error);
@@ -129,7 +130,7 @@ public class SymbolRefcount {
                 break;
             }
             out.writeByte(1);
-            out.writeUTF(i == 5 ? "x".repeat(65535) : "batchedParsing" + i);
+            out.writeUTF(i == 5 ? "x".repeat(65535) : "batchedParsing" + poolCount + "_" + i);
         }
         if (error != 3) {
             out.writeShort(error == 4 ? 0x0211 : 0x0021); // a final interface is invalid
