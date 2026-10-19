@@ -1,0 +1,226 @@
+{
+  "schema": "stringzilla-final-sky-jit-index-v1",
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "runtime_source": "34e3d8f99b053eec3f8f7e0d4c458de662a7d977",
+  "workflow": {
+    "run_id": 39192550770,
+    "head": "15e24d0ee00eee195f9fb9e7af78aeb6dfb221ce",
+    "job_id": 117868310603,
+    "attempt": 1,
+    "conclusion": "success",
+    "steps": [
+      {
+        "number": 1,
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "number": 2,
+        "name": "Initialize containers",
+        "conclusion": "success"
+      },
+      {
+        "number": 3,
+        "name": "Install runtime and diagnostic-reader tools",
+        "conclusion": "success"
+      },
+      {
+        "number": 4,
+        "name": "Run actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955",
+        "conclusion": "success"
+      },
+      {
+        "number": 5,
+        "name": "Check diagnostic parser without Java",
+        "conclusion": "success"
+      },
+      {
+        "number": 6,
+        "name": "Reuse complete images and saved classes for exact C2 witnesses",
+        "conclusion": "success"
+      },
+      {
+        "number": 7,
+        "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "conclusion": "success"
+      },
+      {
+        "number": 8,
+        "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "conclusion": "success"
+      },
+      {
+        "number": 15,
+        "name": "Post Run actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955",
+        "conclusion": "success"
+      },
+      {
+        "number": 16,
+        "name": "Stop containers",
+        "conclusion": "success"
+      },
+      {
+        "number": 17,
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "script_blob": "9b81a14cbb573da8f96804f73ce506e1dbe0e0c6",
+  "test_blob": "16d8a58fa61f341df5421f0c1571c123f72db80c",
+  "binding_blob": "41ebed64cec7817b990413427ab1548f8b5ef127",
+  "workflow_blob": "d5758588763e59c5e7c8d371c759d3ce63385e72",
+  "decoded_log_sha256": "df75e8851a5479e750bf6f87156f8d4f4981a18b43053818aab61f2ffe31b8a5",
+  "artifacts": [
+    {
+      "id": 12163440807,
+      "name": "stringzilla-final-sky-jit-compact-15e24d0ee00eee195f9fb9e7af78aeb6dfb221ce",
+      "digest": "sha256:7ac04cb84125d8769e69f0d3204e9d1ac53975297ec9c4c1bc0ea0b9486b2030",
+      "size": 105115
+    },
+    {
+      "id": 12163166643,
+      "name": "stringzilla-final-sky-jit-original-private-15e24d0ee00eee195f9fb9e7af78aeb6dfb221ce",
+      "digest": "sha256:0660c31d2771a9c64c05d72f9d05bcd71ed8199021a53905e12490b9024c7443",
+      "size": 2262681
+    }
+  ],
+  "complete": {
+    "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+    "diagnostic_runs": 24,
+    "full_assembly_scope": "Original private GHA diagnostic artifact only",
+    "harness_sha256": "9a078da5c6f00cbbeea83c77e08e9a6465b4eda4666aa3936fdeb75e6f2d30e6",
+    "harness_unchanged": true,
+    "image_hashes": {
+      "fork": "e0aacd2826d66f0a43e2782b87747247d40621573bb83c18c6c9d09556b45a1e",
+      "original": "be4c017b8a04e2a8c400ea3753a5a3816d0b354b8da6ca8b1952cee61e9442c9"
+    },
+    "images_unchanged": true,
+    "new_java_compilations": 0,
+    "new_jdk_builds": 0,
+    "pair_receipt_sha256": "0d48ea5db591c76ee481030e7fad16cd23177130952da99580c6d2ac1a68666a",
+    "physical": {
+      "available": true,
+      "container": "ubuntu@sha256:42527649dbc4f9197a6073f426f488cbff0e9cc9f2afce32d91c383e4875634a",
+      "missing": [],
+      "physical_backend": "avx512",
+      "timing_evidence": false
+    },
+    "producer": {
+      "artifact_id": 12151804060,
+      "digest": "sha256:6aa4e64d7515f97403162bde6c85ead38dfd2f4981818b04656f4ee6cefe401f",
+      "job": {
+        "completed_at": "2026-10-18T22:03:04Z",
+        "conclusion": "success",
+        "created_at": "2026-10-18T21:02:29Z",
+        "head_sha": "8bd517316162bc8a638b8339da47ac9c36b40d1e",
+        "id": 117789053163,
+        "name": "avx2_pair / avx2 validated pair",
+        "run_attempt": 1,
+        "run_id": 39164738566,
+        "started_at": "2026-10-18T21:50:14Z",
+        "status": "completed"
+      },
+      "name": "stringzilla-final-pair-avx2-8bd517316162bc8a638b8339da47ac9c36b40d1e"
+    },
+    "runtime_attestation": {
+      "disabled": {
+        "actual": "3:2:false",
+        "expected": "3:2:false",
+        "returncode": 0
+      },
+      "enabled": {
+        "actual": "3:2:true",
+        "expected": "3:2:true",
+        "returncode": 0
+      },
+      "original": {
+        "actual": "3",
+        "expected": "3",
+        "returncode": 0
+      }
+    },
+    "saved_harness_result": {
+      "artifact_id": 12159124281,
+      "digest": "sha256:37ba5ad438a955974fd68da79d6a082ecf6484fc0cacd22bfda718692ee112c4",
+      "job": {
+        "completed_at": "2026-10-19T02:24:47Z",
+        "conclusion": "success",
+        "created_at": "2026-10-18T23:26:28Z",
+        "head_sha": "99609a52cd38d5eb3ef093e7c13f30c7215d96d1",
+        "id": 117820226854,
+        "name": "avx512_controls (c2) / Final SKY c2 slot 3 on ubuntu-26.04",
+        "run_attempt": 1,
+        "run_id": 39174300598,
+        "started_at": "2026-10-19T01:24:25Z",
+        "status": "completed"
+      },
+      "name": "stringzilla-final-results-avx512-c2-99609a52cd38d5eb3ef093e7c13f30c7215d96d1-attempt1"
+    },
+    "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+    "timing_evidence": false
+  },
+  "case_count": 8,
+  "control_count": 24,
+  "timing_evidence": false,
+  "scope_limit": "Diagnostic code summaries include cold paths and are not executed-path traces. Mnemonic hashes ignore operands and do not prove identical hot paths. Diagnostic JMH scores are excluded.",
+  "files": [
+    {
+      "case": "forward-utf16-char-miss",
+      "sha": "657f8afa1a97d89e6b0662f097f6985ca6a1a1f3",
+      "sha256": "2e77a7cd6e0032825b6941c81153b775fd25dce8148b3df2dd192b397bbe03df",
+      "bytes": 107853,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/forward-utf16-char-miss.json"
+    },
+    {
+      "case": "mixed16-end",
+      "sha": "d3a781d0220c00263252506c6a8fc3f04e3c782d",
+      "sha256": "63b8666acd7abb23b8821fd48d3d71b72c8dcffa3c7f5a92a4011ada52fe7235",
+      "bytes": 165668,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/mixed16-end.json"
+    },
+    {
+      "case": "mixed31-end",
+      "sha": "6591ca8e96746bf99f6313e2250830c7242d52f1",
+      "sha256": "f414295dc3359e8c0c0b42403c47de6c4c0cd3095278ddfe8f1346399bcbb7f3",
+      "bytes": 168402,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/mixed31-end.json"
+    },
+    {
+      "case": "mixed32-end",
+      "sha": "4525a9399b9cd11aab3e3b00da77c91ef905ce4f",
+      "sha256": "406eebf74fc1e10ce860730bc8daca34ef320896f5efef8213793cec7f6b3a06",
+      "bytes": 168476,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/mixed32-end.json"
+    },
+    {
+      "case": "latin-char-end",
+      "sha": "b2fbb1dbdab96e164aa84c52249210d44681dda0",
+      "sha256": "4c30ea0b46ce6d387ba4b1f84b8ea879436856fbb1dfa86a746d32179071da04",
+      "bytes": 106559,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/latin-char-end.json"
+    },
+    {
+      "case": "latin4-end",
+      "sha": "06244a67c0e8499e0cfdf1da85c22ce3a4015994",
+      "sha256": "656864508108c099680f75aae4d2dcb056db756832c36e86bfd3a0ed2cb6cb8c",
+      "bytes": 137081,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/latin4-end.json"
+    },
+    {
+      "case": "utf16-char-end",
+      "sha": "4708a9cab11b7428fa6e1f04e83dcec8c3714a34",
+      "sha256": "cab0fb77567b9589f8ed04a0780d31097816d529f32f10b0dff443eb9f8d08cb",
+      "bytes": 104419,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/utf16-char-end.json"
+    },
+    {
+      "case": "utf16-equal",
+      "sha": "9fd7e07378b594f94382b4c9c4cd9e716d13e3ae",
+      "sha256": "ecc2521d2368645fae1410728b7e842007b474beace1c42558a376e7323ec652",
+      "bytes": 76607,
+      "path": "doc/stringzilla/measurements/34e3d8f9/sky-jit/utf16-equal.json"
+    }
+  ]
+}

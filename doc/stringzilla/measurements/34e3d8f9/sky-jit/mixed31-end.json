@@ -1,0 +1,4804 @@
+{
+  "schema": "stringzilla-final-sky-jit-case-v1",
+  "timing_evidence": false,
+  "workflow": {
+    "run_id": 39192550770,
+    "head": "15e24d0ee00eee195f9fb9e7af78aeb6dfb221ce",
+    "job_id": 117868310603
+  },
+  "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+  "base": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+  "records": [
+    {
+      "backend": "avx512",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "case": "mixed31-end",
+      "code_hash_scope": "Raw main-code bytes when complete; mnemonic sequence hash ignores operands. No equality of hot paths is inferred from either alone.",
+      "control": "original",
+      "inlining_lines": [
+        "81    2 %  b        jdk.internal.util.ArraysSupport::unsignedHashCode @ 8 (36 bytes)",
+        "83    3    b        jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)",
+        "182   61    b        java.lang.String::isLatin1 (19 bytes)",
+        "203   84    b        java.lang.String::coder (15 bytes)",
+        "205   86    b        java.lang.String::value (5 bytes)",
+        "215  102    b        java.lang.String::length (11 bytes)",
+        "@ 6   java.lang.String::coder (15 bytes)   inline (hot)",
+        "220  114    b        java.lang.String::charAt (25 bytes)",
+        "@ 1   java.lang.String::isLatin1 (19 bytes)   inline (hot)",
+        "@ 12   java.lang.StringLatin1::charAt (15 bytes)   inline (hot)",
+        "@ 3   java.lang.String::checkIndex (10 bytes)   inline (hot)",
+        "221  115    b        java.lang.StringLatin1::charAt (15 bytes)",
+        "221  116    b        java.lang.String::checkIndex (10 bytes)",
+        "257  142 %  b        java.lang.StringLatin1::indexOfChar0 @ 7 (33 bytes)",
+        "259  143    b        java.lang.StringLatin1::indexOfChar0 (33 bytes)",
+        "278  163    b        java.lang.String::hashCode (60 bytes)",
+        "@ 17   java.lang.String::isLatin1 (19 bytes)   inline (hot)",
+        "@ 27   java.lang.StringLatin1::hashCode (9 bytes)   inline (hot)",
+        "@ 5   jdk.internal.util.ArraysSupport::hashCodeOfUnsigned (55 bytes)   failed to inline: too big",
+        "302  168    b        java.lang.String::equals (56 bytes)",
+        "Compiled method (c2) 303  168             java.lang.String::equals (56 bytes)",
+        "@ 44   java.lang.StringLatin1::equals (16 bytes)   inline (hot)",
+        "@ 12   java.lang.StringLatin1::equals0 (36 bytes)   (intrinsic)",
+        "@ 66   java.lang.String::equals (56 bytes)   inline (hot)",
+        "@ 5   java.lang.String::charAt (25 bytes)   failed to inline: low call site frequency",
+        "@ 57   java.lang.String::intern (0 bytes)   failed to inline: native method",
+        "342  191 %  b        java.lang.StringLatin1::indexOf0 @ 46 (137 bytes)",
+        "345  192    b        java.lang.StringLatin1::indexOf0 (137 bytes)",
+        "352  195    b        java.lang.StringLatin1::lastIndexOf (40 bytes)",
+        "Compiled method (c2) 354  195             java.lang.StringLatin1::lastIndexOf (40 bytes)",
+        "@ 1   java.lang.StringLatin1::canEncode (17 bytes)   inline (hot)",
+        "374  192             java.lang.StringLatin1::indexOf0 (137 bytes)   made not entrant: uncommon trap",
+        "@ 26   java.lang.String::equals (56 bytes)   inline (hot)",
+        "430  243    b        java.lang.StringUTF16::putChar (58 bytes)",
+        "431  244    b        java.lang.StringUTF16::getChar (64 bytes)",
+        "432   61             java.lang.String::isLatin1 (19 bytes)   made not entrant: uncommon trap",
+        "434  245 %  b        java.lang.StringUTF16::lastIndexOfLatin1 @ 143 (184 bytes)",
+        "Compiled method (c2) 437  245 %           java.lang.StringUTF16::lastIndexOfLatin1 @ 143 (184 bytes)",
+        "@ 156   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "447  246    b        java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)",
+        "Compiled method (c2) 450  246             java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)",
+        "@ 88   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)",
+        "@ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)",
+        "@ 5   java.lang.String::checkIndex (10 bytes)   failed to inline: low call site frequency",
+        "@ 101   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "455  247    b        java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 459  247             java.lang.String::lastIndexOf (10 bytes)",
+        "@ 3   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)",
+        "@ 5   java.lang.String::coder (15 bytes)   inline (hot)",
+        "@ 9   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)",
+        "@ 7   java.lang.String::coder (15 bytes)   inline (hot)",
+        "@ 13   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)",
+        "469  248    b        java.lang.String::lastIndexOf (18 bytes)",
+        "Compiled method (c2) 473  248             java.lang.String::lastIndexOf (18 bytes)",
+        "480  249    b        java.lang.String::lastIndexOf (104 bytes)",
+        "Compiled method (c2) 484  249             java.lang.String::lastIndexOf (104 bytes)",
+        "490  250    b        org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "Compiled method (c2) 494  250             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "@ 8   java.lang.String::lastIndexOf (10 bytes)   inline (hot)",
+        "506  253 %  b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "Compiled method (c2) 511  253 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "@ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand",
+        "526  254    b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "Compiled method (c2) 535  254             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "@ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand",
+        "@ 8   java.lang.String::lastIndexOf (10 bytes)   inline (hot)   inline (hot)",
+        "@ 3   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 6   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 6   java.lang.String::lastIndexOf (18 bytes)   inline (hot)   inline (hot)",
+        "@ 5   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 9   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 14   java.lang.String::lastIndexOf (104 bytes)   inline (hot)   inline (hot)",
+        "@ 7   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 13   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 100   java.lang.StringUTF16::lastIndexOfLatin1 (184 bytes)   inline (hot)   inline (hot)",
+        "@ 88   java.lang.StringUTF16::checkIndex (9 bytes)   inline (hot)   inline (hot)",
+        "@ 2   java.lang.StringUTF16::length (5 bytes)   inline (hot)   inline (hot)",
+        "@ 5   java.lang.String::checkIndex (10 bytes)   failed to inline: low call site frequency   failed to inline: low call site frequency",
+        "@ 101   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "@ 156   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "934  253 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap",
+        "939  259 %  b        java.lang.StringLatin1::replace @ 78 (197 bytes)",
+        "@ 122   java.lang.String::<init> (15 bytes)   inline (hot)",
+        "943  260    b        java.lang.StringLatin1::replace (197 bytes)",
+        "@ 1   java.lang.StringLatin1::canEncode (13 bytes)   inline (hot)",
+        "@ 41   java.lang.StringLatin1::canEncode (13 bytes)   inline (hot)",
+        "Compiled method (c2) 1468  265 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "1487  266    b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "Compiled method (c2) 1495  266             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)"
+      ],
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=3",
+        "-XX:-TieredCompilation",
+        "-Xbatch",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintFlagsFinal",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,java.lang.String::indexOf",
+        "-XX:CompileCommand=print,java.lang.String::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.String::equals",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::indexOf",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::indexOfChar0",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOfLatin1",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOfLatin1Native",
+        "-XX:CompileCommand=print,java.lang.StringLatin1::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.StringLatin1::equals",
+        "-XX:CompileCommand=print,java.lang.StringZilla::matchesUTF16Latin1Reverse",
+        "-XX:CompileCommand=print,java.lang.StringZilla::matchesUTF16Latin1JavaReverse",
+        "-XX:CompileCommand=print,java.lang.StringZilla::lastIndexOfLatin1JavaC2",
+        "-XX:CompileCommand=print,java.lang.StringZilla::equalsLatin1",
+        "-XX:CompileCommand=print,jdk.internal.util.ArraysSupport::mismatch",
+        "-XX:CompileCommand=print,jdk.internal.util.ArraysSupport::vectorizedMismatch",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+      ],
+      "last_printed_jmh_stub": {
+        "calls": 37,
+        "conditional_branches": 50,
+        "decoded_instructions": 594,
+        "entry_mod4096": 1024,
+        "entry_mod64": 0,
+        "machine_listing_sha256": "6f99792d601037b05ac2981caa9ab1e8f61a3860735cab037a5fac2c8d58dfa1",
+        "main_code_bytes": 2768,
+        "main_code_sha256": "e0b3f614d4bb1fffab7364d75d23889c7ba6aed9bd910c414e4c8cafff0caabc",
+        "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+        "mnemonics_sha256": "441e38edd3d39da37264eea11c34a47335c45c3c298cd678296252e3e458ef9a",
+        "osr": false,
+        "selected_callframes": [
+          {
+            "bci": 1,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 3,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 6,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 13,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 14,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 28,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 37,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 44,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 53,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 87,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 100,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 4,
+            "method": "java.lang.String::length"
+          },
+          {
+            "bci": 5,
+            "method": "java.lang.StringUTF16::checkIndex"
+          },
+          {
+            "bci": 77,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 88,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 95,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 106,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 147,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 170,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 8,
+            "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+          },
+          {
+            "bci": 10,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 17,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 20,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 30,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          }
+        ],
+        "stack_subtract_bytes": [
+          80
+        ],
+        "timing_evidence": false,
+        "vector_instruction_offsets_mod64": [
+          46,
+          50,
+          55
+        ]
+      },
+      "log": "original-mixed31-end.log",
+      "log_sha256": "874720cc2fd6e4a236abdb5bb9847ca689612da6f5de819d2565110a66898f96",
+      "nmethod_scope": "Captured during the exact warmed diagnostic; main-code counts include cold branches and are not an executed hot-path trace.",
+      "nmethods": [
+        {
+          "calls": 5,
+          "conditional_branches": 25,
+          "decoded_instructions": 143,
+          "entry_mod4096": 2176,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "e76a4dce468139731b79fee0b1d9994093d2dd50ad1b6d4fdda4d00336e3f57a",
+          "main_code_bytes": 584,
+          "main_code_sha256": "2484d59cbfab37886eb579fe3f9cf11d343187966f78916bbe2d668ef4abb2ab",
+          "method": "java.lang.String::equals",
+          "mnemonics_sha256": "f5976e5b24e46efb90e524183efea1e7d4b37058238721eede84925a190128fa",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 8,
+              "method": "java.lang.String::equals"
+            },
+            {
+              "bci": 33,
+              "method": "java.lang.String::equals"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::equals"
+            },
+            {
+              "bci": 1,
+              "method": "java.lang.StringLatin1::equals"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.StringLatin1::equals"
+            }
+          ],
+          "stack_subtract_bytes": [
+            32
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            55,
+            60,
+            1,
+            5,
+            30,
+            36,
+            42,
+            46,
+            23,
+            28,
+            33,
+            37,
+            3,
+            7,
+            17,
+            60,
+            28,
+            56,
+            24
+          ]
+        },
+        {
+          "calls": 5,
+          "conditional_branches": 18,
+          "decoded_instructions": 104,
+          "entry_mod4096": 640,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "1b601625ab3f94ee0df36b701c31276806df31fb7ba5691f107d2cb48d0a6f9b",
+          "main_code_bytes": 400,
+          "main_code_sha256": "907c4f522f009d02466433d32c5ea0ca645a5d396e4dce72a14d6baa798334e6",
+          "method": "java.lang.StringLatin1::lastIndexOf",
+          "mnemonics_sha256": "d20512a7929e0e170b64c351a8df45cecaa8fe6e8aa5674f306d3f74d1410cfd",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 4,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 11,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            32
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 7,
+          "conditional_branches": 19,
+          "decoded_instructions": 164,
+          "entry_mod4096": 384,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "98c01aed0876acca36e930c18790a0d23f78b5811b2c784924b84e653108b842",
+          "main_code_bytes": 712,
+          "main_code_sha256": "671f83aadfc22a06ecb8fa579fa2d73ce01fc1546f71af5dc24251d2dc46a074",
+          "method": "java.lang.StringUTF16::lastIndexOfLatin1",
+          "mnemonics_sha256": "3c7da3a870785e11130a027cf41fb70a614d6a0ebe20ac1f8ff8db6ff8356bba",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 143,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 165,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            80
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 9,
+          "conditional_branches": 19,
+          "decoded_instructions": 174,
+          "entry_mod4096": 3456,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "1fe065702d1c89be65e18de8ac48d265b566119d8ac48066ee9dbeb7a0bacd8c",
+          "main_code_bytes": 736,
+          "main_code_sha256": "71021707dd8263d33d66c5e88342ec6d5647dde6428b171f004e13d96d33e436",
+          "method": "java.lang.StringUTF16::lastIndexOfLatin1",
+          "mnemonics_sha256": "74583edacd07d560e32354fcfac7f072f6cd67c9f8424f0e8bc3d3ff367effd8",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 2,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 1,
+              "method": "java.lang.StringUTF16::length"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 15,
+          "conditional_branches": 25,
+          "decoded_instructions": 241,
+          "entry_mod4096": 896,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "80fb83bc01e8a46047bb9d3506313d4e951d7667b94cf940be2369180e10046b",
+          "main_code_bytes": 1048,
+          "main_code_sha256": "38f6f5fd648fe46b906ad93bad417f521c83c4b5f9021cb9faad127d065ed325",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "e6df9ee79e0f12f43060b568c8b33e07b5daaa9442ad7ac5c7cf12b6b05da964",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 15,
+          "conditional_branches": 25,
+          "decoded_instructions": 238,
+          "entry_mod4096": 3584,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "cbab1ecfbbbfa6981539b040231b00746ef0ba9f5e337741ca9076bbb5a3538b",
+          "main_code_bytes": 1040,
+          "main_code_sha256": "74faf2278d00320fe890dead6c702a9564d9d579b61159938f5d3fe155b32c3a",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "89a073084fe9103316c661de26aaa202e687c71d3a1f2428c1bbf98686bbeee4",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 9,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 15,
+          "conditional_branches": 24,
+          "decoded_instructions": 226,
+          "entry_mod4096": 2304,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "8710741929a2ba2cd79e5fe6c2bd7d1eb7ac8a1db25da8a89008b150a88126f0",
+          "main_code_bytes": 984,
+          "main_code_sha256": "55317be722aa0b80bb97b11208337b913be528abd1b161d2cc1f64f2dffbedc5",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "4da2f929840c62b929be68ccf1655402bd3241001eef21cda125cfb1c421b336",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 2,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 1,
+              "method": "java.lang.StringUTF16::length"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 16,
+          "conditional_branches": 25,
+          "decoded_instructions": 250,
+          "entry_mod4096": 512,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "34bed87c7d8c8298a965321222c2f76bd34c518d450326b8054a8e387eeceef3",
+          "main_code_bytes": 1096,
+          "main_code_sha256": "d7c38d24ed11904828be711d0f14c5e609a5c2474d48f468e24aca491c2aa642",
+          "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+          "mnemonics_sha256": "ad9c8215c3ad42e9e94a09f9a8ddb9c00f77750dd2031a6ae426ace4d952677e",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 23,
+          "conditional_branches": 32,
+          "decoded_instructions": 416,
+          "entry_mod4096": 3712,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "0a21895f6e8ba44db6814155f673b0bd8262835f359d530ffd544bcc09843e37",
+          "main_code_bytes": 1904,
+          "main_code_sha256": "0be06f7d59ff96f2a2804a7572312c475b8ddb4271071f510bd0694f9d8628f7",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "d7ad79185898858e925b7aebf0144dde892318cfa2dff92f69d972da306f382d",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            112
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 38,
+          "conditional_branches": 49,
+          "decoded_instructions": 591,
+          "entry_mod4096": 640,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "226348ad59baaf2ee6977a28a60d9e36372aecab361a1063e4e1a3ff9adc5505",
+          "main_code_bytes": 2720,
+          "main_code_sha256": "414728bc0c3fc647eb13e4f1abd25653d6b22683ad18f8fe091ee8a10a7eeab0",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "275be866ee4ed120bc8dad71379bf08e58389d25bc5251a7ac6a8c485f96907c",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 10,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            80
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 23,
+          "conditional_branches": 34,
+          "decoded_instructions": 435,
+          "entry_mod4096": 640,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "e81bf47226ad9e042f474c30d48ba01c73d3ebb1b5c7c301e77a12fa9c6fea43",
+          "main_code_bytes": 2008,
+          "main_code_sha256": "017e0007af55113201532c1a5ecb9e50f0a080efd864ee5582b4d1c9d3f8f103",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "f7485732670458655ad2867dfc56f4864500c932a8a8ca4dfd8d3af4b4ab6841",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 40,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            112
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            17,
+            21,
+            26
+          ]
+        },
+        {
+          "calls": 37,
+          "conditional_branches": 50,
+          "decoded_instructions": 594,
+          "entry_mod4096": 1024,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "6f99792d601037b05ac2981caa9ab1e8f61a3860735cab037a5fac2c8d58dfa1",
+          "main_code_bytes": 2768,
+          "main_code_sha256": "e0b3f614d4bb1fffab7364d75d23889c7ba6aed9bd910c414e4c8cafff0caabc",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "441e38edd3d39da37264eea11c34a47335c45c3c298cd678296252e3e458ef9a",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 87,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 100,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 5,
+              "method": "java.lang.StringUTF16::checkIndex"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 88,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 95,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 106,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 147,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 170,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 10,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            80
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            46,
+            50,
+            55
+          ]
+        }
+      ],
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "END"
+      },
+      "selected_flags": {
+        "FreqInlineSize": [
+          "325"
+        ],
+        "InlineSmallCode": [
+          "1000"
+        ],
+        "MaxInlineSize": [
+          "35"
+        ],
+        "MaxVectorSize": [
+          "64"
+        ],
+        "ObjectAlignmentInBytes": [
+          "8"
+        ],
+        "SpecialStringIndexOf": [
+          "true"
+        ],
+        "UseAVX": [
+          "3"
+        ],
+        "UseCompressedClassPointers": [],
+        "UseCompressedOops": [
+          "true"
+        ],
+        "UseSSE": [
+          "4"
+        ],
+        "UseSSE42Intrinsics": [
+          "true"
+        ],
+        "UseStringZillaIntrinsics": []
+      },
+      "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "tier": "c2",
+      "timing_evidence": false
+    },
+    {
+      "backend": "avx512",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "case": "mixed31-end",
+      "code_hash_scope": "Raw main-code bytes when complete; mnemonic sequence hash ignores operands. No equality of hot paths is inferred from either alone.",
+      "control": "enabled",
+      "inlining_lines": [
+        "83    2 %  b        jdk.internal.util.ArraysSupport::unsignedHashCode @ 8 (36 bytes)",
+        "86    3    b        jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)",
+        "186   61    b        java.lang.String::isLatin1 (19 bytes)",
+        "207   84    b        java.lang.String::coder (15 bytes)",
+        "209   86    b        java.lang.String::value (5 bytes)",
+        "219  102    b        java.lang.String::length (11 bytes)",
+        "@ 6   java.lang.String::coder (15 bytes)   inline (hot)",
+        "225  114    b        java.lang.String::charAt (25 bytes)",
+        "@ 1   java.lang.String::isLatin1 (19 bytes)   inline (hot)",
+        "@ 12   java.lang.StringLatin1::charAt (15 bytes)   inline (hot)",
+        "@ 3   java.lang.String::checkIndex (10 bytes)   inline (hot)",
+        "226  115    b        java.lang.StringLatin1::charAt (15 bytes)",
+        "226  116    b        java.lang.String::checkIndex (10 bytes)",
+        "258  143 %  b        java.lang.StringLatin1::indexOfChar0 @ 59 (85 bytes)",
+        "260  144    b        java.lang.StringLatin1::indexOfChar0 (85 bytes)",
+        "279  164    b        java.lang.String::hashCode (60 bytes)",
+        "@ 17   java.lang.String::isLatin1 (19 bytes)   inline (hot)",
+        "@ 27   java.lang.StringLatin1::hashCode (9 bytes)   inline (hot)",
+        "@ 5   jdk.internal.util.ArraysSupport::hashCodeOfUnsigned (55 bytes)   failed to inline: too big",
+        "307  168    b        java.lang.String::equals (56 bytes)",
+        "Compiled method (c2) 308  168             java.lang.String::equals (56 bytes)",
+        "@ 44   java.lang.StringLatin1::equals (43 bytes)   (intrinsic)",
+        "@ 66   java.lang.String::equals (56 bytes)   inline (hot)",
+        "@ 5   java.lang.String::charAt (25 bytes)   failed to inline: low call site frequency",
+        "@ 57   java.lang.String::intern (0 bytes)   failed to inline: native method",
+        "352  195    b        java.lang.StringLatin1::lastIndexOf (133 bytes)",
+        "Compiled method (c2) 355  195             java.lang.StringLatin1::lastIndexOf (133 bytes)",
+        "@ 1   java.lang.StringLatin1::canEncode (17 bytes)   inline (hot)",
+        "@ 26   java.lang.String::equals (56 bytes)   inline (hot)",
+        "431  242    b        java.lang.StringUTF16::putChar (58 bytes)",
+        "432   61             java.lang.String::isLatin1 (19 bytes)   made not entrant: uncommon trap",
+        "432  243    b        java.lang.StringZilla::compilerTier (2 bytes)",
+        "435  244    b        java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 437  244             java.lang.String::lastIndexOf (10 bytes)",
+        "@ 3   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "@ 5   java.lang.String::coder (15 bytes)   inline (hot)",
+        "@ 9   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "@ 7   java.lang.String::coder (15 bytes)   inline (hot)",
+        "@ 13   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "@ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)",
+        "@ 315   java.lang.StringZilla::probeMixedImmediate (67 bytes)   force inline by annotation",
+        "@ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation",
+        "447  245    b        java.lang.String::lastIndexOf (18 bytes)",
+        "Compiled method (c2) 448  245             java.lang.String::lastIndexOf (18 bytes)",
+        "453  246    b        java.lang.String::lastIndexOf (163 bytes)",
+        "Compiled method (c2) 454  246             java.lang.String::lastIndexOf (163 bytes)",
+        "459  247    b        java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)",
+        "Compiled method (c2) 461  247             java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)",
+        "465  248    b        java.lang.StringZilla::probeMixedImmediate (67 bytes)",
+        "466  249    b        java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)",
+        "Compiled method (c2) 466  249             java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)",
+        "@ 7   java.lang.StringZilla::rfindUTF16Latin1 (0 bytes)   (intrinsic)",
+        "471  250    b        org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "Compiled method (c2) 473  250             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "@ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "480  244             java.lang.String::lastIndexOf (10 bytes)   made not entrant: uncommon trap",
+        "481  250             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   made not entrant: uncommon trap",
+        "481  245             java.lang.String::lastIndexOf (18 bytes)   made not entrant: uncommon trap",
+        "481  246             java.lang.String::lastIndexOf (163 bytes)   made not entrant: uncommon trap",
+        "481  247             java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   made not entrant: uncommon trap",
+        "483  253    b        org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "Compiled method (c2) 488  253             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "@ 324   java.lang.StringZilla::useMixedRangeIntrinsic (37 bytes)   force inline by annotation",
+        "@ 335   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "@ 357   java.lang.StringUTF16::indexOfLatin1_0 (26 bytes)   (intrinsic)",
+        "@ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation",
+        "@ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation",
+        "@ 24   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "@ 64   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "505  254    b        java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 510  254             java.lang.String::lastIndexOf (10 bytes)",
+        "525  255 %  b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "Compiled method (c2) 532  255 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "@ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand",
+        "559  256    b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "Compiled method (c2) 573  256             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "@ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand",
+        "@ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation",
+        "@ 3   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 6   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation",
+        "@ 5   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 9   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)   inline (hot)",
+        "@ 7   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 13   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation   force inline by annotation",
+        "@ 169   java.lang.StringZilla::compilerTier (2 bytes)   (intrinsic)   (intrinsic)",
+        "@ 315   java.lang.StringZilla::probeMixedImmediate (67 bytes)   force inline by annotation   force inline by annotation",
+        "@ 324   java.lang.StringZilla::useMixedRangeIntrinsic (37 bytes)   force inline by annotation   force inline by annotation",
+        "@ 335   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "@ 357   java.lang.StringUTF16::indexOfLatin1_0 (26 bytes)   (intrinsic)   (intrinsic)",
+        "@ 373   java.lang.StringZilla::matchesUTF16Latin1Reverse (90 bytes)   force inline by annotation   force inline by annotation",
+        "@ 86   java.lang.StringZilla::matchesUTF16Latin1JavaReverse (85 bytes)   force inline by annotation   force inline by annotation",
+        "@ 24   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "@ 64   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "@ 473   java.lang.StringUTF16::lastIndexOfLatin1Native (64 bytes)   failed to inline: don't inline by annotation   failed to inline: don't inline by annotation",
+        "933  255 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap",
+        "938  261 %  b        java.lang.StringLatin1::replace @ 78 (197 bytes)",
+        "@ 122   java.lang.String::<init> (15 bytes)   inline (hot)",
+        "942  262    b        java.lang.StringLatin1::replace (197 bytes)",
+        "@ 1   java.lang.StringLatin1::canEncode (13 bytes)   inline (hot)",
+        "@ 41   java.lang.StringLatin1::canEncode (13 bytes)   inline (hot)",
+        "Compiled method (c2) 1463  267 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "1493  268    b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "Compiled method (c2) 1506  268             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)"
+      ],
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=3",
+        "-XX:-TieredCompilation",
+        "-XX:+UseStringZillaIntrinsics",
+        "-Xbatch",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintFlagsFinal",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,java.lang.String::indexOf",
+        "-XX:CompileCommand=print,java.lang.String::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.String::equals",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::indexOf",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::indexOfChar0",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOfLatin1",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOfLatin1Native",
+        "-XX:CompileCommand=print,java.lang.StringLatin1::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.StringLatin1::equals",
+        "-XX:CompileCommand=print,java.lang.StringZilla::matchesUTF16Latin1Reverse",
+        "-XX:CompileCommand=print,java.lang.StringZilla::matchesUTF16Latin1JavaReverse",
+        "-XX:CompileCommand=print,java.lang.StringZilla::lastIndexOfLatin1JavaC2",
+        "-XX:CompileCommand=print,java.lang.StringZilla::equalsLatin1",
+        "-XX:CompileCommand=print,jdk.internal.util.ArraysSupport::mismatch",
+        "-XX:CompileCommand=print,jdk.internal.util.ArraysSupport::vectorizedMismatch",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+      ],
+      "last_printed_jmh_stub": {
+        "calls": 48,
+        "conditional_branches": 113,
+        "decoded_instructions": 1172,
+        "entry_mod4096": 1536,
+        "entry_mod64": 0,
+        "machine_listing_sha256": "a1e5606e2e5b8640d1e962d638bac7a0577807011dab59e46b0997ac69d43132",
+        "main_code_bytes": 5064,
+        "main_code_sha256": "832e9d8e9d453d55644b1d1795795deb16064839a75f3be37d9dab5f4ed3ac20",
+        "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+        "mnemonics_sha256": "ddf1dab2a8c67c49bb7c0677e910934cb663b7714cc792c0c50cd92392fa751e",
+        "osr": false,
+        "selected_callframes": [
+          {
+            "bci": 1,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 3,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 6,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 13,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 14,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 28,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 37,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 44,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 53,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 145,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 159,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 4,
+            "method": "java.lang.String::length"
+          },
+          {
+            "bci": 25,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 31,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 123,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 140,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 146,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 291,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 297,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 342,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 373,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 384,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 416,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 473,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 30,
+            "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+          },
+          {
+            "bci": 55,
+            "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+          },
+          {
+            "bci": 86,
+            "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+          },
+          {
+            "bci": 8,
+            "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+          },
+          {
+            "bci": 10,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 17,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 20,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 30,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 33,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          }
+        ],
+        "stack_subtract_bytes": [
+          16,
+          96
+        ],
+        "timing_evidence": false,
+        "vector_instruction_offsets_mod64": [
+          41,
+          20,
+          52,
+          47,
+          6,
+          32,
+          49,
+          34,
+          43,
+          16,
+          20,
+          25,
+          31,
+          48,
+          7,
+          33,
+          50,
+          35,
+          12,
+          0,
+          20,
+          28,
+          36,
+          28,
+          24,
+          40,
+          32,
+          36,
+          40,
+          44,
+          40,
+          44,
+          32,
+          28,
+          60,
+          12,
+          36,
+          52,
+          8,
+          20,
+          32,
+          20,
+          12,
+          28,
+          16,
+          24,
+          32,
+          40,
+          44,
+          4,
+          8,
+          40,
+          0,
+          24,
+          48,
+          8,
+          28,
+          52,
+          12,
+          36,
+          60,
+          20
+        ]
+      },
+      "log": "enabled-mixed31-end.log",
+      "log_sha256": "bd743bc877b850a0c05d66650af6a473c5f94a0df68ef63e13a5cf07e0278306",
+      "nmethod_scope": "Captured during the exact warmed diagnostic; main-code counts include cold branches and are not an executed hot-path trace.",
+      "nmethods": [
+        {
+          "calls": 3,
+          "conditional_branches": 25,
+          "decoded_instructions": 133,
+          "entry_mod4096": 1152,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "af8a054a82eda25bbfcb9e2b803f87cd669067a8887d85f41f1ede57255b41a5",
+          "main_code_bytes": 528,
+          "main_code_sha256": "5d37bace2549ca658267437867c3c6289ec4df6e183c693f1d2dcda96ec62ec3",
+          "method": "java.lang.String::equals",
+          "mnemonics_sha256": "95005faf2f90bfc76b82df9a3bb2c7cbb6912c27a801118980598c246516172b",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 8,
+              "method": "java.lang.String::equals"
+            },
+            {
+              "bci": 33,
+              "method": "java.lang.String::equals"
+            }
+          ],
+          "stack_subtract_bytes": [
+            32
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            56,
+            61,
+            2,
+            6,
+            31,
+            37,
+            43,
+            47,
+            24,
+            29,
+            34,
+            38,
+            4,
+            8,
+            18,
+            60,
+            28
+          ]
+        },
+        {
+          "calls": 10,
+          "conditional_branches": 29,
+          "decoded_instructions": 183,
+          "entry_mod4096": 3328,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "e00867036d2246e50f32b7d5661d9e515acaee545f087598e74e26e71ac6b886",
+          "main_code_bytes": 760,
+          "main_code_sha256": "540e8c8aeb7c9a2c929321a01b909acbe74654f2c9a91f73d9a6680f5136f485",
+          "method": "java.lang.StringLatin1::lastIndexOf",
+          "mnemonics_sha256": "d9a988f8dbda3d4ff47517645707fc250851672f6330739bc5a2914c8d2a2ec3",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 4,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 11,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 24,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 54,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 116,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 128,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 16,
+          "conditional_branches": 13,
+          "decoded_instructions": 162,
+          "entry_mod4096": 1408,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "624aaa1c2823e7cbafddbb952a3d8c8f32013e5e32679cd72ba450b3e35a86f0",
+          "main_code_bytes": 752,
+          "main_code_sha256": "91d76eea66ba76bb47201dadfe00e6f300a4273655af920103315fbda68b5cee",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "4960bafad3a9ad161b1b896c600c78426097d7cae6d938684f49c56032e377d1",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 318,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 16,
+          "conditional_branches": 13,
+          "decoded_instructions": 165,
+          "entry_mod4096": 256,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "9b7efbb87fb0112726ea8e58defc25731d74745e32e1de133ad45ae52a47381b",
+          "main_code_bytes": 768,
+          "main_code_sha256": "09404d26d715db92c9223708dbd775626bf02b28358d85ab93e611985f037669",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "9129a2e91045833fda5bc9a4ad12ae1c776fb644e88ddf0810ef676758ab692f",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 9,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 318,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 16,
+          "conditional_branches": 12,
+          "decoded_instructions": 156,
+          "entry_mod4096": 3328,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "ec1d2c2f422fea07c621399707c7de11d52e4516f12faf13885b1340dcff7c3f",
+          "main_code_bytes": 704,
+          "main_code_sha256": "c425f864e72ee53f27c5bf320b51fd0c8df72dad75f4e2f4182fd6b76e53408c",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "c131bedab239f1871a6a6f79a157afe051568f3b1c6a7b2c6664d058d4abf75a",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 318,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 10,
+          "conditional_branches": 8,
+          "decoded_instructions": 108,
+          "entry_mod4096": 2560,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "fa087ec85159ec735ac0a0b74104da2c1b34480db14c5340853dfb76d443644a",
+          "main_code_bytes": 488,
+          "main_code_sha256": "78b7fa069a3a4a0edf45c303027d30b1090a9e7fc5bafa9f972dfb888f615bbb",
+          "method": "java.lang.StringUTF16::lastIndexOfLatin1",
+          "mnemonics_sha256": "740e6ed1ba7882cc070ee4535c3e44717e0648074d5469c41b8d46847bd5cea8",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 9,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 297,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 318,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 4,
+          "conditional_branches": 4,
+          "decoded_instructions": 53,
+          "entry_mod4096": 1792,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "20ab5e5d491fe0777341ae42c7cbb3d900512c0fd4d7ea7109a25aa9fdf686a9",
+          "main_code_bytes": 216,
+          "main_code_sha256": "3ab58fe4f2a40eba516f8ae1416aa99430f5bdf0760e185dddfd93d45a1c3b4b",
+          "method": "java.lang.StringUTF16::lastIndexOfLatin1Native",
+          "mnemonics_sha256": "1b492261294348849f09b9fdc8b953cace11920771f9ffa36945faca18056c2f",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 16,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1Native"
+            },
+            {
+              "bci": 42,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1Native"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            1,
+            36,
+            12,
+            36
+          ]
+        },
+        {
+          "calls": 17,
+          "conditional_branches": 13,
+          "decoded_instructions": 169,
+          "entry_mod4096": 384,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "2ef7694d78a5488092da4369c5c5577f085c098afb0eec6d57853d2ab2951759",
+          "main_code_bytes": 792,
+          "main_code_sha256": "f86652754ba381566d16bd0070bc69dade0fbbe33cc2c99bce964bcdfd1dc05c",
+          "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+          "mnemonics_sha256": "707969aa7c29c7b0ca85cee7471fbfd3747b8178508bf9e21ed3b4971ef07d99",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 318,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 22,
+          "conditional_branches": 57,
+          "decoded_instructions": 488,
+          "entry_mod4096": 2048,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "3b3efda682d2765f01df5274aca092faa2b1da4f9930b6dafeb03e712846cd1d",
+          "main_code_bytes": 2040,
+          "main_code_sha256": "e481b16c14c7773251605f92e85251adeaf3fd63eb67f6187899dba0ec7c3966",
+          "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+          "mnemonics_sha256": "85941064c553a29f60fec65eaf1be5ba129f617ed795340f5ed696de2249f649",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 342,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 373,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 384,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 416,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 473,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 30,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 55,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 86,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            16,
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            56,
+            14,
+            0,
+            23,
+            49,
+            2,
+            51,
+            36,
+            24,
+            16,
+            4,
+            56,
+            16,
+            44,
+            32,
+            56,
+            36,
+            16,
+            60,
+            36,
+            16,
+            16,
+            12,
+            39,
+            60,
+            20,
+            44,
+            4
+          ]
+        },
+        {
+          "calls": 21,
+          "conditional_branches": 57,
+          "decoded_instructions": 494,
+          "entry_mod4096": 3200,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "6d5cd5afb3ba28293dc0f343ed237f7f828481d75fd2c63ed72e185d4bdfb8d9",
+          "main_code_bytes": 2040,
+          "main_code_sha256": "58ad378852b22c22f37e482dbbaa47f0e4acb9100072f54b741e48bf3d1017de",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "40503af31d6880627b6a172934c5491b8408005cc4dd212cdb8f38157a76955e",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 342,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 373,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 384,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 416,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 473,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 30,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 55,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 86,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+            }
+          ],
+          "stack_subtract_bytes": [
+            16,
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            52,
+            10,
+            62,
+            21,
+            47,
+            0,
+            49,
+            48,
+            36,
+            32,
+            20,
+            8,
+            32,
+            60,
+            52,
+            12,
+            60,
+            44,
+            24,
+            0,
+            44,
+            44,
+            36,
+            63,
+            20,
+            44,
+            4
+          ]
+        },
+        {
+          "calls": 27,
+          "conditional_branches": 65,
+          "decoded_instructions": 740,
+          "entry_mod4096": 3968,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "500421e00aaf0b1e2aaf32785913a70ff1db16bb4be555bedfadeb30b803283e",
+          "main_code_bytes": 3256,
+          "main_code_sha256": "5fdf53afed8f2dcb84a279320d407f8a2a8c8c96f4198760700ffac12b543b34",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "451a3b7718601e44a5eb0c2dd05bdb226c10be1ec5430c87af2f7ce9b7adb9d6",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 342,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 373,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 384,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 416,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 473,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 30,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 55,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 86,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            16,
+            128
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            18,
+            12,
+            58,
+            17,
+            43,
+            60,
+            45,
+            8,
+            52,
+            36,
+            12,
+            52,
+            4,
+            24,
+            4,
+            20,
+            56,
+            28,
+            0,
+            36,
+            16,
+            48,
+            52,
+            56,
+            52,
+            40,
+            59,
+            20,
+            44,
+            4,
+            28
+          ]
+        },
+        {
+          "calls": 49,
+          "conditional_branches": 112,
+          "decoded_instructions": 1186,
+          "entry_mod4096": 3840,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "76413bcb7d2d14bfeaf812f1fe570aafdc5839dbd5d88d8043b530e3068a38e8",
+          "main_code_bytes": 5136,
+          "main_code_sha256": "e558211242465fc2af320fd65f6af6b83be5db618c12a73bc9b66e5e9f09189b",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "8bdf1297a300a62a30d1fda98854bb9b06b8d3f999bcc28f5b9cbc018e2954d0",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 297,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 342,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 373,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 384,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 416,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 473,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 30,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 55,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 86,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 10,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            16,
+            96
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            41,
+            20,
+            16,
+            11,
+            34,
+            60,
+            13,
+            62,
+            37,
+            60,
+            22,
+            39,
+            24,
+            16,
+            48,
+            20,
+            28,
+            36,
+            28,
+            24,
+            52,
+            44,
+            48,
+            52,
+            56,
+            28,
+            24,
+            28,
+            32,
+            24,
+            56,
+            8,
+            32,
+            48,
+            4,
+            16,
+            28,
+            16,
+            8,
+            24,
+            12,
+            20,
+            28,
+            36,
+            4,
+            8,
+            32,
+            36,
+            4,
+            28,
+            52,
+            12,
+            36,
+            56,
+            16,
+            40,
+            0,
+            24,
+            48
+          ]
+        },
+        {
+          "calls": 28,
+          "conditional_branches": 66,
+          "decoded_instructions": 750,
+          "entry_mod4096": 1280,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "6fe6d71baf8a4676794a3641b3ec627c359648cdf469e10c7078da3f4472544a",
+          "main_code_bytes": 3312,
+          "main_code_sha256": "0b4c865903c6dfcfeaae43671728c24f1c4ca8ab30c8191bb5b8d567c2b8cca0",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "c8e0a50c28bf6d8723825900e1c1de2e7df3439130464e97577c351c90b0d6ce",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 342,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 373,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 384,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 416,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 473,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 30,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 55,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 86,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 40,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            16,
+            128
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            18,
+            16,
+            15,
+            38,
+            0,
+            17,
+            2,
+            62,
+            40,
+            44,
+            49,
+            55,
+            36,
+            12,
+            56,
+            28,
+            0,
+            12,
+            28,
+            4,
+            16,
+            48,
+            16,
+            48,
+            28,
+            60,
+            44,
+            52,
+            48,
+            48,
+            3,
+            28,
+            52,
+            12,
+            36,
+            60
+          ]
+        },
+        {
+          "calls": 48,
+          "conditional_branches": 113,
+          "decoded_instructions": 1172,
+          "entry_mod4096": 1536,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "a1e5606e2e5b8640d1e962d638bac7a0577807011dab59e46b0997ac69d43132",
+          "main_code_bytes": 5064,
+          "main_code_sha256": "832e9d8e9d453d55644b1d1795795deb16064839a75f3be37d9dab5f4ed3ac20",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "ddf1dab2a8c67c49bb7c0677e910934cb663b7714cc792c0c50cd92392fa751e",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 140,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 146,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 291,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 297,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 342,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 373,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 384,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 416,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 473,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 30,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 55,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1JavaReverse"
+            },
+            {
+              "bci": 86,
+              "method": "java.lang.StringZilla::matchesUTF16Latin1Reverse"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 10,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            16,
+            96
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            41,
+            20,
+            52,
+            47,
+            6,
+            32,
+            49,
+            34,
+            43,
+            16,
+            20,
+            25,
+            31,
+            48,
+            7,
+            33,
+            50,
+            35,
+            12,
+            0,
+            20,
+            28,
+            36,
+            28,
+            24,
+            40,
+            32,
+            36,
+            40,
+            44,
+            40,
+            44,
+            32,
+            28,
+            60,
+            12,
+            36,
+            52,
+            8,
+            20,
+            32,
+            20,
+            12,
+            28,
+            16,
+            24,
+            32,
+            40,
+            44,
+            4,
+            8,
+            40,
+            0,
+            24,
+            48,
+            8,
+            28,
+            52,
+            12,
+            36,
+            60,
+            20
+          ]
+        }
+      ],
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "END"
+      },
+      "selected_flags": {
+        "FreqInlineSize": [
+          "325"
+        ],
+        "InlineSmallCode": [
+          "1000"
+        ],
+        "MaxInlineSize": [
+          "35"
+        ],
+        "MaxVectorSize": [
+          "64"
+        ],
+        "ObjectAlignmentInBytes": [
+          "8"
+        ],
+        "SpecialStringIndexOf": [
+          "true"
+        ],
+        "UseAVX": [
+          "3"
+        ],
+        "UseCompressedClassPointers": [],
+        "UseCompressedOops": [
+          "true"
+        ],
+        "UseSSE": [
+          "4"
+        ],
+        "UseSSE42Intrinsics": [
+          "true"
+        ],
+        "UseStringZillaIntrinsics": [
+          "true"
+        ]
+      },
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "tier": "c2",
+      "timing_evidence": false
+    },
+    {
+      "backend": "avx512",
+      "baseline": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+      "benchmark": "org.openjdk.bench.java.lang.StringZillaSearch.lastIndexOf",
+      "case": "mixed31-end",
+      "code_hash_scope": "Raw main-code bytes when complete; mnemonic sequence hash ignores operands. No equality of hot paths is inferred from either alone.",
+      "control": "disabled",
+      "inlining_lines": [
+        "83    2 %  b        jdk.internal.util.ArraysSupport::unsignedHashCode @ 8 (36 bytes)",
+        "86    3    b        jdk.internal.util.ArraysSupport::unsignedHashCode (36 bytes)",
+        "185   61    b        java.lang.String::isLatin1 (19 bytes)",
+        "207   84    b        java.lang.String::coder (15 bytes)",
+        "209   86    b        java.lang.String::value (5 bytes)",
+        "218  102    b        java.lang.String::length (11 bytes)",
+        "@ 6   java.lang.String::coder (15 bytes)   inline (hot)",
+        "224  114    b        java.lang.String::charAt (25 bytes)",
+        "@ 1   java.lang.String::isLatin1 (19 bytes)   inline (hot)",
+        "@ 12   java.lang.StringLatin1::charAt (15 bytes)   inline (hot)",
+        "@ 3   java.lang.String::checkIndex (10 bytes)   inline (hot)",
+        "225  115    b        java.lang.StringLatin1::charAt (15 bytes)",
+        "225  116    b        java.lang.String::checkIndex (10 bytes)",
+        "256  143 %  b        java.lang.StringLatin1::indexOfChar0 @ 59 (85 bytes)",
+        "258  144    b        java.lang.StringLatin1::indexOfChar0 (85 bytes)",
+        "277  164    b        java.lang.String::hashCode (60 bytes)",
+        "@ 17   java.lang.String::isLatin1 (19 bytes)   inline (hot)",
+        "@ 27   java.lang.StringLatin1::hashCode (9 bytes)   inline (hot)",
+        "@ 5   jdk.internal.util.ArraysSupport::hashCodeOfUnsigned (55 bytes)   failed to inline: too big",
+        "304  168    b        java.lang.String::equals (56 bytes)",
+        "Compiled method (c2) 305  168             java.lang.String::equals (56 bytes)",
+        "@ 44   java.lang.StringLatin1::equals (43 bytes)   (intrinsic)",
+        "@ 66   java.lang.String::equals (56 bytes)   inline (hot)",
+        "@ 5   java.lang.String::charAt (25 bytes)   failed to inline: low call site frequency",
+        "@ 57   java.lang.String::intern (0 bytes)   failed to inline: native method",
+        "344  193 %  b        java.lang.StringLatin1::indexOfJava @ 46 (137 bytes)",
+        "346  194    b        java.lang.StringLatin1::indexOfJava (137 bytes)",
+        "355  197    b        java.lang.StringLatin1::lastIndexOf (133 bytes)",
+        "Compiled method (c2) 358  197             java.lang.StringLatin1::lastIndexOf (133 bytes)",
+        "@ 1   java.lang.StringLatin1::canEncode (17 bytes)   inline (hot)",
+        "378  194             java.lang.StringLatin1::indexOfJava (137 bytes)   made not entrant: uncommon trap",
+        "@ 26   java.lang.String::equals (56 bytes)   inline (hot)",
+        "435  244    b        java.lang.StringUTF16::putChar (58 bytes)",
+        "436  245    b        java.lang.StringUTF16::getChar (64 bytes)",
+        "437   61             java.lang.String::isLatin1 (19 bytes)   made not entrant: uncommon trap",
+        "439  246 %  b        java.lang.StringUTF16::lastIndexOfLatin1 @ 814 (855 bytes)",
+        "Compiled method (c2) 442  246 %           java.lang.StringUTF16::lastIndexOfLatin1 @ 814 (855 bytes)",
+        "@ 827   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "452  247    b        java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)",
+        "Compiled method (c2) 455  247             java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)",
+        "@ 772   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)",
+        "461  248    b        java.lang.String::lastIndexOf (10 bytes)",
+        "Compiled method (c2) 466  248             java.lang.String::lastIndexOf (10 bytes)",
+        "@ 3   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation",
+        "@ 5   java.lang.String::coder (15 bytes)   inline (hot)",
+        "@ 9   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)",
+        "@ 7   java.lang.String::coder (15 bytes)   inline (hot)",
+        "@ 13   java.lang.String::length (11 bytes)   inline (hot)",
+        "@ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation",
+        "474  249    b        java.lang.String::lastIndexOf (18 bytes)",
+        "Compiled method (c2) 478  249             java.lang.String::lastIndexOf (18 bytes)",
+        "489  250    b        java.lang.String::lastIndexOf (163 bytes)",
+        "Compiled method (c2) 493  250             java.lang.String::lastIndexOf (163 bytes)",
+        "501  251    b        org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "Compiled method (c2) 505  251             org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)",
+        "@ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation",
+        "515  254 %  b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "Compiled method (c2) 523  254 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "@ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand",
+        "539  255    b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "Compiled method (c2) 549  255             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "@ 17   org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf (12 bytes)   force inline by CompileCommand   force inline by CompileCommand",
+        "@ 8   java.lang.String::lastIndexOf (10 bytes)   force inline by annotation   force inline by annotation",
+        "@ 3   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 6   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 6   java.lang.String::lastIndexOf (18 bytes)   force inline by annotation   force inline by annotation",
+        "@ 5   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 9   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 14   java.lang.String::lastIndexOf (163 bytes)   inline (hot)   inline (hot)",
+        "@ 7   java.lang.String::coder (15 bytes)   inline (hot)   inline (hot)",
+        "@ 13   java.lang.String::length (11 bytes)   inline (hot)   inline (hot)",
+        "@ 159   java.lang.StringUTF16::lastIndexOfLatin1 (855 bytes)   force inline by annotation   force inline by annotation",
+        "@ 772   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "@ 827   java.lang.StringUTF16::getChar (64 bytes)   (intrinsic)   (intrinsic)",
+        "938  254 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)   made not entrant: uncommon trap",
+        "943  260 %  b        java.lang.StringLatin1::replace @ 78 (197 bytes)",
+        "@ 122   java.lang.String::<init> (15 bytes)   inline (hot)",
+        "947  261    b        java.lang.StringLatin1::replace (197 bytes)",
+        "@ 1   java.lang.StringLatin1::canEncode (13 bytes)   inline (hot)",
+        "@ 41   java.lang.StringLatin1::canEncode (13 bytes)   inline (hot)",
+        "Compiled method (c2) 1472  266 %           org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub @ 13 (57 bytes)",
+        "1495  267    b        org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)",
+        "Compiled method (c2) 1505  267             org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub (57 bytes)"
+      ],
+      "jvmArgs": [
+        "-XX:ActiveProcessorCount=1",
+        "-XX:+UseSerialGC",
+        "-Xshare:off",
+        "-XX:UseAVX=3",
+        "-XX:-TieredCompilation",
+        "-XX:-UseStringZillaIntrinsics",
+        "-Xbatch",
+        "-XX:+UnlockDiagnosticVMOptions",
+        "-XX:+PrintFlagsFinal",
+        "-XX:+PrintCompilation",
+        "-XX:+PrintInlining",
+        "-XX:+PrintIntrinsics",
+        "-XX:CompileCommand=print,java.lang.String::indexOf",
+        "-XX:CompileCommand=print,java.lang.String::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.String::equals",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::indexOf",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::indexOfChar0",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOfLatin1",
+        "-XX:CompileCommand=print,java.lang.StringUTF16::lastIndexOfLatin1Native",
+        "-XX:CompileCommand=print,java.lang.StringLatin1::lastIndexOf",
+        "-XX:CompileCommand=print,java.lang.StringLatin1::equals",
+        "-XX:CompileCommand=print,java.lang.StringZilla::matchesUTF16Latin1Reverse",
+        "-XX:CompileCommand=print,java.lang.StringZilla::matchesUTF16Latin1JavaReverse",
+        "-XX:CompileCommand=print,java.lang.StringZilla::lastIndexOfLatin1JavaC2",
+        "-XX:CompileCommand=print,java.lang.StringZilla::equalsLatin1",
+        "-XX:CompileCommand=print,jdk.internal.util.ArraysSupport::mismatch",
+        "-XX:CompileCommand=print,jdk.internal.util.ArraysSupport::vectorizedMismatch",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+        "-XX:CompileCommand=print,org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+      ],
+      "last_printed_jmh_stub": {
+        "calls": 41,
+        "conditional_branches": 56,
+        "decoded_instructions": 712,
+        "entry_mod4096": 1536,
+        "entry_mod64": 0,
+        "machine_listing_sha256": "52fe8d59e69b66b534599cb2b83c0e26602168c85b4a4cab2e2ea9d112bb944a",
+        "main_code_bytes": 3272,
+        "main_code_sha256": "1037c10ac4840d5bcb7eb0c1db8544a61e8f4c5da351ce1ff59df810bbe8ab49",
+        "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+        "mnemonics_sha256": "45771d5fefd50e5d32dc96d47c79160e391895ccb9795ded823d0325c7cd3328",
+        "osr": false,
+        "selected_callframes": [
+          {
+            "bci": 1,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 3,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 6,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 13,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 14,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 28,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 37,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 44,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 53,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 145,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 159,
+            "method": "java.lang.String::lastIndexOf"
+          },
+          {
+            "bci": 4,
+            "method": "java.lang.String::length"
+          },
+          {
+            "bci": 25,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 31,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 123,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 754,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 766,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 777,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 818,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 841,
+            "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+          },
+          {
+            "bci": 8,
+            "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+          },
+          {
+            "bci": 10,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 17,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 20,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 30,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          },
+          {
+            "bci": 33,
+            "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+          }
+        ],
+        "stack_subtract_bytes": [
+          80
+        ],
+        "timing_evidence": false,
+        "vector_instruction_offsets_mod64": [
+          9,
+          13,
+          18
+        ]
+      },
+      "log": "disabled-mixed31-end.log",
+      "log_sha256": "b05ca8a00b0bb65609d3e09e06f7198b4b803580392831d6b7aabaacef1c45dd",
+      "nmethod_scope": "Captured during the exact warmed diagnostic; main-code counts include cold branches and are not an executed hot-path trace.",
+      "nmethods": [
+        {
+          "calls": 3,
+          "conditional_branches": 25,
+          "decoded_instructions": 133,
+          "entry_mod4096": 3712,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "47265a6bc913071e8c96c2947d86f8577661f89c5e94284ca8e599437c9ef0b6",
+          "main_code_bytes": 528,
+          "main_code_sha256": "7729274dfbb72e474a35479b901ef7fe0256058c153c7d427135329e62735fbf",
+          "method": "java.lang.String::equals",
+          "mnemonics_sha256": "95005faf2f90bfc76b82df9a3bb2c7cbb6912c27a801118980598c246516172b",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 8,
+              "method": "java.lang.String::equals"
+            },
+            {
+              "bci": 33,
+              "method": "java.lang.String::equals"
+            }
+          ],
+          "stack_subtract_bytes": [
+            32
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            56,
+            61,
+            2,
+            6,
+            31,
+            37,
+            43,
+            47,
+            24,
+            29,
+            34,
+            38,
+            4,
+            8,
+            18,
+            60,
+            28
+          ]
+        },
+        {
+          "calls": 10,
+          "conditional_branches": 29,
+          "decoded_instructions": 183,
+          "entry_mod4096": 1664,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "65e0236f1e63dc83442ce5f4a7ab304c8554706395d672149aa153f3b57c830c",
+          "main_code_bytes": 760,
+          "main_code_sha256": "834443be6e2e37a219588d3e8a810b3fb78e9ef54955f5a534e9f2f92e8d6edf",
+          "method": "java.lang.StringLatin1::lastIndexOf",
+          "mnemonics_sha256": "d9a988f8dbda3d4ff47517645707fc250851672f6330739bc5a2914c8d2a2ec3",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 4,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 11,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 24,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 54,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 77,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 116,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            },
+            {
+              "bci": 128,
+              "method": "java.lang.StringLatin1::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 7,
+          "conditional_branches": 19,
+          "decoded_instructions": 164,
+          "entry_mod4096": 2688,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "5c06f27c8eced45109dc4f42b47179aa8eb3062dbf717329db2778c2d3280d81",
+          "main_code_bytes": 712,
+          "main_code_sha256": "f85b2bee8b41e1701183bff546b965bdc3f3f734b4fca147a52b0e3ffd437d86",
+          "method": "java.lang.StringUTF16::lastIndexOfLatin1",
+          "mnemonics_sha256": "3c7da3a870785e11130a027cf41fb70a614d6a0ebe20ac1f8ff8db6ff8356bba",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 814,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 836,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            80
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 12,
+          "conditional_branches": 23,
+          "decoded_instructions": 204,
+          "entry_mod4096": 1408,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "363287532f1cf90e7359558f504347f458e507a6fcbaf1f28e20e34b08535688",
+          "main_code_bytes": 888,
+          "main_code_sha256": "e31856068d7a1eefef633a311245c06f079b196d2fa0d1afd788388c8e27cc28",
+          "method": "java.lang.StringUTF16::lastIndexOfLatin1",
+          "mnemonics_sha256": "17b94b8174c916f0096edfefea514474ccbd9eac7904871930b9f2ab370be611",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 9,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 17,
+          "conditional_branches": 28,
+          "decoded_instructions": 283,
+          "entry_mod4096": 3968,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "a55ed52b3a10a9d534abf0a94687b0e55d524588c80d458831488d3c61506ca2",
+          "main_code_bytes": 1232,
+          "main_code_sha256": "cc6d005b3d3bbaf3ea03e136ae2582f9a7af8af96251a102ab2cbd72aef71c06",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "f044170a48b4e0fd47e91530d12daacf9b1031a351f9e759ff2d674d648d05e3",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 17,
+          "conditional_branches": 28,
+          "decoded_instructions": 286,
+          "entry_mod4096": 2432,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "c2301e8db1650602d66c3215a76c76ba3cfbac7610aa70078d07c2bc29c22f24",
+          "main_code_bytes": 1240,
+          "main_code_sha256": "da7c993f2880faee43bb80ba1bf32ae4b56d4944038209973981e86cb4be9146",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "fd562545ccd8fb214b4ed6e35a8767fdd610018d1bbd4a6c2ace1a6639a2d78f",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 9,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 17,
+          "conditional_branches": 27,
+          "decoded_instructions": 251,
+          "entry_mod4096": 1280,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "c975f27f4c75b05b75ad16d24d46db1e8f869fcb49668ac3ecfb884d3d2cce9c",
+          "main_code_bytes": 1072,
+          "main_code_sha256": "268ed121b1fc26ef598dee3d0cdbbc015401b16bd4ce7056b86d541593d1a84c",
+          "method": "java.lang.String::lastIndexOf",
+          "mnemonics_sha256": "ce6dfde1a35937786344efbd64b2ec59b0c49fc6260e7b718a0147a4c38eeb1f",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 19,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            }
+          ],
+          "stack_subtract_bytes": [
+            48
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 18,
+          "conditional_branches": 28,
+          "decoded_instructions": 288,
+          "entry_mod4096": 3712,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "07b9a0934097974acc6466d169915771cf354e47231bc5468ce858abdb4b697d",
+          "main_code_bytes": 1272,
+          "main_code_sha256": "4e17a5d121671d160230f9cb7e5687b4d45a8d7d4f05836057dd697f428063b1",
+          "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf",
+          "mnemonics_sha256": "45abf93832923cd18dbfcaa0c7d4969654e4cb8332ca55a6c0fd20369514ad7c",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            }
+          ],
+          "stack_subtract_bytes": [
+            64
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 23,
+          "conditional_branches": 36,
+          "decoded_instructions": 427,
+          "entry_mod4096": 640,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "55df76038e6a5acbf75bf9104ed4c5f505394070f073a0b1142d9864db0e4af9",
+          "main_code_bytes": 1960,
+          "main_code_sha256": "4c87058e6936be7874bc7de23d4eef3c31fecc8d032d86164895acc74adeddc7",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "fe800cb0317adee81e27b3dbf3c12af8606665e9351fcd3f616719112a1ee903",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            112
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 42,
+          "conditional_branches": 55,
+          "decoded_instructions": 707,
+          "entry_mod4096": 896,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "e7f7763e14adf3eed7034bbb81fc9a84d5a99227cd7604ad3bb67966a365291b",
+          "main_code_bytes": 3208,
+          "main_code_sha256": "c797aa0f382ceb98c32e6e16a30651a2f67464afe72b96774ce6e0b675048058",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "c3c490b59c62d1436fa3ca8fa70310d96318898573e8d3b851cb281e73c5d6f9",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 10,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            80
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": []
+        },
+        {
+          "calls": 24,
+          "conditional_branches": 37,
+          "decoded_instructions": 508,
+          "entry_mod4096": 512,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "3ebbbf39bec5c8530df55efb81b34a0f66be5fe34851027fdb8d5e6aac029ea4",
+          "main_code_bytes": 2352,
+          "main_code_sha256": "f517725a66bc112e6516da8d34836b782a07e1265353d3a6c2a6b893179ec5d9",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "cfc564dda3d0e6f506cee44e7d9fd312c50c52f5a362baf543901ce4a145e310",
+          "osr": true,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 40,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            112
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            39,
+            43,
+            48
+          ]
+        },
+        {
+          "calls": 41,
+          "conditional_branches": 56,
+          "decoded_instructions": 712,
+          "entry_mod4096": 1536,
+          "entry_mod64": 0,
+          "machine_listing_sha256": "52fe8d59e69b66b534599cb2b83c0e26602168c85b4a4cab2e2ea9d112bb944a",
+          "main_code_bytes": 3272,
+          "main_code_sha256": "1037c10ac4840d5bcb7eb0c1db8544a61e8f4c5da351ce1ff59df810bbe8ab49",
+          "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub",
+          "mnemonics_sha256": "45771d5fefd50e5d32dc96d47c79160e391895ccb9795ded823d0325c7cd3328",
+          "osr": false,
+          "selected_callframes": [
+            {
+              "bci": 1,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 3,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 6,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 13,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 14,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 28,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 37,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 44,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 53,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 145,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 159,
+              "method": "java.lang.String::lastIndexOf"
+            },
+            {
+              "bci": 4,
+              "method": "java.lang.String::length"
+            },
+            {
+              "bci": 25,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 31,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 123,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 754,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 766,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 777,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 818,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 841,
+              "method": "java.lang.StringUTF16::lastIndexOfLatin1"
+            },
+            {
+              "bci": 8,
+              "method": "org.openjdk.bench.java.lang.StringZillaSearch::lastIndexOf"
+            },
+            {
+              "bci": 10,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 17,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 20,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 30,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            },
+            {
+              "bci": 33,
+              "method": "org.openjdk.bench.java.lang.jmh_generated.StringZillaSearch_lastIndexOf_jmhTest::lastIndexOf_avgt_jmhStub"
+            }
+          ],
+          "stack_subtract_bytes": [
+            80
+          ],
+          "timing_evidence": false,
+          "vector_instruction_offsets_mod64": [
+            9,
+            13,
+            18
+          ]
+        }
+      ],
+      "params": {
+        "coder": "MIXED",
+        "length": "4096",
+        "needleLength": "31",
+        "position": "END"
+      },
+      "selected_flags": {
+        "FreqInlineSize": [
+          "325"
+        ],
+        "InlineSmallCode": [
+          "1000"
+        ],
+        "MaxInlineSize": [
+          "35"
+        ],
+        "MaxVectorSize": [
+          "64"
+        ],
+        "ObjectAlignmentInBytes": [
+          "8"
+        ],
+        "SpecialStringIndexOf": [
+          "true"
+        ],
+        "UseAVX": [
+          "3"
+        ],
+        "UseCompressedClassPointers": [],
+        "UseCompressedOops": [
+          "true"
+        ],
+        "UseSSE": [
+          "4"
+        ],
+        "UseSSE42Intrinsics": [
+          "true"
+        ],
+        "UseStringZillaIntrinsics": [
+          "false"
+        ]
+      },
+      "source": "916ba895e834378e3f7eac7f030fc4abff641d33",
+      "tier": "c2",
+      "timing_evidence": false
+    }
+  ]
+}
