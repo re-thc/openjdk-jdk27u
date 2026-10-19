@@ -4443,10 +4443,11 @@ final class DualPivotQuicksort {
                     VM.getSavedProperty("jdk.util.Arrays.useWholeIntSort"));
         }
 
+        @ForceInline
         static void sort(int[] a, int low, int high) {
             int size = high - low;
             if (size >= MIN_WHOLE_INT_SORT_SIZE && size <= MAX_WHOLE_INT_SORT_SIZE
-                    && VM.isBooted() && Config.ENABLED && hasShortFirstIntRun(a, low)) {
+                    && VM.isBooted() && Config.ENABLED) {
                 sortWholeInt(a, low, high);
             } else {
                 DualPivotQuicksort.sort(a, 0, low, high);
@@ -4454,41 +4455,22 @@ final class DualPivotQuicksort {
         }
 
         /**
-         * Tests only the first MIN_FIRST_RUN_SIZE elements without mutation.
-         * A short first run makes tryMergeRuns decline before allocating run
-         * storage. Longer first runs retain original Java run detection.
-         */
-        private static boolean hasShortFirstIntRun(int[] a, int low) {
-            int limit = low + MIN_FIRST_RUN_SIZE, k = low + 1;
-            int first = a[low];
-
-            while (k < limit && a[k] == first) {
-                ++k;
-            }
-            if (k < limit) {
-                if (a[k - 1] < a[k]) {
-                    while (++k < limit && a[k - 1] <= a[k]);
-                } else {
-                    while (++k < limit && a[k - 1] >= a[k]);
-                }
-            }
-            return k < limit;
-        }
-
-        /**
          * Keeps whole-range native sorting out of small callers.
          */
         @DontInline
         private static void sortWholeInt(int[] a, int low, int high) {
-            DualPivotQuicksort.sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high,
-                    IntSorter::sortJavaInt);
+            if (!tryMergeRuns(null, a, low, high - low)) {
+                DualPivotQuicksort.sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high,
+                        IntSorter::sortJavaInt);
+            }
         }
 
         /**
          * Uses the original Java sorter if whole-range intrinsification is absent.
-         * The prefix check leaves input untouched, so the original run detection
-         * and partitioning see the same input as without whole-range dispatch.
+         * A failed run scan may reverse runs. This remains a valid permutation
+         * for the original sorter, which may scan it again before partitioning.
          */
+        @DontInline
         private static void sortJavaInt(int[] a, int low, int high) {
             DualPivotQuicksort.sort(a, 0, low, high);
         }

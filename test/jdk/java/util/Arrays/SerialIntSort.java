@@ -63,7 +63,7 @@ public class SerialIntSort {
             field.setAccessible(true);
             if (field.getBoolean(null)) throw new AssertionError("startup opt-out ignored");
         }
-        checkFirstRunAdmission();
+        checkRunFallback();
         if (args.length == 0 || !args[0].equals("cold")) {
             int[] seed = create(4097, "random", 0), work = seed.clone();
             for (int i = 0; i < 20000; i++) {
@@ -104,13 +104,10 @@ public class SerialIntSort {
         System.out.println("Passed " + checks + " complete-output/range comparisons");
     }
 
-    static void checkFirstRunAdmission() throws Exception {
+    static void checkRunFallback() throws Exception {
         Class<?> dpqs = Class.forName("java.util.DualPivotQuicksort");
         Class<?> sorter = Class.forName("java.util.DualPivotQuicksort$Sorter");
-        var admission = Class.forName("java.util.DualPivotQuicksort$IntSorter")
-                .getDeclaredMethod("hasShortFirstIntRun", int[].class, int.class);
         var merge = dpqs.getDeclaredMethod("tryMergeRuns", sorter, int[].class, int.class, int.class);
-        admission.setAccessible(true);
         merge.setAccessible(true);
         int checks = 0;
         for (int size : new int[] {4096, 65536}) {
@@ -125,24 +122,27 @@ public class SerialIntSort {
                         }
                         a[low + length] = direction > 0 ? Integer.MIN_VALUE : Integer.MAX_VALUE;
                         int[] original = a.clone();
-                        boolean shortRun = (boolean) admission.invoke(null, a, low);
-                        if (shortRun != (length < 16) || !Arrays.equals(a, original)) {
-                            throw new AssertionError("first-run admission " + length + "/" + equalPrefix);
+                        int[] transformed = a.clone();
+                        boolean merged = (boolean) merge.invoke(null, null, transformed, low, size);
+                        if (length < 16 && merged) {
+                            throw new AssertionError("short first run unexpectedly merged");
                         }
-                        if (shortRun && (boolean) merge.invoke(null, null, a.clone(), low, size)) {
-                            throw new AssertionError("admitted input would merge");
+                        if (length < 16 && direction < 0 && Arrays.equals(transformed, original)) {
+                            throw new AssertionError("descending run was not reversed");
                         }
                         int[] expected = original.clone();
                         int[] ordered = radix(Arrays.copyOfRange(original, low, low + size));
                         System.arraycopy(ordered, 0, expected, low, size);
                         Arrays.sort(a, low, low + size);
                         if (!Arrays.equals(a, expected)) throw new AssertionError("first-run output");
+                        Arrays.sort(transformed, low, low + size);
+                        if (!Arrays.equals(transformed, expected)) throw new AssertionError("transformed fallback");
                         checks++;
                     }
                 }
             }
         }
-        System.out.println("Passed " + checks + " first-run admission/output comparisons");
+        System.out.println("Passed " + checks + " first-run/fallback output comparisons");
     }
 
     static int[] create(int n, String pattern, int seed) {
