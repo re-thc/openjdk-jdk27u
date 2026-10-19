@@ -111,7 +111,14 @@ make suites and full profiles. Each profile recorded 56 product javac lists;
 native-record totals were 1,634 on x64 and 1,578 on AArch64, including host
 objects. Five prebuilt jtreg smokes passed locally across HotSpot command-line
 and GC selection, JDK, langtools and lib-test with CI's pinned Boot JDK 26 and
-jtreg 8.2.1. Complete tier1 CI remains pending.
+jtreg 8.2.1.
+
+Later [CI at `cc2239ee101`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39141579708)
+passed all 36 Linux x64/AArch64 and macOS AArch64 tier1 jobs. At
+[`03cd152691d`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39177374811),
+all eight release/fastdebug platform build jobs, including headless make suites
+and full profiles, and all 24 Linux and 12 Windows tier1 jobs passed. Full
+per-platform outcomes are recorded in the linked run.
 
 Native macOS AArch64 images built at `f0824d88112` passed compilation-database,
 profile and direct-link checks under Command Line Tools, without Metal
@@ -126,13 +133,15 @@ was needed. The callback regression does not exercise real configd delivery.
 
 The earlier Mac baseline at `5b3534b7` passed 29 runtime smokes per image,
 including console errors/exit, JNI invocation and signal handling. Those
-smokes, profiles and link inspections were not repeated for the latest
-make-suite confirmation.
+smokes, profiles and link inspections were not repeated for the
+`1f9f7312aa3` make-suite confirmation.
 
-Native Windows x64 validation remains required: inspect `dumpbin /imports` for
-`jli.dll` and `jvm.dll`, check console errors and JNI launch, and confirm
-`javaw.exe` is absent. JLI_Launch embedding remains unrun. Foreign-platform
-graphs, stubbed probes and mocked console I/O do not replace native checks.
+Dedicated native Windows console/JNI validation and `JLI_Launch` embedding
+remain unrun. Direct `dumpbin /imports` inspection of `jli.dll` and `jvm.dll`
+also remains required. The native Windows CI evidence above covers builds,
+launcher/archive checks and profiles, including absence of `javaw.exe`.
+Foreign-platform graphs, stubbed probes and mocked console I/O do not replace
+native checks.
 
 Excluded source/target counts establish removed compilation work. A build-time
 speedup requires measurements with matching hardware, compiler, debug level,
