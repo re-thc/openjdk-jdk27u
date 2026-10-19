@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import tarfile
 import urllib.request
+import urllib.parse
 import zipfile
 
 SOURCE = 'b963d7525943c0540d7753c29f459bf5ad77e2eb'
@@ -19,6 +20,17 @@ PRODUCER = 'a677a179522428c24b85cf76dbf0895f3aa1825f'
 ARTIFACTS = {
     'neon':(12168885783,'2ff97e0af5bee64f0fb410d9befc7afe9697dbcddc2476c7a293c968a3380099'),
     'msvc':(12167948109,'f6591b98c94e0b588bef474cbd41753da19b6874576337c3e0e7c17d9b0da752')}
+
+
+class ArtifactRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirected=super().redirect_request(req,fp,code,msg,headers,newurl)
+        if redirected is not None and urllib.parse.urlsplit(req.full_url).netloc != urllib.parse.urlsplit(newurl).netloc:
+            redirected.remove_header('Authorization')
+        return redirected
+
+
+OPEN=urllib.request.build_opener(ArtifactRedirect()).open
 
 
 def main():
@@ -36,12 +48,12 @@ def main():
         ident,digest=ARTIFACTS[a.backend]
         base='https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/'+str(ident)
         headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}
-        with urllib.request.urlopen(urllib.request.Request(base,headers=headers)) as response:
+        with OPEN(urllib.request.Request(base,headers=headers)) as response:
             meta=json.load(response)
         assert meta['id']==ident and meta['digest']=='sha256:'+digest and not meta['expired']
         assert meta['workflow_run']['id']==39204049909 and meta['workflow_run']['head_sha']==PRODUCER
         archive=root/'retained-pair.zip'
-        with urllib.request.urlopen(urllib.request.Request(base+'/zip',headers=headers)) as src,archive.open('wb') as dst:
+        with OPEN(urllib.request.Request(base+'/zip',headers=headers)) as src,archive.open('wb') as dst:
             shutil.copyfileobj(src,dst)
         assert hashlib.sha256(archive.read_bytes()).hexdigest()==digest
         with zipfile.ZipFile(archive) as z:
@@ -62,11 +74,11 @@ def main():
         ident=12150561563
         digest='bea9bcdcd407c1badace23cbad69aebd75f6d8478693738ea3b8e2b9ec52374d'
         base='https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/'+str(ident)
-        with urllib.request.urlopen(urllib.request.Request(base,headers=headers)) as response:meta=json.load(response)
+        with OPEN(urllib.request.Request(base,headers=headers)) as response:meta=json.load(response)
         assert meta['digest']=='sha256:'+digest and meta['name']=='bundles-jtreg-8.2.1+1' and not meta['expired']
         assert meta['workflow_run']['id']==39164738566
         archive=root/'jtreg.zip'
-        with urllib.request.urlopen(urllib.request.Request(base+'/zip',headers=headers)) as src,archive.open('wb') as dst:
+        with OPEN(urllib.request.Request(base+'/zip',headers=headers)) as src,archive.open('wb') as dst:
             shutil.copyfileobj(src,dst)
         assert hashlib.sha256(archive.read_bytes()).hexdigest()==digest
         with zipfile.ZipFile(archive) as z:
