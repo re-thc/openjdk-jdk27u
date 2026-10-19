@@ -741,7 +741,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     b = vm_intrinsic_control_words[as_int(id)] = !disabled_by_jvm_flags(id);
   }
 
-  // The checked wrapper is a C2 alias of the existing equality operation.
+  // The checked C1 wrapper delegates to the existing equality intrinsic.
   // Disabling _equalsL must also disable that alias.
   return !b || (id == _equalsLChecked && is_disabled_by_flags(_equalsL));
 }

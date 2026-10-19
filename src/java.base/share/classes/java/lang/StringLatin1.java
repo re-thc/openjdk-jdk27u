@@ -106,20 +106,20 @@ final class StringLatin1 {
      *
      * @throws NullPointerException if {@code value} or {@code other} is null
      */
-    @ForceInline
+    // vmIntrinsics::_equalsLChecked (C1 only)
     @IntrinsicCandidate
     static boolean equals(byte[] value, byte[] other) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(other);
-        if (value.length > StringZilla.MAX_BYTES) {
-            return StringZilla.ENABLED ? StringZilla.equalsLarge(value, other) : equalsJava(value, other);
-        }
         return equals0(value, other);
     }
 
     // vmIntrinsics::_equalsL
     @IntrinsicCandidate
     private static boolean equals0(byte[] value, byte[] other) {
+        if (value.length > StringZilla.MAX_BYTES) {
+            return StringZilla.ENABLED ? StringZilla.equalsLarge(value, other) : equalsJava(value, other);
+        }
         return equalsJava(value, other);
     }
 
@@ -796,8 +796,8 @@ final class StringLatin1 {
                 return off;
             }
             int stop = off >= StringZilla.REVERSE_CHAR_PROBE_LENGTH
-                    ? off - StringZilla.REVERSE_CHAR_PROBE_LENGTH : -1;
-            for (off--; off > stop; off--) {
+                    ? off - (StringZilla.REVERSE_CHAR_PROBE_LENGTH - 1) : 0;
+            for (off--; off >= stop; off--) {
                 if (value[off] == (byte)ch) {
                     return off;
                 }

@@ -65,8 +65,8 @@ public class TestStringZillaAvailability {
             throw new AssertionError("String equality must enable C1 independently and retain C2");
         }
         Method checked = latin1.getDeclaredMethod("equals", byte[].class, byte[].class);
-        if (wb.isIntrinsicAvailable(checked, 1) != expected || !wb.isIntrinsicAvailable(checked, 4)) {
-            throw new AssertionError("Checked equality must enable C1 independently and retain C2");
+        if (wb.isIntrinsicAvailable(checked, 1) != expected || wb.isIntrinsicAvailable(checked, 4)) {
+            throw new AssertionError("Checked equality must be C1-only");
         }
     }
 

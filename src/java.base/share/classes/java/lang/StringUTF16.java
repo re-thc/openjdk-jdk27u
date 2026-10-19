@@ -1205,24 +1205,41 @@ final class StringUTF16 {
             checkIndex(tgtCount - 1, tgt);
             checkIndex(fromIndex + tgtCount - 1, src);
 
-            if (tgtCount <= 8 && StringZilla.ENABLED
-                    && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount)) {
-                return fromIndex;
+            if (tgtCount <= 8 && StringZilla.ENABLED) {
+                tier = StringZilla.compilerTier();
+                if (tier == StringZilla.C1
+                        && fromIndex + tgtCount < (StringZilla.MIN_BYTES >> 1)) {
+                    return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+                }
+                if (StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount, tier)) {
+                    return fromIndex;
+                }
             }
 
             if (fromIndex + tgtCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
                     || !StringZilla.ENABLED) {
                 return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
-            tier = StringZilla.compilerTier();
+            if (tier == StringZilla.UNRESOLVED_TIER) {
+                tier = StringZilla.compilerTier();
+            }
             if (tier == StringZilla.C1) {
                 int prefixLength = fromIndex + tgtCount;
                 if (prefixLength < (StringZilla.MIN_BYTES >> 1)) {
                     return lastIndexOfJava(src, tgt, tgtCount,
                             tgtCount <= 8 ? fromIndex - 1 : fromIndex);
                 }
+                if (tgtCount > 8 && tgtCount <= 128 && StringZilla.usesSerial()
+                        && !StringZilla.MSVC_SERIAL
+                        && getChar(src, fromIndex) == getChar(tgt, 0)
+                        && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount, tier)) {
+                    return fromIndex;
+                }
                 if (tgtCount > 128 && fromIndex <= 1
                         && !StringZilla.useReverseUTF16(prefixLength, tgtCount, tier)) {
+                    if (getChar(src, fromIndex) == getChar(tgt, 0)) {
+                        return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+                    }
                     return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex);
                 }
                 return StringZilla.lastIndexOfUTF16C1(src, srcCount, tgt, tgtCount, fromIndex);
@@ -1438,8 +1455,8 @@ final class StringUTF16 {
                 return limit;
             }
             int stop = limit >= StringZilla.REVERSE_CHAR_PROBE_LENGTH
-                    ? limit - StringZilla.REVERSE_CHAR_PROBE_LENGTH : -1;
-            for (limit--; limit > stop; limit--) {
+                    ? limit - (StringZilla.REVERSE_CHAR_PROBE_LENGTH - 1) : 0;
+            for (limit--; limit >= stop; limit--) {
                 if (getChar(value, limit) == ch) {
                     return limit;
                 }
@@ -2351,7 +2368,7 @@ final class StringUTF16 {
                     }
                     if (tgtCount > 2 * StringZilla.MAX_MIXED_NEEDLE
                             && getChar(src, searchLength - 1) == (tgt[tgtCount - 1] & 0xff)) {
-                        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
+                        break accelerated;
                     }
                     return StringZilla.lastIndexOfUTF16Latin1C1(src, srcCount, tgt, tgtCount, fromIndex);
                 }

@@ -253,8 +253,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_compareToUL:
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
-  case vmIntrinsics::_equalsL:
   case vmIntrinsics::_equalsLChecked:
+    // C1 substitutes equalsC1. C2 retains the Java null checks before equals0.
+    return false;
+  case vmIntrinsics::_equalsL:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
   case vmIntrinsics::_vectorizedHashCode:

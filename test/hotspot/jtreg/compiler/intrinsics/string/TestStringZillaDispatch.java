@@ -267,7 +267,7 @@ public class TestStringZillaDispatch {
                 }
             }
         }
-        for (int count : new int[]{4, 8, 9, 23, 24, 25, 31, 32, 33, 47, 48, 49, 63, 64, 65, 66, 127, 128, 129, 130}) {
+        for (int count : new int[]{4, 8, 9, 15, 16, 17, 23, 24, 25, 31, 32, 33, 47, 48, 49, 63, 64, 65, 66, 127, 128, 129, 130}) {
             String needle = "b" + "a".repeat(count - 2) + "c";
             int[] lengths = count == 4 ? new int[]{15, 16, 17, 127, 128, 129, 4096}
                                        : new int[]{127, 256, 4096, 4097};

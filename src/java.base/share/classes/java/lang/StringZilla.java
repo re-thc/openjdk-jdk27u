@@ -83,7 +83,12 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16(byte[] src, int offset, byte[] tgt, int length) {
-        if (compilerTier() == 0) {
+        return matchesUTF16(src, offset, tgt, length, compilerTier());
+    }
+
+    @ForceInline
+    static boolean matchesUTF16(byte[] src, int offset, byte[] tgt, int length, int tier) {
+        if (tier == 0) {
             int result = equalsRange(src, offset << 1, length << 1, tgt, 0);
             if (result != FALLBACK) {
                 return result != 0;
@@ -181,7 +186,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean useMixedRangeIntrinsic(int count, int tier) {
-        return count >= 48 && count <= MAX_MIXED_NEEDLE
+        return count >= (BACKEND == SKYLAKE ? 16 : 48) && count <= MAX_MIXED_NEEDLE
                 && (BACKEND == HASWELL || BACKEND == SKYLAKE) && tier == C2;
     }
 
