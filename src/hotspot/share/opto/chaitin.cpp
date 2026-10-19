@@ -23,6 +23,7 @@
  */
 
 #include "compiler/compileLog.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -379,6 +380,8 @@ void PhaseChaitin::Register_Allocate() {
     using Sharing = SpillCopySharing;
     Sharing::Work work;
     if (C->method() == nullptr) return; // Runtime stubs are outside this experiment.
+    // Temporary per-method control for the same-image causal experiment.
+    if (C->method()->has_option(CompileCommandEnum::DisableSpillCopySharing)) return;
     uint scheduled = 0;
     uint ranges = _lrg_map.max_lrg_id();
     if (ranges == 0 || ranges > Sharing::MaxRanges) return;
