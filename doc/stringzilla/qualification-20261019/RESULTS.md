@@ -236,6 +236,10 @@ explicitly passes fourteen [x64 StringZilla descriptions](ci7048-stringzilla-x64
 and eleven [ARM descriptions](ci7048-stringzilla-arm.json), including native
 kernels, header layouts and defensive bounds. These merge-integration tests
 remain distinct from the exact-product native qualification above.
+The [complete Linux log archive](ordinary-ci-39280914015-linux.tar.gz) contains
+Prepare, four builds and twenty-four test-group logs with metadata and audit
+sources. Its [size and checksum](ordinary-ci-linux-archive.json) bind the saved
+bytes. It records the completed Linux phase, not the unfinished full CI run.
 
 The [full workflow scope](ci7048-workflow-scope.json) corrects earlier wording
 that described only the Linux phase. Prepare's empty platform selector includes
