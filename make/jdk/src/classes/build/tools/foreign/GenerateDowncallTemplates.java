@@ -368,12 +368,13 @@ public final class GenerateDowncallTemplates {
         }
         write(journal.resolve("ready"), new byte[]{1});
         copy(version.resolve("metadata/" + DATA), module.resolve(DATA));
-        copy(version.resolve("bundle/scalar-int.bin"), module.resolve(RESOURCE));
+        // The metadata class embeds the bundle. Do not add a package to
+        // java.base by installing a second, unused copy of the resource.
+        Files.deleteIfExists(module.resolve(RESOURCE));
         delete(journal);
         write(cache.resolve("installed.properties"), encode(Map.of(
                 "version", version.getFileName().toString(),
-                "metadata", hash(module.resolve(DATA)),
-                "resource", hash(module.resolve(RESOURCE)))));
+                "metadata", hash(module.resolve(DATA)))));
     }
 
     private static void recover(Path module, Path journal) throws Exception {

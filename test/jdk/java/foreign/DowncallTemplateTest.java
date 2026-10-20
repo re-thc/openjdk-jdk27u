@@ -449,6 +449,11 @@ public class DowncallTemplateTest {
         }
         boolean forcedFallback = args[0].equals("fallback");
         boolean templatesRequired = args[0].equals("required");
+        if (templatesRequired) {
+            check(!DowncallTemplates.class.getModule().getDescriptor().packages()
+                    .contains("jdk.internal.foreign.abi.templates"),
+                    "inline template data must not add a module package");
+        }
         String runtimePlatform = DowncallTemplates.platform();
         String nativePlatform = nativeTemplatePlatform();
         boolean supportedRuntime = nativePlatform != null;
