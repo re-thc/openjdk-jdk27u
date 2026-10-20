@@ -1134,68 +1134,91 @@ final class StringLatin1 {
         if (len == 0 || ((value[0] & 0xff) > ' ' && (value[len - 1] & 0xff) > ' ')) {
             return null;
         }
-        if (len >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            while (st < StringZilla.SCAN_PROBE && (value[st] & 0xff) <= ' ') {
-                st++;
-            }
-            if (st == StringZilla.SCAN_PROBE && StringZilla.SCANS_ENABLED) {
-                int result = StringZilla.scan(value, st, len, StringZilla.NON_TRIM);
-                if (result != StringZilla.FALLBACK) {
-                    st = result;
-                }
-            }
-        }
-        while ((st < len) && ((value[st] & 0xff) <= ' ')) {
+        int limit = len >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                ? StringZilla.SCAN_PROBE : len;
+        while ((st < limit) && ((value[st] & 0xff) <= ' ')) {
             st++;
         }
-        if (len - st >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            int stop = len - StringZilla.SCAN_PROBE;
-            while (len > stop && (value[len - 1] & 0xff) <= ' ') {
-                len--;
-            }
-            if (len == stop && StringZilla.SCANS_ENABLED) {
-                int result = StringZilla.scan(value, st, len, StringZilla.NON_TRIM_REVERSE);
-                if (result != StringZilla.FALLBACK) {
-                    len = result;
-                }
-            }
+        if (st == limit && st < len) {
+            st = indexOfNonTrimLong(value, st, len);
         }
-        while ((st < len) && ((value[len - 1] & 0xff) <= ' ')) {
+        int stop = len - st >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                ? len - StringZilla.SCAN_PROBE : st;
+        while ((stop < len) && ((value[len - 1] & 0xff) <= ' ')) {
             len--;
+        }
+        if (len == stop && st < len) {
+            len = lastIndexOfNonTrimLong(value, st, len);
         }
         return ((st > 0) || (len < value.length)) ?
             newString(value, st, len - st) : null;
     }
 
+    // Enter only after a full scalar probe on a large input. Keep native
+    // dispatch and fallback continuations outside the common scalar helpers.
+    @DontInline
+    private static int indexOfNonTrimLong(byte[] value, int left, int right) {
+        if (StringZilla.SCANS_ENABLED) {
+            int result = StringZilla.scan(value, left, right, StringZilla.NON_TRIM);
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
+        }
+        while (left < right && (value[left] & 0xff) <= ' ') {
+            left++;
+        }
+        return left;
+    }
+
+    @DontInline
+    private static int lastIndexOfNonTrimLong(byte[] value, int left, int right) {
+        if (StringZilla.SCANS_ENABLED) {
+            int result = StringZilla.scan(value, left, right, StringZilla.NON_TRIM_REVERSE);
+            if (result != StringZilla.FALLBACK) {
+                return result;
+            }
+        }
+        while (left < right && (value[right - 1] & 0xff) <= ' ') {
+            right--;
+        }
+        return right;
+    }
+
     static int indexOfNonWhitespace(byte[] value) {
         int length = value.length;
-        int left = 0;
-        if (left < length) {
+        if (length == 0) {
+            return 0;
+        }
+        char first = getChar(value, 0);
+        if (first != ' ' && first != '\t' && !CharacterDataLatin1.instance.isWhitespace(first)) {
+            return 0;
+        }
+        int left = 1;
+        int limit = length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                ? StringZilla.SCAN_PROBE : length;
+        while (left < limit) {
             char ch = getChar(value, left);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
                 return left;
             }
             left++;
         }
-        if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            while (left < StringZilla.SCAN_PROBE) {
-                char ch = getChar(value, left);
-                if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                    return left;
-                }
-                left++;
-            }
-            if (StringZilla.SCANS_ENABLED) {
-                int result = StringZilla.scan(value, left, length, StringZilla.NON_WHITESPACE);
-                if (result != StringZilla.FALLBACK) {
-                    return result;
-                }
+        return left == length ? left : indexOfNonWhitespaceLong(value, left);
+    }
+
+    @DontInline
+    private static int indexOfNonWhitespaceLong(byte[] value, int left) {
+        int length = value.length;
+        if (StringZilla.SCANS_ENABLED) {
+            int result = StringZilla.scan(value, left, length, StringZilla.NON_WHITESPACE);
+            if (result != StringZilla.FALLBACK) {
+                return result;
             }
         }
         while (left < length) {
             char ch = getChar(value, left);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                break;
+                return left;
             }
             left++;
         }
@@ -1204,33 +1227,38 @@ final class StringLatin1 {
 
     static int lastIndexOfNonWhitespace(byte[] value) {
         int right = value.length;
-        if (right > 0) {
+        if (right == 0) {
+            return 0;
+        }
+        char last = getChar(value, right - 1);
+        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) {
+            return right;
+        }
+        right--;
+        int stop = value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                ? value.length - StringZilla.SCAN_PROBE : 0;
+        while (right > stop) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
                 return right;
             }
             right--;
         }
-        if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            int stop = value.length - StringZilla.SCAN_PROBE;
-            while (right > stop) {
-                char ch = getChar(value, right - 1);
-                if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                    return right;
-                }
-                right--;
-            }
-            if (StringZilla.SCANS_ENABLED) {
-                int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
-                if (result != StringZilla.FALLBACK) {
-                    return result;
-                }
+        return right == 0 ? 0 : lastIndexOfNonWhitespaceLong(value, right);
+    }
+
+    @DontInline
+    private static int lastIndexOfNonWhitespaceLong(byte[] value, int right) {
+        if (StringZilla.SCANS_ENABLED) {
+            int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
+            if (result != StringZilla.FALLBACK) {
+                return result;
             }
         }
         while (0 < right) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                break;
+                return right;
             }
             right--;
         }
@@ -1269,20 +1297,23 @@ final class StringLatin1 {
         }
 
         private int indexOfLineSeparator(int start) {
-            if (fence - start >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-                int stop = start + StringZilla.SCAN_PROBE;
-                while (start < stop) {
-                    char ch = getChar(value, start);
-                    if (ch == '\n' || ch == '\r') {
-                        return start;
-                    }
-                    start++;
+            int stop = fence - start >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                    ? start + StringZilla.SCAN_PROBE : fence;
+            for (int current = start; current < stop; current++) {
+                char ch = getChar(value, current);
+                if (ch == '\n' || ch == '\r') {
+                    return current;
                 }
-                if (StringZilla.SCANS_ENABLED) {
-                    int result = StringZilla.scan(value, start, fence, StringZilla.LINE_SEPARATOR);
-                    if (result != StringZilla.FALLBACK) {
-                        return result;
-                    }
+            }
+            return stop == fence ? fence : indexOfLineSeparatorLong(stop);
+        }
+
+        @DontInline
+        private int indexOfLineSeparatorLong(int start) {
+            if (StringZilla.SCANS_ENABLED) {
+                int result = StringZilla.scan(value, start, fence, StringZilla.LINE_SEPARATOR);
+                if (result != StringZilla.FALLBACK) {
+                    return result;
                 }
             }
             for (int current = start; current < fence; current++) {
