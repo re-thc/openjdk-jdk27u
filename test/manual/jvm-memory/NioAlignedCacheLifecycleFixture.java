@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.Util;
 
-// Experiment nio-aligned-cache-initial-exit-v1; source-only, not yet qualified.
+// Fixed aligned-cache lifecycle probe; NMT reconciliation is described in doc/memory-overhead.md.
 public final class NioAlignedCacheLifecycleFixture {
     private static final int SIZE = 65536;
     private static final int ALIGNMENT = 4096;
