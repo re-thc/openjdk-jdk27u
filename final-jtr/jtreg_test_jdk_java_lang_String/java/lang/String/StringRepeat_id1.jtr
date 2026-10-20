@@ -1,0 +1,176 @@
+#Test Results (version 2)
+#Tue Oct 20 04:04:34 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRepeat.java
+$root=/workspace/sz-candidate/test/jdk
+id=id1
+keywords=othervm
+requires=(os.maxMemory >\= 2G) & (vm.bits \=\= "64")
+run=USER_SPECIFIED main/othervm -Xmx2g StringRepeat 16777216\n
+source=StringRepeat.java
+title=This exercises String\#repeat patterns with 16 * 1024 * 1024 repeats.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/StringRepeat.java\#id1
+elapsed=1681 0\:00\:01.681
+end=Tue Oct 20 04\:04\:34 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Tue Oct 20 04\:04\:32 UTC 2026
+test=java/lang/String/StringRepeat.java\#id1
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1682
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/222)----------
+command: build StringRepeat
+reason: Named class compiled on demand
+started: Tue Oct 20 04:04:32.916 UTC 2026
+Test directory:
+  compile: StringRepeat
+finished: Tue Oct 20 04:04:32.988 UTC 2026
+elapsed time (seconds): 0.072
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/295)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/StringRepeat.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 04:04:32.916 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 187639
+finished: Tue Oct 20 04:04:32.988 UTC 2026
+elapsed time (seconds): 0.072
+----------configuration:(10/587)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d
+
+----------rerun:(38/3088)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/StringRepeat.java#id1 \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRepeat.java \\
+        -J-Dtest.main.class=StringRepeat \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d /workspace/sz-candidate/test/jdk/java/lang/String/StringRepeat.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/290)----------
+command: main -Xmx2g StringRepeat 16777216
+reason: User specified action: run main/othervm -Xmx2g StringRepeat 16777216 
+started: Tue Oct 20 04:04:32.988 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 191057
+finished: Tue Oct 20 04:04:34.596 UTC 2026
+elapsed time (seconds): 1.608
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3144)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/StringRepeat.java#id1 \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRepeat.java \\
+        -Dtest.main.class=StringRepeat \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/StringRepeat_id1.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Xmx2g \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/StringRepeat_id1.d/main.0.jta 16777216
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

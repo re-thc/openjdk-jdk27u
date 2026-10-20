@@ -1,0 +1,470 @@
+#Test Results (version 2)
+#Tue Oct 20 03:17:53 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+keywords=bug8145336 othervm driver
+library=/test/lib
+modules=java.base/jdk.internal.misc
+run=USER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xmixed -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:+IgnoreUnrecognizedVMOptions -XX\:MaxInlineSize\=70 -XX\:MinInlineFrequencyRatio\=0 compiler.intrinsics.string.TestStringIntrinsics2\n
+source=TestStringIntrinsics2.java
+title=PPC64\: fix string intrinsics after CompactStrings change
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java
+elapsed=841 0\:00\:00.841
+end=Tue Oct 20 03\:17\:53 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/jdk.internal.misc
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile driver build compile main
+start=Tue Oct 20 03\:17\:52 UTC 2026
+test=compiler/intrinsics/string/TestStringIntrinsics2.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=842
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/559)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/sz-candidate/test/lib
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Tue Oct 20 03:17:52.881 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Tue Oct 20 03:17:52.953 UTC 2026
+elapsed time (seconds): 0.072
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/404)----------
+command: compile /workspace/sz-candidate/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:52.881 UTC 2026
+Additional options from @modules: --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:52.953 UTC 2026
+elapsed time (seconds): 0.072
+----------configuration:(12/848)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base                   
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib 
+
+----------rerun:(38/4039)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestStringIntrinsics2 \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -J-Dtest.modules=java.base/jdk.internal.misc \\
+        --add-modules java.base \\
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -sourcepath /workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib /workspace/sz-candidate/test/lib/jdk/test/whitebox/WhiteBox.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:52.953 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Tue Oct 20 03:17:53.015 UTC 2026
+elapsed time (seconds): 0.062
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/416)----------
+command: compile /workspace/sz-candidate/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:52.954 UTC 2026
+Additional options from @modules: --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:53.014 UTC 2026
+elapsed time (seconds): 0.06
+----------configuration:(12/848)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base                   
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib 
+
+----------rerun:(38/4052)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestStringIntrinsics2 \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -J-Dtest.modules=java.base/jdk.internal.misc \\
+        --add-modules java.base \\
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -sourcepath /workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib /workspace/sz-candidate/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(9/434)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Tue Oct 20 03:17:53.015 UTC 2026
+Mode: agentvm
+Agent id: 4
+Process id: 166487
+Additional exports to unnamed modules from @modules: java.base/jdk.internal.misc
+finished: Tue Oct 20 03:17:53.069 UTC 2026
+elapsed time (seconds): 0.054
+----------configuration:(16/1137)----------
+Boot Layer
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+              /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar 
+              /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar 
+              /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar 
+              /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+Test Layer
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+  class path:  /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d 
+               /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib 
+               /workspace/sz-candidate/test/lib 
+
+----------rerun:(32/3635)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestStringIntrinsics2 \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -Dtest.modules=java.base/jdk.internal.misc \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+        jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+----------System.err:(3/35)----------
+
+JavaTest Message: Test complete.
+
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/294)----------
+command: build compiler.intrinsics.string.TestStringIntrinsics2
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:53.069 UTC 2026
+Test directory:
+  compile: compiler.intrinsics.string.TestStringIntrinsics2
+finished: Tue Oct 20 03:17:53.215 UTC 2026
+elapsed time (seconds): 0.146
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/436)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:53.070 UTC 2026
+Additional options from @modules: --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:53.215 UTC 2026
+elapsed time (seconds): 0.145
+----------configuration:(14/1020)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base                   
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib 
+
+----------rerun:(38/4202)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestStringIntrinsics2 \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -J-Dtest.modules=java.base/jdk.internal.misc \\
+        --add-modules java.base \\
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/762)----------
+command: main -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:MaxInlineSize=70 -XX:MinInlineFrequencyRatio=0 compiler.intrinsics.string.TestStringIntrinsics2
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:MaxInlineSize=70 -XX:MinInlineFrequencyRatio=0 compiler.intrinsics.string.TestStringIntrinsics2 
+started: Tue Oct 20 03:17:53.216 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
+Process id: 166807
+finished: Tue Oct 20 03:17:53.719 UTC 2026
+elapsed time (seconds): 0.503
+----------configuration:(4/111)----------
+Boot Layer
+  add modules: java.base                   
+  add exports: java.base/jdk.internal.misc ALL-UNNAMED
+
+----------System.out:(55/7441)----------
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_unknown_needle(java.lang.String,java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_imm_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_imm2_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_imm1_needle(java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_unknown_needle(java.lang.String,java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_imm_needle(java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_imm2_needle(java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_imm1_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_unknown_needle(java.lang.String,java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_imm_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_imm2_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_imm1_needle(java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_spans_end_of_string_unknown_needle(java.lang.String,java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_spans_end_of_string_imm_needle(java.lang.String) 1 time(s) 
+Warming up static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_spans_end_of_string_imm2_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_imm1_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_imm1Latin1_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_imm1UTF16_needle(java.lang.String) 1 time(s) 
+Warming up static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_immUTF16_needle(java.lang.String) 1 time(s) 
+Warming up public static int compiler.intrinsics.string.TestStringIntrinsics2.asmStringCompareTo(java.lang.String,java.lang.String) 1 time(s) 
+Warming up public static boolean compiler.intrinsics.string.TestStringIntrinsics2.asmStringEquals(java.lang.String,java.lang.String) 1 time(s) 
+Warming up public static boolean compiler.intrinsics.string.TestStringIntrinsics2.asmStringEqualsConst() 1 time(s) 
+Warming up public static boolean compiler.intrinsics.string.TestStringIntrinsics2.indexOf_use_result_immediately(java.lang.String,java.lang.String) 1 time(s) 
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_unknown_needle(java.lang.String,java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_imm_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_imm2_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_no_match_imm1_needle(java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_unknown_needle(java.lang.String,java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_imm_needle(java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_imm2_needle(java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_reads_past_string_imm1_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_unknown_needle(java.lang.String,java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_imm_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_imm2_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_at_end_of_string_imm1_needle(java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_spans_end_of_string_unknown_needle(java.lang.String,java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_spans_end_of_string_imm_needle(java.lang.String) compiled at 4
+static java.lang.String compiler.intrinsics.string.TestStringIntrinsics2.indexOf_match_spans_end_of_string_imm2_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_imm1_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_imm1Latin1_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_imm1UTF16_needle(java.lang.String) compiled at 4
+static int compiler.intrinsics.string.TestStringIntrinsics2.indexOf_immUTF16_needle(java.lang.String) compiled at 4
+public static int compiler.intrinsics.string.TestStringIntrinsics2.asmStringCompareTo(java.lang.String,java.lang.String) compiled at 4
+public static boolean compiler.intrinsics.string.TestStringIntrinsics2.asmStringEquals(java.lang.String,java.lang.String) compiled at 4
+public static boolean compiler.intrinsics.string.TestStringIntrinsics2.asmStringEqualsConst() compiled at 4
+public static boolean compiler.intrinsics.string.TestStringIntrinsics2.indexOf_use_result_immediately(java.lang.String,java.lang.String) compiled at 4
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_match_at_end_of_string() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_immUTF16() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_no_match() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_reads_past_string() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_match_spans_end_of_string() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_imm1_needle() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_asmStringCompareTo() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_asmStringEquals() - OK
+Executing public static void compiler.intrinsics.string.TestStringIntrinsics2.test_indexOf_use_result_immediately() - OK
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(45/4427)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringIntrinsics2.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestStringIntrinsics2 \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringIntrinsics2.d/test/lib \\
+        -Dtest.modules=java.base/jdk.internal.misc \\
+        --add-modules java.base \\
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xmixed \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:+IgnoreUnrecognizedVMOptions \\
+        -XX:MaxInlineSize=70 \\
+        -XX:MinInlineFrequencyRatio=0 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringIntrinsics2.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

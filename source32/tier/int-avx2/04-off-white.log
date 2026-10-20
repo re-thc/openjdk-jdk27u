@@ -1,0 +1,1671 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/workspace/sz-evidence/jmh/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = shortBlank)
+
+# Run progress: 0.00% complete, ETA 00:00:27
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 750.103 ns/op
+# Warmup Iteration   2: 842.179 ns/op
+Iteration   1: 771.031 ns/op
+Iteration   2: 772.142 ns/op
+Iteration   3: 814.123 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  785.766 ±(99.9%) 448.149 ns/op [Average]
+  (min, avg, max) = (771.031, 785.766, 814.123), stdev = 24.565
+  CI (99.9%): [337.616, 1233.915] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = shortClean)
+
+# Run progress: 1.82% complete, ETA 00:00:31
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 223.252 ns/op
+# Warmup Iteration   2: 234.756 ns/op
+Iteration   1: 220.959 ns/op
+Iteration   2: 218.999 ns/op
+Iteration   3: 225.282 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  221.747 ±(99.9%) 58.654 ns/op [Average]
+  (min, avg, max) = (218.999, 221.747, 225.282), stdev = 3.215
+  CI (99.9%): [163.092, 280.401] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = early)
+
+# Run progress: 3.64% complete, ETA 00:00:28
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 421.267 ns/op
+# Warmup Iteration   2: 468.484 ns/op
+Iteration   1: 401.047 ns/op
+Iteration   2: 402.894 ns/op
+Iteration   3: 382.490 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  395.477 ±(99.9%) 205.879 ns/op [Average]
+  (min, avg, max) = (382.490, 395.477, 402.894), stdev = 11.285
+  CI (99.9%): [189.598, 601.356] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = probeAt)
+
+# Run progress: 5.45% complete, ETA 00:00:27
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1050.956 ns/op
+# Warmup Iteration   2: 1066.049 ns/op
+Iteration   1: 1047.564 ns/op
+Iteration   2: 1011.987 ns/op
+Iteration   3: 1090.108 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  1049.886 ±(99.9%) 713.553 ns/op [Average]
+  (min, avg, max) = (1011.987, 1049.886, 1090.108), stdev = 39.112
+  CI (99.9%): [336.333, 1763.439] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = probeAfter)
+
+# Run progress: 7.27% complete, ETA 00:00:27
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1065.928 ns/op
+# Warmup Iteration   2: 1039.843 ns/op
+Iteration   1: 1088.948 ns/op
+Iteration   2: 1067.197 ns/op
+Iteration   3: 1035.484 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  1063.876 ±(99.9%) 490.503 ns/op [Average]
+  (min, avg, max) = (1035.484, 1063.876, 1088.948), stdev = 26.886
+  CI (99.9%): [573.374, 1554.379] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = tailProbeAt)
+
+# Run progress: 9.09% complete, ETA 00:00:26
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 240.255 ns/op
+# Warmup Iteration   2: 231.430 ns/op
+Iteration   1: 223.296 ns/op
+Iteration   2: 225.428 ns/op
+Iteration   3: 223.338 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  224.021 ±(99.9%) 22.237 ns/op [Average]
+  (min, avg, max) = (223.296, 224.021, 225.428), stdev = 1.219
+  CI (99.9%): [201.783, 246.258] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = tailProbeAfter)
+
+# Run progress: 10.91% complete, ETA 00:00:25
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 237.211 ns/op
+# Warmup Iteration   2: 215.083 ns/op
+Iteration   1: 231.332 ns/op
+Iteration   2: 213.449 ns/op
+Iteration   3: 211.860 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  218.880 ±(99.9%) 197.266 ns/op [Average]
+  (min, avg, max) = (211.860, 218.880, 231.332), stdev = 10.813
+  CI (99.9%): [21.614, 416.146] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = gateAt)
+
+# Run progress: 12.73% complete, ETA 00:00:25
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 7279.218 ns/op
+# Warmup Iteration   2: 7069.124 ns/op
+Iteration   1: 6876.114 ns/op
+Iteration   2: 6971.056 ns/op
+Iteration   3: 6761.990 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  6869.720 ±(99.9%) 1909.742 ns/op [Average]
+  (min, avg, max) = (6761.990, 6869.720, 6971.056), stdev = 104.679
+  CI (99.9%): [4959.978, 8779.462] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = longBlank)
+
+# Run progress: 14.55% complete, ETA 00:00:24
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 207361.248 ns/op
+# Warmup Iteration   2: 186914.305 ns/op
+Iteration   1: 195714.127 ns/op
+Iteration   2: 192267.012 ns/op
+Iteration   3: 194636.194 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  194205.778 ±(99.9%) 32171.061 ns/op [Average]
+  (min, avg, max) = (192267.012, 194205.778, 195714.127), stdev = 1763.404
+  CI (99.9%): [162034.717, 226376.838] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = longClean)
+
+# Run progress: 16.36% complete, ETA 00:00:23
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 224.558 ns/op
+# Warmup Iteration   2: 217.669 ns/op
+Iteration   1: 205.513 ns/op
+Iteration   2: 209.301 ns/op
+Iteration   3: 213.938 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  209.584 ±(99.9%) 76.983 ns/op [Average]
+  (min, avg, max) = (205.513, 209.584, 213.938), stdev = 4.220
+  CI (99.9%): [132.601, 286.567] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.isBlank
+# Parameters: (workload = longBoth)
+
+# Run progress: 18.18% complete, ETA 00:00:23
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 192375.077 ns/op
+# Warmup Iteration   2: 195656.270 ns/op
+Iteration   1: 197449.934 ns/op
+Iteration   2: 196589.518 ns/op
+Iteration   3: 193778.046 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.isBlank":
+  195939.166 ±(99.9%) 35035.109 ns/op [Average]
+  (min, avg, max) = (193778.046, 195939.166, 197449.934), stdev = 1920.393
+  CI (99.9%): [160904.057, 230974.275] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = shortBlank)
+
+# Run progress: 20.00% complete, ETA 00:00:22
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 728.581 ns/op
+# Warmup Iteration   2: 754.374 ns/op
+Iteration   1: 695.142 ns/op
+Iteration   2: 702.883 ns/op
+Iteration   3: 674.423 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  690.816 ±(99.9%) 268.459 ns/op [Average]
+  (min, avg, max) = (674.423, 690.816, 702.883), stdev = 14.715
+  CI (99.9%): [422.357, 959.275] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = shortClean)
+
+# Run progress: 21.82% complete, ETA 00:00:22
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 308.423 ns/op
+# Warmup Iteration   2: 287.094 ns/op
+Iteration   1: 300.465 ns/op
+Iteration   2: 281.631 ns/op
+Iteration   3: 292.173 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  291.423 ±(99.9%) 172.205 ns/op [Average]
+  (min, avg, max) = (281.631, 291.423, 300.465), stdev = 9.439
+  CI (99.9%): [119.218, 463.628] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = early)
+
+# Run progress: 23.64% complete, ETA 00:00:21
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 113726.203 ns/op
+# Warmup Iteration   2: 107116.062 ns/op
+Iteration   1: 108814.942 ns/op
+Iteration   2: 94418.372 ns/op
+Iteration   3: 102401.319 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  101878.211 ±(99.9%) 131583.339 ns/op [Average]
+  (min, avg, max) = (94418.372, 101878.211, 108814.942), stdev = 7212.527
+  CI (99.9%): [≈ 0, 233461.550] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = probeAt)
+
+# Run progress: 25.45% complete, ETA 00:00:21
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2483.324 ns/op
+# Warmup Iteration   2: 1985.497 ns/op
+Iteration   1: 2053.370 ns/op
+Iteration   2: 1952.526 ns/op
+Iteration   3: 2005.283 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  2003.726 ±(99.9%) 920.209 ns/op [Average]
+  (min, avg, max) = (1952.526, 2003.726, 2053.370), stdev = 50.440
+  CI (99.9%): [1083.518, 2923.935] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = probeAfter)
+
+# Run progress: 27.27% complete, ETA 00:00:20
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2122.488 ns/op
+# Warmup Iteration   2: 1918.219 ns/op
+Iteration   1: 1911.564 ns/op
+Iteration   2: 1934.436 ns/op
+Iteration   3: 1885.143 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  1910.381 ±(99.9%) 450.036 ns/op [Average]
+  (min, avg, max) = (1885.143, 1910.381, 1934.436), stdev = 24.668
+  CI (99.9%): [1460.345, 2360.416] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = tailProbeAt)
+
+# Run progress: 29.09% complete, ETA 00:00:20
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2499.764 ns/op
+# Warmup Iteration   2: 2230.769 ns/op
+Iteration   1: 2146.532 ns/op
+Iteration   2: 2144.195 ns/op
+Iteration   3: 2292.413 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  2194.380 ±(99.9%) 1549.023 ns/op [Average]
+  (min, avg, max) = (2144.195, 2194.380, 2292.413), stdev = 84.907
+  CI (99.9%): [645.357, 3743.403] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = tailProbeAfter)
+
+# Run progress: 30.91% complete, ETA 00:00:19
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2234.910 ns/op
+# Warmup Iteration   2: 2181.741 ns/op
+Iteration   1: 2165.346 ns/op
+Iteration   2: 2289.390 ns/op
+Iteration   3: 2256.164 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  2236.966 ±(99.9%) 1171.457 ns/op [Average]
+  (min, avg, max) = (2165.346, 2236.966, 2289.390), stdev = 64.212
+  CI (99.9%): [1065.510, 3408.423] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = gateAt)
+
+# Run progress: 32.73% complete, ETA 00:00:19
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 8078.522 ns/op
+# Warmup Iteration   2: 7728.098 ns/op
+Iteration   1: 7461.771 ns/op
+Iteration   2: 7514.032 ns/op
+Iteration   3: 7729.855 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  7568.553 ±(99.9%) 2592.706 ns/op [Average]
+  (min, avg, max) = (7461.771, 7568.553, 7729.855), stdev = 142.115
+  CI (99.9%): [4975.847, 10161.258] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = longBlank)
+
+# Run progress: 34.55% complete, ETA 00:00:18
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 219482.121 ns/op
+# Warmup Iteration   2: 201791.547 ns/op
+Iteration   1: 215247.189 ns/op
+Iteration   2: 216428.393 ns/op
+Iteration   3: 233207.144 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  221627.575 ±(99.9%) 183268.724 ns/op [Average]
+  (min, avg, max) = (215247.189, 221627.575, 233207.144), stdev = 10045.577
+  CI (99.9%): [38358.851, 404896.300] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = longClean)
+
+# Run progress: 36.36% complete, ETA 00:00:18
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 340.803 ns/op
+# Warmup Iteration   2: 308.448 ns/op
+Iteration   1: 307.412 ns/op
+Iteration   2: 342.907 ns/op
+Iteration   3: 327.039 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  325.786 ±(99.9%) 324.385 ns/op [Average]
+  (min, avg, max) = (307.412, 325.786, 342.907), stdev = 17.781
+  CI (99.9%): [1.401, 650.171] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.strip
+# Parameters: (workload = longBoth)
+
+# Run progress: 38.18% complete, ETA 00:00:17
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 489136.607 ns/op
+# Warmup Iteration   2: 459811.933 ns/op
+Iteration   1: 469518.187 ns/op
+Iteration   2: 453809.326 ns/op
+Iteration   3: 453578.443 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.strip":
+  458968.652 ±(99.9%) 166690.969 ns/op [Average]
+  (min, avg, max) = (453578.443, 458968.652, 469518.187), stdev = 9136.894
+  CI (99.9%): [292277.683, 625659.621] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = shortBlank)
+
+# Run progress: 40.00% complete, ETA 00:00:16
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 794.206 ns/op
+# Warmup Iteration   2: 696.626 ns/op
+Iteration   1: 687.329 ns/op
+Iteration   2: 706.923 ns/op
+Iteration   3: 742.017 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  712.090 ±(99.9%) 505.494 ns/op [Average]
+  (min, avg, max) = (687.329, 712.090, 742.017), stdev = 27.708
+  CI (99.9%): [206.596, 1217.583] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = shortClean)
+
+# Run progress: 41.82% complete, ETA 00:00:16
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 184.399 ns/op
+# Warmup Iteration   2: 185.483 ns/op
+Iteration   1: 180.648 ns/op
+Iteration   2: 178.994 ns/op
+Iteration   3: 182.337 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  180.660 ±(99.9%) 30.495 ns/op [Average]
+  (min, avg, max) = (178.994, 180.660, 182.337), stdev = 1.672
+  CI (99.9%): [150.165, 211.154] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = early)
+
+# Run progress: 43.64% complete, ETA 00:00:15
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1156.947 ns/op
+# Warmup Iteration   2: 1112.896 ns/op
+Iteration   1: 1110.259 ns/op
+Iteration   2: 1108.042 ns/op
+Iteration   3: 1193.266 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  1137.189 ±(99.9%) 886.215 ns/op [Average]
+  (min, avg, max) = (1108.042, 1137.189, 1193.266), stdev = 48.576
+  CI (99.9%): [250.974, 2023.404] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = probeAt)
+
+# Run progress: 45.45% complete, ETA 00:00:15
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1882.465 ns/op
+# Warmup Iteration   2: 1956.102 ns/op
+Iteration   1: 1952.211 ns/op
+Iteration   2: 2035.629 ns/op
+Iteration   3: 2001.035 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  1996.292 ±(99.9%) 764.608 ns/op [Average]
+  (min, avg, max) = (1952.211, 1996.292, 2035.629), stdev = 41.911
+  CI (99.9%): [1231.684, 2760.900] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = probeAfter)
+
+# Run progress: 47.27% complete, ETA 00:00:14
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2045.771 ns/op
+# Warmup Iteration   2: 1941.027 ns/op
+Iteration   1: 1864.572 ns/op
+Iteration   2: 1919.335 ns/op
+Iteration   3: 1947.513 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  1910.474 ±(99.9%) 769.417 ns/op [Average]
+  (min, avg, max) = (1864.572, 1910.474, 1947.513), stdev = 42.174
+  CI (99.9%): [1141.057, 2679.891] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = tailProbeAt)
+
+# Run progress: 49.09% complete, ETA 00:00:14
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 192.571 ns/op
+# Warmup Iteration   2: 193.126 ns/op
+Iteration   1: 182.268 ns/op
+Iteration   2: 198.374 ns/op
+Iteration   3: 186.755 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  189.132 ±(99.9%) 151.640 ns/op [Average]
+  (min, avg, max) = (182.268, 189.132, 198.374), stdev = 8.312
+  CI (99.9%): [37.492, 340.772] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = tailProbeAfter)
+
+# Run progress: 50.91% complete, ETA 00:00:13
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 184.497 ns/op
+# Warmup Iteration   2: 195.704 ns/op
+Iteration   1: 197.025 ns/op
+Iteration   2: 195.519 ns/op
+Iteration   3: 198.546 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  197.030 ±(99.9%) 27.612 ns/op [Average]
+  (min, avg, max) = (195.519, 197.030, 198.546), stdev = 1.514
+  CI (99.9%): [169.418, 224.643] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = gateAt)
+
+# Run progress: 52.73% complete, ETA 00:00:13
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 7259.078 ns/op
+# Warmup Iteration   2: 7512.384 ns/op
+Iteration   1: 7643.190 ns/op
+Iteration   2: 7354.608 ns/op
+Iteration   3: 7436.634 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  7478.144 ±(99.9%) 2712.873 ns/op [Average]
+  (min, avg, max) = (7354.608, 7478.144, 7643.190), stdev = 148.702
+  CI (99.9%): [4765.271, 10191.017] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = longBlank)
+
+# Run progress: 54.55% complete, ETA 00:00:12
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 214850.630 ns/op
+# Warmup Iteration   2: 216907.038 ns/op
+Iteration   1: 202122.990 ns/op
+Iteration   2: 194933.228 ns/op
+Iteration   3: 196595.451 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  197883.890 ±(99.9%) 68670.656 ns/op [Average]
+  (min, avg, max) = (194933.228, 197883.890, 202122.990), stdev = 3764.070
+  CI (99.9%): [129213.233, 266554.546] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = longClean)
+
+# Run progress: 56.36% complete, ETA 00:00:12
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 195.230 ns/op
+# Warmup Iteration   2: 191.692 ns/op
+Iteration   1: 202.049 ns/op
+Iteration   2: 192.957 ns/op
+Iteration   3: 191.721 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  195.576 ±(99.9%) 102.891 ns/op [Average]
+  (min, avg, max) = (191.721, 195.576, 202.049), stdev = 5.640
+  CI (99.9%): [92.684, 298.467] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripLeading
+# Parameters: (workload = longBoth)
+
+# Run progress: 58.18% complete, ETA 00:00:11
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 207579.907 ns/op
+# Warmup Iteration   2: 203800.734 ns/op
+Iteration   1: 205020.360 ns/op
+Iteration   2: 202796.255 ns/op
+Iteration   3: 210163.577 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripLeading":
+  205993.397 ±(99.9%) 68939.692 ns/op [Average]
+  (min, avg, max) = (202796.255, 205993.397, 210163.577), stdev = 3778.817
+  CI (99.9%): [137053.705, 274933.089] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = shortBlank)
+
+# Run progress: 60.00% complete, ETA 00:00:11
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 799.182 ns/op
+# Warmup Iteration   2: 735.069 ns/op
+Iteration   1: 752.016 ns/op
+Iteration   2: 721.907 ns/op
+Iteration   3: 789.131 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  754.352 ±(99.9%) 614.314 ns/op [Average]
+  (min, avg, max) = (721.907, 754.352, 789.131), stdev = 33.673
+  CI (99.9%): [140.037, 1368.666] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = shortClean)
+
+# Run progress: 61.82% complete, ETA 00:00:10
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 218.461 ns/op
+# Warmup Iteration   2: 201.449 ns/op
+Iteration   1: 205.838 ns/op
+Iteration   2: 199.928 ns/op
+Iteration   3: 205.570 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  203.779 ±(99.9%) 60.885 ns/op [Average]
+  (min, avg, max) = (199.928, 203.779, 205.838), stdev = 3.337
+  CI (99.9%): [142.894, 264.664] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = early)
+
+# Run progress: 63.64% complete, ETA 00:00:10
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 109566.651 ns/op
+# Warmup Iteration   2: 119166.867 ns/op
+Iteration   1: 115787.447 ns/op
+Iteration   2: 109430.750 ns/op
+Iteration   3: 100810.396 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  108676.198 ±(99.9%) 137137.740 ns/op [Average]
+  (min, avg, max) = (100810.396, 108676.198, 115787.447), stdev = 7516.982
+  CI (99.9%): [≈ 0, 245813.938] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = probeAt)
+
+# Run progress: 65.45% complete, ETA 00:00:09
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 196.615 ns/op
+# Warmup Iteration   2: 195.259 ns/op
+Iteration   1: 190.734 ns/op
+Iteration   2: 211.052 ns/op
+Iteration   3: 203.513 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  201.766 ±(99.9%) 187.389 ns/op [Average]
+  (min, avg, max) = (190.734, 201.766, 211.052), stdev = 10.271
+  CI (99.9%): [14.378, 389.155] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = probeAfter)
+
+# Run progress: 67.27% complete, ETA 00:00:09
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 277.380 ns/op
+# Warmup Iteration   2: 245.923 ns/op
+Iteration   1: 195.137 ns/op
+Iteration   2: 200.951 ns/op
+Iteration   3: 208.233 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  201.440 ±(99.9%) 119.714 ns/op [Average]
+  (min, avg, max) = (195.137, 201.440, 208.233), stdev = 6.562
+  CI (99.9%): [81.726, 321.154] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = tailProbeAt)
+
+# Run progress: 69.09% complete, ETA 00:00:08
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2049.051 ns/op
+# Warmup Iteration   2: 2115.953 ns/op
+Iteration   1: 2189.226 ns/op
+Iteration   2: 2211.350 ns/op
+Iteration   3: 2262.114 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  2220.897 ±(99.9%) 681.768 ns/op [Average]
+  (min, avg, max) = (2189.226, 2220.897, 2262.114), stdev = 37.370
+  CI (99.9%): [1539.128, 2902.665] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = tailProbeAfter)
+
+# Run progress: 70.91% complete, ETA 00:00:08
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 2143.226 ns/op
+# Warmup Iteration   2: 2276.151 ns/op
+Iteration   1: 2171.073 ns/op
+Iteration   2: 2219.621 ns/op
+Iteration   3: 2212.106 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  2200.933 ±(99.9%) 476.738 ns/op [Average]
+  (min, avg, max) = (2171.073, 2200.933, 2219.621), stdev = 26.132
+  CI (99.9%): [1724.195, 2677.672] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = gateAt)
+
+# Run progress: 72.73% complete, ETA 00:00:07
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 8347.620 ns/op
+# Warmup Iteration   2: 8221.031 ns/op
+Iteration   1: 7474.881 ns/op
+Iteration   2: 7592.699 ns/op
+Iteration   3: 7256.222 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  7441.267 ±(99.9%) 3114.902 ns/op [Average]
+  (min, avg, max) = (7256.222, 7441.267, 7592.699), stdev = 170.738
+  CI (99.9%): [4326.366, 10556.169] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = longBlank)
+
+# Run progress: 74.55% complete, ETA 00:00:07
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 210252.467 ns/op
+# Warmup Iteration   2: 199768.014 ns/op
+Iteration   1: 191146.589 ns/op
+Iteration   2: 214835.964 ns/op
+Iteration   3: 207416.868 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  204466.473 ±(99.9%) 221061.863 ns/op [Average]
+  (min, avg, max) = (191146.589, 204466.473, 214835.964), stdev = 12117.147
+  CI (99.9%): [≈ 0, 425528.336] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = longClean)
+
+# Run progress: 76.36% complete, ETA 00:00:06
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 199.079 ns/op
+# Warmup Iteration   2: 202.498 ns/op
+Iteration   1: 194.734 ns/op
+Iteration   2: 222.301 ns/op
+Iteration   3: 198.607 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  205.214 ±(99.9%) 272.270 ns/op [Average]
+  (min, avg, max) = (194.734, 205.214, 222.301), stdev = 14.924
+  CI (99.9%): [≈ 0, 477.485] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.stripTrailing
+# Parameters: (workload = longBoth)
+
+# Run progress: 78.18% complete, ETA 00:00:06
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 249314.119 ns/op
+# Warmup Iteration   2: 226587.515 ns/op
+Iteration   1: 218584.880 ns/op
+Iteration   2: 199094.405 ns/op
+Iteration   3: 200642.956 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing":
+  206107.414 ±(99.9%) 197643.503 ns/op [Average]
+  (min, avg, max) = (199094.405, 206107.414, 218584.880), stdev = 10833.507
+  CI (99.9%): [8463.911, 403750.917] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = shortBlank)
+
+# Run progress: 80.00% complete, ETA 00:00:05
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 403.831 ns/op
+# Warmup Iteration   2: 375.124 ns/op
+Iteration   1: 445.694 ns/op
+Iteration   2: 394.765 ns/op
+Iteration   3: 429.209 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  423.223 ±(99.9%) 474.099 ns/op [Average]
+  (min, avg, max) = (394.765, 423.223, 445.694), stdev = 25.987
+  CI (99.9%): [≈ 0, 897.322] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = shortClean)
+
+# Run progress: 81.82% complete, ETA 00:00:05
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 188.290 ns/op
+# Warmup Iteration   2: 156.677 ns/op
+Iteration   1: 142.023 ns/op
+Iteration   2: 141.651 ns/op
+Iteration   3: 135.413 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  139.696 ±(99.9%) 67.748 ns/op [Average]
+  (min, avg, max) = (135.413, 139.696, 142.023), stdev = 3.713
+  CI (99.9%): [71.948, 207.443] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = early)
+
+# Run progress: 83.64% complete, ETA 00:00:04
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 58839.835 ns/op
+# Warmup Iteration   2: 57761.346 ns/op
+Iteration   1: 54205.740 ns/op
+Iteration   2: 66671.516 ns/op
+Iteration   3: 59595.322 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  60157.526 ±(99.9%) 114057.479 ns/op [Average]
+  (min, avg, max) = (54205.740, 60157.526, 66671.516), stdev = 6251.875
+  CI (99.9%): [≈ 0, 174215.005] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = probeAt)
+
+# Run progress: 85.45% complete, ETA 00:00:04
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1631.749 ns/op
+# Warmup Iteration   2: 1566.511 ns/op
+Iteration   1: 1536.794 ns/op
+Iteration   2: 1640.322 ns/op
+Iteration   3: 1730.421 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  1635.846 ±(99.9%) 1767.649 ns/op [Average]
+  (min, avg, max) = (1536.794, 1635.846, 1730.421), stdev = 96.891
+  CI (99.9%): [≈ 0, 3403.495] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = probeAfter)
+
+# Run progress: 87.27% complete, ETA 00:00:03
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1664.509 ns/op
+# Warmup Iteration   2: 1541.837 ns/op
+Iteration   1: 1682.513 ns/op
+Iteration   2: 1598.318 ns/op
+Iteration   3: 1487.401 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  1589.411 ±(99.9%) 1785.336 ns/op [Average]
+  (min, avg, max) = (1487.401, 1589.411, 1682.513), stdev = 97.860
+  CI (99.9%): [≈ 0, 3374.747] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = tailProbeAt)
+
+# Run progress: 89.09% complete, ETA 00:00:03
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1781.651 ns/op
+# Warmup Iteration   2: 1661.175 ns/op
+Iteration   1: 1799.570 ns/op
+Iteration   2: 1642.992 ns/op
+Iteration   3: 1592.692 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  1678.418 ±(99.9%) 1968.364 ns/op [Average]
+  (min, avg, max) = (1592.692, 1678.418, 1799.570), stdev = 107.893
+  CI (99.9%): [≈ 0, 3646.782] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = tailProbeAfter)
+
+# Run progress: 90.91% complete, ETA 00:00:02
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 1763.179 ns/op
+# Warmup Iteration   2: 1726.371 ns/op
+Iteration   1: 1683.900 ns/op
+Iteration   2: 1688.956 ns/op
+Iteration   3: 1685.713 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  1686.190 ±(99.9%) 46.735 ns/op [Average]
+  (min, avg, max) = (1683.900, 1686.190, 1688.956), stdev = 2.562
+  CI (99.9%): [1639.455, 1732.924] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = gateAt)
+
+# Run progress: 92.73% complete, ETA 00:00:02
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 4281.188 ns/op
+# Warmup Iteration   2: 4036.849 ns/op
+Iteration   1: 3819.075 ns/op
+Iteration   2: 4089.951 ns/op
+Iteration   3: 3846.690 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  3918.572 ±(99.9%) 2719.404 ns/op [Average]
+  (min, avg, max) = (3819.075, 3918.572, 4089.951), stdev = 149.060
+  CI (99.9%): [1199.168, 6637.976] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = longBlank)
+
+# Run progress: 94.55% complete, ETA 00:00:01
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 54302.271 ns/op
+# Warmup Iteration   2: 54855.074 ns/op
+Iteration   1: 50997.874 ns/op
+Iteration   2: 48556.352 ns/op
+Iteration   3: 47168.101 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  48907.442 ±(99.9%) 35372.312 ns/op [Average]
+  (min, avg, max) = (47168.101, 48907.442, 50997.874), stdev = 1938.876
+  CI (99.9%): [13535.131, 84279.754] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = longClean)
+
+# Run progress: 96.36% complete, ETA 00:00:01
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 155.789 ns/op
+# Warmup Iteration   2: 141.944 ns/op
+Iteration   1: 132.098 ns/op
+Iteration   2: 134.519 ns/op
+Iteration   3: 166.792 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  144.469 ±(99.9%) 353.375 ns/op [Average]
+  (min, avg, max) = (132.098, 144.469, 166.792), stdev = 19.370
+  CI (99.9%): [≈ 0, 497.845] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 27.0.2-internal, OpenJDK 64-Bit Server VM, 27.0.2-internal-adhoc.agent.sz-candidate
+# VM invoker: /workspace/sz-candidate/build/scans/images/jdk/bin/java
+# VM options: -Xms256m -Xmx256m -XX:+UseSerialGC -XX:UseAVX=2 -Xint -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -DcompilerBlackholesEnabled=true -XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands -XX:-UseStringZillaIntrinsics
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 2 iterations, 100 ms each
+# Measurement: 3 iterations, 100 ms each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: org.openjdk.bench.java.lang.StringZillaScans.trim
+# Parameters: (workload = longBoth)
+
+# Run progress: 98.18% complete, ETA 00:00:00
+# Fork: N/A, test runs in the host VM
+# *** WARNING: Non-forked runs may silently omit JVM options, mess up profilers, disable compiler hints, etc. ***
+# *** WARNING: Use non-forked runs only for debugging purposes, not for actual performance runs. ***
+# Warmup Iteration   1: 132040.003 ns/op
+# Warmup Iteration   2: 122189.844 ns/op
+Iteration   1: 128255.748 ns/op
+Iteration   2: 104448.859 ns/op
+Iteration   3: 114264.943 ns/op
+
+Result "org.openjdk.bench.java.lang.StringZillaScans.trim":
+  115656.517 ±(99.9%) 218273.271 ns/op [Average]
+  (min, avg, max) = (104448.859, 115656.517, 128255.748), stdev = 11964.295
+  CI (99.9%): [≈ 0, 333929.788] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:00:28
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                           (workload)  Mode  Cnt       Score        Error  Units
+StringZillaScans.isBlank            shortBlank  avgt    3     785.766 ±    448.149  ns/op
+StringZillaScans.isBlank            shortClean  avgt    3     221.747 ±     58.654  ns/op
+StringZillaScans.isBlank                 early  avgt    3     395.477 ±    205.879  ns/op
+StringZillaScans.isBlank               probeAt  avgt    3    1049.886 ±    713.553  ns/op
+StringZillaScans.isBlank            probeAfter  avgt    3    1063.876 ±    490.503  ns/op
+StringZillaScans.isBlank           tailProbeAt  avgt    3     224.021 ±     22.237  ns/op
+StringZillaScans.isBlank        tailProbeAfter  avgt    3     218.880 ±    197.266  ns/op
+StringZillaScans.isBlank                gateAt  avgt    3    6869.720 ±   1909.742  ns/op
+StringZillaScans.isBlank             longBlank  avgt    3  194205.778 ±  32171.061  ns/op
+StringZillaScans.isBlank             longClean  avgt    3     209.584 ±     76.983  ns/op
+StringZillaScans.isBlank              longBoth  avgt    3  195939.166 ±  35035.109  ns/op
+StringZillaScans.strip              shortBlank  avgt    3     690.816 ±    268.459  ns/op
+StringZillaScans.strip              shortClean  avgt    3     291.423 ±    172.205  ns/op
+StringZillaScans.strip                   early  avgt    3  101878.211 ± 131583.339  ns/op
+StringZillaScans.strip                 probeAt  avgt    3    2003.726 ±    920.209  ns/op
+StringZillaScans.strip              probeAfter  avgt    3    1910.381 ±    450.036  ns/op
+StringZillaScans.strip             tailProbeAt  avgt    3    2194.380 ±   1549.023  ns/op
+StringZillaScans.strip          tailProbeAfter  avgt    3    2236.966 ±   1171.457  ns/op
+StringZillaScans.strip                  gateAt  avgt    3    7568.553 ±   2592.706  ns/op
+StringZillaScans.strip               longBlank  avgt    3  221627.575 ± 183268.724  ns/op
+StringZillaScans.strip               longClean  avgt    3     325.786 ±    324.385  ns/op
+StringZillaScans.strip                longBoth  avgt    3  458968.652 ± 166690.969  ns/op
+StringZillaScans.stripLeading       shortBlank  avgt    3     712.090 ±    505.494  ns/op
+StringZillaScans.stripLeading       shortClean  avgt    3     180.660 ±     30.495  ns/op
+StringZillaScans.stripLeading            early  avgt    3    1137.189 ±    886.215  ns/op
+StringZillaScans.stripLeading          probeAt  avgt    3    1996.292 ±    764.608  ns/op
+StringZillaScans.stripLeading       probeAfter  avgt    3    1910.474 ±    769.417  ns/op
+StringZillaScans.stripLeading      tailProbeAt  avgt    3     189.132 ±    151.640  ns/op
+StringZillaScans.stripLeading   tailProbeAfter  avgt    3     197.030 ±     27.612  ns/op
+StringZillaScans.stripLeading           gateAt  avgt    3    7478.144 ±   2712.873  ns/op
+StringZillaScans.stripLeading        longBlank  avgt    3  197883.890 ±  68670.656  ns/op
+StringZillaScans.stripLeading        longClean  avgt    3     195.576 ±    102.891  ns/op
+StringZillaScans.stripLeading         longBoth  avgt    3  205993.397 ±  68939.692  ns/op
+StringZillaScans.stripTrailing      shortBlank  avgt    3     754.352 ±    614.314  ns/op
+StringZillaScans.stripTrailing      shortClean  avgt    3     203.779 ±     60.885  ns/op
+StringZillaScans.stripTrailing           early  avgt    3  108676.198 ± 137137.740  ns/op
+StringZillaScans.stripTrailing         probeAt  avgt    3     201.766 ±    187.389  ns/op
+StringZillaScans.stripTrailing      probeAfter  avgt    3     201.440 ±    119.714  ns/op
+StringZillaScans.stripTrailing     tailProbeAt  avgt    3    2220.897 ±    681.768  ns/op
+StringZillaScans.stripTrailing  tailProbeAfter  avgt    3    2200.933 ±    476.738  ns/op
+StringZillaScans.stripTrailing          gateAt  avgt    3    7441.267 ±   3114.902  ns/op
+StringZillaScans.stripTrailing       longBlank  avgt    3  204466.473 ± 221061.863  ns/op
+StringZillaScans.stripTrailing       longClean  avgt    3     205.214 ±    272.270  ns/op
+StringZillaScans.stripTrailing        longBoth  avgt    3  206107.414 ± 197643.503  ns/op
+StringZillaScans.trim               shortBlank  avgt    3     423.223 ±    474.099  ns/op
+StringZillaScans.trim               shortClean  avgt    3     139.696 ±     67.748  ns/op
+StringZillaScans.trim                    early  avgt    3   60157.526 ± 114057.479  ns/op
+StringZillaScans.trim                  probeAt  avgt    3    1635.846 ±   1767.649  ns/op
+StringZillaScans.trim               probeAfter  avgt    3    1589.411 ±   1785.336  ns/op
+StringZillaScans.trim              tailProbeAt  avgt    3    1678.418 ±   1968.364  ns/op
+StringZillaScans.trim           tailProbeAfter  avgt    3    1686.190 ±     46.735  ns/op
+StringZillaScans.trim                   gateAt  avgt    3    3918.572 ±   2719.404  ns/op
+StringZillaScans.trim                longBlank  avgt    3   48907.442 ±  35372.312  ns/op
+StringZillaScans.trim                longClean  avgt    3     144.469 ±    353.375  ns/op
+StringZillaScans.trim                 longBoth  avgt    3  115656.517 ± 218273.271  ns/op
+
+Benchmark result is saved to /workspace/sz-evidence/tier/int-avx2/04-off-white.json

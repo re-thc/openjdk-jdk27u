@@ -1,0 +1,338 @@
+#Test Results (version 2)
+#Tue Oct 20 03:17:47 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+id=id1
+keywords=bug8054307 bug8318509 randomness othervm
+library=/test/lib /compiler/patches
+maxTimeout=1200
+requires=vm.cpu.features ~\= ".*avx512.*"
+run=USER_SPECIFIED build java.base/java.lang.Helper\nUSER_SPECIFIED main/othervm/timeout\=1200 -XX\:UseAVX\=3 compiler.intrinsics.string.TestHasNegatives\nUSER_SPECIFIED main/othervm/timeout\=1200 -XX\:UseAVX\=3 -XX\:+UnlockDiagnosticVMOptions -XX\:AVX3Threshold\=0 compiler.intrinsics.string.TestHasNegatives\n
+source=TestHasNegatives.java
+title=Validates StringCoding.hasNegatives intrinsic for AVX3 works with and without AVX3Threshold\=0
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java\#id1
+elapsed=18710 0\:00\:18.710
+end=Tue Oct 20 03\:17\:47 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile build compile main build main
+start=Tue Oct 20 03\:17\:28 UTC 2026
+test=compiler/intrinsics/string/TestHasNegatives.java\#id1
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=18711
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(10/892)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/sz-candidate/test/lib
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib
+Library /compiler/patches; kind: system module patches
+   source directory: /workspace/sz-candidate/test/hotspot/jtreg/compiler/patches
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches
+
+#section:build
+----------messages:(7/291)----------
+command: build java.base/java.lang.Helper
+reason: User specified action: run build java.base/java.lang.Helper 
+started: Tue Oct 20 03:17:28.583 UTC 2026
+Library /compiler/patches:
+  compile: java.base/java.lang.Helper
+finished: Tue Oct 20 03:17:28.640 UTC 2026
+elapsed time (seconds): 0.057
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/319)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/patches/java.base/java/lang/Helper.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:28.584 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 166228
+finished: Tue Oct 20 03:17:28.640 UTC 2026
+elapsed time (seconds): 0.056
+----------configuration:(12/1038)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add reads:  java.base ALL-UNNAMED
+  class path: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d 
+              /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib 
+  patch:      java.base /workspace/sz-candidate/test/hotspot/jtreg/compiler/patches/java.base
+                        /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base
+
+----------rerun:(37/4401)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestHasNegatives.java#id1 \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestHasNegatives \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -J-Dtest.patch.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base \\
+        --patch-module java.base=/workspace/sz-candidate/test/hotspot/jtreg/compiler/patches/java.base:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        --add-reads java.base=ALL-UNNAMED /workspace/sz-candidate/test/hotspot/jtreg/compiler/patches/java.base/java/lang/Helper.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/284)----------
+command: build compiler.intrinsics.string.TestHasNegatives
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:28.640 UTC 2026
+Test directory:
+  compile: compiler.intrinsics.string.TestHasNegatives
+finished: Tue Oct 20 03:17:29.133 UTC 2026
+elapsed time (seconds): 0.493
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/319)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:28.641 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 166228
+finished: Tue Oct 20 03:17:29.132 UTC 2026
+elapsed time (seconds): 0.491
+----------configuration:(14/1169)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib 
+  patch:       java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base
+
+----------rerun:(38/4500)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestHasNegatives.java#id1 \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestHasNegatives \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -J-Dtest.patch.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base \\
+        --add-reads java.base=ALL-UNNAMED /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/402)----------
+command: main -XX:UseAVX=3 compiler.intrinsics.string.TestHasNegatives
+reason: User specified action: run main/othervm/timeout=1200 -XX:UseAVX=3 compiler.intrinsics.string.TestHasNegatives 
+started: Tue Oct 20 03:17:29.133 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Process id: 166466
+finished: Tue Oct 20 03:17:38.618 UTC 2026
+elapsed time (seconds): 9.485
+----------configuration:(3/219)----------
+Boot Layer
+  patch: java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base
+
+----------System.out:(3/189)----------
+For random generator using seed: 1856889064338347988
+To re-run test with same seed value please add "-Djdk.test.lib.random.seed=1856889064338347988" to command line.
+hasNegatives validated
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/4472)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestHasNegatives.java#id1 \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestHasNegatives \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -Dtest.patch.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -XX:UseAVX=3 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestHasNegatives_id1.d/main.0.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/211)----------
+command: build compiler.intrinsics.string.TestHasNegatives
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:38.619 UTC 2026
+finished: Tue Oct 20 03:17:38.619 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/504)----------
+command: main -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 compiler.intrinsics.string.TestHasNegatives
+reason: User specified action: run main/othervm/timeout=1200 -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:AVX3Threshold=0 compiler.intrinsics.string.TestHasNegatives 
+started: Tue Oct 20 03:17:38.619 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Process id: 166623
+finished: Tue Oct 20 03:17:47.291 UTC 2026
+elapsed time (seconds): 8.672
+----------configuration:(3/219)----------
+Boot Layer
+  patch: java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base
+
+----------System.out:(3/191)----------
+For random generator using seed: -2759999217960283633
+To re-run test with same seed value please add "-Djdk.test.lib.random.seed=-2759999217960283633" to command line.
+hasNegatives validated
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(40/4545)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestHasNegatives.java#id1 \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestHasNegatives.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestHasNegatives \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/test/lib \\
+        -Dtest.patch.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestHasNegatives_id1.d/compiler/patches/java.base \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -XX:UseAVX=3 \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:AVX3Threshold=0 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestHasNegatives_id1.d/main.1.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

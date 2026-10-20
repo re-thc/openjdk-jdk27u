@@ -1,0 +1,3414 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortBlank"
+        },
+        "primaryMetric" : {
+            "score" : 21.085762597460135,
+            "scoreError" : 4.431924118118755,
+            "scoreConfidence" : [
+                16.65383847934138,
+                25.51768671557889
+            ],
+            "scorePercentiles" : {
+                "0.0" : 20.81114642633382,
+                "50.0" : 21.173534535982206,
+                "90.0" : 21.27260683006438,
+                "95.0" : 21.27260683006438,
+                "99.0" : 21.27260683006438,
+                "99.9" : 21.27260683006438,
+                "99.99" : 21.27260683006438,
+                "99.999" : 21.27260683006438,
+                "99.9999" : 21.27260683006438,
+                "100.0" : 21.27260683006438
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    21.173534535982206,
+                    20.81114642633382,
+                    21.27260683006438
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortClean"
+        },
+        "primaryMetric" : {
+            "score" : 6.2559814719785605,
+            "scoreError" : 12.75790632046895,
+            "scoreConfidence" : [
+                -6.501924848490389,
+                19.01388779244751
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.517198864766927,
+                "50.0" : 6.343103166707415,
+                "90.0" : 6.9076423844613375,
+                "95.0" : 6.9076423844613375,
+                "99.0" : 6.9076423844613375,
+                "99.9" : 6.9076423844613375,
+                "99.99" : 6.9076423844613375,
+                "99.999" : 6.9076423844613375,
+                "99.9999" : 6.9076423844613375,
+                "100.0" : 6.9076423844613375
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.517198864766927,
+                    6.343103166707415,
+                    6.9076423844613375
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "early"
+        },
+        "primaryMetric" : {
+            "score" : 10.5087002217124,
+            "scoreError" : 1.0594988200960866,
+            "scoreConfidence" : [
+                9.449201401616314,
+                11.568199041808487
+            ],
+            "scorePercentiles" : {
+                "0.0" : 10.472552107654753,
+                "50.0" : 10.477859487517701,
+                "90.0" : 10.57568906996475,
+                "95.0" : 10.57568906996475,
+                "99.0" : 10.57568906996475,
+                "99.9" : 10.57568906996475,
+                "99.99" : 10.57568906996475,
+                "99.999" : 10.57568906996475,
+                "99.9999" : 10.57568906996475,
+                "100.0" : 10.57568906996475
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    10.57568906996475,
+                    10.477859487517701,
+                    10.472552107654753
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAt"
+        },
+        "primaryMetric" : {
+            "score" : 38.90009737465615,
+            "scoreError" : 1.1906586050412715,
+            "scoreConfidence" : [
+                37.70943876961488,
+                40.09075597969742
+            ],
+            "scorePercentiles" : {
+                "0.0" : 38.8478651504066,
+                "50.0" : 38.87916842512724,
+                "90.0" : 38.973258548434615,
+                "95.0" : 38.973258548434615,
+                "99.0" : 38.973258548434615,
+                "99.9" : 38.973258548434615,
+                "99.99" : 38.973258548434615,
+                "99.999" : 38.973258548434615,
+                "99.9999" : 38.973258548434615,
+                "100.0" : 38.973258548434615
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    38.973258548434615,
+                    38.87916842512724,
+                    38.8478651504066
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 38.913183709114506,
+            "scoreError" : 2.795374998719434,
+            "scoreConfidence" : [
+                36.117808710395074,
+                41.70855870783394
+            ],
+            "scorePercentiles" : {
+                "0.0" : 38.74644691056983,
+                "50.0" : 38.94530072159263,
+                "90.0" : 39.04780349518106,
+                "95.0" : 39.04780349518106,
+                "99.0" : 39.04780349518106,
+                "99.9" : 39.04780349518106,
+                "99.99" : 39.04780349518106,
+                "99.999" : 39.04780349518106,
+                "99.9999" : 39.04780349518106,
+                "100.0" : 39.04780349518106
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    38.94530072159263,
+                    38.74644691056983,
+                    39.04780349518106
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAt"
+        },
+        "primaryMetric" : {
+            "score" : 4.980308034517706,
+            "scoreError" : 0.4602587143247152,
+            "scoreConfidence" : [
+                4.5200493201929905,
+                5.440566748842421
+            ],
+            "scorePercentiles" : {
+                "0.0" : 4.955806138335167,
+                "50.0" : 4.97891304515755,
+                "90.0" : 5.006204920060402,
+                "95.0" : 5.006204920060402,
+                "99.0" : 5.006204920060402,
+                "99.9" : 5.006204920060402,
+                "99.99" : 5.006204920060402,
+                "99.999" : 5.006204920060402,
+                "99.9999" : 5.006204920060402,
+                "100.0" : 5.006204920060402
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    4.97891304515755,
+                    4.955806138335167,
+                    5.006204920060402
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 5.6018845948572284,
+            "scoreError" : 2.4959011677730274,
+            "scoreConfidence" : [
+                3.105983427084201,
+                8.097785762630256
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.446724510076247,
+                "50.0" : 5.65376153895723,
+                "90.0" : 5.705167735538207,
+                "95.0" : 5.705167735538207,
+                "99.0" : 5.705167735538207,
+                "99.9" : 5.705167735538207,
+                "99.99" : 5.705167735538207,
+                "99.999" : 5.705167735538207,
+                "99.9999" : 5.705167735538207,
+                "100.0" : 5.705167735538207
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.65376153895723,
+                    5.446724510076247,
+                    5.705167735538207
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "gateAt"
+        },
+        "primaryMetric" : {
+            "score" : 51.06795534137692,
+            "scoreError" : 14.866509147344217,
+            "scoreConfidence" : [
+                36.201446194032705,
+                65.93446448872115
+            ],
+            "scorePercentiles" : {
+                "0.0" : 50.127259514396776,
+                "50.0" : 51.51949660250816,
+                "90.0" : 51.55710990722585,
+                "95.0" : 51.55710990722585,
+                "99.0" : 51.55710990722585,
+                "99.9" : 51.55710990722585,
+                "99.99" : 51.55710990722585,
+                "99.999" : 51.55710990722585,
+                "99.9999" : 51.55710990722585,
+                "100.0" : 51.55710990722585
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    51.51949660250816,
+                    51.55710990722585,
+                    50.127259514396776
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBlank"
+        },
+        "primaryMetric" : {
+            "score" : 166.15684085980718,
+            "scoreError" : 21.12651646341894,
+            "scoreConfidence" : [
+                145.03032439638824,
+                187.2833573232261
+            ],
+            "scorePercentiles" : {
+                "0.0" : 165.46415280192824,
+                "50.0" : 165.51266093675895,
+                "90.0" : 167.49370884073434,
+                "95.0" : 167.49370884073434,
+                "99.0" : 167.49370884073434,
+                "99.9" : 167.49370884073434,
+                "99.99" : 167.49370884073434,
+                "99.999" : 167.49370884073434,
+                "99.9999" : 167.49370884073434,
+                "100.0" : 167.49370884073434
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    167.49370884073434,
+                    165.51266093675895,
+                    165.46415280192824
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longClean"
+        },
+        "primaryMetric" : {
+            "score" : 5.332698834352379,
+            "scoreError" : 0.36776289521392264,
+            "scoreConfidence" : [
+                4.964935939138456,
+                5.700461729566301
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.313006419006034,
+                "50.0" : 5.331797267365955,
+                "90.0" : 5.353292816685147,
+                "95.0" : 5.353292816685147,
+                "99.0" : 5.353292816685147,
+                "99.9" : 5.353292816685147,
+                "99.99" : 5.353292816685147,
+                "99.999" : 5.353292816685147,
+                "99.9999" : 5.353292816685147,
+                "100.0" : 5.353292816685147
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.353292816685147,
+                    5.313006419006034,
+                    5.331797267365955
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.isBlank",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBoth"
+        },
+        "primaryMetric" : {
+            "score" : 174.75990248471896,
+            "scoreError" : 242.7682175663832,
+            "scoreConfidence" : [
+                -68.00831508166425,
+                417.5281200511022
+            ],
+            "scorePercentiles" : {
+                "0.0" : 165.81946788763767,
+                "50.0" : 168.4076310589818,
+                "90.0" : 190.05260850753746,
+                "95.0" : 190.05260850753746,
+                "99.0" : 190.05260850753746,
+                "99.9" : 190.05260850753746,
+                "99.99" : 190.05260850753746,
+                "99.999" : 190.05260850753746,
+                "99.9999" : 190.05260850753746,
+                "100.0" : 190.05260850753746
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    168.4076310589818,
+                    190.05260850753746,
+                    165.81946788763767
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortBlank"
+        },
+        "primaryMetric" : {
+            "score" : 25.202281620759106,
+            "scoreError" : 8.214162533297854,
+            "scoreConfidence" : [
+                16.98811908746125,
+                33.41644415405696
+            ],
+            "scorePercentiles" : {
+                "0.0" : 24.683127120726233,
+                "50.0" : 25.437767718229246,
+                "90.0" : 25.485950023321838,
+                "95.0" : 25.485950023321838,
+                "99.0" : 25.485950023321838,
+                "99.9" : 25.485950023321838,
+                "99.99" : 25.485950023321838,
+                "99.999" : 25.485950023321838,
+                "99.9999" : 25.485950023321838,
+                "100.0" : 25.485950023321838
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    25.485950023321838,
+                    25.437767718229246,
+                    24.683127120726233
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortClean"
+        },
+        "primaryMetric" : {
+            "score" : 10.842067711533977,
+            "scoreError" : 6.188682003861942,
+            "scoreConfidence" : [
+                4.653385707672035,
+                17.03074971539592
+            ],
+            "scorePercentiles" : {
+                "0.0" : 10.573707823294258,
+                "50.0" : 10.729146134530838,
+                "90.0" : 11.223349176776829,
+                "95.0" : 11.223349176776829,
+                "99.0" : 11.223349176776829,
+                "99.9" : 11.223349176776829,
+                "99.99" : 11.223349176776829,
+                "99.999" : 11.223349176776829,
+                "99.9999" : 11.223349176776829,
+                "100.0" : 11.223349176776829
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    10.573707823294258,
+                    10.729146134530838,
+                    11.223349176776829
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "early"
+        },
+        "primaryMetric" : {
+            "score" : 176.73983968218667,
+            "scoreError" : 113.2755837769697,
+            "scoreConfidence" : [
+                63.46425590521697,
+                290.01542345915635
+            ],
+            "scorePercentiles" : {
+                "0.0" : 169.7736932329756,
+                "50.0" : 178.75441211649488,
+                "90.0" : 181.69141369708953,
+                "95.0" : 181.69141369708953,
+                "99.0" : 181.69141369708953,
+                "99.9" : 181.69141369708953,
+                "99.99" : 181.69141369708953,
+                "99.999" : 181.69141369708953,
+                "99.9999" : 181.69141369708953,
+                "100.0" : 181.69141369708953
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    178.75441211649488,
+                    181.69141369708953,
+                    169.7736932329756
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAt"
+        },
+        "primaryMetric" : {
+            "score" : 911.3550195298577,
+            "scoreError" : 1725.6714409905524,
+            "scoreConfidence" : [
+                -814.3164214606946,
+                2637.02646052041
+            ],
+            "scorePercentiles" : {
+                "0.0" : 849.0775041969782,
+                "50.0" : 864.786778101068,
+                "90.0" : 1020.2007762915271,
+                "95.0" : 1020.2007762915271,
+                "99.0" : 1020.2007762915271,
+                "99.9" : 1020.2007762915271,
+                "99.99" : 1020.2007762915271,
+                "99.999" : 1020.2007762915271,
+                "99.9999" : 1020.2007762915271,
+                "100.0" : 1020.2007762915271
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    849.0775041969782,
+                    864.786778101068,
+                    1020.2007762915271
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 853.3193608883789,
+            "scoreError" : 812.9868032170477,
+            "scoreConfidence" : [
+                40.33255767133119,
+                1666.3061641054267
+            ],
+            "scorePercentiles" : {
+                "0.0" : 815.0452827812067,
+                "50.0" : 842.6714696921239,
+                "90.0" : 902.2413301918064,
+                "95.0" : 902.2413301918064,
+                "99.0" : 902.2413301918064,
+                "99.9" : 902.2413301918064,
+                "99.99" : 902.2413301918064,
+                "99.999" : 902.2413301918064,
+                "99.9999" : 902.2413301918064,
+                "100.0" : 902.2413301918064
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    842.6714696921239,
+                    815.0452827812067,
+                    902.2413301918064
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAt"
+        },
+        "primaryMetric" : {
+            "score" : 882.8657727311153,
+            "scoreError" : 1016.1141792216243,
+            "scoreConfidence" : [
+                -133.24840649050907,
+                1898.9799519527396
+            ],
+            "scorePercentiles" : {
+                "0.0" : 830.0102198977181,
+                "50.0" : 877.5628955862011,
+                "90.0" : 941.0242027094266,
+                "95.0" : 941.0242027094266,
+                "99.0" : 941.0242027094266,
+                "99.9" : 941.0242027094266,
+                "99.99" : 941.0242027094266,
+                "99.999" : 941.0242027094266,
+                "99.9999" : 941.0242027094266,
+                "100.0" : 941.0242027094266
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    877.5628955862011,
+                    830.0102198977181,
+                    941.0242027094266
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 971.5181540916592,
+            "scoreError" : 2080.867602602448,
+            "scoreConfidence" : [
+                -1109.349448510789,
+                3052.3857566941074
+            ],
+            "scorePercentiles" : {
+                "0.0" : 875.8402501421263,
+                "50.0" : 940.9744229149115,
+                "90.0" : 1097.7397892179395,
+                "95.0" : 1097.7397892179395,
+                "99.0" : 1097.7397892179395,
+                "99.9" : 1097.7397892179395,
+                "99.99" : 1097.7397892179395,
+                "99.999" : 1097.7397892179395,
+                "99.9999" : 1097.7397892179395,
+                "100.0" : 1097.7397892179395
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    940.9744229149115,
+                    1097.7397892179395,
+                    875.8402501421263
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "gateAt"
+        },
+        "primaryMetric" : {
+            "score" : 55.907932514080194,
+            "scoreError" : 14.037348159864479,
+            "scoreConfidence" : [
+                41.870584354215715,
+                69.94528067394467
+            ],
+            "scorePercentiles" : {
+                "0.0" : 55.39083482359917,
+                "50.0" : 55.540792291279935,
+                "90.0" : 56.79217042736148,
+                "95.0" : 56.79217042736148,
+                "99.0" : 56.79217042736148,
+                "99.9" : 56.79217042736148,
+                "99.99" : 56.79217042736148,
+                "99.999" : 56.79217042736148,
+                "99.9999" : 56.79217042736148,
+                "100.0" : 56.79217042736148
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    55.540792291279935,
+                    56.79217042736148,
+                    55.39083482359917
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBlank"
+        },
+        "primaryMetric" : {
+            "score" : 174.45697808497175,
+            "scoreError" : 240.04968884081697,
+            "scoreConfidence" : [
+                -65.59271075584522,
+                414.50666692578875
+            ],
+            "scorePercentiles" : {
+                "0.0" : 166.2951032297493,
+                "50.0" : 167.43975972036696,
+                "90.0" : 189.63607130479903,
+                "95.0" : 189.63607130479903,
+                "99.0" : 189.63607130479903,
+                "99.9" : 189.63607130479903,
+                "99.99" : 189.63607130479903,
+                "99.999" : 189.63607130479903,
+                "99.9999" : 189.63607130479903,
+                "100.0" : 189.63607130479903
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    189.63607130479903,
+                    167.43975972036696,
+                    166.2951032297493
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longClean"
+        },
+        "primaryMetric" : {
+            "score" : 11.736910663111141,
+            "scoreError" : 6.617919297766237,
+            "scoreConfidence" : [
+                5.118991365344904,
+                18.354829960877378
+            ],
+            "scorePercentiles" : {
+                "0.0" : 11.421593689888184,
+                "50.0" : 11.655781961509733,
+                "90.0" : 12.133356337935506,
+                "95.0" : 12.133356337935506,
+                "99.0" : 12.133356337935506,
+                "99.9" : 12.133356337935506,
+                "99.99" : 12.133356337935506,
+                "99.999" : 12.133356337935506,
+                "99.9999" : 12.133356337935506,
+                "100.0" : 12.133356337935506
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    12.133356337935506,
+                    11.655781961509733,
+                    11.421593689888184
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.strip",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBoth"
+        },
+        "primaryMetric" : {
+            "score" : 397.3657553187,
+            "scoreError" : 214.87310877098218,
+            "scoreConfidence" : [
+                182.4926465477178,
+                612.2388640896822
+            ],
+            "scorePercentiles" : {
+                "0.0" : 384.19251874534723,
+                "50.0" : 401.0251254671222,
+                "90.0" : 406.8796217436305,
+                "95.0" : 406.8796217436305,
+                "99.0" : 406.8796217436305,
+                "99.9" : 406.8796217436305,
+                "99.99" : 406.8796217436305,
+                "99.999" : 406.8796217436305,
+                "99.9999" : 406.8796217436305,
+                "100.0" : 406.8796217436305
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    406.8796217436305,
+                    384.19251874534723,
+                    401.0251254671222
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortBlank"
+        },
+        "primaryMetric" : {
+            "score" : 26.182808324957957,
+            "scoreError" : 10.816590888305665,
+            "scoreConfidence" : [
+                15.366217436652292,
+                36.99939921326362
+            ],
+            "scorePercentiles" : {
+                "0.0" : 25.690086197054896,
+                "50.0" : 26.01753631129752,
+                "90.0" : 26.840802466521453,
+                "95.0" : 26.840802466521453,
+                "99.0" : 26.840802466521453,
+                "99.9" : 26.840802466521453,
+                "99.99" : 26.840802466521453,
+                "99.999" : 26.840802466521453,
+                "99.9999" : 26.840802466521453,
+                "100.0" : 26.840802466521453
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    25.690086197054896,
+                    26.840802466521453,
+                    26.01753631129752
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortClean"
+        },
+        "primaryMetric" : {
+            "score" : 6.140883291523099,
+            "scoreError" : 1.0518642244181275,
+            "scoreConfidence" : [
+                5.089019067104971,
+                7.192747515941226
+            ],
+            "scorePercentiles" : {
+                "0.0" : 6.076308376131876,
+                "50.0" : 6.159142178519157,
+                "90.0" : 6.187199319918262,
+                "95.0" : 6.187199319918262,
+                "99.0" : 6.187199319918262,
+                "99.9" : 6.187199319918262,
+                "99.99" : 6.187199319918262,
+                "99.999" : 6.187199319918262,
+                "99.9999" : 6.187199319918262,
+                "100.0" : 6.187199319918262
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    6.076308376131876,
+                    6.159142178519157,
+                    6.187199319918262
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "early"
+        },
+        "primaryMetric" : {
+            "score" : 878.6381074139381,
+            "scoreError" : 949.9196880935804,
+            "scoreConfidence" : [
+                -71.28158067964227,
+                1828.5577955075184
+            ],
+            "scorePercentiles" : {
+                "0.0" : 839.2086241828189,
+                "50.0" : 859.0451511218246,
+                "90.0" : 937.6605469371706,
+                "95.0" : 937.6605469371706,
+                "99.0" : 937.6605469371706,
+                "99.9" : 937.6605469371706,
+                "99.99" : 937.6605469371706,
+                "99.999" : 937.6605469371706,
+                "99.9999" : 937.6605469371706,
+                "100.0" : 937.6605469371706
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    859.0451511218246,
+                    839.2086241828189,
+                    937.6605469371706
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAt"
+        },
+        "primaryMetric" : {
+            "score" : 734.2149413597417,
+            "scoreError" : 197.13181018711006,
+            "scoreConfidence" : [
+                537.0831311726316,
+                931.3467515468518
+            ],
+            "scorePercentiles" : {
+                "0.0" : 723.4811137367124,
+                "50.0" : 734.07307418837,
+                "90.0" : 745.0906361541425,
+                "95.0" : 745.0906361541425,
+                "99.0" : 745.0906361541425,
+                "99.9" : 745.0906361541425,
+                "99.99" : 745.0906361541425,
+                "99.999" : 745.0906361541425,
+                "99.9999" : 745.0906361541425,
+                "100.0" : 745.0906361541425
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    745.0906361541425,
+                    734.07307418837,
+                    723.4811137367124
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 727.288972216268,
+            "scoreError" : 264.99604607005955,
+            "scoreConfidence" : [
+                462.29292614620846,
+                992.2850182863276
+            ],
+            "scorePercentiles" : {
+                "0.0" : 710.6026490066225,
+                "50.0" : 734.1624054310818,
+                "90.0" : 737.1018622110996,
+                "95.0" : 737.1018622110996,
+                "99.0" : 737.1018622110996,
+                "99.9" : 737.1018622110996,
+                "99.99" : 737.1018622110996,
+                "99.999" : 737.1018622110996,
+                "99.9999" : 737.1018622110996,
+                "100.0" : 737.1018622110996
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    734.1624054310818,
+                    737.1018622110996,
+                    710.6026490066225
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAt"
+        },
+        "primaryMetric" : {
+            "score" : 5.754522815512594,
+            "scoreError" : 2.875835672957481,
+            "scoreConfidence" : [
+                2.878687142555113,
+                8.630358488470076
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.656757739112908,
+                "50.0" : 5.670438999117172,
+                "90.0" : 5.936371708307702,
+                "95.0" : 5.936371708307702,
+                "99.0" : 5.936371708307702,
+                "99.9" : 5.936371708307702,
+                "99.99" : 5.936371708307702,
+                "99.999" : 5.936371708307702,
+                "99.9999" : 5.936371708307702,
+                "100.0" : 5.936371708307702
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.656757739112908,
+                    5.936371708307702,
+                    5.670438999117172
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 6.132647029269266,
+            "scoreError" : 3.5034899757920264,
+            "scoreConfidence" : [
+                2.6291570534772393,
+                9.636137005061292
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.957786263130429,
+                "50.0" : 6.101982454324822,
+                "90.0" : 6.338172370352547,
+                "95.0" : 6.338172370352547,
+                "99.0" : 6.338172370352547,
+                "99.9" : 6.338172370352547,
+                "99.99" : 6.338172370352547,
+                "99.999" : 6.338172370352547,
+                "99.9999" : 6.338172370352547,
+                "100.0" : 6.338172370352547
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    6.338172370352547,
+                    5.957786263130429,
+                    6.101982454324822
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "gateAt"
+        },
+        "primaryMetric" : {
+            "score" : 48.581936020193886,
+            "scoreError" : 8.992727521950563,
+            "scoreConfidence" : [
+                39.58920849824332,
+                57.57466354214445
+            ],
+            "scorePercentiles" : {
+                "0.0" : 48.257605195463704,
+                "50.0" : 48.33903479737543,
+                "90.0" : 49.14916806774253,
+                "95.0" : 49.14916806774253,
+                "99.0" : 49.14916806774253,
+                "99.9" : 49.14916806774253,
+                "99.99" : 49.14916806774253,
+                "99.999" : 49.14916806774253,
+                "99.9999" : 49.14916806774253,
+                "100.0" : 49.14916806774253
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    48.33903479737543,
+                    49.14916806774253,
+                    48.257605195463704
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBlank"
+        },
+        "primaryMetric" : {
+            "score" : 157.34499541476427,
+            "scoreError" : 54.30203610699616,
+            "scoreConfidence" : [
+                103.04295930776811,
+                211.64703152176043
+            ],
+            "scorePercentiles" : {
+                "0.0" : 154.8350320400373,
+                "50.0" : 156.56663424276638,
+                "90.0" : 160.6333199614891,
+                "95.0" : 160.6333199614891,
+                "99.0" : 160.6333199614891,
+                "99.9" : 160.6333199614891,
+                "99.99" : 160.6333199614891,
+                "99.999" : 160.6333199614891,
+                "99.9999" : 160.6333199614891,
+                "100.0" : 160.6333199614891
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    160.6333199614891,
+                    156.56663424276638,
+                    154.8350320400373
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longClean"
+        },
+        "primaryMetric" : {
+            "score" : 5.982910389024358,
+            "scoreError" : 3.7194043508342354,
+            "scoreConfidence" : [
+                2.2635060381901226,
+                9.702314739858593
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.847581357179026,
+                "50.0" : 5.8837552957974415,
+                "90.0" : 6.217394514096608,
+                "95.0" : 6.217394514096608,
+                "99.0" : 6.217394514096608,
+                "99.9" : 6.217394514096608,
+                "99.99" : 6.217394514096608,
+                "99.999" : 6.217394514096608,
+                "99.9999" : 6.217394514096608,
+                "100.0" : 6.217394514096608
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.847581357179026,
+                    5.8837552957974415,
+                    6.217394514096608
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripLeading",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBoth"
+        },
+        "primaryMetric" : {
+            "score" : 941.7286786197319,
+            "scoreError" : 763.810945137531,
+            "scoreConfidence" : [
+                177.9177334822009,
+                1705.539623757263
+            ],
+            "scorePercentiles" : {
+                "0.0" : 911.0396955854441,
+                "50.0" : 924.723671577859,
+                "90.0" : 989.4226686958928,
+                "95.0" : 989.4226686958928,
+                "99.0" : 989.4226686958928,
+                "99.9" : 989.4226686958928,
+                "99.99" : 989.4226686958928,
+                "99.999" : 989.4226686958928,
+                "99.9999" : 989.4226686958928,
+                "100.0" : 989.4226686958928
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    924.723671577859,
+                    911.0396955854441,
+                    989.4226686958928
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortBlank"
+        },
+        "primaryMetric" : {
+            "score" : 27.028228789481364,
+            "scoreError" : 8.774201501802924,
+            "scoreConfidence" : [
+                18.25402728767844,
+                35.80243029128429
+            ],
+            "scorePercentiles" : {
+                "0.0" : 26.737137769498105,
+                "50.0" : 26.76419371912491,
+                "90.0" : 27.583354879821087,
+                "95.0" : 27.583354879821087,
+                "99.0" : 27.583354879821087,
+                "99.9" : 27.583354879821087,
+                "99.99" : 27.583354879821087,
+                "99.999" : 27.583354879821087,
+                "99.9999" : 27.583354879821087,
+                "100.0" : 27.583354879821087
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    27.583354879821087,
+                    26.76419371912491,
+                    26.737137769498105
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortClean"
+        },
+        "primaryMetric" : {
+            "score" : 7.2614836752614424,
+            "scoreError" : 4.850538393489236,
+            "scoreConfidence" : [
+                2.4109452817722064,
+                12.11202206875068
+            ],
+            "scorePercentiles" : {
+                "0.0" : 6.960524578272467,
+                "50.0" : 7.359457027264406,
+                "90.0" : 7.4644694202474575,
+                "95.0" : 7.4644694202474575,
+                "99.0" : 7.4644694202474575,
+                "99.9" : 7.4644694202474575,
+                "99.99" : 7.4644694202474575,
+                "99.999" : 7.4644694202474575,
+                "99.9999" : 7.4644694202474575,
+                "100.0" : 7.4644694202474575
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    6.960524578272467,
+                    7.4644694202474575,
+                    7.359457027264406
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "early"
+        },
+        "primaryMetric" : {
+            "score" : 189.11347583182783,
+            "scoreError" : 77.0202100662202,
+            "scoreConfidence" : [
+                112.09326576560763,
+                266.13368589804804
+            ],
+            "scorePercentiles" : {
+                "0.0" : 185.02219092661488,
+                "50.0" : 188.86366423591784,
+                "90.0" : 193.4545723329507,
+                "95.0" : 193.4545723329507,
+                "99.0" : 193.4545723329507,
+                "99.9" : 193.4545723329507,
+                "99.99" : 193.4545723329507,
+                "99.999" : 193.4545723329507,
+                "99.9999" : 193.4545723329507,
+                "100.0" : 193.4545723329507
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    185.02219092661488,
+                    193.4545723329507,
+                    188.86366423591784
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAt"
+        },
+        "primaryMetric" : {
+            "score" : 6.989900286171232,
+            "scoreError" : 6.504639385777277,
+            "scoreConfidence" : [
+                0.4852609003939552,
+                13.494539671948509
+            ],
+            "scorePercentiles" : {
+                "0.0" : 6.663373178970177,
+                "50.0" : 6.936007933808263,
+                "90.0" : 7.370319745735255,
+                "95.0" : 7.370319745735255,
+                "99.0" : 7.370319745735255,
+                "99.9" : 7.370319745735255,
+                "99.99" : 7.370319745735255,
+                "99.999" : 7.370319745735255,
+                "99.9999" : 7.370319745735255,
+                "100.0" : 7.370319745735255
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    7.370319745735255,
+                    6.936007933808263,
+                    6.663373178970177
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 7.046219705524088,
+            "scoreError" : 14.190645099033565,
+            "scoreConfidence" : [
+                -7.1444253935094775,
+                21.236864804557655
+            ],
+            "scorePercentiles" : {
+                "0.0" : 6.467480099272474,
+                "50.0" : 6.740756783681792,
+                "90.0" : 7.930422233618,
+                "95.0" : 7.930422233618,
+                "99.0" : 7.930422233618,
+                "99.9" : 7.930422233618,
+                "99.99" : 7.930422233618,
+                "99.999" : 7.930422233618,
+                "99.9999" : 7.930422233618,
+                "100.0" : 7.930422233618
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    6.467480099272474,
+                    6.740756783681792,
+                    7.930422233618
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAt"
+        },
+        "primaryMetric" : {
+            "score" : 850.5914776970634,
+            "scoreError" : 548.5790052785,
+            "scoreConfidence" : [
+                302.01247241856345,
+                1399.1704829755633
+            ],
+            "scorePercentiles" : {
+                "0.0" : 816.258237010711,
+                "50.0" : 863.2754374315502,
+                "90.0" : 872.2407586489288,
+                "95.0" : 872.2407586489288,
+                "99.0" : 872.2407586489288,
+                "99.9" : 872.2407586489288,
+                "99.99" : 872.2407586489288,
+                "99.999" : 872.2407586489288,
+                "99.9999" : 872.2407586489288,
+                "100.0" : 872.2407586489288
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    863.2754374315502,
+                    872.2407586489288,
+                    816.258237010711
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 795.0781129528906,
+            "scoreError" : 133.24761714939635,
+            "scoreConfidence" : [
+                661.8304958034943,
+                928.3257301022869
+            ],
+            "scorePercentiles" : {
+                "0.0" : 786.6448819887488,
+                "50.0" : 799.2222860883588,
+                "90.0" : 799.3671707815644,
+                "95.0" : 799.3671707815644,
+                "99.0" : 799.3671707815644,
+                "99.9" : 799.3671707815644,
+                "99.99" : 799.3671707815644,
+                "99.999" : 799.3671707815644,
+                "99.9999" : 799.3671707815644,
+                "100.0" : 799.3671707815644
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    799.2222860883588,
+                    786.6448819887488,
+                    799.3671707815644
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "gateAt"
+        },
+        "primaryMetric" : {
+            "score" : 52.42551230453359,
+            "scoreError" : 40.20002021670243,
+            "scoreConfidence" : [
+                12.225492087831164,
+                92.62553252123601
+            ],
+            "scorePercentiles" : {
+                "0.0" : 50.729299223373644,
+                "50.0" : 51.63119604344373,
+                "90.0" : 54.91604164678341,
+                "95.0" : 54.91604164678341,
+                "99.0" : 54.91604164678341,
+                "99.9" : 54.91604164678341,
+                "99.99" : 54.91604164678341,
+                "99.999" : 54.91604164678341,
+                "99.9999" : 54.91604164678341,
+                "100.0" : 54.91604164678341
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    50.729299223373644,
+                    54.91604164678341,
+                    51.63119604344373
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBlank"
+        },
+        "primaryMetric" : {
+            "score" : 189.15979353022297,
+            "scoreError" : 123.98694374534686,
+            "scoreConfidence" : [
+                65.1728497848761,
+                313.1467372755698
+            ],
+            "scorePercentiles" : {
+                "0.0" : 181.33054647936302,
+                "50.0" : 192.61103341073445,
+                "90.0" : 193.53780070057144,
+                "95.0" : 193.53780070057144,
+                "99.0" : 193.53780070057144,
+                "99.9" : 193.53780070057144,
+                "99.99" : 193.53780070057144,
+                "99.999" : 193.53780070057144,
+                "99.9999" : 193.53780070057144,
+                "100.0" : 193.53780070057144
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    181.33054647936302,
+                    192.61103341073445,
+                    193.53780070057144
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longClean"
+        },
+        "primaryMetric" : {
+            "score" : 7.068544536080922,
+            "scoreError" : 17.619585751877974,
+            "scoreConfidence" : [
+                -10.551041215797053,
+                24.688130287958895
+            ],
+            "scorePercentiles" : {
+                "0.0" : 6.284732239043102,
+                "50.0" : 6.773444856675643,
+                "90.0" : 8.147456512524023,
+                "95.0" : 8.147456512524023,
+                "99.0" : 8.147456512524023,
+                "99.9" : 8.147456512524023,
+                "99.99" : 8.147456512524023,
+                "99.999" : 8.147456512524023,
+                "99.9999" : 8.147456512524023,
+                "100.0" : 8.147456512524023
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    6.773444856675643,
+                    8.147456512524023,
+                    6.284732239043102
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.stripTrailing",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBoth"
+        },
+        "primaryMetric" : {
+            "score" : 929.0344949575118,
+            "scoreError" : 646.6831479991087,
+            "scoreConfidence" : [
+                282.35134695840316,
+                1575.7176429566205
+            ],
+            "scorePercentiles" : {
+                "0.0" : 891.3739449410591,
+                "50.0" : 933.9815455809223,
+                "90.0" : 961.7479943505539,
+                "95.0" : 961.7479943505539,
+                "99.0" : 961.7479943505539,
+                "99.9" : 961.7479943505539,
+                "99.99" : 961.7479943505539,
+                "99.999" : 961.7479943505539,
+                "99.9999" : 961.7479943505539,
+                "100.0" : 961.7479943505539
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    891.3739449410591,
+                    961.7479943505539,
+                    933.9815455809223
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortBlank"
+        },
+        "primaryMetric" : {
+            "score" : 20.08456253804152,
+            "scoreError" : 10.466277835537003,
+            "scoreConfidence" : [
+                9.618284702504518,
+                30.550840373578524
+            ],
+            "scorePercentiles" : {
+                "0.0" : 19.52974310397563,
+                "50.0" : 20.048517213111143,
+                "90.0" : 20.67542729703778,
+                "95.0" : 20.67542729703778,
+                "99.0" : 20.67542729703778,
+                "99.9" : 20.67542729703778,
+                "99.99" : 20.67542729703778,
+                "99.999" : 20.67542729703778,
+                "99.9999" : 20.67542729703778,
+                "100.0" : 20.67542729703778
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    20.048517213111143,
+                    20.67542729703778,
+                    19.52974310397563
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "shortClean"
+        },
+        "primaryMetric" : {
+            "score" : 6.059684210145828,
+            "scoreError" : 5.910112452043294,
+            "scoreConfidence" : [
+                0.14957175810253354,
+                11.969796662189122
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.736848896921449,
+                "50.0" : 6.057459878689197,
+                "90.0" : 6.384743854826836,
+                "95.0" : 6.384743854826836,
+                "99.0" : 6.384743854826836,
+                "99.9" : 6.384743854826836,
+                "99.99" : 6.384743854826836,
+                "99.999" : 6.384743854826836,
+                "99.9999" : 6.384743854826836,
+                "100.0" : 6.384743854826836
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.736848896921449,
+                    6.384743854826836,
+                    6.057459878689197
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "early"
+        },
+        "primaryMetric" : {
+            "score" : 195.45199381753437,
+            "scoreError" : 144.25723890266565,
+            "scoreConfidence" : [
+                51.194754914868724,
+                339.7092327202
+            ],
+            "scorePercentiles" : {
+                "0.0" : 190.24658244582344,
+                "50.0" : 191.55839340203758,
+                "90.0" : 204.55100560474207,
+                "95.0" : 204.55100560474207,
+                "99.0" : 204.55100560474207,
+                "99.9" : 204.55100560474207,
+                "99.99" : 204.55100560474207,
+                "99.999" : 204.55100560474207,
+                "99.9999" : 204.55100560474207,
+                "100.0" : 204.55100560474207
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    191.55839340203758,
+                    204.55100560474207,
+                    190.24658244582344
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAt"
+        },
+        "primaryMetric" : {
+            "score" : 827.7086490977509,
+            "scoreError" : 1065.3900918346178,
+            "scoreConfidence" : [
+                -237.68144273686687,
+                1893.0987409323689
+            ],
+            "scorePercentiles" : {
+                "0.0" : 792.4031278938162,
+                "50.0" : 795.6077882857824,
+                "90.0" : 895.1150311136543,
+                "95.0" : 895.1150311136543,
+                "99.0" : 895.1150311136543,
+                "99.9" : 895.1150311136543,
+                "99.99" : 895.1150311136543,
+                "99.999" : 895.1150311136543,
+                "99.9999" : 895.1150311136543,
+                "100.0" : 895.1150311136543
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    795.6077882857824,
+                    792.4031278938162,
+                    895.1150311136543
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "probeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 945.8415724322807,
+            "scoreError" : 618.3822470527876,
+            "scoreConfidence" : [
+                327.45932537949307,
+                1564.2238194850684
+            ],
+            "scorePercentiles" : {
+                "0.0" : 918.0119363030465,
+                "50.0" : 935.9226663426125,
+                "90.0" : 983.5901146511834,
+                "95.0" : 983.5901146511834,
+                "99.0" : 983.5901146511834,
+                "99.9" : 983.5901146511834,
+                "99.99" : 983.5901146511834,
+                "99.999" : 983.5901146511834,
+                "99.9999" : 983.5901146511834,
+                "100.0" : 983.5901146511834
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    935.9226663426125,
+                    983.5901146511834,
+                    918.0119363030465
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAt"
+        },
+        "primaryMetric" : {
+            "score" : 880.680878140449,
+            "scoreError" : 407.075405978892,
+            "scoreConfidence" : [
+                473.605472161557,
+                1287.756284119341
+            ],
+            "scorePercentiles" : {
+                "0.0" : 855.1020660909968,
+                "50.0" : 890.7923873585308,
+                "90.0" : 896.1481809718194,
+                "95.0" : 896.1481809718194,
+                "99.0" : 896.1481809718194,
+                "99.9" : 896.1481809718194,
+                "99.99" : 896.1481809718194,
+                "99.999" : 896.1481809718194,
+                "99.9999" : 896.1481809718194,
+                "100.0" : 896.1481809718194
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    890.7923873585308,
+                    855.1020660909968,
+                    896.1481809718194
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "tailProbeAfter"
+        },
+        "primaryMetric" : {
+            "score" : 802.0741452439212,
+            "scoreError" : 941.2610929210321,
+            "scoreConfidence" : [
+                -139.18694767711088,
+                1743.3352381649534
+            ],
+            "scorePercentiles" : {
+                "0.0" : 754.9700479594607,
+                "50.0" : 794.0380228740026,
+                "90.0" : 857.2143648983002,
+                "95.0" : 857.2143648983002,
+                "99.0" : 857.2143648983002,
+                "99.9" : 857.2143648983002,
+                "99.99" : 857.2143648983002,
+                "99.999" : 857.2143648983002,
+                "99.9999" : 857.2143648983002,
+                "100.0" : 857.2143648983002
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    794.0380228740026,
+                    857.2143648983002,
+                    754.9700479594607
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "gateAt"
+        },
+        "primaryMetric" : {
+            "score" : 47.74383318008006,
+            "scoreError" : 39.180611768258075,
+            "scoreConfidence" : [
+                8.563221411821985,
+                86.92444494833813
+            ],
+            "scorePercentiles" : {
+                "0.0" : 45.72171097524548,
+                "50.0" : 47.51169493367453,
+                "90.0" : 49.99809363132018,
+                "95.0" : 49.99809363132018,
+                "99.0" : 49.99809363132018,
+                "99.9" : 49.99809363132018,
+                "99.99" : 49.99809363132018,
+                "99.999" : 49.99809363132018,
+                "99.9999" : 49.99809363132018,
+                "100.0" : 49.99809363132018
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    45.72171097524548,
+                    47.51169493367453,
+                    49.99809363132018
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBlank"
+        },
+        "primaryMetric" : {
+            "score" : 158.78316174954603,
+            "scoreError" : 128.13426131964786,
+            "scoreConfidence" : [
+                30.648900429898163,
+                286.9174230691939
+            ],
+            "scorePercentiles" : {
+                "0.0" : 152.55230702429287,
+                "50.0" : 157.4028705711424,
+                "90.0" : 166.3943076532028,
+                "95.0" : 166.3943076532028,
+                "99.0" : 166.3943076532028,
+                "99.9" : 166.3943076532028,
+                "99.99" : 166.3943076532028,
+                "99.999" : 166.3943076532028,
+                "99.9999" : 166.3943076532028,
+                "100.0" : 166.3943076532028
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    166.3943076532028,
+                    157.4028705711424,
+                    152.55230702429287
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longClean"
+        },
+        "primaryMetric" : {
+            "score" : 6.071901311666472,
+            "scoreError" : 4.976347529601683,
+            "scoreConfidence" : [
+                1.0955537820647887,
+                11.048248841268155
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5.7655529594279935,
+                "50.0" : 6.161697996172663,
+                "90.0" : 6.28845297939876,
+                "95.0" : 6.28845297939876,
+                "99.0" : 6.28845297939876,
+                "99.9" : 6.28845297939876,
+                "99.99" : 6.28845297939876,
+                "99.999" : 6.28845297939876,
+                "99.9999" : 6.28845297939876,
+                "100.0" : 6.28845297939876
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    5.7655529594279935,
+                    6.161697996172663,
+                    6.28845297939876
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.lang.StringZillaScans.trim",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 0,
+        "jvm" : "/workspace/sz-candidate/build/scans/images/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:UseAVX=2",
+            "-Xbatch",
+            "-XX:TieredStopAtLevel=1",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+UnlockExperimentalVMOptions",
+            "-DcompilerBlackholesEnabled=true",
+            "-XX:CompileCommandFile=/workspace/sz-evidence/hints/candidate.commands"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-adhoc.agent.sz-candidate",
+        "warmupIterations" : 2,
+        "warmupTime" : "100 ms",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "100 ms",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "workload" : "longBoth"
+        },
+        "primaryMetric" : {
+            "score" : 342.2817936223707,
+            "scoreError" : 496.8339276944129,
+            "scoreConfidence" : [
+                -154.55213407204224,
+                839.1157213167836
+            ],
+            "scorePercentiles" : {
+                "0.0" : 325.9402831008893,
+                "50.0" : 327.18539582924757,
+                "90.0" : 373.71970193697496,
+                "95.0" : 373.71970193697496,
+                "99.0" : 373.71970193697496,
+                "99.9" : 373.71970193697496,
+                "99.99" : 373.71970193697496,
+                "99.999" : 373.71970193697496,
+                "99.9999" : 373.71970193697496,
+                "100.0" : 373.71970193697496
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    373.71970193697496,
+                    325.9402831008893,
+                    327.18539582924757
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

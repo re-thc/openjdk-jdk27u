@@ -1,0 +1,273 @@
+#Test Results (version 2)
+#Tue Oct 20 03:14:10 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings CharAt\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings CharAt\n
+source=CharAt.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java
+elapsed=3039 0\:00\:03.039
+end=Tue Oct 20 03\:14\:10 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 03\:14\:07 UTC 2026
+test=java/lang/String/CompactString/CharAt.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=3042
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/210)----------
+command: build CharAt
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:07.495 UTC 2026
+Test directory:
+  compile: CharAt
+finished: Tue Oct 20 03:14:09.074 UTC 2026
+elapsed time (seconds): 1.579
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/303)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:14:07.508 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 161294
+finished: Tue Oct 20 03:14:09.074 UTC 2026
+elapsed time (seconds): 1.566
+----------configuration:(13/819)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3347)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/CharAt.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java \\
+        -J-Dtest.main.class=CharAt \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/290)----------
+command: testng -XX:+CompactStrings CharAt
+reason: User specified action: run testng/othervm -XX:+CompactStrings CharAt 
+started: Tue Oct 20 03:14:09.074 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 161352
+finished: Tue Oct 20 03:14:09.628 UTC 2026
+elapsed time (seconds): 0.554
+----------configuration:(0/0)----------
+----------System.out:(16/944)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:09.529] config CompactString.setUp(): success [0ms]
+[03:14:09.558] test CharAt.testCharAt("A", [C@7f91a1b8): success [10ms]
+[03:14:09.560] test CharAt.testCharAt("AB", [C@60c506bb): success [1ms]
+[03:14:09.561] test CharAt.testCharAt("ABCD", [C@54d9a75c): success [0ms]
+[03:14:09.563] test CharAt.testCharAt("ABCDEFGH", [C@130c1ee6): success [1ms]
+[03:14:09.563] test CharAt.testCharAt("\uff21", [C@3f811dd1): success [0ms]
+[03:14:09.565] test CharAt.testCharAt("\uff21\uff22", [C@6c8cec7a): success [1ms]
+[03:14:09.566] test CharAt.testCharAt("\uff21A", [C@18b78df7): success [0ms]
+[03:14:09.567] test CharAt.testCharAt("A\uff21", [C@16d50519): success [0ms]
+
+===============================================
+java/lang/String/CompactString/CharAt.java
+Total tests run: 8, Passes: 8, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3443)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/CharAt.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java \\
+        -Dtest.main.class=CharAt \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/CharAt.d/testng.0.jta java/lang/String/CompactString/CharAt.java false CharAt
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/174)----------
+command: build CharAt
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:09.629 UTC 2026
+finished: Tue Oct 20 03:14:09.629 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/290)----------
+command: testng -XX:-CompactStrings CharAt
+reason: User specified action: run testng/othervm -XX:-CompactStrings CharAt 
+started: Tue Oct 20 03:14:09.629 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 161407
+finished: Tue Oct 20 03:14:10.468 UTC 2026
+elapsed time (seconds): 0.839
+----------configuration:(0/0)----------
+----------System.out:(16/943)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:10.287] config CompactString.setUp(): success [0ms]
+[03:14:10.333] test CharAt.testCharAt("A", [C@6fd50719): success [11ms]
+[03:14:10.337] test CharAt.testCharAt("AB", [C@683e35a0): success [4ms]
+[03:14:10.339] test CharAt.testCharAt("ABCD", [C@241dc083): success [1ms]
+[03:14:10.341] test CharAt.testCharAt("ABCDEFGH", [C@1daa7c33): success [1ms]
+[03:14:10.341] test CharAt.testCharAt("\uff21", [C@484a737f): success [0ms]
+[03:14:10.342] test CharAt.testCharAt("\uff21\uff22", [C@5b10ac40): success [0ms]
+[03:14:10.343] test CharAt.testCharAt("\uff21A", [C@50da0853): success [0ms]
+[03:14:10.343] test CharAt.testCharAt("A\uff21", [C@d01bffb): success [0ms]
+
+===============================================
+java/lang/String/CompactString/CharAt.java
+Total tests run: 8, Passes: 8, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3443)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/CharAt.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CharAt.java \\
+        -Dtest.main.class=CharAt \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/CharAt.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/CharAt.d/testng.1.jta java/lang/String/CompactString/CharAt.java false CharAt
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

@@ -1,0 +1,299 @@
+#Test Results (version 2)
+#Tue Oct 20 03:15:29 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8311906 othervm junit
+modules=java.base/java.lang\:open
+run=USER_SPECIFIED junit/othervm -XX\:+CompactStrings test.java.lang.String.StringRacyConstructor\nUSER_SPECIFIED junit/othervm -XX\:-CompactStrings test.java.lang.String.StringRacyConstructor\n
+source=StringRacyConstructor.java
+title=check String's racy constructors
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java
+elapsed=2537 0\:00\:02.537
+end=Tue Oct 20 03\:15\:29 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile junit build junit
+start=Tue Oct 20 03\:15\:26 UTC 2026
+test=java/lang/String/StringRacyConstructor.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=2539
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/284)----------
+command: build test.java.lang.String.StringRacyConstructor
+reason: Named class compiled on demand
+started: Tue Oct 20 03:15:26.923 UTC 2026
+Test directory:
+  compile: test.java.lang.String.StringRacyConstructor
+finished: Tue Oct 20 03:15:27.107 UTC 2026
+elapsed time (seconds): 0.184
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/362)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:15:26.923 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: agentvm
+Agent id: 2
+Process id: 161294
+finished: Tue Oct 20 03:15:27.107 UTC 2026
+elapsed time (seconds): 0.184
+----------configuration:(12/711)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  add modules: java.base
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d
+               /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar
+
+----------rerun:(40/3334)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/StringRacyConstructor.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java \\
+        -J-Dtest.main.class=test.java.lang.String.StringRacyConstructor \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar /workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java
+result: Passed. Compilation successful
+
+#section:junit
+----------messages:(8/464)----------
+command: junit -XX:+CompactStrings test.java.lang.String.StringRacyConstructor
+reason: User specified action: run junit/othervm -XX:+CompactStrings test.java.lang.String.StringRacyConstructor 
+started: Tue Oct 20 03:15:27.107 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 164628
+finished: Tue Oct 20 03:15:28.566 UTC 2026
+elapsed time (seconds): 1.459
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(29/2661)*----------
+[03:15:27.838] STARTED    test.java.lang.String.StringRacyConstructor::checkConcatAndIntern 'checkConcatAndIntern()'
+[03:15:27.945] SUCCESSFUL test.java.lang.String.StringRacyConstructor::checkConcatAndIntern 'checkConcatAndIntern()' [107ms]
+[03:15:27.947] STARTED    test.java.lang.String.StringRacyConstructor::charSequenceException 'charSequenceException()'
+[03:15:27.949] SUCCESSFUL test.java.lang.String.StringRacyConstructor::charSequenceException 'charSequenceException()' [2ms]
+[03:15:28.001] STARTED    test.java.lang.String.StringRacyConstructor::racyString '[1] 01234'
+[03:15:28.069] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyString '[1] 01234' [68ms]
+[03:15:28.073] STARTED    test.java.lang.String.StringRacyConstructor::racyString '[2]  '
+[03:15:28.124] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyString '[2]  ' [50ms]
+[03:15:28.125] STARTED    test.java.lang.String.StringRacyConstructor::verifyUTF16CopyBytes 'verifyUTF16CopyBytes()'
+[03:15:28.329] SUCCESSFUL test.java.lang.String.StringRacyConstructor::verifyUTF16CopyBytes 'verifyUTF16CopyBytes()' [204ms]
+[03:15:28.333] STARTED    test.java.lang.String.StringRacyConstructor::racyCodePointSurrogates '[1] 01234'
+orig: 01234, iffy: \ud800\udc301234[65584, 49, 50, 51, 52]
+[03:15:28.337] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyCodePointSurrogates '[1] 01234' [4ms]
+[03:15:28.339] STARTED    test.java.lang.String.StringRacyConstructor::racyCodePointSurrogates '[2]  '
+orig:  , iffy: \ud800\udc20[65568]
+[03:15:28.361] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyCodePointSurrogates '[2]  ' [22ms]
+[03:15:28.363] STARTED    test.java.lang.String.StringRacyConstructor::racyEmptyString 'racyEmptyString()'
+[03:15:28.413] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyEmptyString 'racyEmptyString()' [50ms]
+[03:15:28.414] STARTED    test.java.lang.String.StringRacyConstructor::checkStringRange 'checkStringRange()'
+[03:15:28.417] SUCCESSFUL test.java.lang.String.StringRacyConstructor::checkStringRange 'checkStringRange()' [2ms]
+[03:15:28.419] STARTED    test.java.lang.String.StringRacyConstructor::racyCodePoint '[1] 01234'
+[03:15:28.485] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyCodePoint '[1] 01234' [65ms]
+[03:15:28.487] STARTED    test.java.lang.String.StringRacyConstructor::racyCodePoint '[2]  '
+[03:15:28.542] SUCCESSFUL test.java.lang.String.StringRacyConstructor::racyCodePoint '[2]  ' [54ms]
+
+[ JUnit Containers: found 7, started 7, succeeded 7, failed 0, aborted 0, skipped 0]
+[ JUnit Tests: found 11, started 11, succeeded 11, failed 0, aborted 0, skipped 0]
+
+STATUS:Passed.
+----------rerun:(42/3527)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/StringRacyConstructor.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java \\
+        -Dtest.main.class=test.java.lang.String.StringRacyConstructor \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/StringRacyConstructor.d/junit.0.jta java/lang/String/StringRacyConstructor.java test.java.lang.String.StringRacyConstructor
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/211)----------
+command: build test.java.lang.String.StringRacyConstructor
+reason: Named class compiled on demand
+started: Tue Oct 20 03:15:28.566 UTC 2026
+finished: Tue Oct 20 03:15:28.566 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:junit
+----------messages:(8/464)----------
+command: junit -XX:-CompactStrings test.java.lang.String.StringRacyConstructor
+reason: User specified action: run junit/othervm -XX:-CompactStrings test.java.lang.String.StringRacyConstructor 
+started: Tue Oct 20 03:15:28.566 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 164665
+finished: Tue Oct 20 03:15:29.459 UTC 2026
+elapsed time (seconds): 0.893
+----------configuration:(4/95)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(11/1252)----------
+[03:15:29.230] SKIPPED    test.java.lang.String.StringRacyConstructor::checkConcatAndIntern 'checkConcatAndIntern()' @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings") evaluated to false
+[03:15:29.237] SKIPPED    test.java.lang.String.StringRacyConstructor::charSequenceException 'charSequenceException()' @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings") evaluated to false
+[03:15:29.239] STARTED    test.java.lang.String.StringRacyConstructor::verifyUTF16CopyBytes 'verifyUTF16CopyBytes()'
+[03:15:29.438] SUCCESSFUL test.java.lang.String.StringRacyConstructor::verifyUTF16CopyBytes 'verifyUTF16CopyBytes()' [198ms]
+[03:15:29.441] SKIPPED    test.java.lang.String.StringRacyConstructor::racyEmptyString 'racyEmptyString()' @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings") evaluated to false
+[03:15:29.441] SKIPPED    test.java.lang.String.StringRacyConstructor::checkStringRange 'checkStringRange()' @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings") evaluated to false
+
+[ JUnit Containers: found 7, started 4, succeeded 4, failed 0, aborted 0, skipped 3]
+[ JUnit Tests: found 5, started 1, succeeded 1, failed 0, aborted 0, skipped 4]
+
+STATUS:Passed.
+----------rerun:(42/3527)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/StringRacyConstructor.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/StringRacyConstructor.java \\
+        -Dtest.main.class=test.java.lang.String.StringRacyConstructor \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/StringRacyConstructor.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.modules=java.base/java.lang:open \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/StringRacyConstructor.d/junit.1.jta java/lang/String/StringRacyConstructor.java test.java.lang.String.StringRacyConstructor
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

@@ -1,0 +1,794 @@
+#Test Results (version 2)
+#Tue Oct 20 03:18:08 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+id=limitedAVX
+keywords=othervm driver
+library=/test/lib
+modules=java.base/java.lang\:open
+requires=(vm.compiler1.enabled & vm.compiler2.enabled) & ((os.arch \=\= "amd64" | os.arch \=\= "x86_64"))
+run=USER_SPECIFIED compile/module\=java.base java/lang/StringZillaDispatchHelper.java\nUSER_SPECIFIED build jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=0 TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=2 TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xbatch -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=0 -XX\:DisableIntrinsic\=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=0 TestStringZillaDispatch interpreted\nUSER_SPECIFIED main/othervm -Xbootclasspath/a\:. -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:+WhiteBoxAPI -XX\:UseAVX\=2 TestStringZillaDispatch interpreted\n
+source=TestStringZillaDispatch.java
+title=Reverse-search boundaries in serial and AVX2 dispatch
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java\#limitedAVX
+elapsed=9493 0\:00\:09.493
+end=Tue Oct 20 03\:18\:08 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages compile build compile build compile driver build compile main build main build main build main build main
+start=Tue Oct 20 03\:17\:59 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaDispatch.java\#limitedAVX
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=9494
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/572)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/sz-candidate/test/lib
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib
+
+#section:compile
+----------messages:(9/458)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/java.base/java/lang/StringZillaDispatchHelper.java
+reason: User specified action: run compile/module=java.base java/lang/StringZillaDispatchHelper.java 
+started: Tue Oct 20 03:17:59.427 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:59.485 UTC 2026
+elapsed time (seconds): 0.058
+----------configuration:(13/1008)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/java.base 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+  patch:       java.base /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/java.base
+                         /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(39/4172)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        --add-modules java.base \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --patch-module java.base=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/java.base:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/java.base:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        --add-reads java.base=ALL-UNNAMED /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/java.base/java/lang/StringZillaDispatchHelper.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/283)----------
+command: build jdk.test.whitebox.WhiteBox
+reason: User specified action: run build jdk.test.whitebox.WhiteBox 
+started: Tue Oct 20 03:17:59.485 UTC 2026
+Library /test/lib:
+  compile: jdk.test.whitebox.WhiteBox
+finished: Tue Oct 20 03:17:59.581 UTC 2026
+elapsed time (seconds): 0.096
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/350)----------
+command: compile /workspace/sz-candidate/test/lib/jdk/test/whitebox/WhiteBox.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:59.486 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:59.581 UTC 2026
+elapsed time (seconds): 0.095
+----------configuration:(13/1056)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib 
+  patch:       java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(40/4371)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        --add-modules java.base \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -sourcepath /workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-reads java.base=ALL-UNNAMED /workspace/sz-candidate/test/lib/jdk/test/whitebox/WhiteBox.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(7/279)----------
+command: build jdk.test.lib.helpers.ClassFileInstaller
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:59.581 UTC 2026
+Library /test/lib:
+  compile: jdk.test.lib.helpers.ClassFileInstaller
+finished: Tue Oct 20 03:17:59.607 UTC 2026
+elapsed time (seconds): 0.026
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/363)----------
+command: compile /workspace/sz-candidate/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:59.582 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:59.607 UTC 2026
+elapsed time (seconds): 0.025
+----------configuration:(13/1056)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib 
+  patch:       java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(40/4384)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        --add-modules java.base \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -sourcepath /workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-reads java.base=ALL-UNNAMED /workspace/sz-candidate/test/lib/jdk/test/lib/helpers/ClassFileInstaller.java
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/487)----------
+command: driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+reason: User specified action: run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox 
+started: Tue Oct 20 03:17:59.607 UTC 2026
+Mode: othervm [test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 167218
+finished: Tue Oct 20 03:17:59.723 UTC 2026
+elapsed time (seconds): 0.116
+----------configuration:(5/323)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(40/4559)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/driver.0.jta jdk.test.whitebox.WhiteBox
+result: Passed. Execution successful
+
+#section:build
+----------messages:(7/244)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:59.723 UTC 2026
+Test directory:
+  compile: TestStringZillaDispatch
+finished: Tue Oct 20 03:17:59.804 UTC 2026
+elapsed time (seconds): 0.081
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/383)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:59.724 UTC 2026
+Additional options from @modules: --add-modules java.base
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:59.804 UTC 2026
+elapsed time (seconds): 0.08
+----------configuration:(15/1228)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base 
+  add reads:   java.base ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib 
+  patch:       java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------rerun:(40/4536)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -J-Dtest.main.class=TestStringZillaDispatch \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -J-Dtest.modules=java.base/java.lang:open \\
+        -J-Dtest.patch.path= \\
+        --add-modules java.base \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-reads java.base=ALL-UNNAMED /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(8/603)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch 
+started: Tue Oct 20 03:17:59.804 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 167241
+finished: Tue Oct 20 03:18:02.552 UTC 2026
+elapsed time (seconds): 2.748
+----------configuration:(5/323)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(45/4674)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=0 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.1.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/193)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Tue Oct 20 03:18:02.552 UTC 2026
+finished: Tue Oct 20 03:18:02.553 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/602)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch 
+started: Tue Oct 20 03:18:02.553 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 167316
+finished: Tue Oct 20 03:18:04.283 UTC 2026
+elapsed time (seconds): 1.73
+----------configuration:(5/323)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(45/4674)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=2 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.2.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Tue Oct 20 03:18:04.283 UTC 2026
+finished: Tue Oct 20 03:18:04.283 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/797)----------
+command: main -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch 
+started: Tue Oct 20 03:18:04.285 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 167387
+finished: Tue Oct 20 03:18:07.091 UTC 2026
+elapsed time (seconds): 2.806
+----------configuration:(5/323)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(46/4782)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xbatch \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=0 \\
+        -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.3.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Tue Oct 20 03:18:07.091 UTC 2026
+finished: Tue Oct 20 03:18:07.091 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/623)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=0 TestStringZillaDispatch interpreted 
+started: Tue Oct 20 03:18:07.091 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 167509
+finished: Tue Oct 20 03:18:08.014 UTC 2026
+elapsed time (seconds): 0.923
+----------configuration:(5/323)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(45/4684)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=0 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.4.jta interpreted
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/191)----------
+command: build TestStringZillaDispatch
+reason: Named class compiled on demand
+started: Tue Oct 20 03:18:08.015 UTC 2026
+finished: Tue Oct 20 03:18:08.015 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/623)----------
+command: main -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch interpreted
+reason: User specified action: run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:UseAVX=2 TestStringZillaDispatch interpreted 
+started: Tue Oct 20 03:18:08.015 UTC 2026
+Mode: othervm [/othervm specified, test or library overrides a system module]
+Additional options from @modules: --add-modules java.base --add-opens java.base/java.lang=ALL-UNNAMED
+Process id: 167590
+finished: Tue Oct 20 03:18:08.916 UTC 2026
+elapsed time (seconds): 0.901
+----------configuration:(5/323)----------
+Boot Layer
+  add modules: java.base           
+  add opens:   java.base/java.lang ALL-UNNAMED
+  patch:       java.base           /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(45/4684)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaDispatch.java#limitedAVX \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaDispatch.java \\
+        -Dtest.main.class=TestStringZillaDispatch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/test/lib \\
+        -Dtest.modules=java.base/java.lang:open \\
+        -Dtest.patch.path= \\
+        --patch-module java.base=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/patches/java.base \\
+        --add-modules java.base \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbootclasspath/a:. \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:+WhiteBoxAPI \\
+        -XX:UseAVX=2 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaDispatch_limitedAVX.d/main.5.jta interpreted
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

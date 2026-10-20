@@ -1,0 +1,344 @@
+#Test Results (version 2)
+#Tue Oct 20 04:05:46 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/UnicodeCaseFoldingTest.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug4397357 othervm junit
+library=/lib/testlibrary/java/lang
+modules=java.base/jdk.internal.lang\:+open
+run=USER_SPECIFIED junit/othervm UnicodeCaseFoldingTest\n
+source=UnicodeCaseFoldingTest.java
+title=tests unicode case-folding based String comparison and equality
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/UnicodeCaseFoldingTest.java
+elapsed=1169 0\:00\:01.169
+end=Tue Oct 20 04\:05\:46 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/jdk.internal.lang\:+open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile junit
+start=Tue Oct 20 04\:05\:45 UTC 2026
+test=java/lang/String/UnicodeCaseFoldingTest.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1170
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String
+
+#section:script_messages
+----------messages:(7/590)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+Library /lib/testlibrary/java/lang; kind: packages
+   source directory: /workspace/sz-candidate/test/jdk/lib/testlibrary/java/lang
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang
+
+#section:build
+----------messages:(7/242)----------
+command: build UnicodeCaseFoldingTest
+reason: Named class compiled on demand
+started: Tue Oct 20 04:05:45.394 UTC 2026
+Test directory:
+  compile: UnicodeCaseFoldingTest
+finished: Tue Oct 20 04:05:45.560 UTC 2026
+elapsed time (seconds): 0.166
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/417)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/UnicodeCaseFoldingTest.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 04:05:45.395 UTC 2026
+Additional options from @modules: --add-modules java.base --add-exports java.base/jdk.internal.lang=ALL-UNNAMED
+Mode: agentvm
+Agent id: 2
+Process id: 187639
+finished: Tue Oct 20 04:05:45.560 UTC 2026
+elapsed time (seconds): 0.165
+----------configuration:(15/1040)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  add modules: java.base                   
+  add exports: java.base/jdk.internal.lang ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String 
+               /workspace/sz-candidate/test/jdk/lib/testlibrary/java/lang 
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang 
+               /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar 
+
+----------rerun:(41/3990)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/UnicodeCaseFoldingTest.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/UnicodeCaseFoldingTest.java \\
+        -J-Dtest.main.class=UnicodeCaseFoldingTest \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/test/jdk/lib/testlibrary/java/lang \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang \\
+        -J-Dtest.modules=java.base/jdk.internal.lang:+open \\
+        --add-modules java.base \\
+        --add-exports java.base/jdk.internal.lang=ALL-UNNAMED \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/test/jdk/lib/testlibrary/java/lang \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar /workspace/sz-candidate/test/jdk/java/lang/String/UnicodeCaseFoldingTest.java
+result: Passed. Compilation successful
+
+#section:junit
+----------messages:(8/444)----------
+command: junit UnicodeCaseFoldingTest
+reason: User specified action: run junit/othervm UnicodeCaseFoldingTest 
+started: Tue Oct 20 04:05:45.560 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-exports java.base/jdk.internal.lang=ALL-UNNAMED --add-opens java.base/jdk.internal.lang=ALL-UNNAMED
+Process id: 192310
+finished: Tue Oct 20 04:05:46.561 UTC 2026
+elapsed time (seconds): 1.001
+----------configuration:(5/166)----------
+Boot Layer
+  add modules: java.base                   
+  add exports: java.base/jdk.internal.lang ALL-UNNAMED
+  add opens:   java.base/jdk.internal.lang ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(147/16923)*----------
+[04:05:46.307] STARTED    UnicodeCaseFoldingTest::testAllCodePointsFoldToThemselvesIfNotListed 'testAllCodePointsFoldToThemselvesIfNotListed()'
+[04:05:46.397] SUCCESSFUL UnicodeCaseFoldingTest::testAllCodePointsFoldToThemselvesIfNotListed 'testAllCodePointsFoldToThemselvesIfNotListed()' [89ms]
+[04:05:46.397] STARTED    UnicodeCaseFoldingTest::testAllSimpleCodePointsListedInCaseFoldinigTxt 'testAllSimpleCodePointsListedInCaseFoldinigTxt()'
+[04:05:46.406] SUCCESSFUL UnicodeCaseFoldingTest::testAllSimpleCodePointsListedInCaseFoldinigTxt 'testAllSimpleCodePointsListedInCaseFoldinigTxt()' [8ms]
+[04:05:46.441] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "ABC" \u2192 "abc"'
+[04:05:46.450] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "ABC" \u2192 "abc"' [8ms]
+[04:05:46.453] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "already" \u2192 "already"'
+[04:05:46.454] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "already" \u2192 "already"' [0ms]
+[04:05:46.454] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "MiXeD123" \u2192 "mixed123"'
+[04:05:46.455] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "MiXeD123" \u2192 "mixed123"' [0ms]
+[04:05:46.456] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "aBc\u00b5Efg" \u2192 "abc\u03bcefg"'
+[04:05:46.456] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "aBc\u00b5Efg" \u2192 "abc\u03bcefg"' [0ms]
+[04:05:46.457] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "test\u00b5\ud801\udc00X" \u2192 "test\u03bc\ud801\udc28x"'
+[04:05:46.458] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "test\u00b5\ud801\udc00X" \u2192 "test\u03bc\ud801\udc28x"' [0ms]
+[04:05:46.459] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "Stra\u00dfe" \u2192 "strasse"'
+[04:05:46.459] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "Stra\u00dfe" \u2192 "strasse"' [0ms]
+[04:05:46.460] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u1e9e" \u2192 "ss"'
+[04:05:46.460] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u1e9e" \u2192 "ss"' [0ms]
+[04:05:46.461] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "I" \u2192 "i"'
+[04:05:46.461] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "I" \u2192 "i"' [0ms]
+[04:05:46.462] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u0130" \u2192 "i\u0307"'
+[04:05:46.463] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u0130" \u2192 "i\u0307"' [0ms]
+[04:05:46.463] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "i\u0307" \u2192 "i\u0307"'
+[04:05:46.464] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "i\u0307" \u2192 "i\u0307"' [0ms]
+[04:05:46.464] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u0131" \u2192 "\u0131"'
+[04:05:46.465] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u0131" \u2192 "\u0131"' [0ms]
+[04:05:46.465] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u039f\u03a3" \u2192 "\u03bf\u03c3"'
+[04:05:46.466] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u039f\u03a3" \u2192 "\u03bf\u03c3"' [0ms]
+[04:05:46.466] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u1f88" \u2192 "\u1f00\u03b9"'
+[04:05:46.467] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u1f88" \u2192 "\u1f00\u03b9"' [0ms]
+[04:05:46.467] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u039c\u03ac\u03ca\u03bf\u03c2" \u2192 "\u03bc\u03ac\u03ca\u03bf\u03c3"'
+[04:05:46.468] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u039c\u03ac\u03ca\u03bf\u03c2" \u2192 "\u03bc\u03ac\u03ca\u03bf\u03c3"' [0ms]
+[04:05:46.468] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u1f08" \u2192 "\u1f00"'
+[04:05:46.469] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u1f08" \u2192 "\u1f00"' [0ms]
+[04:05:46.469] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ud801\udc00" \u2192 "\ud801\udc28"'
+[04:05:46.470] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ud801\udc00" \u2192 "\ud801\udc28"' [0ms]
+[04:05:46.470] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ud801\udc01" \u2192 "\ud801\udc29"'
+[04:05:46.471] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ud801\udc01" \u2192 "\ud801\udc29"' [0ms]
+[04:05:46.471] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\ud801\udc00def" \u2192 "abc\ud801\udc28def"'
+[04:05:46.472] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\ud801\udc00def" \u2192 "abc\ud801\udc28def"' [0ms]
+[04:05:46.472] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ufb00" \u2192 "ff"'
+[04:05:46.473] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ufb00" \u2192 "ff"' [0ms]
+[04:05:46.473] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ufb03" \u2192 "ffi"'
+[04:05:46.474] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\ufb03" \u2192 "ffi"' [0ms]
+[04:05:46.474] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u212a" \u2192 "k"'
+[04:05:46.475] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u212a" \u2192 "k"' [0ms]
+[04:05:46.475] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\ufb00def" \u2192 "abcffdef"'
+[04:05:46.476] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\ufb00def" \u2192 "abcffdef"' [0ms]
+[04:05:46.476] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\ufb03def" \u2192 "abcffidef"'
+[04:05:46.477] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\ufb03def" \u2192 "abcffidef"' [0ms]
+[04:05:46.477] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\u212adef" \u2192 "abckdef"'
+[04:05:46.478] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "abc\u212adef" \u2192 "abckdef"' [0ms]
+[04:05:46.478] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\uff21\uff22\uff23" \u2192 "\uff41\uff42\uff43"'
+[04:05:46.479] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\uff21\uff22\uff23" \u2192 "\uff41\uff42\uff43"' [0ms]
+[04:05:46.479] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u0531" \u2192 "\u0561"'
+[04:05:46.480] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u0531" \u2192 "\u0561"' [0ms]
+[04:05:46.481] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u13a0" \u2192 "\u13a0"'
+[04:05:46.481] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\u13a0" \u2192 "\u13a0"' [0ms]
+[04:05:46.482] STARTED    UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\uab70" \u2192 "\u13a0"'
+[04:05:46.482] SUCCESSFUL UnicodeCaseFoldingTest::testIndividualCaseFolding 'CaseFold "\uab70" \u2192 "\u13a0"' [0ms]
+[04:05:46.486] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[1] asa, a\u00df, -1'
+[04:05:46.489] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[1] asa, a\u00df, -1' [3ms]
+[04:05:46.490] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[2] a\u00df, asa, 1'
+[04:05:46.490] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[2] a\u00df, asa, 1' [0ms]
+[04:05:46.491] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[3] a\u00df, ass, 0'
+[04:05:46.491] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[3] a\u00df, ass, 0' [0ms]
+[04:05:46.492] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[4] \ufb03, ffi, 0'
+[04:05:46.492] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[4] \ufb03, ffi, 0' [0ms]
+[04:05:46.493] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[5] \u00c5, Z, 1'
+[04:05:46.493] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[5] \u00c5, Z, 1' [0ms]
+[04:05:46.493] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[6] A, \u00c0, -1'
+[04:05:46.494] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[6] A, \u00c0, -1' [0ms]
+[04:05:46.494] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[7] \u03a9, \u03c9, 0'
+[04:05:46.495] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[7] \u03a9, \u03c9, 0' [0ms]
+[04:05:46.495] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[8] \u03c2, \u03c3, 0'
+[04:05:46.495] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[8] \u03c2, \u03c3, 0' [0ms]
+[04:05:46.496] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[9] \ud835\udd23, R, 1'
+[04:05:46.500] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[9] \ud835\udd23, R, 1' [3ms]
+[04:05:46.500] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[10] \uff26, E, 1'
+[04:05:46.501] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[10] \uff26, E, 1' [0ms]
+[04:05:46.501] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[11] \u00c9clair, Eclair, 1'
+[04:05:46.501] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[11] \u00c9clair, Eclair, 1' [0ms]
+[04:05:46.502] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[12] \u03bc\u00df, \u00b5s, 1'
+[04:05:46.502] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[12] \u03bc\u00df, \u00b5s, 1' [0ms]
+[04:05:46.503] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[13] \u00b5s, \u03bc\u00df, -1'
+[04:05:46.503] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseOrdering '[13] \u00b5s, \u03bc\u00df, -1' [0ms]
+[04:05:46.505] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[1] abc'
+[04:05:46.506] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[1] abc' [1ms]
+[04:05:46.507] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[2] ABC'
+[04:05:46.507] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[2] ABC' [0ms]
+[04:05:46.507] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[3] stra\u00dfe'
+[04:05:46.508] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[3] stra\u00dfe' [0ms]
+[04:05:46.508] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[4] \u00c0\u00e7'
+[04:05:46.509] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[4] \u00c0\u00e7' [0ms]
+[04:05:46.509] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[5] a\u00df'
+[04:05:46.509] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[5] a\u00df' [0ms]
+[04:05:46.510] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[6] \ufb02uff'
+[04:05:46.510] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[6] \ufb02uff' [0ms]
+[04:05:46.510] STARTED    UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[7] \u00c9COLE'
+[04:05:46.511] SUCCESSFUL UnicodeCaseFoldingTest::testCaseFoldRoundTrip '[7] \u00c9COLE' [0ms]
+[04:05:46.512] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[1] abc, ABC'
+[04:05:46.513] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[1] abc, ABC' [0ms]
+[04:05:46.513] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[2] aBcDe, AbCdE'
+[04:05:46.513] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[2] aBcDe, AbCdE' [0ms]
+[04:05:46.514] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[3] \u00c0\u00e7, \u00e0\u00c7'
+[04:05:46.514] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[3] \u00c0\u00e7, \u00e0\u00c7' [0ms]
+[04:05:46.514] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[4] stra\u00dfe, STRASSE'
+[04:05:46.515] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[4] stra\u00dfe, STRASSE' [0ms]
+[04:05:46.515] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[5] \ud83c\udde6, \ud83c\udde6'
+[04:05:46.515] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[5] \ud83c\udde6, \ud83c\udde6' [0ms]
+[04:05:46.516] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[6] \u1e9e, ss'
+[04:05:46.516] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[6] \u1e9e, ss' [0ms]
+[04:05:46.517] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[7] \u03a3, \u03c3'
+[04:05:46.517] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[7] \u03a3, \u03c3' [0ms]
+[04:05:46.517] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[8] \u03c3, \u03c2'
+[04:05:46.518] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[8] \u03c3, \u03c2' [0ms]
+[04:05:46.518] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[9] \u212b, \u00e5'
+[04:05:46.518] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[9] \u212b, \u00e5' [0ms]
+[04:05:46.519] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[10] \ufb00, ff'
+[04:05:46.519] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[10] \ufb00, ff' [0ms]
+[04:05:46.520] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[11] \u01c5, \u01c5'
+[04:05:46.520] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[11] \u01c5, \u01c5' [0ms]
+[04:05:46.520] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[12] Caf\u00e9, CAF\u00c9'
+[04:05:46.521] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[12] Caf\u00e9, CAF\u00c9' [0ms]
+[04:05:46.521] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[13] \u03ba\u03b1\u03bb\u03b7\u03bc\u03ad\u03c1\u03b1, \u039a\u0391\u039b\u0397\u039c\u0388\u03a1\u0391'
+[04:05:46.522] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[13] \u03ba\u03b1\u03bb\u03b7\u03bc\u03ad\u03c1\u03b1, \u039a\u0391\u039b\u0397\u039c\u0388\u03a1\u0391' [0ms]
+[04:05:46.522] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[14] \u4e2d\u56fd, \u4e2d\u56fd'
+[04:05:46.522] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[14] \u4e2d\u56fd, \u4e2d\u56fd' [0ms]
+[04:05:46.523] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[15] \u03b1, \u0391'
+[04:05:46.523] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[15] \u03b1, \u0391' [0ms]
+[04:05:46.524] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[16] \u212b, \u00c5'
+[04:05:46.524] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[16] \u212b, \u00c5' [0ms]
+[04:05:46.524] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[17] \u0100\u0102\u0104\u0106\u0108, \u0100\u0102\u0104\u0106\u0109'
+[04:05:46.525] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[17] \u0100\u0102\u0104\u0106\u0108, \u0100\u0102\u0104\u0106\u0109' [0ms]
+[04:05:46.525] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[18] \u0101\u0103\u0105\u0107\u0109, \u0100\u0102\u0104\u0106\u0109'
+[04:05:46.525] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[18] \u0101\u0103\u0105\u0107\u0109, \u0100\u0102\u0104\u0106\u0109' [0ms]
+[04:05:46.526] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[19] \ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc04, \ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc2c'
+[04:05:46.526] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[19] \ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc04, \ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc2c' [0ms]
+[04:05:46.527] STARTED    UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[20] \ud801\udc28\ud801\udc29\ud801\udc2a\ud801\udc2b\ud801\udc2c, \ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc2c'
+[04:05:46.527] SUCCESSFUL UnicodeCaseFoldingTest::testcompareToFoldCaseEquals '[20] \ud801\udc28\ud801\udc29\ud801\udc2a\ud801\udc2b\ud801\udc2c, \ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc2c' [0ms]
+[04:05:46.527] STARTED    UnicodeCaseFoldingTest::testAllCommnFullCodePointsListedInCaseFoldinigTxt 'testAllCommnFullCodePointsListedInCaseFoldinigTxt()'
+[04:05:46.543] SUCCESSFUL UnicodeCaseFoldingTest::testAllCommnFullCodePointsListedInCaseFoldinigTxt 'testAllCommnFullCodePointsListedInCaseFoldinigTxt()' [15ms]
+
+[ JUnit Containers: found 8, started 8, succeeded 8, failed 0, aborted 0, skipped 0]
+[ JUnit Tests: found 71, started 71, succeeded 71, failed 0, aborted 0, skipped 0]
+
+STATUS:Passed.
+----------rerun:(42/4139)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang:/workspace/sz-candidate/test/jdk/lib/testlibrary/java/lang:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/UnicodeCaseFoldingTest.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/UnicodeCaseFoldingTest.java \\
+        -Dtest.main.class=UnicodeCaseFoldingTest \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/test/jdk/lib/testlibrary/java/lang \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/UnicodeCaseFoldingTest.d/lib/testlibrary/java/lang \\
+        -Dtest.modules=java.base/jdk.internal.lang:+open \\
+        --add-modules java.base \\
+        --add-exports java.base/jdk.internal.lang=ALL-UNNAMED \\
+        --add-opens java.base/jdk.internal.lang=ALL-UNNAMED \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/UnicodeCaseFoldingTest.d/junit.0.jta java/lang/String/UnicodeCaseFoldingTest.java UnicodeCaseFoldingTest
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

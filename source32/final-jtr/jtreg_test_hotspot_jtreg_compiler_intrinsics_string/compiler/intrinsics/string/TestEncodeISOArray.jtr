@@ -1,0 +1,284 @@
+#Test Results (version 2)
+#Tue Oct 20 03:17:22 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+keywords=bug8390546 othervm
+library=/test/lib
+modules=java.base/java.lang\:+open java.base/sun.nio.cs\:+open
+requires=vm.compiler2.enabled
+run=USER_SPECIFIED main compiler.intrinsics.string.TestEncodeISOArray\nUSER_SPECIFIED main/othervm -Xbatch -XX\:-TieredCompilation -XX\:CompileThreshold\=100 -XX\:+IgnoreUnrecognizedVMOptions -XX\:UseAVX\=0 -XX\:-UseSSE42Intrinsics compiler.intrinsics.string.TestEncodeISOArray\n
+source=TestEncodeISOArray.java
+title=Verify that the memory effect of the encodeISOArray intrinsic is correctly wired in.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java
+elapsed=1837 0\:00\:01.837
+end=Tue Oct 20 03\:17\:22 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+modules=java.base/java.lang\:+open java.base/sun.nio.cs\:+open
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main build main
+start=Tue Oct 20 03\:17\:20 UTC 2026
+test=compiler/intrinsics/string/TestEncodeISOArray.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1840
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(7/556)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/sz-candidate/test/lib
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib
+
+#section:build
+----------messages:(7/288)----------
+command: build compiler.intrinsics.string.TestEncodeISOArray
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:20.609 UTC 2026
+Test directory:
+  compile: compiler.intrinsics.string.TestEncodeISOArray
+finished: Tue Oct 20 03:17:20.667 UTC 2026
+elapsed time (seconds): 0.058
+result: Passed. Build successful
+
+#section:compile
+----------messages:(9/472)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:17:20.609 UTC 2026
+Additional options from @modules: --add-modules java.base --add-exports java.base/java.lang=ALL-UNNAMED --add-exports java.base/sun.nio.cs=ALL-UNNAMED
+Mode: agentvm
+Agent id: 2
+Process id: 166248
+finished: Tue Oct 20 03:17:20.667 UTC 2026
+elapsed time (seconds): 0.058
+----------configuration:(15/1048)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  add modules: java.base            
+  add exports: java.base/java.lang  ALL-UNNAMED
+               java.base/sun.nio.cs ALL-UNNAMED
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/test/lib 
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib 
+
+----------rerun:(39/4243)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestEncodeISOArray.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestEncodeISOArray \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib \\
+        -J-Dtest.modules='java.base/java.lang:+open java.base/sun.nio.cs:+open' \\
+        --add-modules java.base \\
+        --add-exports java.base/java.lang=ALL-UNNAMED \\
+        --add-exports java.base/sun.nio.cs=ALL-UNNAMED \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(10/493)----------
+command: main compiler.intrinsics.string.TestEncodeISOArray
+reason: User specified action: run main compiler.intrinsics.string.TestEncodeISOArray 
+started: Tue Oct 20 03:17:20.667 UTC 2026
+Mode: agentvm
+Agent id: 3
+Process id: 166394
+Additional exports to unnamed modules from @modules: java.base/java.lang java.base/sun.nio.cs
+Additional opens to unnamed modules from @modules: java.base/java.lang java.base/sun.nio.cs
+finished: Tue Oct 20 03:17:20.973 UTC 2026
+elapsed time (seconds): 0.306
+----------configuration:(19/1268)----------
+Boot Layer
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+              /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar 
+              /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar 
+              /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar 
+              /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+Test Layer
+  add exports: java.base/java.lang  ALL-UNNAMED
+               java.base/sun.nio.cs ALL-UNNAMED
+  add opens:   java.base/java.lang  ALL-UNNAMED
+               java.base/sun.nio.cs ALL-UNNAMED
+  class path:  /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d 
+               /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string 
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib 
+               /workspace/sz-candidate/test/lib 
+
+----------rerun:(32/3611)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestEncodeISOArray.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestEncodeISOArray \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib \\
+        -Dtest.modules='java.base/java.lang:+open java.base/sun.nio.cs:+open' \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+        compiler.intrinsics.string.TestEncodeISOArray
+----------System.err:(3/35)----------
+
+JavaTest Message: Test complete.
+
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/215)----------
+command: build compiler.intrinsics.string.TestEncodeISOArray
+reason: Named class compiled on demand
+started: Tue Oct 20 03:17:20.973 UTC 2026
+finished: Tue Oct 20 03:17:20.974 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:main
+----------messages:(8/816)----------
+command: main -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 -XX:-UseSSE42Intrinsics compiler.intrinsics.string.TestEncodeISOArray
+reason: User specified action: run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 -XX:-UseSSE42Intrinsics compiler.intrinsics.string.TestEncodeISOArray 
+started: Tue Oct 20 03:17:20.974 UTC 2026
+Mode: othervm [/othervm specified]
+Additional options from @modules: --add-modules java.base --add-exports java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-exports java.base/sun.nio.cs=ALL-UNNAMED --add-opens java.base/sun.nio.cs=ALL-UNNAMED
+Process id: 166421
+finished: Tue Oct 20 03:17:22.443 UTC 2026
+elapsed time (seconds): 1.469
+----------configuration:(7/241)----------
+Boot Layer
+  add modules: java.base            
+  add exports: java.base/java.lang  ALL-UNNAMED
+               java.base/sun.nio.cs ALL-UNNAMED
+  add opens:   java.base/java.lang  ALL-UNNAMED
+               java.base/sun.nio.cs ALL-UNNAMED
+
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(47/4537)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestEncodeISOArray.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestEncodeISOArray.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestEncodeISOArray \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestEncodeISOArray.d/test/lib \\
+        -Dtest.modules='java.base/java.lang:+open java.base/sun.nio.cs:+open' \\
+        --add-modules java.base \\
+        --add-exports java.base/java.lang=ALL-UNNAMED \\
+        --add-opens java.base/java.lang=ALL-UNNAMED \\
+        --add-exports java.base/sun.nio.cs=ALL-UNNAMED \\
+        --add-opens java.base/sun.nio.cs=ALL-UNNAMED \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xbatch \\
+        -XX:-TieredCompilation \\
+        -XX:CompileThreshold=100 \\
+        -XX:+IgnoreUnrecognizedVMOptions \\
+        -XX:UseAVX=0 \\
+        -XX:-UseSSE42Intrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestEncodeISOArray.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

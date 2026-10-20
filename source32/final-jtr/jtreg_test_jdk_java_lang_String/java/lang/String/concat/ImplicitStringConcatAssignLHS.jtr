@@ -1,0 +1,553 @@
+#Test Results (version 2)
+#Tue Oct 20 03:14:54 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8204322 othervm
+run=USER_SPECIFIED compile ImplicitStringConcatAssignLHS.java\nUSER_SPECIFIED main/othervm -Xverify\:all ImplicitStringConcatAssignLHS\nUSER_SPECIFIED compile -XDstringConcat\=inline ImplicitStringConcatAssignLHS.java\nUSER_SPECIFIED main/othervm -Xverify\:all ImplicitStringConcatAssignLHS\nUSER_SPECIFIED compile -XDstringConcat\=indy ImplicitStringConcatAssignLHS.java\nUSER_SPECIFIED main/othervm -Xverify\:all ImplicitStringConcatAssignLHS\nUSER_SPECIFIED compile -XDstringConcat\=indyWithConstants ImplicitStringConcatAssignLHS.java\nUSER_SPECIFIED main/othervm -Xverify\:all ImplicitStringConcatAssignLHS\n
+source=ImplicitStringConcatAssignLHS.java
+title="+\=" applied to String operands can provoke side effects
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+elapsed=1234 0\:00\:01.234
+end=Tue Oct 20 03\:14\:54 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages compile build main compile build main compile build main compile build main
+start=Tue Oct 20 03\:14\:53 UTC 2026
+test=java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1235
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/concat
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:compile
+----------messages:(8/347)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+reason: User specified action: run compile ImplicitStringConcatAssignLHS.java 
+started: Tue Oct 20 03:14:53.539 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:53.609 UTC 2026
+elapsed time (seconds): 0.07
+----------configuration:(10/621)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/concat
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/concat
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d
+
+----------rerun:(38/3308)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(5/197)----------
+command: build ImplicitStringConcatAssignLHS
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:53.609 UTC 2026
+finished: Tue Oct 20 03:14:53.609 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/318)----------
+command: main -Xverify:all ImplicitStringConcatAssignLHS
+reason: User specified action: run main/othervm -Xverify:all ImplicitStringConcatAssignLHS 
+started: Tue Oct 20 03:14:53.609 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 163528
+finished: Tue Oct 20 03:14:53.844 UTC 2026
+elapsed time (seconds): 0.235
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3330)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Xverify:all \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/concat/ImplicitStringConcatAssignLHS.d/main.0.jta
+result: Passed. Execution successful
+
+#section:compile
+----------messages:(8/394)----------
+command: compile -XDstringConcat=inline /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+reason: User specified action: run compile -XDstringConcat=inline ImplicitStringConcatAssignLHS.java 
+started: Tue Oct 20 03:14:53.844 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:53.916 UTC 2026
+elapsed time (seconds): 0.072
+----------configuration:(10/621)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/concat
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/concat
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d
+
+----------rerun:(39/3342)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -XDstringConcat=inline /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(5/197)----------
+command: build ImplicitStringConcatAssignLHS
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:53.917 UTC 2026
+finished: Tue Oct 20 03:14:53.917 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/318)----------
+command: main -Xverify:all ImplicitStringConcatAssignLHS
+reason: User specified action: run main/othervm -Xverify:all ImplicitStringConcatAssignLHS 
+started: Tue Oct 20 03:14:53.917 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 163548
+finished: Tue Oct 20 03:14:54.151 UTC 2026
+elapsed time (seconds): 0.234
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3330)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Xverify:all \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/concat/ImplicitStringConcatAssignLHS.d/main.1.jta
+result: Passed. Execution successful
+
+#section:compile
+----------messages:(8/390)----------
+command: compile -XDstringConcat=indy /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+reason: User specified action: run compile -XDstringConcat=indy ImplicitStringConcatAssignLHS.java 
+started: Tue Oct 20 03:14:54.151 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:54.228 UTC 2026
+elapsed time (seconds): 0.077
+----------configuration:(10/621)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/concat
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/concat
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d
+
+----------rerun:(39/3340)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -XDstringConcat=indy /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(5/197)----------
+command: build ImplicitStringConcatAssignLHS
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:54.228 UTC 2026
+finished: Tue Oct 20 03:14:54.228 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/318)----------
+command: main -Xverify:all ImplicitStringConcatAssignLHS
+reason: User specified action: run main/othervm -Xverify:all ImplicitStringConcatAssignLHS 
+started: Tue Oct 20 03:14:54.229 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 163569
+finished: Tue Oct 20 03:14:54.473 UTC 2026
+elapsed time (seconds): 0.244
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3330)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Xverify:all \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/concat/ImplicitStringConcatAssignLHS.d/main.2.jta
+result: Passed. Execution successful
+
+#section:compile
+----------messages:(8/415)----------
+command: compile -XDstringConcat=indyWithConstants /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+reason: User specified action: run compile -XDstringConcat=indyWithConstants ImplicitStringConcatAssignLHS.java 
+started: Tue Oct 20 03:14:54.473 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:54.543 UTC 2026
+elapsed time (seconds): 0.07
+----------configuration:(10/621)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/concat
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/concat
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d
+
+----------rerun:(39/3353)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -J-Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -XDstringConcat=indyWithConstants /workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java
+result: Passed. Compilation successful
+
+#section:build
+----------messages:(5/197)----------
+command: build ImplicitStringConcatAssignLHS
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:54.543 UTC 2026
+finished: Tue Oct 20 03:14:54.543 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/318)----------
+command: main -Xverify:all ImplicitStringConcatAssignLHS
+reason: User specified action: run main/othervm -Xverify:all ImplicitStringConcatAssignLHS 
+started: Tue Oct 20 03:14:54.543 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 163590
+finished: Tue Oct 20 03:14:54.770 UTC 2026
+elapsed time (seconds): 0.227
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3330)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/concat/ImplicitStringConcatAssignLHS.java \\
+        -Dtest.main.class=ImplicitStringConcatAssignLHS \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/concat/ImplicitStringConcatAssignLHS.d:/workspace/sz-candidate/test/jdk/java/lang/String/concat \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Xverify:all \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/concat/ImplicitStringConcatAssignLHS.d/main.3.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

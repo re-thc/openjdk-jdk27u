@@ -1,0 +1,178 @@
+#Test Results (version 2)
+#Tue Oct 20 03:07:21 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding/StringPlatformChars.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=othervm native
+requires=\!jdk.static
+run=USER_SPECIFIED main/othervm/native -Xcheck\:jni StringPlatformChars\n
+source=StringPlatformChars.java
+title=\ 
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding/StringPlatformChars.java
+elapsed=501 0\:00\:00.501
+end=Tue Oct 20 03\:07\:21 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Tue Oct 20 03\:07\:20 UTC 2026
+test=java/lang/String/nativeEncoding/StringPlatformChars.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=502
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/nativeEncoding
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/236)----------
+command: build StringPlatformChars
+reason: Named class compiled on demand
+started: Tue Oct 20 03:07:20.893 UTC 2026
+Test directory:
+  compile: StringPlatformChars
+finished: Tue Oct 20 03:07:20.954 UTC 2026
+elapsed time (seconds): 0.061
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/316)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding/StringPlatformChars.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:07:20.894 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 144876
+finished: Tue Oct 20 03:07:20.954 UTC 2026
+elapsed time (seconds): 0.06
+----------configuration:(10/635)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d
+
+----------rerun:(38/3322)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/nativeEncoding/StringPlatformChars.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding/StringPlatformChars.java \\
+        -J-Dtest.main.class=StringPlatformChars \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d:/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d /workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding/StringPlatformChars.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/303)----------
+command: main -Xcheck:jni StringPlatformChars
+reason: User specified action: run main/othervm/native -Xcheck:jni StringPlatformChars 
+started: Tue Oct 20 03:07:20.954 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 148102
+finished: Tue Oct 20 03:07:21.393 UTC 2026
+elapsed time (seconds): 0.439
+----------configuration:(0/0)----------
+----------System.out:(1/24)----------
+sun.jnu.encoding: UTF-8
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(41/3467)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+LD_LIBRARY_PATH=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d:/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/nativeEncoding/StringPlatformChars.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding/StringPlatformChars.java \\
+        -Dtest.main.class=StringPlatformChars \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/nativeEncoding/StringPlatformChars.d:/workspace/sz-candidate/test/jdk/java/lang/String/nativeEncoding \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Xcheck:jni \\
+        --enable-native-access=ALL-UNNAMED \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/nativeEncoding/StringPlatformChars.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

@@ -1,0 +1,420 @@
+#Test Results (version 2)
+#Tue Oct 20 04:07:19 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+keywords=othervm
+requires=(os.arch \=\= "amd64" | os.arch \=\= "x86_64" | os.arch \=\= "aarch64")
+run=USER_SPECIFIED main/othervm -Xint TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockDiagnosticVMOptions -XX\:DisableIntrinsic\=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockExperimentalVMOptions -XX\:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch\nUSER_SPECIFIED main/othervm -Xint -XX\:+UnlockExperimentalVMOptions -XX\:-UseCompactObjectHeaders TestStringZillaInterpreterSearch\n
+source=TestStringZillaInterpreterSearch.java
+title=Interpreter forward search preserves coder semantics, small inputs and bounded Java fallback
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+elapsed=8480 0\:00\:08.480
+end=Tue Oct 20 04\:07\:19 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main build main build main build main build main
+start=Tue Oct 20 04\:07\:10 UTC 2026
+test=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=8533
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/261)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Tue Oct 20 04:07:10.790 UTC 2026
+Test directory:
+  compile: TestStringZillaInterpreterSearch
+finished: Tue Oct 20 04:07:10.810 UTC 2026
+elapsed time (seconds): 0.02
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/334)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 04:07:10.790 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 192572
+finished: Tue Oct 20 04:07:10.810 UTC 2026
+elapsed time (seconds): 0.02
+----------configuration:(10/693)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d
+
+----------rerun:(35/3539)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -J-Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/310)----------
+command: main -Xint TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint TestStringZillaInterpreterSearch 
+started: Tue Oct 20 04:07:10.810 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 193946
+finished: Tue Oct 20 04:07:12.449 UTC 2026
+elapsed time (seconds): 1.639
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(36/3535)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xint \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.0.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Tue Oct 20 04:07:12.449 UTC 2026
+finished: Tue Oct 20 04:07:12.449 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/370)----------
+command: main -Xint -XX:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:-UseStringZillaIntrinsics TestStringZillaInterpreterSearch 
+started: Tue Oct 20 04:07:12.449 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 194073
+finished: Tue Oct 20 04:07:14.750 UTC 2026
+elapsed time (seconds): 2.301
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(37/3576)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xint \\
+        -XX:-UseStringZillaIntrinsics \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.1.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Tue Oct 20 04:07:14.750 UTC 2026
+finished: Tue Oct 20 04:07:14.750 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/622)----------
+command: main -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 TestStringZillaInterpreterSearch 
+started: Tue Oct 20 04:07:14.751 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 194189
+finished: Tue Oct 20 04:07:16.204 UTC 2026
+elapsed time (seconds): 1.453
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/3713)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockDiagnosticVMOptions \\
+        -XX:DisableIntrinsic=_indexOfL,_indexOfU,_indexOfUL,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaFindUTF16Latin1 \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.2.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Tue Oct 20 04:07:16.204 UTC 2026
+finished: Tue Oct 20 04:07:16.204 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/435)----------
+command: main -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseFourByteObjectHeaders TestStringZillaInterpreterSearch 
+started: Tue Oct 20 04:07:16.204 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 194246
+finished: Tue Oct 20 04:07:17.734 UTC 2026
+elapsed time (seconds): 1.53
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/3620)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockExperimentalVMOptions \\
+        -XX:-UseFourByteObjectHeaders \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.3.jta
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/200)----------
+command: build TestStringZillaInterpreterSearch
+reason: Named class compiled on demand
+started: Tue Oct 20 04:07:17.734 UTC 2026
+finished: Tue Oct 20 04:07:17.734 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:main
+----------messages:(7/434)----------
+command: main -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders TestStringZillaInterpreterSearch
+reason: User specified action: run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders TestStringZillaInterpreterSearch 
+started: Tue Oct 20 04:07:17.734 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 194271
+finished: Tue Oct 20 04:07:19.269 UTC 2026
+elapsed time (seconds): 1.535
+----------configuration:(0/0)----------
+----------System.out:(0/0)----------
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/3619)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaInterpreterSearch.java \\
+        -Dtest.main.class=TestStringZillaInterpreterSearch \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Xint \\
+        -XX:+UnlockExperimentalVMOptions \\
+        -XX:-UseCompactObjectHeaders \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringZillaInterpreterSearch.d/main.4.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

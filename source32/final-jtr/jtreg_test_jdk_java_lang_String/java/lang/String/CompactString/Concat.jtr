@@ -1,0 +1,295 @@
+#Test Results (version 2)
+#Tue Oct 20 03:14:15 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings Concat\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings Concat\n
+source=Concat.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java
+elapsed=1559 0\:00\:01.559
+end=Tue Oct 20 03\:14\:15 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 03\:14\:13 UTC 2026
+test=java/lang/String/CompactString/Concat.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1562
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/210)----------
+command: build Concat
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:13.735 UTC 2026
+Test directory:
+  compile: Concat
+finished: Tue Oct 20 03:14:13.972 UTC 2026
+elapsed time (seconds): 0.237
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/303)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:14:13.736 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:13.971 UTC 2026
+elapsed time (seconds): 0.235
+----------configuration:(13/819)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3347)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/Concat.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java \\
+        -J-Dtest.main.class=Concat \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/290)----------
+command: testng -XX:+CompactStrings Concat
+reason: User specified action: run testng/othervm -XX:+CompactStrings Concat 
+started: Tue Oct 20 03:14:13.972 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 161658
+finished: Tue Oct 20 03:14:14.654 UTC 2026
+elapsed time (seconds): 0.682
+----------configuration:(0/0)----------
+----------System.out:(27/2901)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:14.529] config CompactString.setUp(): success [0ms]
+[03:14:14.558] test Concat.testConcat("", "ABC", "ABC"): success [9ms]
+[03:14:14.560] test Concat.testConcat("", "ABC\uff21\uff22\uff23DEF", "ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.561] test Concat.testConcat("", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.561] test Concat.testConcat("A", "ABC\uff21\uff22\uff23DEF", "AABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.562] test Concat.testConcat("A", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "A\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.562] test Concat.testConcat("AB", "ABC\uff21\uff22\uff23DEF", "ABABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.563] test Concat.testConcat("AB", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "AB\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.563] test Concat.testConcat("ABCD", "ABC\uff21\uff22\uff23DEF", "ABCDABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.564] test Concat.testConcat("ABCD", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "ABCD\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.565] test Concat.testConcat("ABCDEFGH", "ABC\uff21\uff22\uff23DEF", "ABCDEFGHABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.566] test Concat.testConcat("ABCDEFGH", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "ABCDEFGH\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.566] test Concat.testConcat("\uff21", "ABC\uff21\uff22\uff23DEF", "\uff21ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.567] test Concat.testConcat("\uff21", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.568] test Concat.testConcat("\uff21\uff22", "ABC\uff21\uff22\uff23DEF", "\uff21\uff22ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.569] test Concat.testConcat("\uff21\uff22", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21\uff22\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.570] test Concat.testConcat("\uff21A", "ABC\uff21\uff22\uff23DEF", "\uff21AABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.571] test Concat.testConcat("\uff21A", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21A\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:14.572] test Concat.testConcat("A\uff21", "ABC\uff21\uff22\uff23DEF", "A\uff21ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:14.572] test Concat.testConcat("A\uff21", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "A\uff21\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+
+===============================================
+java/lang/String/CompactString/Concat.java
+Total tests run: 19, Passes: 19, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3443)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/Concat.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java \\
+        -Dtest.main.class=Concat \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/Concat.d/testng.0.jta java/lang/String/CompactString/Concat.java false Concat
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/174)----------
+command: build Concat
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:14.657 UTC 2026
+finished: Tue Oct 20 03:14:14.657 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/290)----------
+command: testng -XX:-CompactStrings Concat
+reason: User specified action: run testng/othervm -XX:-CompactStrings Concat 
+started: Tue Oct 20 03:14:14.657 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 161715
+finished: Tue Oct 20 03:14:15.289 UTC 2026
+elapsed time (seconds): 0.632
+----------configuration:(0/0)----------
+----------System.out:(27/2902)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:15.158] config CompactString.setUp(): success [0ms]
+[03:14:15.199] test Concat.testConcat("", "ABC", "ABC"): success [13ms]
+[03:14:15.200] test Concat.testConcat("", "ABC\uff21\uff22\uff23DEF", "ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.201] test Concat.testConcat("", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.202] test Concat.testConcat("A", "ABC\uff21\uff22\uff23DEF", "AABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.202] test Concat.testConcat("A", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "A\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.203] test Concat.testConcat("AB", "ABC\uff21\uff22\uff23DEF", "ABABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.203] test Concat.testConcat("AB", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "AB\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.204] test Concat.testConcat("ABCD", "ABC\uff21\uff22\uff23DEF", "ABCDABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.204] test Concat.testConcat("ABCD", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "ABCD\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.205] test Concat.testConcat("ABCDEFGH", "ABC\uff21\uff22\uff23DEF", "ABCDEFGHABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.205] test Concat.testConcat("ABCDEFGH", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "ABCDEFGH\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.206] test Concat.testConcat("\uff21", "ABC\uff21\uff22\uff23DEF", "\uff21ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.206] test Concat.testConcat("\uff21", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.206] test Concat.testConcat("\uff21\uff22", "ABC\uff21\uff22\uff23DEF", "\uff21\uff22ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.207] test Concat.testConcat("\uff21\uff22", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21\uff22\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.207] test Concat.testConcat("\uff21A", "ABC\uff21\uff22\uff23DEF", "\uff21AABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.208] test Concat.testConcat("\uff21A", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "\uff21A\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+[03:14:15.208] test Concat.testConcat("A\uff21", "ABC\uff21\uff22\uff23DEF", "A\uff21ABC\uff21\uff22\uff23DEF"): success [0ms]
+[03:14:15.209] test Concat.testConcat("A\uff21", "\uff21\uff22\uff23ABC\uff24\uff25\uff26", "A\uff21\uff21\uff22\uff23ABC\uff24\uff25\uff26"): success [0ms]
+
+===============================================
+java/lang/String/CompactString/Concat.java
+Total tests run: 19, Passes: 19, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3443)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/Concat.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Concat.java \\
+        -Dtest.main.class=Concat \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/Concat.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/Concat.d/testng.1.jta java/lang/String/CompactString/Concat.java false Concat
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

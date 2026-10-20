@@ -1,0 +1,289 @@
+#Test Results (version 2)
+#Tue Oct 20 03:06:32 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 bug8248655 bug8302871 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings EqualsIgnoreCase\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings EqualsIgnoreCase\n
+source=EqualsIgnoreCase.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java
+elapsed=1612 0\:00\:01.612
+end=Tue Oct 20 03\:06\:32 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 03\:06\:31 UTC 2026
+test=java/lang/String/CompactString/EqualsIgnoreCase.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1614
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/230)----------
+command: build EqualsIgnoreCase
+reason: Named class compiled on demand
+started: Tue Oct 20 03:06:31.145 UTC 2026
+Test directory:
+  compile: EqualsIgnoreCase
+finished: Tue Oct 20 03:06:31.333 UTC 2026
+elapsed time (seconds): 0.188
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/313)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:06:31.145 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 144876
+finished: Tue Oct 20 03:06:31.333 UTC 2026
+elapsed time (seconds): 0.188
+----------configuration:(13/829)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3437)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/EqualsIgnoreCase.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java \\
+        -J-Dtest.main.class=EqualsIgnoreCase \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/310)----------
+command: testng -XX:+CompactStrings EqualsIgnoreCase
+reason: User specified action: run testng/othervm -XX:+CompactStrings EqualsIgnoreCase 
+started: Tue Oct 20 03:06:31.333 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 145477
+finished: Tue Oct 20 03:06:32.111 UTC 2026
+elapsed time (seconds): 0.778
+----------configuration:(0/0)----------
+----------System.out:(24/2002)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:06:31.831] config CompactString.setUp(): success [0ms]
+[03:06:31.971] test EqualsIgnoreCase.checkConsistencyWithCharacterUppercaseLowerCase(): success [121ms]
+[03:06:32.010] test EqualsIgnoreCase.testEqualsIgnoreCase("", "", true): success [31ms]
+[03:06:32.010] test EqualsIgnoreCase.testEqualsIgnoreCase("A", "a", true): success [0ms]
+[03:06:32.011] test EqualsIgnoreCase.testEqualsIgnoreCase("AB", "aB", true): success [0ms]
+[03:06:32.013] test EqualsIgnoreCase.testEqualsIgnoreCase("ABCD", "AbCd", true): success [1ms]
+[03:06:32.013] test EqualsIgnoreCase.testEqualsIgnoreCase("ABCDEFGH", "aBcDeFgH", true): success [0ms]
+[03:06:32.015] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21", "\uff41", true): success [0ms]
+[03:06:32.020] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21", "\uff21", true): success [0ms]
+[03:06:32.020] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21\uff22", "\uff41\uff42", true): success [0ms]
+[03:06:32.021] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21\uff22", "\uff41\uff22", true): success [0ms]
+[03:06:32.021] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21\uff22", "\uff21\uff42", true): success [0ms]
+[03:06:32.021] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21A", "\uff41a", true): success [0ms]
+[03:06:32.022] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21A", "\uff21A", true): success [0ms]
+[03:06:32.022] test EqualsIgnoreCase.testEqualsIgnoreCase("A\uff21", "a\uff41", true): success [0ms]
+[03:06:32.022] test EqualsIgnoreCase.testEqualsIgnoreCase("A\uff21", "A\uff21", true): success [0ms]
+[03:06:32.029] test EqualsIgnoreCase.testEqualsIgnoreCase("\ud801\udc00\ud801\udc01\uff21A", "\ud801\udc28\ud801\udc29\uff41a", true): success [1ms]
+
+===============================================
+java/lang/String/CompactString/EqualsIgnoreCase.java
+Total tests run: 16, Passes: 16, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3543)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/EqualsIgnoreCase.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java \\
+        -Dtest.main.class=EqualsIgnoreCase \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/EqualsIgnoreCase.d/testng.0.jta java/lang/String/CompactString/EqualsIgnoreCase.java false EqualsIgnoreCase
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/186)----------
+command: build EqualsIgnoreCase
+reason: Named class compiled on demand
+started: Tue Oct 20 03:06:32.111 UTC 2026
+finished: Tue Oct 20 03:06:32.112 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/310)----------
+command: testng -XX:-CompactStrings EqualsIgnoreCase
+reason: User specified action: run testng/othervm -XX:-CompactStrings EqualsIgnoreCase 
+started: Tue Oct 20 03:06:32.112 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 145534
+finished: Tue Oct 20 03:06:32.754 UTC 2026
+elapsed time (seconds): 0.642
+----------configuration:(0/0)----------
+----------System.out:(24/2002)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:06:32.458] config CompactString.setUp(): success [0ms]
+[03:06:32.623] test EqualsIgnoreCase.checkConsistencyWithCharacterUppercaseLowerCase(): success [147ms]
+[03:06:32.651] test EqualsIgnoreCase.testEqualsIgnoreCase("", "", true): success [21ms]
+[03:06:32.651] test EqualsIgnoreCase.testEqualsIgnoreCase("A", "a", true): success [0ms]
+[03:06:32.652] test EqualsIgnoreCase.testEqualsIgnoreCase("AB", "aB", true): success [0ms]
+[03:06:32.652] test EqualsIgnoreCase.testEqualsIgnoreCase("ABCD", "AbCd", true): success [0ms]
+[03:06:32.653] test EqualsIgnoreCase.testEqualsIgnoreCase("ABCDEFGH", "aBcDeFgH", true): success [0ms]
+[03:06:32.653] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21", "\uff41", true): success [0ms]
+[03:06:32.654] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21", "\uff21", true): success [0ms]
+[03:06:32.656] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21\uff22", "\uff41\uff42", true): success [1ms]
+[03:06:32.656] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21\uff22", "\uff41\uff22", true): success [0ms]
+[03:06:32.657] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21\uff22", "\uff21\uff42", true): success [0ms]
+[03:06:32.657] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21A", "\uff41a", true): success [0ms]
+[03:06:32.658] test EqualsIgnoreCase.testEqualsIgnoreCase("\uff21A", "\uff21A", true): success [0ms]
+[03:06:32.658] test EqualsIgnoreCase.testEqualsIgnoreCase("A\uff21", "a\uff41", true): success [0ms]
+[03:06:32.658] test EqualsIgnoreCase.testEqualsIgnoreCase("A\uff21", "A\uff21", true): success [0ms]
+[03:06:32.659] test EqualsIgnoreCase.testEqualsIgnoreCase("\ud801\udc00\ud801\udc01\uff21A", "\ud801\udc28\ud801\udc29\uff41a", true): success [1ms]
+
+===============================================
+java/lang/String/CompactString/EqualsIgnoreCase.java
+Total tests run: 16, Passes: 16, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3543)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/EqualsIgnoreCase.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/EqualsIgnoreCase.java \\
+        -Dtest.main.class=EqualsIgnoreCase \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/EqualsIgnoreCase.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/EqualsIgnoreCase.d/testng.1.jta java/lang/String/CompactString/EqualsIgnoreCase.java false EqualsIgnoreCase
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

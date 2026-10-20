@@ -1,0 +1,439 @@
+#Test Results (version 2)
+#Tue Oct 20 03:14:20 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings LastIndexOf\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings LastIndexOf\n
+source=LastIndexOf.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java
+elapsed=1333 0\:00\:01.333
+end=Tue Oct 20 03\:14\:20 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 03\:14\:18 UTC 2026
+test=java/lang/String/CompactString/LastIndexOf.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1335
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/220)----------
+command: build LastIndexOf
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:18.995 UTC 2026
+Test directory:
+  compile: LastIndexOf
+finished: Tue Oct 20 03:14:19.132 UTC 2026
+elapsed time (seconds): 0.137
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/308)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:14:18.996 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:19.131 UTC 2026
+elapsed time (seconds): 0.135
+----------configuration:(13/824)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3392)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/LastIndexOf.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java \\
+        -J-Dtest.main.class=LastIndexOf \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/300)----------
+command: testng -XX:+CompactStrings LastIndexOf
+reason: User specified action: run testng/othervm -XX:+CompactStrings LastIndexOf 
+started: Tue Oct 20 03:14:19.132 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 162099
+finished: Tue Oct 20 03:14:19.764 UTC 2026
+elapsed time (seconds): 0.632
+----------configuration:(0/0)----------
+----------System.out:(99/8857)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:19.601] config CompactString.setUp(): success [0ms]
+[03:14:19.632] test LastIndexOf.testLastIndexOf("", 65, -1): success [9ms]
+[03:14:19.633] test LastIndexOf.testLastIndexOf("A", 65, 0): success [0ms]
+[03:14:19.633] test LastIndexOf.testLastIndexOf("AB", 65, 0): success [0ms]
+[03:14:19.634] test LastIndexOf.testLastIndexOf("AB", 66, 1): success [0ms]
+[03:14:19.634] test LastIndexOf.testLastIndexOf("ABCD", 65, 0): success [0ms]
+[03:14:19.635] test LastIndexOf.testLastIndexOf("ABCD", 68, 3): success [0ms]
+[03:14:19.635] test LastIndexOf.testLastIndexOf("ABCDEFGH", 65, 0): success [0ms]
+[03:14:19.636] test LastIndexOf.testLastIndexOf("ABCDEFGH", 72, 7): success [0ms]
+[03:14:19.636] test LastIndexOf.testLastIndexOf("\uff21", 65313, 0): success [0ms]
+[03:14:19.637] test LastIndexOf.testLastIndexOf("\uff21", 66, -1): success [0ms]
+[03:14:19.638] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65313, 0): success [0ms]
+[03:14:19.641] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65314, 1): success [3ms]
+[03:14:19.642] test LastIndexOf.testLastIndexOf("\uff21A", 65313, 0): success [0ms]
+[03:14:19.642] test LastIndexOf.testLastIndexOf("\uff21A", 65, 1): success [0ms]
+[03:14:19.643] test LastIndexOf.testLastIndexOf("A\uff21", 65, 0): success [0ms]
+[03:14:19.643] test LastIndexOf.testLastIndexOf("A\uff21", 65313, 1): success [0ms]
+[03:14:19.644] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 9): success [0ms]
+[03:14:19.644] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 8): success [0ms]
+[03:14:19.645] test LastIndexOf.testLastIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 2): success [0ms]
+[03:14:19.653] test LastIndexOf.testLastIndexOf("", 65, 0, -1): success [6ms]
+[03:14:19.653] test LastIndexOf.testLastIndexOf("A", 65, 0, 0): success [0ms]
+[03:14:19.654] test LastIndexOf.testLastIndexOf("A", 65, 1, 0): success [0ms]
+[03:14:19.654] test LastIndexOf.testLastIndexOf("AB", 65, 0, 0): success [0ms]
+[03:14:19.654] test LastIndexOf.testLastIndexOf("AB", 66, 1, 1): success [0ms]
+[03:14:19.655] test LastIndexOf.testLastIndexOf("AB", 66, 2, 1): success [0ms]
+[03:14:19.655] test LastIndexOf.testLastIndexOf("ABCD", 65, 0, 0): success [0ms]
+[03:14:19.655] test LastIndexOf.testLastIndexOf("ABCD", 67, 2, 2): success [0ms]
+[03:14:19.655] test LastIndexOf.testLastIndexOf("ABCD", 67, 1, -1): success [0ms]
+[03:14:19.656] test LastIndexOf.testLastIndexOf("ABCDEFGH", 65, 0, 0): success [0ms]
+[03:14:19.656] test LastIndexOf.testLastIndexOf("ABCDEFGH", 72, 7, 7): success [0ms]
+[03:14:19.657] test LastIndexOf.testLastIndexOf("ABCDEFGH", 72, 6, -1): success [0ms]
+[03:14:19.657] test LastIndexOf.testLastIndexOf("\uff21", 65313, 0, 0): success [0ms]
+[03:14:19.657] test LastIndexOf.testLastIndexOf("\uff21", 65313, 7, 0): success [0ms]
+[03:14:19.657] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65313, 0, 0): success [0ms]
+[03:14:19.658] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65314, 0, -1): success [0ms]
+[03:14:19.658] test LastIndexOf.testLastIndexOf("\uff21A", 65313, 0, 0): success [0ms]
+[03:14:19.658] test LastIndexOf.testLastIndexOf("\uff21A", 65, 1, 1): success [0ms]
+[03:14:19.659] test LastIndexOf.testLastIndexOf("\uff21A", 65, 0, -1): success [0ms]
+[03:14:19.659] test LastIndexOf.testLastIndexOf("A\uff21", 65, 0, 0): success [0ms]
+[03:14:19.659] test LastIndexOf.testLastIndexOf("A\uff21", 65313, 1, 1): success [0ms]
+[03:14:19.660] test LastIndexOf.testLastIndexOf("A\uff21", 65313, 0, -1): success [0ms]
+[03:14:19.660] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 5, 4): success [0ms]
+[03:14:19.660] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 6, 6): success [0ms]
+[03:14:19.661] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 5, 5): success [0ms]
+[03:14:19.661] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 6, 5): success [0ms]
+[03:14:19.665] test LastIndexOf.testLastIndexOf("", "A", -1): success [4ms]
+[03:14:19.666] test LastIndexOf.testLastIndexOf("A", "A", 0): success [0ms]
+[03:14:19.666] test LastIndexOf.testLastIndexOf("A", "AB", -1): success [0ms]
+[03:14:19.666] test LastIndexOf.testLastIndexOf("AB", "AB", 0): success [0ms]
+[03:14:19.667] test LastIndexOf.testLastIndexOf("AB", "B", 1): success [0ms]
+[03:14:19.667] test LastIndexOf.testLastIndexOf("ABCD", "ABCD", 0): success [0ms]
+[03:14:19.667] test LastIndexOf.testLastIndexOf("ABCD", "B", 1): success [0ms]
+[03:14:19.667] test LastIndexOf.testLastIndexOf("ABCDEFGH", "ABCD", 0): success [0ms]
+[03:14:19.668] test LastIndexOf.testLastIndexOf("ABCDEFGH", "GH", 6): success [0ms]
+[03:14:19.668] test LastIndexOf.testLastIndexOf("\uff21", "\uff21", 0): success [0ms]
+[03:14:19.668] test LastIndexOf.testLastIndexOf("\uff21", "\uff22", -1): success [0ms]
+[03:14:19.669] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:19.669] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff22", 1): success [0ms]
+[03:14:19.669] test LastIndexOf.testLastIndexOf("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:19.669] test LastIndexOf.testLastIndexOf("\uff21A", "A", 1): success [0ms]
+[03:14:19.670] test LastIndexOf.testLastIndexOf("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:19.670] test LastIndexOf.testLastIndexOf("A\uff21", "\uff21", 1): success [0ms]
+[03:14:19.670] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22", 6): success [0ms]
+[03:14:19.671] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22", 8): success [0ms]
+[03:14:19.677] test LastIndexOf.testLastIndexOf("", "A", 0, -1): success [5ms]
+[03:14:19.677] test LastIndexOf.testLastIndexOf("AB", "AB", 0, 0): success [0ms]
+[03:14:19.678] test LastIndexOf.testLastIndexOf("A", "AB", -1, -1): success [0ms]
+[03:14:19.678] test LastIndexOf.testLastIndexOf("AB", "B", 1, 1): success [0ms]
+[03:14:19.679] test LastIndexOf.testLastIndexOf("AB", "B", 0, -1): success [0ms]
+[03:14:19.679] test LastIndexOf.testLastIndexOf("ABCD", "ABC", 3, 0): success [0ms]
+[03:14:19.679] test LastIndexOf.testLastIndexOf("ABCD", "ABC", 0, 0): success [0ms]
+[03:14:19.680] test LastIndexOf.testLastIndexOf("ABCD", "ABC", 1, 0): success [0ms]
+[03:14:19.680] test LastIndexOf.testLastIndexOf("ABCD", "BC", 1, 1): success [0ms]
+[03:14:19.681] test LastIndexOf.testLastIndexOf("ABCD", "BC", 0, -1): success [0ms]
+[03:14:19.681] test LastIndexOf.testLastIndexOf("ABCDEFGH", "ABCDEFGH", 0, 0): success [0ms]
+[03:14:19.681] test LastIndexOf.testLastIndexOf("ABCDEFGH", "EFGH", 7, 4): success [0ms]
+[03:14:19.682] test LastIndexOf.testLastIndexOf("ABCDEFGH", "EFGH", 3, -1): success [0ms]
+[03:14:19.682] test LastIndexOf.testLastIndexOf("\uff21", "\uff21", 0, 0): success [0ms]
+[03:14:19.682] test LastIndexOf.testLastIndexOf("\uff21", "\uff21", 7, 0): success [0ms]
+[03:14:19.683] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff21\uff22", 0, 0): success [0ms]
+[03:14:19.683] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff21\uff22", 1, 0): success [0ms]
+[03:14:19.683] test LastIndexOf.testLastIndexOf("\uff21A", "\uff21A", 0, 0): success [0ms]
+[03:14:19.684] test LastIndexOf.testLastIndexOf("\uff21A", "A", 1, 1): success [0ms]
+[03:14:19.684] test LastIndexOf.testLastIndexOf("\uff21A", "A", 0, -1): success [0ms]
+[03:14:19.684] test LastIndexOf.testLastIndexOf("A\uff21", "A\uff21", 0, 0): success [0ms]
+[03:14:19.685] test LastIndexOf.testLastIndexOf("A\uff21", "A\uff21", 1, 0): success [0ms]
+[03:14:19.685] test LastIndexOf.testLastIndexOf("A\uff21", "\uff21", 0, -1): success [0ms]
+[03:14:19.685] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 9, 0): success [0ms]
+[03:14:19.686] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 0, 0): success [0ms]
+[03:14:19.686] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22", 6, 6): success [0ms]
+[03:14:19.686] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21", 6, 6): success [0ms]
+
+===============================================
+java/lang/String/CompactString/LastIndexOf.java
+Total tests run: 91, Passes: 91, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3493)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/LastIndexOf.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java \\
+        -Dtest.main.class=LastIndexOf \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/LastIndexOf.d/testng.0.jta java/lang/String/CompactString/LastIndexOf.java false LastIndexOf
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/179)----------
+command: build LastIndexOf
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:19.765 UTC 2026
+finished: Tue Oct 20 03:14:19.765 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/300)----------
+command: testng -XX:-CompactStrings LastIndexOf
+reason: User specified action: run testng/othervm -XX:-CompactStrings LastIndexOf 
+started: Tue Oct 20 03:14:19.765 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 162176
+finished: Tue Oct 20 03:14:20.327 UTC 2026
+elapsed time (seconds): 0.562
+----------configuration:(0/0)----------
+----------System.out:(99/8859)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:20.116] config CompactString.setUp(): success [0ms]
+[03:14:20.156] test LastIndexOf.testLastIndexOf("", 65, -1): success [11ms]
+[03:14:20.157] test LastIndexOf.testLastIndexOf("A", 65, 0): success [0ms]
+[03:14:20.158] test LastIndexOf.testLastIndexOf("AB", 65, 0): success [0ms]
+[03:14:20.158] test LastIndexOf.testLastIndexOf("AB", 66, 1): success [0ms]
+[03:14:20.159] test LastIndexOf.testLastIndexOf("ABCD", 65, 0): success [0ms]
+[03:14:20.159] test LastIndexOf.testLastIndexOf("ABCD", 68, 3): success [0ms]
+[03:14:20.160] test LastIndexOf.testLastIndexOf("ABCDEFGH", 65, 0): success [0ms]
+[03:14:20.160] test LastIndexOf.testLastIndexOf("ABCDEFGH", 72, 7): success [0ms]
+[03:14:20.161] test LastIndexOf.testLastIndexOf("\uff21", 65313, 0): success [0ms]
+[03:14:20.161] test LastIndexOf.testLastIndexOf("\uff21", 66, -1): success [0ms]
+[03:14:20.162] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65313, 0): success [0ms]
+[03:14:20.162] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65314, 1): success [0ms]
+[03:14:20.163] test LastIndexOf.testLastIndexOf("\uff21A", 65313, 0): success [0ms]
+[03:14:20.163] test LastIndexOf.testLastIndexOf("\uff21A", 65, 1): success [0ms]
+[03:14:20.163] test LastIndexOf.testLastIndexOf("A\uff21", 65, 0): success [0ms]
+[03:14:20.164] test LastIndexOf.testLastIndexOf("A\uff21", 65313, 1): success [0ms]
+[03:14:20.164] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 9): success [0ms]
+[03:14:20.165] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 8): success [0ms]
+[03:14:20.165] test LastIndexOf.testLastIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 2): success [0ms]
+[03:14:20.183] test LastIndexOf.testLastIndexOf("", 65, 0, -1): success [16ms]
+[03:14:20.184] test LastIndexOf.testLastIndexOf("A", 65, 0, 0): success [0ms]
+[03:14:20.185] test LastIndexOf.testLastIndexOf("A", 65, 1, 0): success [0ms]
+[03:14:20.185] test LastIndexOf.testLastIndexOf("AB", 65, 0, 0): success [0ms]
+[03:14:20.186] test LastIndexOf.testLastIndexOf("AB", 66, 1, 1): success [0ms]
+[03:14:20.187] test LastIndexOf.testLastIndexOf("AB", 66, 2, 1): success [0ms]
+[03:14:20.187] test LastIndexOf.testLastIndexOf("ABCD", 65, 0, 0): success [0ms]
+[03:14:20.188] test LastIndexOf.testLastIndexOf("ABCD", 67, 2, 2): success [0ms]
+[03:14:20.188] test LastIndexOf.testLastIndexOf("ABCD", 67, 1, -1): success [0ms]
+[03:14:20.189] test LastIndexOf.testLastIndexOf("ABCDEFGH", 65, 0, 0): success [0ms]
+[03:14:20.189] test LastIndexOf.testLastIndexOf("ABCDEFGH", 72, 7, 7): success [0ms]
+[03:14:20.190] test LastIndexOf.testLastIndexOf("ABCDEFGH", 72, 6, -1): success [0ms]
+[03:14:20.190] test LastIndexOf.testLastIndexOf("\uff21", 65313, 0, 0): success [0ms]
+[03:14:20.191] test LastIndexOf.testLastIndexOf("\uff21", 65313, 7, 0): success [0ms]
+[03:14:20.191] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65313, 0, 0): success [0ms]
+[03:14:20.192] test LastIndexOf.testLastIndexOf("\uff21\uff22", 65314, 0, -1): success [0ms]
+[03:14:20.192] test LastIndexOf.testLastIndexOf("\uff21A", 65313, 0, 0): success [0ms]
+[03:14:20.193] test LastIndexOf.testLastIndexOf("\uff21A", 65, 1, 1): success [0ms]
+[03:14:20.193] test LastIndexOf.testLastIndexOf("\uff21A", 65, 0, -1): success [0ms]
+[03:14:20.194] test LastIndexOf.testLastIndexOf("A\uff21", 65, 0, 0): success [0ms]
+[03:14:20.194] test LastIndexOf.testLastIndexOf("A\uff21", 65313, 1, 1): success [0ms]
+[03:14:20.195] test LastIndexOf.testLastIndexOf("A\uff21", 65313, 0, -1): success [0ms]
+[03:14:20.196] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 5, 4): success [1ms]
+[03:14:20.197] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 6, 6): success [0ms]
+[03:14:20.197] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 5, 5): success [0ms]
+[03:14:20.198] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 6, 5): success [0ms]
+[03:14:20.204] test LastIndexOf.testLastIndexOf("", "A", -1): success [5ms]
+[03:14:20.205] test LastIndexOf.testLastIndexOf("A", "A", 0): success [0ms]
+[03:14:20.205] test LastIndexOf.testLastIndexOf("A", "AB", -1): success [0ms]
+[03:14:20.206] test LastIndexOf.testLastIndexOf("AB", "AB", 0): success [0ms]
+[03:14:20.206] test LastIndexOf.testLastIndexOf("AB", "B", 1): success [0ms]
+[03:14:20.206] test LastIndexOf.testLastIndexOf("ABCD", "ABCD", 0): success [0ms]
+[03:14:20.207] test LastIndexOf.testLastIndexOf("ABCD", "B", 1): success [0ms]
+[03:14:20.207] test LastIndexOf.testLastIndexOf("ABCDEFGH", "ABCD", 0): success [0ms]
+[03:14:20.207] test LastIndexOf.testLastIndexOf("ABCDEFGH", "GH", 6): success [0ms]
+[03:14:20.208] test LastIndexOf.testLastIndexOf("\uff21", "\uff21", 0): success [0ms]
+[03:14:20.208] test LastIndexOf.testLastIndexOf("\uff21", "\uff22", -1): success [0ms]
+[03:14:20.209] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:20.209] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff22", 1): success [0ms]
+[03:14:20.209] test LastIndexOf.testLastIndexOf("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:20.210] test LastIndexOf.testLastIndexOf("\uff21A", "A", 1): success [0ms]
+[03:14:20.210] test LastIndexOf.testLastIndexOf("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:20.210] test LastIndexOf.testLastIndexOf("A\uff21", "\uff21", 1): success [0ms]
+[03:14:20.211] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22", 6): success [0ms]
+[03:14:20.211] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22", 8): success [0ms]
+[03:14:20.219] test LastIndexOf.testLastIndexOf("", "A", 0, -1): success [7ms]
+[03:14:20.220] test LastIndexOf.testLastIndexOf("AB", "AB", 0, 0): success [0ms]
+[03:14:20.220] test LastIndexOf.testLastIndexOf("A", "AB", -1, -1): success [0ms]
+[03:14:20.221] test LastIndexOf.testLastIndexOf("AB", "B", 1, 1): success [0ms]
+[03:14:20.221] test LastIndexOf.testLastIndexOf("AB", "B", 0, -1): success [0ms]
+[03:14:20.222] test LastIndexOf.testLastIndexOf("ABCD", "ABC", 3, 0): success [0ms]
+[03:14:20.222] test LastIndexOf.testLastIndexOf("ABCD", "ABC", 0, 0): success [0ms]
+[03:14:20.222] test LastIndexOf.testLastIndexOf("ABCD", "ABC", 1, 0): success [0ms]
+[03:14:20.223] test LastIndexOf.testLastIndexOf("ABCD", "BC", 1, 1): success [0ms]
+[03:14:20.223] test LastIndexOf.testLastIndexOf("ABCD", "BC", 0, -1): success [0ms]
+[03:14:20.224] test LastIndexOf.testLastIndexOf("ABCDEFGH", "ABCDEFGH", 0, 0): success [0ms]
+[03:14:20.224] test LastIndexOf.testLastIndexOf("ABCDEFGH", "EFGH", 7, 4): success [0ms]
+[03:14:20.224] test LastIndexOf.testLastIndexOf("ABCDEFGH", "EFGH", 3, -1): success [0ms]
+[03:14:20.225] test LastIndexOf.testLastIndexOf("\uff21", "\uff21", 0, 0): success [0ms]
+[03:14:20.225] test LastIndexOf.testLastIndexOf("\uff21", "\uff21", 7, 0): success [0ms]
+[03:14:20.226] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff21\uff22", 0, 0): success [0ms]
+[03:14:20.226] test LastIndexOf.testLastIndexOf("\uff21\uff22", "\uff21\uff22", 1, 0): success [0ms]
+[03:14:20.226] test LastIndexOf.testLastIndexOf("\uff21A", "\uff21A", 0, 0): success [0ms]
+[03:14:20.227] test LastIndexOf.testLastIndexOf("\uff21A", "A", 1, 1): success [0ms]
+[03:14:20.227] test LastIndexOf.testLastIndexOf("\uff21A", "A", 0, -1): success [0ms]
+[03:14:20.227] test LastIndexOf.testLastIndexOf("A\uff21", "A\uff21", 0, 0): success [0ms]
+[03:14:20.228] test LastIndexOf.testLastIndexOf("A\uff21", "A\uff21", 1, 0): success [0ms]
+[03:14:20.228] test LastIndexOf.testLastIndexOf("A\uff21", "\uff21", 0, -1): success [0ms]
+[03:14:20.229] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 9, 0): success [0ms]
+[03:14:20.229] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 0, 0): success [0ms]
+[03:14:20.230] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22", 6, 6): success [0ms]
+[03:14:20.230] test LastIndexOf.testLastIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21", 6, 6): success [0ms]
+
+===============================================
+java/lang/String/CompactString/LastIndexOf.java
+Total tests run: 91, Passes: 91, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3493)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/LastIndexOf.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/LastIndexOf.java \\
+        -Dtest.main.class=LastIndexOf \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/LastIndexOf.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/LastIndexOf.d/testng.1.jta java/lang/String/CompactString/LastIndexOf.java false LastIndexOf
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

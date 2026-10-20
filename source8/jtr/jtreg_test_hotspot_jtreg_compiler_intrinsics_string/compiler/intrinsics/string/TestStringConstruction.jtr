@@ -1,0 +1,173 @@
+#Test Results (version 2)
+#Tue Oct 20 03:09:47 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringConstruction.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+keywords=bug8142303 othervm
+run=USER_SPECIFIED main/othervm -XX\:CompileCommand\=inline,java.lang.String\:\:* -XX\:CompileCommand\=inline,java.lang.StringUTF16\:\:* -XX\:CompileCommand\=exclude,java.lang.String\:\:checkBoundsOffCount compiler.intrinsics.string.TestStringConstruction\n
+source=TestStringConstruction.java
+title=Tests handling of invalid array indices in C2 intrinsic if explicit range check in Java code is not inlined.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringConstruction.java
+elapsed=239 0\:00\:00.239
+end=Tue Oct 20 03\:09\:47 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile main
+start=Tue Oct 20 03\:09\:47 UTC 2026
+test=compiler/intrinsics/string/TestStringConstruction.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=240
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/296)----------
+command: build compiler.intrinsics.string.TestStringConstruction
+reason: Named class compiled on demand
+started: Tue Oct 20 03:09:47.219 UTC 2026
+Test directory:
+  compile: compiler.intrinsics.string.TestStringConstruction
+finished: Tue Oct 20 03:09:47.275 UTC 2026
+elapsed time (seconds): 0.056
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/325)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringConstruction.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:09:47.219 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 150173
+finished: Tue Oct 20 03:09:47.274 UTC 2026
+elapsed time (seconds): 0.055
+----------configuration:(10/683)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d
+
+----------rerun:(35/3476)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestStringConstruction.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringConstruction.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestStringConstruction \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringConstruction.java
+result: Passed. Compilation successful
+
+#section:main
+----------messages:(7/656)----------
+command: main -XX:CompileCommand=inline,java.lang.String::* -XX:CompileCommand=inline,java.lang.StringUTF16::* -XX:CompileCommand=exclude,java.lang.String::checkBoundsOffCount compiler.intrinsics.string.TestStringConstruction
+reason: User specified action: run main/othervm -XX:CompileCommand=inline,java.lang.String::* -XX:CompileCommand=inline,java.lang.StringUTF16::* -XX:CompileCommand=exclude,java.lang.String::checkBoundsOffCount compiler.intrinsics.string.TestStringConstruction 
+started: Tue Oct 20 03:09:47.275 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 150492
+finished: Tue Oct 20 03:09:47.456 UTC 2026
+elapsed time (seconds): 0.181
+----------configuration:(0/0)----------
+----------System.out:(3/208)----------
+CompileCommand: inline java/lang/String.* bool inline = true
+CompileCommand: inline java/lang/StringUTF16.* bool inline = true
+CompileCommand: exclude java/lang/String.checkBoundsOffCount intx exclude = 1111
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(38/3660)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestStringConstruction.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestStringConstruction.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestStringConstruction \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/0/compiler/intrinsics/string/TestStringConstruction.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -XX:CompileCommand=inline,java.lang.String::* \\
+        -XX:CompileCommand=inline,java.lang.StringUTF16::* \\
+        -XX:CompileCommand=exclude,java.lang.String::checkBoundsOffCount \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string/TestStringConstruction.d/main.0.jta
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

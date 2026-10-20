@@ -1,0 +1,102 @@
+Independent read-only review, 2026-10-20, agent independent_scan_review.
+Initial source review: no blocking defects in exact predicates, window arithmetic, bounds, safepoints, JNI/C1/C2 dispatch, feature-off, identities, or line splitting.
+Follow-up: immutable masks exactly match the pinned bitset representation; no defects in consumer-exception continuation, availability registration, six producer compilation probes, or 32 MiB SerialGC stress.
+Reviewer did not run builds or tests.
+
+Measurement-method review: found an initially permissive missing-result check,
+missing 8/9-byte probe-edge controls, dispatch work inside the cold timer, and
+the absence of standard JMH compiler hints under -f0. These were corrected
+before qualification. The final runner rejects missing/duplicate/unexpected
+results, wrong raw sample counts, nonfinite values and missing rounds/triples.
+Cold dispatch and input construction precede the timer. Standard compiler hints
+and blackhole flags are generated through JMH's public API, retained and checked.
+
+Final source review, a5576dd and 4aa7d23:
+"No remaining source-review blocker. Verified that 4aa7d23 adds the requested
+long-input assertions at 31/32/33, and runtime source is unchanged from reviewed
+a5576dd. Benchmark contracts now match 154 full, 101 exploratory, and 77 selected
+tier rows. Publication still depends on the running test results and final
+measured benefit/loss assessment. No builds or benchmarks run by this reviewer."
+
+Final evidence-method/document review:
+"No material issue found. The cold summarizer requires all 378 unique samples,
+calculates paired speedups correctly, and keeps operation and process latency
+separate. The docs accurately identify source, tests, measurement method,
+dependency, and local qualification limits. Complete the pending measurement
+and evidence sections after strict validation finishes. No files changed or
+runs started."
+
+Completed C2 data review:
+"The C2 evidence justifies a focused draft for long Latin1 scans, pending
+assessment of the remaining tiers. Bulk gains are convincing: relevant
+whitespace cases also beat candidate-off substantially, and long-line gains
+hold across all five pairs. Keep regressions prominent: unchanged/empty
+stripTrailing +1.1–1.65 ns, consistently slower; clean trim about +1 ns;
+linesFirst at probe boundaries +10–15 ns; selected allocating cases median
+losses around 45–95 ns. Do not attribute UTF16 control changes to SIMD or infer
+overall application benefit from row counts. This supports specific long-scan
+workloads; typical String-call distributions remain unqualified."
+
+Loss classification and refinement source review:
+Independent analysis matched all 44 C2 rows below 0.95x:13 actual native probe-edge
+rows and 31 paths without native setup. The selected diagnostic showed hot
+inlining, so missed inlining is not established as the cause. Reviewed the
+refined copy applied as c881f89fb5c: no source-review blocker; exact predicates,
+32-byte probes, thresholds, reverse indices, trim identity and line laziness/
+CRLF behavior remain intact. Early 7/8/9 matches avoid the new continuations.
+Long paths gain one noninlined call; its costs require remeasurement.
+
+Final four-label harness review:
+"No blocker found in the four-label measurement logic. C2 requires all 20 result
+files and complete base/candidate/old/off data for every case. Both paired
+ratios have the correct direction, and direct-old losses remain visible.
+C1/interpreter retain three-label checks. This verifies the harness logic,
+not the pending results. No builds or benchmarks run."
+
+Final C2 evidence review, c881f89fb5c:
+The reviewer considered the complete four-image five-round data and final
+loss classification. A focused draft remains justified after this bounded
+refinement; no new C2 concern requiring a narrower scope was identified.
+StripTrailing empty/clean and trim longClean improve against the preserved
+old image in every paired repeat, while major long-scan gains remain.
+The refinement is not uniformly faster: 87 of 154 direct-old ratios are below
+1, including 40 below 0.95. Describe targeted recovery with tradeoffs, not a
+general second win. Final publication still awaits C1/interpreter assessment.
+The updated report's C2 numbers and scope were checked against final data.
+The reviewer also requested visible ordinary-short-operation costs: short
+linesCount +7.44 ns, 16-byte linesFirst +3.03 ns, padded five-byte strip
++2.77 ns, each losing every pair. These were added to the report. No further
+tuning cycle was warranted solely to improve row counts.
+
+Final C1 evidence review:
+LongBlank isBlank 27.52x, trim 19.17x and no-match linesCount 5.75x win in
+every pair, including versus feature-off. C1 supports the same focused long-
+scan scope. Costs remain at probe32/33 (isBlank +9.93/+8.49 ns versus baseline,
+also slower than off in every pair), early isBlank +1.07 ns, shortBlank
+isBlank +1.85 ns and trim +1.86 ns, all consistently slower than baseline.
+ShortBlank strip +4.05 ns and trailing probe allocation +48–69 ns are median
+losses whose paired ranges cross 1. C1 short-line results are near parity;
+80/128-byte line gains persist. No new reason for another tuning cycle or
+narrower source scope. Interpreter and first-call results still pending.
+
+Final report recheck, C2 and C1:
+All 17 selected C2 rows match current values, paired ranges and direct-old
+ratios; counts 55/34 and 87/40 are correct. C1 counts 25/16, bulk ratios
+27.517/19.168/5.753 and probe-edge costs 9.93/8.49 ns, including every-pair
+baseline/off comparisons, match per-round data. Short-operation costs and tier
+differences are explicit. No unsupported workload weighting or UTF16 SIMD
+attribution was found. Complete interpreter/cold sections and immutable links
+before publication. No builds, timings or edits were performed by the reviewer.
+
+Final interpreter, first-call and publication assessment:
+The reviewer checked all 77 interpreter rows with five consistent-label rounds
+and independently reconstructed all 378 unique first-call samples, all 14
+summary rows, medians and paired ranges. Counts match report-facts.json across
+all three tiers. Long interpreter scans win every baseline/off pair, while
+probe costs reach 384 ns and short blank trim loses 67 ns. Several short losses
+are reproduced with feature-off, so they cannot all be attributed to JNI.
+Every full-process latency range crosses 1x. Final report and PR-body values,
+costs and scope are accurate. Verdict: worthwhile focused draft for long
+Latin1 scans, with disclosed residuals; no new source/scope blocker or reason
+for another tuning cycle. Replace immutable evidence/product-report link
+markers before publication. No edits, builds or timing runs were performed.

@@ -1,0 +1,353 @@
+#Test Results (version 2)
+#Tue Oct 20 04:03:38 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings Split\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings Split\n
+source=Split.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java
+elapsed=943 0\:00\:00.943
+end=Tue Oct 20 04\:03\:38 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 04\:03\:37 UTC 2026
+test=java/lang/String/CompactString/Split.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=945
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/208)----------
+command: build Split
+reason: Named class compiled on demand
+started: Tue Oct 20 04:03:37.995 UTC 2026
+Test directory:
+  compile: Split
+finished: Tue Oct 20 04:03:38.110 UTC 2026
+elapsed time (seconds): 0.115
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/302)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 04:03:37.995 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 187619
+finished: Tue Oct 20 04:03:38.110 UTC 2026
+elapsed time (seconds): 0.115
+----------configuration:(13/818)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3338)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/Split.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java \\
+        -J-Dtest.main.class=Split \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/288)----------
+command: testng -XX:+CompactStrings Split
+reason: User specified action: run testng/othervm -XX:+CompactStrings Split 
+started: Tue Oct 20 04:03:38.110 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 188918
+finished: Tue Oct 20 04:03:38.501 UTC 2026
+elapsed time (seconds): 0.391
+----------configuration:(0/0)----------
+----------System.out:(56/6211)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[04:03:38.381] config CompactString.setUp(): success [0ms]
+[04:03:38.407] test Split.testSplit("A", "", 0, [Ljava.lang.String;@7e49b8d5): success [14ms]
+[04:03:38.408] test Split.testSplit("A", "", 1, [Ljava.lang.String;@2acda81d): success [0ms]
+[04:03:38.409] test Split.testSplit("A", "", 2, [Ljava.lang.String;@77f56f98): success [0ms]
+[04:03:38.409] test Split.testSplit("A", "A", 0, [Ljava.lang.String;@2fff7c9f): success [0ms]
+[04:03:38.410] test Split.testSplit("AB", "A", 0, [Ljava.lang.String;@66dafcf9): success [0ms]
+[04:03:38.410] test Split.testSplit("AB", "B", 0, [Ljava.lang.String;@35806d06): success [0ms]
+[04:03:38.411] test Split.testSplit("ABCDEFGH", "D", 0, [Ljava.lang.String;@18dba3b1): success [0ms]
+[04:03:38.412] test Split.testSplit("ABCDEFGH", "[D]", 0, [Ljava.lang.String;@2cce816a): success [0ms]
+[04:03:38.412] test Split.testSplit("ABCDEFGH", "CD", 0, [Ljava.lang.String;@5ce95df4): success [0ms]
+[04:03:38.413] test Split.testSplit("ABCDEFGH", "DC", 0, [Ljava.lang.String;@420646a4): success [0ms]
+[04:03:38.413] test Split.testSplit("ABCDEFGH", "[CF]", 0, [Ljava.lang.String;@79246731): success [0ms]
+[04:03:38.419] test Split.testSplit("ABCDEFGH", "[CF]", 1, [Ljava.lang.String;@2f024557): success [5ms]
+[04:03:38.419] test Split.testSplit("ABCDEFGH", "[CF]", 2, [Ljava.lang.String;@66fa4b6b): success [0ms]
+[04:03:38.420] test Split.testSplit("ABCDEFGH", "[FC]", 0, [Ljava.lang.String;@6fa97776): success [0ms]
+[04:03:38.421] test Split.testSplit("ABCDEFGH", "[FC]", 1, [Ljava.lang.String;@4af456e3): success [0ms]
+[04:03:38.421] test Split.testSplit("ABCDEFGH", "[FC]", 2, [Ljava.lang.String;@7e2f36e8): success [0ms]
+[04:03:38.422] test Split.testSplit("\uff21", "", 0, [Ljava.lang.String;@658d4479): success [0ms]
+[04:03:38.422] test Split.testSplit("\uff21", "", 1, [Ljava.lang.String;@78fc4281): success [0ms]
+[04:03:38.423] test Split.testSplit("\uff21", "", 2, [Ljava.lang.String;@4864ea79): success [0ms]
+[04:03:38.424] test Split.testSplit("\uff21", "\uff21", 0, [Ljava.lang.String;@296ca767): success [0ms]
+[04:03:38.424] test Split.testSplit("\uff21A", "\uff21", 0, [Ljava.lang.String;@16dce35): success [0ms]
+[04:03:38.425] test Split.testSplit("\uff21A", "A", 0, [Ljava.lang.String;@4af2bdca): success [0ms]
+[04:03:38.425] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21", 0, [Ljava.lang.String;@53cc6959): success [0ms]
+[04:03:38.426] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21", 2, [Ljava.lang.String;@3f72b8d4): success [0ms]
+[04:03:38.426] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21", 4, [Ljava.lang.String;@4e7343d0): success [0ms]
+[04:03:38.427] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22", 0, [Ljava.lang.String;@428328dd): success [0ms]
+[04:03:38.427] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22", 3, [Ljava.lang.String;@451a5a60): success [0ms]
+[04:03:38.428] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "\uff21", 0, [Ljava.lang.String;@1ce594bd): success [0ms]
+[04:03:38.428] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "\uff21", 3, [Ljava.lang.String;@212f582a): success [0ms]
+[04:03:38.429] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", 0, [Ljava.lang.String;@1a77a54e): success [0ms]
+[04:03:38.429] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", 4, [Ljava.lang.String;@48bd0d): success [0ms]
+[04:03:38.430] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "\ud801\udc01", 0, [Ljava.lang.String;@182790a8): success [1ms]
+[04:03:38.431] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "?", 0, [Ljava.lang.String;@7f2363a5): success [0ms]
+[04:03:38.432] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "\ud801\udc01", 0, [Ljava.lang.String;@d50ef54): success [0ms]
+[04:03:38.433] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\ud801\udc01\uff21]", 0, [Ljava.lang.String;@129be5bf): success [0ms]
+[04:03:38.433] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\ud801\udc01\uff21]", 1, [Ljava.lang.String;@7d9a49cd): success [0ms]
+[04:03:38.434] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\ud801\udc01\uff21]", 2, [Ljava.lang.String;@1a1aa3ba): success [0ms]
+[04:03:38.434] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\uff21\ud801\udc01]", 0, [Ljava.lang.String;@4381223): success [0ms]
+[04:03:38.435] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\uff21\ud801\udc01]", 1, [Ljava.lang.String;@29aabdb7): success [0ms]
+[04:03:38.436] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\uff21\ud801\udc01]", 2, [Ljava.lang.String;@5ffed8e5): success [0ms]
+[04:03:38.437] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "?", 0, [Ljava.lang.String;@5c581936): success [0ms]
+[04:03:38.437] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "\ud801\udc29", 0, [Ljava.lang.String;@6f225b45): success [0ms]
+[04:03:38.438] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\ud801\udc29\uff41]", 0, [Ljava.lang.String;@8ab4e40): success [0ms]
+[04:03:38.439] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\ud801\udc29\uff41]", 1, [Ljava.lang.String;@135cac8e): success [0ms]
+[04:03:38.439] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\ud801\udc29\uff41]", 2, [Ljava.lang.String;@5664e74a): success [0ms]
+[04:03:38.440] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\uff41\ud801\udc29]", 0, [Ljava.lang.String;@338ea743): success [0ms]
+[04:03:38.440] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\uff41\ud801\udc29]", 1, [Ljava.lang.String;@4171cd0d): success [0ms]
+[04:03:38.441] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\uff41\ud801\udc29]", 2, [Ljava.lang.String;@78f0d4fc): success [0ms]
+
+===============================================
+java/lang/String/CompactString/Split.java
+Total tests run: 48, Passes: 48, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3433)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/Split.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java \\
+        -Dtest.main.class=Split \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/Split.d/testng.0.jta java/lang/String/CompactString/Split.java false Split
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/173)----------
+command: build Split
+reason: Named class compiled on demand
+started: Tue Oct 20 04:03:38.501 UTC 2026
+finished: Tue Oct 20 04:03:38.501 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/288)----------
+command: testng -XX:-CompactStrings Split
+reason: User specified action: run testng/othervm -XX:-CompactStrings Split 
+started: Tue Oct 20 04:03:38.501 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 188945
+finished: Tue Oct 20 04:03:38.935 UTC 2026
+elapsed time (seconds): 0.434
+----------configuration:(0/0)----------
+----------System.out:(56/6212)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[04:03:38.801] config CompactString.setUp(): success [0ms]
+[04:03:38.834] test Split.testSplit("A", "", 0, [Ljava.lang.String;@5690ec07): success [13ms]
+[04:03:38.835] test Split.testSplit("A", "", 1, [Ljava.lang.String;@1d724015): success [0ms]
+[04:03:38.835] test Split.testSplit("A", "", 2, [Ljava.lang.String;@7ee7e9de): success [0ms]
+[04:03:38.836] test Split.testSplit("A", "A", 0, [Ljava.lang.String;@a1f4a60): success [0ms]
+[04:03:38.840] test Split.testSplit("AB", "A", 0, [Ljava.lang.String;@214fcd53): success [0ms]
+[04:03:38.841] test Split.testSplit("AB", "B", 0, [Ljava.lang.String;@3b20757f): success [0ms]
+[04:03:38.841] test Split.testSplit("ABCDEFGH", "D", 0, [Ljava.lang.String;@2a845785): success [0ms]
+[04:03:38.842] test Split.testSplit("ABCDEFGH", "[D]", 0, [Ljava.lang.String;@28d736e1): success [0ms]
+[04:03:38.843] test Split.testSplit("ABCDEFGH", "CD", 0, [Ljava.lang.String;@1aecd9b3): success [0ms]
+[04:03:38.843] test Split.testSplit("ABCDEFGH", "DC", 0, [Ljava.lang.String;@14a24338): success [0ms]
+[04:03:38.844] test Split.testSplit("ABCDEFGH", "[CF]", 0, [Ljava.lang.String;@36025612): success [0ms]
+[04:03:38.845] test Split.testSplit("ABCDEFGH", "[CF]", 1, [Ljava.lang.String;@1b429200): success [0ms]
+[04:03:38.845] test Split.testSplit("ABCDEFGH", "[CF]", 2, [Ljava.lang.String;@6bba1758): success [0ms]
+[04:03:38.846] test Split.testSplit("ABCDEFGH", "[FC]", 0, [Ljava.lang.String;@4d80cb29): success [0ms]
+[04:03:38.846] test Split.testSplit("ABCDEFGH", "[FC]", 1, [Ljava.lang.String;@3affdd10): success [0ms]
+[04:03:38.847] test Split.testSplit("ABCDEFGH", "[FC]", 2, [Ljava.lang.String;@3b36cd9d): success [0ms]
+[04:03:38.847] test Split.testSplit("\uff21", "", 0, [Ljava.lang.String;@750c01fd): success [0ms]
+[04:03:38.848] test Split.testSplit("\uff21", "", 1, [Ljava.lang.String;@6fbbdd8e): success [0ms]
+[04:03:38.848] test Split.testSplit("\uff21", "", 2, [Ljava.lang.String;@559671b7): success [0ms]
+[04:03:38.849] test Split.testSplit("\uff21", "\uff21", 0, [Ljava.lang.String;@3a741b8f): success [0ms]
+[04:03:38.849] test Split.testSplit("\uff21A", "\uff21", 0, [Ljava.lang.String;@3313eca): success [0ms]
+[04:03:38.852] test Split.testSplit("\uff21A", "A", 0, [Ljava.lang.String;@238271f0): success [3ms]
+[04:03:38.853] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21", 0, [Ljava.lang.String;@c8cf261): success [0ms]
+[04:03:38.854] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21", 2, [Ljava.lang.String;@10e235df): success [0ms]
+[04:03:38.854] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21", 4, [Ljava.lang.String;@7219eff2): success [0ms]
+[04:03:38.855] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22", 0, [Ljava.lang.String;@3c0486cf): success [0ms]
+[04:03:38.855] test Split.testSplit("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22", 3, [Ljava.lang.String;@620f4d80): success [0ms]
+[04:03:38.856] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "\uff21", 0, [Ljava.lang.String;@6cc39461): success [0ms]
+[04:03:38.856] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "\uff21", 3, [Ljava.lang.String;@5efb9ef9): success [0ms]
+[04:03:38.856] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", 0, [Ljava.lang.String;@377d8a00): success [0ms]
+[04:03:38.857] test Split.testSplit("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", 4, [Ljava.lang.String;@5be85938): success [0ms]
+[04:03:38.858] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "\ud801\udc01", 0, [Ljava.lang.String;@527932d5): success [1ms]
+[04:03:38.859] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "?", 0, [Ljava.lang.String;@20acaf5b): success [0ms]
+[04:03:38.859] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "\ud801\udc01", 0, [Ljava.lang.String;@36865ca0): success [0ms]
+[04:03:38.860] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\ud801\udc01\uff21]", 0, [Ljava.lang.String;@76fa6fb3): success [0ms]
+[04:03:38.861] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\ud801\udc01\uff21]", 1, [Ljava.lang.String;@6fef9f76): success [0ms]
+[04:03:38.862] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\ud801\udc01\uff21]", 2, [Ljava.lang.String;@62fd3932): success [0ms]
+[04:03:38.862] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\uff21\ud801\udc01]", 0, [Ljava.lang.String;@1f38c8c4): success [0ms]
+[04:03:38.863] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\uff21\ud801\udc01]", 1, [Ljava.lang.String;@552f41dd): success [0ms]
+[04:03:38.863] test Split.testSplit("\ud801\udc00\ud801\udc01\uff21A", "[\uff21\ud801\udc01]", 2, [Ljava.lang.String;@2a420dd9): success [0ms]
+[04:03:38.864] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "?", 0, [Ljava.lang.String;@236899d7): success [0ms]
+[04:03:38.864] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "\ud801\udc29", 0, [Ljava.lang.String;@3e0e4f1a): success [0ms]
+[04:03:38.865] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\ud801\udc29\uff41]", 0, [Ljava.lang.String;@18bd9b89): success [0ms]
+[04:03:38.865] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\ud801\udc29\uff41]", 1, [Ljava.lang.String;@6bddb800): success [0ms]
+[04:03:38.866] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\ud801\udc29\uff41]", 2, [Ljava.lang.String;@3f3fd1a1): success [0ms]
+[04:03:38.866] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\uff41\ud801\udc29]", 0, [Ljava.lang.String;@2227645): success [0ms]
+[04:03:38.866] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\uff41\ud801\udc29]", 1, [Ljava.lang.String;@a175aed): success [0ms]
+[04:03:38.867] test Split.testSplit("\ud801\udc28\ud801\udc29\uff41a", "[\uff41\ud801\udc29]", 2, [Ljava.lang.String;@3bf17abf): success [0ms]
+
+===============================================
+java/lang/String/CompactString/Split.java
+Total tests run: 48, Passes: 48, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3433)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/Split.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/Split.java \\
+        -Dtest.main.class=Split \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/Split.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/Split.d/testng.1.jta java/lang/String/CompactString/Split.java false Split
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

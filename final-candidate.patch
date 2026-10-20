@@ -1,0 +1,933 @@
+diff --git a/src/hotspot/share/c1/c1_Compiler.cpp b/src/hotspot/share/c1/c1_Compiler.cpp
+index f1444b42508..aea2f857040 100644
+--- a/src/hotspot/share/c1/c1_Compiler.cpp
++++ b/src/hotspot/share/c1/c1_Compiler.cpp
+@@ -245,6 +245,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+   case vmIntrinsics::_stringzillaEqualsRange:
+   case vmIntrinsics::_stringzillaFindUTF16Latin1:
+   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
++  case vmIntrinsics::_stringzillaScanLatin1:
+   case vmIntrinsics::_stringzillaFindCharLatin1:
+   case vmIntrinsics::_stringzillaFindCharUTF16:
+   case vmIntrinsics::_stringzillaRfindCharLatin1:
+diff --git a/src/hotspot/share/c1/c1_LIRGenerator.cpp b/src/hotspot/share/c1/c1_LIRGenerator.cpp
+index 669667a14ca..61ede7f51bb 100644
+--- a/src/hotspot/share/c1/c1_LIRGenerator.cpp
++++ b/src/hotspot/share/c1/c1_LIRGenerator.cpp
+@@ -3045,6 +3045,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
+   case vmIntrinsics::_equalsL:
+     do_stringzilla_equals(x);
+     break;
++  case vmIntrinsics::_stringzillaScanLatin1:
+   case vmIntrinsics::_stringzillaFindCharLatin1:
+   case vmIntrinsics::_stringzillaFindCharUTF16:
+   case vmIntrinsics::_stringzillaRfindCharLatin1:
+diff --git a/src/hotspot/share/c1/c1_Runtime1.cpp b/src/hotspot/share/c1/c1_Runtime1.cpp
+index 7893d2e4849..0d8cb9f1ce8 100644
+--- a/src/hotspot/share/c1/c1_Runtime1.cpp
++++ b/src/hotspot/share/c1/c1_Runtime1.cpp
+@@ -357,6 +357,7 @@ const char* Runtime1::name_for_address(address entry) {
+   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
+   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindUTF16Latin1));
+   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindUTF16Latin1));
++  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaScanLatin1));
+   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharLatin1));
+   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharUTF16));
+   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindCharLatin1));
+diff --git a/src/hotspot/share/classfile/vmIntrinsics.cpp b/src/hotspot/share/classfile/vmIntrinsics.cpp
+index 70abfc832e5..9937409fda8 100644
+--- a/src/hotspot/share/classfile/vmIntrinsics.cpp
++++ b/src/hotspot/share/classfile/vmIntrinsics.cpp
+@@ -539,6 +539,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
+   case vmIntrinsics::_stringzillaEqualsRange:
+   case vmIntrinsics::_stringzillaFindUTF16Latin1:
+   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
++  case vmIntrinsics::_stringzillaScanLatin1:
+   case vmIntrinsics::_stringzillaFindCharLatin1:
+   case vmIntrinsics::_stringzillaFindCharUTF16:
+   case vmIntrinsics::_stringzillaRfindCharLatin1:
+diff --git a/src/hotspot/share/classfile/vmIntrinsics.hpp b/src/hotspot/share/classfile/vmIntrinsics.hpp
+index 0b5612f46af..481134bec9c 100644
+--- a/src/hotspot/share/classfile/vmIntrinsics.hpp
++++ b/src/hotspot/share/classfile/vmIntrinsics.hpp
+@@ -394,6 +394,8 @@ class methodHandle;
+    do_name(stringzilla_findUTF16Latin1_name, "findUTF16Latin1") \
+   do_intrinsic(_stringzillaRfindUTF16Latin1, java_lang_StringZilla, stringzilla_rfindUTF16Latin1_name, stringzilla_search_signature, F_SN) \
+    do_name(stringzilla_rfindUTF16Latin1_name, "rfindUTF16Latin1") \
++  do_intrinsic(_stringzillaScanLatin1, java_lang_StringZilla, stringzilla_scanLatin1_name, stringzilla_char_signature, F_SN) \
++   do_name(stringzilla_scanLatin1_name, "scanLatin1") \
+   do_intrinsic(_stringzillaFindCharLatin1, java_lang_StringZilla, stringzilla_findCharLatin1_name, stringzilla_char_signature, F_SN) \
+    do_name(stringzilla_findCharLatin1_name, "findCharLatin1") \
+   do_intrinsic(_stringzillaFindCharUTF16, java_lang_StringZilla, stringzilla_findCharUTF16_name, stringzilla_char_signature, F_SN) \
+diff --git a/src/hotspot/share/include/jvm.h b/src/hotspot/share/include/jvm.h
+index 10e47471d3c..67fe4e49edc 100644
+--- a/src/hotspot/share/include/jvm.h
++++ b/src/hotspot/share/include/jvm.h
+@@ -107,6 +107,10 @@ JVM_StringZillaCapabilities(void);
+ JNIEXPORT void JNICALL
+ JVM_RegisterStringZillaKernels(const void* kernels);
+ 
++JNIEXPORT jint JNICALL
++JVM_StringZillaScanLatin1(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
++                         jint length, jint mode);
++
+ JNIEXPORT jint JNICALL
+ JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src, jint offset,
+                    jint length, jint ch, jboolean utf16, jboolean reverse);
+diff --git a/src/hotspot/share/opto/c2compiler.cpp b/src/hotspot/share/opto/c2compiler.cpp
+index cf90f30708f..305c8167087 100644
+--- a/src/hotspot/share/opto/c2compiler.cpp
++++ b/src/hotspot/share/opto/c2compiler.cpp
+@@ -811,6 +811,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
+   case vmIntrinsics::_stringzillaEqualsRange:
+   case vmIntrinsics::_stringzillaFindUTF16Latin1:
+   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
++  case vmIntrinsics::_stringzillaScanLatin1:
+   case vmIntrinsics::_stringzillaFindCharLatin1:
+   case vmIntrinsics::_stringzillaFindCharUTF16:
+   case vmIntrinsics::_stringzillaRfindCharLatin1:
+diff --git a/src/hotspot/share/opto/library_call.cpp b/src/hotspot/share/opto/library_call.cpp
+index 16fadbf2eec..be14694b106 100644
+--- a/src/hotspot/share/opto/library_call.cpp
++++ b/src/hotspot/share/opto/library_call.cpp
+@@ -301,6 +301,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
+   case vmIntrinsics::_stringzillaCompilerTier:
+     set_result(intcon(CompLevel_full_optimization));
+     return true;
++  case vmIntrinsics::_stringzillaScanLatin1:
+   case vmIntrinsics::_stringzillaFindCharLatin1:
+   case vmIntrinsics::_stringzillaFindCharUTF16:
+   case vmIntrinsics::_stringzillaRfindCharLatin1:
+diff --git a/src/hotspot/share/prims/jvm.cpp b/src/hotspot/share/prims/jvm.cpp
+index 7e87556114f..b0b653198b4 100644
+--- a/src/hotspot/share/prims/jvm.cpp
++++ b/src/hotspot/share/prims/jvm.cpp
+@@ -254,6 +254,13 @@ JVM_LEAF(void, JVM_RegisterStringZillaKernels(const void* kernels))
+   StringZilla::register_kernels(kernels);
+ JVM_END
+ 
++JVM_ENTRY(jint, JVM_StringZillaScanLatin1(JNIEnv* env, jclass ignored, jbyteArray src,
++                                       jint offset, jint length, jint mode))
++  typeArrayOop s = typeArrayOop(JNIHandles::resolve_non_null(src));
++  // The Java window loop validates physical bounds before entering this leaf.
++  return StringZilla::scan_latin1((const char*)s->byte_at_addr(offset), length, mode);
++JVM_END
++
+ JVM_ENTRY(jint, JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src,
+                                  jint offset, jint length, jint ch,
+                                  jboolean utf16, jboolean reverse))
+diff --git a/src/hotspot/share/runtime/stringZilla.cpp b/src/hotspot/share/runtime/stringZilla.cpp
+index ab9dfb6497d..1a9faf0012c 100644
+--- a/src/hotspot/share/runtime/stringZilla.cpp
++++ b/src/hotspot/share/runtime/stringZilla.cpp
+@@ -81,6 +81,10 @@ int StringZilla::equal_range(const char* src, int length, const char* tgt, int t
+   return equal_bytes(src, tgt + tgt_offset, length);
+ }
+ 
++int StringZilla::scan_latin1(const char* src, int length, int mode) {
++  return kernels()->scanLatin1(src, length, mode);
++}
++
+ int StringZilla::capabilities() {
+ #if defined(AMD64) && !defined(ZERO)
+   if (UseAVX >= 2 && VM_Version::supports_avx2() && VM_Version::supports_bmi1() &&
+@@ -114,6 +118,7 @@ int StringZilla::search_char(const char* src, int length, int ch, bool utf16, bo
+ 
+ address StringZilla::entry(vmIntrinsics::ID id) {
+   switch (id) {
++    case vmIntrinsics::_stringzillaScanLatin1: return CAST_FROM_FN_PTR(address, StringZilla::scan_latin1);
+     case vmIntrinsics::_stringzillaEqualsRange: return CAST_FROM_FN_PTR(address, StringZilla::equal_range);
+     case vmIntrinsics::_equalsL: return CAST_FROM_FN_PTR(address, equal_bytes);
+     case vmIntrinsics::_stringzillaFindCharLatin1: return CAST_FROM_FN_PTR(address, find_char_latin1);
+diff --git a/src/hotspot/share/runtime/stringZilla.hpp b/src/hotspot/share/runtime/stringZilla.hpp
+index 2f028a0ef13..3d51ee2a12c 100644
+--- a/src/hotspot/share/runtime/stringZilla.hpp
++++ b/src/hotspot/share/runtime/stringZilla.hpp
+@@ -37,6 +37,7 @@ class StringZilla : AllStatic {
+   static void register_kernels(const void* table);
+   static int capabilities();
+   static int equal_range(const char* src, int length, const char* tgt, int tgt_offset);
++  static int scan_latin1(const char* src, int length, int mode);
+   static address entry(vmIntrinsics::ID id);
+   static int search_char(const char* src, int length, int ch, bool utf16, bool reverse);
+   static int search(const char* src, int length, const char* tgt, int tgt_length,
+diff --git a/src/java.base/share/classes/java/lang/StringLatin1.java b/src/java.base/share/classes/java/lang/StringLatin1.java
+index 956dc2d4156..31c4b6c371c 100644
+--- a/src/java.base/share/classes/java/lang/StringLatin1.java
++++ b/src/java.base/share/classes/java/lang/StringLatin1.java
+@@ -1131,23 +1131,94 @@ private static String toUpperCaseEx(String str, byte[] value,
+     static String trim(byte[] value) {
+         int len = value.length;
+         int st = 0;
+-        while ((st < len) && ((value[st] & 0xff) <= ' ')) {
++        if (len == 0 || ((value[0] & 0xff) > ' ' && (value[len - 1] & 0xff) > ' ')) {
++            return null;
++        }
++        int limit = len >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
++                ? StringZilla.SCAN_PROBE : len;
++        while ((st < limit) && ((value[st] & 0xff) <= ' ')) {
+             st++;
+         }
+-        while ((st < len) && ((value[len - 1] & 0xff) <= ' ')) {
++        if (st == limit && st < len) {
++            st = indexOfNonTrimLong(value, st, len);
++        }
++        int stop = len - st >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
++                ? len - StringZilla.SCAN_PROBE : st;
++        while ((stop < len) && ((value[len - 1] & 0xff) <= ' ')) {
+             len--;
+         }
++        if (len == stop && st < len) {
++            len = lastIndexOfNonTrimLong(value, st, len);
++        }
+         return ((st > 0) || (len < value.length)) ?
+             newString(value, st, len - st) : null;
+     }
+ 
++    // Enter only after a full scalar probe on a large input. Keep native
++    // dispatch and fallback continuations outside the common scalar helpers.
++    @DontInline
++    private static int indexOfNonTrimLong(byte[] value, int left, int right) {
++        if (StringZilla.SCANS_ENABLED) {
++            int result = StringZilla.scan(value, left, right, StringZilla.NON_TRIM);
++            if (result != StringZilla.FALLBACK) {
++                return result;
++            }
++        }
++        while (left < right && (value[left] & 0xff) <= ' ') {
++            left++;
++        }
++        return left;
++    }
++
++    @DontInline
++    private static int lastIndexOfNonTrimLong(byte[] value, int left, int right) {
++        if (StringZilla.SCANS_ENABLED) {
++            int result = StringZilla.scan(value, left, right, StringZilla.NON_TRIM_REVERSE);
++            if (result != StringZilla.FALLBACK) {
++                return result;
++            }
++        }
++        while (left < right && (value[right - 1] & 0xff) <= ' ') {
++            right--;
++        }
++        return right;
++    }
++
+     static int indexOfNonWhitespace(byte[] value) {
+         int length = value.length;
+-        int left = 0;
++        if (length == 0) {
++            return 0;
++        }
++        char first = getChar(value, 0);
++        if (first != ' ' && first != '\t' && !CharacterDataLatin1.instance.isWhitespace(first)) {
++            return 0;
++        }
++        int left = 1;
++        int limit = length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
++                ? StringZilla.SCAN_PROBE : length;
++        while (left < limit) {
++            char ch = getChar(value, left);
++            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
++                return left;
++            }
++            left++;
++        }
++        return left == length ? left : indexOfNonWhitespaceLong(value, left);
++    }
++
++    @DontInline
++    private static int indexOfNonWhitespaceLong(byte[] value, int left) {
++        int length = value.length;
++        if (StringZilla.SCANS_ENABLED) {
++            int result = StringZilla.scan(value, left, length, StringZilla.NON_WHITESPACE);
++            if (result != StringZilla.FALLBACK) {
++                return result;
++            }
++        }
+         while (left < length) {
+             char ch = getChar(value, left);
+             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+-                break;
++                return left;
+             }
+             left++;
+         }
+@@ -1156,10 +1227,38 @@ static int indexOfNonWhitespace(byte[] value) {
+ 
+     static int lastIndexOfNonWhitespace(byte[] value) {
+         int right = value.length;
++        if (right == 0) {
++            return 0;
++        }
++        char last = getChar(value, right - 1);
++        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) {
++            return right;
++        }
++        right--;
++        int stop = value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
++                ? value.length - StringZilla.SCAN_PROBE : 0;
++        while (right > stop) {
++            char ch = getChar(value, right - 1);
++            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
++                return right;
++            }
++            right--;
++        }
++        return right == 0 ? 0 : lastIndexOfNonWhitespaceLong(value, right);
++    }
++
++    @DontInline
++    private static int lastIndexOfNonWhitespaceLong(byte[] value, int right) {
++        if (StringZilla.SCANS_ENABLED) {
++            int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
++            if (result != StringZilla.FALLBACK) {
++                return result;
++            }
++        }
+         while (0 < right) {
+             char ch = getChar(value, right - 1);
+             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+-                break;
++                return right;
+             }
+             right--;
+         }
+@@ -1198,6 +1297,25 @@ private LinesSpliterator(byte[] value, int start, int length) {
+         }
+ 
+         private int indexOfLineSeparator(int start) {
++            int stop = fence - start >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
++                    ? start + StringZilla.SCAN_PROBE : fence;
++            for (int current = start; current < stop; current++) {
++                char ch = getChar(value, current);
++                if (ch == '\n' || ch == '\r') {
++                    return current;
++                }
++            }
++            return stop == fence ? fence : indexOfLineSeparatorLong(stop);
++        }
++
++        @DontInline
++        private int indexOfLineSeparatorLong(int start) {
++            if (StringZilla.SCANS_ENABLED) {
++                int result = StringZilla.scan(value, start, fence, StringZilla.LINE_SEPARATOR);
++                if (result != StringZilla.FALLBACK) {
++                    return result;
++                }
++            }
+             for (int current = start; current < fence; current++) {
+                 char ch = getChar(value, current);
+                 if (ch == '\n' || ch == '\r') {
+diff --git a/src/java.base/share/classes/java/lang/StringZilla.java b/src/java.base/share/classes/java/lang/StringZilla.java
+index 8e1d3755a46..02100dfaf7e 100644
+--- a/src/java.base/share/classes/java/lang/StringZilla.java
++++ b/src/java.base/share/classes/java/lang/StringZilla.java
+@@ -45,6 +45,15 @@ final class StringZilla {
+     private static final int HASWELL = 1;
+     private static final int SKYLAKE = 2;
+     private static final int NEON = 4;
++    // Byte-set kernels use AVX2 (also on the Skylake backend) or NEON.
++    static final boolean SCANS_ENABLED = ENABLED && BACKEND != SERIAL;
++    static final int SCAN_PROBE = 32;
++    static final int MIN_SCAN_BYTES = 256;
++    static final int LINE_SEPARATOR = 0;
++    static final int NON_TRIM = 1;
++    static final int NON_TRIM_REVERSE = 2;
++    static final int NON_WHITESPACE = 3;
++    static final int NON_WHITESPACE_REVERSE = 4;
+     static final boolean MSVC_SERIAL = (CONFIGURATION & MSVC_BIT) != 0 && BACKEND == SERIAL;
+     static final int UNRESOLVED_TIER = -1;
+     static final int C1 = 1;
+@@ -415,6 +424,32 @@ static int lastIndexOfUTF16Latin1C1(byte[] src, int srcCount, byte[] tgt, int co
+ 
+     private StringZilla() {}
+ 
++    // Bound each leaf call and return to Java between windows for safepoints.
++    // Forward results are inclusive; reverse results are exclusive, like the
++    // StringLatin1 whitespace helpers. A miss returns the corresponding fence.
++    @DontInline
++    static int scan(byte[] src, int from, int to, int mode) {
++        Objects.checkFromToIndex(from, to, src.length);
++        boolean reverse = mode == NON_TRIM_REVERSE || mode == NON_WHITESPACE_REVERSE;
++        int cursor = reverse ? to : from;
++        while (reverse ? cursor > from : cursor < to) {
++            int size = Math.min(MAX_BYTES, reverse ? cursor - from : to - cursor);
++            int offset = reverse ? cursor - size : cursor;
++            int result = scanLatin1(src, offset, size, mode);
++            if (result == FALLBACK) {
++                return FALLBACK;
++            }
++            if (result >= 0) {
++                return offset + result + (reverse ? 1 : 0);
++            }
++            cursor = reverse ? offset : cursor + size;
++        }
++        return reverse ? from : to;
++    }
++
++    @IntrinsicCandidate
++    private static native int scanLatin1(byte[] src, int offset, int length, int mode);
++
+     // The selected kernel, including serial-only builds, and the VM enable flag.
+     private static native int initialize();
+ 
+diff --git a/src/java.base/share/native/libjava/StringZilla.c b/src/java.base/share/native/libjava/StringZilla.c
+index d22ca5e3449..0d7f0b76ff5 100644
+--- a/src/java.base/share/native/libjava/StringZilla.c
++++ b/src/java.base/share/native/libjava/StringZilla.c
+@@ -37,6 +37,12 @@ Java_java_lang_StringZilla_initialize(JNIEnv* env, jclass ignored) {
+     return capabilities | (JVM_StringZillaEnabled(env, ignored) ? JVM_STRINGZILLA_ENABLED : 0);
+ }
+ 
++JNIEXPORT jint JNICALL
++Java_java_lang_StringZilla_scanLatin1(JNIEnv* env, jclass ignored, jbyteArray src,
++        jint offset, jint length, jint mode) {
++    return JVM_StringZillaScanLatin1(env, ignored, src, offset, length, mode);
++}
++
+ JNIEXPORT jint JNICALL
+ Java_java_lang_StringZilla_equalsRange(JNIEnv* env, jclass ignored, jbyteArray src,
+         jint offset, jint length, jbyteArray tgt, jint tgt_offset) {
+diff --git a/src/java.base/share/native/libjava/StringZillaKernels.c b/src/java.base/share/native/libjava/StringZillaKernels.c
+index b435843f105..8271bc609f2 100644
+--- a/src/java.base/share/native/libjava/StringZillaKernels.c
++++ b/src/java.base/share/native/libjava/StringZillaKernels.c
+@@ -42,6 +42,25 @@
+ typedef sz_cptr_t (*search_fn)(sz_cptr_t, sz_size_t, sz_cptr_t, sz_size_t);
+ typedef int (*aligned_fn)(const jchar*, int, const jchar*, int, jboolean);
+ 
++// Pinned sz_byteset_t stores bit c at _u64s[c / 64], position c % 64.
++// Java trim: U+0000..U+0020. Character.isWhitespace in Latin1:
++// U+0009..U+000D and U+001C..U+0020; neither NEL nor NBSP is whitespace.
++static const sz_byteset_t line_separators = {{0x2400ull, 0, 0, 0}};
++static const sz_byteset_t non_trim = {{~0x1ffffffffull, ~0ull, ~0ull, ~0ull}};
++static const sz_byteset_t non_whitespace = {{~0x1f0003e00ull, ~0ull, ~0ull, ~0ull}};
++
++static jint scan_latin1_impl(const char* src, jint length, jint mode,
++                            sz_find_byteset_t forward, sz_find_byteset_t backward) {
++    // Check before any read, including on serial-only builds and JNI fallback.
++    if ((unsigned int)length > JVM_STRINGZILLA_MAX_BYTES || (unsigned int)mode > 4) {
++        return JVM_STRINGZILLA_FALLBACK;
++    }
++    if (length == 0) return -1;
++    const sz_byteset_t* set = mode == 0 ? &line_separators : mode <= 2 ? &non_trim : &non_whitespace;
++    sz_cptr_t match = (mode == 2 || mode == 4 ? backward : forward)(src, (sz_size_t)length, set);
++    return match == NULL ? -1 : (jint)(match - src);
++}
++
+ // Verify aligned candidates from the search-direction end, so repeated
+ // prefixes with late reverse mismatches reject early. The batch filter has
+ // already checked the first and last code units.
+@@ -567,7 +586,7 @@ static sz_cptr_t rfind_utf16_neon(sz_cptr_t src, sz_size_t src_bytes,
+ #endif
+ 
+ /* Every published table is immutable; repeated initialization is harmless. */
+-#define DEFINE_KERNELS(tag, forward, backward, backward_latin1, backward_utf16, equality, aligned, caps) \
++#define DEFINE_KERNELS(tag, forward, backward, backward_latin1, backward_utf16, equality, aligned, set_forward, set_backward, caps) \
+ static jint tag##_find_latin1(const char* s, jint n, const char* t, jint m) { \
+     return search_impl(s, n, t, m, 0, JNI_FALSE, forward, aligned, equality); \
+ } \
+@@ -602,20 +621,25 @@ static jint tag##_equal(const char* s, const char* t, jint n) { \
+     if ((unsigned int)n > JVM_STRINGZILLA_MAX_BYTES) return JVM_STRINGZILLA_FALLBACK; \
+     return equality(s, t, (sz_size_t)n); \
+ } \
++static jint tag##_scan_latin1(const char* s, jint n, jint mode) { \
++    return scan_latin1_impl(s, n, mode, set_forward, set_backward); \
++} \
+ static const StringZillaKernels tag##_kernels = { \
+     caps, tag##_find_latin1, tag##_find_utf16, tag##_find_mixed, \
+     tag##_rfind_latin1, tag##_rfind_utf16, tag##_rfind_mixed, \
+     tag##_find_char_latin1, tag##_find_char_utf16, \
+-    tag##_rfind_char_latin1, tag##_rfind_char_utf16, tag##_equal \
++    tag##_rfind_char_latin1, tag##_rfind_char_utf16, tag##_equal, tag##_scan_latin1 \
+ };
+ 
+-DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_latin1_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
++DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_latin1_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, sz_find_byteset_serial, sz_rfind_byteset_serial, JVM_STRINGZILLA_SERIAL)
+ #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+-DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
+-DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, rfind_utf16_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
++DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, sz_find_byteset_haswell, sz_rfind_byteset_haswell, JVM_STRINGZILLA_HASWELL)
++// The AVX-512 byte-set implementation requires Ice Lake capabilities beyond
++// this backend's gate. Reuse the already qualified AVX2 byte-set instructions.
++DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, rfind_utf16_skylake, sz_equal_skylake, search_utf16_haswell, sz_find_byteset_haswell, sz_rfind_byteset_haswell, JVM_STRINGZILLA_SKYLAKE)
+ #endif
+ #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
+-DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, rfind_latin1_neon, rfind_utf16_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)
++DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, rfind_latin1_neon, rfind_utf16_neon, sz_equal_neon, search_utf16_default, sz_find_byteset_neon, sz_rfind_byteset_neon, JVM_STRINGZILLA_NEON)
+ #endif
+ #undef DEFINE_KERNELS
+ 
+diff --git a/src/java.base/share/native/libjava/StringZillaKernels.h b/src/java.base/share/native/libjava/StringZillaKernels.h
+index 992e9fe844a..a215a6633e2 100644
+--- a/src/java.base/share/native/libjava/StringZillaKernels.h
++++ b/src/java.base/share/native/libjava/StringZillaKernels.h
+@@ -55,6 +55,7 @@ typedef struct {
+     StringZillaCharFn rfindCharLatin1;
+     StringZillaCharFn rfindCharUTF16;
+     StringZillaEqualFn equal;
++    StringZillaCharFn scanLatin1;
+ } StringZillaKernels;
+ 
+ jint StringZilla_initialize(void);
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaAvailability.java b/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaAvailability.java
+index caeb738c31b..75a39476f95 100644
+--- a/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaAvailability.java
++++ b/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaAvailability.java
+@@ -50,7 +50,7 @@ public static void main(String[] args) throws Exception {
+         }
+         String[] substrings = {"findLatin1", "findUTF16", "rfindLatin1", "rfindUTF16",
+                                "findUTF16Latin1", "rfindUTF16Latin1"};
+-        String[] characters = {"findCharLatin1", "findCharUTF16", "rfindCharLatin1", "rfindCharUTF16"};
++        String[] characters = {"findCharLatin1", "findCharUTF16", "rfindCharLatin1", "rfindCharUTF16", "scanLatin1"};
+         for (String name : substrings) {
+             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, byte[].class, int.class), expected);
+         }
+diff --git a/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaCompilation.java b/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaCompilation.java
+index 2343ad202fc..6188dd55123 100644
+--- a/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaCompilation.java
++++ b/test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaCompilation.java
+@@ -50,6 +50,8 @@ public class TestStringZillaCompilation {
+     private static String overlappingUTF16Needle = "\u0402" + "\u0401".repeat(128);
+     private static String overlappingLatin = overlappingLatinNeedle + "a";
+     private static String overlappingUTF16 = overlappingUTF16Needle + "\u0401";
++    private static String whitespace = " \t\n\u001c".repeat(1024);
++    private static String scanLines = latin + "\r\n" + latin;
+ 
+     public static int probeLatin() { return latin.indexOf(latinNeedle); }
+     public static int probeUTF16() { return utf16.indexOf(utf16Needle); }
+@@ -68,6 +70,12 @@ public class TestStringZillaCompilation {
+     public static int probeReverseSupplementary() { return utf16.lastIndexOf(0x10400); }
+     public static int probeBuilder() { return builder.indexOf(latinNeedle); }
+     public static int probeBuffer() { return buffer.indexOf(utf16Needle); }
++    public static int probeTrim() { return whitespace.trim().isEmpty() ? -1 : 0; }
++    public static int probeStrip() { return whitespace.strip().isEmpty() ? -1 : 0; }
++    public static int probeStripLeading() { return whitespace.stripLeading().isEmpty() ? -1 : 0; }
++    public static int probeStripTrailing() { return whitespace.stripTrailing().isEmpty() ? -1 : 0; }
++    public static int probeIsBlank() { return whitespace.isBlank() ? -1 : 0; }
++    public static int probeLines() { return scanLines.lines().count() == 2 ? -1 : 0; }
+ 
+     public static int probeEquality() { return latin.equals(new String(latin.toCharArray())) ? -1 : 0; }
+     public static int probeUTF16Equality() { return utf16.equals(new String(utf16.toCharArray())) ? -1 : 0; }
+diff --git a/test/jdk/java/lang/String/StringZillaScans.java b/test/jdk/java/lang/String/StringZillaScans.java
+new file mode 100644
+index 00000000000..af61d5b4a86
+--- /dev/null
++++ b/test/jdk/java/lang/String/StringZillaScans.java
+@@ -0,0 +1,219 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++/*
++ * @test
++ * @summary Latin1 line and whitespace scans preserve public String behavior
++ * @run main/othervm -Xint StringZillaScans
++ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 StringZillaScans
++ * @run main/othervm -Xbatch -XX:-TieredCompilation StringZillaScans
++ * @run main/othervm -Xcomp -XX:-TieredCompilation StringZillaScans
++ * @run main/othervm -Xbatch -XX:-CompactStrings StringZillaScans
++ * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaScans
++ * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaScanLatin1 StringZillaScans
++ * @run main/othervm -Xmx32m -XX:+UseSerialGC StringZillaScans gc
++ */
++
++/*
++ * @test id=limitedAVX
++ * @summary Latin1 scan fallback and AVX2 paths
++ * @requires (os.arch == "amd64" | os.arch == "x86_64")
++ * @run main/othervm -Xbatch -XX:UseAVX=0 StringZillaScans
++ * @run main/othervm -Xbatch -XX:UseAVX=2 StringZillaScans
++ */
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Spliterator;
++import java.util.concurrent.atomic.AtomicInteger;
++
++public class StringZillaScans {
++    private static volatile boolean running;
++    private static void equal(Object actual, Object expected) {
++        if (!actual.equals(expected)) {
++            throw new AssertionError("Mismatch: " + actual + " != " + expected);
++        }
++    }
++
++    private static boolean white(char ch, boolean trim) {
++        return trim ? ch <= 0x20 : Character.isWhitespace(ch);
++    }
++
++    private static void check(String s) {
++        for (boolean trim : new boolean[]{true, false}) {
++            int left = 0, right = s.length();
++            while (left < right && white(s.charAt(left), trim)) left++;
++            while (right > left && white(s.charAt(right - 1), trim)) right--;
++            String actual = trim ? s.trim() : s.strip();
++            equal(actual, s.substring(left, right));
++            if (left == 0 && right == s.length() && (trim || !s.isEmpty()) && actual != s) {
++                throw new AssertionError("Unchanged string identity");
++            }
++            if (!trim) {
++                String leading = s.stripLeading();
++                equal(leading, s.substring(left));
++                // Trailing-only scan must retain leading whitespace.
++                int end = s.length();
++                while (end > 0 && white(s.charAt(end - 1), false)) end--;
++                String trailing = s.stripTrailing();
++                equal(trailing, s.substring(0, end));
++                if ((left == 0 && leading != s) || (end == s.length() && trailing != s)) {
++                    throw new AssertionError("Unchanged directional identity");
++                }
++                equal(s.isBlank(), left == s.length());
++            }
++        }
++    }
++
++    private static List<String> referenceLines(String s) {
++        var lines = new ArrayList<String>();
++        for (int start = 0, i = 0; i < s.length();) {
++            while (i < s.length() && s.charAt(i) != '\r' && s.charAt(i) != '\n') i++;
++            lines.add(s.substring(start, i));
++            if (i < s.length()) {
++                char ch = s.charAt(i++);
++                if (ch == '\r' && i < s.length() && s.charAt(i) == '\n') i++;
++            }
++            start = i;
++        }
++        return lines;
++    }
++
++    private static void split(Spliterator<String> sp, List<String> output, int depth) {
++        var prefix = depth > 0 ? sp.trySplit() : null;
++        if (prefix != null) split(prefix, output, depth - 1);
++        if (depth > 0 && prefix != null) split(sp, output, depth - 1);
++        else sp.forEachRemaining(output::add);
++    }
++
++    private static void lines(String s) {
++        List<String> expected = referenceLines(s);
++        equal(s.lines().toList(), expected);
++        equal(s.lines().parallel().toList(), expected);
++        var sp = s.lines().spliterator();
++        int characteristics = Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL;
++        equal(sp.characteristics(), characteristics);
++        equal(sp.estimateSize(), (long)s.length() + 1);
++        var actual = new ArrayList<String>();
++        sp.tryAdvance(actual::add);
++        split(sp, actual, 8);
++        equal(actual, expected);
++        for (boolean advance : new boolean[]{true, false}) {
++            try {
++                if (advance) sp.tryAdvance(null);
++                else sp.forEachRemaining(null);
++                throw new AssertionError("Missing null consumer exception");
++            } catch (NullPointerException ok) { }
++        }
++        var calls = new AtomicInteger();
++        var stream = s.lines().peek(x -> calls.incrementAndGet());
++        equal(calls.get(), 0);
++        stream.findFirst();
++        equal(calls.get(), expected.isEmpty() ? 0 : 1);
++        if (!expected.isEmpty()) {
++            var throwing = s.lines().spliterator();
++            try {
++                throwing.tryAdvance(x -> { throw new UnsupportedOperationException(); });
++                throw new AssertionError("Consumer exception lost");
++            } catch (UnsupportedOperationException ok) { }
++            var remaining = new ArrayList<String>();
++            throwing.forEachRemaining(remaining::add);
++            equal(remaining, expected.subList(1, expected.size()));
++        }
++    }
++
++    private static void concurrentGC() throws Exception {
++        String blank = " \t\u001c\n".repeat(65537);
++        String text = "x".repeat(131089) + "\r\n" + "y".repeat(131089);
++        running = true;
++        Thread allocator = new Thread(() -> {
++            byte[][] retained = new byte[8][];
++            int cursor = 0;
++            while (running) {
++                retained[cursor++ & 7] = new byte[256 * 1024];
++                if ((cursor & 31) == 0) System.gc();
++            }
++        });
++        allocator.start();
++        try {
++            for (int i = 0; i < 2000; i++) {
++                equal(blank.isBlank(), true);
++                equal(blank.trim(), "");
++                equal(blank.stripTrailing(), "");
++                equal(text.lines().count(), 2L);
++            }
++        } finally {
++            running = false;
++            allocator.join();
++        }
++    }
++
++    public static void main(String[] args) throws Exception {
++        if (args.length != 0) {
++            concurrentGC();
++            return;
++        }
++        for (int ch = 0; ch < 256; ch++) {
++            String c = String.valueOf((char)ch);
++            for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 263, 264, 265, 287, 288, 289, 521}) {
++                String pad = c.repeat(n);
++                check(pad);
++                check(pad + "X" + pad);
++                check(" ".repeat(n) + c + "\t".repeat(n));
++            }
++        }
++        for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 255, 256, 263, 264, 265, 287, 288, 289,
++                              65527, 65528, 65535, 65536, 65537, 65543, 65544, 65567, 65568, 131089}) {
++            for (String c : new String[]{" ", "\0", "\t", "\u001c", "\u0085", "\u00a0", "x",
++                                         "\u1680", "\u2000", "\u2028", "\u3000", "\ufeff", "\ud800", "\ud83d\ude00"}) {
++                String pad = c.repeat(n);
++                check(pad);
++                check(pad + "X" + pad);
++                check("X" + pad);
++                check(pad + "X");
++            }
++            for (String separator : new String[]{"\r", "\n", "\r\n"}) {
++                String pad = "x".repeat(n);
++                lines(pad);
++                lines(separator + pad + separator + separator + "\u00a0" + separator);
++                lines(pad + separator + "tail");
++                lines(pad + "\u0100" + separator + "\ud83d\ude00");
++            }
++        }
++        for (String s : new String[]{"", "\n", "\r", "\r\n", "\n\r", "\r\n\r\n", "a\rb\nc\r\nd",
++                                     "\u000b\u000c\u0085\u2028\u2029", "\r\r\n\n"}) lines(s);
++        for (int n : new int[]{31, 32, 33}) {
++            String clean = "x".repeat(1024);
++            String pad = " ".repeat(n);
++            check(pad + clean);
++            check(clean + pad);
++            lines("x".repeat(n) + "\r\n" + clean);
++        }
++        // Warm all public producers so compiled tiers execute the same checks.
++        String pad = " ".repeat(1024);
++        for (int i = 0; i < 12000; i++) {
++            check(pad + (char)(33 + (i & 63)) + pad);
++            equal((pad + "\r\nx").lines().count(), 2L);
++        }
++    }
++}
+diff --git a/test/jdk/java/lang/String/libStringZillaKernelsTest.c b/test/jdk/java/lang/String/libStringZillaKernelsTest.c
+index 28eae640855..3f2b255e7e3 100644
+--- a/test/jdk/java/lang/String/libStringZillaKernelsTest.c
++++ b/test/jdk/java/lang/String/libStringZillaKernelsTest.c
+@@ -855,6 +855,48 @@ static jint check_kernels(void) {
+             }
+         }
+ 
++        // Exact byte-set predicates for every Latin1 value, alignment and table.
++        // Allocate exact ends so sanitizer runs can detect vector overreads.
++        for (int mode = 0; mode <= 4; mode++) {
++            CHECK(kernels->scanLatin1(NULL, -1, mode) == JVM_STRINGZILLA_FALLBACK);
++            CHECK(kernels->scanLatin1(NULL, JVM_STRINGZILLA_MAX_BYTES + 1, mode) == JVM_STRINGZILLA_FALLBACK);
++            CHECK(kernels->scanLatin1(NULL, 0, mode) == -1);
++            for (unsigned int ch = 0; ch < 256; ch++) {
++                int whitespace = (ch >= 9 && ch <= 13) || (ch >= 28 && ch <= 32);
++                int match = mode == 0 ? ch == 10 || ch == 13 : mode <= 2 ? ch > 32 : !whitespace;
++                for (int offset = 0; offset < 32; offset++) {
++                    char* allocation = (char*)malloc(257 + offset);
++                    CHECK(allocation != NULL);
++                    char* bytes = allocation + offset;
++                    memset(bytes, (int)ch, 257);
++                    int expected = match ? (mode == 2 || mode == 4 ? 256 : 0) : -1;
++                    int result = kernels->scanLatin1(bytes, 257, mode);
++                    free(allocation);
++                    CHECK(result == expected);
++                }
++            }
++            const int scan_lengths[] = {1, 7, 8, 15, 16, 31, 32, 33, 255, 256, 257, 65536};
++            for (unsigned int n = 0; n < sizeof(scan_lengths) / sizeof(scan_lengths[0]); n++) {
++                int length = scan_lengths[n];
++                for (int offset = 0; offset < 32; offset++) {
++                    char* allocation = (char*)malloc(length + offset);
++                    CHECK(allocation != NULL);
++                    char* bytes = allocation + offset;
++                    memset(bytes, mode == 0 ? 'x' : ' ', length);
++                    CHECK(kernels->scanLatin1(bytes, length, mode) == -1);
++                    for (int p = 0; p < length; p = p < 33 ? p + 1 : length - 1) {
++                        bytes[p] = mode == 0 ? '\r' : (char)0xa0;
++                        CHECK(kernels->scanLatin1(bytes, length, mode) == p);
++                        bytes[p] = mode == 0 ? 'x' : ' ';
++                        if (p == length - 1) break;
++                    }
++                    free(allocation);
++                }
++            }
++        }
++        CHECK(kernels->scanLatin1(NULL, 1, -1) == JVM_STRINGZILLA_FALLBACK);
++        CHECK(kernels->scanLatin1(NULL, 1, 5) == JVM_STRINGZILLA_FALLBACK);
++
+         // Limits are enforced by every table, before touching either array.
+         StringZillaSearchFn bounded[] = {kernels->findLatin1, kernels->rfindLatin1,
+                                         kernels->findUTF16, kernels->rfindUTF16};
+diff --git a/test/micro/org/openjdk/bench/java/lang/StringZillaScans.java b/test/micro/org/openjdk/bench/java/lang/StringZillaScans.java
+new file mode 100644
+index 00000000000..a542b7f4d5b
+--- /dev/null
++++ b/test/micro/org/openjdk/bench/java/lang/StringZillaScans.java
+@@ -0,0 +1,136 @@
++/*
++ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++
++package org.openjdk.bench.java.lang;
++
++import java.util.concurrent.TimeUnit;
++import org.openjdk.jmh.annotations.*;
++
++/** Complete public operations, including scalar controls and allocation. */
++@BenchmarkMode(Mode.AverageTime)
++@OutputTimeUnit(TimeUnit.NANOSECONDS)
++@Warmup(iterations = 3, time = 1)
++@Measurement(iterations = 5, time = 1)
++@Fork(3)
++public class StringZillaScans {
++    @State(Scope.Thread)
++    public static class Whitespace {
++        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "prefix8", "prefix9", "suffix8", "suffix9", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter", "gateBefore", "gateAt",
++                "longBlank", "longClean", "longLeading", "longTrailing", "longBoth", "lateNbsp", "nul", "window", "utf16"})
++        public String workload;
++        private String[] values;
++        private int cursor;
++
++        @Setup
++        public void setup() {
++            values = new String[16];
++            for (int i = 0; i < values.length; i++) {
++                String text = String.valueOf((char)('A' + i));
++                String pad = " \t\u001c\n".repeat(1024);
++                values[i] = switch (workload) {
++                    case "empty" -> new String("");
++                    case "shortBlank" -> " \t\n ".repeat(4);
++                    case "shortClean" -> text.repeat(16);
++                    case "shortPad" -> "  " + text + "  ";
++                    case "early" -> " ".repeat(7) + text + " ".repeat(4088);
++                    case "prefix8" -> " ".repeat(8) + text.repeat(4096);
++                    case "prefix9" -> " ".repeat(9) + text.repeat(4096);
++                    case "suffix8" -> text.repeat(4096) + " ".repeat(8);
++                    case "suffix9" -> text.repeat(4096) + " ".repeat(9);
++                    case "probeAt" -> " ".repeat(32) + text.repeat(4096);
++                    case "probeAfter" -> " ".repeat(33) + text.repeat(4096);
++                    case "tailProbeAt" -> text.repeat(4096) + " ".repeat(32);
++                    case "tailProbeAfter" -> text.repeat(4096) + " ".repeat(33);
++                    case "gateBefore" -> " ".repeat(287);
++                    case "gateAt" -> " ".repeat(288);
++                    case "longBlank" -> pad;
++                    case "longClean" -> text.repeat(4096);
++                    case "longLeading" -> pad + text;
++                    case "longTrailing" -> text + pad;
++                    case "longBoth" -> pad + text + pad;
++                    case "lateNbsp" -> pad + "\u00a0";
++                    case "nul" -> "\0".repeat(4096);
++                    case "window" -> " ".repeat(131089) + text;
++                    case "utf16" -> "\u2000".repeat(4096) + text + "\u2000".repeat(4096);
++                    default -> throw new IllegalArgumentException(workload);
++                };
++            }
++        }
++
++        public String next() {
++            String value = values[cursor];
++            cursor = (cursor + 1) & 15;
++            return value;
++        }
++    }
++
++    @State(Scope.Thread)
++    public static class Lines {
++        @Param({"empty", "short", "immediate", "prefix8", "prefix9", "probeAt", "probeAfter", "lines16", "lines80", "lines128", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
++        public String workload;
++        private String[] values;
++        private int cursor;
++
++        @Setup
++        public void setup() {
++            values = new String[16];
++            for (int i = 0; i < values.length; i++) {
++                String text = String.valueOf((char)('A' + i));
++                values[i] = switch (workload) {
++                    case "empty" -> new String("");
++                    case "short" -> text + "bc\r\ndef\nghi\r";
++                    case "immediate" -> "\r\n" + text.repeat(4096);
++                    case "prefix8" -> text.repeat(8) + "\r\n" + text.repeat(4096);
++                    case "prefix9" -> text.repeat(9) + "\r\n" + text.repeat(4096);
++                    case "probeAt" -> text.repeat(32) + "\r\n" + text.repeat(4096);
++                    case "probeAfter" -> text.repeat(33) + "\r\n" + text.repeat(4096);
++                    case "lines16" -> (text.repeat(16) + "\r\n").repeat(256);
++                    case "lines80" -> (text.repeat(80) + "\r\n").repeat(256);
++                    case "lines128" -> (text.repeat(128) + "\r\n").repeat(256);
++                    case "gateBefore" -> text.repeat(287);
++                    case "gateAt" -> text.repeat(288);
++                    case "noMatch" -> text.repeat(4096);
++                    case "longLines" -> (text.repeat(4096) + "\r\n").repeat(4);
++                    case "dense" -> (text + "\r\n").repeat(1024);
++                    case "windowCRLF" -> text.repeat(65567) + "\r\n" + text.repeat(65536) + "\n";
++                    case "utf16" -> ("\u0100".repeat(4096) + "\r\n").repeat(4);
++                    default -> throw new IllegalArgumentException(workload);
++                };
++            }
++        }
++
++        public String next() {
++            String value = values[cursor];
++            cursor = (cursor + 1) & 15;
++            return value;
++        }
++    }
++
++    @Benchmark public String trim(Whitespace state) { return state.next().trim(); }
++    @Benchmark public String strip(Whitespace state) { return state.next().strip(); }
++    @Benchmark public String stripLeading(Whitespace state) { return state.next().stripLeading(); }
++    @Benchmark public String stripTrailing(Whitespace state) { return state.next().stripTrailing(); }
++    @Benchmark public boolean isBlank(Whitespace state) { return state.next().isBlank(); }
++    @Benchmark public long linesCount(Lines state) { return state.next().lines().count(); }
++    @Benchmark public String linesFirst(Lines state) { return state.next().lines().findFirst().orElse(""); }
++}

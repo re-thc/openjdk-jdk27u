@@ -1,0 +1,423 @@
+#Test Results (version 2)
+#Tue Oct 20 03:07:34 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/IndexOfBeginEnd.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8302590 bug8303648 testng
+run=USER_SPECIFIED testng IndexOfBeginEnd\n
+source=IndexOfBeginEnd.java
+title=This one is for String.indexOf([int|String],int,int).
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/IndexOfBeginEnd.java
+elapsed=678 0\:00\:00.678
+end=Tue Oct 20 03\:07\:34 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng
+start=Tue Oct 20 03\:07\:34 UTC 2026
+test=java/lang/String/IndexOfBeginEnd.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=679
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/228)----------
+command: build IndexOfBeginEnd
+reason: Named class compiled on demand
+started: Tue Oct 20 03:07:34.233 UTC 2026
+Test directory:
+  compile: IndexOfBeginEnd
+finished: Tue Oct 20 03:07:34.300 UTC 2026
+elapsed time (seconds): 0.067
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/298)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/IndexOfBeginEnd.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:07:34.233 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 144856
+finished: Tue Oct 20 03:07:34.300 UTC 2026
+elapsed time (seconds): 0.067
+----------configuration:(13/786)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3246)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/IndexOfBeginEnd.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/IndexOfBeginEnd.java \\
+        -J-Dtest.main.class=IndexOfBeginEnd \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/IndexOfBeginEnd.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(8/250)----------
+command: testng IndexOfBeginEnd
+reason: User specified action: run testng IndexOfBeginEnd 
+started: Tue Oct 20 03:07:34.300 UTC 2026
+Mode: agentvm
+Agent id: 5
+Process id: 148407
+finished: Tue Oct 20 03:07:34.910 UTC 2026
+elapsed time (seconds): 0.61
+----------configuration:(13/766)----------
+Boot Layer
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+              /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar 
+              /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar 
+              /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar 
+              /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+Test Layer
+  class path: /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d
+              /workspace/sz-candidate/test/jdk/java/lang/String
+
+----------rerun:(31/2863)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/IndexOfBeginEnd.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/IndexOfBeginEnd.java \\
+        -Dtest.main.class=IndexOfBeginEnd \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d:/workspace/sz-candidate/test/jdk/java/lang/String \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/IndexOfBeginEnd.d:/workspace/sz-candidate/test/jdk/java/lang/String:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+        com.sun.javatest.regtest.agent.TestNGRunner java/lang/String/IndexOfBeginEnd.java false IndexOfBeginEnd
+----------System.out:(238/23850)*----------
+[03:07:34.715] test IndexOfBeginEnd.testIndexOf("ABABABABAB", A, -1, 0): success [20ms]
+[03:07:34.723] test IndexOfBeginEnd.testIndexOf("ABABABABAB", A, 0, 100): success [0ms]
+[03:07:34.723] test IndexOfBeginEnd.testIndexOf("ABABABABAB", A, -1, 100): success [0ms]
+[03:07:34.724] test IndexOfBeginEnd.testIndexOf("ABABABABAB", A, 3, 1): success [0ms]
+[03:07:34.724] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", A, -1, 0): success [0ms]
+[03:07:34.725] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", A, 0, 100): success [0ms]
+[03:07:34.725] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", A, -1, 100): success [0ms]
+[03:07:34.726] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", A, 3, 1): success [0ms]
+[03:07:34.726] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", A, -1, 0): success [0ms]
+[03:07:34.726] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", A, 0, 100): success [0ms]
+[03:07:34.727] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", A, -1, 100): success [0ms]
+[03:07:34.727] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", A, 3, 1): success [0ms]
+[03:07:34.728] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", A, -1, 0): success [0ms]
+[03:07:34.728] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", A, 0, 100): success [0ms]
+[03:07:34.729] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", A, -1, 100): success [0ms]
+[03:07:34.729] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", A, 3, 1): success [0ms]
+[03:07:34.734] test IndexOfBeginEnd.testIndexOf("", 90, 0, 0, -1): success [3ms]
+[03:07:34.734] test IndexOfBeginEnd.testIndexOf("A", 65, 0, 1, 0): success [0ms]
+[03:07:34.735] test IndexOfBeginEnd.testIndexOf("A", 65, 1, 1, -1): success [0ms]
+[03:07:34.735] test IndexOfBeginEnd.testIndexOf("A", 90, 0, 1, -1): success [0ms]
+[03:07:34.735] test IndexOfBeginEnd.testIndexOf("AB", 65, 0, 2, 0): success [0ms]
+[03:07:34.736] test IndexOfBeginEnd.testIndexOf("AB", 65, 0, 1, 0): success [0ms]
+[03:07:34.736] test IndexOfBeginEnd.testIndexOf("AB", 65, 1, 1, -1): success [0ms]
+[03:07:34.736] test IndexOfBeginEnd.testIndexOf("AB", 65, 1, 2, -1): success [0ms]
+[03:07:34.737] test IndexOfBeginEnd.testIndexOf("AB", 66, 0, 2, 1): success [0ms]
+[03:07:34.737] test IndexOfBeginEnd.testIndexOf("AB", 66, 0, 1, -1): success [0ms]
+[03:07:34.737] test IndexOfBeginEnd.testIndexOf("AB", 66, 1, 1, -1): success [0ms]
+[03:07:34.738] test IndexOfBeginEnd.testIndexOf("AB", 66, 1, 2, 1): success [0ms]
+[03:07:34.738] test IndexOfBeginEnd.testIndexOf("AB", 66, 2, 2, -1): success [0ms]
+[03:07:34.738] test IndexOfBeginEnd.testIndexOf("AB", 90, 0, 2, -1): success [0ms]
+[03:07:34.739] test IndexOfBeginEnd.testIndexOf("ABCD", 65, 0, 4, 0): success [0ms]
+[03:07:34.739] test IndexOfBeginEnd.testIndexOf("ABCD", 65, 0, 1, 0): success [0ms]
+[03:07:34.739] test IndexOfBeginEnd.testIndexOf("ABCD", 65, 1, 4, -1): success [0ms]
+[03:07:34.739] test IndexOfBeginEnd.testIndexOf("ABCD", 68, 0, 4, 3): success [0ms]
+[03:07:34.740] test IndexOfBeginEnd.testIndexOf("ABCD", 68, 0, 3, -1): success [0ms]
+[03:07:34.740] test IndexOfBeginEnd.testIndexOf("ABCD", 68, 3, 4, 3): success [0ms]
+[03:07:34.740] test IndexOfBeginEnd.testIndexOf("ABCD", 68, 4, 4, -1): success [0ms]
+[03:07:34.741] test IndexOfBeginEnd.testIndexOf("ABCD", 90, 0, 4, -1): success [0ms]
+[03:07:34.741] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 65, 0, 8, 0): success [0ms]
+[03:07:34.741] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 65, 0, 1, 0): success [0ms]
+[03:07:34.741] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 65, 1, 1, -1): success [0ms]
+[03:07:34.742] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 65, 1, 8, -1): success [0ms]
+[03:07:34.742] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 72, 0, 8, 7): success [0ms]
+[03:07:34.742] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 72, 0, 7, -1): success [0ms]
+[03:07:34.743] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 72, 7, 8, 7): success [0ms]
+[03:07:34.743] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 72, 8, 8, -1): success [0ms]
+[03:07:34.743] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", 90, 0, 8, -1): success [0ms]
+[03:07:34.743] test IndexOfBeginEnd.testIndexOf("\uff21", 65313, 0, 1, 0): success [0ms]
+[03:07:34.744] test IndexOfBeginEnd.testIndexOf("\uff21", 65313, 0, 0, -1): success [0ms]
+[03:07:34.744] test IndexOfBeginEnd.testIndexOf("\uff21", 65313, 1, 1, -1): success [0ms]
+[03:07:34.745] test IndexOfBeginEnd.testIndexOf("\uff21", 65, 0, 1, -1): success [0ms]
+[03:07:34.745] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65313, 0, 2, 0): success [0ms]
+[03:07:34.745] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65313, 0, 1, 0): success [0ms]
+[03:07:34.746] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65313, 1, 2, -1): success [0ms]
+[03:07:34.746] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65314, 0, 2, 1): success [0ms]
+[03:07:34.746] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65314, 0, 1, -1): success [0ms]
+[03:07:34.747] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65314, 1, 2, 1): success [0ms]
+[03:07:34.747] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65314, 2, 2, -1): success [0ms]
+[03:07:34.747] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", 65338, 0, 2, -1): success [0ms]
+[03:07:34.748] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 65, 0, 10, 0): success [0ms]
+[03:07:34.748] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 65, 1, 3, 2): success [0ms]
+[03:07:34.748] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 65, 3, 3, -1): success [0ms]
+[03:07:34.749] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 65, 3, 5, 4): success [0ms]
+[03:07:34.749] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 66, 0, 10, 1): success [0ms]
+[03:07:34.749] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 66, 2, 4, 3): success [0ms]
+[03:07:34.750] test IndexOfBeginEnd.testIndexOf("ABABABABAB", 66, 4, 6, 5): success [0ms]
+[03:07:34.750] test IndexOfBeginEnd.testIndexOf("A\uff21", 65, 0, 2, 0): success [0ms]
+[03:07:34.750] test IndexOfBeginEnd.testIndexOf("A\uff21", 65, 0, 1, 0): success [0ms]
+[03:07:34.751] test IndexOfBeginEnd.testIndexOf("A\uff21", 65, 1, 2, -1): success [0ms]
+[03:07:34.751] test IndexOfBeginEnd.testIndexOf("A\uff21", 65, 2, 2, -1): success [0ms]
+[03:07:34.751] test IndexOfBeginEnd.testIndexOf("A\uff21", 65313, 0, 2, 1): success [0ms]
+[03:07:34.752] test IndexOfBeginEnd.testIndexOf("A\uff21", 65313, 0, 1, -1): success [0ms]
+[03:07:34.752] test IndexOfBeginEnd.testIndexOf("A\uff21", 65313, 1, 2, 1): success [0ms]
+[03:07:34.752] test IndexOfBeginEnd.testIndexOf("A\uff21", 65313, 2, 2, -1): success [0ms]
+[03:07:34.753] test IndexOfBeginEnd.testIndexOf("A\uff21", 65338, 0, 2, -1): success [0ms]
+[03:07:34.753] test IndexOfBeginEnd.testIndexOf("\uff21A", 65313, 0, 2, 0): success [0ms]
+[03:07:34.753] test IndexOfBeginEnd.testIndexOf("\uff21A", 65313, 0, 1, 0): success [0ms]
+[03:07:34.754] test IndexOfBeginEnd.testIndexOf("\uff21A", 65313, 1, 2, -1): success [0ms]
+[03:07:34.754] test IndexOfBeginEnd.testIndexOf("\uff21A", 65313, 2, 2, -1): success [0ms]
+[03:07:34.754] test IndexOfBeginEnd.testIndexOf("\uff21A", 65, 0, 2, 1): success [0ms]
+[03:07:34.754] test IndexOfBeginEnd.testIndexOf("\uff21A", 65, 0, 1, -1): success [0ms]
+[03:07:34.755] test IndexOfBeginEnd.testIndexOf("\uff21A", 65, 1, 2, 1): success [0ms]
+[03:07:34.755] test IndexOfBeginEnd.testIndexOf("\uff21A", 65, 2, 2, -1): success [0ms]
+[03:07:34.755] test IndexOfBeginEnd.testIndexOf("\uff21A", 65338, 0, 2, -1): success [0ms]
+[03:07:34.756] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 0, 10, 0): success [0ms]
+[03:07:34.756] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 1, 3, 2): success [0ms]
+[03:07:34.756] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 3, 3, -1): success [0ms]
+[03:07:34.757] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65313, 3, 5, 4): success [0ms]
+[03:07:34.757] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 0, 10, 1): success [0ms]
+[03:07:34.757] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 2, 4, 3): success [0ms]
+[03:07:34.758] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 65314, 4, 6, 5): success [0ms]
+[03:07:34.758] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", A, 0, 6, 5): success [0ms]
+[03:07:34.759] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", A, 2, 6, 5): success [0ms]
+[03:07:34.759] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", A, 2, 4, -1): success [0ms]
+[03:07:34.759] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", A, 4, 4, -1): success [0ms]
+[03:07:34.760] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", \uff21, 0, 6, 4): success [0ms]
+[03:07:34.760] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", \uff21, 2, 2, -1): success [0ms]
+[03:07:34.761] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", \uff21, 2, 6, 4): success [0ms]
+[03:07:34.761] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", \uff21, 2, 4, -1): success [0ms]
+[03:07:34.761] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66560, 0, 6, 0): success [0ms]
+[03:07:34.761] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66560, 0, 3, 0): success [0ms]
+[03:07:34.762] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66560, 0, 1, -1): success [0ms]
+[03:07:34.762] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66560, 1, 4, -1): success [0ms]
+[03:07:34.762] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 0, 6, 2): success [0ms]
+[03:07:34.763] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 2, 2, -1): success [0ms]
+[03:07:34.763] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 2, 5, 2): success [0ms]
+[03:07:34.763] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 2, 3, -1): success [0ms]
+[03:07:34.764] test IndexOfBeginEnd.testIndexOf("\ud801\udc00\ud801\udc01\uff21A", 66561, 3, 6, -1): success [0ms]
+[03:07:34.770] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "", -1, 0): success [5ms]
+[03:07:34.770] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "", 0, 100): success [0ms]
+[03:07:34.771] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "", -1, 100): success [0ms]
+[03:07:34.771] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "", 3, 1): success [0ms]
+[03:07:34.771] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "", -1, 0): success [0ms]
+[03:07:34.772] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "", 0, 100): success [0ms]
+[03:07:34.772] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "", -1, 100): success [0ms]
+[03:07:34.772] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "", 3, 1): success [0ms]
+[03:07:34.773] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "", -1, 0): success [0ms]
+[03:07:34.773] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "", 0, 100): success [0ms]
+[03:07:34.773] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "", -1, 100): success [0ms]
+[03:07:34.774] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "", 3, 1): success [0ms]
+[03:07:34.774] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "", -1, 0): success [0ms]
+[03:07:34.775] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "", 0, 100): success [0ms]
+[03:07:34.775] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "", -1, 100): success [0ms]
+[03:07:34.775] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "", 3, 1): success [0ms]
+[03:07:34.776] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "A", -1, 0): success [0ms]
+[03:07:34.776] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "A", 0, 100): success [0ms]
+[03:07:34.776] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "A", -1, 100): success [0ms]
+[03:07:34.776] test IndexOfBeginEnd.testIndexOf("ABABABABAB", "A", 3, 1): success [0ms]
+[03:07:34.777] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "A", -1, 0): success [0ms]
+[03:07:34.777] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "A", 0, 100): success [0ms]
+[03:07:34.777] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "A", -1, 100): success [0ms]
+[03:07:34.778] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "A", 3, 1): success [0ms]
+[03:07:34.778] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", -1, 0): success [0ms]
+[03:07:34.778] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", 0, 100): success [0ms]
+[03:07:34.778] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", -1, 100): success [0ms]
+[03:07:34.779] test IndexOfBeginEnd.testIndexOf("\uff21A\uff21A\uff21A\uff21A\uff21A", "A", 3, 1): success [0ms]
+[03:07:34.779] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "A", -1, 0): success [0ms]
+[03:07:34.779] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "A", 0, 100): success [0ms]
+[03:07:34.779] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "A", -1, 100): success [0ms]
+[03:07:34.780] test IndexOfBeginEnd.testIndexOf("A\uff21A\uff21A\uff21A\uff21A\uff21", "A", 3, 1): success [0ms]
+[03:07:34.785] test IndexOfBeginEnd.testIndexOf("", "A", 0, 0, -1): success [4ms]
+[03:07:34.785] test IndexOfBeginEnd.testIndexOf("", "", 0, 0, 0): success [0ms]
+[03:07:34.785] test IndexOfBeginEnd.testIndexOf("A", "A", 0, 1, 0): success [0ms]
+[03:07:34.786] test IndexOfBeginEnd.testIndexOf("A", "A", 1, 1, -1): success [0ms]
+[03:07:34.786] test IndexOfBeginEnd.testIndexOf("A", "AB", 0, 1, -1): success [0ms]
+[03:07:34.786] test IndexOfBeginEnd.testIndexOf("A", "", 0, 0, 0): success [0ms]
+[03:07:34.786] test IndexOfBeginEnd.testIndexOf("A", "", 0, 1, 0): success [0ms]
+[03:07:34.787] test IndexOfBeginEnd.testIndexOf("A", "", 1, 1, 1): success [0ms]
+[03:07:34.787] test IndexOfBeginEnd.testIndexOf("AB", "A", 0, 2, 0): success [0ms]
+[03:07:34.787] test IndexOfBeginEnd.testIndexOf("AB", "A", 0, 1, 0): success [0ms]
+[03:07:34.787] test IndexOfBeginEnd.testIndexOf("AB", "A", 1, 2, -1): success [0ms]
+[03:07:34.787] test IndexOfBeginEnd.testIndexOf("AB", "B", 0, 2, 1): success [0ms]
+[03:07:34.788] test IndexOfBeginEnd.testIndexOf("AB", "B", 1, 2, 1): success [0ms]
+[03:07:34.788] test IndexOfBeginEnd.testIndexOf("AB", "B", 0, 0, -1): success [0ms]
+[03:07:34.788] test IndexOfBeginEnd.testIndexOf("AB", "AB", 0, 2, 0): success [0ms]
+[03:07:34.788] test IndexOfBeginEnd.testIndexOf("AB", "AB", 1, 2, -1): success [0ms]
+[03:07:34.788] test IndexOfBeginEnd.testIndexOf("AB", "AB", 0, 1, -1): success [0ms]
+[03:07:34.789] test IndexOfBeginEnd.testIndexOf("AB", "", 0, 2, 0): success [0ms]
+[03:07:34.789] test IndexOfBeginEnd.testIndexOf("AB", "", 1, 2, 1): success [0ms]
+[03:07:34.789] test IndexOfBeginEnd.testIndexOf("AB", "", 2, 2, 2): success [0ms]
+[03:07:34.789] test IndexOfBeginEnd.testIndexOf("ABCD", "ABCD", 0, 4, 0): success [0ms]
+[03:07:34.789] test IndexOfBeginEnd.testIndexOf("ABCD", "ABCD", 0, 3, -1): success [0ms]
+[03:07:34.790] test IndexOfBeginEnd.testIndexOf("ABCD", "ABCD", 1, 4, -1): success [0ms]
+[03:07:34.790] test IndexOfBeginEnd.testIndexOf("ABCD", "BC", 0, 4, 1): success [0ms]
+[03:07:34.790] test IndexOfBeginEnd.testIndexOf("ABCD", "BC", 0, 3, 1): success [0ms]
+[03:07:34.799] test IndexOfBeginEnd.testIndexOf("ABCD", "BC", 1, 4, 1): success [0ms]
+[03:07:34.800] test IndexOfBeginEnd.testIndexOf("ABCD", "BC", 1, 2, -1): success [0ms]
+[03:07:34.800] test IndexOfBeginEnd.testIndexOf("ABCD", "BC", 2, 4, -1): success [0ms]
+[03:07:34.800] test IndexOfBeginEnd.testIndexOf("ABCD", "A", 0, 4, 0): success [0ms]
+[03:07:34.801] test IndexOfBeginEnd.testIndexOf("ABCD", "A", 1, 4, -1): success [0ms]
+[03:07:34.801] test IndexOfBeginEnd.testIndexOf("ABCD", "CD", 0, 4, 2): success [0ms]
+[03:07:34.801] test IndexOfBeginEnd.testIndexOf("ABCD", "CD", 2, 4, 2): success [0ms]
+[03:07:34.801] test IndexOfBeginEnd.testIndexOf("ABCD", "CD", 1, 4, 2): success [0ms]
+[03:07:34.801] test IndexOfBeginEnd.testIndexOf("ABCD", "CD", 0, 3, -1): success [0ms]
+[03:07:34.802] test IndexOfBeginEnd.testIndexOf("ABCD", "A", 2, 4, -1): success [0ms]
+[03:07:34.802] test IndexOfBeginEnd.testIndexOf("ABCD", "A", 2, 2, -1): success [0ms]
+[03:07:34.802] test IndexOfBeginEnd.testIndexOf("ABCD", "A", 4, 4, -1): success [0ms]
+[03:07:34.802] test IndexOfBeginEnd.testIndexOf("ABCD", "ABCDE", 0, 4, -1): success [0ms]
+[03:07:34.803] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "ABCDEFGH", 0, 8, 0): success [0ms]
+[03:07:34.803] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "ABCDEFGH", 1, 8, -1): success [0ms]
+[03:07:34.803] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "ABCDEFGH", 0, 7, -1): success [0ms]
+[03:07:34.803] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "DEFGH", 0, 8, 3): success [0ms]
+[03:07:34.803] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "DEFGH", 3, 8, 3): success [0ms]
+[03:07:34.804] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "DEFGH", 4, 8, -1): success [0ms]
+[03:07:34.804] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "DEFGH", 0, 7, -1): success [0ms]
+[03:07:34.804] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "A", 0, 8, 0): success [0ms]
+[03:07:34.804] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "A", 1, 8, -1): success [0ms]
+[03:07:34.804] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "A", 0, 0, -1): success [0ms]
+[03:07:34.804] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "GHI", 0, 8, -1): success [0ms]
+[03:07:34.805] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "GHI", 8, 8, -1): success [0ms]
+[03:07:34.805] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "", 4, 4, 4): success [0ms]
+[03:07:34.805] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "", 4, 8, 4): success [0ms]
+[03:07:34.805] test IndexOfBeginEnd.testIndexOf("ABCDEFGH", "", 8, 8, 8): success [0ms]
+[03:07:34.805] test IndexOfBeginEnd.testIndexOf("\uff21", "\uff21", 0, 1, 0): success [0ms]
+[03:07:34.806] test IndexOfBeginEnd.testIndexOf("\uff21", "\uff21", 0, 0, -1): success [0ms]
+[03:07:34.806] test IndexOfBeginEnd.testIndexOf("\uff21", "\uff21", 1, 1, -1): success [0ms]
+[03:07:34.806] test IndexOfBeginEnd.testIndexOf("\uff21", "\uff21A", 0, 1, -1): success [0ms]
+[03:07:34.806] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff21\uff22", 0, 2, 0): success [0ms]
+[03:07:34.806] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff21\uff22", 1, 2, -1): success [0ms]
+[03:07:34.807] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff22", 0, 2, 1): success [0ms]
+[03:07:34.807] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff22", 0, 1, -1): success [0ms]
+[03:07:34.807] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff22", 1, 2, 1): success [0ms]
+[03:07:34.807] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff21", 1, 2, -1): success [0ms]
+[03:07:34.807] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "\uff21", 0, 1, 0): success [0ms]
+[03:07:34.807] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "", 0, 1, 0): success [0ms]
+[03:07:34.808] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "", 1, 1, 1): success [0ms]
+[03:07:34.808] test IndexOfBeginEnd.testIndexOf("\uff21\uff22", "", 2, 2, 2): success [0ms]
+[03:07:34.808] test IndexOfBeginEnd.testIndexOf("\uff21A", "\uff21A", 0, 2, 0): success [0ms]
+[03:07:34.808] test IndexOfBeginEnd.testIndexOf("\uff21A", "\uff21A", 0, 1, -1): success [0ms]
+[03:07:34.808] test IndexOfBeginEnd.testIndexOf("\uff21A", "\uff21A", 1, 2, -1): success [0ms]
+[03:07:34.809] test IndexOfBeginEnd.testIndexOf("\uff21A", "A", 1, 2, 1): success [0ms]
+[03:07:34.809] test IndexOfBeginEnd.testIndexOf("\uff21A", "A", 0, 2, 1): success [0ms]
+[03:07:34.809] test IndexOfBeginEnd.testIndexOf("\uff21A", "A", 0, 1, -1): success [0ms]
+[03:07:34.809] test IndexOfBeginEnd.testIndexOf("\uff21A", "\uff21", 0, 2, 0): success [0ms]
+[03:07:34.810] test IndexOfBeginEnd.testIndexOf("\uff21A", "\uff21", 0, 1, 0): success [0ms]
+[03:07:34.810] test IndexOfBeginEnd.testIndexOf("\uff21A", "\uff21", 1, 2, -1): success [0ms]
+[03:07:34.810] test IndexOfBeginEnd.testIndexOf("A\uff21", "A\uff21", 0, 2, 0): success [0ms]
+[03:07:34.810] test IndexOfBeginEnd.testIndexOf("A\uff21", "\uff21", 1, 2, 1): success [0ms]
+[03:07:34.810] test IndexOfBeginEnd.testIndexOf("A\uff21", "A\uff21", 1, 2, -1): success [0ms]
+[03:07:34.811] test IndexOfBeginEnd.testIndexOf("A\uff21", "A\uff21A", 0, 2, -1): success [0ms]
+[03:07:34.811] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 0, 10, 0): success [0ms]
+[03:07:34.811] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 0, 9, -1): success [0ms]
+[03:07:34.811] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 1, 10, -1): success [0ms]
+[03:07:34.812] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 1, 10, 1): success [0ms]
+[03:07:34.812] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 0, 10, 1): success [0ms]
+[03:07:34.812] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", 0, 9, -1): success [0ms]
+[03:07:34.812] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22", 4, 10, 4): success [0ms]
+[03:07:34.812] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22", 3, 8, 4): success [0ms]
+[03:07:34.813] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22", 2, 7, 2): success [0ms]
+[03:07:34.813] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "\uff21\uff22\uff21\uff22", 7, 10, -1): success [0ms]
+[03:07:34.813] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "", 7, 10, 7): success [0ms]
+[03:07:34.813] test IndexOfBeginEnd.testIndexOf("\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22\uff21\uff22", "", 10, 10, 10): success [0ms]
+
+===============================================
+java/lang/String/IndexOfBeginEnd.java
+Total tests run: 232, Passes: 232, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(3/35)----------
+
+JavaTest Message: Test complete.
+
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

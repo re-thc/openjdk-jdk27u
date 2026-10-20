@@ -1,0 +1,23 @@
+Building target 'images' in configuration 'scans'
+mold: fatal: /workspace/sz-candidate/build/scans/hotspot/variant-server/libjvm/objs/loopnode.o: unknown file type
+collect2: error: ld returned 1 exit status
+gmake[3]: *** [lib/CompileJvm.gmk:183: /workspace/sz-candidate/build/scans/support/modules_libs/java.base/server/libjvm.so] Error 1
+gmake[3]: *** Waiting for unfinished jobs....
+gmake[2]: *** [make/Main.gmk:242: hotspot-server-libs] Error 2
+
+ERROR: Build failed for target 'images' in configuration 'scans' (exit code 2)
+
+=== Output from failing command(s) repeated here ===
+* For target hotspot_variant-server_libjvm_objs_BUILD_LIBJVM_run_ld:
+mold: fatal: /workspace/sz-candidate/build/scans/hotspot/variant-server/libjvm/objs/loopnode.o: unknown file type
+collect2: error: ld returned 1 exit status
+
+* All command lines available in /workspace/sz-candidate/build/scans/make-support/failure-logs.
+=== End of repeated output ===
+
+No indication of failed target found.
+HELP: Try searching the build log for '] Error'.
+HELP: Run 'make doctor' to diagnose build problems.
+
+make[1]: *** [/workspace/sz-candidate/make/Init.gmk:151: main] Error 2
+make: *** [/workspace/sz-candidate/make/PreInit.gmk:160: images] Error 2

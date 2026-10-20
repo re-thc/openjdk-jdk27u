@@ -1,0 +1,205 @@
+#Test Results (version 2)
+#Tue Oct 20 04:06:37 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java
+$root=/workspace/sz-candidate/test/hotspot/jtreg
+keywords=bug8374582 driver
+library=/test/lib /
+requires=(vm.flagless) & (os.arch \!\= "riscv64" | vm.cpu.features ~\= ".*rvv.*")
+run=USER_SPECIFIED driver ${test.main.class}\n
+source=TestOpaqueConstantBoolNodes.java
+title=Tests the creation and removal of opaque nodes at range checks points in string intrinsics.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java
+elapsed=1995 0\:00\:01.995
+end=Tue Oct 20 04\:06\:37 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile driver
+start=Tue Oct 20 04\:06\:35 UTC 2026
+test=compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1997
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/compiler/intrinsics/string
+
+#section:script_messages
+----------messages:(10/843)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+Library /test/lib; kind: packages
+   source directory: /workspace/sz-candidate/test/lib
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib
+Library /; kind: packages
+   source directory: /workspace/sz-candidate/test/hotspot/jtreg
+   class directory: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d
+
+#section:build
+----------messages:(7/306)----------
+command: build compiler.intrinsics.string.TestOpaqueConstantBoolNodes
+reason: Named class compiled on demand
+started: Tue Oct 20 04:06:35.087 UTC 2026
+Test directory:
+  compile: compiler.intrinsics.string.TestOpaqueConstantBoolNodes
+finished: Tue Oct 20 04:06:36.415 UTC 2026
+elapsed time (seconds): 1.328
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/330)----------
+command: compile /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 04:06:35.087 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 192592
+finished: Tue Oct 20 04:06:36.415 UTC 2026
+elapsed time (seconds): 1.328
+----------configuration:(13/986)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/sz-candidate/test/lib
+               /workspace/sz-candidate/test/hotspot/jtreg
+  class path:  /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib
+
+----------rerun:(35/4372)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp \\
+        -J-Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.name=compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java \\
+        -J-Dtest.main.class=compiler.intrinsics.string.TestOpaqueConstantBoolNodes \\
+        -J-Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib:/workspace/sz-candidate/test/hotspot/jtreg \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d \\
+        -sourcepath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib:/workspace/sz-candidate/test/hotspot/jtreg \\
+        -classpath /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java
+result: Passed. Compilation successful
+
+#section:driver
+----------messages:(8/293)----------
+command: driver compiler.intrinsics.string.TestOpaqueConstantBoolNodes
+reason: User specified action: run driver ${test.main.class} 
+started: Tue Oct 20 04:06:36.415 UTC 2026
+Mode: agentvm
+Agent id: 4
+Process id: 192846
+finished: Tue Oct 20 04:06:37.080 UTC 2026
+elapsed time (seconds): 0.665
+----------configuration:(16/1143)----------
+Boot Layer
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+              /workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar 
+              /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar 
+              /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar 
+              /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/patches/java.base
+
+Test Layer
+  class path: /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d
+              /workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string
+              /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib
+              /workspace/sz-candidate/test/lib
+              /workspace/sz-candidate/test/hotspot/jtreg
+
+----------rerun:(31/3883)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.tool.vm.opts='-J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.name=compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.java \\
+        -Dtest.main.class=compiler.intrinsics.string.TestOpaqueConstantBoolNodes \\
+        -Dtest.src=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string \\
+        -Dtest.src.path=/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/test/lib:/workspace/sz-candidate/test/hotspot/jtreg \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib \\
+        -classpath /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib:/workspace/sz-candidate/test/lib:/workspace/sz-candidate/test/hotspot/jtreg:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+        compiler.intrinsics.string.TestOpaqueConstantBoolNodes
+----------System.out:(12/2579)----------
+IR verification disabled due to the following reason(s):
+- Not running a debug build (required for PrintIdeal and PrintOptoAssembly)
+
+Skip Flag VM due to not performing IR verification.
+Run Test VM - [-XX:CompileCommand=inline,java.lang.String::*, -XX:CompileCommand=inline,java.lang.StringCoding::*, -XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize]:
+Command line: [/workspace/sz-candidate/build/scans/images/jdk/bin/java -cp /workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d:/workspace/sz-candidate/test/hotspot/jtreg/compiler/intrinsics/string:/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/classes/1/compiler/intrinsics/string/TestOpaqueConstantBoolNodes.d/test/lib:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar:/workspace/toolchains/jtreg83/lib/junit-platform-console-standalone-1.14.2.jar:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/hotspot/jtreg/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_hotspot_jtreg_compiler_intrinsics_string/tmp -Dir.framework.server.port=45285 -XX:CompileCommand=inline,java.lang.String::* -XX:CompileCommand=inline,java.lang.StringCoding::* -XX:CompileCommand=exclude,jdk.internal.util.Preconditions::checkFromIndexSize -XX:-BackgroundCompilation -XX:CompileCommand=quiet compiler.lib.ir_framework.test.TestVM compiler.intrinsics.string.TestOpaqueConstantBoolNodes ]
+[2026-10-20T04:06:36.783898912Z] Gathering output for process 192873
+[2026-10-20T04:06:36.795390582Z] Waiting for completion for process 192873
+[2026-10-20T04:06:37.075615680Z] Waiting for completion finished for process 192873
+Output and diagnostic info for process 192873 was saved into 'pid-192873-output.log'
+IR verification disabled either due to no @IR annotations, through explicitly setting -DVerify=false, due to not running a debug build, using a non-whitelisted JTreg VM or Javaopts flag like -Xint, or running the Test VM with other VM flags added by user code that make the IR verification impossible (e.g. -XX:-UseCompile, -XX:TieredStopAtLevel=[1,2,3], etc.).
+
+----------System.err:(3/35)----------
+
+JavaTest Message: Test complete.
+
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

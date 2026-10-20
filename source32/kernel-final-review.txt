@@ -1,0 +1,38 @@
+Independent read-only review, 2026-10-20, agent independent_scan_review.
+Initial source review: no blocking defects in exact predicates, window arithmetic, bounds, safepoints, JNI/C1/C2 dispatch, feature-off, identities, or line splitting.
+Follow-up: immutable masks exactly match the pinned bitset representation; no defects in consumer-exception continuation, availability registration, six producer compilation probes, or 32 MiB SerialGC stress.
+Reviewer did not run builds or tests.
+
+Measurement-method review: found an initially permissive missing-result check,
+missing 8/9-byte probe-edge controls, dispatch work inside the cold timer, and
+the absence of standard JMH compiler hints under -f0. These were corrected
+before qualification. The final runner rejects missing/duplicate/unexpected
+results, wrong raw sample counts, nonfinite values and missing rounds/triples.
+Cold dispatch and input construction precede the timer. Standard compiler hints
+and blackhole flags are generated through JMH's public API, retained and checked.
+
+Final source review, a5576dd and 4aa7d23:
+"No remaining source-review blocker. Verified that 4aa7d23 adds the requested
+long-input assertions at 31/32/33, and runtime source is unchanged from reviewed
+a5576dd. Benchmark contracts now match 154 full, 101 exploratory, and 77 selected
+tier rows. Publication still depends on the running test results and final
+measured benefit/loss assessment. No builds or benchmarks run by this reviewer."
+
+Final evidence-method/document review:
+"No material issue found. The cold summarizer requires all 378 unique samples,
+calculates paired speedups correctly, and keeps operation and process latency
+separate. The docs accurately identify source, tests, measurement method,
+dependency, and local qualification limits. Complete the pending measurement
+and evidence sections after strict validation finishes. No files changed or
+runs started."
+
+Completed C2 data review:
+"The C2 evidence justifies a focused draft for long Latin1 scans, pending
+assessment of the remaining tiers. Bulk gains are convincing: relevant
+whitespace cases also beat candidate-off substantially, and long-line gains
+hold across all five pairs. Keep regressions prominent: unchanged/empty
+stripTrailing +1.1–1.65 ns, consistently slower; clean trim about +1 ns;
+linesFirst at probe boundaries +10–15 ns; selected allocating cases median
+losses around 45–95 ns. Do not attribute UTF16 control changes to SIMD or infer
+overall application benefit from row counts. This supports specific long-scan
+workloads; typical String-call distributions remain unqualified."

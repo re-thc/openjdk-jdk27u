@@ -1,0 +1,461 @@
+#Test Results (version 2)
+#Tue Oct 20 03:06:43 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 bug8248655 bug8264544 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings RegionMatches\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings RegionMatches\n
+source=RegionMatches.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java
+elapsed=997 0\:00\:00.997
+end=Tue Oct 20 03\:06\:43 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 03\:06\:42 UTC 2026
+test=java/lang/String/CompactString/RegionMatches.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=997
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/224)----------
+command: build RegionMatches
+reason: Named class compiled on demand
+started: Tue Oct 20 03:06:42.120 UTC 2026
+Test directory:
+  compile: RegionMatches
+finished: Tue Oct 20 03:06:42.202 UTC 2026
+elapsed time (seconds): 0.082
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/310)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:06:42.121 UTC 2026
+Mode: agentvm
+Agent id: 2
+Process id: 144876
+finished: Tue Oct 20 03:06:42.202 UTC 2026
+elapsed time (seconds): 0.081
+----------configuration:(13/826)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3410)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/RegionMatches.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java \\
+        -J-Dtest.main.class=RegionMatches \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/303)----------
+command: testng -XX:+CompactStrings RegionMatches
+reason: User specified action: run testng/othervm -XX:+CompactStrings RegionMatches 
+started: Tue Oct 20 03:06:42.202 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 146069
+finished: Tue Oct 20 03:06:42.652 UTC 2026
+elapsed time (seconds): 0.45
+----------configuration:(0/0)----------
+----------System.out:(110/11410)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:06:42.480] config CompactString.setUp(): success [0ms]
+[03:06:42.502] test RegionMatches.testRegionMatches("", true, 0, "", 0, 0, true): success [9ms]
+[03:06:42.503] test RegionMatches.testRegionMatches("", true, 0, "", 0, 1, false): success [0ms]
+[03:06:42.503] test RegionMatches.testRegionMatches("", true, 0, "A", 0, 0, true): success [0ms]
+[03:06:42.504] test RegionMatches.testRegionMatches("", true, 0, "", 0, 0, true): success [0ms]
+[03:06:42.505] test RegionMatches.testRegionMatches("", true, 0, "", 0, 1, false): success [0ms]
+[03:06:42.506] test RegionMatches.testRegionMatches("A", false, 0, "a", 0, 1, false): success [0ms]
+[03:06:42.506] test RegionMatches.testRegionMatches("A", false, 0, "BA", 1, 1, true): success [0ms]
+[03:06:42.507] test RegionMatches.testRegionMatches("A", false, 0, "Ba", 1, 1, false): success [0ms]
+[03:06:42.507] test RegionMatches.testRegionMatches("A", true, 0, "a", 0, 1, true): success [0ms]
+[03:06:42.508] test RegionMatches.testRegionMatches("A", true, 0, "BA", 1, 1, true): success [0ms]
+[03:06:42.509] test RegionMatches.testRegionMatches("A", true, 0, "Ba", 1, 1, true): success [0ms]
+[03:06:42.512] test RegionMatches.testRegionMatches("AB", true, 1, "b", 0, 1, true): success [3ms]
+[03:06:42.512] test RegionMatches.testRegionMatches("AB", true, 1, "B", 0, 1, true): success [0ms]
+[03:06:42.513] test RegionMatches.testRegionMatches("AB", true, 0, "xaBc", 1, 2, true): success [0ms]
+[03:06:42.513] test RegionMatches.testRegionMatches("AB", false, 0, "AB", 0, 2, true): success [0ms]
+[03:06:42.514] test RegionMatches.testRegionMatches("AB", false, 0, "Ab", 0, 2, false): success [0ms]
+[03:06:42.514] test RegionMatches.testRegionMatches("AB", false, 1, "BAB", 2, 1, true): success [0ms]
+[03:06:42.515] test RegionMatches.testRegionMatches("ABCDEFGH", true, 1, "bCdEF", 0, 5, true): success [0ms]
+[03:06:42.515] test RegionMatches.testRegionMatches("ABCDEFGH", false, 2, "CDEFG", 0, 5, true): success [0ms]
+[03:06:42.516] test RegionMatches.testRegionMatches("ABCDEFGH", true, 2, "CDEFg", 0, 5, true): success [0ms]
+[03:06:42.518] test RegionMatches.testRegionMatches("\uff21", true, 0, "\uff41", 0, 1, true): success [1ms]
+[03:06:42.518] test RegionMatches.testRegionMatches("\uff21", false, 0, "\uff41", 0, 1, false): success [0ms]
+[03:06:42.519] test RegionMatches.testRegionMatches("\uff21A\uff21A\uff21A\uff21A\uff21A", true, 0, "\uff41a\uff41", 0, 3, true): success [0ms]
+[03:06:42.520] test RegionMatches.testRegionMatches("\uff21A\uff21A\uff21A\uff21A\uff21A", false, 0, "\uff21a\uff21", 0, 3, false): success [0ms]
+[03:06:42.521] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 0, "\ud801\udc28\ud801\udc29", 0, 4, true): success [1ms]
+[03:06:42.521] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 1, "??", 0, 2, true): success [0ms]
+[03:06:42.522] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 1, "?", 0, 1, false): success [0ms]
+[03:06:42.522] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 4, "\uff21", 0, 1, true): success [0ms]
+[03:06:42.523] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 5, "A", 0, 1, true): success [0ms]
+[03:06:42.523] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 0, "\ud802\udc00\ud801\udc01\uff21A", 0, 2, false): success [0ms]
+[03:06:42.524] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", false, 0, "\ud801\udc28\ud801\udc29", 0, 4, true): success [0ms]
+[03:06:42.524] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 0, "\ud801\udc00\ud801\udc01", 0, 4, true): success [0ms]
+[03:06:42.525] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 1, "??", 0, 2, true): success [0ms]
+[03:06:42.525] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 1, "?", 0, 1, false): success [0ms]
+[03:06:42.525] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 1, "??", 0, 2, false): success [0ms]
+[03:06:42.526] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 4, "\uff21", 0, 1, true): success [0ms]
+[03:06:42.526] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", false, 4, "\uff21", 0, 1, false): success [0ms]
+[03:06:42.527] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", false, 4, "\uff41", 0, 1, true): success [0ms]
+[03:06:42.527] test RegionMatches.testRegionMatches("\u0130", false, 0, "i", 0, 1, false): success [0ms]
+[03:06:42.527] test RegionMatches.testRegionMatches("\u0130", true, 0, "i", 0, 1, true): success [0ms]
+[03:06:42.527] test RegionMatches.testRegionMatches("\u0130", false, 0, "I", 0, 1, false): success [0ms]
+[03:06:42.528] test RegionMatches.testRegionMatches("\u0130", true, 0, "I", 0, 1, true): success [0ms]
+[03:06:42.528] test RegionMatches.testRegionMatches("\u0131", false, 0, "i", 0, 1, false): success [0ms]
+[03:06:42.528] test RegionMatches.testRegionMatches("\u0131", true, 0, "i", 0, 1, true): success [0ms]
+[03:06:42.529] test RegionMatches.testRegionMatches("\u0131", false, 0, "I", 0, 1, false): success [0ms]
+[03:06:42.529] test RegionMatches.testRegionMatches("\u0131", true, 0, "I", 0, 1, true): success [0ms]
+[03:06:42.529] test RegionMatches.testRegionMatches("A", true, 0, "a", 0, 1, true): success [0ms]
+[03:06:42.529] test RegionMatches.testRegionMatches("B", true, 0, "b", 0, 1, true): success [0ms]
+[03:06:42.530] test RegionMatches.testRegionMatches("C", true, 0, "c", 0, 1, true): success [0ms]
+[03:06:42.530] test RegionMatches.testRegionMatches("D", true, 0, "d", 0, 1, true): success [0ms]
+[03:06:42.530] test RegionMatches.testRegionMatches("E", true, 0, "e", 0, 1, true): success [0ms]
+[03:06:42.530] test RegionMatches.testRegionMatches("F", true, 0, "f", 0, 1, true): success [0ms]
+[03:06:42.531] test RegionMatches.testRegionMatches("G", true, 0, "g", 0, 1, true): success [0ms]
+[03:06:42.531] test RegionMatches.testRegionMatches("H", true, 0, "h", 0, 1, true): success [0ms]
+[03:06:42.531] test RegionMatches.testRegionMatches("I", true, 0, "i", 0, 1, true): success [0ms]
+[03:06:42.531] test RegionMatches.testRegionMatches("J", true, 0, "j", 0, 1, true): success [0ms]
+[03:06:42.532] test RegionMatches.testRegionMatches("K", true, 0, "k", 0, 1, true): success [0ms]
+[03:06:42.532] test RegionMatches.testRegionMatches("L", true, 0, "l", 0, 1, true): success [0ms]
+[03:06:42.532] test RegionMatches.testRegionMatches("M", true, 0, "m", 0, 1, true): success [0ms]
+[03:06:42.532] test RegionMatches.testRegionMatches("N", true, 0, "n", 0, 1, true): success [0ms]
+[03:06:42.533] test RegionMatches.testRegionMatches("O", true, 0, "o", 0, 1, true): success [0ms]
+[03:06:42.533] test RegionMatches.testRegionMatches("P", true, 0, "p", 0, 1, true): success [0ms]
+[03:06:42.533] test RegionMatches.testRegionMatches("Q", true, 0, "q", 0, 1, true): success [0ms]
+[03:06:42.533] test RegionMatches.testRegionMatches("R", true, 0, "r", 0, 1, true): success [0ms]
+[03:06:42.534] test RegionMatches.testRegionMatches("S", true, 0, "s", 0, 1, true): success [0ms]
+[03:06:42.534] test RegionMatches.testRegionMatches("T", true, 0, "t", 0, 1, true): success [0ms]
+[03:06:42.534] test RegionMatches.testRegionMatches("U", true, 0, "u", 0, 1, true): success [0ms]
+[03:06:42.534] test RegionMatches.testRegionMatches("V", true, 0, "v", 0, 1, true): success [0ms]
+[03:06:42.534] test RegionMatches.testRegionMatches("W", true, 0, "w", 0, 1, true): success [0ms]
+[03:06:42.535] test RegionMatches.testRegionMatches("X", true, 0, "x", 0, 1, true): success [0ms]
+[03:06:42.535] test RegionMatches.testRegionMatches("Y", true, 0, "y", 0, 1, true): success [0ms]
+[03:06:42.535] test RegionMatches.testRegionMatches("Z", true, 0, "z", 0, 1, true): success [0ms]
+[03:06:42.535] test RegionMatches.testRegionMatches("\u00c0", true, 0, "\u00e0", 0, 1, true): success [0ms]
+[03:06:42.535] test RegionMatches.testRegionMatches("\u00c1", true, 0, "\u00e1", 0, 1, true): success [0ms]
+[03:06:42.536] test RegionMatches.testRegionMatches("\u00c2", true, 0, "\u00e2", 0, 1, true): success [0ms]
+[03:06:42.536] test RegionMatches.testRegionMatches("\u00c3", true, 0, "\u00e3", 0, 1, true): success [0ms]
+[03:06:42.536] test RegionMatches.testRegionMatches("\u00c4", true, 0, "\u00e4", 0, 1, true): success [0ms]
+[03:06:42.536] test RegionMatches.testRegionMatches("\u00c5", true, 0, "\u00e5", 0, 1, true): success [0ms]
+[03:06:42.537] test RegionMatches.testRegionMatches("\u00c6", true, 0, "\u00e6", 0, 1, true): success [0ms]
+[03:06:42.537] test RegionMatches.testRegionMatches("\u00c7", true, 0, "\u00e7", 0, 1, true): success [0ms]
+[03:06:42.537] test RegionMatches.testRegionMatches("\u00c8", true, 0, "\u00e8", 0, 1, true): success [0ms]
+[03:06:42.537] test RegionMatches.testRegionMatches("\u00c9", true, 0, "\u00e9", 0, 1, true): success [0ms]
+[03:06:42.537] test RegionMatches.testRegionMatches("\u00ca", true, 0, "\u00ea", 0, 1, true): success [0ms]
+[03:06:42.538] test RegionMatches.testRegionMatches("\u00cb", true, 0, "\u00eb", 0, 1, true): success [0ms]
+[03:06:42.538] test RegionMatches.testRegionMatches("\u00cc", true, 0, "\u00ec", 0, 1, true): success [0ms]
+[03:06:42.538] test RegionMatches.testRegionMatches("\u00cd", true, 0, "\u00ed", 0, 1, true): success [0ms]
+[03:06:42.538] test RegionMatches.testRegionMatches("\u00ce", true, 0, "\u00ee", 0, 1, true): success [0ms]
+[03:06:42.538] test RegionMatches.testRegionMatches("\u00cf", true, 0, "\u00ef", 0, 1, true): success [0ms]
+[03:06:42.539] test RegionMatches.testRegionMatches("\u00d0", true, 0, "\u00f0", 0, 1, true): success [0ms]
+[03:06:42.539] test RegionMatches.testRegionMatches("\u00d1", true, 0, "\u00f1", 0, 1, true): success [0ms]
+[03:06:42.539] test RegionMatches.testRegionMatches("\u00d2", true, 0, "\u00f2", 0, 1, true): success [0ms]
+[03:06:42.539] test RegionMatches.testRegionMatches("\u00d3", true, 0, "\u00f3", 0, 1, true): success [0ms]
+[03:06:42.539] test RegionMatches.testRegionMatches("\u00d4", true, 0, "\u00f4", 0, 1, true): success [0ms]
+[03:06:42.540] test RegionMatches.testRegionMatches("\u00d5", true, 0, "\u00f5", 0, 1, true): success [0ms]
+[03:06:42.540] test RegionMatches.testRegionMatches("\u00d6", true, 0, "\u00f6", 0, 1, true): success [0ms]
+[03:06:42.540] test RegionMatches.testRegionMatches("\u00d8", true, 0, "\u00f8", 0, 1, true): success [0ms]
+[03:06:42.540] test RegionMatches.testRegionMatches("\u00d9", true, 0, "\u00f9", 0, 1, true): success [0ms]
+[03:06:42.541] test RegionMatches.testRegionMatches("\u00da", true, 0, "\u00fa", 0, 1, true): success [0ms]
+[03:06:42.541] test RegionMatches.testRegionMatches("\u00db", true, 0, "\u00fb", 0, 1, true): success [0ms]
+[03:06:42.541] test RegionMatches.testRegionMatches("\u00dc", true, 0, "\u00fc", 0, 1, true): success [0ms]
+[03:06:42.541] test RegionMatches.testRegionMatches("\u00dd", true, 0, "\u00fd", 0, 1, true): success [0ms]
+[03:06:42.542] test RegionMatches.testRegionMatches("\u00de", true, 0, "\u00fe", 0, 1, true): success [0ms]
+
+===============================================
+java/lang/String/CompactString/RegionMatches.java
+Total tests run: 102, Passes: 102, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3513)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/RegionMatches.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java \\
+        -Dtest.main.class=RegionMatches \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/RegionMatches.d/testng.0.jta java/lang/String/CompactString/RegionMatches.java false RegionMatches
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/181)----------
+command: build RegionMatches
+reason: Named class compiled on demand
+started: Tue Oct 20 03:06:42.653 UTC 2026
+finished: Tue Oct 20 03:06:42.653 UTC 2026
+elapsed time (seconds): 0.0
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/304)----------
+command: testng -XX:-CompactStrings RegionMatches
+reason: User specified action: run testng/othervm -XX:-CompactStrings RegionMatches 
+started: Tue Oct 20 03:06:42.653 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 146097
+finished: Tue Oct 20 03:06:43.114 UTC 2026
+elapsed time (seconds): 0.461
+----------configuration:(0/0)----------
+----------System.out:(110/11411)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:06:42.928] config CompactString.setUp(): success [0ms]
+[03:06:42.954] test RegionMatches.testRegionMatches("", true, 0, "", 0, 0, true): success [11ms]
+[03:06:42.955] test RegionMatches.testRegionMatches("", true, 0, "", 0, 1, false): success [0ms]
+[03:06:42.956] test RegionMatches.testRegionMatches("", true, 0, "A", 0, 0, true): success [0ms]
+[03:06:42.957] test RegionMatches.testRegionMatches("", true, 0, "", 0, 0, true): success [0ms]
+[03:06:42.958] test RegionMatches.testRegionMatches("", true, 0, "", 0, 1, false): success [0ms]
+[03:06:42.959] test RegionMatches.testRegionMatches("A", false, 0, "a", 0, 1, false): success [0ms]
+[03:06:42.959] test RegionMatches.testRegionMatches("A", false, 0, "BA", 1, 1, true): success [0ms]
+[03:06:42.960] test RegionMatches.testRegionMatches("A", false, 0, "Ba", 1, 1, false): success [0ms]
+[03:06:42.961] test RegionMatches.testRegionMatches("A", true, 0, "a", 0, 1, true): success [0ms]
+[03:06:42.961] test RegionMatches.testRegionMatches("A", true, 0, "BA", 1, 1, true): success [0ms]
+[03:06:42.962] test RegionMatches.testRegionMatches("A", true, 0, "Ba", 1, 1, true): success [0ms]
+[03:06:42.962] test RegionMatches.testRegionMatches("AB", true, 1, "b", 0, 1, true): success [0ms]
+[03:06:42.963] test RegionMatches.testRegionMatches("AB", true, 1, "B", 0, 1, true): success [0ms]
+[03:06:42.963] test RegionMatches.testRegionMatches("AB", true, 0, "xaBc", 1, 2, true): success [0ms]
+[03:06:42.964] test RegionMatches.testRegionMatches("AB", false, 0, "AB", 0, 2, true): success [0ms]
+[03:06:42.964] test RegionMatches.testRegionMatches("AB", false, 0, "Ab", 0, 2, false): success [0ms]
+[03:06:42.965] test RegionMatches.testRegionMatches("AB", false, 1, "BAB", 2, 1, true): success [0ms]
+[03:06:42.965] test RegionMatches.testRegionMatches("ABCDEFGH", true, 1, "bCdEF", 0, 5, true): success [0ms]
+[03:06:42.966] test RegionMatches.testRegionMatches("ABCDEFGH", false, 2, "CDEFG", 0, 5, true): success [0ms]
+[03:06:42.966] test RegionMatches.testRegionMatches("ABCDEFGH", true, 2, "CDEFg", 0, 5, true): success [0ms]
+[03:06:42.974] test RegionMatches.testRegionMatches("\uff21", true, 0, "\uff41", 0, 1, true): success [7ms]
+[03:06:42.974] test RegionMatches.testRegionMatches("\uff21", false, 0, "\uff41", 0, 1, false): success [0ms]
+[03:06:42.975] test RegionMatches.testRegionMatches("\uff21A\uff21A\uff21A\uff21A\uff21A", true, 0, "\uff41a\uff41", 0, 3, true): success [0ms]
+[03:06:42.975] test RegionMatches.testRegionMatches("\uff21A\uff21A\uff21A\uff21A\uff21A", false, 0, "\uff21a\uff21", 0, 3, false): success [0ms]
+[03:06:42.977] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 0, "\ud801\udc28\ud801\udc29", 0, 4, true): success [1ms]
+[03:06:42.978] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 1, "??", 0, 2, true): success [0ms]
+[03:06:42.978] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 1, "?", 0, 1, false): success [0ms]
+[03:06:42.979] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 4, "\uff21", 0, 1, true): success [0ms]
+[03:06:42.979] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 5, "A", 0, 1, true): success [0ms]
+[03:06:42.979] test RegionMatches.testRegionMatches("\ud801\udc00\ud801\udc01\uff21A", true, 0, "\ud802\udc00\ud801\udc01\uff21A", 0, 2, false): success [0ms]
+[03:06:42.980] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", false, 0, "\ud801\udc28\ud801\udc29", 0, 4, true): success [0ms]
+[03:06:42.981] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 0, "\ud801\udc00\ud801\udc01", 0, 4, true): success [0ms]
+[03:06:42.981] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 1, "??", 0, 2, true): success [0ms]
+[03:06:42.981] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 1, "?", 0, 1, false): success [0ms]
+[03:06:42.982] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 1, "??", 0, 2, false): success [0ms]
+[03:06:42.982] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", true, 4, "\uff21", 0, 1, true): success [0ms]
+[03:06:42.983] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", false, 4, "\uff21", 0, 1, false): success [0ms]
+[03:06:42.983] test RegionMatches.testRegionMatches("\ud801\udc28\ud801\udc29\uff41a", false, 4, "\uff41", 0, 1, true): success [0ms]
+[03:06:42.983] test RegionMatches.testRegionMatches("\u0130", false, 0, "i", 0, 1, false): success [0ms]
+[03:06:42.984] test RegionMatches.testRegionMatches("\u0130", true, 0, "i", 0, 1, true): success [0ms]
+[03:06:42.984] test RegionMatches.testRegionMatches("\u0130", false, 0, "I", 0, 1, false): success [0ms]
+[03:06:42.984] test RegionMatches.testRegionMatches("\u0130", true, 0, "I", 0, 1, true): success [0ms]
+[03:06:42.984] test RegionMatches.testRegionMatches("\u0131", false, 0, "i", 0, 1, false): success [0ms]
+[03:06:42.985] test RegionMatches.testRegionMatches("\u0131", true, 0, "i", 0, 1, true): success [0ms]
+[03:06:42.985] test RegionMatches.testRegionMatches("\u0131", false, 0, "I", 0, 1, false): success [0ms]
+[03:06:42.985] test RegionMatches.testRegionMatches("\u0131", true, 0, "I", 0, 1, true): success [0ms]
+[03:06:42.986] test RegionMatches.testRegionMatches("A", true, 0, "a", 0, 1, true): success [0ms]
+[03:06:42.986] test RegionMatches.testRegionMatches("B", true, 0, "b", 0, 1, true): success [0ms]
+[03:06:42.986] test RegionMatches.testRegionMatches("C", true, 0, "c", 0, 1, true): success [0ms]
+[03:06:42.986] test RegionMatches.testRegionMatches("D", true, 0, "d", 0, 1, true): success [0ms]
+[03:06:42.987] test RegionMatches.testRegionMatches("E", true, 0, "e", 0, 1, true): success [0ms]
+[03:06:42.987] test RegionMatches.testRegionMatches("F", true, 0, "f", 0, 1, true): success [0ms]
+[03:06:42.987] test RegionMatches.testRegionMatches("G", true, 0, "g", 0, 1, true): success [0ms]
+[03:06:42.988] test RegionMatches.testRegionMatches("H", true, 0, "h", 0, 1, true): success [0ms]
+[03:06:42.988] test RegionMatches.testRegionMatches("I", true, 0, "i", 0, 1, true): success [0ms]
+[03:06:42.988] test RegionMatches.testRegionMatches("J", true, 0, "j", 0, 1, true): success [0ms]
+[03:06:42.989] test RegionMatches.testRegionMatches("K", true, 0, "k", 0, 1, true): success [0ms]
+[03:06:42.989] test RegionMatches.testRegionMatches("L", true, 0, "l", 0, 1, true): success [0ms]
+[03:06:42.989] test RegionMatches.testRegionMatches("M", true, 0, "m", 0, 1, true): success [0ms]
+[03:06:42.989] test RegionMatches.testRegionMatches("N", true, 0, "n", 0, 1, true): success [0ms]
+[03:06:42.990] test RegionMatches.testRegionMatches("O", true, 0, "o", 0, 1, true): success [0ms]
+[03:06:42.990] test RegionMatches.testRegionMatches("P", true, 0, "p", 0, 1, true): success [0ms]
+[03:06:42.990] test RegionMatches.testRegionMatches("Q", true, 0, "q", 0, 1, true): success [0ms]
+[03:06:42.991] test RegionMatches.testRegionMatches("R", true, 0, "r", 0, 1, true): success [0ms]
+[03:06:42.991] test RegionMatches.testRegionMatches("S", true, 0, "s", 0, 1, true): success [0ms]
+[03:06:42.991] test RegionMatches.testRegionMatches("T", true, 0, "t", 0, 1, true): success [0ms]
+[03:06:42.991] test RegionMatches.testRegionMatches("U", true, 0, "u", 0, 1, true): success [0ms]
+[03:06:42.992] test RegionMatches.testRegionMatches("V", true, 0, "v", 0, 1, true): success [0ms]
+[03:06:42.992] test RegionMatches.testRegionMatches("W", true, 0, "w", 0, 1, true): success [0ms]
+[03:06:42.992] test RegionMatches.testRegionMatches("X", true, 0, "x", 0, 1, true): success [0ms]
+[03:06:42.992] test RegionMatches.testRegionMatches("Y", true, 0, "y", 0, 1, true): success [0ms]
+[03:06:42.993] test RegionMatches.testRegionMatches("Z", true, 0, "z", 0, 1, true): success [0ms]
+[03:06:42.993] test RegionMatches.testRegionMatches("\u00c0", true, 0, "\u00e0", 0, 1, true): success [0ms]
+[03:06:42.993] test RegionMatches.testRegionMatches("\u00c1", true, 0, "\u00e1", 0, 1, true): success [0ms]
+[03:06:42.993] test RegionMatches.testRegionMatches("\u00c2", true, 0, "\u00e2", 0, 1, true): success [0ms]
+[03:06:42.994] test RegionMatches.testRegionMatches("\u00c3", true, 0, "\u00e3", 0, 1, true): success [0ms]
+[03:06:42.994] test RegionMatches.testRegionMatches("\u00c4", true, 0, "\u00e4", 0, 1, true): success [0ms]
+[03:06:42.994] test RegionMatches.testRegionMatches("\u00c5", true, 0, "\u00e5", 0, 1, true): success [0ms]
+[03:06:42.995] test RegionMatches.testRegionMatches("\u00c6", true, 0, "\u00e6", 0, 1, true): success [0ms]
+[03:06:42.995] test RegionMatches.testRegionMatches("\u00c7", true, 0, "\u00e7", 0, 1, true): success [0ms]
+[03:06:42.995] test RegionMatches.testRegionMatches("\u00c8", true, 0, "\u00e8", 0, 1, true): success [0ms]
+[03:06:42.995] test RegionMatches.testRegionMatches("\u00c9", true, 0, "\u00e9", 0, 1, true): success [0ms]
+[03:06:42.996] test RegionMatches.testRegionMatches("\u00ca", true, 0, "\u00ea", 0, 1, true): success [0ms]
+[03:06:42.996] test RegionMatches.testRegionMatches("\u00cb", true, 0, "\u00eb", 0, 1, true): success [0ms]
+[03:06:42.996] test RegionMatches.testRegionMatches("\u00cc", true, 0, "\u00ec", 0, 1, true): success [0ms]
+[03:06:42.996] test RegionMatches.testRegionMatches("\u00cd", true, 0, "\u00ed", 0, 1, true): success [0ms]
+[03:06:42.996] test RegionMatches.testRegionMatches("\u00ce", true, 0, "\u00ee", 0, 1, true): success [0ms]
+[03:06:42.997] test RegionMatches.testRegionMatches("\u00cf", true, 0, "\u00ef", 0, 1, true): success [0ms]
+[03:06:42.997] test RegionMatches.testRegionMatches("\u00d0", true, 0, "\u00f0", 0, 1, true): success [0ms]
+[03:06:42.997] test RegionMatches.testRegionMatches("\u00d1", true, 0, "\u00f1", 0, 1, true): success [0ms]
+[03:06:42.997] test RegionMatches.testRegionMatches("\u00d2", true, 0, "\u00f2", 0, 1, true): success [0ms]
+[03:06:42.998] test RegionMatches.testRegionMatches("\u00d3", true, 0, "\u00f3", 0, 1, true): success [0ms]
+[03:06:42.998] test RegionMatches.testRegionMatches("\u00d4", true, 0, "\u00f4", 0, 1, true): success [0ms]
+[03:06:42.998] test RegionMatches.testRegionMatches("\u00d5", true, 0, "\u00f5", 0, 1, true): success [0ms]
+[03:06:42.998] test RegionMatches.testRegionMatches("\u00d6", true, 0, "\u00f6", 0, 1, true): success [0ms]
+[03:06:42.998] test RegionMatches.testRegionMatches("\u00d8", true, 0, "\u00f8", 0, 1, true): success [0ms]
+[03:06:42.999] test RegionMatches.testRegionMatches("\u00d9", true, 0, "\u00f9", 0, 1, true): success [0ms]
+[03:06:42.999] test RegionMatches.testRegionMatches("\u00da", true, 0, "\u00fa", 0, 1, true): success [0ms]
+[03:06:42.999] test RegionMatches.testRegionMatches("\u00db", true, 0, "\u00fb", 0, 1, true): success [0ms]
+[03:06:42.999] test RegionMatches.testRegionMatches("\u00dc", true, 0, "\u00fc", 0, 1, true): success [0ms]
+[03:06:42.999] test RegionMatches.testRegionMatches("\u00dd", true, 0, "\u00fd", 0, 1, true): success [0ms]
+[03:06:43.000] test RegionMatches.testRegionMatches("\u00de", true, 0, "\u00fe", 0, 1, true): success [0ms]
+
+===============================================
+java/lang/String/CompactString/RegionMatches.java
+Total tests run: 102, Passes: 102, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3513)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/1 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/RegionMatches.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/RegionMatches.java \\
+        -Dtest.main.class=RegionMatches \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/0/java/lang/String/CompactString/RegionMatches.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/RegionMatches.d/testng.1.jta java/lang/String/CompactString/RegionMatches.java false RegionMatches
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful

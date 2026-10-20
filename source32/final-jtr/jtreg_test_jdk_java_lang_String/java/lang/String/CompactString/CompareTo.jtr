@@ -1,0 +1,461 @@
+#Test Results (version 2)
+#Tue Oct 20 03:14:13 UTC 2026
+#-----testdescription-----
+$file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java
+$root=/workspace/sz-candidate/test/jdk
+keywords=bug8077559 bug8137326 othervm testng
+run=USER_SPECIFIED testng/othervm -XX\:+CompactStrings CompareTo\nUSER_SPECIFIED testng/othervm -XX\:-CompactStrings CompareTo\n
+source=CompareTo.java
+title=Tests Compact String.
+
+#-----environment-----
+
+#-----testresult-----
+description=file\:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java
+elapsed=1868 0\:00\:01.868
+end=Tue Oct 20 03\:14\:13 UTC 2026
+environment=regtest
+execStatus=Passed. Execution successful
+harnessLoaderMode=Classpath Loader
+harnessVariety=Full Bundle
+hostname=48479de81858
+javatestOS=Linux 6.18.55 (amd64)
+javatestVersion=6.0-ea+b24-2026-09-11-${BUILT_FROM_COMMIT}
+jtregVersion=jtreg 8.3 dev 1
+script=com.sun.javatest.regtest.exec.RegressionScript
+sections=script_messages build compile testng build testng
+start=Tue Oct 20 03\:14\:11 UTC 2026
+test=java/lang/String/CompactString/CompareTo.java
+testJDK=/workspace/sz-candidate/build/scans/images/jdk
+testJDK_OS=[name\:Linux,arch\:amd64,version\:6.18.55,family\:linux,simple_arch\:x64,simple_version\:6.18,processors\:4,maxMemory\:17179869184,maxSwap\:0]
+testJDK_os.arch=amd64
+testJDK_os.name=Linux
+testJDK_os.version=6.18.55
+totalTime=1873
+user.name=agent
+work=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString
+
+#section:script_messages
+----------messages:(4/280)----------
+JDK under test: /workspace/sz-candidate/build/scans/images/jdk
+openjdk version "27.0.2-internal" 2027-01-19
+OpenJDK Runtime Environment (build 27.0.2-internal-adhoc.agent.sz-candidate)
+OpenJDK 64-Bit Server VM (build 27.0.2-internal-adhoc.agent.sz-candidate, mixed mode, sharing)
+
+#section:build
+----------messages:(7/216)----------
+command: build CompareTo
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:11.865 UTC 2026
+Test directory:
+  compile: CompareTo
+finished: Tue Oct 20 03:14:12.169 UTC 2026
+elapsed time (seconds): 0.304
+result: Passed. Build successful
+
+#section:compile
+----------messages:(8/306)----------
+command: compile /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java
+reason: .class file out of date or does not exist
+started: Tue Oct 20 03:14:11.868 UTC 2026
+Mode: agentvm
+Agent id: 1
+Process id: 161274
+finished: Tue Oct 20 03:14:12.169 UTC 2026
+elapsed time (seconds): 0.301
+----------configuration:(13/822)----------
+Boot Layer (javac runtime environment)
+  class path: /workspace/toolchains/jtreg83/lib/javatest.jar 
+              /workspace/toolchains/jtreg83/lib/jtreg.jar 
+  patch:      java.base /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/patches/java.base
+
+javac compilation environment
+  source path: /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+  class path:  /workspace/sz-candidate/test/jdk/java/lang/String/CompactString
+               /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d
+               /workspace/toolchains/jtreg83/lib/testng-7.3.0.jar
+               /workspace/toolchains/jtreg83/lib/guice-5.1.0.jar
+               /workspace/toolchains/jtreg83/lib/jcommander-1.82.jar
+
+----------rerun:(38/3374)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/javac \\
+        -J-Xmx768m \\
+        -J-XX:MaxRAMPercentage=12.5 \\
+        -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -J-ea \\
+        -J-esa \\
+        -J-Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -J-Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -J-Dtest.compiler.opts= \\
+        -J-Dtest.java.opts= \\
+        -J-Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -J-Dtest.timeout.factor=4.0 \\
+        -J-Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -J-Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -J-Dtest.name=java/lang/String/CompactString/CompareTo.java \\
+        -J-Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -J-Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java \\
+        -J-Dtest.main.class=CompareTo \\
+        -J-Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -J-Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -J-Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -J-Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -d /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -sourcepath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -classpath /workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar /workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java
+result: Passed. Compilation successful
+
+#section:testng
+----------messages:(7/296)----------
+command: testng -XX:+CompactStrings CompareTo
+reason: User specified action: run testng/othervm -XX:+CompactStrings CompareTo 
+started: Tue Oct 20 03:14:12.169 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 161549
+finished: Tue Oct 20 03:14:12.940 UTC 2026
+elapsed time (seconds): 0.771
+----------configuration:(0/0)----------
+----------System.out:(110/9069)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:12.717] config CompactString.setUp(): success [0ms]
+[03:14:12.751] test CompareTo.testCompareTo("", "A", -1): success [13ms]
+[03:14:12.753] test CompareTo.testCompareTo("", "\uff21", -1): success [0ms]
+[03:14:12.754] test CompareTo.testCompareTo("A", "AB", -1): success [0ms]
+[03:14:12.756] test CompareTo.testCompareTo("A", "A", 0): success [1ms]
+[03:14:12.756] test CompareTo.testCompareTo("A", "a", -32): success [0ms]
+[03:14:12.757] test CompareTo.testCompareTo("A", "\uff21", -65248): success [0ms]
+[03:14:12.757] test CompareTo.testCompareTo("AB", "AB", 0): success [0ms]
+[03:14:12.758] test CompareTo.testCompareTo("AB", "Ab", -32): success [0ms]
+[03:14:12.760] test CompareTo.testCompareTo("AB", "AA", 1): success [1ms]
+[03:14:12.760] test CompareTo.testCompareTo("AB", "\uff21", -65248): success [0ms]
+[03:14:12.761] test CompareTo.testCompareTo("AB", "A\uff21", -65247): success [0ms]
+[03:14:12.761] test CompareTo.testCompareTo("ABCD", "ABC", 1): success [0ms]
+[03:14:12.762] test CompareTo.testCompareTo("ABCD", "AB", 2): success [0ms]
+[03:14:12.762] test CompareTo.testCompareTo("ABCD", "ABcD", -32): success [0ms]
+[03:14:12.763] test CompareTo.testCompareTo("ABCD", "ABCD\uff21\uff21", -2): success [0ms]
+[03:14:12.764] test CompareTo.testCompareTo("ABCD", "ABCD\uff21", -1): success [0ms]
+[03:14:12.764] test CompareTo.testCompareTo("ABCDEFGH", "ABCDEFG\uff21", -65241): success [0ms]
+[03:14:12.773] test CompareTo.testCompareTo("ABCDEFGH", "AB", 6): success [0ms]
+[03:14:12.774] test CompareTo.testCompareTo("ABCDEFGH", "ABCD", 4): success [0ms]
+[03:14:12.774] test CompareTo.testCompareTo("ABCDEFGH", "ABCDEFGH\uff21\uff21", -2): success [0ms]
+[03:14:12.775] test CompareTo.testCompareTo("\uff21", "\uff21", 0): success [0ms]
+[03:14:12.776] test CompareTo.testCompareTo("\uff21", "\uff22", -1): success [0ms]
+[03:14:12.778] test CompareTo.testCompareTo("\uff21", "\uff21\uff22", -1): success [1ms]
+[03:14:12.778] test CompareTo.testCompareTo("\uff21", "A", 65248): success [0ms]
+[03:14:12.779] test CompareTo.testCompareTo("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:12.780] test CompareTo.testCompareTo("\uff21\uff22", "\uff22", -1): success [0ms]
+[03:14:12.781] test CompareTo.testCompareTo("\uff21\uff22", "\uff21\uff21", 1): success [0ms]
+[03:14:12.782] test CompareTo.testCompareTo("\uff21\uff22", "A", 65248): success [1ms]
+[03:14:12.783] test CompareTo.testCompareTo("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:12.784] test CompareTo.testCompareTo("\uff21A", "A\uff21", 65248): success [0ms]
+[03:14:12.784] test CompareTo.testCompareTo("\uff21A", "\uff21\uff21", -65248): success [0ms]
+[03:14:12.785] test CompareTo.testCompareTo("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:12.786] test CompareTo.testCompareTo("A\uff21", "\uff21A", -65248): success [0ms]
+[03:14:12.787] test CompareTo.testCompareTo("A\uff21", "AA", 65248): success [0ms]
+[03:14:12.795] test CompareTo.testStringBuffer("", "A", -1): success [6ms]
+[03:14:12.795] test CompareTo.testStringBuffer("", "\uff21", -1): success [0ms]
+[03:14:12.796] test CompareTo.testStringBuffer("A", "AB", -1): success [0ms]
+[03:14:12.796] test CompareTo.testStringBuffer("A", "A", 0): success [0ms]
+[03:14:12.797] test CompareTo.testStringBuffer("A", "a", -32): success [0ms]
+[03:14:12.797] test CompareTo.testStringBuffer("A", "\uff21", -65248): success [0ms]
+[03:14:12.798] test CompareTo.testStringBuffer("AB", "AB", 0): success [0ms]
+[03:14:12.799] test CompareTo.testStringBuffer("AB", "Ab", -32): success [0ms]
+[03:14:12.800] test CompareTo.testStringBuffer("AB", "AA", 1): success [0ms]
+[03:14:12.801] test CompareTo.testStringBuffer("AB", "\uff21", -65248): success [0ms]
+[03:14:12.801] test CompareTo.testStringBuffer("AB", "A\uff21", -65247): success [0ms]
+[03:14:12.801] test CompareTo.testStringBuffer("ABCD", "ABC", 1): success [0ms]
+[03:14:12.802] test CompareTo.testStringBuffer("ABCD", "AB", 2): success [0ms]
+[03:14:12.803] test CompareTo.testStringBuffer("ABCD", "ABcD", -32): success [0ms]
+[03:14:12.803] test CompareTo.testStringBuffer("ABCD", "ABCD\uff21\uff21", -2): success [0ms]
+[03:14:12.804] test CompareTo.testStringBuffer("ABCD", "ABCD\uff21", -1): success [0ms]
+[03:14:12.806] test CompareTo.testStringBuffer("ABCDEFGH", "ABCDEFG\uff21", -65241): success [0ms]
+[03:14:12.806] test CompareTo.testStringBuffer("ABCDEFGH", "AB", 6): success [0ms]
+[03:14:12.807] test CompareTo.testStringBuffer("ABCDEFGH", "ABCD", 4): success [0ms]
+[03:14:12.808] test CompareTo.testStringBuffer("ABCDEFGH", "ABCDEFGH\uff21\uff21", -2): success [0ms]
+[03:14:12.809] test CompareTo.testStringBuffer("\uff21", "\uff21", 0): success [0ms]
+[03:14:12.809] test CompareTo.testStringBuffer("\uff21", "\uff22", -1): success [0ms]
+[03:14:12.809] test CompareTo.testStringBuffer("\uff21", "\uff21\uff22", -1): success [0ms]
+[03:14:12.810] test CompareTo.testStringBuffer("\uff21", "A", 65248): success [0ms]
+[03:14:12.810] test CompareTo.testStringBuffer("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:12.812] test CompareTo.testStringBuffer("\uff21\uff22", "\uff22", -1): success [1ms]
+[03:14:12.812] test CompareTo.testStringBuffer("\uff21\uff22", "\uff21\uff21", 1): success [0ms]
+[03:14:12.813] test CompareTo.testStringBuffer("\uff21\uff22", "A", 65248): success [0ms]
+[03:14:12.815] test CompareTo.testStringBuffer("\uff21A", "\uff21A", 0): success [1ms]
+[03:14:12.815] test CompareTo.testStringBuffer("\uff21A", "A\uff21", 65248): success [0ms]
+[03:14:12.816] test CompareTo.testStringBuffer("\uff21A", "\uff21\uff21", -65248): success [0ms]
+[03:14:12.816] test CompareTo.testStringBuffer("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:12.817] test CompareTo.testStringBuffer("A\uff21", "\uff21A", -65248): success [0ms]
+[03:14:12.818] test CompareTo.testStringBuffer("A\uff21", "AA", 65248): success [0ms]
+[03:14:12.820] test CompareTo.testStringBuilder("", "A", -1): success [1ms]
+[03:14:12.820] test CompareTo.testStringBuilder("", "\uff21", -1): success [0ms]
+[03:14:12.821] test CompareTo.testStringBuilder("A", "AB", -1): success [0ms]
+[03:14:12.821] test CompareTo.testStringBuilder("A", "A", 0): success [0ms]
+[03:14:12.822] test CompareTo.testStringBuilder("A", "a", -32): success [0ms]
+[03:14:12.822] test CompareTo.testStringBuilder("A", "\uff21", -65248): success [0ms]
+[03:14:12.822] test CompareTo.testStringBuilder("AB", "AB", 0): success [0ms]
+[03:14:12.823] test CompareTo.testStringBuilder("AB", "Ab", -32): success [0ms]
+[03:14:12.823] test CompareTo.testStringBuilder("AB", "AA", 1): success [0ms]
+[03:14:12.824] test CompareTo.testStringBuilder("AB", "\uff21", -65248): success [0ms]
+[03:14:12.824] test CompareTo.testStringBuilder("AB", "A\uff21", -65247): success [0ms]
+[03:14:12.824] test CompareTo.testStringBuilder("ABCD", "ABC", 1): success [0ms]
+[03:14:12.825] test CompareTo.testStringBuilder("ABCD", "AB", 2): success [0ms]
+[03:14:12.825] test CompareTo.testStringBuilder("ABCD", "ABcD", -32): success [0ms]
+[03:14:12.825] test CompareTo.testStringBuilder("ABCD", "ABCD\uff21\uff21", -2): success [0ms]
+[03:14:12.826] test CompareTo.testStringBuilder("ABCD", "ABCD\uff21", -1): success [0ms]
+[03:14:12.826] test CompareTo.testStringBuilder("ABCDEFGH", "ABCDEFG\uff21", -65241): success [0ms]
+[03:14:12.827] test CompareTo.testStringBuilder("ABCDEFGH", "AB", 6): success [0ms]
+[03:14:12.828] test CompareTo.testStringBuilder("ABCDEFGH", "ABCD", 4): success [0ms]
+[03:14:12.828] test CompareTo.testStringBuilder("ABCDEFGH", "ABCDEFGH\uff21\uff21", -2): success [0ms]
+[03:14:12.829] test CompareTo.testStringBuilder("\uff21", "\uff21", 0): success [0ms]
+[03:14:12.829] test CompareTo.testStringBuilder("\uff21", "\uff22", -1): success [0ms]
+[03:14:12.829] test CompareTo.testStringBuilder("\uff21", "\uff21\uff22", -1): success [0ms]
+[03:14:12.830] test CompareTo.testStringBuilder("\uff21", "A", 65248): success [0ms]
+[03:14:12.831] test CompareTo.testStringBuilder("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:12.831] test CompareTo.testStringBuilder("\uff21\uff22", "\uff22", -1): success [0ms]
+[03:14:12.832] test CompareTo.testStringBuilder("\uff21\uff22", "\uff21\uff21", 1): success [0ms]
+[03:14:12.834] test CompareTo.testStringBuilder("\uff21\uff22", "A", 65248): success [0ms]
+[03:14:12.835] test CompareTo.testStringBuilder("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:12.835] test CompareTo.testStringBuilder("\uff21A", "A\uff21", 65248): success [0ms]
+[03:14:12.836] test CompareTo.testStringBuilder("\uff21A", "\uff21\uff21", -65248): success [0ms]
+[03:14:12.836] test CompareTo.testStringBuilder("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:12.836] test CompareTo.testStringBuilder("A\uff21", "\uff21A", -65248): success [0ms]
+[03:14:12.836] test CompareTo.testStringBuilder("A\uff21", "AA", 65248): success [0ms]
+
+===============================================
+java/lang/String/CompactString/CompareTo.java
+Total tests run: 102, Passes: 102, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3473)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/CompareTo.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java \\
+        -Dtest.main.class=CompareTo \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:+CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/CompareTo.d/testng.0.jta java/lang/String/CompactString/CompareTo.java false CompareTo
+result: Passed. Execution successful
+
+#section:build
+----------messages:(5/179)----------
+command: build CompareTo
+reason: Named class compiled on demand
+started: Tue Oct 20 03:14:12.941 UTC 2026
+finished: Tue Oct 20 03:14:12.942 UTC 2026
+elapsed time (seconds): 0.001
+result: Passed. All files up to date
+
+#section:testng
+----------messages:(7/296)----------
+command: testng -XX:-CompactStrings CompareTo
+reason: User specified action: run testng/othervm -XX:-CompactStrings CompareTo 
+started: Tue Oct 20 03:14:12.942 UTC 2026
+Mode: othervm [/othervm specified]
+Process id: 161600
+finished: Tue Oct 20 03:14:13.720 UTC 2026
+elapsed time (seconds): 0.778
+----------configuration:(0/0)----------
+----------System.out:(110/9069)*----------
+====== The platform's default charset is "UTF-8", we're using "UTF-8" for testing.
+[03:14:13.473] config CompactString.setUp(): success [0ms]
+[03:14:13.512] test CompareTo.testCompareTo("", "A", -1): success [13ms]
+[03:14:13.514] test CompareTo.testCompareTo("", "\uff21", -1): success [0ms]
+[03:14:13.514] test CompareTo.testCompareTo("A", "AB", -1): success [0ms]
+[03:14:13.514] test CompareTo.testCompareTo("A", "A", 0): success [0ms]
+[03:14:13.515] test CompareTo.testCompareTo("A", "a", -32): success [0ms]
+[03:14:13.515] test CompareTo.testCompareTo("A", "\uff21", -65248): success [0ms]
+[03:14:13.516] test CompareTo.testCompareTo("AB", "AB", 0): success [0ms]
+[03:14:13.516] test CompareTo.testCompareTo("AB", "Ab", -32): success [0ms]
+[03:14:13.516] test CompareTo.testCompareTo("AB", "AA", 1): success [0ms]
+[03:14:13.517] test CompareTo.testCompareTo("AB", "\uff21", -65248): success [0ms]
+[03:14:13.517] test CompareTo.testCompareTo("AB", "A\uff21", -65247): success [0ms]
+[03:14:13.518] test CompareTo.testCompareTo("ABCD", "ABC", 1): success [0ms]
+[03:14:13.520] test CompareTo.testCompareTo("ABCD", "AB", 2): success [0ms]
+[03:14:13.520] test CompareTo.testCompareTo("ABCD", "ABcD", -32): success [0ms]
+[03:14:13.521] test CompareTo.testCompareTo("ABCD", "ABCD\uff21\uff21", -2): success [0ms]
+[03:14:13.521] test CompareTo.testCompareTo("ABCD", "ABCD\uff21", -1): success [0ms]
+[03:14:13.521] test CompareTo.testCompareTo("ABCDEFGH", "ABCDEFG\uff21", -65241): success [0ms]
+[03:14:13.522] test CompareTo.testCompareTo("ABCDEFGH", "AB", 6): success [0ms]
+[03:14:13.523] test CompareTo.testCompareTo("ABCDEFGH", "ABCD", 4): success [0ms]
+[03:14:13.523] test CompareTo.testCompareTo("ABCDEFGH", "ABCDEFGH\uff21\uff21", -2): success [0ms]
+[03:14:13.524] test CompareTo.testCompareTo("\uff21", "\uff21", 0): success [0ms]
+[03:14:13.525] test CompareTo.testCompareTo("\uff21", "\uff22", -1): success [0ms]
+[03:14:13.525] test CompareTo.testCompareTo("\uff21", "\uff21\uff22", -1): success [0ms]
+[03:14:13.526] test CompareTo.testCompareTo("\uff21", "A", 65248): success [0ms]
+[03:14:13.527] test CompareTo.testCompareTo("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:13.527] test CompareTo.testCompareTo("\uff21\uff22", "\uff22", -1): success [0ms]
+[03:14:13.528] test CompareTo.testCompareTo("\uff21\uff22", "\uff21\uff21", 1): success [0ms]
+[03:14:13.529] test CompareTo.testCompareTo("\uff21\uff22", "A", 65248): success [0ms]
+[03:14:13.530] test CompareTo.testCompareTo("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:13.535] test CompareTo.testCompareTo("\uff21A", "A\uff21", 65248): success [0ms]
+[03:14:13.536] test CompareTo.testCompareTo("\uff21A", "\uff21\uff21", -65248): success [0ms]
+[03:14:13.537] test CompareTo.testCompareTo("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:13.537] test CompareTo.testCompareTo("A\uff21", "\uff21A", -65248): success [0ms]
+[03:14:13.538] test CompareTo.testCompareTo("A\uff21", "AA", 65248): success [0ms]
+[03:14:13.541] test CompareTo.testStringBuffer("", "A", -1): success [2ms]
+[03:14:13.544] test CompareTo.testStringBuffer("", "\uff21", -1): success [2ms]
+[03:14:13.544] test CompareTo.testStringBuffer("A", "AB", -1): success [0ms]
+[03:14:13.544] test CompareTo.testStringBuffer("A", "A", 0): success [0ms]
+[03:14:13.545] test CompareTo.testStringBuffer("A", "a", -32): success [0ms]
+[03:14:13.545] test CompareTo.testStringBuffer("A", "\uff21", -65248): success [0ms]
+[03:14:13.546] test CompareTo.testStringBuffer("AB", "AB", 0): success [0ms]
+[03:14:13.546] test CompareTo.testStringBuffer("AB", "Ab", -32): success [0ms]
+[03:14:13.546] test CompareTo.testStringBuffer("AB", "AA", 1): success [0ms]
+[03:14:13.547] test CompareTo.testStringBuffer("AB", "\uff21", -65248): success [0ms]
+[03:14:13.547] test CompareTo.testStringBuffer("AB", "A\uff21", -65247): success [0ms]
+[03:14:13.547] test CompareTo.testStringBuffer("ABCD", "ABC", 1): success [0ms]
+[03:14:13.548] test CompareTo.testStringBuffer("ABCD", "AB", 2): success [0ms]
+[03:14:13.548] test CompareTo.testStringBuffer("ABCD", "ABcD", -32): success [0ms]
+[03:14:13.548] test CompareTo.testStringBuffer("ABCD", "ABCD\uff21\uff21", -2): success [0ms]
+[03:14:13.549] test CompareTo.testStringBuffer("ABCD", "ABCD\uff21", -1): success [0ms]
+[03:14:13.549] test CompareTo.testStringBuffer("ABCDEFGH", "ABCDEFG\uff21", -65241): success [0ms]
+[03:14:13.549] test CompareTo.testStringBuffer("ABCDEFGH", "AB", 6): success [0ms]
+[03:14:13.549] test CompareTo.testStringBuffer("ABCDEFGH", "ABCD", 4): success [0ms]
+[03:14:13.550] test CompareTo.testStringBuffer("ABCDEFGH", "ABCDEFGH\uff21\uff21", -2): success [0ms]
+[03:14:13.550] test CompareTo.testStringBuffer("\uff21", "\uff21", 0): success [0ms]
+[03:14:13.550] test CompareTo.testStringBuffer("\uff21", "\uff22", -1): success [0ms]
+[03:14:13.551] test CompareTo.testStringBuffer("\uff21", "\uff21\uff22", -1): success [0ms]
+[03:14:13.552] test CompareTo.testStringBuffer("\uff21", "A", 65248): success [0ms]
+[03:14:13.553] test CompareTo.testStringBuffer("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:13.553] test CompareTo.testStringBuffer("\uff21\uff22", "\uff22", -1): success [0ms]
+[03:14:13.554] test CompareTo.testStringBuffer("\uff21\uff22", "\uff21\uff21", 1): success [0ms]
+[03:14:13.554] test CompareTo.testStringBuffer("\uff21\uff22", "A", 65248): success [0ms]
+[03:14:13.555] test CompareTo.testStringBuffer("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:13.556] test CompareTo.testStringBuffer("\uff21A", "A\uff21", 65248): success [0ms]
+[03:14:13.556] test CompareTo.testStringBuffer("\uff21A", "\uff21\uff21", -65248): success [0ms]
+[03:14:13.557] test CompareTo.testStringBuffer("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:13.557] test CompareTo.testStringBuffer("A\uff21", "\uff21A", -65248): success [0ms]
+[03:14:13.557] test CompareTo.testStringBuffer("A\uff21", "AA", 65248): success [0ms]
+[03:14:13.559] test CompareTo.testStringBuilder("", "A", -1): success [1ms]
+[03:14:13.560] test CompareTo.testStringBuilder("", "\uff21", -1): success [0ms]
+[03:14:13.560] test CompareTo.testStringBuilder("A", "AB", -1): success [0ms]
+[03:14:13.561] test CompareTo.testStringBuilder("A", "A", 0): success [0ms]
+[03:14:13.561] test CompareTo.testStringBuilder("A", "a", -32): success [0ms]
+[03:14:13.562] test CompareTo.testStringBuilder("A", "\uff21", -65248): success [0ms]
+[03:14:13.562] test CompareTo.testStringBuilder("AB", "AB", 0): success [0ms]
+[03:14:13.563] test CompareTo.testStringBuilder("AB", "Ab", -32): success [0ms]
+[03:14:13.563] test CompareTo.testStringBuilder("AB", "AA", 1): success [0ms]
+[03:14:13.564] test CompareTo.testStringBuilder("AB", "\uff21", -65248): success [0ms]
+[03:14:13.564] test CompareTo.testStringBuilder("AB", "A\uff21", -65247): success [0ms]
+[03:14:13.565] test CompareTo.testStringBuilder("ABCD", "ABC", 1): success [0ms]
+[03:14:13.565] test CompareTo.testStringBuilder("ABCD", "AB", 2): success [0ms]
+[03:14:13.566] test CompareTo.testStringBuilder("ABCD", "ABcD", -32): success [0ms]
+[03:14:13.566] test CompareTo.testStringBuilder("ABCD", "ABCD\uff21\uff21", -2): success [0ms]
+[03:14:13.566] test CompareTo.testStringBuilder("ABCD", "ABCD\uff21", -1): success [0ms]
+[03:14:13.567] test CompareTo.testStringBuilder("ABCDEFGH", "ABCDEFG\uff21", -65241): success [0ms]
+[03:14:13.567] test CompareTo.testStringBuilder("ABCDEFGH", "AB", 6): success [0ms]
+[03:14:13.568] test CompareTo.testStringBuilder("ABCDEFGH", "ABCD", 4): success [0ms]
+[03:14:13.568] test CompareTo.testStringBuilder("ABCDEFGH", "ABCDEFGH\uff21\uff21", -2): success [0ms]
+[03:14:13.568] test CompareTo.testStringBuilder("\uff21", "\uff21", 0): success [0ms]
+[03:14:13.569] test CompareTo.testStringBuilder("\uff21", "\uff22", -1): success [0ms]
+[03:14:13.571] test CompareTo.testStringBuilder("\uff21", "\uff21\uff22", -1): success [0ms]
+[03:14:13.571] test CompareTo.testStringBuilder("\uff21", "A", 65248): success [0ms]
+[03:14:13.572] test CompareTo.testStringBuilder("\uff21\uff22", "\uff21\uff22", 0): success [0ms]
+[03:14:13.572] test CompareTo.testStringBuilder("\uff21\uff22", "\uff22", -1): success [0ms]
+[03:14:13.572] test CompareTo.testStringBuilder("\uff21\uff22", "\uff21\uff21", 1): success [0ms]
+[03:14:13.573] test CompareTo.testStringBuilder("\uff21\uff22", "A", 65248): success [0ms]
+[03:14:13.573] test CompareTo.testStringBuilder("\uff21A", "\uff21A", 0): success [0ms]
+[03:14:13.574] test CompareTo.testStringBuilder("\uff21A", "A\uff21", 65248): success [0ms]
+[03:14:13.574] test CompareTo.testStringBuilder("\uff21A", "\uff21\uff21", -65248): success [0ms]
+[03:14:13.574] test CompareTo.testStringBuilder("A\uff21", "A\uff21", 0): success [0ms]
+[03:14:13.575] test CompareTo.testStringBuilder("A\uff21", "\uff21A", -65248): success [0ms]
+[03:14:13.575] test CompareTo.testStringBuilder("A\uff21", "AA", 65248): success [0ms]
+
+===============================================
+java/lang/String/CompactString/CompareTo.java
+Total tests run: 102, Passes: 102, Failures: 0, Skips: 0
+===============================================
+
+----------System.err:(1/15)----------
+STATUS:Passed.
+----------rerun:(39/3473)*----------
+cd /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/scratch/0 && \\
+DOCS_JDK_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/docs \\
+HOME=/home/agent \\
+LANG=C.UTF-8 \\
+LC_ALL=C.UTF-8 \\
+LC_CTYPE=C.UTF-8 \\
+PATH=/bin:/usr/bin:/usr/sbin \\
+TEST_IMAGE_DIR=/workspace/sz-candidate/build/scans/images/test \\
+XDG_CACHE_HOME=/workspace/toolchains/cache \\
+_JVM_DWARF_PATH=/workspace/sz-candidate/build/scans/images/symbols \\
+CLASSPATH=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString:/workspace/toolchains/jtreg83/lib/testng-7.3.0.jar:/workspace/toolchains/jtreg83/lib/guice-5.1.0.jar:/workspace/toolchains/jtreg83/lib/jcommander-1.82.jar:/workspace/toolchains/jtreg83/lib/javatest.jar:/workspace/toolchains/jtreg83/lib/jtreg.jar \\
+    /workspace/sz-candidate/build/scans/images/jdk/bin/java \\
+        -Dtest.vm.opts='-Xmx768m -XX:MaxRAMPercentage=12.5 -Dtest.boot.jdk=/workspace/toolchains/jdk27 -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -ea -esa' \\
+        -Dtest.tool.vm.opts='-J-Xmx768m -J-XX:MaxRAMPercentage=12.5 -J-Dtest.boot.jdk=/workspace/toolchains/jdk27 -J-Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp -J-ea -J-esa' \\
+        -Dtest.compiler.opts= \\
+        -Dtest.java.opts= \\
+        -Dtest.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dcompile.jdk=/workspace/sz-candidate/build/scans/images/jdk \\
+        -Dtest.timeout.factor=4.0 \\
+        -Dtest.nativepath=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -Dtest.root=/workspace/sz-candidate/test/jdk \\
+        -Dtest.name=java/lang/String/CompactString/CompareTo.java \\
+        -Dtest.verbose=Verbose[p=SUMMARY,f=FULL,e=FULL,t=false,m=false] \\
+        -Dtest.file=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString/CompareTo.java \\
+        -Dtest.main.class=CompareTo \\
+        -Dtest.src=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.src.path=/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Dtest.classes=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -Dtest.class.path=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d \\
+        -Dtest.class.path.prefix=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/classes/1/java/lang/String/CompactString/CompareTo.d:/workspace/sz-candidate/test/jdk/java/lang/String/CompactString \\
+        -Xmx768m \\
+        -XX:MaxRAMPercentage=12.5 \\
+        -Dtest.boot.jdk=/workspace/toolchains/jdk27 \\
+        -Djava.io.tmpdir=/workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/tmp \\
+        -ea \\
+        -esa \\
+        -Djava.library.path=/workspace/sz-candidate/build/scans/images/test/jdk/jtreg/native \\
+        -XX:-CompactStrings \\
+        com.sun.javatest.regtest.agent.MainWrapper /workspace/sz-candidate/build/scans/test-support/jtreg_test_jdk_java_lang_String/java/lang/String/CompactString/CompareTo.d/testng.1.jta java/lang/String/CompactString/CompareTo.java false CompareTo
+result: Passed. Execution successful
+
+
+test result: Passed. Execution successful
