@@ -50,6 +50,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import jdk.internal.vm.annotation.DontInline;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
@@ -912,6 +913,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             return zoneStrings;
         }
 
+        return copyZoneStrings(zoneStrings);
+    }
+
+    // Keep this allocation-heavy loop outside clone's small shared-symbol path.
+    @DontInline
+    private static String[][] copyZoneStrings(String[][] zoneStrings) {
         int len = zoneStrings.length;
         String[][] aCopy = new String[len][];
         for (int i = 0; i < len; i++) {
