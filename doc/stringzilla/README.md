@@ -19,6 +19,22 @@ additional shared library is required.
 | C2 | Reverse-search leaf calls; existing JDK forward-search, forward BMP-character and equality intrinsics |
 | JNI fallback | The same kernels and bounds through JVM entry points |
 
+Latin-1 byte-set scans use a C1/C2 leaf bridge and JNI in the interpreter.
+They reuse AVX2 on both x86 SIMD backends and NEON on AArch64; serial backends
+retain Java scanning. After a 32-byte scalar probe, at least 256 remaining
+bytes are required. Each native window is bounded to 64 KiB and Java polls
+between windows. Short inputs and early matches avoid native setup and
+`StringZilla` initialization.
+The scalar probe shares a loop with short-input scanning; private long
+continuations keep native dispatch outside the common helpers.
+
+The line-separator set contains only CR and LF. The inverted trim set accepts
+exactly bytes above `0x20`; the inverted Character whitespace set excludes
+`0x09`–`0x0D` and `0x1C`–`0x20`. NEL (`0x85`) and NBSP (`0xA0`) are not
+Character whitespace. UTF-16 continues to use its existing code-point scanners.
+Line allocation, CRLF consumption, laziness and spliterator splitting stay in
+Java. [Latin-1 scan qualification](LATIN1-SCANS.md) records the measured scope.
+
 C1 reverse bridges carry the caller's tier explicitly, preserving C1 policy when
 the bridge compiles in C2. Scalar windows and eligible mixed-coder continuations
 avoid the bridge. Small public reverse-search wrappers are forced inline so C2
@@ -223,7 +239,7 @@ no handwritten SIMD instructions.
 | Prefix/suffix/region checks, sequence comparison, regex | Existing range-mismatch, sequence-access and specialized implementations |
 | Ordering, hashing, case conversion, encoding | Existing comparison, Unicode and charset semantics |
 | Copy/mismatch, inflate/compress, builder mutations | Existing intrinsics, allocation and write barriers |
-| Lines, trim/strip, blank and indent helpers | Existing CR/LF and Unicode scanners |
+| Lines, trim/strip, blank and indent helpers | Eligible Latin-1 byte-set scans; existing UTF-16 Unicode scanners |
 
 ## Vendoring
 
