@@ -202,6 +202,13 @@ public class StringZillaScans {
         }
         for (String s : new String[]{"", "\n", "\r", "\r\n", "\n\r", "\r\n\r\n", "a\rb\nc\r\nd",
                                      "\u000b\u000c\u0085\u2028\u2029", "\r\r\n\n"}) lines(s);
+        for (int n : new int[]{31, 32, 33}) {
+            String clean = "x".repeat(1024);
+            String pad = " ".repeat(n);
+            check(pad + clean);
+            check(clean + pad);
+            lines("x".repeat(n) + "\r\n" + clean);
+        }
         // Warm all public producers so compiled tiers execute the same checks.
         String pad = " ".repeat(1024);
         for (int i = 0; i < 12000; i++) {
