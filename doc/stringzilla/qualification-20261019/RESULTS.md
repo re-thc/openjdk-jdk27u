@@ -252,12 +252,16 @@ with the final [macOS release log](ordinary-ci-39280914015-macos-release.tar.gz)
 and its [receipt](ordinary-ci-macos-release.json). Both Apple builds use Xcode
 26.6 and Apple clang 21; both MSVC builds verify toolset 14.44.
 
-All twenty-four Linux and six Windows tier1 groups pass, with full checkout
+All twenty-four Linux and nine Windows tier1 groups pass, with full checkout
 proofs and test tables in the [current summary](ci7048-test-summary.json).
-The first four Windows groups have a separate
+The nine Windows groups have a separate
 [log checkpoint](ordinary-ci-39280914015-windows-progress.tar.gz) and
-[checksum/count receipt](ordinary-ci-windows-progress.json). The remaining
-Windows groups and all twelve newly created macOS groups are running or queued.
+[checksum/count receipt](ordinary-ci-windows-progress.json): 4,493 passed
+descriptions, 238 skipped/excluded and zero failures or errors. All fourteen
+[Windows StringZilla descriptions](ci7048-stringzilla-windows.json) explicitly
+pass, including forced tiers, physical bounds, equality, native kernels and
+header layouts. The remaining Windows GC/runtime/langtools groups and all
+twelve macOS groups are running or queued.
 No pending job is counted as passed. The same existing run remains the
 unfinished qualification gate; no duplicate is dispatched. The live run link
 provides subsequent status.

@@ -1,5 +1,5 @@
 {
-  "job_metadata_observed_at": "2026-10-20T06:45:18.321107+00:00",
+  "job_metadata_observed_at": "2026-10-20T07:09:25.402511+00:00",
   "run_id": 39280914015,
   "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
   "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
@@ -9,36 +9,18 @@
   "test_matrices_not_yet_created": [],
   "configured_stage_gate": "macOS/Windows builds follow successful Linux matrices;their tests follow their builds",
   "created_test_groups": 48,
-  "collected_test_groups": 30,
+  "collected_test_groups": 33,
   "missing": [
-    {
-      "job_id": 118444402222,
-      "name": "windows-x64 / test (hs/tier1 compiler part 3)",
-      "status": "in_progress",
-      "conclusion": null
-    },
-    {
-      "job_id": 118444402233,
-      "name": "windows-x64 / test (jdk/tier1 part 1)",
-      "status": "in_progress",
-      "conclusion": null
-    },
     {
       "job_id": 118444402234,
       "name": "windows-x64 / test (hs/tier1 gc)",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "job_id": 118444402260,
-      "name": "windows-x64 / test (hs/tier1 compiler part 2)",
       "status": "in_progress",
       "conclusion": null
     },
     {
       "job_id": 118444402278,
       "name": "windows-x64 / test (hs/tier1 runtime)",
-      "status": "queued",
+      "status": "in_progress",
       "conclusion": null
     },
     {
@@ -121,11 +103,11 @@
     }
   ],
   "collected_jtreg_counts": {
-    "total": 23854,
-    "pass": 22652,
+    "total": 26149,
+    "pass": 24855,
     "fail": 0,
     "error": 0,
-    "skip": 1202
+    "skip": 1294
   },
   "records": [
     {
@@ -876,6 +858,84 @@
           "fail": 0,
           "error": 0,
           "skip": 97
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402222,
+      "name": "windows-x64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:09:13Z",
+      "completed_at": "2026-10-20T07:04:26Z",
+      "log_bytes": 562377,
+      "log_sha256": "d6f49060558bee064dac7754127b742e483b52702efa7ac3a23e304f1daf906f",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 790; excluded: 1; did not meet platform requirements: 26"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_3",
+          "total": 817,
+          "pass": 790,
+          "fail": 0,
+          "error": 0,
+          "skip": 27
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402233,
+      "name": "windows-x64 / test (jdk/tier1 part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:23:34Z",
+      "completed_at": "2026-10-20T06:50:47Z",
+      "log_bytes": 737683,
+      "log_sha256": "39baaf48957d045234a46e08d9b7e9620c8009674e36cfae6ad81c424a1741cf",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 1,136; excluded: 3; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 42"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part1",
+          "total": 1189,
+          "pass": 1136,
+          "fail": 0,
+          "error": 0,
+          "skip": 53
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402260,
+      "name": "windows-x64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:42:20Z",
+      "completed_at": "2026-10-20T06:55:14Z",
+      "log_bytes": 242126,
+      "log_sha256": "f109f9d3e7c7e02bea8ba5a9bc0bd5cde82db70962e57e30225cac8ba8cc6ee8",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 277; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 10"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
+          "total": 289,
+          "pass": 277,
+          "fail": 0,
+          "error": 0,
+          "skip": 12
         }
       ],
       "test_success_marker": true,
