@@ -3,13 +3,18 @@
 Product: [`7048d6f2c74e25737850789812da063900ec18c0`](https://github.com/re-thc/openjdk-jdk27u/commit/7048d6f2c74e25737850789812da063900ec18c0).
 Independent original: `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`.
 
-**Performance and native qualification are complete; ordinary CI is pending.**
+**Not ready to merge: five required macOS tier1 groups never executed.**
 Final measurements complete all 98 planned triplets on serial, AVX2, AVX-512,
 NEON and MSVC, with all seventeen loss-table rows retained. Fourteen local,
 thirteen Windows and ten ARM targeted test descriptions pass. Both native jobs
-finish successfully. Retain the corrected implementation and its documented
-tradeoffs; keep PR4 in draft until the existing ordinary PR integration CI finishes.
-Preceding measurements retain their original revisions.
+finish successfully. Ordinary integration CI passes all eight builds and 43 of
+48 tier1 groups. Its original attempt and one bounded recovery both terminate
+with the same five macOS groups cancelled before runner assignment or any step.
+Retain the corrected implementation and documented tradeoffs, but keep PR4 in
+draft until those groups actually execute and their results are reviewed.
+Preceding measurements retain their original revisions. The
+[continuation](CONTINUATION.md) identifies the five missing groups and the
+bounded next action; no further performance campaign is needed.
 
 ## Implementation and correctness
 
@@ -225,65 +230,60 @@ The shipped current Windows and ARM `StringLatin1` instruction listings match
 the measured Linux image, including the final range guard. No duplicate native
 run or additional performance campaign is needed.
 
-Ordinary CI's Prepare and all four Linux release/fastdebug builds on x64 and
-ARM pass. The [build receipt](ci7048-builds-verified.json) binds their checkout,
-bundle/profile checks and complete retained logs. The
-[complete Linux receipt](ci7048-linux-verified.json) and
-[tier1 tables](ci7048-test-summary.json) record all twenty-four Linux groups
-passing: 20,362 passed descriptions, 1,056 skipped/excluded, zero failures or
-errors. Every group log and full checkout SHA is retained. The ordinary suite
-explicitly passes fourteen [x64 StringZilla descriptions](ci7048-stringzilla-x64.json)
-and eleven [ARM descriptions](ci7048-stringzilla-arm.json), including native
-kernels, header layouts and defensive bounds. These merge-integration tests
-remain distinct from the exact-product native qualification above.
-The [complete Linux log archive](ordinary-ci-39280914015-linux.tar.gz) contains
-Prepare, four builds and twenty-four test-group logs with metadata and audit
-sources. Its [size and checksum](ordinary-ci-linux-archive.json) bind the saved
-bytes. It records the completed Linux phase, not the unfinished full CI run.
+The [terminal ordinary-CI outcome](ci7048-outcome.json) records all eight
+release/fastdebug builds passing, including bundle and development-profile
+checks. Both Apple builds use Xcode 26.6 and Apple clang 21; both MSVC builds
+verify toolset 14.44. Prepare also passes. The
+[workflow scope](ci7048-workflow-scope.json) requires twelve tier1 groups on each
+of four platforms, for forty-eight groups in total.
 
-The [full workflow scope](ci7048-workflow-scope.json) corrects earlier wording
-that described only the Linux phase. Prepare's empty platform selector includes
-all four platforms. The accepted workflow plans eight builds and forty-eight
-tier1 groups: Linux x64/ARM first, then macOS ARM and Windows x64 after both
-Linux test matrices succeed. All eight release/fastdebug builds now pass. The three earlier
-[Windows/macOS build logs](ordinary-ci-39280914015-build-checkpoint.tar.gz)
-and their [receipt](ordinary-ci-build-checkpoint.json) are retained, together
-with the final [macOS release log](ordinary-ci-39280914015-macos-release.tar.gz)
-and its [receipt](ordinary-ci-macos-release.json). Both Apple builds use Xcode
-26.6 and Apple clang 21; both MSVC builds verify toolset 14.44.
+| Platform | Executed groups passed / planned | Passed descriptions | Skipped/excluded | Failed / error |
+|---|---:|---:|---:|---:|
+| Linux x64 | 12 / 12 | 10,191 | 518 | 0 / 0 |
+| Linux ARM | 12 / 12 | 10,171 | 538 | 0 / 0 |
+| Windows x64 | 12 / 12 | 10,123 | 586 | 0 / 0 |
+| macOS ARM | 7 / 12 | 8,388 | 508 | 0 / 0 |
+| Collected total | 43 / 48 | 38,873 | 2,150 | 0 / 0 |
 
-All twenty-four Linux and twelve Windows tier1 groups pass, with full checkout
-proofs and test tables in the [current summary](ci7048-test-summary.json).
-The complete Windows phase has a separate
-[log archive](ordinary-ci-39280914015-windows-progress.tar.gz) and
-[checksum/count receipt](ordinary-ci-windows-progress.json): 10,123 passed
-descriptions, 586 skipped/excluded and zero failures or errors. All fourteen
-[Windows StringZilla descriptions](ci7048-stringzilla-windows.json) explicitly
-pass, including forced tiers, physical bounds, equality, native kernels and
-header layouts. Seven macOS groups also pass (JDK parts 1/2, GC, serviceability,
-runtime, langtools and compiler part 2), with 8,388 passed descriptions, 508
-skipped/excluded and zero test failures or errors. Their
-[complete logs](ordinary-ci-39280914015-macos-progress.tar.gz) and
-[checksum/count receipt](ordinary-ci-macos-progress.json) are retained. All four
-[StringZilla JDK descriptions](ci7048-stringzilla-macos.json) pass on Apple ARM,
-including native kernels and header layouts.
+These are the retained make/jtreg table counts across groups and variants,
+rather than a count of unique test methods. The
+[test summary](ci7048-test-summary.json) binds every executed group to its full
+checkout SHA and complete log. Explicit StringZilla passes include
+[fourteen Linux x64](ci7048-stringzilla-x64.json),
+[eleven Linux ARM](ci7048-stringzilla-arm.json),
+[fourteen Windows](ci7048-stringzilla-windows.json) and
+[four macOS JDK descriptions](ci7048-stringzilla-macos.json). macOS compiler
+part 3 did not execute; its remaining StringZilla descriptions stay unqualified.
 
-The [first attempt](ci7048-attempt1-terminal-run.json) ended in failure after
-52 successful jobs and five macOS cancellations before runner assignment. None
-of those five executed a step or test. Its [terminal job records](ci7048-attempt1-terminal-jobs.json)
-are retained. The early [single-job retry](ci7048-compiler1-rerun-block.json)
-was refused while the workflow remained active; no retry started then.
+Both the [original attempt](ci7048-attempt1-terminal-run.json) and the
+[bounded recovery](ci7048-attempt2-terminal-run.json) end in failure. The
+[original jobs](ci7048-attempt1-terminal-jobs.json) and
+[recovery jobs](ci7048-attempt2-terminal-jobs.json) show the same five cancelled
+macOS groups: JDK part 3, library, HotSpot common and compiler parts 1/3. Each
+has runner ID zero and no executed steps in both attempts. No cancellation is
+counted as a passing test. The records establish absent execution; they do not
+identify the underlying GitHub scheduling cause.
 
-After the original run completed, GitHub accepted one bounded
-[failed-job-only recovery](ci7048-recovery-request.json) in the same run at the
-same source. Attempt 2 queues only the five missing macOS groups. Its
-[raw latest jobs](ci7048-latest-jobs.json) give the 52 carried-forward successes
-new IDs with unchanged execution times, runners and steps. The explicit
-[provenance ledger](ci7048-job-provenance.json) binds those statuses to the
-original execution records and logs; they are not represented as newly run.
-Successful builds/tests and performance measurements were not repeated.
-The remaining compiler parts 1/3, common, JDK part 3 and library groups still
-need execution and review. No pending or cancelled job is counted as passed.
+The [accepted recovery request](ci7048-recovery-request.json) reruns only those
+five missing groups in the same existing run. GitHub gives the 52 carried-forward
+successes new IDs with unchanged original execution times, runners and steps.
+The explicit [provenance ledger](ci7048-job-provenance.json) maps these statuses
+to the original executions and logs. No successful build, test group or
+performance measurement was repeated. An earlier
+[state-gated retry refusal](ci7048-compiler1-rerun-block.json) started no job;
+the bounded recovery was submitted only after the original run completed.
+
+The [terminal audit archive](ordinary-ci-39280914015-outcome.tar.gz) retains all
+52 successful execution logs, both raw terminal attempts, the provenance
+ledger, build/test receipts and the auditors. Its
+[receipt](ordinary-ci-outcome-archive.json) binds 4,445,747 bytes to SHA-256
+`652704c67dd86dac5faa9549c31f4a208ce931adcc2351a5cb2bfa7313156906`.
+An independent extraction verifies all 77 member checksums and reruns both
+supplied auditors: 43 executed groups, five missing, no failures/errors in the
+executed groups, and incomplete macOS qualification. Saved CI logs are decoded
+UTF-8 with LF endings; these digests bind saved text, not GitHub log ZIP bytes.
+Original JMH file bytes are separately retained without normalization.
+Earlier Linux, Windows, build and macOS checkpoint archives remain available.
 
 ## Decision
 
@@ -295,10 +295,13 @@ no concrete source defect requiring another change. The recorded gains support
 adoption for this fork with the known costs documented; they do not establish a
 universal application speedup. No zero-loss gate or new tuning campaign is used.
 
-**PR4 remains draft and is not ready to merge.** The concrete remaining blocker
-is completion and review of the existing ordinary PR integration CI, including
-completion of the accepted five-job recovery. Native
-correctness and all planned comparisons have completed. A green preceding
-revision does not satisfy the remaining requirement, and a future green stage
-must be assessed with the retained losses rather than replacing that assessment.
-No merge or upstream push has been performed.
+**PR4 remains draft and is not ready to merge.** The bounded recovery has
+finished, and the same five mandatory macOS groups remain unexecuted. This
+persistent execution blocker requires available Mac execution capacity and
+actual results for those groups; another unchanged hosted-runner retry has no
+new evidence to justify it. The [continuation](CONTINUATION.md) preserves their
+exact identities and the required source binding. Native correctness and all
+planned comparisons have completed. No source change or additional performance
+campaign is justified by these cancellations. A later successful CI completion
+must still be assessed with the retained losses. No merge or upstream push has
+been performed.

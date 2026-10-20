@@ -1,0 +1,513 @@
+{
+  "run_id": 39280914015,
+  "run_attempt": 2,
+  "url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39280914015",
+  "status": "completed",
+  "conclusion": "failure",
+  "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
+  "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
+  "decision": "NOT READY TO MERGE: five required macOS groups were cancelled without execution in both attempts. Retain the corrected implementation and measured tradeoffs, but require actual execution of these groups before readiness.",
+  "successful_builds": 8,
+  "verified_tier1_groups": 43,
+  "planned_tier1_groups": 48,
+  "successful_executions_carried_forward": 52,
+  "new_successful_executions_in_recovery": 0,
+  "cancelled_without_execution_each_attempt": 5,
+  "missing_groups": [
+    {
+      "job_id": 118792915867,
+      "name": "macos-aarch64 / test (lib-test/tier1)",
+      "runner_id": 0,
+      "steps": [],
+      "completed_at": "2026-10-20T20:45:06Z"
+    },
+    {
+      "job_id": 118792915922,
+      "name": "macos-aarch64 / test (jdk/tier1 part 3)",
+      "runner_id": 0,
+      "steps": [],
+      "completed_at": "2026-10-20T20:40:49Z"
+    },
+    {
+      "job_id": 118792915951,
+      "name": "macos-aarch64 / test (hs/tier1 common)",
+      "runner_id": 0,
+      "steps": [],
+      "completed_at": "2026-10-20T20:45:06Z"
+    },
+    {
+      "job_id": 118792916163,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
+      "runner_id": 0,
+      "steps": [],
+      "completed_at": "2026-10-20T21:04:01Z"
+    },
+    {
+      "job_id": 118792916219,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 3)",
+      "runner_id": 0,
+      "steps": [],
+      "completed_at": "2026-10-20T20:55:32Z"
+    }
+  ],
+  "collected_jtreg_counts": {
+    "total": 41023,
+    "pass": 38873,
+    "fail": 0,
+    "error": 0,
+    "skip": 2150
+  },
+  "per_platform_jtreg_counts": {
+    "linux-x64": {
+      "groups": 12,
+      "total": 10709,
+      "pass": 10191,
+      "fail": 0,
+      "error": 0,
+      "skip": 518
+    },
+    "linux-aarch64": {
+      "groups": 12,
+      "total": 10709,
+      "pass": 10171,
+      "fail": 0,
+      "error": 0,
+      "skip": 538
+    },
+    "windows-x64": {
+      "groups": 12,
+      "total": 10709,
+      "pass": 10123,
+      "fail": 0,
+      "error": 0,
+      "skip": 586
+    },
+    "macos-aarch64": {
+      "groups": 7,
+      "total": 8896,
+      "pass": 8388,
+      "fail": 0,
+      "error": 0,
+      "skip": 508
+    }
+  },
+  "log_encoding": "Decoded UTF-8 CI text saved with LF endings; digests bind saved bytes, not GitHub log ZIP bytes. Original JMH files remain separately preserved without normalization.",
+  "logs": [
+    {
+      "name": "Prepare the run",
+      "evidence_job_id": 118154618535,
+      "latest_job_id": 118792908390,
+      "file_name": "ci7048-prepare.log",
+      "bytes": 21186,
+      "sha256": "5f0c9d6df79b3fec1f9f0d57abc7d25e145c6f703dd93c04187b55bf806a51d5"
+    },
+    {
+      "name": "linux-aarch64 / build (debug)",
+      "evidence_job_id": 118259522111,
+      "latest_job_id": 118792908978,
+      "file_name": "ci7048-arm-debug.log",
+      "bytes": 660171,
+      "sha256": "886b084391dab3042b6c14266e3fad393da37ac0b24c8ef51de0415a8205d806"
+    },
+    {
+      "name": "linux-aarch64 / build (release)",
+      "evidence_job_id": 118259521858,
+      "latest_job_id": 118792909510,
+      "file_name": "ci7048-arm-release.log",
+      "bytes": 660301,
+      "sha256": "89a564aa2acb346a26bdef746893054c4765a8e37990ef1d2bf28dac8ea8e33d"
+    },
+    {
+      "name": "linux-aarch64 / test (jdk/tier1 part 2)",
+      "evidence_job_id": 118317250825,
+      "latest_job_id": 118792910314,
+      "file_name": "ci7048-test-118317250825.log",
+      "bytes": 608435,
+      "sha256": "2bad9c7c72940eca36e1a38282d0296f9b09a74b1125a097d56e1034a017c6a8"
+    },
+    {
+      "name": "linux-x64 / test (langtools/tier1)",
+      "evidence_job_id": 118301428173,
+      "latest_job_id": 118792910349,
+      "file_name": "ci7048-test-118301428173.log",
+      "bytes": 2493155,
+      "sha256": "03986917d9c946d0c4f8072cb2869d92eeb45d277b4d18fddd23ecc15487c980"
+    },
+    {
+      "name": "linux-x64 / test (jdk/tier1 part 3)",
+      "evidence_job_id": 118301428189,
+      "latest_job_id": 118792910365,
+      "file_name": "ci7048-test-118301428189.log",
+      "bytes": 283496,
+      "sha256": "3449fce823134a4426561a98b090f12c36a59f3019ccaebfa0ca2cb301f45e6b"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 common)",
+      "evidence_job_id": 118317250696,
+      "latest_job_id": 118792910380,
+      "file_name": "ci7048-test-118317250696.log",
+      "bytes": 64794,
+      "sha256": "a30ad1393f3b971f47fa19aef1795000f469880a6dc9d059bd5c332e056b25cc"
+    },
+    {
+      "name": "linux-aarch64 / test (jdk/tier1 part 3)",
+      "evidence_job_id": 118317250687,
+      "latest_job_id": 118792910614,
+      "file_name": "ci7048-test-118317250687.log",
+      "bytes": 282336,
+      "sha256": "374dd75858bfcdc763192d8249959fc243d492ac2075555cbd1bad0546662a33"
+    },
+    {
+      "name": "linux-x64 / test (jdk/tier1 part 1)",
+      "evidence_job_id": 118301428106,
+      "latest_job_id": 118792910737,
+      "file_name": "ci7048-test-118301428106.log",
+      "bytes": 731978,
+      "sha256": "acb3f5c33c6202dd1ba19a73697a0d4a2433f8e9be4d46f5b5b54cfe7a870bda"
+    },
+    {
+      "name": "linux-aarch64 / test (jdk/tier1 part 1)",
+      "evidence_job_id": 118317250779,
+      "latest_job_id": 118792910957,
+      "file_name": "ci7048-test-118317250779.log",
+      "bytes": 728860,
+      "sha256": "bc37ffcf577fc487d7963955e0a59bf645ff690460c9a0b4c437e059495757d4"
+    },
+    {
+      "name": "linux-x64 / test (jdk/tier1 part 2)",
+      "evidence_job_id": 118301427984,
+      "latest_job_id": 118792911202,
+      "file_name": "ci7048-test-118301427984.log",
+      "bytes": 608487,
+      "sha256": "0ee5e28c478c0b96e6b79e07798aa2f524b1ef1362e21ed5625a90d006a71c66"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 compiler part 3)",
+      "evidence_job_id": 118301428156,
+      "latest_job_id": 118792911210,
+      "file_name": "ci7048-test-118301428156.log",
+      "bytes": 539720,
+      "sha256": "6cf89601cf3d2a533b0b05dde2f3a500721e668f580de7e69f68adad96942b24"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 3)",
+      "evidence_job_id": 118317250681,
+      "latest_job_id": 118792911360,
+      "file_name": "ci7048-test-118317250681.log",
+      "bytes": 536017,
+      "sha256": "f553fc08b4056468410c205b7c2701b93f90f7f7f106df9a7880ac2765ce4d6d"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 common)",
+      "evidence_job_id": 118301428149,
+      "latest_job_id": 118792911468,
+      "file_name": "ci7048-test-118301428149.log",
+      "bytes": 65572,
+      "sha256": "ad0113fad42436ae87d178fba21b5ea96fabaa3bbdb1bf5fd3421759060a306b"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 compiler part 1)",
+      "evidence_job_id": 118301427928,
+      "latest_job_id": 118792911486,
+      "file_name": "ci7048-test-118301427928.log",
+      "bytes": 341597,
+      "sha256": "843c040add49d463ad398071c9a99809fe16549b2c0c4006eee430a16995c69e"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 2)",
+      "evidence_job_id": 118317250838,
+      "latest_job_id": 118792911492,
+      "file_name": "ci7048-test-118317250838.log",
+      "bytes": 222930,
+      "sha256": "318b3fa2cde48660980db08a248f79d9810df702621fc37074100ca154c2a43c"
+    },
+    {
+      "name": "linux-aarch64 / test (langtools/tier1)",
+      "evidence_job_id": 118317250763,
+      "latest_job_id": 118792911584,
+      "file_name": "ci7048-test-118317250763.log",
+      "bytes": 2493025,
+      "sha256": "fb0b3434351bfecd7e234ef3d004b1fd008b05132f65f408741f9f6a114e2a04"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 gc)",
+      "evidence_job_id": 118317250701,
+      "latest_job_id": 118792911683,
+      "file_name": "ci7048-test-118317250701.log",
+      "bytes": 205793,
+      "sha256": "0950d6059238ee994a5c9454a075e31e817cfc3530be770c0f0fc3b2fca3f672"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 1)",
+      "evidence_job_id": 118317250695,
+      "latest_job_id": 118792911781,
+      "file_name": "ci7048-test-118317250695.log",
+      "bytes": 343893,
+      "sha256": "435388b8d15ee2f1221e9d67993bab10bbed7e7cf26ba7a54899271aee227e07"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 compiler part 2)",
+      "evidence_job_id": 118301427948,
+      "latest_job_id": 118792911871,
+      "file_name": "ci7048-test-118301427948.log",
+      "bytes": 229496,
+      "sha256": "fe19523f17c4d0b7acf6219e034e8558da730ba2237691313121daa42abecb11"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 gc)",
+      "evidence_job_id": 118301428089,
+      "latest_job_id": 118792911986,
+      "file_name": "ci7048-test-118301428089.log",
+      "bytes": 203753,
+      "sha256": "e4a2d1ec8f735351ebe5493b7d424d0d2a4d37f3ab9bc8edb9202fdba4840bf0"
+    },
+    {
+      "name": "linux-aarch64 / test (lib-test/tier1)",
+      "evidence_job_id": 118317250651,
+      "latest_job_id": 118792912157,
+      "file_name": "ci7048-test-118317250651.log",
+      "bytes": 84284,
+      "sha256": "e0f559bd1b8d34a088ba8874e6338bc64620cf7a92ded1962217526715560a54"
+    },
+    {
+      "name": "linux-x64 / test (lib-test/tier1)",
+      "evidence_job_id": 118301428083,
+      "latest_job_id": 118792912251,
+      "file_name": "ci7048-test-118301428083.log",
+      "bytes": 84765,
+      "sha256": "655e46dc9e555fa04691b3b6bf8b2c191a78d38f56379829530cd6928ea60d05"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 serviceability)",
+      "evidence_job_id": 118301428069,
+      "latest_job_id": 118792912358,
+      "file_name": "ci7048-test-118301428069.log",
+      "bytes": 264379,
+      "sha256": "17eb6d6256d13cbb44a22d3c6ed9a5903934742820c3dfe05710572a8f026011"
+    },
+    {
+      "name": "linux-x64 / test (hs/tier1 runtime)",
+      "evidence_job_id": 118301429019,
+      "latest_job_id": 118792912501,
+      "file_name": "ci7048-test-118301429019.log",
+      "bytes": 535955,
+      "sha256": "526c80b123f97308bc538c9da72820661291581698b392cc22ec7eb181616465"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 runtime)",
+      "evidence_job_id": 118317250706,
+      "latest_job_id": 118792912853,
+      "file_name": "ci7048-test-118317250706.log",
+      "bytes": 533743,
+      "sha256": "849bea3aa2c839680008be2d171a251def9f9b2975bfd44e1d0734d98222c1a0"
+    },
+    {
+      "name": "linux-aarch64 / test (hs/tier1 serviceability)",
+      "evidence_job_id": 118317250684,
+      "latest_job_id": 118792913340,
+      "file_name": "ci7048-test-118317250684.log",
+      "bytes": 264086,
+      "sha256": "e24c6f5a503775b12819a83e2ff5abe7408e7e238b85f07977387feeb7900d70"
+    },
+    {
+      "name": "windows-x64 / build (release)",
+      "evidence_job_id": 118413102708,
+      "latest_job_id": 118792915266,
+      "file_name": "ci7048-build-118413102708.log",
+      "bytes": 871817,
+      "sha256": "7fff1f6a3828562092a33cad365792619e7e921ba3e1c08608744c750534f27c"
+    },
+    {
+      "name": "macos-aarch64 / build (release)",
+      "evidence_job_id": 118413102722,
+      "latest_job_id": 118792915416,
+      "file_name": "ci7048-build-118413102722.log",
+      "bytes": 820591,
+      "sha256": "b82df197f671a5b8d34627d3884ccc4129b979b4d517b38358ec8e737fa08f70"
+    },
+    {
+      "name": "windows-x64 / build (debug)",
+      "evidence_job_id": 118413102752,
+      "latest_job_id": 118792915894,
+      "file_name": "ci7048-build-118413102752.log",
+      "bytes": 871109,
+      "sha256": "1e9be89a86e2e06d7ce770827d3846568e7835c90913f2bb891abe7a4e59af5c"
+    },
+    {
+      "name": "windows-x64 / test (jdk/tier1 part 1)",
+      "evidence_job_id": 118444402233,
+      "latest_job_id": 118792916030,
+      "file_name": "ci7048-test-118444402233.log",
+      "bytes": 737683,
+      "sha256": "39baaf48957d045234a46e08d9b7e9620c8009674e36cfae6ad81c424a1741cf"
+    },
+    {
+      "name": "macos-aarch64 / build (debug)",
+      "evidence_job_id": 118413102711,
+      "latest_job_id": 118792916256,
+      "file_name": "ci7048-build-118413102711.log",
+      "bytes": 828416,
+      "sha256": "dda1d47089edc0167c69190a8ac9c1912333e2fff4f4435193fbb2b5662bef44"
+    },
+    {
+      "name": "macos-aarch64 / test (jdk/tier1 part 2)",
+      "evidence_job_id": 118492858024,
+      "latest_job_id": 118792916471,
+      "file_name": "ci7048-test-118492858024.log",
+      "bytes": 613042,
+      "sha256": "40910f3429fc95801244627a71e0d01cb93e651f89c4ef4ef21d8071a3838559"
+    },
+    {
+      "name": "windows-x64 / test (jdk/tier1 part 2)",
+      "evidence_job_id": 118444402182,
+      "latest_job_id": 118792916552,
+      "file_name": "ci7048-test-118444402182.log",
+      "bytes": 622088,
+      "sha256": "0560fc10c942b882f879dbbbe9a351833246d95596ce100fea1029a577494881"
+    },
+    {
+      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
+      "evidence_job_id": 118492858040,
+      "latest_job_id": 118792916594,
+      "file_name": "ci7048-test-118492858040.log",
+      "bytes": 727776,
+      "sha256": "fda80e78f9590710756cedcf9874252aacf85ae3f0d49dce24287791233dd8f4"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 common)",
+      "evidence_job_id": 118444402201,
+      "latest_job_id": 118792917368,
+      "file_name": "ci7048-test-118444402201.log",
+      "bytes": 79148,
+      "sha256": "b7a586512fbd6ea78c250b79f542e00304e083d49db69b207017ff376f94b745"
+    },
+    {
+      "name": "macos-aarch64 / test (hs/tier1 gc)",
+      "evidence_job_id": 118492858073,
+      "latest_job_id": 118792917438,
+      "file_name": "ci7048-test-118492858073.log",
+      "bytes": 203188,
+      "sha256": "e1dac7abf37de98b43000aac139a3046946b7e40fa64af74001f6f8e9885befa"
+    },
+    {
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
+      "evidence_job_id": 118492858110,
+      "latest_job_id": 118792917633,
+      "file_name": "ci7048-test-118492858110.log",
+      "bytes": 226029,
+      "sha256": "5a60fa3f8e0ee97c9745761281e5c587acba6883afd97f83736a877632a7ebf8"
+    },
+    {
+      "name": "windows-x64 / test (jdk/tier1 part 3)",
+      "evidence_job_id": 118444402172,
+      "latest_job_id": 118792917699,
+      "file_name": "ci7048-test-118444402172.log",
+      "bytes": 295504,
+      "sha256": "6edaa57a8f97485cca8b8c25728daa108051cc209bf8bd31533693678bbbd8cb"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 compiler part 3)",
+      "evidence_job_id": 118444402222,
+      "latest_job_id": 118792917724,
+      "file_name": "ci7048-test-118444402222.log",
+      "bytes": 562377,
+      "sha256": "d6f49060558bee064dac7754127b742e483b52702efa7ac3a23e304f1daf906f"
+    },
+    {
+      "name": "macos-aarch64 / test (hs/tier1 runtime)",
+      "evidence_job_id": 118492858078,
+      "latest_job_id": 118792917788,
+      "file_name": "ci7048-test-118492858078.log",
+      "bytes": 522904,
+      "sha256": "f6ffed23800cc1909b929aa7e415fb67d6b8882a7d06e4a4db81d458e4f68aab"
+    },
+    {
+      "name": "windows-x64 / test (langtools/tier1)",
+      "evidence_job_id": 118444402342,
+      "latest_job_id": 118792917868,
+      "file_name": "ci7048-test-118444402342.log",
+      "bytes": 2505427,
+      "sha256": "b99710457622feef771d2d3d95ba6b57567ffc736c2b903e07a07a4e0f4bef24"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 runtime)",
+      "evidence_job_id": 118444402278,
+      "latest_job_id": 118792917963,
+      "file_name": "ci7048-test-118444402278.log",
+      "bytes": 519507,
+      "sha256": "faa0ab604b70ace4c3212e16dd8dcc71bd9732eaf280943d07925a8bce03fc5e"
+    },
+    {
+      "name": "macos-aarch64 / test (hs/tier1 serviceability)",
+      "evidence_job_id": 118492858096,
+      "latest_job_id": 118792917981,
+      "file_name": "ci7048-test-118492858096.log",
+      "bytes": 266198,
+      "sha256": "6bd6739f9a68091befd2bb51ffcb806d82057b33b3f6389c2222f9b0820b167e"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 gc)",
+      "evidence_job_id": 118444402234,
+      "latest_job_id": 118792918099,
+      "file_name": "ci7048-test-118444402234.log",
+      "bytes": 213549,
+      "sha256": "9dd595bbffb3f9a8c485b8731e5a0780985d7f77cead2ea551448f411a6a95ea"
+    },
+    {
+      "name": "macos-aarch64 / test (langtools/tier1)",
+      "evidence_job_id": 118492858069,
+      "latest_job_id": 118792918318,
+      "file_name": "ci7048-test-118492858069.log",
+      "bytes": 2497250,
+      "sha256": "d1a0ce564aa5948b9d1b24af5f0ac23b85309d9065ae3ba57f4584ff779b4912"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 compiler part 1)",
+      "evidence_job_id": 118444402180,
+      "latest_job_id": 118792918470,
+      "file_name": "ci7048-test-118444402180.log",
+      "bytes": 355364,
+      "sha256": "906568d1b0c4bf8d8aa4dcaf4435b2d46f0f7030a4770be0bc2ae011dc31a23c"
+    },
+    {
+      "name": "windows-x64 / test (lib-test/tier1)",
+      "evidence_job_id": 118444402282,
+      "latest_job_id": 118792918726,
+      "file_name": "ci7048-test-118444402282.log",
+      "bytes": 98457,
+      "sha256": "375b34386300d10b83afb59d429ff46b5df15aee3491e5fb05d69557ab65a592"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 compiler part 2)",
+      "evidence_job_id": 118444402260,
+      "latest_job_id": 118792918731,
+      "file_name": "ci7048-test-118444402260.log",
+      "bytes": 242126,
+      "sha256": "f109f9d3e7c7e02bea8ba5a9bc0bd5cde82db70962e57e30225cac8ba8cc6ee8"
+    },
+    {
+      "name": "windows-x64 / test (hs/tier1 serviceability)",
+      "evidence_job_id": 118444402215,
+      "latest_job_id": 118792918907,
+      "file_name": "ci7048-test-118444402215.log",
+      "bytes": 272984,
+      "sha256": "10d17cd53903eaf7199ab0f3fe53c20cb0441c1140335f9bd40c27d6694ad5dc"
+    },
+    {
+      "name": "linux-x64 / build (debug)",
+      "evidence_job_id": 118259521768,
+      "latest_job_id": 118792960579,
+      "file_name": "ci7048-x64-debug.log",
+      "bytes": 664354,
+      "sha256": "b63370d71e60b8818bf647f468819a7acfbf3c53eb4c6817f473afb5faaae668"
+    },
+    {
+      "name": "linux-x64 / build (release)",
+      "evidence_job_id": 118259521790,
+      "latest_job_id": 118792984560,
+      "file_name": "ci7048-x64-release.log",
+      "bytes": 664783,
+      "sha256": "970fb02a1ce53d96bdb07128b6b4c91e6875828c5eb01aedb0039fa026d685dd"
+    }
+  ]
+}
