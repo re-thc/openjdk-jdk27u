@@ -1,5 +1,5 @@
 {
-  "job_metadata_observed_at": "2026-10-20T08:25:07.133118+00:00",
+  "job_metadata_observed_at": "2026-10-20T09:30:12.338319+00:00",
   "run_id": 39280914015,
   "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
   "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
@@ -9,14 +9,8 @@
   "test_matrices_not_yet_created": [],
   "configured_stage_gate": "macOS/Windows builds follow successful Linux matrices;their tests follow their builds",
   "created_test_groups": 48,
-  "collected_test_groups": 38,
+  "collected_test_groups": 39,
   "missing": [
-    {
-      "job_id": 118492858040,
-      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
-      "status": "queued",
-      "conclusion": null
-    },
     {
       "job_id": 118492858069,
       "name": "macos-aarch64 / test (langtools/tier1)",
@@ -73,11 +67,11 @@
     }
   ],
   "collected_jtreg_counts": {
-    "total": 33586,
-    "pass": 31714,
+    "total": 34775,
+    "pass": 32849,
     "fail": 0,
     "error": 0,
-    "skip": 1872
+    "skip": 1926
   },
   "records": [
     {
@@ -1036,6 +1030,32 @@
           "fail": 0,
           "error": 0,
           "skip": 13
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858040,
+      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T08:57:21Z",
+      "completed_at": "2026-10-20T09:26:28Z",
+      "log_bytes": 727776,
+      "log_sha256": "fda80e78f9590710756cedcf9874252aacf85ae3f0d49dce24287791233dd8f4",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 1,135; excluded: 3; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 43"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part1",
+          "total": 1189,
+          "pass": 1135,
+          "fail": 0,
+          "error": 0,
+          "skip": 54
         }
       ],
       "test_success_marker": true,
