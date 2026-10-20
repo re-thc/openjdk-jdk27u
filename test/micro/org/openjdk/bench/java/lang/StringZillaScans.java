@@ -35,7 +35,7 @@ import org.openjdk.jmh.annotations.*;
 public class StringZillaScans {
     @State(Scope.Thread)
     public static class Whitespace {
-        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "gateBefore", "gateAt",
+        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter", "gateBefore", "gateAt",
                 "longBlank", "longClean", "longLeading", "longTrailing", "longBoth", "lateNbsp", "nul", "window", "utf16"})
         public String workload;
         private String[] values;
@@ -53,6 +53,10 @@ public class StringZillaScans {
                     case "shortClean" -> text.repeat(16);
                     case "shortPad" -> "  " + text + "  ";
                     case "early" -> " ".repeat(7) + text + " ".repeat(4088);
+                    case "probeAt" -> " ".repeat(8) + text.repeat(4096);
+                    case "probeAfter" -> " ".repeat(9) + text.repeat(4096);
+                    case "tailProbeAt" -> text.repeat(4096) + " ".repeat(8);
+                    case "tailProbeAfter" -> text.repeat(4096) + " ".repeat(9);
                     case "gateBefore" -> " ".repeat(263);
                     case "gateAt" -> " ".repeat(264);
                     case "longBlank" -> pad;
@@ -78,7 +82,7 @@ public class StringZillaScans {
 
     @State(Scope.Thread)
     public static class Lines {
-        @Param({"empty", "short", "immediate", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
+        @Param({"empty", "short", "immediate", "probeAt", "probeAfter", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
         public String workload;
         private String[] values;
         private int cursor;
@@ -92,6 +96,8 @@ public class StringZillaScans {
                     case "empty" -> new String("");
                     case "short" -> text + "bc\r\ndef\nghi\r";
                     case "immediate" -> "\r\n" + text.repeat(4096);
+                    case "probeAt" -> text.repeat(8) + "\r\n" + text.repeat(4096);
+                    case "probeAfter" -> text.repeat(9) + "\r\n" + text.repeat(4096);
                     case "gateBefore" -> text.repeat(263);
                     case "gateAt" -> text.repeat(264);
                     case "noMatch" -> text.repeat(4096);
