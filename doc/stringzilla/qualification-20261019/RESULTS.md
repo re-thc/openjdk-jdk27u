@@ -248,9 +248,12 @@ tier1 groups: Linux x64/ARM first, then macOS ARM and Windows x64 after both
 Linux test matrices succeed. Linux is complete. Both Windows builds and macOS fastdebug also pass, bringing
 the verified build count to seven of eight. The latter three
 [complete build logs](ordinary-ci-39280914015-build-checkpoint.tar.gz) have a
-[separate checksum receipt](ordinary-ci-build-checkpoint.json). macOS release
-and the Windows/macOS tier1 matrices remain pending. None of those pending jobs
-is counted as passed. The same existing run remains the unfinished qualification
+[separate checksum receipt](ordinary-ci-build-checkpoint.json). Four of twelve Windows tier1 groups also pass: 1,771 passed descriptions and
+121 skipped/excluded, with zero failures or errors. Their
+[complete logs](ordinary-ci-39280914015-windows-progress.tar.gz) and
+[checksum/count receipt](ordinary-ci-windows-progress.json) are retained. macOS
+release and the remaining Windows/macOS tier1 groups remain pending. None of
+those pending jobs is counted as passed. The same existing run remains the unfinished qualification
 gate; no duplicate is dispatched. The live run link provides subsequent status.
 
 ## Decision
