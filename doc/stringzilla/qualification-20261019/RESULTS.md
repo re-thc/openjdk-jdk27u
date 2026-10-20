@@ -260,13 +260,20 @@ The complete Windows phase has a separate
 descriptions, 586 skipped/excluded and zero failures or errors. All fourteen
 [Windows StringZilla descriptions](ci7048-stringzilla-windows.json) explicitly
 pass, including forced tiers, physical bounds, equality, native kernels and
-header layouts. Six macOS groups also pass (JDK parts 1/2, GC, serviceability,
-runtime and langtools), with 8,122 passed descriptions, 485 skipped/excluded and
-zero failures or errors. Their [complete logs](ordinary-ci-39280914015-macos-progress.tar.gz)
-and [checksum/count receipt](ordinary-ci-macos-progress.json) are retained. All
-four [StringZilla JDK descriptions](ci7048-stringzilla-macos.json) pass on Apple
-ARM, including native kernels and header layouts. The remaining macOS compiler
-parts 1/2/3, common, JDK part 3 and library groups are still queued.
+header layouts. Seven macOS groups also pass (JDK parts 1/2, GC, serviceability,
+runtime, langtools and compiler part 2), with 8,388 passed descriptions, 508
+skipped/excluded and zero test failures or errors. Their
+[complete logs](ordinary-ci-39280914015-macos-progress.tar.gz) and
+[checksum/count receipt](ordinary-ci-macos-progress.json) are retained. All four
+[StringZilla JDK descriptions](ci7048-stringzilla-macos.json) pass on Apple ARM,
+including native kernels and header layouts.
+
+[Compiler part 1](ci7048-cancelled-compiler1.json) was cancelled before runner
+assignment, with no executed steps. It is not counted as passed. A bounded
+[single-job retry](ci7048-compiler1-rerun-block.json) was refused with HTTP 403:
+"The workflow run containing this job is already running." No retry started.
+That action is stopped until the run reaches the required completed state.
+Compiler part 3, common, JDK part 3 and library remain queued.
 No pending job is counted as passed. The same existing run remains the
 unfinished qualification gate; no duplicate is dispatched. The live run link
 provides subsequent status.
@@ -282,7 +289,8 @@ adoption for this fork with the known costs documented; they do not establish a
 universal application speedup. No zero-loss gate or new tuning campaign is used.
 
 **PR4 remains draft and is not ready to merge.** The concrete remaining blocker
-is completion and review of the existing ordinary PR integration CI. Native
+is completion and review of the existing ordinary PR integration CI, including
+recovery of the cancelled compiler group after GitHub permits its retry. Native
 correctness and all planned comparisons have completed. A green preceding
 revision does not satisfy the remaining requirement, and a future green stage
 must be assessed with the retained losses rather than replacing that assessment.

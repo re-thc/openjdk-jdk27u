@@ -1,5 +1,5 @@
 {
-  "job_metadata_observed_at": "2026-10-20T12:09:31.174468+00:00",
+  "job_metadata_observed_at": "2026-10-20T16:54:23.247350+00:00",
   "run_id": 39280914015,
   "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
   "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
@@ -9,19 +9,13 @@
   "test_matrices_not_yet_created": [],
   "configured_stage_gate": "macOS/Windows builds follow successful Linux matrices;their tests follow their builds",
   "created_test_groups": 48,
-  "collected_test_groups": 42,
+  "collected_test_groups": 43,
   "missing": [
     {
       "job_id": 118492858109,
       "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "job_id": 118492858110,
-      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
-      "status": "queued",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "cancelled"
     },
     {
       "job_id": 118492858146,
@@ -49,11 +43,11 @@
     }
   ],
   "collected_jtreg_counts": {
-    "total": 40734,
-    "pass": 38607,
+    "total": 41023,
+    "pass": 38873,
     "fail": 0,
     "error": 0,
-    "skip": 2127
+    "skip": 2150
   },
   "records": [
     {
@@ -1142,6 +1136,32 @@
           "fail": 0,
           "error": 0,
           "skip": 93
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858110,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T12:33:45Z",
+      "completed_at": "2026-10-20T12:42:46Z",
+      "log_bytes": 226029,
+      "log_sha256": "5a60fa3f8e0ee97c9745761281e5c587acba6883afd97f83736a877632a7ebf8",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 266; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 21"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
+          "total": 289,
+          "pass": 266,
+          "fail": 0,
+          "error": 0,
+          "skip": 23
         }
       ],
       "test_success_marker": true,
