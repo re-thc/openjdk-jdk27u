@@ -3045,6 +3045,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_equalsL:
     do_stringzilla_equals(x);
     break;
+  case vmIntrinsics::_stringzillaScanLatin1:
   case vmIntrinsics::_stringzillaFindCharLatin1:
   case vmIntrinsics::_stringzillaFindCharUTF16:
   case vmIntrinsics::_stringzillaRfindCharLatin1:

@@ -45,6 +45,15 @@ final class StringZilla {
     private static final int HASWELL = 1;
     private static final int SKYLAKE = 2;
     private static final int NEON = 4;
+    // Byte-set kernels use AVX2 (also on the Skylake backend) or NEON.
+    static final boolean SCANS_ENABLED = ENABLED && BACKEND != SERIAL;
+    static final int SCAN_PROBE = 8;
+    static final int MIN_SCAN_BYTES = 256;
+    static final int LINE_SEPARATOR = 0;
+    static final int NON_TRIM = 1;
+    static final int NON_TRIM_REVERSE = 2;
+    static final int NON_WHITESPACE = 3;
+    static final int NON_WHITESPACE_REVERSE = 4;
     static final boolean MSVC_SERIAL = (CONFIGURATION & MSVC_BIT) != 0 && BACKEND == SERIAL;
     static final int UNRESOLVED_TIER = -1;
     static final int C1 = 1;
@@ -414,6 +423,32 @@ final class StringZilla {
     }
 
     private StringZilla() {}
+
+    // Bound each leaf call and return to Java between windows for safepoints.
+    // Forward results are inclusive; reverse results are exclusive, like the
+    // StringLatin1 whitespace helpers. A miss returns the corresponding fence.
+    @DontInline
+    static int scan(byte[] src, int from, int to, int mode) {
+        Objects.checkFromToIndex(from, to, src.length);
+        boolean reverse = mode == NON_TRIM_REVERSE || mode == NON_WHITESPACE_REVERSE;
+        int cursor = reverse ? to : from;
+        while (reverse ? cursor > from : cursor < to) {
+            int size = Math.min(MAX_BYTES, reverse ? cursor - from : to - cursor);
+            int offset = reverse ? cursor - size : cursor;
+            int result = scanLatin1(src, offset, size, mode);
+            if (result == FALLBACK) {
+                return FALLBACK;
+            }
+            if (result >= 0) {
+                return offset + result + (reverse ? 1 : 0);
+            }
+            cursor = reverse ? offset : cursor + size;
+        }
+        return reverse ? from : to;
+    }
+
+    @IntrinsicCandidate
+    private static native int scanLatin1(byte[] src, int offset, int length, int mode);
 
     // The selected kernel, including serial-only builds, and the VM enable flag.
     private static native int initialize();

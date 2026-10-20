@@ -855,6 +855,48 @@ static jint check_kernels(void) {
             }
         }
 
+        // Exact byte-set predicates for every Latin1 value, alignment and table.
+        // Allocate exact ends so sanitizer runs can detect vector overreads.
+        for (int mode = 0; mode <= 4; mode++) {
+            CHECK(kernels->scanLatin1(NULL, -1, mode) == JVM_STRINGZILLA_FALLBACK);
+            CHECK(kernels->scanLatin1(NULL, JVM_STRINGZILLA_MAX_BYTES + 1, mode) == JVM_STRINGZILLA_FALLBACK);
+            CHECK(kernels->scanLatin1(NULL, 0, mode) == -1);
+            for (unsigned int ch = 0; ch < 256; ch++) {
+                int whitespace = (ch >= 9 && ch <= 13) || (ch >= 28 && ch <= 32);
+                int match = mode == 0 ? ch == 10 || ch == 13 : mode <= 2 ? ch > 32 : !whitespace;
+                for (int offset = 0; offset < 32; offset++) {
+                    char* allocation = (char*)malloc(257 + offset);
+                    CHECK(allocation != NULL);
+                    char* bytes = allocation + offset;
+                    memset(bytes, (int)ch, 257);
+                    int expected = match ? (mode == 2 || mode == 4 ? 256 : 0) : -1;
+                    int result = kernels->scanLatin1(bytes, 257, mode);
+                    free(allocation);
+                    CHECK(result == expected);
+                }
+            }
+            const int scan_lengths[] = {1, 7, 8, 15, 16, 31, 32, 33, 255, 256, 257, 65536};
+            for (unsigned int n = 0; n < sizeof(scan_lengths) / sizeof(scan_lengths[0]); n++) {
+                int length = scan_lengths[n];
+                for (int offset = 0; offset < 32; offset++) {
+                    char* allocation = (char*)malloc(length + offset);
+                    CHECK(allocation != NULL);
+                    char* bytes = allocation + offset;
+                    memset(bytes, mode == 0 ? 'x' : ' ', length);
+                    CHECK(kernels->scanLatin1(bytes, length, mode) == -1);
+                    for (int p = 0; p < length; p = p < 33 ? p + 1 : length - 1) {
+                        bytes[p] = mode == 0 ? '\r' : (char)0xa0;
+                        CHECK(kernels->scanLatin1(bytes, length, mode) == p);
+                        bytes[p] = mode == 0 ? 'x' : ' ';
+                        if (p == length - 1) break;
+                    }
+                    free(allocation);
+                }
+            }
+        }
+        CHECK(kernels->scanLatin1(NULL, 1, -1) == JVM_STRINGZILLA_FALLBACK);
+        CHECK(kernels->scanLatin1(NULL, 1, 5) == JVM_STRINGZILLA_FALLBACK);
+
         // Limits are enforced by every table, before touching either array.
         StringZillaSearchFn bounded[] = {kernels->findLatin1, kernels->rfindLatin1,
                                         kernels->findUTF16, kernels->rfindUTF16};

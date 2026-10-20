@@ -394,6 +394,8 @@ class methodHandle;
    do_name(stringzilla_findUTF16Latin1_name, "findUTF16Latin1") \
   do_intrinsic(_stringzillaRfindUTF16Latin1, java_lang_StringZilla, stringzilla_rfindUTF16Latin1_name, stringzilla_search_signature, F_SN) \
    do_name(stringzilla_rfindUTF16Latin1_name, "rfindUTF16Latin1") \
+  do_intrinsic(_stringzillaScanLatin1, java_lang_StringZilla, stringzilla_scanLatin1_name, stringzilla_char_signature, F_SN) \
+   do_name(stringzilla_scanLatin1_name, "scanLatin1") \
   do_intrinsic(_stringzillaFindCharLatin1, java_lang_StringZilla, stringzilla_findCharLatin1_name, stringzilla_char_signature, F_SN) \
    do_name(stringzilla_findCharLatin1_name, "findCharLatin1") \
   do_intrinsic(_stringzillaFindCharUTF16, java_lang_StringZilla, stringzilla_findCharUTF16_name, stringzilla_char_signature, F_SN) \

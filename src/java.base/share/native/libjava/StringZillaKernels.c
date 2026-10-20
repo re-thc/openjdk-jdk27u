@@ -42,6 +42,25 @@
 typedef sz_cptr_t (*search_fn)(sz_cptr_t, sz_size_t, sz_cptr_t, sz_size_t);
 typedef int (*aligned_fn)(const jchar*, int, const jchar*, int, jboolean);
 
+// Pinned sz_byteset_t stores bit c at _u64s[c / 64], position c % 64.
+// Java trim: U+0000..U+0020. Character.isWhitespace in Latin1:
+// U+0009..U+000D and U+001C..U+0020; neither NEL nor NBSP is whitespace.
+static const sz_byteset_t line_separators = {{0x2400ull, 0, 0, 0}};
+static const sz_byteset_t non_trim = {{~0x1ffffffffull, ~0ull, ~0ull, ~0ull}};
+static const sz_byteset_t non_whitespace = {{~0x1f0003e00ull, ~0ull, ~0ull, ~0ull}};
+
+static jint scan_latin1_impl(const char* src, jint length, jint mode,
+                            sz_find_byteset_t forward, sz_find_byteset_t backward) {
+    // Check before any read, including on serial-only builds and JNI fallback.
+    if ((unsigned int)length > JVM_STRINGZILLA_MAX_BYTES || (unsigned int)mode > 4) {
+        return JVM_STRINGZILLA_FALLBACK;
+    }
+    if (length == 0) return -1;
+    const sz_byteset_t* set = mode == 0 ? &line_separators : mode <= 2 ? &non_trim : &non_whitespace;
+    sz_cptr_t match = (mode == 2 || mode == 4 ? backward : forward)(src, (sz_size_t)length, set);
+    return match == NULL ? -1 : (jint)(match - src);
+}
+
 // Verify aligned candidates from the search-direction end, so repeated
 // prefixes with late reverse mismatches reject early. The batch filter has
 // already checked the first and last code units.
@@ -567,7 +586,7 @@ static sz_cptr_t rfind_utf16_neon(sz_cptr_t src, sz_size_t src_bytes,
 #endif
 
 /* Every published table is immutable; repeated initialization is harmless. */
-#define DEFINE_KERNELS(tag, forward, backward, backward_latin1, backward_utf16, equality, aligned, caps) \
+#define DEFINE_KERNELS(tag, forward, backward, backward_latin1, backward_utf16, equality, aligned, set_forward, set_backward, caps) \
 static jint tag##_find_latin1(const char* s, jint n, const char* t, jint m) { \
     return search_impl(s, n, t, m, 0, JNI_FALSE, forward, aligned, equality); \
 } \
@@ -602,20 +621,25 @@ static jint tag##_equal(const char* s, const char* t, jint n) { \
     if ((unsigned int)n > JVM_STRINGZILLA_MAX_BYTES) return JVM_STRINGZILLA_FALLBACK; \
     return equality(s, t, (sz_size_t)n); \
 } \
+static jint tag##_scan_latin1(const char* s, jint n, jint mode) { \
+    return scan_latin1_impl(s, n, mode, set_forward, set_backward); \
+} \
 static const StringZillaKernels tag##_kernels = { \
     caps, tag##_find_latin1, tag##_find_utf16, tag##_find_mixed, \
     tag##_rfind_latin1, tag##_rfind_utf16, tag##_rfind_mixed, \
     tag##_find_char_latin1, tag##_find_char_utf16, \
-    tag##_rfind_char_latin1, tag##_rfind_char_utf16, tag##_equal \
+    tag##_rfind_char_latin1, tag##_rfind_char_utf16, tag##_equal, tag##_scan_latin1 \
 };
 
-DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_latin1_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, JVM_STRINGZILLA_SERIAL)
+DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, rfind_latin1_serial, rfind_utf16_serial, sz_equal_serial, search_utf16_default, sz_find_byteset_serial, sz_rfind_byteset_serial, JVM_STRINGZILLA_SERIAL)
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
-DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, JVM_STRINGZILLA_HASWELL)
-DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, rfind_utf16_skylake, sz_equal_skylake, search_utf16_haswell, JVM_STRINGZILLA_SKYLAKE)
+DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, rfind_latin1_haswell, rfind_utf16_haswell, sz_equal_haswell, search_utf16_haswell, sz_find_byteset_haswell, sz_rfind_byteset_haswell, JVM_STRINGZILLA_HASWELL)
+// The AVX-512 byte-set implementation requires Ice Lake capabilities beyond
+// this backend's gate. Reuse the already qualified AVX2 byte-set instructions.
+DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, rfind_latin1_skylake, rfind_utf16_skylake, sz_equal_skylake, search_utf16_haswell, sz_find_byteset_haswell, sz_rfind_byteset_haswell, JVM_STRINGZILLA_SKYLAKE)
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
-DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, rfind_latin1_neon, rfind_utf16_neon, sz_equal_neon, search_utf16_default, JVM_STRINGZILLA_NEON)
+DEFINE_KERNELS(neon, sz_find_neon, sz_rfind_neon, rfind_latin1_neon, rfind_utf16_neon, sz_equal_neon, search_utf16_default, sz_find_byteset_neon, sz_rfind_byteset_neon, JVM_STRINGZILLA_NEON)
 #endif
 #undef DEFINE_KERNELS
 

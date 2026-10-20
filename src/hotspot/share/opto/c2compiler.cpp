@@ -811,6 +811,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaScanLatin1:
   case vmIntrinsics::_stringzillaFindCharLatin1:
   case vmIntrinsics::_stringzillaFindCharUTF16:
   case vmIntrinsics::_stringzillaRfindCharLatin1:

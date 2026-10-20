@@ -38,6 +38,12 @@ Java_java_lang_StringZilla_initialize(JNIEnv* env, jclass ignored) {
 }
 
 JNIEXPORT jint JNICALL
+Java_java_lang_StringZilla_scanLatin1(JNIEnv* env, jclass ignored, jbyteArray src,
+        jint offset, jint length, jint mode) {
+    return JVM_StringZillaScanLatin1(env, ignored, src, offset, length, mode);
+}
+
+JNIEXPORT jint JNICALL
 Java_java_lang_StringZilla_equalsRange(JNIEnv* env, jclass ignored, jbyteArray src,
         jint offset, jint length, jbyteArray tgt, jint tgt_offset) {
     return JVM_StringZillaEqualsRange(env, ignored, src, offset, length, tgt, tgt_offset);

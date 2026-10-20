@@ -1131,8 +1131,31 @@ final class StringLatin1 {
     static String trim(byte[] value) {
         int len = value.length;
         int st = 0;
+        if (len >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            while (st < StringZilla.SCAN_PROBE && (value[st] & 0xff) <= ' ') {
+                st++;
+            }
+            if (st == StringZilla.SCAN_PROBE && StringZilla.SCANS_ENABLED) {
+                int result = StringZilla.scan(value, st, len, StringZilla.NON_TRIM);
+                if (result != StringZilla.FALLBACK) {
+                    st = result;
+                }
+            }
+        }
         while ((st < len) && ((value[st] & 0xff) <= ' ')) {
             st++;
+        }
+        if (len - st >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            int stop = len - StringZilla.SCAN_PROBE;
+            while (len > stop && (value[len - 1] & 0xff) <= ' ') {
+                len--;
+            }
+            if (len == stop && StringZilla.SCANS_ENABLED) {
+                int result = StringZilla.scan(value, st, len, StringZilla.NON_TRIM_REVERSE);
+                if (result != StringZilla.FALLBACK) {
+                    len = result;
+                }
+            }
         }
         while ((st < len) && ((value[len - 1] & 0xff) <= ' ')) {
             len--;
@@ -1144,6 +1167,21 @@ final class StringLatin1 {
     static int indexOfNonWhitespace(byte[] value) {
         int length = value.length;
         int left = 0;
+        if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            while (left < StringZilla.SCAN_PROBE) {
+                char ch = getChar(value, left);
+                if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                    return left;
+                }
+                left++;
+            }
+            if (StringZilla.SCANS_ENABLED) {
+                int result = StringZilla.scan(value, left, length, StringZilla.NON_WHITESPACE);
+                if (result != StringZilla.FALLBACK) {
+                    return result;
+                }
+            }
+        }
         while (left < length) {
             char ch = getChar(value, left);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -1156,6 +1194,22 @@ final class StringLatin1 {
 
     static int lastIndexOfNonWhitespace(byte[] value) {
         int right = value.length;
+        if (right >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            int stop = right - StringZilla.SCAN_PROBE;
+            while (right > stop) {
+                char ch = getChar(value, right - 1);
+                if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                    return right;
+                }
+                right--;
+            }
+            if (StringZilla.SCANS_ENABLED) {
+                int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
+                if (result != StringZilla.FALLBACK) {
+                    return result;
+                }
+            }
+        }
         while (0 < right) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -1198,6 +1252,22 @@ final class StringLatin1 {
         }
 
         private int indexOfLineSeparator(int start) {
+            if (fence - start >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+                int stop = start + StringZilla.SCAN_PROBE;
+                while (start < stop) {
+                    char ch = getChar(value, start);
+                    if (ch == '\n' || ch == '\r') {
+                        return start;
+                    }
+                    start++;
+                }
+                if (StringZilla.SCANS_ENABLED) {
+                    int result = StringZilla.scan(value, start, fence, StringZilla.LINE_SEPARATOR);
+                    if (result != StringZilla.FALLBACK) {
+                        return result;
+                    }
+                }
+            }
             for (int current = start; current < fence; current++) {
                 char ch = getChar(value, current);
                 if (ch == '\n' || ch == '\r') {

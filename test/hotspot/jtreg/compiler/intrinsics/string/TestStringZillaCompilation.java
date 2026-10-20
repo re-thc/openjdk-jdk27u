@@ -50,6 +50,8 @@ public class TestStringZillaCompilation {
     private static String overlappingUTF16Needle = "\u0402" + "\u0401".repeat(128);
     private static String overlappingLatin = overlappingLatinNeedle + "a";
     private static String overlappingUTF16 = overlappingUTF16Needle + "\u0401";
+    private static String whitespace = " \t\n\u001c".repeat(1024);
+    private static String scanLines = latin + "\r\n" + latin;
 
     public static int probeLatin() { return latin.indexOf(latinNeedle); }
     public static int probeUTF16() { return utf16.indexOf(utf16Needle); }
@@ -68,6 +70,12 @@ public class TestStringZillaCompilation {
     public static int probeReverseSupplementary() { return utf16.lastIndexOf(0x10400); }
     public static int probeBuilder() { return builder.indexOf(latinNeedle); }
     public static int probeBuffer() { return buffer.indexOf(utf16Needle); }
+    public static int probeTrim() { return whitespace.trim().isEmpty() ? -1 : 0; }
+    public static int probeStrip() { return whitespace.strip().isEmpty() ? -1 : 0; }
+    public static int probeStripLeading() { return whitespace.stripLeading().isEmpty() ? -1 : 0; }
+    public static int probeStripTrailing() { return whitespace.stripTrailing().isEmpty() ? -1 : 0; }
+    public static int probeIsBlank() { return whitespace.isBlank() ? -1 : 0; }
+    public static int probeLines() { return scanLines.lines().count() == 2 ? -1 : 0; }
 
     public static int probeEquality() { return latin.equals(new String(latin.toCharArray())) ? -1 : 0; }
     public static int probeUTF16Equality() { return utf16.equals(new String(utf16.toCharArray())) ? -1 : 0; }

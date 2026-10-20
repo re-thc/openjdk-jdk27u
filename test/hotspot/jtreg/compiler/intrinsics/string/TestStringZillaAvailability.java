@@ -50,7 +50,7 @@ public class TestStringZillaAvailability {
         }
         String[] substrings = {"findLatin1", "findUTF16", "rfindLatin1", "rfindUTF16",
                                "findUTF16Latin1", "rfindUTF16Latin1"};
-        String[] characters = {"findCharLatin1", "findCharUTF16", "rfindCharLatin1", "rfindCharUTF16"};
+        String[] characters = {"findCharLatin1", "findCharUTF16", "rfindCharLatin1", "rfindCharUTF16", "scanLatin1"};
         for (String name : substrings) {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, byte[].class, int.class), expected);
         }

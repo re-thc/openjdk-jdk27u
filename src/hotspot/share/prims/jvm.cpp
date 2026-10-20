@@ -254,6 +254,13 @@ JVM_LEAF(void, JVM_RegisterStringZillaKernels(const void* kernels))
   StringZilla::register_kernels(kernels);
 JVM_END
 
+JVM_ENTRY(jint, JVM_StringZillaScanLatin1(JNIEnv* env, jclass ignored, jbyteArray src,
+                                       jint offset, jint length, jint mode))
+  typeArrayOop s = typeArrayOop(JNIHandles::resolve_non_null(src));
+  // The Java window loop validates physical bounds before entering this leaf.
+  return StringZilla::scan_latin1((const char*)s->byte_at_addr(offset), length, mode);
+JVM_END
+
 JVM_ENTRY(jint, JVM_StringZillaChar(JNIEnv* env, jclass ignored, jbyteArray src,
                                  jint offset, jint length, jint ch,
                                  jboolean utf16, jboolean reverse))

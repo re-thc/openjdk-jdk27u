@@ -81,6 +81,10 @@ int StringZilla::equal_range(const char* src, int length, const char* tgt, int t
   return equal_bytes(src, tgt + tgt_offset, length);
 }
 
+int StringZilla::scan_latin1(const char* src, int length, int mode) {
+  return kernels()->scanLatin1(src, length, mode);
+}
+
 int StringZilla::capabilities() {
 #if defined(AMD64) && !defined(ZERO)
   if (UseAVX >= 2 && VM_Version::supports_avx2() && VM_Version::supports_bmi1() &&
@@ -114,6 +118,7 @@ int StringZilla::search_char(const char* src, int length, int ch, bool utf16, bo
 
 address StringZilla::entry(vmIntrinsics::ID id) {
   switch (id) {
+    case vmIntrinsics::_stringzillaScanLatin1: return CAST_FROM_FN_PTR(address, StringZilla::scan_latin1);
     case vmIntrinsics::_stringzillaEqualsRange: return CAST_FROM_FN_PTR(address, StringZilla::equal_range);
     case vmIntrinsics::_equalsL: return CAST_FROM_FN_PTR(address, equal_bytes);
     case vmIntrinsics::_stringzillaFindCharLatin1: return CAST_FROM_FN_PTR(address, find_char_latin1);

@@ -357,6 +357,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindUTF16Latin1));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindUTF16Latin1));
+  FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaScanLatin1));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharLatin1));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaFindCharUTF16));
   FUNCTION_CASE(entry, StringZilla::entry(vmIntrinsics::_stringzillaRfindCharLatin1));

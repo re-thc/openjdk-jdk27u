@@ -55,6 +55,7 @@ typedef struct {
     StringZillaCharFn rfindCharLatin1;
     StringZillaCharFn rfindCharUTF16;
     StringZillaEqualFn equal;
+    StringZillaCharFn scanLatin1;
 } StringZillaKernels;
 
 jint StringZilla_initialize(void);

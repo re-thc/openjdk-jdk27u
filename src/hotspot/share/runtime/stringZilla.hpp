@@ -37,6 +37,7 @@ class StringZilla : AllStatic {
   static void register_kernels(const void* table);
   static int capabilities();
   static int equal_range(const char* src, int length, const char* tgt, int tgt_offset);
+  static int scan_latin1(const char* src, int length, int mode);
   static address entry(vmIntrinsics::ID id);
   static int search_char(const char* src, int length, int ch, bool utf16, bool reverse);
   static int search(const char* src, int length, const char* tgt, int tgt_length,
