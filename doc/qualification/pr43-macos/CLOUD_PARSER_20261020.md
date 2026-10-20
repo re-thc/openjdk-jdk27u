@@ -181,6 +181,18 @@ controls. Reason-specific allocation-copy extraction was checked against the
 retained x64 allocation phase. These are reader/workflow checks, not native
 ARM execution evidence.
 
+The reviewed entrypoint was committed and pushed normally at
+`66590c138fc511a5aab06462acba9e1027e3ae70` on the existing qualification branch.
+The single authorized dispatch attempt returned `Forbidden` for
+`POST /repos/re-thc/openjdk-jdk27u/actions/workflows/main.yml/dispatches`.
+The connected repository-run collection then reported zero manual runs for
+that branch. No native JVM capture started. The exact request, result and
+remaining access prerequisite are retained in
+[NATIVE_CI_ADMISSION_20261020.json](NATIVE_CI_ADMISSION_20261020.json).
+No alternate trigger or retry was attempted. Execution now requires a permitted
+workflow-dispatch path with Actions write access; user authorization for the
+reviewed focused capture is already present.
+
 No historical artifact-transfer route was retried, no new run is claimed to
 recover old paired captures, and PR39 was not modified or used. Historical
 capture unavailability remains the completed decision already recorded.

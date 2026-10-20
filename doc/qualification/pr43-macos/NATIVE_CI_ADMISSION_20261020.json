@@ -1,0 +1,55 @@
+{
+  "status": "dispatch-forbidden-no-run-observed",
+  "repository": "re-thc/openjdk-jdk27u",
+  "existing_branch": "codex/pr43-macos-qualification",
+  "reviewed_diagnostic_sha": "66590c138fc511a5aab06462acba9e1027e3ae70",
+  "product_pr": 43,
+  "product_sha": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+  "live_master_at_check": "70c91df3528a9c95bfde606a8fbe1bfaee957271",
+  "completed": [
+    "Inspected existing make arguments: they append to ordinary build targets and cannot select this capture alone",
+    "Added one default-false manual-only job on the existing ubuntu-26.04-arm runner label",
+    "Bound current product, successful ordinary CI, exact merge tree/parents and current unexpired native fastdebug artifact",
+    "Preserved ordinary jobs, global permissions and concurrency; normal push/PR/default dispatch behavior unchanged",
+    "Independent read-only review approved the concrete workflow and helper after phase and allocation-copy corrections",
+    "Validated complete retained-code reconstruction and constant/register/byte negative controls",
+    "Committed cleanly and pushed normally to the existing qualification branch"
+  ],
+  "reviewed_helper_sha256": "98c087b4764b6808544bcb8e658034817699f78a82252f7332b59cc5cb223450",
+  "reviewed_workflow_sha256": "5b51853d0121bd796785447c44527e4dda480e217884f56680c2a783716b4e3f",
+  "dispatch_attempts": 1,
+  "denied_action": {
+    "method": "POST",
+    "target": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/workflows/main.yml/dispatches",
+    "body": {
+      "ref": "codex/pr43-macos-qualification",
+      "inputs": {"pr43_native_parser_probe": true}
+    },
+    "tool": "gh api --method POST with a JSON input file",
+    "exit_code": 1,
+    "reported_reason": "Post \"https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/workflows/main.yml/dispatches\": Forbidden",
+    "diagnosis_limit": "The CLI reported Forbidden; no HTTP response code or more specific credential/network reason was provided. This was not an automatic approval-review rejection.",
+    "outcome": "Rejected; no manual workflow run observed in the subsequent connected GitHub repository-run collection"
+  },
+  "post_attempt_read": {
+    "endpoint": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/runs?branch=codex%2Fpr43-macos-qualification&event=workflow_dispatch&per_page=5",
+    "total_count": 0,
+    "workflow_runs": []
+  },
+  "other_access_limits": [
+    "The preceding gh run list read also returned Forbidden",
+    "GitHub Fetch did not support the artifact-by-ID or workflow-file-runs URL shapes; supported repository-run metadata remained readable"
+  ],
+  "remaining_prerequisite": "A permitted workflow_dispatch path with GitHub Actions write access for this repository; existing user authorization already covers the single reviewed bounded probe",
+  "not_performed": [
+    "No retry or alternate dispatch trigger",
+    "No broad build/test matrix or native JVM execution",
+    "No historical artifact transfer, infrastructure change, dependency installation or PR39 action",
+    "No new branch/PR, merge, force-push or product source change"
+  ],
+  "remaining_hardware_evidence": [
+    "Actual full-parser NEON matching, allocated physical operands, complete machine bytes and allocation-copy/stack classification on native AArch64",
+    "Separate nonzero-SVE exclusion records on suitable native SVE hardware",
+    "Fresh matched bounded paired/interleaved native profitability evidence, with Apple-generation claims confined to suitable Apple hardware"
+  ]
+}
