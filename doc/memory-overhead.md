@@ -1,11 +1,11 @@
 # JVM memory overhead changes
 
-**Review remains open.** The measured memory benefits do not establish universal
-non-regression. In particular, the measured DateFormatSymbols implementation
-has repeatable warm-zone clone costs of about 11% under Serial and 2.88–5.72%
-under G1. Lazy-zone and unrelated native gains do not recover those costs in
-the same workload. This PR includes DateFormatSymbols without a runtime selector;
-a split or revert would be a separate decision.
+These changes correct excess native allocation and temporary-buffer retention,
+reclaim dead code earlier, and share privately owned locale symbol arrays.
+Public APIs, heap defaults and the normal collector profile are unchanged.
+Memory and CPU results below retain their measured sources and workload limits;
+they do not establish universal non-regression. DateFormatSymbols is included
+without a runtime selector; omitting it requires a separately reviewed split or revert.
 
 ## Components and provenance
 
@@ -45,7 +45,7 @@ different candidate revisions are kept separate:
 | C0 | `dfbbd8f2b278729aa5efbb286f59664dcbe02042`; initial combined image |
 | C1 | `474b4c1650ade24c4f4a76b23a506c55d1e79212`; immutable snapshots replace broad clone locking |
 | C2 | `207f395074f651fb36d03160169940de80504013`; avoid a redundant volatile destination write |
-| Proposed follow-up | `72e8eefc589cad059abffd8678df194671a0ec6b`; separate the eager zone-copy loop; complete-image qualification pending |
+| F | `0039375e7ce4cf3a300284a55fc329201fc53abb`; complete images containing the clone-copy repair `72e8eefc589cad059abffd8678df194671a0ec6b`; separately measured below |
 | Common benchmark additions | First-write serialization at `e4eb05db67bf426f909f9116a49be139bbff16a5`; lazy-zone cloning at `9805280fafdc019d8fbbd57d8aa463276a06aa76` |
 | Test-only follow-up | `ea4a3535592081cfce0de6cd543f60d9f582585a`; exclude an inherited shared-Builder race from concurrent cache checks |
 | Archived record | `1cfa04fdfb95b92ae1a213535f8b0bb4ff1c4f23`; later changes to C2 are tests, documentation and copyright attribution |
@@ -61,14 +61,14 @@ remain in the immutable [validation record](https://github.com/re-thc/openjdk-jd
 [comparison instructions](https://github.com/re-thc/openjdk-jdk27u/blob/1cfa04fdfb95b92ae1a213535f8b0bb4ff1c4f23/doc/memory-overhead-native-decision.md),
 [ownership/test instructions](https://github.com/re-thc/openjdk-jdk27u/blob/1cfa04fdfb95b92ae1a213535f8b0bb4ff1c4f23/doc/date-format-symbols-sharing.md)
 and [original provenance record](https://github.com/re-thc/openjdk-jdk27u/blob/1cfa04fdfb95b92ae1a213535f8b0bb4ff1c4f23/doc/memory-overhead.md).
-Their adoption recommendation is withdrawn during this review. Original images,
-raw observations and diagnostic inputs are retained privately. Any subsequent
-production edit requires new affected validation; these measurements keep their
-original source identities.
+Those records describe earlier sources. Original images, raw observations and
+diagnostic inputs remain retained privately; old measurements are not relabeled
+as validation of changed production code.
 
 ## Attributable memory and correctness
 
-Matched images use the normal headless profile, GCC/G++ 16.2.0, mold, boot JDK
+The following memory figures were measured on the historical B/C0/C1/C2 images,
+not remeasured on F. Their matched builds use the normal headless profile, GCC/G++ 16.2.0, mold, boot JDK
 27+35-2325, jtreg 8.3-dev+1, GoogleTest 1.14 and JMH 1.37. The local host provides
 four CPU equivalents and a 16 GiB memory limit. Actual compact headers are four
 bytes, with eight-byte alignment; compressed oops are enabled for Serial/G1 and
@@ -109,14 +109,14 @@ wrong regions in three/four workers; a candidate failure occurred before clone.
 Concurrent region-override construction remains unqualified. Ordinary cache
 publication is checked concurrently; region-override ownership sequentially.
 
-## Runtime costs remain material
+## Historical CPU costs
 
 Each condition uses four balanced AB/BA pairs, one fork, three one-second
 warmups and four one-second measurements, with unchanged common class bytes.
 Timing uses fixed US/UTC, CPU affinity 0–3, 256 MiB heaps, four processors, two
 compiler/parallel GC threads, one concurrent GC thread, and no NMT/agent/profiler.
-The following C2 paired medians/ranges are candidate relative to B; positive is
-slower. Initialized-zone setup checks equality; lazy setup checks months only.
+The following C2 results are from the EPYC 9V45 phase, relative to B; positive
+is slower. Initialized-zone setup checks equality; lazy setup checks months only.
 
 | C2 clone condition | Paired median % [range] | Slower pairs |
 | --- | --- | --- |
@@ -135,15 +135,6 @@ losses and a 2281% G1 lazy shared-clone loss; C1/C2 repair that contention but
 leave the costs above. Lazy C2 clones are 41–54% faster in selected conditions.
 The measured G1 formatter clone is 11.39% faster with lazy zones; it is not
 proof of recovery for a warmed-zone formatter chain.
-
-The follow-up `72e8eefc589cad059abffd8678df194671a0ec6b` moves the unchanged
-eager time-zone copy loop into a helper marked `DontInline`. Snapshot ownership,
-volatile publication and serialization locking remain intact. An unchanged-image
-compiler-boundary experiment and matched-mode module-patch diagnostics support
-this targeted repair. The patch comparisons explicitly disable CDS on both
-sides; they do not replace the C2 results with a complete-image non-regression
-claim. Normal-image/default-CDS costs, including affected G1/ZGC conditions,
-remain to be checked.
 
 Other slower/noisy results remain recorded. C0 javac medians are +1.91% G1,
 +0.93% Serial and +3.47% ZGC; G1 thread start/join is +4.51%, Serial/ZGC allocation
@@ -167,6 +158,55 @@ descriptive, not application transaction p99. G1 C0 median 1.417 ms versus B
 1.285 ms lies within substantial B/B variation (1.147–1.788 ms). Sparse process
 tails, other architectures, Parallel and C2 peak-byte/sanitizer claims remain
 unqualified. CI success establishes its selected tests, not performance.
+
+## Clone-copy boundary and focused repair results
+
+An initialized-zone clone calls `copyOtherMembers` then `getZoneStringsImpl(true)`.
+Retained inlining traces show B leaving `copyMembers` (160 bytecodes) outside the
+clone caller, while C2 inlines `copyOtherMembers` (46 bytecodes) and the getter
+(80 bytecodes), including the allocation loop. The repair keeps the same eager row copies in
+`copyZoneStrings`, marked `DontInline`; the getter shrinks to 35 bytecodes and
+the traces confirm that the loop stays outside the inlined caller. Copies still
+execute for every warmed-zone clone. Ownership, volatile publication and locking
+are unchanged. This is a [limited HotSpot code-shape workaround](../src/java.base/share/classes/jdk/internal/vm/annotation/DontInline.java),
+not a general inlining-policy fix or an instruction-level cause claim.
+
+The boundary also serves public `getZoneStrings` and ordinary `SimpleDateFormat`
+constructor, symbols getter/setter and clone calls through DateFormatSymbols.
+No benchmark detection or alternate copy algorithm is introduced. Performance
+of those other caller shapes, tiny/custom tables, subclasses, other locales,
+warmed formatter chains, other JITs/hosts and untested collectors is not established.
+
+Fresh complete release and fastdebug F images each pass profile checks and all
+14 affected IDs (Serial 8, G1 3, ZGC 3), including the three serialization schedules
+per collector. F release matches 93 primary baseline configuration variables
+after source/output path normalization; external symbols remain enabled.
+Omitting GTest affects test artifacts only:
+all 55 shipped native ELF files match retained C2 byte-for-byte. F `lib/modules`
+SHA256 is `d804b1bae7481ae9fae524aac9c953a3b4d67447fa66b84a8b79211306c56628`;
+default `classes_fourbyte.jsa` is `0544370dc7355470dbcf17c9909f0c27db69587bbf214cd3a4a458132dcb28bc`.
+
+A separate EPYC 9V74 phase uses unchanged benchmark bytes/settings and default
+CDS on B, C2 and F: four interleaved three-image blocks and two B/B control pairs
+per case, exactly 64 measured forks. Earlier module-patch diagnostics with CDS
+disabled are separate exploratory evidence. Percent changes below are medians
+[paired ranges]; F/B and F/C2 are faster in all four blocks of every case.
+
+| Clone case | F/B % | F/C2 % | B/B control % |
+| --- | --- | --- | --- |
+| Serial private, one worker | -11.85 [-15.53, -6.86] | -22.16 [-23.89, -17.90] | -2.23 [-4.64, +0.17] |
+| Serial shared, four workers | -10.58 [-11.32, -4.59] | -20.76 [-22.50, -14.73] | -2.43 [-3.42, -1.44] |
+| G1 private, one worker | -22.63 [-29.68, -15.40] | -18.59 [-25.01, -17.50] | -1.99 [-2.50, -1.49] |
+| G1 shared, one worker | -21.15 [-25.78, -15.40] | -20.85 [-26.16, -13.01] | +0.72 [+0.57, +0.87] |
+
+Serial C2/B costs reproduce on 9V74: +12.50% [+8.11, +17.84] private and
++13.57% [+4.40, +21.06] shared, both 4/4 slower. F recovers those costs within
+each clone workload, without unrelated offsets. G1 C2/B is mixed: private
+-4.79% [-8.22, +4.33], 1/4 slower; shared +1.69% [-9.09, +3.33], 3/4 slower.
+The earlier 9V45 G1 losses remain on record. These phases are not pooled.
+B/B variation reaches 4.64%; four blocks/two controls do not certify a 1%
+non-regression bound. F's process/code-memory footprint and remaining workloads
+were not remeasured; historical memory benefits are not new F measurements.
 
 ## Reproduction
 
