@@ -55,7 +55,6 @@ final class BufferMismatch {
         }
     }
 
-    @ForceInline
     static int mismatch(ByteBuffer a, int aOff, ByteBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 7) {
@@ -74,7 +73,6 @@ final class BufferMismatch {
         return -1;
     }
 
-    @ForceInline
     static int mismatch(CharBuffer a, int aOff, CharBuffer b, int bOff, int length) {
         int i = 0;
         // Ensure only heap or off-heap buffer instances use the
@@ -97,7 +95,6 @@ final class BufferMismatch {
         return -1;
     }
 
-    @ForceInline
     static int mismatch(ShortBuffer a, int aOff, ShortBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 3 && a.order() == b.order()) {
@@ -116,7 +113,6 @@ final class BufferMismatch {
         return -1;
     }
 
-    @ForceInline
     static int mismatch(IntBuffer a, int aOff, IntBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
@@ -135,7 +131,6 @@ final class BufferMismatch {
         return -1;
     }
 
-    @ForceInline
     static int mismatch(FloatBuffer a, int aOff, FloatBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
@@ -176,7 +171,6 @@ final class BufferMismatch {
         return -1;
     }
 
-    @ForceInline
     static int mismatch(LongBuffer a, int aOff, LongBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {
@@ -194,7 +188,6 @@ final class BufferMismatch {
         return -1;
     }
 
-    @ForceInline
     static int mismatch(DoubleBuffer a, int aOff, DoubleBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {

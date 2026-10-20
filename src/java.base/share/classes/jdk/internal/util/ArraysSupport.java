@@ -430,14 +430,6 @@ public class ArraysSupport {
     private static final int MISMATCH_ADMISSION_BYTES = 128;
     private static final int MISMATCH_HEAP_STUB_BYTES = 2 * 1024;
 
-    // Large byte-array suffixes cannot use C2's heap leaf. Resume Java after
-    // the two words already checked instead of scanning an admission prefix.
-    private static int mismatchBytePrefixLength(int length) {
-        if (length <= MISMATCH_INLINE_BYTES) return length;
-        return length > MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES
-                ? 2 * Long.BYTES : MISMATCH_ADMISSION_BYTES;
-    }
-
     // The caller has at least one word; compare at most the first two words.
     private static int mismatchPrefix(Object a, long aOffset, Object b, long bOffset,
                                       int length, int log2ArrayIndexScale) {
@@ -460,6 +452,16 @@ public class ArraysSupport {
     private static int mismatchSmall(Object a, long aOffset, Object b, long bOffset,
                                      int length, int log2ArrayIndexScale, int prefixBytes) {
         int last = (length << log2ArrayIndexScale) - Long.BYTES;
+        if (log2ArrayIndexScale == LOG2_ARRAY_LONG_INDEX_SCALE) {
+            // Eight-byte array elements and their offsets are naturally aligned.
+            // Avoid the Java unaligned-access helper on the interpreter path.
+            for (int offset = prefixBytes; offset <= last; offset += Long.BYTES) {
+                if (U.getLong(a, aOffset + offset) != U.getLong(b, bOffset + offset)) {
+                    return offset >> LOG2_ARRAY_LONG_INDEX_SCALE;
+                }
+            }
+            return -1;
+        }
         for (int offset = prefixBytes; offset < last; offset += Long.BYTES) {
             long diff = U.getLongUnaligned(a, aOffset + offset) ^ U.getLongUnaligned(b, bOffset + offset);
             if (diff != 0) return mismatchIndex(diff, offset, log2ArrayIndexScale);
@@ -824,30 +826,6 @@ public class ArraysSupport {
     public static int mismatch(byte[] a, int aFromIndex,
                                byte[] b, int bFromIndex,
                                int length) {
-        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
-            if (length < (8 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) {
-                for (int j = 0; j < length; j++) {
-                    if (a[aFromIndex + j] != b[bFromIndex + j]) return j;
-                }
-                return -1;
-            }
-            if (a[aFromIndex] != b[bFromIndex]) return 0;
-            long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
-            long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
-            int i = mismatchPrefix(a, aOffset, b, bOffset,
-                    length, LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0) return i;
-            if (i < 0 && length <= (16 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) return -1;
-            int prefixLength = mismatchBytePrefixLength(length);
-            int prefixMismatch = prefixLength == 16 ? -1
-                    : mismatchSmall(a, aOffset, b, bOffset, prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE, 16);
-            if (prefixMismatch >= 0) return prefixMismatch;
-            if (length == prefixLength) return -1;
-            int result = mismatchLarge(a, aFromIndex + prefixLength,
-                    b, bFromIndex + prefixLength, length - prefixLength);
-            return result < 0 ? -1 : prefixLength + result;
-        }
-
         // assert 0 <= aFromIndex < a.length
         // assert 0 <= aFromIndex + length <= a.length
         // assert 0 <= bFromIndex < b.length
@@ -856,14 +834,40 @@ public class ArraysSupport {
 
         int i = 0;
         if (length > 7) {
+            // Larger suffixes cannot use C2's heap leaf; retain the Java route.
+            if (PlatformProps.TARGET_ARCH_IS_AARCH64 &&
+                    length <= MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES) {
+                if (a[aFromIndex] != b[bFromIndex]) return 0;
+                long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
+                int firstMismatch = mismatchPrefix(a, aOffset, b, bOffset,
+                        length, LOG2_ARRAY_BYTE_INDEX_SCALE);
+                if (firstMismatch >= 0) return firstMismatch;
+                if (firstMismatch < 0 && length <= (16 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) return -1;
+                int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE)
+                        ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE;
+                int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                        prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE, 16);
+                if (prefixMismatch >= 0) return prefixMismatch;
+                if (length == prefixLength) return -1;
+                int result = mismatchLarge(a, aFromIndex + prefixLength,
+                        b, bFromIndex + prefixLength, length - prefixLength);
+                return result < 0 ? -1 : prefixLength + result;
+            }
+
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
             long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
             long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
+            // On AArch64 this path is above the cap. Expose that bound to C2
+            // before intrinsification; the guarded length is unchanged.
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
-                    length, LOG2_ARRAY_BYTE_INDEX_SCALE);
+                    PlatformProps.TARGET_ARCH_IS_AARCH64
+                            ? Math.max(length, MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES + 1)
+                            : length,
+                    LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0)
                 return i;
             i = length - ~i;

@@ -1238,6 +1238,52 @@ public class NativeVectorizedMismatchTest {
                     Integer.valueOf(cap).equals(intCon(input(count, 2))));
         }
 
+        private N otherIntInput(N n, int constant) {
+            if (Integer.valueOf(constant).equals(intCon(input(n, 1)))) return uncast(input(n, 2));
+            if (Integer.valueOf(constant).equals(intCon(input(n, 2)))) return uncast(input(n, 1));
+            return null;
+        }
+
+        private Set<Integer> signedBound(N length, int bound, boolean lower) {
+            Set<Integer> result = new HashSet<>();
+            for (N iff : named("If")) {
+                N bool = input(iff, 1);
+                N cmp = bool != null && bool.name().equals("Bool") ? input(bool, 1) : null;
+                if (cmp == null || !cmp.name().equals("CmpI") || uncast(input(cmp, 1)) != length) {
+                    continue;
+                }
+                Integer value = intCon(input(cmp, 2));
+                if (value == null) continue;
+                Boolean taken = switch (test(bool)) {
+                    case "ge" -> lower && value == bound ? true : null;
+                    case "lt" -> lower && value == bound ? false : null;
+                    case "gt" -> !lower && value == bound ? false : null;
+                    case "le" -> !lower && value == bound ? true : null;
+                    default -> null;
+                };
+                if (taken != null) result.add(projection(iff, taken));
+            }
+            return result;
+        }
+
+        // A clamp is an identity only when guards on its original input already
+        // establish both bounds. Require those guards to dominate the pinned
+        // prefix too; a bounded leaf count alone cannot make an over-read safe.
+        private Set<Integer> checkedNativeBounds(N count, int scale) {
+            int minimum = BULK_MINIMUM >> scale, maximum = LIMIT >> scale;
+            if (!count.name().equals("MinI")) return Set.of();
+            N max = otherIntInput(count, maximum);
+            if (max == null || !max.name().equals("MaxI")) return Set.of();
+            N original = otherIntInput(max, minimum);
+            if (original == null) return Set.of();
+            Set<Integer> inside = new HashSet<>(rangeGuards(original, minimum, maximum - minimum).get(0));
+            Set<Integer> lower = signedBound(original, minimum, true);
+            for (int upper : signedBound(original, maximum, false)) {
+                if (!lower.isEmpty() && dominatedBy(node(upper), lower)) inside.add(upper);
+            }
+            return inside;
+        }
+
         private void verifyAArch64NativeChunk(N leaf, int scale) {
             N count = uncast(input(leaf, 7));
             Integer constant = intCon(count);
@@ -1248,10 +1294,17 @@ public class NativeVectorizedMismatchTest {
                 }
                 inside = named("Start").stream().map(N::idx).collect(Collectors.toSet());
             } else {
-                inside = lengthGuards(scale, count).get(0);
-                Set<Integer> admitted = shortNativeGuards(scale, count).get(1);
-                if (admitted.isEmpty() || !dominatedBy(leaf, admitted) || firstWordEqual(admitted).size() != 16) {
-                    throw new AssertionError("native chunk bypasses bulk admission or its pinned prefix: " + leaf);
+                inside = checkedNativeBounds(count, scale);
+                if (!inside.isEmpty()) {
+                    if (firstWordEqual(inside).size() != 16) {
+                        throw new AssertionError("checked native bounds lack sixteen pinned comparisons: " + leaf);
+                    }
+                } else {
+                    inside = lengthGuards(scale, count).get(0);
+                    Set<Integer> admitted = shortNativeGuards(scale, count).get(1);
+                    if (admitted.isEmpty() || !dominatedBy(leaf, admitted) || firstWordEqual(admitted).size() != 16) {
+                        throw new AssertionError("native chunk bypasses bulk admission or its pinned prefix: " + leaf);
+                    }
                 }
             }
             if (inside.isEmpty() || !dominatedBy(leaf, inside)) {

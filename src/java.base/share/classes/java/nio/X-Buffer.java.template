@@ -1762,6 +1762,7 @@ public abstract sealed class $Type$Buffer
         int h = 1;
         int p = position();
         int i = limit() - 1;
+#if[!float]
         // Four elements per step give the same value as one per step
         // (h = 31 * h + e), with only one multiplication on the dependency chain.
         for (; i - 3 >= p; i -= 4)
@@ -1771,6 +1772,7 @@ public abstract sealed class $Type$Buffer
             h = 923521 * h + 29791 * (int)get(i) + 961 * (int)get(i - 1)
                 + 31 * (int)get(i - 2) + (int)get(i - 3);
 #end[int]
+#end[!float]
         for (; i >= p; i--)
 #if[int]
             h = 31 * h + get(i);
@@ -1904,7 +1906,12 @@ public abstract sealed class $Type$Buffer
      *
      * @since 11
      */
+#if[float]
     @ForceInline
+#end[float]
+#if[double]
+    @ForceInline
+#end[double]
     public int mismatch($Type$Buffer that) {
         int thisPos = this.position();
         int thisRem = this.limit() - thisPos;

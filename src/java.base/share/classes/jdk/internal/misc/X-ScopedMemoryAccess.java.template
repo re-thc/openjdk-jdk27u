@@ -233,7 +233,8 @@ public final class ScopedMemoryAccess {
                 bSession.checkValidStateRaw();
             }
             if ((a == null || b == null) && log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
-                int minimum = (Architecture.isAARCH64() ? 512 : 128) >> log2ArrayIndexScale;
+                boolean aarch64 = Architecture.isAARCH64();
+                int minimum = (aarch64 ? 512 : 128) >> log2ArrayIndexScale;
                 if (length >= 0 && length < minimum) {
                     // Bound short native ranges so C2 retains the Java loop
                     // without constructing the bulk dispatch and chunk loop.
@@ -242,8 +243,15 @@ public final class ScopedMemoryAccess {
                 }
                 // Bound native-address mismatch calls, including C1's existing
                 // intrinsic. The loop between chunks provides safepoint polls.
-                if (length > (65536 >> log2ArrayIndexScale)) {
+                int maximum = 65536 >> log2ArrayIndexScale;
+                if (length > maximum) {
                     return vectorizedMismatchLarge(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+                }
+                if (aarch64 && length >= minimum) {
+                    // Expose the checked bounds before C2 intrinsification;
+                    // the guarded length and original Java arguments are unchanged.
+                    return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset,
+                            Math.min(Math.max(length, minimum), maximum), log2ArrayIndexScale);
                 }
             }
             return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
