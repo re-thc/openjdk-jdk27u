@@ -1131,6 +1131,9 @@ final class StringLatin1 {
     static String trim(byte[] value) {
         int len = value.length;
         int st = 0;
+        if (len == 0 || ((value[0] & 0xff) > ' ' && (value[len - 1] & 0xff) > ' ')) {
+            return null;
+        }
         if (len >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
             while (st < StringZilla.SCAN_PROBE && (value[st] & 0xff) <= ' ') {
                 st++;
@@ -1167,6 +1170,13 @@ final class StringLatin1 {
     static int indexOfNonWhitespace(byte[] value) {
         int length = value.length;
         int left = 0;
+        if (left < length) {
+            char ch = getChar(value, left);
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                return left;
+            }
+            left++;
+        }
         if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
             while (left < StringZilla.SCAN_PROBE) {
                 char ch = getChar(value, left);
@@ -1194,8 +1204,15 @@ final class StringLatin1 {
 
     static int lastIndexOfNonWhitespace(byte[] value) {
         int right = value.length;
-        if (right >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            int stop = right - StringZilla.SCAN_PROBE;
+        if (right > 0) {
+            char ch = getChar(value, right - 1);
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                return right;
+            }
+            right--;
+        }
+        if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            int stop = value.length - StringZilla.SCAN_PROBE;
             while (right > stop) {
                 char ch = getChar(value, right - 1);
                 if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {

@@ -35,7 +35,7 @@ import org.openjdk.jmh.annotations.*;
 public class StringZillaScans {
     @State(Scope.Thread)
     public static class Whitespace {
-        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter", "gateBefore", "gateAt",
+        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "prefix8", "prefix9", "suffix8", "suffix9", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter", "gateBefore", "gateAt",
                 "longBlank", "longClean", "longLeading", "longTrailing", "longBoth", "lateNbsp", "nul", "window", "utf16"})
         public String workload;
         private String[] values;
@@ -53,12 +53,16 @@ public class StringZillaScans {
                     case "shortClean" -> text.repeat(16);
                     case "shortPad" -> "  " + text + "  ";
                     case "early" -> " ".repeat(7) + text + " ".repeat(4088);
-                    case "probeAt" -> " ".repeat(8) + text.repeat(4096);
-                    case "probeAfter" -> " ".repeat(9) + text.repeat(4096);
-                    case "tailProbeAt" -> text.repeat(4096) + " ".repeat(8);
-                    case "tailProbeAfter" -> text.repeat(4096) + " ".repeat(9);
-                    case "gateBefore" -> " ".repeat(263);
-                    case "gateAt" -> " ".repeat(264);
+                    case "prefix8" -> " ".repeat(8) + text.repeat(4096);
+                    case "prefix9" -> " ".repeat(9) + text.repeat(4096);
+                    case "suffix8" -> text.repeat(4096) + " ".repeat(8);
+                    case "suffix9" -> text.repeat(4096) + " ".repeat(9);
+                    case "probeAt" -> " ".repeat(32) + text.repeat(4096);
+                    case "probeAfter" -> " ".repeat(33) + text.repeat(4096);
+                    case "tailProbeAt" -> text.repeat(4096) + " ".repeat(32);
+                    case "tailProbeAfter" -> text.repeat(4096) + " ".repeat(33);
+                    case "gateBefore" -> " ".repeat(287);
+                    case "gateAt" -> " ".repeat(288);
                     case "longBlank" -> pad;
                     case "longClean" -> text.repeat(4096);
                     case "longLeading" -> pad + text;
@@ -82,7 +86,7 @@ public class StringZillaScans {
 
     @State(Scope.Thread)
     public static class Lines {
-        @Param({"empty", "short", "immediate", "probeAt", "probeAfter", "lines16", "lines80", "lines128", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
+        @Param({"empty", "short", "immediate", "prefix8", "prefix9", "probeAt", "probeAfter", "lines16", "lines80", "lines128", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
         public String workload;
         private String[] values;
         private int cursor;
@@ -96,17 +100,19 @@ public class StringZillaScans {
                     case "empty" -> new String("");
                     case "short" -> text + "bc\r\ndef\nghi\r";
                     case "immediate" -> "\r\n" + text.repeat(4096);
-                    case "probeAt" -> text.repeat(8) + "\r\n" + text.repeat(4096);
-                    case "probeAfter" -> text.repeat(9) + "\r\n" + text.repeat(4096);
+                    case "prefix8" -> text.repeat(8) + "\r\n" + text.repeat(4096);
+                    case "prefix9" -> text.repeat(9) + "\r\n" + text.repeat(4096);
+                    case "probeAt" -> text.repeat(32) + "\r\n" + text.repeat(4096);
+                    case "probeAfter" -> text.repeat(33) + "\r\n" + text.repeat(4096);
                     case "lines16" -> (text.repeat(16) + "\r\n").repeat(256);
                     case "lines80" -> (text.repeat(80) + "\r\n").repeat(256);
                     case "lines128" -> (text.repeat(128) + "\r\n").repeat(256);
-                    case "gateBefore" -> text.repeat(263);
-                    case "gateAt" -> text.repeat(264);
+                    case "gateBefore" -> text.repeat(287);
+                    case "gateAt" -> text.repeat(288);
                     case "noMatch" -> text.repeat(4096);
                     case "longLines" -> (text.repeat(4096) + "\r\n").repeat(4);
                     case "dense" -> (text + "\r\n").repeat(1024);
-                    case "windowCRLF" -> text.repeat(65543) + "\r\n" + text.repeat(65536) + "\n";
+                    case "windowCRLF" -> text.repeat(65567) + "\r\n" + text.repeat(65536) + "\n";
                     case "utf16" -> ("\u0100".repeat(4096) + "\r\n").repeat(4);
                     default -> throw new IllegalArgumentException(workload);
                 };

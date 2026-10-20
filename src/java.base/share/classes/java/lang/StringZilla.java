@@ -47,7 +47,7 @@ final class StringZilla {
     private static final int NEON = 4;
     // Byte-set kernels use AVX2 (also on the Skylake backend) or NEON.
     static final boolean SCANS_ENABLED = ENABLED && BACKEND != SERIAL;
-    static final int SCAN_PROBE = 8;
+    static final int SCAN_PROBE = 32;
     static final int MIN_SCAN_BYTES = 256;
     static final int LINE_SEPARATOR = 0;
     static final int NON_TRIM = 1;
