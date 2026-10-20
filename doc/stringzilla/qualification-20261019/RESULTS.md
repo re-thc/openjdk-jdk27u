@@ -245,11 +245,13 @@ The [full workflow scope](ci7048-workflow-scope.json) corrects earlier wording
 that described only the Linux phase. Prepare's empty platform selector includes
 all four platforms. The accepted workflow plans eight builds and forty-eight
 tier1 groups: Linux x64/ARM first, then macOS ARM and Windows x64 after both
-Linux test matrices succeed. Linux is now complete, and the four macOS/Windows
-build jobs are created and queued. Their test matrices follow those builds;
-none of those pending jobs is counted as passed. The same existing run remains
-the unfinished qualification gate;
-no duplicate is dispatched. The live run link provides subsequent status.
+Linux test matrices succeed. Linux is complete. Both Windows builds and macOS fastdebug also pass, bringing
+the verified build count to seven of eight. The latter three
+[complete build logs](ordinary-ci-39280914015-build-checkpoint.tar.gz) have a
+[separate checksum receipt](ordinary-ci-build-checkpoint.json). macOS release
+and the Windows/macOS tier1 matrices remain pending. None of those pending jobs
+is counted as passed. The same existing run remains the unfinished qualification
+gate; no duplicate is dispatched. The live run link provides subsequent status.
 
 ## Decision
 
