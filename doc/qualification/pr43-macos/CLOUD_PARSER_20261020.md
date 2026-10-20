@@ -140,13 +140,46 @@ python3 cloud-parser-probe/analyze.py /new/output/directory
 | Nonzero-SVE exclusion | Requires a freshly verified SVE-capable native host and effective flags/phase records. The existing guarded Linux CI execution identifies a useful pool; the Apple NEON check cannot substitute. |
 | Profitability | Not measured here. Fresh native paired/interleaved runs must use identical parser source, controls, image configuration and hardware. For the new rule, compare current source with `456afea88231bc9ebf17dfa48811db90a8bae8b8`, holding C1 and earlier ARM fixes constant. x64 timing cannot answer this ARM-only change. |
 
-Current head and live master expose only the platform/configure/make/dry-run
-inputs of `main.yml`; `test.yml` is reusable-only with 12 fixed tier1 groups.
-Neither has a focused diagnostic/test selector. Adding one would change a CI
-workflow, which was treated as outside this pass's no-infrastructure-change
-scope. No broad matrix was dispatched to imitate a focused capture. A scoped
-native diagnostic entrypoint or an already available
-native ARM execution environment is the exact remaining execution prerequisite.
+The existing `make-arguments` input appends to the product/test-bundle build;
+it does not replace that build or select the 12 fixed tier1 test groups. After
+explicit authorization for a scoped diagnostic entrypoint, the existing
+qualification branch adds a default-false `pr43_native_parser_probe` boolean
+to the registered `main.yml`. Only a manual dispatch with that input true
+skips ordinary preparation and runs one 15-minute job on the existing
+`ubuntu-26.04-arm` pool. Push, PR and default-false dispatch behavior is preserved.
+
+The job reuses current run `39266688701` artifact `12194059473`,
+`bundles-linux-aarch64-debug`, with GitHub-reported archive digest
+`sha256:b25f7a24708dea4147028dd5520d4ba09cce9b82bcedb28e652890a5f1d6857e`.
+It fails closed if the product head, draft state, successful CI identity,
+artifact identity, or merge tree/parents change. Its JDK source is the actual
+CI merge `f09e3bcdd4ab29af3270136ca02bc12674b337e1`, not the detached PR head.
+The pinned download action performs its transfer/digest check in managed CI;
+the helper receives extracted files and does not independently hash the outer
+ZIP. Its receipt distinguishes that API archive digest from separately computed
+inner-tar, executed-java and libjvm hashes; the action's verification log is
+retained with the run.
+
+The untimed JVM has a fresh 180-second budget and forces NEON with `UseSVE=0`.
+It retains full raw phases, parser results, installed nmethod bytes, native GNU
+objdump output and a known-byte decoder control. Physical operands and the
+four-MOV weight constant are checked for all 40 fused sites in each captured
+parser nmethod. Allocation-node records and SP-relative accesses are retained
+for review; SP-relative frame/call state alone is not classified as spilling.
+Partial records are uploaded even if capture or analysis fails. No JDK build,
+package installation, timing or historical evidence recovery is part of this
+entrypoint. Native results must be reviewed at their actual run/source identity.
+
+Independent read-only review approved helper SHA256
+`98c087b4764b6808544bcb8e658034817699f78a82252f7332b59cc5cb223450` and
+workflow SHA256 `5b51853d0121bd796785447c44527e4dda480e217884f56680c2a783716b4e3f`
+before dispatch. Static verification compared every ordinary job, permission
+and concurrency definition with the prior revision. The byte reader recovered
+both complete retained x64 nmethods at their declared lengths, rejected missing
+bytes, and passed positive/negative synthetic constant and physical-register
+controls. Reason-specific allocation-copy extraction was checked against the
+retained x64 allocation phase. These are reader/workflow checks, not native
+ARM execution evidence.
 
 No historical artifact-transfer route was retried, no new run is claimed to
 recover old paired captures, and PR39 was not modified or used. Historical

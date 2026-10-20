@@ -46,6 +46,10 @@ on:
         description: 'Skip builds and tests; only prepare dependencies and configure'
         type: boolean
         default: false
+      pr43_native_parser_probe:
+        description: 'Only PR43 pinned native ARM parser/codegen capture; no builds or timing'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -57,8 +61,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pr43-native-parser:
+    name: 'PR43 native ARM parser codegen'
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_parser_probe
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: 'Checkout exact diagnostic source'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: doc/qualification/pr43-macos/cloud-parser-probe
+
+      - name: 'Bind current product, successful CI and pinned image'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/native_ci.py bind --out native-evidence
+
+      - name: 'Reuse current native fastdebug image'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: '12194059473'
+          run-id: '39266688701'
+          github-token: ${{ github.token }}
+          path: image-download
+          merge-multiple: true
+
+      - name: 'Capture parser semantics, allocation and installed ARM bytes'
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/native_ci.py capture --out native-evidence --download image-download
+
+      - name: 'Retain fresh records, including partial failures'
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr43-native-parser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: native-evidence
+          retention-days: 5
+          if-no-files-found: error
+
   prepare:
     name: 'Prepare the run'
+    if: github.event_name != 'workflow_dispatch' || !inputs.pr43_native_parser_probe
     runs-on: ubuntu-26.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
