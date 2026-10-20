@@ -260,13 +260,13 @@ The complete Windows phase has a separate
 descriptions, 586 skipped/excluded and zero failures or errors. All fourteen
 [Windows StringZilla descriptions](ci7048-stringzilla-windows.json) explicitly
 pass, including forced tiers, physical bounds, equality, native kernels and
-header layouts. Three macOS groups also pass (JDK parts 1/2 and GC), with 2,364
-passed descriptions, 284 skipped/excluded and zero failures or errors. Their
-[complete logs](ordinary-ci-39280914015-macos-progress.tar.gz) and
-[checksum/count receipt](ordinary-ci-macos-progress.json) are retained. All four
-[StringZilla JDK descriptions](ci7048-stringzilla-macos.json) pass on Apple ARM,
-including native kernels and header layouts. The nine remaining macOS groups
-are still queued.
+header layouts. Four macOS groups also pass (JDK parts 1/2, GC and
+serviceability), with 2,685 passed descriptions, 377 skipped/excluded and zero
+failures or errors. Their [complete logs](ordinary-ci-39280914015-macos-progress.tar.gz)
+and [checksum/count receipt](ordinary-ci-macos-progress.json) are retained. All
+four [StringZilla JDK descriptions](ci7048-stringzilla-macos.json) pass on Apple
+ARM, including native kernels and header layouts. The eight remaining macOS
+groups are still queued.
 No pending job is counted as passed. The same existing run remains the
 unfinished qualification gate; no duplicate is dispatched. The live run link
 provides subsequent status.
