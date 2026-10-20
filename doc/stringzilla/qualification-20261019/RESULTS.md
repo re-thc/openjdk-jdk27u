@@ -268,15 +268,22 @@ skipped/excluded and zero test failures or errors. Their
 [StringZilla JDK descriptions](ci7048-stringzilla-macos.json) pass on Apple ARM,
 including native kernels and header layouts.
 
-[Compiler part 1](ci7048-cancelled-compiler1.json) was cancelled before runner
-assignment, with no executed steps. It is not counted as passed. A bounded
-[single-job retry](ci7048-compiler1-rerun-block.json) was refused with HTTP 403:
-"The workflow run containing this job is already running." No retry started.
-That action is stopped until the run reaches the required completed state.
-Compiler part 3, common, JDK part 3 and library remain queued.
-No pending job is counted as passed. The same existing run remains the
-unfinished qualification gate; no duplicate is dispatched. The live run link
-provides subsequent status.
+The [first attempt](ci7048-attempt1-terminal-run.json) ended in failure after
+52 successful jobs and five macOS cancellations before runner assignment. None
+of those five executed a step or test. Its [terminal job records](ci7048-attempt1-terminal-jobs.json)
+are retained. The early [single-job retry](ci7048-compiler1-rerun-block.json)
+was refused while the workflow remained active; no retry started then.
+
+After the original run completed, GitHub accepted one bounded
+[failed-job-only recovery](ci7048-recovery-request.json) in the same run at the
+same source. Attempt 2 queues only the five missing macOS groups. Its
+[raw latest jobs](ci7048-latest-jobs.json) give the 52 carried-forward successes
+new IDs with unchanged execution times, runners and steps. The explicit
+[provenance ledger](ci7048-job-provenance.json) binds those statuses to the
+original execution records and logs; they are not represented as newly run.
+Successful builds/tests and performance measurements were not repeated.
+The remaining compiler parts 1/3, common, JDK part 3 and library groups still
+need execution and review. No pending or cancelled job is counted as passed.
 
 ## Decision
 
@@ -290,7 +297,7 @@ universal application speedup. No zero-loss gate or new tuning campaign is used.
 
 **PR4 remains draft and is not ready to merge.** The concrete remaining blocker
 is completion and review of the existing ordinary PR integration CI, including
-recovery of the cancelled compiler group after GitHub permits its retry. Native
+completion of the accepted five-job recovery. Native
 correctness and all planned comparisons have completed. A green preceding
 revision does not satisfy the remaining requirement, and a future green stage
 must be assessed with the retained losses rather than replacing that assessment.
