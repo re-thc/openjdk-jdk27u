@@ -162,9 +162,24 @@ final class BufferMismatch {
                 i = length - ~i;
             }
         }
+        if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+            if (i >= length) return -1;
+            return mismatchHeap(a.hb, aOff + a.offset, b.hb, bOff + b.offset, i, length);
+        }
         for (; i < length; i++) {
             float av = a.get(aOff + i);
             float bv = b.get(bOff + i);
+            if (av != bv && (!Float.isNaN(av) || !Float.isNaN(bv)))
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchHeap(float[] a, int aOff, float[] b, int bOff,
+                                    int i, int length) {
+        for (; i < length; i++) {
+            float av = a[aOff + i];
+            float bv = b[bOff + i];
             if (av != bv && (!Float.isNaN(av) || !Float.isNaN(bv)))
                 return i;
         }
@@ -218,9 +233,24 @@ final class BufferMismatch {
                 return -1;
             }
         }
+        if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+            if (i >= length) return -1;
+            return mismatchHeap(a.hb, aOff + a.offset, b.hb, bOff + b.offset, i, length);
+        }
         for (; i < length; i++) {
             double av = a.get(aOff + i);
             double bv = b.get(bOff + i);
+            if (av != bv && (!Double.isNaN(av) || !Double.isNaN(bv)))
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchHeap(double[] a, int aOff, double[] b, int bOff,
+                                    int i, int length) {
+        for (; i < length; i++) {
+            double av = a[aOff + i];
+            double bv = b[bOff + i];
             if (av != bv && (!Double.isNaN(av) || !Double.isNaN(bv)))
                 return i;
         }
