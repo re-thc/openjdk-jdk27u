@@ -100,7 +100,7 @@ class SymbolTable : public AllStatic {
 
   static void print_table_statistics(outputStream* st);
 
-  static void try_rehash_table();
+  static bool try_rehash_table();
 
 public:
   // The symbol table

@@ -36,6 +36,10 @@
 
 class SymbolTableTest : public AllStatic {
 public:
+  static bool try_rehash() {
+    return SymbolTable::try_rehash_table();
+  }
+
   static void batch(ClassLoaderData* cld, const constantPoolHandle& cp,
                     int count, const char** names, int* lengths, int* indices) {
     SymbolTable::new_symbols(cld, cp, count, names, lengths, indices);
@@ -178,6 +182,14 @@ public:
   void doit() { SymbolTableTest::check_permanent_duplicates(_cp, _name); }
 };
 
+class SymbolTableRehash : public VM_GTestExecuteAtSafepoint {
+  bool _done;
+public:
+  SymbolTableRehash() : _done(false) {}
+  void doit() override { _done = SymbolTableTest::try_rehash(); }
+  bool done() const { return _done; }
+};
+
 TEST_VM(SymbolTable, batch_permanent_duplicates) {
   JavaThread* THREAD = JavaThread::current();
   ThreadInVMfromNative tiv(THREAD);
@@ -207,11 +219,19 @@ TEST_VM(SymbolTable, batch_reference_ownership) {
 }
 
 TEST_VM(SymbolTable, batch_reference_ownership_alt_hash) {
-  {
-    ThreadInVMfromNative tiv(JavaThread::current());
-    VM_RehashSymbolTable op;
-    VMThread::execute(&op);
+  bool rehashed = false;
+  for (int attempts = 0; !rehashed && attempts < 1000; attempts++) {
+    SymbolTableRehash op;
+    {
+      ThreadInVMfromNative tiv(JavaThread::current());
+      VMThread::execute(&op);
+    }
+    rehashed = op.done();
+    if (!rehashed) {
+      os::naked_short_sleep(10);
+    }
   }
+  ASSERT_TRUE(rehashed) << "Timed out waiting to rehash the symbol table";
   const int counts[] = {1, 17, 257};
   for (int count : counts) {
     for (int layout = 0; layout < 3; layout++) {

@@ -924,10 +924,19 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   AtomicAccess::release_store(&_has_work, false);
 }
 
+bool SymbolTable::try_rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  if (!_local_table->is_safepoint_safe()) {
+    return false;
+  }
+  rehash_table();
+  return true;
+}
+
 // Called at VM_Operation safepoint
 void SymbolTable::rehash_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
-  // The ServiceThread initiates the rehashing so it is not resizing.
+  // No paused table operation may resume after the table is replaced.
   assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
 
   _alt_hash_seed = AltHashing::compute_seed();
