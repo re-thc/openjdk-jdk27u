@@ -1,5 +1,5 @@
 {
-  "job_metadata_observed_at": "2026-10-20T10:13:09.951737+00:00",
+  "job_metadata_observed_at": "2026-10-20T12:09:31.174468+00:00",
   "run_id": 39280914015,
   "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
   "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
@@ -9,20 +9,8 @@
   "test_matrices_not_yet_created": [],
   "configured_stage_gate": "macOS/Windows builds follow successful Linux matrices;their tests follow their builds",
   "created_test_groups": 48,
-  "collected_test_groups": 40,
+  "collected_test_groups": 42,
   "missing": [
-    {
-      "job_id": 118492858069,
-      "name": "macos-aarch64 / test (langtools/tier1)",
-      "status": "queued",
-      "conclusion": null
-    },
-    {
-      "job_id": 118492858078,
-      "name": "macos-aarch64 / test (hs/tier1 runtime)",
-      "status": "queued",
-      "conclusion": null
-    },
     {
       "job_id": 118492858109,
       "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
@@ -61,11 +49,11 @@
     }
   ],
   "collected_jtreg_counts": {
-    "total": 35189,
-    "pass": 33170,
+    "total": 40734,
+    "pass": 38607,
     "fail": 0,
     "error": 0,
-    "skip": 2019
+    "skip": 2127
   },
   "records": [
     {
@@ -1057,6 +1045,32 @@
       "step_failures": []
     },
     {
+      "job_id": 118492858069,
+      "name": "macos-aarch64 / test (langtools/tier1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T11:47:14Z",
+      "completed_at": "2026-10-20T12:07:26Z",
+      "log_bytes": 2497250,
+      "log_sha256": "d1a0ce564aa5948b9d1b24af5f0ac23b85309d9065ae3ba57f4584ff779b4912",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 4,703; skipped: 1; excluded: 5; did not match keywords: 2; did not meet module requirements: 16; did not meet platform requirements: 2"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/langtools:tier1",
+          "total": 4728,
+          "pass": 4702,
+          "fail": 0,
+          "error": 0,
+          "skip": 26
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
       "job_id": 118492858073,
       "name": "macos-aarch64 / test (hs/tier1 gc)",
       "conclusion": "success",
@@ -1076,6 +1090,32 @@
           "fail": 0,
           "error": 0,
           "skip": 217
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858078,
+      "name": "macos-aarch64 / test (hs/tier1 runtime)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T11:35:14Z",
+      "completed_at": "2026-10-20T11:58:39Z",
+      "log_bytes": 522904,
+      "log_sha256": "f6ffed23800cc1909b929aa7e415fb67d6b8882a7d06e4a4db81d458e4f68aab",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 737; skipped: 2; excluded: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 68"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_runtime",
+          "total": 817,
+          "pass": 735,
+          "fail": 0,
+          "error": 0,
+          "skip": 82
         }
       ],
       "test_success_marker": true,
