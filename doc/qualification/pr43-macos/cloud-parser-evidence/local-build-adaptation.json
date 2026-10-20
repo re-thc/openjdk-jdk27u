@@ -1,0 +1,16 @@
+{
+  "attempt1": {
+    "exit_code": 2,
+    "budget_seconds": 1800,
+    "expired": false,
+    "cause": "GCC 16.2 -Werror=nonnull in runtime/handshake.cpp after virtual-call inlining"
+  },
+  "attempt2": {
+    "budget_seconds": 1800,
+    "fresh_controller": true,
+    "make_override": "BUILD_LIBJVM_DISABLED_WARNINGS_gcc_handshake.cpp=stringop-overflow nonnull",
+    "source_change": false,
+    "unmanaged_install": false
+  },
+  "scope": "Local x64 diagnostic image only; no ARM qualification or source fix credited"
+}

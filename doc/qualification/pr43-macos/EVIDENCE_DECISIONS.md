@@ -1,12 +1,17 @@
 # PR43 retained-evidence decisions
 
-Product head: `3afce4988dc00fba614929d5f6f10c873afde87e`, branch
+Product head at this 2026-10-18 review: `3afce4988dc00fba614929d5f6f10c873afde87e`, branch
 `codex/aarch64-consolidated-compiler-fixes`, draft PR43. These decisions close
 the requested read-only reviews for the existing record set. **UNAVAILABLE**
 means the specified evidence cannot be reviewed; it is neither a correctness
 failure nor a review queued for later. This read-only review started no new
 manual Mac check, build, timing, diagnostic dispatch or CI rerun. The existing
 ordinary CI run continued normally and is now terminal.
+
+The [2026-10-20 cloud investigation](CLOUD_PARSER_20261020.md) records current
+head `2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1`, current CI and new parser
+records separately. It does not recover the missing historical captures or
+change the availability decisions below.
 
 | Gate | Outcome | Evidence boundary |
 | --- | --- | --- |

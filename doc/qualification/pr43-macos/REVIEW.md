@@ -1,6 +1,12 @@
 # PR43 source and qualification review
 
-PR43's draft head is `3afce4988dc00fba614929d5f6f10c873afde87e` on
+Current PR43 draft head is `2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1`;
+the increment from the reported Mac source is copyright-only. Current CI
+`39266688701` passed all 57 jobs. The [2026-10-20 cloud investigation](CLOUD_PARSER_20261020.md)
+adds exact parser source/semantic/C2 front-end evidence and records native
+allocation and hardware limits separately.
+
+The reported Mac source is `3afce4988dc00fba614929d5f6f10c873afde87e` on
 `codex/aarch64-consolidated-compiler-fixes`. It adds a narrow raw-byte128
 `VectorMask.toLong()` lowering after the UBFX test repair at
 `456afea88231bc9ebf17dfa48811db90a8bae8b8`. The new compiler rule and its local
@@ -78,7 +84,7 @@ Keep the accepted upstream/BiSheng provenance for unchanged wide-SVE work as
 provenance, without restarting PR12/18 or requiring unavailable wide hardware
 for this scalar/NEON review.
 
-For the current head, ordinary run
+For the reported Mac source head, ordinary run
 [`39079268554`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39079268554)
 completed successfully with all 57 jobs passed: prepare, all eight
 release/fastdebug builds and all 48 tier1 jobs. Its [terminal receipt](CI_TERMINAL.json)

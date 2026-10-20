@@ -1,0 +1,94 @@
+{
+  "actual_ci_merge": {
+    "sha": "f09e3bcdd4ab29af3270136ca02bc12674b337e1",
+    "tree": "7e9be0fb61d956b8982a01d1d12279d9e1faad6b",
+    "parents": [
+      "e7753d9dffffbf3a9430c2cc2ab53c5332bf1bf4",
+      "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1"
+    ]
+  },
+  "bundles": [
+    {
+      "id": 12221728634,
+      "name": "bundles-macos-aarch64",
+      "size": 231331716,
+      "digest": "sha256:f79efb3a740cf4fbcce24a72fa5179340d73e88454348c7b855c8d30ccbea83b",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12219352057,
+      "name": "bundles-windows-x64",
+      "size": 414829719,
+      "digest": "sha256:bcf31f06193fe8655656330d0883dde58eb64287b1782657b2dcf98e25a0618a",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12218590044,
+      "name": "bundles-macos-aarch64-debug",
+      "size": 276100430,
+      "digest": "sha256:af4762c301256383e380cf72ae978e48e8721488b80683329d32d47a4ae6e223",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12215685255,
+      "name": "bundles-windows-x64-debug",
+      "size": 448350448,
+      "digest": "sha256:f80a98b33938de3398e237a5b092807a3ecb164c4fafcaf7437450980c056966",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12196105549,
+      "name": "bundles-linux-x64-debug",
+      "size": 353821673,
+      "digest": "sha256:ace182f8caba22389f645e68d729d208e76bd8b40fae37b3cf2df51745953dce",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12196076157,
+      "name": "bundles-linux-aarch64",
+      "size": 300910840,
+      "digest": "sha256:18f14bf534e6a117381bb4c0687778d686120c81c09a734f38675f98cb3fba7d",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12194059473,
+      "name": "bundles-linux-aarch64-debug",
+      "size": 338244197,
+      "digest": "sha256:b25f7a24708dea4147028dd5520d4ba09cce9b82bcedb28e652890a5f1d6857e",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12193544182,
+      "name": "bundles-linux-x64",
+      "size": 310823062,
+      "digest": "sha256:4848c9fd043f9d6a9bba3d87b703caec20d49b43e0a9c70ac5222b4c6ba6a9ac",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    },
+    {
+      "id": 12192388544,
+      "name": "bundles-jtreg-8.2.1+1",
+      "size": 10159213,
+      "digest": "sha256:204a593fc22cb7f3b4f635848816c4aa4d196cc3b5b203c9604ec6d95085a088",
+      "head": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+      "expired": false
+    }
+  ],
+  "parser_reference": {
+    "sha": "afee2c32e1b8070a20214e8728079d6759663c8f",
+    "parents": [
+      "a4044aa94deb7144c09f1030a5f40bcb73aaf26b"
+    ],
+    "message": "Add 128-bit vector support for stage-1 structural indexing\n\nPlatforms such as Apple Silicon use 128-bit ByteVector as the preferred\nspecies; rejecting that width broke ./gradlew test and made forced 256-bit\nruns very slow. Implement index128 with four 16-byte lanes per 64-byte block,\naligned with simdjson ARM64 stage-1 (simd8x64).\n\nAdd test128 to CI and check, and wire species-specific test tasks to the test\nclasspath so test128/test256/test512 run the suite with the correct JVM flag.\n\nSigned-off-by: The-Alchemist <kap4020@gmail.com>",
+    "main": "a4044aa94deb7144c09f1030a5f40bcb73aaf26b",
+    "ahead": 1,
+    "behind": 0
+  }
+}

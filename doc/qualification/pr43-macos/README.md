@@ -1,5 +1,11 @@
 # Run PR43 qualification on your local Apple Silicon Mac
 
+The [2026-10-20 cloud parser investigation](CLOUD_PARSER_20261020.md) records
+current PR head `2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1`, parser source
+activation/semantic checks, fresh diagnostic tooling and exact native hardware
+limits. It does not request another local Mac campaign. The historical Mac
+commands below retain their original source pins and scope.
+
 Check out this review branch and run the committed commands below. All source,
 tests, audits and build instructions are in Git. Local builds are the default.
 No CI artifact, Library file, private workspace, chat patch or Linux binary is

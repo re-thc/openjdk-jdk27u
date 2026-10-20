@@ -1,5 +1,10 @@
 # Raw byte128 mask packing
 
+Current draft head is `2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1`; its changes
+from the native report's source are copyright-only. The [cloud investigation](CLOUD_PARSER_20261020.md)
+records current CI and actual parser front-end checks. Native Mac evidence
+below keeps its original source/image identity.
+
 Product commit `9fd8620e40573264ec1f601db67e7f93e05b4939`, directly on PR43,
 adds `vstoremask_tolongB16_neon` and two regression-test files. Its parent is
 `456afea88231bc9ebf17dfa48811db90a8bae8b8`. No library code, generic shuffle

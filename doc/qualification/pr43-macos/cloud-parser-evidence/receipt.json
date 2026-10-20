@@ -1,0 +1,47 @@
+{
+  "started_utc": "2026-10-20T15:54:32.411498+00:00",
+  "mode": "frontend-x64",
+  "machine": "x86_64",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "reported_image_source_sha": "2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1",
+  "parser_source_sha": "afee2c32e1b8070a20214e8728079d6759663c8f",
+  "fresh_jvm_budget_seconds": 180,
+  "timing_collected": false,
+  "removed_injected_option_names": [],
+  "status": "failed",
+  "image_version": "OpenJDK 64-Bit Server VM (fastdebug 27.0.2-internal-pr43-cloud-2b7b6060bea) for linux-amd64 JRE (27.0.2-internal-pr43-cloud-2b7b6060bea), built on 2026-10-20T15:26:04Z with gcc 16.2.0",
+  "image_sha256": {
+    "java": "cbafac412314887d920af96176391ebcc2f9a88da90b4b9f058045caf6544030",
+    "libjvm": "f17037b5316c568c408d8d65a2454574b6610a2042d7c748b9b23f7c4bf97f80"
+  },
+  "source_sha256": {
+    "StructuralIndexer.java": "fa8e8a84eeb3eafcfb758615593636b66a9bcb571ea533a6eb1f0aa2cb5570fe",
+    "VectorUtils.java": "31b34c1e486cc07682bb97b8d3dc099367004e0e3c79e967e98b5de99e410910",
+    "BitIndexes.java": "b7de5732da99c0b05afd73a41bc75ef750c7a800f0e1849ccf087ca48ef8c884",
+    "JsonParsingException.java": "ba927f5899a2023e0d88c96e4ee62866aada5709651b7dfabf3a6ce4ffc4f24c",
+    "PR43ParserProbe.java": "7f9bcda49e2d77064bd82b2e703a261704dbd523150e676047455edb36ea97db"
+  },
+  "command": [
+    "/workspace/pr43-cloud-20261020/source/build/pr43-cloud-x64-ir/jdk/bin/java",
+    "--add-modules",
+    "jdk.incubator.vector",
+    "-Dorg.simdjson.species=128",
+    "-XX:MaxVectorSize=16",
+    "-XX:UseAVX=2",
+    "-XX:-TieredCompilation",
+    "-XX:CompileThreshold=1000",
+    "-XX:CICompilerCount=1",
+    "-Xbatch",
+    "-XX:+UnlockDiagnosticVMOptions",
+    "-XX:+LogCompilation",
+    "-XX:+PrintCompilation",
+    "-XX:LogFile=/workspace/pr43-cloud-20261020/parser-ir-run/hotspot-%p.log",
+    "-XX:CompileCommand=dontinline,org.simdjson.StructuralIndexer::index128",
+    "-XX:CompilerDirectivesFile=/workspace/pr43-cloud-20261020/parser-ir-run/directives.json",
+    "-cp",
+    "/workspace/pr43-cloud-20261020/parser-ir-run/classes",
+    "org.simdjson.PR43ParserProbe"
+  ],
+  "error": "RuntimeError: No Before Matching record was retained",
+  "finished_utc": "2026-10-20T15:54:50.854839+00:00"
+}
