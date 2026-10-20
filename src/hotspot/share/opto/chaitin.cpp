@@ -373,13 +373,13 @@ void PhaseChaitin::Register_Allocate() {
   ResourceArea split_arena(mtCompiler, Arena::Tag::tag_regsplit);     // Arena for Split local resources
   ResourceArea live_arena(mtCompiler, Arena::Tag::tag_reglive);     // Arena for liveness & IFG info
   ResourceMark rm(&live_arena);
-  // The following pass rebuilds masks, liveness and physical interference.
-  // This first-generation-only optimization declines shapes outside its
-  // explicit origin, edge, mask, graph-size and total-work limits.
+  // Share reloads only after the first physical split. The allocator then
+  // rebuilds masks, liveness and interference for the extended
+  // live ranges.
   auto share_reload_copies = [&]() {
     using Sharing = SpillCopySharing;
     Sharing::Work work;
-    if (C->method() == nullptr) return; // Runtime stubs are outside this experiment.
+    if (C->method() == nullptr) return; // Only optimize compiled Java methods.
     uint scheduled = 0;
     uint ranges = _lrg_map.max_lrg_id();
     if (ranges == 0 || ranges > Sharing::MaxRanges) return;

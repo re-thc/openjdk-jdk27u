@@ -17,9 +17,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-import java.util.Random;
-
-
 /*
  * @test
  * @summary Check GC, deoptimization, aliases and exceptional output in an activated C2 compilation.
