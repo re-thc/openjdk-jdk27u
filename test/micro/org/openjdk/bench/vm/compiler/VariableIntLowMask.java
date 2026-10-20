@@ -43,7 +43,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-// Isolate scalar matching. This is a diagnostic micro, not codec VM settings.
+// Disable vectorization to measure scalar mask lowering.
 @Fork(value = 3, jvmArgsAppend = {"-XX:-UseSuperWord"})
 public class VariableIntLowMask {
     private static final int SIZE = 256;
@@ -53,7 +53,7 @@ public class VariableIntLowMask {
     private byte[] nonzeroCounts;
     private int seed;
 
-    // Validate setup without invoking the JMH harness or any timed windows.
+    // Run setup and all kernels without the JMH harness.
     public static void main(String[] args) {
         VariableIntLowMask benchmark = new VariableIntLowMask();
         benchmark.setup();
@@ -97,8 +97,8 @@ public class VariableIntLowMask {
     @Benchmark
     @OperationsPerInvocation(SIZE)
     public int dependentNonzero() {
-        // Only the value is loop-carried. Independent counts can let the old
-        // shift/subtract mask generation execute ahead of that dependency.
+        // Counts are independent of value, allowing mask generation to run
+        // ahead of the loop-carried value dependency.
         int value = seed;
         for (int i = 0; i < SIZE; i++) {
             // A zero mask would kill the architectural dependency. Keep the

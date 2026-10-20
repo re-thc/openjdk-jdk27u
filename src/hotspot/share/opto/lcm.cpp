@@ -516,17 +516,17 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
 }
 
 
-//------------------------------select-----------------------------------------
-// A local, single-use MachTemp reserves a register for its instruction; it does
-// not produce a value. Schedule it together with that instruction instead of
-// making the instruction wait behind otherwise-ready value producers. Keep the
-// usual scheduling for temps used by the block end or outside this block.
+//-------------------------schedule_temp_with_use------------------------------
+// MachTemp reserves a register but emits no code. Schedule an unconstrained,
+// local, single-use temp immediately before its consumer to keep the scratch
+// lifetime short without delaying the consumer behind ready value producers.
+// Block boundaries, projections and nonlocal uses retain ordinary scheduling.
 static bool schedule_temp_with_use(const PhaseCFG* cfg, const Block* block, const Node* n) {
   if (!n->is_MachTemp() || n->outcnt() != 1) {
     return false;
   }
-  // ADLC temps have no value inputs. Leave any constrained temp on the normal
-  // ready list so that moving it cannot violate an added dependency.
+  // Only the initial null/Root control is allowed. Extra required or precedence
+  // inputs must keep their ordinary dependency ordering.
   if (n->req() != 1 || (n->in(0) != nullptr && !n->in(0)->is_Root())) {
     return false;
   }
@@ -746,9 +746,9 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
     Node *src_n = n->in(i);
     if (src_n == nullptr) continue;
     if (!src_n->is_Mach()) continue;
-    // A bundled temp is not live yet when select() scores its instruction.
-    // Its definition and use cancel within the bundle. In finalize mode the
-    // temp has already been scheduled and must be included in the accounting.
+    // Before selection, a temp scheduled with this consumer is not live yet.
+    // Its definition and use have no net pressure effect. Finalization accounts
+    // for each definition before its use, including transient scratch pressure.
     if (!finalize_mode && schedule_temp_with_use(this, block, src_n)) continue;
     uint src = _regalloc->_lrg_map.find(src_n);
     if (src == 0) continue;

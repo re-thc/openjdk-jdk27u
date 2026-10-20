@@ -180,7 +180,7 @@ public class TestMachTempScheduling {
                            " block-end temps");
     }
 
-    // Three reversals keep the block large enough for pressure-aware LCM.
+    // Three x64 reversals provide several temps and a block large enough for pressure scheduling.
     static long reverseBits(long x, long y, long z) {
         return (Long.reverse(x) + Long.reverse(y)) ^ Long.reverse(z);
     }

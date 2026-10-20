@@ -191,8 +191,8 @@ public class TestBzhiIntMask {
         return source & ((1 << count) - 1);
     }
 
-    // The codec's saturating wrapper differs from the raw wrapping expression:
-    // count=32 must preserve value, even though the raw int mask would be zero.
+    // Saturation preserves value for count >= 32. A raw int mask instead wraps
+    // to zero at count == 32.
     @Test
     @IR(counts = {BZHI, "0"}, phase = CompilePhase.MATCHING,
         applyIf = {"UseBMI2Instructions", "false"})
@@ -222,8 +222,8 @@ public class TestBzhiIntMask {
                 checkAll(value, count, value ^ 0x6d2b_79f5);
             }
         }
-        // Reproduce the workload's full byte-sized count domain, not a
-        // source-level [0,31] restriction that could hide normalization bugs.
+        // Cover the full byte-sized count domain so known byte bounds cannot
+        // hide the modulo-32 normalization requirement.
         for (int count = 0; count <= 256; count++) {
             checkAll(0xffff_ffff, count, 0x8000_0001);
             checkAll(count, count, count ^ 0x7654_3210);

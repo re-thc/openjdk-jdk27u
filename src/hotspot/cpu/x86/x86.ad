@@ -13048,15 +13048,15 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rR
   ins_pipe(ialu_reg_reg);
 %}
 
-// Java int shift distances wrap modulo 32. BZHI instead selects all source bits
-// for an index >= 32, so normalize even an 8-bit count before using it.
+// Java int shifts use count & 31. BZHI preserves src for byte indices >= 32,
+// so normalize the count even when it is already known to fit in a byte.
 instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, rRegI shift, immI_1 one,
                         immI_M1 minus_one, rFlagsReg cr)
 %{
   predicate(UseBMI2Instructions && VM_Version::supports_bmi2());
   match(Set dst (AndI src (AddI (LShiftI one shift) minus_one)));
-  // The result holds the normalized count before BZHI reads src. It must not
-  // overlap either real input, including when src and shift are the same value.
+  // Reserve dst separately from the inputs so count normalization cannot
+  // clobber src, including when src and shift are the same value.
   effect(TEMP_DEF dst, KILL cr);
 
   ins_cost(300);
@@ -13068,7 +13068,7 @@ instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, rRegI shift, immI_1 one,
     __ andl($dst$$Register, 31);
     __ bzhil($dst$$Register, $src$$Register, $dst$$Register);
   %}
-  // Keep the existing BMI pipeline approximation; cost is not a cycle count.
+
   ins_pipe(ialu_reg_reg);
 %}
 
