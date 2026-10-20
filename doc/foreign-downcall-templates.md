@@ -105,11 +105,33 @@ one platform-restricted `critical/TestStressAllowHeap` description. jtreg emitte
 a post-run result-cache worker exception; all 118 retained test result files
 report successful execution, but cache consistency was not established.
 
-Fastdebug build and tests are blocked by host process exhaustion: even a serial
-build could not start the Boot JDK's Reference Handler thread. Native Linux
-AArch64, cross-build execution, and unsupported-target/build-host validation
-remain unverified. Source review and synthetic ABI byte comparisons do not
-replace those checks.
+The local x86_64 fastdebug attempt was blocked by host process exhaustion:
+even a serial build could not start the Boot JDK's Reference Handler thread.
+This local limitation is separate from the native AArch64 results below and
+the ordinary platform CI results.
+
+The user reported native Linux AArch64 execution at exact source
+`b67cf2421d5dca1df4d9759003e1983a1b810f86`, a documentation-only successor to
+the runtime/test source above. Release and fastdebug images built and each
+passed all four template descriptions, with
+`DOWNCALL_TEMPLATE_PASS checks=63 selected=true platform=linux-aarch64`.
+Each image passed TestIntrinsics (23 cases), TestLinker (78) and callarranger
+(112). The full foreign suite passed 116 release and 117 fastdebug descriptions,
+with 140,290 framework cases per image. Every retained JTR passed without a
+reporting exception.
+
+These attributed results ran without emulation in an Apple container 1.5 Linux
+ARM64 VM, using Linux Boot JDK 26+35, GCC 16.0.1 and mold 3.0.0. jtreg came
+from official tag `jtreg-8.2.1+1` and reported `8.2.1-dev+0` because its build
+number was unset. Three known mold version-script warnings occurred per libjvm
+link; no compiler-warning overrides were used. Raw logs and complete
+source/image/tool identities remain on the user's machine.
+
+The AArch64 suites excluded 21 manual TestMatrix descriptions and two
+unavailable-Shenandoah stack-walk descriptions. Release also excluded debug-only
+TestStressAllowHeap, which passed fastdebug. Cross-build execution and
+unsupported-target/build-host validation remain unverified; native results do
+not replace those checks.
 
 No qualified speedup or regression-free performance result is claimed. The
 earlier handwritten adapter, which is excluded from this change, has an
