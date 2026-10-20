@@ -166,6 +166,15 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
+        // Scope this backport to the demonstrated insert fallback boundary.
+        // Other intrinsic-failure families retain the existing policy.
+        if (IncrementalInlineVector && allow_inline &&
+            callee->intrinsic_id() == vmIntrinsics::_VectorInsert) {
+          // Check fallback eligibility only after intrinsic retries are exhausted.
+          // A successful intrinsic must not reserve fallback inlining budget.
+          return CallGenerator::for_vector_late_inline(callee, cg, prof_factor);
+        }
+        // Don't try to inline fallback implementation.
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
