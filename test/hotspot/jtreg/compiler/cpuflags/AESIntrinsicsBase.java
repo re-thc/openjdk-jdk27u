@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +24,15 @@
 
 package compiler.cpuflags;
 
-import compiler.codegen.aes.TestAESMain;
 import java.util.Arrays;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public abstract class AESIntrinsicsBase {
     public static final String CIPHER_INTRINSIC = "com\\.sun\\.crypto\\"
             + ".provider\\.CipherBlockChaining::"
-            + "(implEncrypt|implDecrypt) \\([0-9]+ bytes\\)\\s+\\(intrinsic[,\\)]";
+            + "(implEncrypt|implDecrypt) \\([0-9]+ bytes\\)\\s+(inline \\([a-z ]+\\)\\s+)?"
+            + "\\(intrinsic[,\\)]";
     public static final String AES_INTRINSIC = "com\\.sun\\.crypto\\"
             + ".provider\\.AES_Crypt::(implEncryptBlock|implDecryptBlock) \\([0-9]+ "
             + "bytes\\)\\s+\\(intrinsic[,\\)]";
@@ -38,17 +41,33 @@ public abstract class AESIntrinsicsBase {
     public static final String USE_SSE = "UseSSE";
     public static final String[] USE_DIAGNOSTIC_CMD
             = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics"};
+    // Check C2 intrinsic logging after warming up the Java implementations.
+    // Common interpreter/C1 intrinsics bypass the CBC body and its AES block calls.
     public static final String[] TEST_AES_CMD
             = {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+PrintFlagsFinal",
+            "-XX:-UseCommonIntrinsics",
             "-Xbatch", "-XX:CompileThresholdScaling=0.01", "-DcheckOutput=true", "-Dmode=CBC",
-            TestAESMain.class.getName(), "100", "1000"};
+            AESWorkload.class.getName(), "100", "1000"};
 
     /**
-     * Prepares command for TestAESMain execution.
+     * Runs AESWorkload with the given flags. The workload must succeed even
+     * when the AES intrinsics are disabled, so a failing child JVM is
+     * reported here instead of passing the checks for absent output.
+     * @param args flags that must be added to command
+     * @return output of the successful AESWorkload execution
+     */
+    public static OutputAnalyzer runWorkload(String... args) throws Throwable {
+        OutputAnalyzer output = ProcessTools.executeTestJava(prepareArguments(args));
+        output.shouldHaveExitValue(0);
+        return output;
+    }
+
+    /**
+     * Prepares command for AESWorkload execution.
      * Intrinsics flags are of diagnostic type
      * and must be preceded by UnlockDiagnosticVMOptions.
      * @param args flags that must be added to command
-     * @return command for TestAESMain execution
+     * @return command for AESWorkload execution
      */
     public static String[] prepareArguments(String... args) {
         String[] command = Arrays.copyOf(USE_DIAGNOSTIC_CMD, args.length
