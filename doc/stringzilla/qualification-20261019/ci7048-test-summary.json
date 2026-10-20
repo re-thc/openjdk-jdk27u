@@ -1,40 +1,26 @@
 {
-  "job_metadata_observed_at": "2026-10-20T06:09:25.069672+00:00",
+  "job_metadata_observed_at": "2026-10-20T06:45:18.321107+00:00",
   "run_id": 39280914015,
   "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
   "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
   "planned_linux_test_groups": 24,
   "planned_total_test_groups": 48,
   "created_build_jobs": 8,
-  "test_matrices_not_yet_created": [
-    "macos-aarch64"
-  ],
+  "test_matrices_not_yet_created": [],
   "configured_stage_gate": "macOS/Windows builds follow successful Linux matrices;their tests follow their builds",
-  "created_test_groups": 36,
-  "collected_test_groups": 28,
+  "created_test_groups": 48,
+  "collected_test_groups": 30,
   "missing": [
-    {
-      "job_id": 118444402180,
-      "name": "windows-x64 / test (hs/tier1 compiler part 1)",
-      "status": "in_progress",
-      "conclusion": null
-    },
-    {
-      "job_id": 118444402201,
-      "name": "windows-x64 / test (hs/tier1 common)",
-      "status": "queued",
-      "conclusion": null
-    },
     {
       "job_id": 118444402222,
       "name": "windows-x64 / test (hs/tier1 compiler part 3)",
-      "status": "queued",
+      "status": "in_progress",
       "conclusion": null
     },
     {
       "job_id": 118444402233,
       "name": "windows-x64 / test (jdk/tier1 part 1)",
-      "status": "queued",
+      "status": "in_progress",
       "conclusion": null
     },
     {
@@ -46,7 +32,7 @@
     {
       "job_id": 118444402260,
       "name": "windows-x64 / test (hs/tier1 compiler part 2)",
-      "status": "queued",
+      "status": "in_progress",
       "conclusion": null
     },
     {
@@ -60,14 +46,86 @@
       "name": "windows-x64 / test (langtools/tier1)",
       "status": "queued",
       "conclusion": null
+    },
+    {
+      "job_id": 118492858024,
+      "name": "macos-aarch64 / test (jdk/tier1 part 2)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858040,
+      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858069,
+      "name": "macos-aarch64 / test (langtools/tier1)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858073,
+      "name": "macos-aarch64 / test (hs/tier1 gc)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858078,
+      "name": "macos-aarch64 / test (hs/tier1 runtime)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858096,
+      "name": "macos-aarch64 / test (hs/tier1 serviceability)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858109,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858110,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858146,
+      "name": "macos-aarch64 / test (hs/tier1 common)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858155,
+      "name": "macos-aarch64 / test (jdk/tier1 part 3)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858179,
+      "name": "macos-aarch64 / test (lib-test/tier1)",
+      "status": "queued",
+      "conclusion": null
+    },
+    {
+      "job_id": 118492858193,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 3)",
+      "status": "queued",
+      "conclusion": null
     }
   ],
   "collected_jtreg_counts": {
-    "total": 23310,
-    "pass": 22133,
+    "total": 23854,
+    "pass": 22652,
     "fail": 0,
     "error": 0,
-    "skip": 1177
+    "skip": 1202
   },
   "records": [
     {
@@ -721,6 +779,32 @@
       "step_failures": []
     },
     {
+      "job_id": 118444402180,
+      "name": "windows-x64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T05:59:30Z",
+      "completed_at": "2026-10-20T06:31:18Z",
+      "log_bytes": 355364,
+      "log_sha256": "906568d1b0c4bf8d8aa4dcaf4435b2d46f0f7030a4770be0bc2ae011dc31a23c",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 508; excluded: 1; did not match keywords: 1; did not meet module requirements: 1; did not meet platform requirements: 21"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_1",
+          "total": 532,
+          "pass": 508,
+          "fail": 0,
+          "error": 0,
+          "skip": 24
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
       "job_id": 118444402182,
       "name": "windows-x64 / test (jdk/tier1 part 2)",
       "conclusion": "success",
@@ -740,6 +824,32 @@
           "fail": 0,
           "error": 0,
           "skip": 15
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402201,
+      "name": "windows-x64 / test (hs/tier1 common)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:15:22Z",
+      "completed_at": "2026-10-20T06:20:52Z",
+      "log_bytes": 79148,
+      "log_sha256": "b7a586512fbd6ea78c250b79f542e00304e083d49db69b207017ff376f94b745",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 11; did not meet platform requirements: 1"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_common",
+          "total": 12,
+          "pass": 11,
+          "fail": 0,
+          "error": 0,
+          "skip": 1
         }
       ],
       "test_success_marker": true,

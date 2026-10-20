@@ -245,16 +245,22 @@ The [full workflow scope](ci7048-workflow-scope.json) corrects earlier wording
 that described only the Linux phase. Prepare's empty platform selector includes
 all four platforms. The accepted workflow plans eight builds and forty-eight
 tier1 groups: Linux x64/ARM first, then macOS ARM and Windows x64 after both
-Linux test matrices succeed. Linux is complete. Both Windows builds and macOS fastdebug also pass, bringing
-the verified build count to seven of eight. The latter three
-[complete build logs](ordinary-ci-39280914015-build-checkpoint.tar.gz) have a
-[separate checksum receipt](ordinary-ci-build-checkpoint.json). Four of twelve Windows tier1 groups also pass: 1,771 passed descriptions and
-121 skipped/excluded, with zero failures or errors. Their
-[complete logs](ordinary-ci-39280914015-windows-progress.tar.gz) and
-[checksum/count receipt](ordinary-ci-windows-progress.json) are retained. macOS
-release and the remaining Windows/macOS tier1 groups remain pending. None of
-those pending jobs is counted as passed. The same existing run remains the unfinished qualification
-gate; no duplicate is dispatched. The live run link provides subsequent status.
+Linux test matrices succeed. All eight release/fastdebug builds now pass. The three earlier
+[Windows/macOS build logs](ordinary-ci-39280914015-build-checkpoint.tar.gz)
+and their [receipt](ordinary-ci-build-checkpoint.json) are retained, together
+with the final [macOS release log](ordinary-ci-39280914015-macos-release.tar.gz)
+and its [receipt](ordinary-ci-macos-release.json). Both Apple builds use Xcode
+26.6 and Apple clang 21; both MSVC builds verify toolset 14.44.
+
+All twenty-four Linux and six Windows tier1 groups pass, with full checkout
+proofs and test tables in the [current summary](ci7048-test-summary.json).
+The first four Windows groups have a separate
+[log checkpoint](ordinary-ci-39280914015-windows-progress.tar.gz) and
+[checksum/count receipt](ordinary-ci-windows-progress.json). The remaining
+Windows groups and all twelve newly created macOS groups are running or queued.
+No pending job is counted as passed. The same existing run remains the
+unfinished qualification gate; no duplicate is dispatched. The live run link
+provides subsequent status.
 
 ## Decision
 
