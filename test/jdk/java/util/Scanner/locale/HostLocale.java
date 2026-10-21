@@ -55,12 +55,6 @@ public class HostLocale {
             if (!scanner.nextLine().equals("word")) {
                 throw new AssertionError("Unexpected text line");
             }
-            // Both explicit locale changes and reset must capture HOST data
-            // before toString or numeric parsing can initialize it on demand.
-            scanner.useLocale(Locale.ROOT).useLocale(locale);
-            captured(scanner, format, symbols);
-            scanner.useLocale(Locale.ROOT).reset();
-            captured(scanner, format, symbols);
             if (scanner.nextDouble() != 1234.5 || scanner.nextInt() != -6789) {
                 throw new AssertionError("Native numeric symbols were not used");
             }

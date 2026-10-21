@@ -493,7 +493,7 @@ public final class StringConcatFactory {
         }
         if (paramCount == 1) {
             String prefix = constants[0];
-            // Empty constants will be
+            // Try the existing fast paths for empty constants.
             if (prefix.isEmpty()) {
                 if (suffix.isEmpty()) {
                     return unaryConcat(mt.parameterType(0));
@@ -1240,7 +1240,7 @@ public final class StringConcatFactory {
          * <blockquote><pre>
          * import static java.lang.StringConcatHelper.stringCoder;
          *
-         * static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
+         * static int coder(int coder, char arg3, String str4, String str5, String str6, String str7) {
          *     return coder | stringCoder(arg3) | str4.coder() | str5.coder() | str6.coder() | str7.coder();
          * }
          * </pre></blockquote>
@@ -1308,7 +1308,7 @@ public final class StringConcatFactory {
                     /*
                      * // StringConcatHelper.prepend
                      * return prepend(prepend(prepend(prepend(
-                     *         prepend(apppend(prepend(prepend(length,
+                     *         prepend(prepend(prepend(prepend(length,
                      *              buf, str7, constant[7]), buf, str6, constant[6]),
                      *              buf, str5, constant[5]), buf, arg4, constant[4]),
                      *              buf, arg3, constant[3]), buf, arg2, constant[2]),
