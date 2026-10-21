@@ -23,6 +23,8 @@ import urllib.parse
 import urllib.request
 import zipfile
 
+from mac_image import inspect_image, mac_executable
+
 
 MANIFEST = Path(__file__).with_name('artifacts.json')
 
@@ -124,26 +126,6 @@ def unique(root, name):
     return files[0]
 
 
-def mac_executable(root, name):
-    root = root.resolve()
-    expected = root / 'jdk/jtreg/native' / name
-    # Test images also contain <name>.dSYM/.../DWARF/<name> (MH_DSYM).
-    # Keep genuine ambiguity fatal, and require the source-defined image path.
-    candidates = [p for p in root.rglob(name) if p.is_file() and not any(
-        part.lower().endswith('.dsym') for part in p.relative_to(root).parts)]
-    require(len(candidates) == 1, f'Expected one non-dSYM {name}, found {len(candidates)}')
-    require(candidates[0] == expected, 'Native executable outside canonical path: ' + str(candidates[0]))
-    require(expected.resolve() == expected, 'Mac native executable must not use symlinks')
-    require(expected.stat().st_mode & stat.S_IXUSR, 'Mac native file is not owner-executable: ' + str(expected))
-    with expected.open('rb') as stream:
-        header = stream.read(32)
-    require(len(header) == 32, 'Truncated Mach-O executable: ' + str(expected))
-    magic, cpu, _, kind = struct.unpack('<IIII', header[:16])
-    require((magic, cpu, kind) == (0xfeedfacf, 0x0100000c, 2),
-            'Expected arm64 Mach-O MH_EXECUTE: ' + str(expected))
-    return expected
-
-
 def unpack(archive, root, pin, manifest):
     suffix = '-debug' if pin['variant'] == 'fastdebug' else ''
     base = pin['platform'] + suffix
@@ -162,23 +144,17 @@ def unpack(archive, root, pin, manifest):
     tests.mkdir()
     (extract_zip if jdk_bundle.endswith('.zip') else extract_tar)(root / jdk_bundle, jdk)
     extract_tar(root / tests_bundle, tests)
+    if not pin['platform'].startswith('windows'):
+        return inspect_image(jdk, tests, pin['variant'], manifest['build_commit'])
     release = unique(jdk, 'release')
     home = release.parent
     require(manifest['build_commit'] in release.read_text(), 'Wrong compiled revision in release file')
-    win = pin['platform'].startswith('windows')
-    jli = unique(tests, 'JliLaunchTest.exe') if win else mac_executable(tests, 'JliLaunchTest')
+    jli = unique(tests, 'JliLaunchTest.exe')
     selected = {'home': str(home), 'jli': str(jli), 'release': release.read_text(),
                 'hashes': {str(jli): sha256(jli)}}
-    if win:
-        daemon = unique(tests, 'daemonDestroy.exe')
-        selected['daemon'] = str(daemon)
-        files = [daemon, home / 'bin/jli.dll', home / 'bin/server/jvm.dll']
-    else:
-        require(home.name == 'Home', 'Mac app bundle Home layout required')
-        require((home.parent / 'MacOS/libjli.dylib').is_file(), 'MacOS libjli alias missing')
-        jni = mac_executable(tests, 'JniInvocationTest')
-        selected['jni'] = str(jni)
-        files = [jni, home / 'lib/libjli.dylib', home / 'lib/server/libjvm.dylib']
+    daemon = unique(tests, 'daemonDestroy.exe')
+    selected['daemon'] = str(daemon)
+    files = [daemon, home / 'bin/jli.dll', home / 'bin/server/jvm.dll']
     for path in files:
         require(path.is_file(), 'Required native file missing: ' + str(path))
         selected['hashes'][str(path)] = sha256(path)
@@ -190,6 +166,8 @@ def self_test():
     import unittest
 
     class Tests(unittest.TestCase):
+        revision = json.loads(MANIFEST.read_text())['build_commit']
+
         def test_unsafe_zip(self):
             for name in ('../escape', '/escape', 'C:/escape', 'a\\escape'):
                 with self.assertRaises(RuntimeError):
@@ -293,22 +271,33 @@ def self_test():
                 with self.assertRaisesRegex(RuntimeError, 'must not use symlinks'):
                     mac_executable(root, 'JliLaunchTest')
 
-        def test_unpack_mac_with_dsym_duplicates(self):
+        def mac_fixture(self, root, variant):
+            # Pinned spec.gmk.template:905 and Bundles.gmk:152-174 define these layouts.
+            jdk = root / 'jdk-input'
+            relative = ('jdk-27.0.2.jdk/Contents/Home' if variant == 'release'
+                        else 'jdk-27.0.2/fastdebug')
+            home = jdk / relative
+            home.mkdir(parents=True)
+            (home / 'release').write_text(f'SOURCE=".:git:{self.revision[:12]}"\nJAVA_VERSION="27.0.2-internal"\n'
+                                        f'JAVA_RUNTIME_VERSION="27.0.2-internal+0-re-thc-{self.revision}"\n'
+                                        'OS_ARCH="aarch64"\nOS_NAME="Darwin"\n')
+            self.native(jdk, relative + '/bin/java')
+            for name in ('lib/libjli.dylib', 'lib/server/libjvm.dylib', 'lib/libjava.dylib'):
+                self.native(jdk, relative + '/' + name, kind=6)
+            (home / 'lib/jvm.cfg').write_text('-server KNOWN\n')
+            if variant == 'release':
+                self.native(jdk, 'jdk-27.0.2.jdk/Contents/MacOS/libjli.dylib', kind=6)
+            tests = root / 'tests-input'
+            for name in ('JliLaunchTest', 'JniInvocationTest'):
+                self.native(tests, 'jdk/jtreg/native/' + name)
+                self.native(tests, f'jdk/jtreg/native/{name}.dSYM/Contents/Resources/DWARF/{name}', kind=10)
+            return jdk, tests, home
+
+        def test_unpack_actual_release_and_fastdebug_layouts(self):
             for variant in ('release', 'fastdebug'):
                 with self.subTest(variant=variant), tempfile.TemporaryDirectory() as temp:
                     root = Path(temp)
-                    jdk = root / 'jdk-input'
-                    home = jdk / 'jdk-fixture.jdk/Contents/Home'
-                    home.mkdir(parents=True)
-                    (home / 'release').write_text('SOURCE="fixture-build"')
-                    for relative in ('lib/libjli.dylib', 'lib/server/libjvm.dylib', '../MacOS/libjli.dylib'):
-                        path = home / relative
-                        path.parent.mkdir(parents=True, exist_ok=True)
-                        path.touch()
-                    tests = root / 'tests-input'
-                    for name in ('JliLaunchTest', 'JniInvocationTest'):
-                        self.native(tests, 'jdk/jtreg/native/' + name)
-                        self.native(tests, f'jdk/jtreg/native/{name}.dSYM/Contents/Resources/DWARF/{name}', kind=10)
+                    jdk, tests, home = self.mac_fixture(root, variant)
                     suffix = '-debug' if variant == 'fastdebug' else ''
                     bundles = []
                     for prefix, source in (('jdk', jdk), ('tests', tests)):
@@ -323,11 +312,71 @@ def self_test():
                             package.write(bundle, bundle.name)
                     selected = unpack(archive, root / 'output',
                                       {'platform': 'macos-aarch64', 'variant': variant},
-                                      {'build_commit': 'fixture-build'})
+                                      {'build_commit': self.revision})
                     for key, name in (('jli', 'JliLaunchTest'), ('jni', 'JniInvocationTest')):
                         path = root.resolve() / 'output/tests/jdk/jtreg/native' / name
                         self.assertEqual(selected[key], str(path))
                         self.assertEqual(selected['hashes'][str(path)], sha256(path))
+                    self.assertEqual(Path(selected['home']).relative_to(root.resolve() / 'output/jdk'),
+                                     home.relative_to(jdk))
+                    self.assertEqual(selected['layout'], 'app-bundle' if variant == 'release' else 'ordinary-jdk')
+                    self.assertEqual('bundle_libjli' in selected, variant == 'release')
+                    for key in ('java', 'libjli', 'libjvm', 'libjava'):
+                        self.assertEqual(selected['hashes'][selected[key]], sha256(Path(selected[key])))
+
+        def test_missing_required_mac_paths(self):
+            for variant in ('release', 'fastdebug'):
+                missing = ('bin/java', 'lib/libjli.dylib', 'lib/server/libjvm.dylib',
+                           'lib/libjava.dylib', 'lib/jvm.cfg', 'jli', 'jni')
+                if variant == 'release':
+                    missing += ('../MacOS/libjli.dylib',)
+                for name in missing:
+                    with self.subTest(variant=variant, missing=name), tempfile.TemporaryDirectory() as temp:
+                        jdk, tests, home = self.mac_fixture(Path(temp), variant)
+                        path = (tests / 'jdk/jtreg/native' / ('JliLaunchTest' if name == 'jli' else 'JniInvocationTest')
+                                if name in ('jli', 'jni') else home / name)
+                        path.unlink()
+                        with self.assertRaises(RuntimeError):
+                            inspect_image(jdk, tests, variant, self.revision)
+
+        def test_wrong_mac_layout_and_release_identity(self):
+            for variant in ('release', 'fastdebug'):
+                with self.subTest(variant=variant), tempfile.TemporaryDirectory() as temp:
+                    jdk, tests, home = self.mac_fixture(Path(temp), variant)
+                    other = 'fastdebug' if variant == 'release' else 'release'
+                    with self.assertRaisesRegex(RuntimeError, 'JDK layout'):
+                        inspect_image(jdk, tests, other, self.revision)
+                    text = (home / 'release').read_text()
+                    source = '.:git:' + self.revision[:12]
+                    for old, new in ((source, '.:git:bad-revision'), (source, source + '++'),
+                                     (source, source[:-1]), (self.revision, '0' * 40),
+                                     ('aarch64', 'x86_64'), ('Darwin', 'Linux'),
+                                     ('27.0.2-internal', '../escape')):
+                        (home / 'release').write_text(text.replace(old, new))
+                        with self.assertRaises(RuntimeError):
+                            inspect_image(jdk, tests, variant, self.revision)
+                    (home / 'release').write_text(text + 'JAVA_VERSION="27.0.2"\n')
+                    with self.assertRaisesRegex(RuntimeError, 'duplicate release property'):
+                        inspect_image(jdk, tests, variant, self.revision)
+
+        def test_mac_release_ambiguity(self):
+            with tempfile.TemporaryDirectory() as temp:
+                jdk, tests, home = self.mac_fixture(Path(temp), 'release')
+                (jdk / 'release').write_text((home / 'release').read_text())
+                with self.assertRaisesRegex(RuntimeError, 'Expected one release, found 2'):
+                    inspect_image(jdk, tests, 'release', self.revision)
+
+        def test_source_status_marker_from_ci_dependencies(self):
+            for variant in ('release', 'fastdebug'):
+                with self.subTest(variant=variant), tempfile.TemporaryDirectory() as temp:
+                    jdk, tests, home = self.mac_fixture(Path(temp), variant)
+                    path = home / 'release'
+                    text = path.read_text()
+                    source = '.:git:' + self.revision[:12]
+                    path.write_text(text.replace(source, source + '+'))
+                    image = inspect_image(jdk, tests, variant, self.revision)
+                    self.assertEqual(image['source_root'], source + '+')
+                    self.assertTrue(image['source_status_marker'])
 
     result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
     require(result.wasSuccessful(), 'Loader self-test failed')
@@ -369,8 +418,17 @@ def main():
         archive = args.root / (str(pin['id']) + '.zip')
         download(pin, archive, repo, token)
         identity['verified_artifacts'].append(actual)
+        if args.platform == 'macos-aarch64':
+            print(json.dumps({'verified_artifact': pin['id'], 'variant': pin['variant'],
+                              'sha256': pin['sha256']}), flush=True)
+            # Preserve completed byte verification even if layout validation fails.
+            (args.evidence / 'identity.json').write_text(json.dumps(identity, indent=2))
         identity['images'][pin['variant']] = unpack(archive, args.root / pin['variant'], pin, manifest)
         (args.evidence / 'identity.json').write_text(json.dumps(identity, indent=2))
+        if args.platform == 'macos-aarch64':
+            image = identity['images'][pin['variant']]
+            print(json.dumps({'variant': pin['variant'], **{key: image[key] for key in (
+                'layout', 'home', 'java', 'jli', 'jni', 'libjli', 'libjvm', 'source_root')}}), flush=True)
     require(set(identity['images']) == {'release', 'fastdebug'}, 'Missing image variant')
 
 
