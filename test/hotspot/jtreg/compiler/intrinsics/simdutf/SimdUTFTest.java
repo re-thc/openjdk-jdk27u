@@ -119,6 +119,7 @@ public class SimdUTFTest {
         narrowing();
         unicode();
         utf32();
+        base64EncodeBoundaries();
         base64Streams();
         malformed();
         nativeRanges();
@@ -601,6 +602,69 @@ public class SimdUTFTest {
             var result = cs.newDecoder().decode(src, dst, true);
             check(result.isMalformed() && src.position() == at && dst.position() == 513,
                     "UTF32 malformed positions");
+        }
+    }
+
+    private static void base64EncodeBoundaries() throws Exception {
+        // Cover masked tails, full-width loads and eight-block encoding batches.
+        for (int boundary : new int[]{48, 64, 96, 384, 400, 768, 784, 1024, 4096}) {
+            for (int delta = -2; delta <= 2; delta++) {
+                byte[] input = new byte[boundary + delta];
+                RANDOM.nextBytes(input);
+                for (boolean url : new boolean[]{false, true}) {
+                    String alphabet = url
+                            ? "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+                            : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                    StringBuilder reference = new StringBuilder();
+                    for (int i = 0; i < input.length; i += 3) {
+                        int remaining = input.length - i;
+                        int bits = (input[i] & 255) << 16;
+                        if (remaining > 1) bits |= (input[i + 1] & 255) << 8;
+                        if (remaining > 2) bits |= input[i + 2] & 255;
+                        reference.append(alphabet.charAt(bits >>> 18));
+                        reference.append(alphabet.charAt((bits >>> 12) & 63));
+                        reference.append(remaining > 1 ? alphabet.charAt((bits >>> 6) & 63) : '=');
+                        reference.append(remaining > 2 ? alphabet.charAt(bits & 63) : '=');
+                    }
+                    if (input.length % 3 == 0) {
+                        byte[] source = new byte[input.length + 5];
+                        System.arraycopy(input, 0, source, 5, input.length);
+                        byte[] target = new byte[reference.length() + 19];
+                        Arrays.fill(target, SENTINEL);
+                        int written = SimdUTF.encodeBase64(source, 5, input.length, target, 7, url);
+                        if (written >= 0) {
+                            equal(reference.toString().getBytes(StandardCharsets.ISO_8859_1),
+                                    Arrays.copyOfRange(target, 7, 7 + written));
+                            guards(target, 7, written);
+                        }
+                    }
+                    for (int lineLength : new int[]{0, 76, 512, 1024}) {
+                        if (url && lineLength != 0) continue;
+                        var encoder = url ? Base64.getUrlEncoder() : lineLength == 0
+                                ? Base64.getEncoder()
+                                : Base64.getMimeEncoder(lineLength, new byte[]{'\r', '\n'});
+                        for (boolean padding : new boolean[]{true, false}) {
+                            String expected = reference.toString();
+                            if (!padding) expected = expected.replace("=", "");
+                            StringBuilder lines = new StringBuilder();
+                            for (int i = 0; i < expected.length(); i++) {
+                                if (lineLength != 0 && i != 0 && i % lineLength == 0) {
+                                    lines.append("\r\n");
+                                }
+                                lines.append(expected.charAt(i));
+                            }
+                            byte[] bytes = lines.toString().getBytes(StandardCharsets.ISO_8859_1);
+                            var selected = padding ? encoder : encoder.withoutPadding();
+                            equal(bytes, selected.encode(input));
+                            var output = new ByteArrayOutputStream();
+                            try (var stream = selected.wrap(output)) {
+                                stream.write(input);
+                            }
+                            equal(bytes, output.toByteArray());
+                        }
+                    }
+                }
+            }
         }
     }
 

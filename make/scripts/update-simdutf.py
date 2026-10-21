@@ -22,6 +22,7 @@
 
 """Regenerate the vendored simdutf from an unmodified upstream release checkout."""
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -73,10 +74,14 @@ license_text = (upstream / "LICENSE-MIT").read_text()
     "code under the BSD 3-Clause license reproduced below.\n\n"
     f"### MIT License\n\n```\n{license_text}```\n\n"
     f"### ISA detector notice and BSD 3-Clause license\n\n```\n{notice}\n```\n")
+checksums = "".join(
+    f"SHA-256 ({name}): {hashlib.sha256((destination / name).read_bytes()).hexdigest()}\n"
+    for name in ("simdutf.h", "simdutf.cpp"))
 (destination / "UPSTREAM").write_text(
     f"Repository: https://github.com/simdutf/simdutf\nRelease: {tag}\nCommit: {commit}\n"
     "License: MIT (ISA detector: BSD 3-Clause)\n"
     "Features: UTF-8, UTF-16, UTF-32, Latin-1, ASCII, Base64\n"
     "Local source changes: none\n"
+    f"{checksums}"
     "Update: python3 make/scripts/update-simdutf.py /path/to/clean/release/checkout\n")
 print(f"Updated simdutf to {tag} ({commit})")

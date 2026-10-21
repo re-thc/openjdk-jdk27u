@@ -2069,7 +2069,7 @@ void VM_Version::initialize() {
 
 #ifdef AMD64
   if (UseSIMDUTFIntrinsics && FLAG_IS_DEFAULT(SIMDUTFMinLength)) {
-    // The measured x86-64 crossover is lower than the portable default.
+    // Use the x86-64 crossover rather than the portable default.
     // Operation floors protect compiler-enabled VMs from higher call overhead.
     FLAG_SET_DEFAULT(SIMDUTFMinLength, 32);
   }

@@ -101,7 +101,7 @@ jint SimdUTF::initialize() {
   simdutf::get_active_implementation() = impl;
   jint minimum = checked_cast<jint>(SIMDUTFMinLength);
   // Encode automatic policy in this private bootstrap return value. A pure
-  // interpreter VM can use the lower crossover measured for that tier.
+  // interpreter VM uses its lower tier-specific crossover.
   return FLAG_IS_DEFAULT(SIMDUTFMinLength) && UseCompiler ? -minimum - 1 : minimum;
 }
 

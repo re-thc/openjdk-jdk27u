@@ -173,7 +173,6 @@ public class SimdUTF {
     }
     @Benchmark public String utf16FromChars() { return new String(chars); }
     @Benchmark public char[] latin1ToChars() { return latin1.toCharArray(); }
-    @Benchmark public String charArrayString() { return new String(chars); }
     @Benchmark public String supplementaryDecode() { return new String(supplementaryBytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] supplementaryEncode() { return supplementary.getBytes(StandardCharsets.UTF_8); }
     @Benchmark public int latin1IndexOf() { return latin1.indexOf('z'); }
