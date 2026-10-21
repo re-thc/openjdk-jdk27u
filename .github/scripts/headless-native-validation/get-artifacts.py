@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 import platform
 import shutil
 import stat
+import struct
 import sys
 import tarfile
 import tempfile
@@ -123,6 +124,26 @@ def unique(root, name):
     return files[0]
 
 
+def mac_executable(root, name):
+    root = root.resolve()
+    expected = root / 'jdk/jtreg/native' / name
+    # Test images also contain <name>.dSYM/.../DWARF/<name> (MH_DSYM).
+    # Keep genuine ambiguity fatal, and require the source-defined image path.
+    candidates = [p for p in root.rglob(name) if p.is_file() and not any(
+        part.lower().endswith('.dsym') for part in p.relative_to(root).parts)]
+    require(len(candidates) == 1, f'Expected one non-dSYM {name}, found {len(candidates)}')
+    require(candidates[0] == expected, 'Native executable outside canonical path: ' + str(candidates[0]))
+    require(expected.resolve() == expected, 'Mac native executable must not use symlinks')
+    require(expected.stat().st_mode & stat.S_IXUSR, 'Mac native file is not owner-executable: ' + str(expected))
+    with expected.open('rb') as stream:
+        header = stream.read(32)
+    require(len(header) == 32, 'Truncated Mach-O executable: ' + str(expected))
+    magic, cpu, _, kind = struct.unpack('<IIII', header[:16])
+    require((magic, cpu, kind) == (0xfeedfacf, 0x0100000c, 2),
+            'Expected arm64 Mach-O MH_EXECUTE: ' + str(expected))
+    return expected
+
+
 def unpack(archive, root, pin, manifest):
     suffix = '-debug' if pin['variant'] == 'fastdebug' else ''
     base = pin['platform'] + suffix
@@ -145,7 +166,7 @@ def unpack(archive, root, pin, manifest):
     home = release.parent
     require(manifest['build_commit'] in release.read_text(), 'Wrong compiled revision in release file')
     win = pin['platform'].startswith('windows')
-    jli = unique(tests, 'JliLaunchTest.exe' if win else 'JliLaunchTest')
+    jli = unique(tests, 'JliLaunchTest.exe') if win else mac_executable(tests, 'JliLaunchTest')
     selected = {'home': str(home), 'jli': str(jli), 'release': release.read_text(),
                 'hashes': {str(jli): sha256(jli)}}
     if win:
@@ -155,7 +176,7 @@ def unpack(archive, root, pin, manifest):
     else:
         require(home.name == 'Home', 'Mac app bundle Home layout required')
         require((home.parent / 'MacOS/libjli.dylib').is_file(), 'MacOS libjli alias missing')
-        jni = unique(tests, 'JniInvocationTest')
+        jni = mac_executable(tests, 'JniInvocationTest')
         selected['jni'] = str(jni)
         files = [jni, home / 'lib/libjli.dylib', home / 'lib/server/libjvm.dylib']
     for path in files:
@@ -199,14 +220,114 @@ def self_test():
                 with self.assertRaisesRegex(RuntimeError, 'SHA256 mismatch'):
                     download(pin, Path(temp) / 'input.zip', 'fixture/repo', 'fixture')
 
-        def test_ambiguous_native(self):
+        def test_ambiguous_release(self):
             with tempfile.TemporaryDirectory() as temp:
                 root = Path(temp)
                 for name in ('a', 'b'):
                     (root / name).mkdir()
-                    (root / name / 'JliLaunchTest').touch()
+                    (root / name / 'release').touch()
                 with self.assertRaises(RuntimeError):
-                    unique(root, 'JliLaunchTest')
+                    unique(root, 'release')
+
+        def native(self, root, relative, cpu=0x0100000c, kind=2, mode=0o755):
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(struct.pack('<IIIIIIII', 0xfeedfacf, cpu, 0, kind, 0, 0, 0, 0))
+            path.chmod(mode)
+            return path
+
+        def test_canonical_executables_with_dsym_duplicates(self):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                for name in ('JliLaunchTest', 'JniInvocationTest'):
+                    expected = self.native(root, 'jdk/jtreg/native/' + name)
+                    self.native(root, f'jdk/jtreg/native/{name}.dSYM/Contents/Resources/DWARF/{name}', kind=10)
+                    # Reproduce the original basename failure before checking the repair.
+                    with self.assertRaisesRegex(RuntimeError, 'found 2'):
+                        unique(root, name)
+                    self.assertEqual(mac_executable(root, name), expected.resolve())
+
+        def test_dsym_only_rejected(self):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                self.native(root, 'jdk/jtreg/native/JliLaunchTest.dSYM/Contents/Resources/DWARF/JliLaunchTest', kind=10)
+                with self.assertRaisesRegex(RuntimeError, 'found 0'):
+                    mac_executable(root, 'JliLaunchTest')
+
+        def test_noncanonical_executable_rejected(self):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                self.native(root, 'other/JliLaunchTest')
+                with self.assertRaisesRegex(RuntimeError, 'outside canonical path'):
+                    mac_executable(root, 'JliLaunchTest')
+
+        def test_real_native_ambiguity_rejected(self):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                self.native(root, 'jdk/jtreg/native/JliLaunchTest')
+                self.native(root, 'other/JliLaunchTest')
+                with self.assertRaisesRegex(RuntimeError, 'found 2'):
+                    mac_executable(root, 'JliLaunchTest')
+
+        def test_invalid_executable_rejected(self):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                for cpu, kind, mode in ((0x01000007, 2, 0o755), (0x0100000c, 10, 0o755),
+                                        (0x0100000c, 6, 0o755), (0x0100000c, 2, 0o644),
+                                        (0x0100000c, 2, 0o611)):
+                    with self.subTest(cpu=cpu, kind=kind, mode=mode):
+                        self.native(root, 'jdk/jtreg/native/JliLaunchTest', cpu=cpu, kind=kind, mode=mode)
+                        with self.assertRaises(RuntimeError):
+                            mac_executable(root, 'JliLaunchTest')
+                path = self.native(root, 'jdk/jtreg/native/JliLaunchTest')
+                for invalid in (b'#!/bin/sh\n', b'\0' * 32):
+                    path.write_bytes(invalid)
+                    with self.assertRaises(RuntimeError):
+                        mac_executable(root, 'JliLaunchTest')
+
+        def test_symlink_executable_rejected(self):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                real = self.native(root, 'jdk/jtreg/native/payload')
+                (real.parent / 'JliLaunchTest').symlink_to(real.name)
+                with self.assertRaisesRegex(RuntimeError, 'must not use symlinks'):
+                    mac_executable(root, 'JliLaunchTest')
+
+        def test_unpack_mac_with_dsym_duplicates(self):
+            for variant in ('release', 'fastdebug'):
+                with self.subTest(variant=variant), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    jdk = root / 'jdk-input'
+                    home = jdk / 'jdk-fixture.jdk/Contents/Home'
+                    home.mkdir(parents=True)
+                    (home / 'release').write_text('SOURCE="fixture-build"')
+                    for relative in ('lib/libjli.dylib', 'lib/server/libjvm.dylib', '../MacOS/libjli.dylib'):
+                        path = home / relative
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.touch()
+                    tests = root / 'tests-input'
+                    for name in ('JliLaunchTest', 'JniInvocationTest'):
+                        self.native(tests, 'jdk/jtreg/native/' + name)
+                        self.native(tests, f'jdk/jtreg/native/{name}.dSYM/Contents/Resources/DWARF/{name}', kind=10)
+                    suffix = '-debug' if variant == 'fastdebug' else ''
+                    bundles = []
+                    for prefix, source in (('jdk', jdk), ('tests', tests)):
+                        bundle = root / f'{prefix}-macos-aarch64{suffix}.tar.gz'
+                        with tarfile.open(bundle, 'w:gz') as package:
+                            for entry in source.iterdir():
+                                package.add(entry, arcname=entry.name)
+                        bundles.append(bundle)
+                    archive = root / 'artifact.zip'
+                    with zipfile.ZipFile(archive, 'w') as package:
+                        for bundle in bundles:
+                            package.write(bundle, bundle.name)
+                    selected = unpack(archive, root / 'output',
+                                      {'platform': 'macos-aarch64', 'variant': variant},
+                                      {'build_commit': 'fixture-build'})
+                    for key, name in (('jli', 'JliLaunchTest'), ('jni', 'JniInvocationTest')):
+                        path = root.resolve() / 'output/tests/jdk/jtreg/native' / name
+                        self.assertEqual(selected[key], str(path))
+                        self.assertEqual(selected['hashes'][str(path)], sha256(path))
 
     result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
     require(result.wasSuccessful(), 'Loader self-test failed')
