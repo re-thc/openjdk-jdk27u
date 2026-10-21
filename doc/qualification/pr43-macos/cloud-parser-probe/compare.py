@@ -110,8 +110,12 @@ def stability(directory):
     root = ET.parse(directory / "hotspot.xml").getroot()
     methods = [dict(e.attrib) for e in root.iter("nmethod") if e.get("method", "").startswith(TARGET)]
     ids = {e["compile_id"] for e in methods}
-    # Runtime records only: task-local uncommon_trap entries are compiled trap sites.
-    events = [dict(e.attrib, event=e.tag) for e in root if e.tag in
+    # LogCompilation puts runtime records inside <tty>. Also accept root-level
+    # records for older/synthetic logs; never descend into compilation tasks.
+    runtime_records = list(root)
+    for tty in root.findall("tty"):
+        runtime_records.extend(tty)
+    events = [dict(e.attrib, event=e.tag) for e in runtime_records if e.tag in
               ["uncommon_trap", "make_not_entrant", "deoptimized"] and e.get("compile_id") in ids]
     windows = {}
     for name in WORKLOADS:
