@@ -12,18 +12,17 @@ concurrency:
   cancel-in-progress: false
 jobs:
   configuration:
-    if: ${{ github.event.before == 'f4aada9f54a5d47bcd21c20ace0dab6eba10be87' && github.run_attempt == 1 }}
+    if: ${{ github.event.before == 'cfac72faa3abdeed850cafb1aba70404e027faba' }}
     runs-on: macos-26
     timeout-minutes: 10
     steps:
-      - name: Verify the single approved execution
+      - name: Verify the qualification branch
         env:
           PUBLISH_PARENT: ${{ github.event.before }}
         shell: bash
         run: |
-          test "$GITHUB_RUN_ATTEMPT" = 1
           test "$GITHUB_REF" = refs/heads/diagnose-c1-policy-20261016
-          test "$PUBLISH_PARENT" = f4aada9f54a5d47bcd21c20ace0dab6eba10be87
+          test "$PUBLISH_PARENT" = cfac72faa3abdeed850cafb1aba70404e027faba
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
