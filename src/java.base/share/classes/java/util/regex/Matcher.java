@@ -250,6 +250,9 @@ public final class Matcher implements MatchResult {
     private boolean javaOnly;
     private boolean directSearch;
     private static final int FIXED_FIND_CONTINUATION = 3;
+    // Empty local storage has no mutable elements and can be shared.
+    private static final int[] EMPTY_LOCALS = new int[0];
+    private static final IntHashSet[] EMPTY_LOCALS_POS = new IntHashSet[0];
     private record JavaMatchChoice(Pattern.Node root, Pattern.Node matchRoot,
             WeakReference<CharSequence> input, int from, int to, int width, int mode) { }
 
@@ -270,8 +273,8 @@ public final class Matcher implements MatchResult {
 
         // Allocate state storage
         groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
-        locals = new int[parent.localCount];
-        localsPos = new IntHashSet[parent.localTCNCount];
+        locals = parent.localCount == 0 ? EMPTY_LOCALS : new int[parent.localCount];
+        localsPos = parent.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[parent.localTCNCount];
 
         // Put fields into initial states
         reset();
@@ -448,12 +451,12 @@ public final class Matcher implements MatchResult {
 
         // Reallocate state storage
         groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.rustRegex != null ? 4 : 0)];
-        locals = new int[newPattern.localCount];
+        locals = newPattern.localCount == 0 ? EMPTY_LOCALS : new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
         for (int i = 0; i < locals.length; i++)
             locals[i] = -1;
-        localsPos = new IntHashSet[parentPattern.localTCNCount];
+        localsPos = newPattern.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[newPattern.localTCNCount];
         modCount++;
         return this;
     }
@@ -2171,11 +2174,11 @@ public final class Matcher implements MatchResult {
 
     private void javaStorage(Pattern execution) {
         if (locals.length != execution.localCount) {
-            locals = new int[execution.localCount];
+            locals = execution.localCount == 0 ? EMPTY_LOCALS : new int[execution.localCount];
             for (int i = 0; i < locals.length; i++) locals[i] = -1;
         }
         if (localsPos.length != execution.localTCNCount)
-            localsPos = new IntHashSet[execution.localTCNCount];
+            localsPos = execution.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[execution.localTCNCount];
     }
 
     private void ensureContinuation() {
