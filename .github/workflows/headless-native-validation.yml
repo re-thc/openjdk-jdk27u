@@ -1,0 +1,94 @@
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation. See LICENSE for details.
+
+name: Pinned PR45 native follow-up
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  windows:
+    name: windows-x64 native probes
+    runs-on: windows-2025
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout reviewed controllers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github
+      - name: Verify and unpack the two pinned Windows artifacts
+        timeout-minutes: 15
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python .github/scripts/headless-native-validation/get-artifacts.py
+          --platform windows-x64 --root "$env:RUNNER_TEMP/pr45-inputs"
+          --evidence "$env:RUNNER_TEMP/pr45-evidence"
+      - name: Four target processes and direct DLL imports
+        timeout-minutes: 4
+        run: >-
+          ./.github/scripts/headless-native-validation/windows.ps1
+          -Evidence "$env:RUNNER_TEMP/pr45-evidence"
+      - name: Preserve bounded native evidence
+        if: ${{ always() }}
+        timeout-minutes: 2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr45-native-windows-39267520699-attempt2
+          path: |
+            ${{ runner.temp }}/pr45-evidence
+            !${{ runner.temp }}/pr45-evidence/**/core
+            !${{ runner.temp }}/pr45-evidence/**/core.*
+            !${{ runner.temp }}/pr45-evidence/**/*.dmp
+            !${{ runner.temp }}/pr45-evidence/**/*.mdmp
+          retention-days: 7
+          if-no-files-found: error
+
+  macos:
+    name: macos-aarch64 native probes
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - name: Checkout reviewed controllers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github
+      - name: Verify and unpack the two pinned Mac artifacts
+        timeout-minutes: 15
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 .github/scripts/headless-native-validation/get-artifacts.py
+          --platform macos-aarch64 --root "$RUNNER_TEMP/pr45-inputs"
+          --evidence "$RUNNER_TEMP/pr45-evidence"
+      - name: Six native launcher and JNI processes
+        timeout-minutes: 5
+        run: >-
+          python3 .github/scripts/headless-native-validation/macos.py
+          --evidence "$RUNNER_TEMP/pr45-evidence"
+      - name: Preserve bounded native evidence
+        if: ${{ always() }}
+        timeout-minutes: 2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr45-native-macos-39267520699-attempt2
+          path: |
+            ${{ runner.temp }}/pr45-evidence
+            !${{ runner.temp }}/pr45-evidence/**/core
+            !${{ runner.temp }}/pr45-evidence/**/core.*
+            !${{ runner.temp }}/pr45-evidence/**/*.dmp
+            !${{ runner.temp }}/pr45-evidence/**/*.mdmp
+          retention-days: 7
+          if-no-files-found: error

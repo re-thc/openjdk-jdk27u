@@ -42,6 +42,10 @@ on:
       make-arguments:
         description: 'Additional make arguments'
         required: false
+      native-validation:
+        description: 'Run only the pinned PR45 native follow-up; do not build'
+        type: boolean
+        default: false
       dry-run:
         description: 'Skip builds and tests; only prepare dependencies and configure'
         type: boolean
@@ -59,6 +63,7 @@ concurrency:
 jobs:
   prepare:
     name: 'Prepare the run'
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.native-validation) }}
     runs-on: ubuntu-26.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
@@ -206,3 +211,11 @@ jobs:
       runs-on: windows-2025
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+
+  native-validation:
+    name: 'Pinned PR45 native follow-up'
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.native-validation }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/headless-native-validation.yml
