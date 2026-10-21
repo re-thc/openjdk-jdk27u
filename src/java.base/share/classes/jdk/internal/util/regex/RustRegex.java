@@ -339,8 +339,8 @@ public final class RustRegex {
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
         if (bytes == null) {
             if (input.length() > MAX_LENGTH) return -1;
-            // Handles Latin-1 contents with compact strings disabled, and
-            // snapshots of mutable CharSequences, without a second engine.
+            // Handles Latin-1 contents when compact Strings are disabled,
+            // without constructing a second engine.
             bytes = new byte[input.length()];
             for (int i = 0; i < bytes.length; i++) {
                 char c = input.charAt(i);

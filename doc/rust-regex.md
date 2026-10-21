@@ -1,225 +1,101 @@
-# Rust regex primary engine
+# Rust regex backend
 
-This fork selects Rust at Pattern compilation for a parsed common subset of
-`java.util.regex`. Supported Patterns return matches and captures directly
-from Rust or a prepared specialization. Their Java node fields are
-initially empty; measured Java choices share a lazily compiled sibling graph.
-Unsupported syntax compiles with Java. Per-Matcher Java choices preserve native
-eligibility for other inputs; unresolved input/operation constraints permanently
-promote the affected Pattern to Java.
+This fork includes a Rust backend for a compatible subset of `java.util.regex`.
+Public APIs are unchanged. Patterns can use Rust, prepared Java specializations,
+or the ordinary Java engine; native dispatch is not always the cheapest path.
 
-## Build and runtime controls
+## Building and controls
 
-GNU Linux/macOS x86_64 and AArch64 builds compile the locked vendor snapshot
-offline. Supported default builds require Rust; builders can opt out with
-`--disable-rust-regex`. Unsupported targets retain Java. Baseline CPU features
-and upstream memchr runtime SIMD dispatch avoid a target-cpu=native dependency.
+The backend is enabled by default for x86_64 and AArch64 on GNU/Linux and
+macOS. Other targets build without it. Use `--disable-rust-regex` to omit it.
+Enabled builds require Cargo, Rust 1.85 or newer and the matching Rust standard
+library copyright notices. CI pins Rust 1.99.1 through the shared
+`get-rust-regex` action. Install the toolchain and notices with rustup:
 
-`UseRustRegex` defaults to true when included. Applications opt out with
-`-XX:-UseRustRegex`. `UseRustRegexIntrinsics` also defaults to true;
-`-XX:-UseRustRegexIntrinsics` selects registered JNI for Rust calls. The short
-specialization continues to avoid those calls in either mode.
+```sh
+rustup toolchain install 1.99.1 --profile minimal --component rust-docs,rustfmt,clippy
+rustup default 1.99.1
+bash configure
+make images
+```
 
-Interpreter, C1 and C2 paths on x86_64/AArch64 call the same C ABI with a handle,
-input byte-array address and capture-array address. Four trailing ints carry
-region bounds, search position and operation. C2 models capture writes. The
-AArch64 interpreter branches through a full function address, independently
-of code-cache placement. JNI remains available in every tier.
+Configure resolves `RUSTC` and passes that compiler to Cargo. If notices cannot
+be found in its sysroot, supply `--with-rust-regex-license=PATH`. Cargo builds
+with `--frozen` from vendored sources; ordinary builds do not access a registry.
+The adapter and HotSpot are linked together in `libjvm`.
 
-## Compatibility and selection
+On included builds, `UseRustRegex` and `UseRustRegexIntrinsics` default to true.
+Applications can disable the backend with `-XX:-UseRustRegex`, or select its
+registered JNI fallback with `-XX:-UseRustRegexIntrinsics`. JNI remains available
+in interpreter, C1 and C2 configurations. The configured maximum compiler tier
+also guides prepared Java choices; it does not identify the current tier of an
+individual call.
 
-A recursive grammar recognizer translates ASCII expressions and records capture
-numbers/names and nullable subexpressions. It accepts ordinary/noncapturing/named
-groups, ordered alternation, ranges, negated classes, default ASCII d/D/w/W/s/S,
-greedy/reluctant quantifiers, quoting, byte-valued escapes, anchors and boundaries.
-Supported native flags are UNIX_LINES, ASCII CASE_INSENSITIVE and DOTALL.
-Plain literals and LITERAL mode keep Java's optimized literal path.
+## Compatibility
 
-Literal-prefix/digit-tail expressions, including ordinary/named captures, get
-a compact specialization containing the prefix and capture metadata. It
-handles searches of up to 256 characters and checks the first candidate of
-longer searches. With at most 256 characters remaining, numeric runs stay in the
-plan. With more input remaining, interpreter/C1 configurations hand runs longer
-than 32 digits to Rust; C2 configurations finish the first candidate's digit run
-in Java. A longer search that needs another candidate still reaches Rust unless
-a prepared literal rejection can establish the miss.
-Digit-only searches skip nondigits directly and read each digit once. Inputs
-shorter than the required prefix plus one digit reject immediately.
-Literal searches respect the region end, including small regions within large Strings.
-This avoids the native boundary for short/early matches. The Rust engine is
-compiled on the first operation that needs it, with no use-count threshold.
-Patterns used exclusively through the specialization allocate no native engine
-or Cleaner registration. A bounded cache also retains these parsed plans, so
-recompiling an expression does not have to parse it again.
-
-The captured ASCII email shape `([a-z0-9_]+)@([a-z0-9_]+)\\.[a-z]{2,4}`,
-also with named captures, has a compact plan for regions of up to 32 characters
-and early candidates. Longer word runs and scans select Rust. Both plans receive
-scalar bounds; capture-array ABI arguments are written only for native calls.
-The uncaptured fixed digit shape `[0-9]{3}-[0-9]{2}-[0-9]{4}` (also using `\\d`)
-uses a scalar plan in C1/C2 configurations: complete searches up to 16 characters
-in C1 or 256 in C2, and the first candidate of larger searches. Interpreter
-matching selects Rust once a full-width candidate is possible; unresolved scans
-also select Rust. Its exact end flags avoid general
-Java replay. Failed anchors restore digit-atom progress immediately; failed
-searches defer specialized continuation recovery until a subsequent find() or
-usePattern(). That recovery does not promote the Pattern; reset discards it.
-
-Literal-prefix/digit regions up to eight characters use the Java graph. For
-uncaptured prefixes of four through fifteen characters, sixteen qualifying
-adapter searches can select that graph in a wider window: sixteen characters
-in a C2 configuration, or min(64, eight times the prefix length) in interpreter/C1
-configurations. Captured prefixes retain the eight-character window. General
-fixed-width regions up to sixteen characters do too in a VM configured for C2;
-their Rust construction is deferred. A short early native hit can select Java
-for repeated operations on the same input, region and operation in C2 for
-fixed-width expressions, or in C1/C2 for short literal alternatives followed
-by a digit run. This choice does not promote the Pattern: another input or larger region
-can still use Rust. The configured maximum compiler tier guides this policy;
-it does not observe the current tier of an individual Java method.
-Java locals are allocated when selecting the sibling graph and reused.
-
-Dot uses Java's exact Latin-1 terminator set. Fixed-width expressions and
-fixed-width prefixes with greedy fixed-width repeated tails share one engine
-for all operations. Other expressions get a separate native engine with an
-end assertion for matches(), including alternatives that require a later branch
-for a full match. Keeping that variant separate preserves the primary engine's
-one-pass capture optimization. Capture-bearing repeated subtrees are restricted
-to one non-nullable capture without nested captures: Java's retained capture
-histories can otherwise differ from Rust's.
-
+The recognizer accepts ASCII syntax including ordinary, named and noncapturing
+groups, ordered alternation, ranges and negated classes, ASCII shorthand
+classes, greedy/reluctant repetition, quoting, byte-valued escapes, anchors and
+boundaries. Native flags are `UNIX_LINES`, ASCII `CASE_INSENSITIVE` and `DOTALL`.
+Plain literals and `LITERAL` mode keep Java's optimized literal handling.
 Backreferences, lookaround, possessive repetition, embedded flags, Unicode
-properties, nested/set-operation classes and other unrecognized constructs
-use Java. The parser tracks negation and a leading literal ]; combined classes
-such as `[]a~~a]+` cannot enter Rust. Unrecognized/invalid syntax goes to Java
-for its usual syntax diagnostics. Extending the subset requires grammar and
-differential evidence, not additional lexical exceptions.
+properties, nested class operations and other unsupported syntax use Java,
+including its usual invalid-pattern diagnostics.
 
-Compact Latin-1 Strings use backing bytes directly. Other CharSequences use
-ordinary Java traversal through a cached sibling graph, without requesting a
-whole-input toString() snapshot or promoting the shared Pattern. Resetting to
-an immutable String can use the native backend again. The ASCII short plan can
-answer short searches and early candidates
-directly on Unicode or noncompact Strings, without encoding. Operations that
-need Rust encode noncompact Latin-1 Strings; non-Latin-1 contents promote to
-Java. Regions over 65,536 characters can use the short plan for an early match
-or immediate anchored rejection; other operations on these regions promote.
-The native leaf-call limit remains 65,536 characters. Context-sensitive expressions
-with transparent bounds or disabled anchoring bounds promote too. Dollar/\Z
-expressions promote for final Java line terminators.
+Captures and state remain Java-compatible for `find`, `matches`, `lookingAt`,
+replacement, split, predicates, streams and immutable match results. Repeated
+captures are admitted only when Java's retained capture history can be
+preserved. Prepared plans handle some short/early matches without constructing
+a Rust engine. Complete validated preparations supply capture metadata without
+a second Java source parse.
 
-The selected backend supplies capture offsets, including unmatched groups, for find, matches,
-lookingAt, replacement, splitting, immutable results and streams. Matcher keeps
-zero-length progression. Literal-prefix/greedy-digit-tail plans compute exact
-Java hitEnd()/requireEnd() flags for successful matches and failed searches,
-including results returned by Rust for longer digit runs. General expressions
-promote and replay the last operation using saved input/bounds when these flags
-are queried: Rust's offsets do not describe Java's attempted reads and backtracking.
-Failed anchored operations in general expressions replay immediately on the original Matcher, since
-Java can advance its continuation position before ultimately failing. General
-failed searches defer that state replay until a subsequent find() or usePattern();
-reset discards the pending continuation. Scanner streaming end-state queries
-preserve Java behavior; general delimiter patterns select Java after the first
-query. Promotion publishes
-a separately compiled graph; existing Matchers allocate Java locals lazily.
-In-flight native calls retain their wrapper until completion.
+Compact Latin-1 Strings use their bytes directly. Noncompact Latin-1 Strings
+are encoded when needed. Other `CharSequence` implementations use ordinary
+Java traversal without taking a whole-input `toString()` snapshot or promoting
+the shared Pattern. Resetting to a String can use the native backend again.
+Non-Latin-1 input that cannot be answered by a prepared plan uses Java. The
+native region limit is 65,536 characters; longer regions can still use a
+prepared early match or immediate rejection. Unresolved longer operations,
+unsupported bounds and final-terminator cases promote to Java.
 
-## Memory and lifetime
+Rust offsets do not describe Java's attempted reads/backtracking. Prepared
+plans compute exact end flags where supported; other `hitEnd`/`requireEnd`
+queries promote and replay the saved operation in Java. General anchored
+failures replay immediately when Java continuation state is needed. Failed
+searches defer continuation recovery until another `find` or `usePattern`;
+reset discards it. Fixed-digit recovery uses a bounded specialization without
+promoting the Pattern. Per-Matcher Java choices preserve eligibility for other
+inputs. Scanner's mutable input and streaming end-state queries follow these
+same rules.
 
-A cache retains at most 256 expression/flag keys and weak native-engine values.
-Identical live Patterns can share an immutable engine; weak values do not keep it
-alive after the owners disappear. Unsupported syntax decisions are cached;
-allocation failures remain retryable for newly compiled Patterns. Concurrent
-cold misses can build duplicates, both charged to the budget.
-Capture-name maps are frozen with the validated preparation and shared when
-an expired weak wrapper is reconstructed, without retaining a native engine.
+## Ownership and native safety
 
-The regex-automata meta engine uses bounded NFA/one-pass construction and
-bounded lazy DFAs. Concurrent Matchers use separately owned pooled caches.
-A shared 64 MiB accounting budget admits construction, retained engines and
-search caches. It is a ceiling, not 64 MiB allocated at startup or per Pattern.
-Construction reserves 16 MiB before allocation, then shrinks to the retained
-charge. Cache creation reserves an upper allowance before allocation and keeps
-an allowance for fixed state and lazy-DFA growth. Admission failure selects
-Java; errors, unwinding and Cleaner cleanup return reservations.
-The first search cache is admitted and initialized during native compilation, while
-the thread is in native state, so the selected engine is ready for its first call.
-The intrinsic leaf path admits at most 262,144 / estimated expanded cost input
-bytes for automata whose cost exceeds 64. Capture-bearing engines also limit
-leaf regions to 4,096 bytes, since capture recovery may use the Pike VM.
-Minimum-length misses return before cache acquisition. Operations above those
-limits request a JNI call that copies at most 65,536 input bytes and 70 state
-ints before entering native thread state. It restores absolute capture offsets
-after returning to VM state and resolving the output array again. These native
-copies allow GC to proceed during expensive searches while preserving Rust
-matching. Input copies are temporary storage outside the engine/cache accounting
-budget, bounded by 65,536 bytes per active call. Unsupported operations and
-admission failures still use Java. These policies do not impose a matching timeout;
-Java fallback restores safepoints but can still run for a long time.
+A bounded cache retains at most 256 expression/flag keys, validated preparation
+metadata and weak backend values. Capture-name metadata is immutable and shared
+across wrapper restoration. Native engines are constructed lazily where
+possible; Cleaner release follows wrapper lifetime. In-flight calls retain
+their owner. Immutable Regex engines are shared, while pooled Cache/Captures
+state belongs to individual searches.
 
-The budget bounds accounted engine/cache storage and construction reservations;
-allocator metadata, fragmentation and the Rust runtime are outside that metric.
-Selected engines may retain one Java sibling graph after a measured Java choice;
-that graph is outside native engine/cache accounting. Promotion releases the backend reference;
-other Patterns may still own the shared engine, and Cleaner cleanup is eventual.
-Native Matcher arrays retain captures plus four ABI ints; Java-only Matchers
-keep the original array size. Compilation/destruction use
-native thread state; match calls retain no heap addresses after return. All
-four C ABI exports contain unwinding panics and fail open.
+The native adapter accounts for live engines, pooled caches and growth under a
+64 MiB aggregate budget. Allocation/admission failures fall back to Java;
+new Patterns can retry after resources are released. Full DFA construction and
+the bounded backtracker are disabled; Thompson/PikeVM fallback remains available.
 
-## JDK applicability
+The C ABI uses pointers, sizes and integer results, never a Rust `bool` return.
+Bounded leaf calls use relocated array-element addresses. Work beyond the leaf
+budget uses stable native copies and safepoint-capable thread state.
+Rust panics are contained at the FFI boundary; release builds retain
+`panic = "unwind"`. Changing header layout, GC handling, capture publication or
+thread transitions requires interpreter/C1/C2 and JNI correctness coverage.
 
-The source inventory is [rust-regex-callers.txt](rust-regex-callers.txt). Backend
-selection in Pattern and shared Matcher operations cover hidden callers too.
+## Maintenance and tests
 
-| Caller family | Route |
-| --- | --- |
-| Matcher search, anchored matching, captures, replacement, streams | Native primary matching, subject to the fallback rules above. |
-| Pattern split, delimiter split, streams, predicates, match predicates | Shared Matcher path; existing literal shortcuts remain. |
-| String regex helpers | Shared Pattern selection; repeated live expressions can share engines. |
-| Scanner | Mutable CharSequences use Java traversal; general streaming end-state queries select Java. |
-| Filesystem/ZIP glob matchers | Anchored native matching if translated syntax is eligible. |
-| Swing, joptsimple, compiler and JDK tool helpers | Shared Pattern/Matcher selection. |
-| PrintPattern | Requests Java compilation before inspecting the graph. |
-| Grapheme/Unicode constructs | Unsupported syntax selects Java. |
-| Xerces XML Schema/XPath and platform native regex | Independent dialects/engines; not routed through Pattern. |
-
-Audit commands:
-
-```sh
-rg -l 'import java.util.regex|java.util.regex.Pattern|java.util.regex.Matcher' src --glob '*.java'
-rg -n 'class.*(Regex|Regexp)|package .*regex' src --glob '*.java'
-```
-
-## Vendor updates
-
-```sh
-python3 make/scripts/update-rust-regex.py --check
-python3 make/scripts/update-rust-regex.py
-python3 make/scripts/update-rust-regex.py --version <version>
-```
-
-The updater resolves dependencies outside the offline checkout, regenerates
-Cargo.lock and pristine vendor sources/checksums, updates JDK MIT notices, and
-records the live version/date/checksum in UPSTREAM.json. Review licenses and
-toolchain requirements on updates. The adapter is GPLv2; bundled crates and the
-Rust standard library use their MIT option.
-
-Configure retains the resolved `RUSTC` and passes it to Cargo. CI pins Rust
-1.99.0 and verifies a configure-only compiler override outside PATH.
-
-## Upstream optimization guidance
-
-The [option audit](rust-regex-optimization-audit.md) maps the upstream performance
-guide to the adapter and records isolated trials of ThinLTO, full DFAs, bounded
-backtracking and larger lazy-DFA caches. Default `std`/`perf` Cargo features,
-literal/SIMD prefilters, lazy DFAs, one-pass captures, reusable engines and
-separate mutable search caches are enabled. Release builds use optimization
-level 3 and one codegen unit. Options with mixed performance or greater memory
-cost remain deliberately disabled; the audit includes a portable offline script
-and native measurements.
-
-## Tests and measurements
+`make/scripts/update-rust-regex.py` is the explicit dependency-update tool. It
+regenerates the lockfile and pristine vendor checksums, legal notices and
+`UPSTREAM.json`. Review those changes together; ordinary toolchain updates do
+not require crate upgrades. The adapter is GPLv2; bundled crates and Rust's
+standard library use their MIT option.
 
 ```sh
 cd src/hotspot/share/runtime/rustregex
@@ -228,29 +104,20 @@ cargo clippy --frozen --all-targets -- -D warnings
 cargo fmt --check
 cd ../../../../..
 make test TEST="jtreg:test/jdk/java/util/regex"
-make test TEST="jtreg:test/jdk/java/util/Scanner jtreg:test/jdk/java/lang/String"
+make test TEST="jtreg:test/hotspot/jtreg/runtime/interpreter/RustRegexStartup.java"
+make test TEST="jtreg:test/hotspot/jtreg/runtime/interpreter/RustRegexArrayLayout.java"
 ```
 
-RustRegexTest compares captures and API state against a Java-only reference
-and asserts native matching keeps Java roots absent. Modes cover default,
-on/off, JNI, interpreter, C1, C2 and noncompact Strings. Separate tests exercise
-memory admission/recovery, stateful continuation and relocated hashed arrays
-under each supported header layout and compiler tier. Rust tests cover captures, full matches,
-nullable results, byte inputs, concurrency, accounting and contained FFI panics.
+The regular tier1 jobs include regex API/state, ownership, mutable input,
+continuation, admission/recovery and safepoint tests, plus HotSpot startup and
+array-layout tests. Platform builds cover Linux x86_64/AArch64 and macOS
+AArch64. Cross compilation/emulation establishes functionality, not native
+hardware performance.
 
-RustRegexNative measures reusable searches, including positive/negative cases,
-captures, fallback controls and short inputs. RustRegexEndFlags measures matching
-plus both end-state queries, including early candidates in large regions.
-RustRegexLifetime includes every
-search in complete 1/8/9/10/16/32-call lifetimes, mixed workloads and shared
-Pattern contention. Shared runs retain another Pattern owning the same engine.
-Cold runs use one lifetime per single-shot iteration, with collection outside
-its timer. Runtime paths are warmed using other Patterns before measurement.
-Cleaner completion is asynchronous. The paired runner checks the selected
-backend so budget pressure cannot silently replace native compilation with Java.
-Cross compilation/emulation is functional coverage; AArch64
-performance requires real hardware.
-
-The [performance report](rust-regex-performance.md) compares short inputs by
-regex shape and tier, end-state queries, and complete Pattern lifetimes.
-It includes the benchmark protocol, limitations and routing decisions.
+The microbenchmarks `RustRegexNative`, `RustRegexState`, `RustRegexEndFlags`,
+`RustRegexLifetime` and `PreparedRegexCost` cover reusable operations, requested
+end flags, complete lifetimes and preparation reuse. Forced weak-slot clearing
+isolates wrapper reconstruction; GC-cold lifetimes warm callers/adapters and do
+not measure whole-process startup. Compare matching semantics and actual
+execution routes on the same host, and retain short-input, cold, allocation and
+fallback costs alongside gains.

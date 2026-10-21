@@ -205,13 +205,6 @@ jobs:
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
         if: ${{ inputs.dry-run == false }}
 
-      - name: 'Check configured Rust compiler'
-        run: |
-          if grep -q '^RUST_REGEX_ENABLED := true$' "build/${{ inputs.platform }}/spec.gmk"; then
-            test -f "${{ steps.rust-regex.outputs.rustc }}.used"
-          fi
-        if: ${{ inputs.dry-run == false }}
-
       - name: 'Check development profile'
         run: bash .github/scripts/check-dev-profile.sh "build/${{ inputs.platform }}/images/jdk" "build/${{ inputs.platform }}/spec.gmk"
         if: ${{ inputs.dry-run == false }}

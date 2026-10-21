@@ -96,9 +96,7 @@ public class RustRegexLifetime {
             for (int i = 0; i < threads; i++) tasks.add(() -> 0);
             pool.invokeAll(tasks);
         }
-        // Warm the complete facade for both reuse modes. In the paired
-        // C2 runs (CompileThreshold=1000), warming only Pattern.compile/find
-        // leaves this low-invocation method in the interpreter.
+        // Warm the complete facade as well as its callees in both reuse modes.
         for (int i = 0; i < 2000; i++) lifetime();
         java.lang.ref.Reference.reachabilityFence(warm);
     }

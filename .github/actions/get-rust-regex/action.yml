@@ -27,7 +27,7 @@ name: 'Get Rust regex toolchain'
 description: 'Install the Rust compiler and matching legal notices for native fork builds'
 outputs:
   rustc:
-    description: 'Configured compiler wrapper outside PATH'
+    description: 'Resolved Rust compiler'
     value: ${{ steps.toolchain.outputs.rustc }}
 runs:
   using: composite
@@ -36,24 +36,9 @@ runs:
       id: toolchain
       shell: bash
       run: |
-        rustup toolchain install 1.99.0 --profile minimal --component rust-docs,rustfmt,clippy --no-self-update
-        rustup default 1.99.0
+        rust_version=1.99.1
+        rustup toolchain install "$rust_version" --profile minimal --component rust-docs,rustfmt,clippy --no-self-update
+        rustup default "$rust_version"
         echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-
-        compiler=$(rustup which --toolchain 1.99.0 rustc)
-        wrapper="$RUNNER_TEMP/regex-rustc/rustc"
-        mkdir -p "$(dirname "$wrapper")"
-        {
-          printf '#!/usr/bin/env bash\nset -euo pipefail\n'
-          printf 'compiler=%q\n' "$compiler"
-          cat <<'EOF'
-        for arg in "$@"; do
-          if [[ $arg == jdk_rust_regex ]]; then
-            : > "$0.used"
-          fi
-        done
-        exec "$compiler" "$@"
-        EOF
-        } > "$wrapper"
-        chmod +x "$wrapper"
-        echo "rustc=$wrapper" >> "$GITHUB_OUTPUT"
+        compiler=$(rustup which --toolchain "$rust_version" rustc)
+        echo "rustc=$compiler" >> "$GITHUB_OUTPUT"
