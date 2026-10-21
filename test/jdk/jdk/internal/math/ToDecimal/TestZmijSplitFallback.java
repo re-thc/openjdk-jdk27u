@@ -108,7 +108,7 @@ public class TestZmijSplitFallback {
             if (!fields(expected, false).equals(fields(withoutBuffer, false)))
                 throw new AssertionError("Java buffer independence " + Long.toHexString(bits));
         }
-        // Preserve the original native dispatch and its exception behavior for fd == null.
+        // Check native dispatch and exception behavior for fd == null.
         String nullExpected;
         try {
             if (!(boolean) NATIVE.invoke(null, v, null))

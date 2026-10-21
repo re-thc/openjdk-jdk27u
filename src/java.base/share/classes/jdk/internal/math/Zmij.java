@@ -68,9 +68,8 @@ final class Zmij {
         }
         int bq = (int) (bits >>> 52);
         int q = bq == 0 ? -1074 : bq - 1075;
-        // Preserve the existing exact-integer fast path and its compact
-        // significand. Calling native code and stripping many zeros costs
-        // more than this Java path, especially for BigDecimal.valueOf.
+        // The compact-significand integer fast path avoids a native call and
+        // trailing-zero normalization.
         int mq = -q;
         if (0 < mq && mq < 53) {
             long c = (bits & 0xfffffffffffffL) | (1L << 52);

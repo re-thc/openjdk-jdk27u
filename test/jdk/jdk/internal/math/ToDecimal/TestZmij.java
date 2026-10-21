@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Correct shortest floating-point renderings with zmij across execution tiers
+ * @summary Canonical floating-point decimal selection across execution tiers
  * @modules java.base/jdk.internal.math:+open
  * @run main/othervm TestZmij
  * @run main/othervm -Xint TestZmij

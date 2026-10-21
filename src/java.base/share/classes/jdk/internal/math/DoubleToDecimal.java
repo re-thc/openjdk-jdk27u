@@ -191,8 +191,8 @@ public final class DoubleToDecimal extends ToDecimal {
 
     @ForceInline
     private static byte[] splitBuffer(double v, FormattedFPDecimal fd) {
-        // Keep native-declined inputs on the original allocation path.
-        // Null holders, negative inputs and tiny subnormals also retain the buffer.
+        // Native-declined requests, null holders, negatives and tiny subnormals
+        // retain the scratch buffer.
         if (!Zmij.isEnabled() && fd != null && doubleToRawLongBits(v) > 128) {
             return null;
         }

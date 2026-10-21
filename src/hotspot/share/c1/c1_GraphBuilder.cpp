@@ -3908,8 +3908,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   }
 
   // now perform tests that are based on flag settings
-  // Keep Java-only decimal factories within C1's ordinary inlining budgets.
-  // C2 still needs their ForceInline annotations to optimize the full pipeline.
+  // Java-only decimal factories use C1's ordinary inlining budgets.
+  // Their ForceInline annotations remain active in C2.
   const bool suppress_force_inline = callee->force_inline() && !Zmij::is_enabled() &&
                                      is_decimal_precision_factory(callee);
   const bool inlinee_by_annotation = callee->force_inline() && !suppress_force_inline;

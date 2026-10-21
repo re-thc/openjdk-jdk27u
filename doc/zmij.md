@@ -87,9 +87,9 @@ python3 make/scripts/update-zmij.py /path/to/zmij --commit <40-hex-revision>
 ```
 
 Without `--commit`, the updater requires an exact release tag. It checks the
-MIT license and applies decimal selection/notation, Clang compatibility and unused-instantiation
-patches with zero fuzz. Before installation, it verifies the production
-metadata and exact integer-store bridges against the staged vendor files,
+MIT license and applies decimal selection/notation, Clang compatibility and
+unused-instantiation patches with zero fuzz. Before installation, it verifies
+the production metadata and exact integer-store bridges against the staged vendor files,
 including sanitizer checks and scalar/SIMD fallback profiles. Failed patches,
 compilation or assumptions stop installation. `--cxx` selects a host C++17
 compiler.

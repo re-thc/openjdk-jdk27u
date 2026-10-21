@@ -52,7 +52,6 @@ public final class FloatingDecimal {
     private static final int    MAX_DEC_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
     private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
-    // The native parser returns NaN to request the full Java grammar/parser.
     private static final boolean USE_FAST_FLOAT = isFastFloatEnabled0();
 
     private static native boolean isFastFloatEnabled0();
@@ -62,6 +61,7 @@ public final class FloatingDecimal {
         return USE_FAST_FLOAT;
     }
 
+    // NaN requests fallback to the full Java parser.
     @IntrinsicCandidate
     private static native double parseFastFloat(String s, int ix);
 
@@ -69,7 +69,7 @@ public final class FloatingDecimal {
     private static native double parseFastFloatDigits(byte[] digits, int length, int decExp);
 
     // Avoid a native call for the usual symbolic and hexadecimal spellings.
-    // Whitespace-prefixed variants are still handled correctly by the adapter.
+    // The adapter trims leading whitespace before parsing.
     @ForceInline
     private static boolean isFastFloatCandidate(String s) {
         int length = s.length();

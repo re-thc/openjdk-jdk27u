@@ -83,7 +83,7 @@ def verify(output, values):
         if float(str(sig) + 'e' + str(exp)) != value:
             raise AssertionError(f'Decimal does not round-trip for {bits:016x}')
         # Python's independent shortest formatter supplies a digit-count bound.
-        # Java allows a minimum of two significant digits.
+        # Java considers two-digit candidates when one digit would round-trip.
         digits = len(str(sig).rstrip('0'))
         original_digits = len(''.join(map(str, Decimal(repr(value)).as_tuple().digits)).rstrip('0'))
         if digits > max(2, original_digits):

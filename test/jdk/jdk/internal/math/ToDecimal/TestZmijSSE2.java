@@ -33,6 +33,4 @@
  * @run main/othervm -Xint -XX:UseSSE=2 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij TestZmij
  */
 
-public class TestZmijSSE2 {
-    // The actions deliberately reuse the complete differential/canary test.
-}
+public class TestZmijSSE2 { }
