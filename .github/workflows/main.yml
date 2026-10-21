@@ -46,6 +46,10 @@ on:
         description: 'Skip builds and tests; only prepare dependencies and configure'
         type: boolean
         default: false
+      pr43_apple_comparison:
+        description: 'Only PR43 matched Apple release builds and twelve stage-one pairs'
+        type: boolean
+        default: false
       pr43_full_parser_sve:
         description: 'Only PR43 retained-image full-parser timings and SVE correctness; no JDK builds'
         type: boolean
@@ -69,20 +73,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pr43-apple:
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_apple_comparison
+    uses: ./.github/workflows/pr43-apple.yml
+
   pr43-followup:
-    if: github.event_name == 'workflow_dispatch' && inputs.pr43_full_parser_sve
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_full_parser_sve && !inputs.pr43_apple_comparison
     permissions:
       contents: read
       actions: read
     uses: ./.github/workflows/pr43-followup.yml
 
   pr43-comparison:
-    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_comparison && !inputs.pr43_full_parser_sve
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_comparison && !inputs.pr43_full_parser_sve && !inputs.pr43_apple_comparison
     uses: ./.github/workflows/pr43-compare.yml
 
   pr43-native-parser:
     name: 'PR43 native ARM parser codegen'
-    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_parser_probe && !inputs.pr43_native_comparison && !inputs.pr43_full_parser_sve
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_parser_probe && !inputs.pr43_native_comparison && !inputs.pr43_full_parser_sve && !inputs.pr43_apple_comparison
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 15
     permissions:
@@ -124,7 +132,7 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    if: github.event_name != 'workflow_dispatch' || (!inputs.pr43_native_parser_probe && !inputs.pr43_native_comparison && !inputs.pr43_full_parser_sve)
+    if: github.event_name != 'workflow_dispatch' || (!inputs.pr43_native_parser_probe && !inputs.pr43_native_comparison && !inputs.pr43_full_parser_sve && !inputs.pr43_apple_comparison)
     runs-on: ubuntu-26.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}

@@ -1,0 +1,74 @@
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# Distributed under GNU GPL version 2; see the repository LICENSE file.
+name: PR43 matched native Apple comparison
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: macos-26
+    timeout-minutes: 135
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Bind the approved Apple scope and unchanged product
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/apple_compare.py bind --root . --out apple-admission
+      - name: Check controller readers without JVM execution
+        run: |
+          python3 doc/qualification/pr43-macos/cloud-parser-probe/test_apple_decode.py
+          python3 doc/qualification/pr43-macos/cloud-parser-probe/test_apple_compare.py
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 456afea88231bc9ebf17dfa48811db90a8bae8b8
+          path: A
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1
+          path: B
+          persist-credentials: false
+      - name: Get the standard macOS ARM64 BootJDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: macos-aarch64
+      - name: Select standard native Apple toolchain and dependencies
+        run: |
+          brew install autoconf make ccache
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+      - name: Build exact predecessor release image
+        timeout-minutes: 45
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/apple_compare.py build --label A --root . --out apple-build-evidence --boot '${{ steps.bootjdk.outputs.path }}'
+      - name: Build exact candidate release image
+        timeout-minutes: 45
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/apple_compare.py build --label B --root . --out apple-build-evidence --boot '${{ steps.bootjdk.outputs.path }}'
+      - name: Two diagnostics and twelve balanced stage-one pairs
+        timeout-minutes: 30
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/apple_compare.py compare --root . --out apple-comparison-evidence
+      - name: Retain every observation including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr43-apple-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apple-admission
+            apple-build-evidence
+            apple-comparison-evidence
+          retention-days: 5
+          if-no-files-found: warn
+      - name: Retain exact built images
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr43-apple-images-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            A/build/pr43/images/jdk
+            B/build/pr43/images/jdk
+          retention-days: 5
+          if-no-files-found: warn
