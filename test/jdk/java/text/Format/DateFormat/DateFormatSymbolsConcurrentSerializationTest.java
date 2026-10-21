@@ -178,8 +178,8 @@ public class DateFormatSymbolsConcurrentSerializationTest {
             prepare.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
             prepare.enable();
         }
-        // Baseline has no symbol-array detachment. Stop before it invokes the
-        // serialization hooks instead, so the same child can verify baseline.
+        // If no symbol-array detachment event occurs, stop before serialization
+        // callbacks so the child can still verify clone isolation.
         var defaultWrite = requests.createMethodEntryRequest();
         defaultWrite.addClassFilter(ObjectOutputStream.class.getName());
         defaultWrite.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);

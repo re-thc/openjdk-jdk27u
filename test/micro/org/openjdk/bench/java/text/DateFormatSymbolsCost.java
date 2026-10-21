@@ -51,8 +51,8 @@ import org.openjdk.jmh.annotations.Warmup;
  * Cost checks separate from the instrumented allocation-only footprint probe.
  * Return values escape through JMH. Formatting/parsing state is private to each
  * worker; shared clone methods use a shared, never-mutated prototype.
- * Run them at one and four workers to expose clone-monitor contention, both
- * with initialized time-zone tables and with the ordinary lazy table.
+ * Compare private and shared cloning at one and four workers, with initialized
+ * time-zone tables and with the ordinary lazy table.
  * This read-only prototype scenario is not a concurrent-mutation safety claim.
  */
 @BenchmarkMode(Mode.AverageTime)

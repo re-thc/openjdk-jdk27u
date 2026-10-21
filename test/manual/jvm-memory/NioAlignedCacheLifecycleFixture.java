@@ -7,7 +7,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.Util;
 
-// Fixed aligned-cache lifecycle probe; NMT reconciliation is described in doc/memory-overhead.md.
+/**
+ * Manual aligned-buffer cache lifetime probe. Compile and run with
+ * {@code --add-exports=java.base/sun.nio.ch=ALL-UNNAMED}; enable
+ * {@code -XX:NativeMemoryTracking=detail} when running.
+ *
+ * At {@code NIO READY}, take an NMT baseline and send a newline on stdin.
+ * At {@code NIO POST_EXIT}, collect {@code VM.native_memory detail.diff}, then
+ * send another newline to let the process exit. Both signals follow worker
+ * termination, so cached buffers should have been released.
+ *
+ * The {@code leak} argument requires every cached buffer to need realignment;
+ * {@code control} also permits already aligned buffers or disabled caching.
+ */
 public final class NioAlignedCacheLifecycleFixture {
     private static final int SIZE = 65536;
     private static final int ALIGNMENT = 4096;
