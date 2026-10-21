@@ -1511,7 +1511,11 @@ public class NativeVectorizedMismatchTest {
                 List<String> flags = new ArrayList<>(List.of(
                         "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                         "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
-                        "-XX:-TieredCompilation"));
+                        "-XX:-TieredCompilation",
+                        // Keep the NIO call chain's leaf and polls visible even if
+                        // warmup has already compiled its callees separately.
+                        "-XX:CompileCommand=inline,java.nio.ByteBuffer::mismatch",
+                        "-XX:CompileCommand=inline,java.nio.BufferMismatch::mismatch"));
                 if (mode.equals("disable-partial")) {
                     flags.addAll(List.of("-XX:+UnlockDiagnosticVMOptions", "-XX:ArrayOperationPartialInlineSize=0"));
                 } else if (mode.equals("serial")) {
