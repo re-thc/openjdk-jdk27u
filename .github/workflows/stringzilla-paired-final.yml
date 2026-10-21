@@ -1,8 +1,8 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 name: StringZilla final paired native checks
-# Bounded follow-on for the Latin-1 physical-range guard: 98 affected/control triplets.
-# Prior full 290 results retain their actual measured source identity.
+# Bounded combined PR4/PR63 qualification: 39 affected/control cases per platform.
+# Four complete-image controls, four balanced rounds, five samples per fork.
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -13,7 +13,7 @@ permissions:
 env:
   PYTHONDONTWRITEBYTECODE: '1'
 concurrency:
-  group: stringzilla-physical-range-7048d6f2
+  group: stringzilla-combined-20261021
   cancel-in-progress: false
 jobs:
   neon:
@@ -22,18 +22,18 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 7048d6f2c74e25737850789812da063900ec18c0
+          ref: b19af25c4ccac240e017ca15bfbfc955d4798aa4
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
           path: .stringzilla-driver
           persist-credentials: false
-          sparse-checkout: doc/stringzilla/qualification-20261019
+          sparse-checkout: doc/stringzilla/integration-20261021
       - name: Restore verified independent native ARM baseline
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 .stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py restore --backend neon
+        run: python3 .stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py restore --backend neon
       - uses: ./.github/actions/get-bootjdk
         id: bootjdk
         with:
@@ -53,7 +53,7 @@ jobs:
             --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
             --with-source-date=1792195200 --with-native-debug-symbols=none --with-jmod-compress=zip-1
           make CONF=perf JOBS=2 images
-          python3 .stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py seal --backend neon
+          python3 .stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py seal --backend neon
       - name: Retain complete ARM candidate before tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -62,12 +62,12 @@ jobs:
           retention-days: 30
           if-no-files-found: error
       - name: Validate native ARM dispatch, bounds and safepoints
-        run: python3 .stringzilla-driver/doc/stringzilla/qualification-20261019/jtreg.py
+        run: python3 .stringzilla-driver/doc/stringzilla/integration-20261021/jtreg.py
       - name: Repeated paired ARM measurements
         run: >-
-          python3 .stringzilla-driver/doc/stringzilla/qualification-20261019/paired.py
-          --source . --pair pair --backend neon
-          --manifest .stringzilla-driver/doc/stringzilla/qualification-20261019/physical-guard-focus.tsv
+          python3 .stringzilla-driver/doc/stringzilla/integration-20261021/compare.py
+          --source . --controls pair/controls.json
+          --manifest .stringzilla-driver/doc/stringzilla/integration-20261021/native-cases.json
           --output paired-results
       - name: Retain ARM evidence
         if: always()
@@ -76,9 +76,8 @@ jobs:
           name: stringzilla-paired-neon-${{ github.sha }}
           path: |
             paired-results
-            pair/reuse.json
-            pair/pair-receipt.json
-            pair/pair-inventories.json
+            pair/*.json
+            build/perf/configure.log
             pair/*.gmk
             pair/*.cmdline
             jtreg-evidence
@@ -97,21 +96,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 7048d6f2c74e25737850789812da063900ec18c0
+          ref: b19af25c4ccac240e017ca15bfbfc955d4798aa4
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
           path: .stringzilla-driver
           persist-credentials: false
-          sparse-checkout: doc/stringzilla/qualification-20261019
+          sparse-checkout: doc/stringzilla/integration-20261021
       - name: Restore verified independent Windows baseline
         shell: python
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py','restore','--backend','msvc'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py','restore','--backend','msvc'],check=True)
       - uses: ./.github/actions/get-msys2
         with:
           architecture: x86.x64
@@ -148,9 +147,8 @@ jobs:
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/prepare.py','seal','--backend','msvc'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py','seal','--backend','msvc'],check=True)
       - name: Retain complete Windows candidate before tests
-        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: stringzilla-paired-candidate-msvc-${{ github.sha }}
@@ -163,19 +161,19 @@ jobs:
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/validate-windows.py'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/validate-windows.py'],check=True)
       - name: Validate Windows dispatch, physical bounds and safepoints
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/jtreg.py'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/jtreg.py'],check=True)
       - name: Repeated paired Windows measurements
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/qualification-20261019/paired.py',
-            '--source','.','--pair','pair','--backend','msvc',
-            '--manifest','.stringzilla-driver/doc/stringzilla/qualification-20261019/physical-guard-focus.tsv','--output','paired-results'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/compare.py',
+            '--source','.','--controls','pair/controls.json',
+            '--manifest','.stringzilla-driver/doc/stringzilla/integration-20261021/native-cases.json','--output','paired-results'],check=True)
       - name: Retain Windows evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
