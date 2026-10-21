@@ -1,135 +1,44 @@
-name: C1 policy existing-image readiness
+name: PR3 macOS existing-image configuration checks
 'on':
-  workflow_dispatch:
-    inputs:
-      expected_head:
-        description: Approved diagnostic commit SHA
-        required: true
-        type: string
+  push:
+    branches: [diagnose-c1-policy-20261016]
+    paths: [.github/workflows/main.yml, .github/scripts/pr3-macos-config.py]
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 concurrency:
-  group: c1-policy-diagnostic-${{ github.ref }}
+  group: pr3-macos-config-${{ github.ref }}
   cancel-in-progress: false
-env:
-  LC_ALL: C
-  LANG: C
-  OPENBLAS_NUM_THREADS: '1'
-  OMP_NUM_THREADS: '1'
 jobs:
-  diagnostic:
-    runs-on: ubuntu-26.04
-    timeout-minutes: 25
+  configuration:
+    if: ${{ github.event.before == 'f4aada9f54a5d47bcd21c20ace0dab6eba10be87' && github.run_attempt == 1 }}
+    runs-on: macos-26
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        persist-credentials: 'false'
-        sparse-checkout: |
-          .github
-          make/scripts/c1-policy-diagnostic
-    - name: Verify approved head and original immutable build artifact
-      env:
-        GH_TOKEN: ${{ github.token }}
-        EXPECTED_HEAD: ${{ inputs.expected_head }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        mkdir -p "$RUNNER_TEMP/c1-native-preflight"
-        /usr/bin/python3 - <<'PYCODE' 2>&1 | tee "$RUNNER_TEMP/c1-native-preflight/source-check.log"
-        import json
-        import os
-        from pathlib import Path
-        import urllib.request
-
-        if os.environ['GITHUB_RUN_ATTEMPT'] != '1':
-            raise ValueError('Workflow reruns are not approved')
-        if os.environ['EXPECTED_HEAD'] != os.environ['GITHUB_SHA']:
-            raise ValueError('Dispatch is not at the approved diagnostic head')
-
-        def get(suffix):
-            request = urllib.request.Request(
-                'https://api.github.com/repos/re-thc/openjdk-jdk27u/' + suffix,
-                headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
-                         'Accept': 'application/vnd.github+json'})
-            with urllib.request.urlopen(request, timeout=20) as response:
-                return json.load(response)
-
-        run = get('actions/runs/38815696411')
-        artifact = get('actions/artifacts/12014298650')
-        job = get('actions/jobs/116699670046')
-        path = Path(os.environ['RUNNER_TEMP']) / 'c1-native-results-source.json'
-        path.write_text(json.dumps({'run': run, 'artifact': artifact, 'build_job': job}, indent=2))
-        source = 'a107f5c66ad8bd0e40f474eb03d6c8601529b8f8'
-        if (run['id'], run['run_attempt'], run['head_sha'], run['status'], run['conclusion']) != (
-                38815696411, 1, source, 'completed', 'failure'):
-            raise ValueError('Original run identity/state changed')
-        if (job['id'], job['run_id'], job['status'], job['conclusion']) != (
-                116699670046, 38815696411, 'completed', 'success'):
-            raise ValueError('Successful original build job is not the expected one')
-        if (artifact['id'], artifact['name'], artifact['size_in_bytes'], artifact['digest'],
-                artifact['expired'], artifact['workflow_run']['id'],
-                artifact['workflow_run']['head_sha']) != (
-                12014298650, 'c1-native-build-38815696411', 643491662,
-                'sha256:a93c431fe6562a2ad3e60ed3384bb748e4e3a91038bf7b3cf632d09e30bebba3',
-                False, 38815696411, source):
-            raise ValueError('Original immutable artifact binding changed or expired')
-        print('SOURCE_RUN_AND_ARTIFACT_IDENTITY_PASS')
-        PYCODE
-    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-      with:
-        artifact-ids: '12014298650'
-        run-id: '38815696411'
-        repository: re-thc/openjdk-jdk27u
-        github-token: ${{ github.token }}
-        merge-multiple: 'true'
-        digest-mismatch: error
-        path: ${{ runner.temp }}/c1-native-artifact
-      timeout-minutes: 15
-    - name: Prepare analysis tools
-      shell: bash
-      run: |
-        set -euo pipefail
-        sudo apt-get update
-        sudo apt-get install --yes python3-scipy binutils strace
-    - name: Unpack the exact build artifact
-      env:
-        ARCHIVE_SHA: f0f67bc86173ad344190bab52355f768ac759837bb886ce87e2ce6afd642de51
-        MANIFEST_SHA: d8b5a411f02c89170a301e43d9ccba15dcba8de7085d2c80d459ab2724e7db82
-      shell: bash
-      run: |
-        set -euo pipefail
-        mkdir -p "$RUNNER_TEMP/c1-native-preflight"
-        /usr/bin/python3 make/scripts/c1-policy-diagnostic/preflight.py \
-          --archive "$RUNNER_TEMP/c1-native-artifact/native-images.tar" \
-          --archive-sha256 "$ARCHIVE_SHA" --manifest-sha256 "$MANIFEST_SHA" \
-          --destination "$RUNNER_TEMP/c1-native-payload" \
-          2>&1 | tee "$RUNNER_TEMP/c1-native-preflight/staging.log"
-    - name: Run bounded readiness only
-      shell: bash
-      run: |
-        set -euo pipefail
-        /usr/bin/python3 make/scripts/c1-policy-diagnostic/run.py --readiness-only \
-          --payload "$RUNNER_TEMP/c1-native-payload" \
-          --output "$RUNNER_TEMP/c1-native-results"
-    - name: Analyze without extending runtime or restarting measurements
-      if: ${{ always() }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        if [[ -f "$RUNNER_TEMP/c1-native-results/completion.json" ]]; then
-          /usr/bin/python3 make/scripts/c1-policy-diagnostic/analyze.py "$RUNNER_TEMP/c1-native-results"
-        fi
-    - name: Preserve every raw sample, command, diagnostic and HOLD
-      if: ${{ always() }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-      with:
-        name: c1-native-results-${{ github.run_id }}
-        path: |-
-          ${{ runner.temp }}/c1-native-results
-          ${{ runner.temp }}/c1-native-results-source.json
-          ${{ runner.temp }}/c1-native-preflight
-        if-no-files-found: warn
-        compression-level: '1'
-        retention-days: '14'
-    if: github.ref == 'refs/heads/diagnose-c1-policy-20261016'
+      - name: Verify the single approved execution
+        env:
+          PUBLISH_PARENT: ${{ github.event.before }}
+        shell: bash
+        run: |
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_REF" = refs/heads/diagnose-c1-policy-20261016
+          test "$PUBLISH_PARENT" = f4aada9f54a5d47bcd21c20ace0dab6eba10be87
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Run four configuration checks on the retained image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROBE_OUTPUT: ${{ runner.temp }}/pr3-macos-config
+        run: python3 .github/scripts/pr3-macos-config.py "$PROBE_OUTPUT"
+      - name: Preserve configuration evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr3-macos-four-configurations
+          path: ${{ runner.temp }}/pr3-macos-config/evidence
+          if-no-files-found: error
+          retention-days: 30
