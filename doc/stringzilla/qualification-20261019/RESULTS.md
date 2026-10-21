@@ -3,18 +3,15 @@
 Product: [`7048d6f2c74e25737850789812da063900ec18c0`](https://github.com/re-thc/openjdk-jdk27u/commit/7048d6f2c74e25737850789812da063900ec18c0).
 Independent original: `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`.
 
-**Not ready to merge: five required macOS tier1 groups never executed.**
-Final measurements complete all 98 planned triplets on serial, AVX2, AVX-512,
-NEON and MSVC, with all seventeen loss-table rows retained. Fourteen local,
-thirteen Windows and ten ARM targeted test descriptions pass. Both native jobs
-finish successfully. Ordinary integration CI passes all eight builds and 43 of
-48 tier1 groups. Its original attempt and one bounded recovery both terminate
-with the same five macOS groups cancelled before runner assignment or any step.
-Retain the corrected implementation and documented tradeoffs, but keep PR4 in
-draft until those groups actually execute and their results are reviewed.
-Preceding measurements retain their original revisions. The
-[continuation](CONTINUATION.md) identifies the five missing groups and the
-bounded next action; no further performance campaign is needed.
+**The earlier five-group CI blocker is removed for product `7048d6f2`.**
+Ordinary CI succeeds in attempt 3: all eight builds and all 48 tier1 groups pass.
+The five previously cancelled macOS groups actually execute, with complete logs
+and checkout proofs. All 98 planned final-image triplets and both native jobs
+also complete. The measured losses and mixed practical results remain part of
+the adoption decision. This assessment qualifies the named source; the later
+PR63 integration and regression work require their own evidence.
+See the [completed CI outcome](ci7048-attempt3-success.json) and
+[source-specific continuation](CONTINUATION.md).
 
 ## Implementation and correctness
 
@@ -230,7 +227,7 @@ The shipped current Windows and ARM `StringLatin1` instruction listings match
 the measured Linux image, including the final range guard. No duplicate native
 run or additional performance campaign is needed.
 
-The [terminal ordinary-CI outcome](ci7048-outcome.json) records all eight
+The [completed ordinary-CI outcome](ci7048-attempt3-success.json) records all eight
 release/fastdebug builds passing, including bundle and development-profile
 checks. Both Apple builds use Xcode 26.6 and Apple clang 21; both MSVC builds
 verify toolset 14.44. Prepare also passes. The
@@ -242,8 +239,8 @@ of four platforms, for forty-eight groups in total.
 | Linux x64 | 12 / 12 | 10,191 | 518 | 0 / 0 |
 | Linux ARM | 12 / 12 | 10,171 | 538 | 0 / 0 |
 | Windows x64 | 12 / 12 | 10,123 | 586 | 0 / 0 |
-| macOS ARM | 7 / 12 | 8,388 | 508 | 0 / 0 |
-| Collected total | 43 / 48 | 38,873 | 2,150 | 0 / 0 |
+| macOS ARM | 12 / 12 | 10,114 | 595 | 0 / 0 |
+| Collected total | 48 / 48 | 40,599 | 2,237 | 0 / 0 |
 
 These are the retained make/jtreg table counts across groups and variants,
 rather than a count of unique test methods. The
@@ -252,38 +249,33 @@ checkout SHA and complete log. Explicit StringZilla passes include
 [fourteen Linux x64](ci7048-stringzilla-x64.json),
 [eleven Linux ARM](ci7048-stringzilla-arm.json),
 [fourteen Windows](ci7048-stringzilla-windows.json) and
-[four macOS JDK descriptions](ci7048-stringzilla-macos.json). macOS compiler
-part 3 did not execute; its remaining StringZilla descriptions stay unqualified.
+[eleven macOS descriptions](ci7048-stringzilla-macos.json), including the
+previously missing compiler-part-3 cases.
 
-Both the [original attempt](ci7048-attempt1-terminal-run.json) and the
-[bounded recovery](ci7048-attempt2-terminal-run.json) end in failure. The
-[original jobs](ci7048-attempt1-terminal-jobs.json) and
-[recovery jobs](ci7048-attempt2-terminal-jobs.json) show the same five cancelled
-macOS groups: JDK part 3, library, HotSpot common and compiler parts 1/3. Each
-has runner ID zero and no executed steps in both attempts. No cancellation is
-counted as a passing test. The records establish absent execution; they do not
-identify the underlying GitHub scheduling cause.
+The [third attempt](ci7048-attempt3-run.json) completes successfully. Its
+[raw jobs](ci7048-attempt3-jobs.json) show actual runners and executed steps for
+all five formerly missing macOS groups. Their full logs verify checkout
+`7223ef030b1de2e72bbf7eb7db81e48e2f79c965`, successful outer jtreg results and
+zero failed/error table entries. The
+[execution ledger](ci7048-attempt3-provenance.json) checks that the other 52
+successes retain their original execution times, runners and step records.
+They are carried-forward results, not new executions.
 
-The [accepted recovery request](ci7048-recovery-request.json) reruns only those
-five missing groups in the same existing run. GitHub gives the 52 carried-forward
-successes new IDs with unchanged original execution times, runners and steps.
-The explicit [provenance ledger](ci7048-job-provenance.json) maps these statuses
-to the original executions and logs. No successful build, test group or
-performance measurement was repeated. An earlier
-[state-gated retry refusal](ci7048-compiler1-rerun-block.json) started no job;
-the bounded recovery was submitted only after the original run completed.
+The original attempt and its first recovery remain retained as incomplete
+historical outcomes. Their cancellations disclosed no scheduling root cause;
+the later actual executions remove the qualification gap. No performance
+measurement or successful build/test group was repeated to achieve this.
 
-The [terminal audit archive](ordinary-ci-39280914015-outcome.tar.gz) retains all
-52 successful execution logs, both raw terminal attempts, the provenance
-ledger, build/test receipts and the auditors. Its
-[receipt](ordinary-ci-outcome-archive.json) binds 4,445,747 bytes to SHA-256
-`652704c67dd86dac5faa9549c31f4a208ce931adcc2351a5cb2bfa7313156906`.
-An independent extraction verifies all 77 member checksums and reruns both
-supplied auditors: 43 executed groups, five missing, no failures/errors in the
-executed groups, and incomplete macOS qualification. Saved CI logs are decoded
-UTF-8 with LF endings; these digests bind saved text, not GitHub log ZIP bytes.
-Original JMH file bytes are separately retained without normalization.
-Earlier Linux, Windows, build and macOS checkpoint archives remain available.
+The [complete audit archive](ordinary-ci-39280914015-complete.tar.gz) retains all
+57 successful execution logs, the third-attempt metadata, provenance ledger,
+test receipts and standalone auditors. Its
+[receipt](ordinary-ci-complete-receipt.json) binds 4,615,175 bytes to SHA-256
+`3f51db252a326403758389274f43ec2e9627d96228e98675c6587b40b9d80212`.
+Independent extraction checks all saved member digests and reruns both auditors
+with complete qualification required: all 48 groups and all four platforms'
+expected StringZilla descriptions pass. Saved CI logs are decoded UTF-8 with
+LF endings; original JMH bytes remain separately retained without normalization.
+All preceding terminal and checkpoint archives remain available.
 
 ## Decision
 
@@ -295,13 +287,10 @@ no concrete source defect requiring another change. The recorded gains support
 adoption for this fork with the known costs documented; they do not establish a
 universal application speedup. No zero-loss gate or new tuning campaign is used.
 
-**PR4 remains draft and is not ready to merge.** The bounded recovery has
-finished, and the same five mandatory macOS groups remain unexecuted. This
-persistent execution blocker requires available Mac execution capacity and
-actual results for those groups; another unchanged hosted-runner retry has no
-new evidence to justify it. The [continuation](CONTINUATION.md) preserves their
-exact identities and the required source binding. Native correctness and all
-planned comparisons have completed. No source change or additional performance
-campaign is justified by these cancellations. A later successful CI completion
-must still be assessed with the retained losses. No merge or upstream push has
-been performed.
+**The earlier absent-execution objection no longer applies to `7048d6f2`.**
+All required ordinary integration groups have now executed and passed. The
+retained performance tradeoff supports the implementation for this fork, with
+its documented costs. PR4 remains draft while the requested PR63 integration
+and further regression work are evaluated at their own source identities.
+No earlier measurement is relabelled as a result of that combined product.
+No merge into master or upstream push has been performed.

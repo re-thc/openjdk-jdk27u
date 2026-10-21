@@ -1,7 +1,14 @@
 <!-- Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved. -->
-# PR4 continuation after terminal CI recovery
+# Historical PR4 execution blocker and its resolution
 
-**Decision: retain the implementation; do not merge yet.** PR4 remains open
+**Resolved in attempt 3.** All eight builds and all 48 tier1 groups now pass
+for product `7048d6f2` at merge `7223ef03`. The [complete outcome](ci7048-attempt3-success.json)
+and [full log archive](ordinary-ci-39280914015-complete.tar.gz) supersede the
+missing-execution status below. Do not rerun those five jobs. The later user
+request to integrate PR63 and fix regressions requires new source-specific
+validation. The remainder of this file preserves the earlier blocked state.
+
+**Historical decision: retain the implementation; do not merge yet.** PR4 remained open
 and draft. The [assessment](RESULTS.md) retains the performance tradeoff and
 all losses. Source corrections, native validation and the planned final
 complete-image comparisons are complete. Five mandatory macOS tier1 groups

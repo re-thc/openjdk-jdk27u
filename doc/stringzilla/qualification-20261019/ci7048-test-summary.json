@@ -1,5 +1,5 @@
 {
-  "job_metadata_observed_at": "2026-10-20T21:06:41.461568+00:00",
+  "job_metadata_observed_at": "2026-10-21T21:25:29.940269+00:00",
   "run_id": 39280914015,
   "product_head": "7048d6f2c74e25737850789812da063900ec18c0",
   "merge_checkout": "7223ef030b1de2e72bbf7eb7db81e48e2f79c965",
@@ -9,47 +9,42 @@
   "test_matrices_not_yet_created": [],
   "configured_stage_gate": "macOS/Windows builds follow successful Linux matrices;their tests follow their builds",
   "created_test_groups": 48,
-  "collected_test_groups": 43,
-  "missing": [
-    {
-      "job_id": 118792915867,
-      "name": "macos-aarch64 / test (lib-test/tier1)",
-      "status": "completed",
-      "conclusion": "cancelled"
-    },
-    {
-      "job_id": 118792915922,
-      "name": "macos-aarch64 / test (jdk/tier1 part 3)",
-      "status": "completed",
-      "conclusion": "cancelled"
-    },
-    {
-      "job_id": 118792915951,
-      "name": "macos-aarch64 / test (hs/tier1 common)",
-      "status": "completed",
-      "conclusion": "cancelled"
-    },
-    {
-      "job_id": 118792916163,
-      "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
-      "status": "completed",
-      "conclusion": "cancelled"
-    },
-    {
-      "job_id": 118792916219,
-      "name": "macos-aarch64 / test (hs/tier1 compiler part 3)",
-      "status": "completed",
-      "conclusion": "cancelled"
-    }
-  ],
+  "collected_test_groups": 48,
+  "missing": [],
   "collected_jtreg_counts": {
-    "total": 41023,
-    "pass": 38873,
+    "total": 42836,
+    "pass": 40599,
     "fail": 0,
     "error": 0,
-    "skip": 2150
+    "skip": 2237
   },
   "records": [
+    {
+      "job_id": 118301428106,
+      "name": "linux-x64 / test (jdk/tier1 part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T00:04:02Z",
+      "completed_at": "2026-10-20T00:29:29Z",
+      "log_bytes": 731978,
+      "log_sha256": "acb3f5c33c6202dd1ba19a73697a0d4a2433f8e9be4d46f5b5b54cfe7a870bda",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 1,149; excluded: 4; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 28"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part1",
+          "total": 1189,
+          "pass": 1149,
+          "fail": 0,
+          "error": 0,
+          "skip": 40
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
     {
       "job_id": 118317250825,
       "name": "linux-aarch64 / test (jdk/tier1 part 2)",
@@ -77,13 +72,65 @@
       "step_failures": []
     },
     {
-      "job_id": 118301428173,
-      "name": "linux-x64 / test (langtools/tier1)",
+      "job_id": 118317250779,
+      "name": "linux-aarch64 / test (jdk/tier1 part 1)",
       "conclusion": "success",
-      "started_at": "2026-10-20T00:04:10Z",
-      "completed_at": "2026-10-20T00:21:44Z",
-      "log_bytes": 2493155,
-      "log_sha256": "03986917d9c946d0c4f8072cb2869d92eeb45d277b4d18fddd23ecc15487c980",
+      "started_at": "2026-10-20T01:41:27Z",
+      "completed_at": "2026-10-20T02:02:20Z",
+      "log_bytes": 728860,
+      "log_sha256": "bc37ffcf577fc487d7963955e0a59bf645ff690460c9a0b4c437e059495757d4",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 1,145; excluded: 4; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 32"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part1",
+          "total": 1189,
+          "pass": 1145,
+          "fail": 0,
+          "error": 0,
+          "skip": 44
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118317250695,
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T01:07:43Z",
+      "completed_at": "2026-10-20T01:23:25Z",
+      "log_bytes": 343893,
+      "log_sha256": "435388b8d15ee2f1221e9d67993bab10bbed7e7cf26ba7a54899271aee227e07",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 510; excluded: 2; did not match keywords: 1; did not meet module requirements: 1; did not meet platform requirements: 18"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_1",
+          "total": 532,
+          "pass": 510,
+          "fail": 0,
+          "error": 0,
+          "skip": 22
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118317250763,
+      "name": "linux-aarch64 / test (langtools/tier1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T01:27:13Z",
+      "completed_at": "2026-10-20T01:46:17Z",
+      "log_bytes": 2493025,
+      "log_sha256": "fb0b3434351bfecd7e234ef3d004b1fd008b05132f65f408741f9f6a114e2a04",
       "checkout_verified": true,
       "test_result_summaries": [
         "passed: 4,703; skipped: 1; excluded: 5; did not match keywords: 2; did not meet module requirements: 16; did not meet platform requirements: 2"
@@ -96,32 +143,6 @@
           "fail": 0,
           "error": 0,
           "skip": 26
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118301428189,
-      "name": "linux-x64 / test (jdk/tier1 part 3)",
-      "conclusion": "success",
-      "started_at": "2026-10-19T22:20:10Z",
-      "completed_at": "2026-10-19T22:29:03Z",
-      "log_bytes": 283496,
-      "log_sha256": "3449fce823134a4426561a98b090f12c36a59f3019ccaebfa0ca2cb301f45e6b",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 405; skipped: 1; did not match keywords: 2; did not meet platform requirements: 5"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/jdk:tier1_part3",
-          "total": 412,
-          "pass": 404,
-          "fail": 0,
-          "error": 0,
-          "skip": 8
         }
       ],
       "test_success_marker": true,
@@ -181,58 +202,6 @@
       "step_failures": []
     },
     {
-      "job_id": 118301428106,
-      "name": "linux-x64 / test (jdk/tier1 part 1)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T00:04:02Z",
-      "completed_at": "2026-10-20T00:29:29Z",
-      "log_bytes": 731978,
-      "log_sha256": "acb3f5c33c6202dd1ba19a73697a0d4a2433f8e9be4d46f5b5b54cfe7a870bda",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 1,149; excluded: 4; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 28"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/jdk:tier1_part1",
-          "total": 1189,
-          "pass": 1149,
-          "fail": 0,
-          "error": 0,
-          "skip": 40
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118317250779,
-      "name": "linux-aarch64 / test (jdk/tier1 part 1)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T01:41:27Z",
-      "completed_at": "2026-10-20T02:02:20Z",
-      "log_bytes": 728860,
-      "log_sha256": "bc37ffcf577fc487d7963955e0a59bf645ff690460c9a0b4c437e059495757d4",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 1,145; excluded: 4; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 32"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/jdk:tier1_part1",
-          "total": 1189,
-          "pass": 1145,
-          "fail": 0,
-          "error": 0,
-          "skip": 44
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
       "job_id": 118301427984,
       "name": "linux-x64 / test (jdk/tier1 part 2)",
       "conclusion": "success",
@@ -259,25 +228,25 @@
       "step_failures": []
     },
     {
-      "job_id": 118301428156,
-      "name": "linux-x64 / test (hs/tier1 compiler part 3)",
+      "job_id": 118301428173,
+      "name": "linux-x64 / test (langtools/tier1)",
       "conclusion": "success",
-      "started_at": "2026-10-20T00:05:21Z",
-      "completed_at": "2026-10-20T00:51:00Z",
-      "log_bytes": 539720,
-      "log_sha256": "6cf89601cf3d2a533b0b05dde2f3a500721e668f580de7e69f68adad96942b24",
+      "started_at": "2026-10-20T00:04:10Z",
+      "completed_at": "2026-10-20T00:21:44Z",
+      "log_bytes": 2493155,
+      "log_sha256": "03986917d9c946d0c4f8072cb2869d92eeb45d277b4d18fddd23ecc15487c980",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 776; did not meet platform requirements: 41"
+        "passed: 4,703; skipped: 1; excluded: 5; did not match keywords: 2; did not meet module requirements: 16; did not meet platform requirements: 2"
       ],
       "test_tables": [
         {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_3",
-          "total": 817,
-          "pass": 776,
+          "suite": "jtreg:test/langtools:tier1",
+          "total": 4728,
+          "pass": 4702,
           "fail": 0,
           "error": 0,
-          "skip": 41
+          "skip": 26
         }
       ],
       "test_success_marker": true,
@@ -311,32 +280,6 @@
       "step_failures": []
     },
     {
-      "job_id": 118301428149,
-      "name": "linux-x64 / test (hs/tier1 common)",
-      "conclusion": "success",
-      "started_at": "2026-10-19T23:52:20Z",
-      "completed_at": "2026-10-19T23:55:04Z",
-      "log_bytes": 65572,
-      "log_sha256": "ad0113fad42436ae87d178fba21b5ea96fabaa3bbdb1bf5fd3421759060a306b",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 11; did not meet platform requirements: 1"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_common",
-          "total": 12,
-          "pass": 11,
-          "fail": 0,
-          "error": 0,
-          "skip": 1
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
       "job_id": 118301427928,
       "name": "linux-x64 / test (hs/tier1 compiler part 1)",
       "conclusion": "success",
@@ -363,58 +306,6 @@
       "step_failures": []
     },
     {
-      "job_id": 118317250838,
-      "name": "linux-aarch64 / test (hs/tier1 compiler part 2)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T01:37:04Z",
-      "completed_at": "2026-10-20T01:44:11Z",
-      "log_bytes": 222930,
-      "log_sha256": "318b3fa2cde48660980db08a248f79d9810df702621fc37074100ca154c2a43c",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 267; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 20"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
-          "total": 289,
-          "pass": 267,
-          "fail": 0,
-          "error": 0,
-          "skip": 22
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118317250763,
-      "name": "linux-aarch64 / test (langtools/tier1)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T01:27:13Z",
-      "completed_at": "2026-10-20T01:46:17Z",
-      "log_bytes": 2493025,
-      "log_sha256": "fb0b3434351bfecd7e234ef3d004b1fd008b05132f65f408741f9f6a114e2a04",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 4,703; skipped: 1; excluded: 5; did not match keywords: 2; did not meet module requirements: 16; did not meet platform requirements: 2"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/langtools:tier1",
-          "total": 4728,
-          "pass": 4702,
-          "fail": 0,
-          "error": 0,
-          "skip": 26
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
       "job_id": 118317250701,
       "name": "linux-aarch64 / test (hs/tier1 gc)",
       "conclusion": "success",
@@ -434,188 +325,6 @@
           "fail": 0,
           "error": 0,
           "skip": 209
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118317250695,
-      "name": "linux-aarch64 / test (hs/tier1 compiler part 1)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T01:07:43Z",
-      "completed_at": "2026-10-20T01:23:25Z",
-      "log_bytes": 343893,
-      "log_sha256": "435388b8d15ee2f1221e9d67993bab10bbed7e7cf26ba7a54899271aee227e07",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 510; excluded: 2; did not match keywords: 1; did not meet module requirements: 1; did not meet platform requirements: 18"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_1",
-          "total": 532,
-          "pass": 510,
-          "fail": 0,
-          "error": 0,
-          "skip": 22
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118301427948,
-      "name": "linux-x64 / test (hs/tier1 compiler part 2)",
-      "conclusion": "success",
-      "started_at": "2026-10-19T23:10:27Z",
-      "completed_at": "2026-10-19T23:21:07Z",
-      "log_bytes": 229496,
-      "log_sha256": "fe19523f17c4d0b7acf6219e034e8558da730ba2237691313121daa42abecb11",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 278; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 9"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
-          "total": 289,
-          "pass": 278,
-          "fail": 0,
-          "error": 0,
-          "skip": 11
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118301428089,
-      "name": "linux-x64 / test (hs/tier1 gc)",
-      "conclusion": "success",
-      "started_at": "2026-10-19T23:46:38Z",
-      "completed_at": "2026-10-20T00:05:06Z",
-      "log_bytes": 203753,
-      "log_sha256": "e4a2d1ec8f735351ebe5493b7d424d0d2a4d37f3ab9bc8edb9202fdba4840bf0",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 225; skipped: 4; excluded: 7; did not meet platform requirements: 201"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_gc",
-          "total": 433,
-          "pass": 221,
-          "fail": 0,
-          "error": 0,
-          "skip": 212
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118317250651,
-      "name": "linux-aarch64 / test (lib-test/tier1)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T00:19:11Z",
-      "completed_at": "2026-10-20T00:21:18Z",
-      "log_bytes": 84284,
-      "log_sha256": "e0f559bd1b8d34a088ba8874e6338bc64620cf7a92ded1962217526715560a54",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 40"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/lib-test:tier1",
-          "total": 40,
-          "pass": 40,
-          "fail": 0,
-          "error": 0,
-          "skip": 0
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118301428083,
-      "name": "linux-x64 / test (lib-test/tier1)",
-      "conclusion": "success",
-      "started_at": "2026-10-19T23:00:00Z",
-      "completed_at": "2026-10-19T23:02:37Z",
-      "log_bytes": 84765,
-      "log_sha256": "655e46dc9e555fa04691b3b6bf8b2c191a78d38f56379829530cd6928ea60d05",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 40"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/lib-test:tier1",
-          "total": 40,
-          "pass": 40,
-          "fail": 0,
-          "error": 0,
-          "skip": 0
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118301428069,
-      "name": "linux-x64 / test (hs/tier1 serviceability)",
-      "conclusion": "success",
-      "started_at": "2026-10-19T21:56:19Z",
-      "completed_at": "2026-10-19T22:07:19Z",
-      "log_bytes": 264379,
-      "log_sha256": "17eb6d6256d13cbb44a22d3c6ed9a5903934742820c3dfe05710572a8f026011",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 325; excluded: 7; did not meet module requirements: 10; did not meet platform requirements: 72"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_serviceability",
-          "total": 414,
-          "pass": 325,
-          "fail": 0,
-          "error": 0,
-          "skip": 89
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118301429019,
-      "name": "linux-x64 / test (hs/tier1 runtime)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T00:09:41Z",
-      "completed_at": "2026-10-20T00:34:07Z",
-      "log_bytes": 535955,
-      "log_sha256": "526c80b123f97308bc538c9da72820661291581698b392cc22ec7eb181616465",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 767; skipped: 2; excluded: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 38"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_runtime",
-          "total": 817,
-          "pass": 765,
-          "fail": 0,
-          "error": 0,
-          "skip": 52
         }
       ],
       "test_success_marker": true,
@@ -675,25 +384,25 @@
       "step_failures": []
     },
     {
-      "job_id": 118444402233,
-      "name": "windows-x64 / test (jdk/tier1 part 1)",
+      "job_id": 118301428089,
+      "name": "linux-x64 / test (hs/tier1 gc)",
       "conclusion": "success",
-      "started_at": "2026-10-20T06:23:34Z",
-      "completed_at": "2026-10-20T06:50:47Z",
-      "log_bytes": 737683,
-      "log_sha256": "39baaf48957d045234a46e08d9b7e9620c8009674e36cfae6ad81c424a1741cf",
+      "started_at": "2026-10-19T23:46:38Z",
+      "completed_at": "2026-10-20T00:05:06Z",
+      "log_bytes": 203753,
+      "log_sha256": "e4a2d1ec8f735351ebe5493b7d424d0d2a4d37f3ab9bc8edb9202fdba4840bf0",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 1,136; excluded: 3; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 42"
+        "passed: 225; skipped: 4; excluded: 7; did not meet platform requirements: 201"
       ],
       "test_tables": [
         {
-          "suite": "jtreg:test/jdk:tier1_part1",
-          "total": 1189,
-          "pass": 1136,
+          "suite": "jtreg:test/hotspot/jtreg:tier1_gc",
+          "total": 433,
+          "pass": 221,
           "fail": 0,
           "error": 0,
-          "skip": 53
+          "skip": 212
         }
       ],
       "test_success_marker": true,
@@ -701,25 +410,25 @@
       "step_failures": []
     },
     {
-      "job_id": 118492858024,
-      "name": "macos-aarch64 / test (jdk/tier1 part 2)",
+      "job_id": 118317250838,
+      "name": "linux-aarch64 / test (hs/tier1 compiler part 2)",
       "conclusion": "success",
-      "started_at": "2026-10-20T07:48:01Z",
-      "completed_at": "2026-10-20T08:03:13Z",
-      "log_bytes": 613042,
-      "log_sha256": "40910f3429fc95801244627a71e0d01cb93e651f89c4ef4ef21d8071a3838559",
+      "started_at": "2026-10-20T01:37:04Z",
+      "completed_at": "2026-10-20T01:44:11Z",
+      "log_bytes": 222930,
+      "log_sha256": "318b3fa2cde48660980db08a248f79d9810df702621fc37074100ca154c2a43c",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 1,013; did not match keywords: 8; did not meet module requirements: 4; did not meet platform requirements: 1"
+        "passed: 267; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 20"
       ],
       "test_tables": [
         {
-          "suite": "jtreg:test/jdk:tier1_part2",
-          "total": 1026,
-          "pass": 1013,
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
+          "total": 289,
+          "pass": 267,
           "fail": 0,
           "error": 0,
-          "skip": 13
+          "skip": 22
         }
       ],
       "test_success_marker": true,
@@ -727,25 +436,25 @@
       "step_failures": []
     },
     {
-      "job_id": 118444402182,
-      "name": "windows-x64 / test (jdk/tier1 part 2)",
+      "job_id": 118317250651,
+      "name": "linux-aarch64 / test (lib-test/tier1)",
       "conclusion": "success",
-      "started_at": "2026-10-20T05:48:59Z",
-      "completed_at": "2026-10-20T06:08:50Z",
-      "log_bytes": 622088,
-      "log_sha256": "0560fc10c942b882f879dbbbe9a351833246d95596ce100fea1029a577494881",
+      "started_at": "2026-10-20T00:19:11Z",
+      "completed_at": "2026-10-20T00:21:18Z",
+      "log_bytes": 84284,
+      "log_sha256": "e0f559bd1b8d34a088ba8874e6338bc64620cf7a92ded1962217526715560a54",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 1,011; did not match keywords: 8; did not meet module requirements: 4; did not meet platform requirements: 3"
+        "passed: 40"
       ],
       "test_tables": [
         {
-          "suite": "jtreg:test/jdk:tier1_part2",
-          "total": 1026,
-          "pass": 1011,
+          "suite": "jtreg:test/lib-test:tier1",
+          "total": 40,
+          "pass": 40,
           "fail": 0,
           "error": 0,
-          "skip": 15
+          "skip": 0
         }
       ],
       "test_success_marker": true,
@@ -753,25 +462,25 @@
       "step_failures": []
     },
     {
-      "job_id": 118492858040,
-      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
+      "job_id": 118301427948,
+      "name": "linux-x64 / test (hs/tier1 compiler part 2)",
       "conclusion": "success",
-      "started_at": "2026-10-20T08:57:21Z",
-      "completed_at": "2026-10-20T09:26:28Z",
-      "log_bytes": 727776,
-      "log_sha256": "fda80e78f9590710756cedcf9874252aacf85ae3f0d49dce24287791233dd8f4",
+      "started_at": "2026-10-19T23:10:27Z",
+      "completed_at": "2026-10-19T23:21:07Z",
+      "log_bytes": 229496,
+      "log_sha256": "fe19523f17c4d0b7acf6219e034e8558da730ba2237691313121daa42abecb11",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 1,135; excluded: 3; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 43"
+        "passed: 278; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 9"
       ],
       "test_tables": [
         {
-          "suite": "jtreg:test/jdk:tier1_part1",
-          "total": 1189,
-          "pass": 1135,
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
+          "total": 289,
+          "pass": 278,
           "fail": 0,
           "error": 0,
-          "skip": 54
+          "skip": 11
         }
       ],
       "test_success_marker": true,
@@ -779,13 +488,39 @@
       "step_failures": []
     },
     {
-      "job_id": 118444402201,
-      "name": "windows-x64 / test (hs/tier1 common)",
+      "job_id": 118301428189,
+      "name": "linux-x64 / test (jdk/tier1 part 3)",
       "conclusion": "success",
-      "started_at": "2026-10-20T06:15:22Z",
-      "completed_at": "2026-10-20T06:20:52Z",
-      "log_bytes": 79148,
-      "log_sha256": "b7a586512fbd6ea78c250b79f542e00304e083d49db69b207017ff376f94b745",
+      "started_at": "2026-10-19T22:20:10Z",
+      "completed_at": "2026-10-19T22:29:03Z",
+      "log_bytes": 283496,
+      "log_sha256": "3449fce823134a4426561a98b090f12c36a59f3019ccaebfa0ca2cb301f45e6b",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 405; skipped: 1; did not match keywords: 2; did not meet platform requirements: 5"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part3",
+          "total": 412,
+          "pass": 404,
+          "fail": 0,
+          "error": 0,
+          "skip": 8
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118301428149,
+      "name": "linux-x64 / test (hs/tier1 common)",
+      "conclusion": "success",
+      "started_at": "2026-10-19T23:52:20Z",
+      "completed_at": "2026-10-19T23:55:04Z",
+      "log_bytes": 65572,
+      "log_sha256": "ad0113fad42436ae87d178fba21b5ea96fabaa3bbdb1bf5fd3421759060a306b",
       "checkout_verified": true,
       "test_result_summaries": [
         "passed: 11; did not meet platform requirements: 1"
@@ -805,103 +540,25 @@
       "step_failures": []
     },
     {
-      "job_id": 118492858073,
-      "name": "macos-aarch64 / test (hs/tier1 gc)",
+      "job_id": 118301428156,
+      "name": "linux-x64 / test (hs/tier1 compiler part 3)",
       "conclusion": "success",
-      "started_at": "2026-10-20T08:06:56Z",
-      "completed_at": "2026-10-20T08:23:28Z",
-      "log_bytes": 203188,
-      "log_sha256": "e1dac7abf37de98b43000aac139a3046946b7e40fa64af74001f6f8e9885befa",
+      "started_at": "2026-10-20T00:05:21Z",
+      "completed_at": "2026-10-20T00:51:00Z",
+      "log_bytes": 539720,
+      "log_sha256": "6cf89601cf3d2a533b0b05dde2f3a500721e668f580de7e69f68adad96942b24",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 220; skipped: 4; excluded: 7; did not meet platform requirements: 206"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_gc",
-          "total": 433,
-          "pass": 216,
-          "fail": 0,
-          "error": 0,
-          "skip": 217
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118492858110,
-      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T12:33:45Z",
-      "completed_at": "2026-10-20T12:42:46Z",
-      "log_bytes": 226029,
-      "log_sha256": "5a60fa3f8e0ee97c9745761281e5c587acba6883afd97f83736a877632a7ebf8",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 266; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 21"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
-          "total": 289,
-          "pass": 266,
-          "fail": 0,
-          "error": 0,
-          "skip": 23
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118444402172,
-      "name": "windows-x64 / test (jdk/tier1 part 3)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T05:24:57Z",
-      "completed_at": "2026-10-20T05:36:31Z",
-      "log_bytes": 295504,
-      "log_sha256": "6edaa57a8f97485cca8b8c25728daa108051cc209bf8bd31533693678bbbd8cb",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 404; skipped: 1; did not match keywords: 2; did not meet platform requirements: 6"
-      ],
-      "test_tables": [
-        {
-          "suite": "jtreg:test/jdk:tier1_part3",
-          "total": 412,
-          "pass": 403,
-          "fail": 0,
-          "error": 0,
-          "skip": 9
-        }
-      ],
-      "test_success_marker": true,
-      "canonical_failed_results": [],
-      "step_failures": []
-    },
-    {
-      "job_id": 118444402222,
-      "name": "windows-x64 / test (hs/tier1 compiler part 3)",
-      "conclusion": "success",
-      "started_at": "2026-10-20T06:09:13Z",
-      "completed_at": "2026-10-20T07:04:26Z",
-      "log_bytes": 562377,
-      "log_sha256": "d6f49060558bee064dac7754127b742e483b52702efa7ac3a23e304f1daf906f",
-      "checkout_verified": true,
-      "test_result_summaries": [
-        "passed: 790; excluded: 1; did not meet platform requirements: 26"
+        "passed: 776; did not meet platform requirements: 41"
       ],
       "test_tables": [
         {
           "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_3",
           "total": 817,
-          "pass": 790,
+          "pass": 776,
           "fail": 0,
           "error": 0,
-          "skip": 27
+          "skip": 41
         }
       ],
       "test_success_marker": true,
@@ -909,25 +566,207 @@
       "step_failures": []
     },
     {
-      "job_id": 118492858078,
-      "name": "macos-aarch64 / test (hs/tier1 runtime)",
+      "job_id": 118301429019,
+      "name": "linux-x64 / test (hs/tier1 runtime)",
       "conclusion": "success",
-      "started_at": "2026-10-20T11:35:14Z",
-      "completed_at": "2026-10-20T11:58:39Z",
-      "log_bytes": 522904,
-      "log_sha256": "f6ffed23800cc1909b929aa7e415fb67d6b8882a7d06e4a4db81d458e4f68aab",
+      "started_at": "2026-10-20T00:09:41Z",
+      "completed_at": "2026-10-20T00:34:07Z",
+      "log_bytes": 535955,
+      "log_sha256": "526c80b123f97308bc538c9da72820661291581698b392cc22ec7eb181616465",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 737; skipped: 2; excluded: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 68"
+        "passed: 767; skipped: 2; excluded: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 38"
       ],
       "test_tables": [
         {
           "suite": "jtreg:test/hotspot/jtreg:tier1_runtime",
           "total": 817,
-          "pass": 735,
+          "pass": 765,
           "fail": 0,
           "error": 0,
-          "skip": 82
+          "skip": 52
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118301428069,
+      "name": "linux-x64 / test (hs/tier1 serviceability)",
+      "conclusion": "success",
+      "started_at": "2026-10-19T21:56:19Z",
+      "completed_at": "2026-10-19T22:07:19Z",
+      "log_bytes": 264379,
+      "log_sha256": "17eb6d6256d13cbb44a22d3c6ed9a5903934742820c3dfe05710572a8f026011",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 325; excluded: 7; did not meet module requirements: 10; did not meet platform requirements: 72"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_serviceability",
+          "total": 414,
+          "pass": 325,
+          "fail": 0,
+          "error": 0,
+          "skip": 89
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118301428083,
+      "name": "linux-x64 / test (lib-test/tier1)",
+      "conclusion": "success",
+      "started_at": "2026-10-19T23:00:00Z",
+      "completed_at": "2026-10-19T23:02:37Z",
+      "log_bytes": 84765,
+      "log_sha256": "655e46dc9e555fa04691b3b6bf8b2c191a78d38f56379829530cd6928ea60d05",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 40"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/lib-test:tier1",
+          "total": 40,
+          "pass": 40,
+          "fail": 0,
+          "error": 0,
+          "skip": 0
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118912281200,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T23:22:51Z",
+      "completed_at": "2026-10-20T23:52:28Z",
+      "log_bytes": 537239,
+      "log_sha256": "52800b8558c2993fbb0d4c8c3be1246033a6356b7dc7411693b0a222ad8a82ba",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 769; did not meet platform requirements: 48"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_3",
+          "total": 817,
+          "pass": 769,
+          "fail": 0,
+          "error": 0,
+          "skip": 48
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118912281253,
+      "name": "macos-aarch64 / test (hs/tier1 common)",
+      "conclusion": "success",
+      "started_at": "2026-10-21T00:02:12Z",
+      "completed_at": "2026-10-21T00:05:18Z",
+      "log_bytes": 67236,
+      "log_sha256": "1baac2e0e44dff379e4c47cd902f4c5fe08386908485a6c432d6f4ebc74c86b4",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 9; did not meet platform requirements: 3"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_common",
+          "total": 12,
+          "pass": 9,
+          "fail": 0,
+          "error": 0,
+          "skip": 3
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118912281450,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-21T02:12:03Z",
+      "completed_at": "2026-10-21T02:29:41Z",
+      "log_bytes": 346954,
+      "log_sha256": "b8f956e3dcb9f8abfce4939f7bc1dc3c6c869a6f6c27ccea0357b3250268f44d",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 508; excluded: 2; did not match keywords: 1; did not meet module requirements: 1; did not meet platform requirements: 20"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_1",
+          "total": 532,
+          "pass": 508,
+          "fail": 0,
+          "error": 0,
+          "skip": 24
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118912281482,
+      "name": "macos-aarch64 / test (lib-test/tier1)",
+      "conclusion": "success",
+      "started_at": "2026-10-21T01:24:02Z",
+      "completed_at": "2026-10-21T01:26:45Z",
+      "log_bytes": 88014,
+      "log_sha256": "93e3ea702020ce477de9a85cbe05726e8abbd7fb5f2de62d0c14a15b9ee2393e",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 40"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/lib-test:tier1",
+          "total": 40,
+          "pass": 40,
+          "fail": 0,
+          "error": 0,
+          "skip": 0
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118912281576,
+      "name": "macos-aarch64 / test (jdk/tier1 part 3)",
+      "conclusion": "success",
+      "started_at": "2026-10-21T00:46:35Z",
+      "completed_at": "2026-10-21T00:55:34Z",
+      "log_bytes": 284543,
+      "log_sha256": "e3cfdadd0493daae93b5be2ed9094b1cd91c0fe7adeb294fcabe76448ea38e11",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 401; skipped: 1; did not match keywords: 2; did not meet platform requirements: 9"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part3",
+          "total": 412,
+          "pass": 400,
+          "fail": 0,
+          "error": 0,
+          "skip": 12
         }
       ],
       "test_success_marker": true,
@@ -961,25 +800,155 @@
       "step_failures": []
     },
     {
-      "job_id": 118444402278,
-      "name": "windows-x64 / test (hs/tier1 runtime)",
+      "job_id": 118444402182,
+      "name": "windows-x64 / test (jdk/tier1 part 2)",
       "conclusion": "success",
-      "started_at": "2026-10-20T06:51:12Z",
-      "completed_at": "2026-10-20T07:18:16Z",
-      "log_bytes": 519507,
-      "log_sha256": "faa0ab604b70ace4c3212e16dd8dcc71bd9732eaf280943d07925a8bce03fc5e",
+      "started_at": "2026-10-20T05:48:59Z",
+      "completed_at": "2026-10-20T06:08:50Z",
+      "log_bytes": 622088,
+      "log_sha256": "0560fc10c942b882f879dbbbe9a351833246d95596ce100fea1029a577494881",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 717; skipped: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 89"
+        "passed: 1,011; did not match keywords: 8; did not meet module requirements: 4; did not meet platform requirements: 3"
       ],
       "test_tables": [
         {
-          "suite": "jtreg:test/hotspot/jtreg:tier1_runtime",
-          "total": 817,
-          "pass": 716,
+          "suite": "jtreg:test/jdk:tier1_part2",
+          "total": 1026,
+          "pass": 1011,
           "fail": 0,
           "error": 0,
-          "skip": 101
+          "skip": 15
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858110,
+      "name": "macos-aarch64 / test (hs/tier1 compiler part 2)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T12:33:45Z",
+      "completed_at": "2026-10-20T12:42:46Z",
+      "log_bytes": 226029,
+      "log_sha256": "5a60fa3f8e0ee97c9745761281e5c587acba6883afd97f83736a877632a7ebf8",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 266; excluded: 1; did not meet module requirements: 1; did not meet platform requirements: 21"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_2",
+          "total": 289,
+          "pass": 266,
+          "fail": 0,
+          "error": 0,
+          "skip": 23
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858024,
+      "name": "macos-aarch64 / test (jdk/tier1 part 2)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T07:48:01Z",
+      "completed_at": "2026-10-20T08:03:13Z",
+      "log_bytes": 613042,
+      "log_sha256": "40910f3429fc95801244627a71e0d01cb93e651f89c4ef4ef21d8071a3838559",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 1,013; did not match keywords: 8; did not meet module requirements: 4; did not meet platform requirements: 1"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part2",
+          "total": 1026,
+          "pass": 1013,
+          "fail": 0,
+          "error": 0,
+          "skip": 13
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402201,
+      "name": "windows-x64 / test (hs/tier1 common)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:15:22Z",
+      "completed_at": "2026-10-20T06:20:52Z",
+      "log_bytes": 79148,
+      "log_sha256": "b7a586512fbd6ea78c250b79f542e00304e083d49db69b207017ff376f94b745",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 11; did not meet platform requirements: 1"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_common",
+          "total": 12,
+          "pass": 11,
+          "fail": 0,
+          "error": 0,
+          "skip": 1
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402233,
+      "name": "windows-x64 / test (jdk/tier1 part 1)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:23:34Z",
+      "completed_at": "2026-10-20T06:50:47Z",
+      "log_bytes": 737683,
+      "log_sha256": "39baaf48957d045234a46e08d9b7e9620c8009674e36cfae6ad81c424a1741cf",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 1,136; excluded: 3; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 42"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part1",
+          "total": 1189,
+          "pass": 1136,
+          "fail": 0,
+          "error": 0,
+          "skip": 53
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402172,
+      "name": "windows-x64 / test (jdk/tier1 part 3)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T05:24:57Z",
+      "completed_at": "2026-10-20T05:36:31Z",
+      "log_bytes": 295504,
+      "log_sha256": "6edaa57a8f97485cca8b8c25728daa108051cc209bf8bd31533693678bbbd8cb",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 404; skipped: 1; did not match keywords: 2; did not meet platform requirements: 6"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part3",
+          "total": 412,
+          "pass": 403,
+          "fail": 0,
+          "error": 0,
+          "skip": 9
         }
       ],
       "test_success_marker": true,
@@ -1013,25 +982,77 @@
       "step_failures": []
     },
     {
-      "job_id": 118444402234,
-      "name": "windows-x64 / test (hs/tier1 gc)",
+      "job_id": 118492858040,
+      "name": "macos-aarch64 / test (jdk/tier1 part 1)",
       "conclusion": "success",
-      "started_at": "2026-10-20T06:47:36Z",
-      "completed_at": "2026-10-20T07:11:32Z",
-      "log_bytes": 213549,
-      "log_sha256": "9dd595bbffb3f9a8c485b8731e5a0780985d7f77cead2ea551448f411a6a95ea",
+      "started_at": "2026-10-20T08:57:21Z",
+      "completed_at": "2026-10-20T09:26:28Z",
+      "log_bytes": 727776,
+      "log_sha256": "fda80e78f9590710756cedcf9874252aacf85ae3f0d49dce24287791233dd8f4",
       "checkout_verified": true,
       "test_result_summaries": [
-        "passed: 219; skipped: 4; excluded: 7; did not meet platform requirements: 207"
+        "passed: 1,135; excluded: 3; did not match keywords: 2; did not meet module requirements: 6; did not meet platform requirements: 43"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/jdk:tier1_part1",
+          "total": 1189,
+          "pass": 1135,
+          "fail": 0,
+          "error": 0,
+          "skip": 54
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858073,
+      "name": "macos-aarch64 / test (hs/tier1 gc)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T08:06:56Z",
+      "completed_at": "2026-10-20T08:23:28Z",
+      "log_bytes": 203188,
+      "log_sha256": "e1dac7abf37de98b43000aac139a3046946b7e40fa64af74001f6f8e9885befa",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 220; skipped: 4; excluded: 7; did not meet platform requirements: 206"
       ],
       "test_tables": [
         {
           "suite": "jtreg:test/hotspot/jtreg:tier1_gc",
           "total": 433,
-          "pass": 215,
+          "pass": 216,
           "fail": 0,
           "error": 0,
-          "skip": 218
+          "skip": 217
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402278,
+      "name": "windows-x64 / test (hs/tier1 runtime)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:51:12Z",
+      "completed_at": "2026-10-20T07:18:16Z",
+      "log_bytes": 519507,
+      "log_sha256": "faa0ab604b70ace4c3212e16dd8dcc71bd9732eaf280943d07925a8bce03fc5e",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 717; skipped: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 89"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_runtime",
+          "total": 817,
+          "pass": 716,
+          "fail": 0,
+          "error": 0,
+          "skip": 101
         }
       ],
       "test_success_marker": true,
@@ -1058,6 +1079,32 @@
           "fail": 0,
           "error": 0,
           "skip": 26
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118492858078,
+      "name": "macos-aarch64 / test (hs/tier1 runtime)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T11:35:14Z",
+      "completed_at": "2026-10-20T11:58:39Z",
+      "log_bytes": 522904,
+      "log_sha256": "f6ffed23800cc1909b929aa7e415fb67d6b8882a7d06e4a4db81d458e4f68aab",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 737; skipped: 2; excluded: 1; did not match keywords: 6; did not meet module requirements: 5; did not meet platform requirements: 68"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_runtime",
+          "total": 817,
+          "pass": 735,
+          "fail": 0,
+          "error": 0,
+          "skip": 82
         }
       ],
       "test_success_marker": true,
@@ -1143,6 +1190,32 @@
       "step_failures": []
     },
     {
+      "job_id": 118444402222,
+      "name": "windows-x64 / test (hs/tier1 compiler part 3)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:09:13Z",
+      "completed_at": "2026-10-20T07:04:26Z",
+      "log_bytes": 562377,
+      "log_sha256": "d6f49060558bee064dac7754127b742e483b52702efa7ac3a23e304f1daf906f",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 790; excluded: 1; did not meet platform requirements: 26"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_compiler_3",
+          "total": 817,
+          "pass": 790,
+          "fail": 0,
+          "error": 0,
+          "skip": 27
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
       "job_id": 118444402215,
       "name": "windows-x64 / test (hs/tier1 serviceability)",
       "conclusion": "success",
@@ -1162,6 +1235,32 @@
           "fail": 0,
           "error": 0,
           "skip": 97
+        }
+      ],
+      "test_success_marker": true,
+      "canonical_failed_results": [],
+      "step_failures": []
+    },
+    {
+      "job_id": 118444402234,
+      "name": "windows-x64 / test (hs/tier1 gc)",
+      "conclusion": "success",
+      "started_at": "2026-10-20T06:47:36Z",
+      "completed_at": "2026-10-20T07:11:32Z",
+      "log_bytes": 213549,
+      "log_sha256": "9dd595bbffb3f9a8c485b8731e5a0780985d7f77cead2ea551448f411a6a95ea",
+      "checkout_verified": true,
+      "test_result_summaries": [
+        "passed: 219; skipped: 4; excluded: 7; did not meet platform requirements: 207"
+      ],
+      "test_tables": [
+        {
+          "suite": "jtreg:test/hotspot/jtreg:tier1_gc",
+          "total": 433,
+          "pass": 215,
+          "fail": 0,
+          "error": 0,
+          "skip": 218
         }
       ],
       "test_success_marker": true,
