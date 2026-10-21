@@ -1203,18 +1203,21 @@ final class StringUTF16 {
             assert fromIndex >= 0;
             assert tgtCount > 0;
             assert tgtCount <= length(tgt);
-            checkIndex(tgtCount - 1, tgt);
-            checkIndex(fromIndex + tgtCount - 1, src);
-
             if (tgtCount <= 8 && StringZilla.ENABLED) {
                 tier = StringZilla.compilerTier();
                 if (tier == StringZilla.C1
                         && fromIndex + tgtCount < (StringZilla.MIN_BYTES >> 1)) {
+                    // The scalar helper checks both physical ends itself.
                     return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
                 }
+                checkIndex(tgtCount - 1, tgt);
+                checkIndex(fromIndex + tgtCount - 1, src);
                 if (StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount, tier)) {
                     return fromIndex;
                 }
+            } else {
+                checkIndex(tgtCount - 1, tgt);
+                checkIndex(fromIndex + tgtCount - 1, src);
             }
 
             if (fromIndex + tgtCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)

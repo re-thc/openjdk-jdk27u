@@ -32,6 +32,15 @@
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UseCompactObjectHeaders -XX:ObjectAlignmentInBytes=16 StringZillaSearch
+ */
+
+/*
+ * @test id=limitedAVX
+ * @summary Exercise bounded word probes and search fallbacks without AVX and with AVX2
+ * @requires (os.arch == "amd64" | os.arch == "x86_64")
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=0 StringZillaSearch
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 StringZillaSearch
  */
 
 import java.util.Random;
@@ -101,12 +110,38 @@ public class StringZillaSearch {
         equal(s.indexOf(cp, begin, end), expected);
     }
 
+    private static void mixedWords() {
+        // Vary byte order, high Latin1 bits, residual word widths and all
+        // UTF16 alignments. A later near-match must preserve the earlier hit.
+        for (int symbol = 0; symbol < 512; symbol++) {
+            for (int count : new int[]{4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64}) {
+                char[] chars = new char[count];
+                for (int i = 0; i < count; i++) {
+                    chars[i] = (char)((symbol < 256 ? 0 : 0x400) + ((symbol + 37 * i) & 0xff));
+                }
+                String target = new String(chars);
+                for (int alignment = 0; alignment < 4; alignment++) {
+                    String prefix = "\u0800".repeat(256 + alignment);
+                    String source = prefix + target + "\u0400" + target;
+                    int first = prefix.length();
+                    int last = first + count + 1;
+                    equal(source.lastIndexOf(target), last);
+                    equal(source.lastIndexOf(target, last - 1), first);
+                    char[] changed = source.toCharArray();
+                    changed[last + symbol % count] = '\u0100';
+                    equal(new String(changed).lastIndexOf(target), first);
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         // Equality is used during native-library and timezone initialization.
         // Exercise these consumers before warming up the string-search corpus.
         if (System.getProperty(new String("java.vm.info".toCharArray())) == null)
             throw new AssertionError("VM property lookup");
         java.time.ZoneId.of("America/New_York").getRules();
+        mixedWords();
         int[] sizes = {0, 1, 2, 15, 31, 127, 128, 129, 255, 256, 257, 1024, 4096};
         String[] needles = {"", "a", "aa", "ab", "abc", "b", "\0", "\u00ff", "\u0100", "\ud800", "\udc00", "\ud83d\ude00", "a".repeat(64), "a".repeat(65)};
         int[] codepoints = {-1, 0, 'a', 'b', 255, 256, 0xd800, 0xdc00, 0x1f600, 0x10ffff, 0x110000};

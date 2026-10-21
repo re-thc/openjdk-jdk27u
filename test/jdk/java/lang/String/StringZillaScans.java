@@ -175,15 +175,17 @@ public class StringZillaScans {
         }
         for (int ch = 0; ch < 256; ch++) {
             String c = String.valueOf((char)ch);
-            for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 263, 264, 265, 287, 288, 289, 521}) {
+            for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 63, 64, 65, 263, 264, 265, 287, 288, 289, 319, 320, 321, 521}) {
                 String pad = c.repeat(n);
                 check(pad);
                 check(pad + "X" + pad);
                 check(" ".repeat(n) + c + "\t".repeat(n));
             }
         }
-        for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 255, 256, 263, 264, 265, 287, 288, 289,
-                              65527, 65528, 65535, 65536, 65537, 65543, 65544, 65567, 65568, 131089}) {
+        for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 63, 64, 65, 255, 256, 263, 264, 265, 287, 288, 289,
+                              319, 320, 321, 511, 512, 513, 543, 544, 545, 575, 576, 577,
+                              65527, 65528, 65535, 65536, 65537, 65543, 65544, 65567, 65568,
+                              65823, 65824, 65825, 65855, 65856, 65857, 131089}) {
             for (String c : new String[]{" ", "\0", "\t", "\u001c", "\u0085", "\u00a0", "x",
                                          "\u1680", "\u2000", "\u2028", "\u3000", "\ufeff", "\ud800", "\ud83d\ude00"}) {
                 String pad = c.repeat(n);
@@ -202,7 +204,7 @@ public class StringZillaScans {
         }
         for (String s : new String[]{"", "\n", "\r", "\r\n", "\n\r", "\r\n\r\n", "a\rb\nc\r\nd",
                                      "\u000b\u000c\u0085\u2028\u2029", "\r\r\n\n"}) lines(s);
-        for (int n : new int[]{31, 32, 33}) {
+        for (int n : new int[]{31, 32, 33, 63, 64, 65, 287, 288, 289, 319, 320, 321}) {
             String clean = "x".repeat(1024);
             String pad = " ".repeat(n);
             check(pad + clean);

@@ -235,7 +235,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean useMixedRangeIntrinsic(int count, int tier) {
-        return count >= (BACKEND == SKYLAKE ? 16 : 48) && count <= MAX_MIXED_NEEDLE
+        return count >= 16 && count <= MAX_MIXED_NEEDLE
                 && (BACKEND == HASWELL || BACKEND == SKYLAKE) && tier == C2;
     }
 
@@ -427,9 +427,76 @@ final class StringZilla {
     // Bound each leaf call and return to Java between windows for safepoints.
     // Forward results are inclusive; reverse results are exclusive, like the
     // StringLatin1 whitespace helpers. A miss returns the corresponding fence.
-    @DontInline
+    @ForceInline
     static int scan(byte[] src, int from, int to, int mode) {
-        Objects.checkFromToIndex(from, to, src.length);
+        if (from < 0 || to > src.length || from > to) {
+            Objects.checkFromToIndex(from, to, src.length);
+        }
+        int length = to - from;
+        if (length == 0) {
+            return from;
+        }
+        if (length >= Long.BYTES && compilerTier() != 0 && mode >= LINE_SEPARATOR
+                && mode <= NON_WHITESPACE_REVERSE) {
+            int result = scanWord(src, from, to, mode);
+            if (result != FALLBACK) {
+                return result;
+            }
+        }
+        if (length <= MAX_BYTES) {
+            int result = scanLatin1(src, from, length, mode);
+            if (result == FALLBACK) {
+                return FALLBACK;
+            }
+            boolean reverse = mode == NON_TRIM_REVERSE || mode == NON_WHITESPACE_REVERSE;
+            if (result < 0) {
+                return reverse ? from : to;
+            }
+            return from + result + (reverse ? 1 : 0);
+        }
+        return scanLarge(src, from, to, mode);
+    }
+
+    // The caller checks the complete interval and proves at least eight bytes.
+    // A miss leaves the native interval unchanged, preserving window boundaries.
+    @ForceInline
+    private static int scanWord(byte[] src, int from, int to, int mode) {
+        boolean reverse = mode == NON_TRIM_REVERSE || mode == NON_WHITESPACE_REVERSE;
+        int offset = reverse ? to - Long.BYTES : from;
+        Unsafe unsafe = Unsafe.getUnsafe();
+        long base = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        long word = unsafe.getLongUnaligned(src, base + offset);
+        long high = 0x8080808080808080L;
+        long low = word & 0x7f7f7f7f7f7f7f7fL;
+        long hits;
+        if (mode == LINE_SEPARATOR) {
+            hits = zeroBytes(word ^ 0x0a0a0a0a0a0a0a0aL)
+                    | zeroBytes(word ^ 0x0d0d0d0d0d0d0d0dL);
+        } else if (mode == NON_TRIM || mode == NON_TRIM_REVERSE) {
+            hits = ((low + 0x5f5f5f5f5f5f5f5fL) | word) & high;
+        } else {
+            // Masking to seven bits keeps every sum below 256: no byte carry.
+            long whitespace = ((low + 0x7777777777777777L) & ~(low + 0x7272727272727272L))
+                    | ((low + 0x6464646464646464L) & ~(low + 0x5f5f5f5f5f5f5f5fL));
+            hits = (~whitespace | word) & high;
+        }
+        if (hits == 0) {
+            return FALLBACK;
+        }
+        int bits = unsafe.isBigEndian() == reverse
+                ? Long.numberOfTrailingZeros(hits) : Long.numberOfLeadingZeros(hits);
+        int index = reverse ? Long.BYTES - 1 - (bits >> 3) : bits >> 3;
+        return offset + index + (reverse ? 1 : 0);
+    }
+
+    @ForceInline
+    private static long zeroBytes(long word) {
+        return ~(((word & 0x7f7f7f7f7f7f7f7fL) + 0x7f7f7f7f7f7f7f7fL) | word)
+                & 0x8080808080808080L;
+    }
+
+    @DontInline
+    private static int scanLarge(byte[] src, int from, int to, int mode) {
         boolean reverse = mode == NON_TRIM_REVERSE || mode == NON_WHITESPACE_REVERSE;
         int cursor = reverse ? to : from;
         while (reverse ? cursor > from : cursor < to) {

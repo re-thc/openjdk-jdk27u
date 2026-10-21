@@ -24,7 +24,9 @@ They reuse AVX2 on both x86 SIMD backends and NEON on AArch64; serial backends
 retain Java scanning. After a 32-byte scalar probe, at least 256 remaining
 bytes are required. Each native window is bounded to 64 KiB and Java polls
 between windows. Short inputs and early matches avoid native setup and
-`StringZilla` initialization.
+`StringZilla` initialization. A checked one-word probe can resolve compiled
+matches just beyond the scalar probe; initialized scan targets bypass the VM
+table-dispatch wrapper.
 The scalar probe shares a loop with short-input scanning; private long
 continuations keep native dispatch outside the common helpers.
 
@@ -99,7 +101,7 @@ on MSVC. Other eligible bulk searches retain StringZilla.
 
 Serial C1 probes UTF-16 widths 9 through 128 before entering its bridge,
 checking the first code unit before backward verification. Non-MSVC serial C2
-uses the checked word verifier through width 256. MSVC C2 widths 9 through 128
+uses the checked word verifier for widths 9 through 256. MSVC C2 widths 9 through 128
 resume the existing Java search when the rightmost ending character matches;
 absent ending characters retain the JDK character filter.
 A failed complete verification with no earlier candidate returns immediately.
@@ -146,7 +148,7 @@ For widths 9 through 64, additional rightmost-candidate verification is:
 | MSVC serial C1 | Backward Java through 63; bounded native verification at 64 |
 | Serial C2 | Backward Java |
 | AVX2/AVX-512/NEON C1 | Backward Java through 24 |
-| AVX2 C2 | Backward Java through 47; existing mixed forward intrinsic over one candidate from 48 through 64 |
+| AVX2 C2 | Backward Java through 15; existing mixed forward intrinsic over one candidate from 16 through 64 |
 | AVX-512 C2 | Backward Java through 15; existing mixed forward intrinsic over one candidate from 16 through 64 |
 | NEON C2 | Backward Java through 30; bounded native verification from 31 through 64 |
 

@@ -64,6 +64,8 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestStringZillaUTF16Bounds {
     private static final MethodHandle LAST_INDEX_OF;
+    private static final MethodHandle SCAN;
+    private static final MethodHandle INITIALIZE;
 
     static {
         try {
@@ -71,6 +73,12 @@ public class TestStringZillaUTF16Bounds {
                     .findStatic(String.class, "lastIndexOf",
                             MethodType.methodType(int.class, byte[].class, byte.class,
                                     int.class, String.class, int.class));
+            Class<?> stringZilla = Class.forName("java.lang.StringZilla");
+            SCAN = MethodHandles.privateLookupIn(stringZilla, MethodHandles.lookup())
+                    .findStatic(stringZilla, "scan", MethodType.methodType(int.class,
+                            byte[].class, int.class, int.class, int.class));
+            INITIALIZE = MethodHandles.privateLookupIn(stringZilla, MethodHandles.lookup())
+                    .findStatic(stringZilla, "initialize", MethodType.methodType(int.class));
         } catch (ReflectiveOperationException failure) {
             throw new ExceptionInInitializerError(failure);
         }
@@ -84,6 +92,65 @@ public class TestStringZillaUTF16Bounds {
 
     public static int probeLatin1(byte[] value, int count, String needle, int from) throws Throwable {
         return (int)LAST_INDEX_OF.invokeExact(value, (byte)0, count, needle, from);
+    }
+
+    public static int probeScan(byte[] value, int from, int to, int mode) throws Throwable {
+        return (int)SCAN.invokeExact(value, from, to, mode);
+    }
+
+    private static int scanOracle(byte[] value, int from, int to, int mode) {
+        boolean reverse = mode == 2 || mode == 4;
+        for (int i = reverse ? to - 1 : from; reverse ? i >= from : i < to; i += reverse ? -1 : 1) {
+            int ch = value[i] & 0xff;
+            boolean match = mode == 0 ? ch == '\r' || ch == '\n'
+                    : mode <= 2 ? ch > 0x20 : !Character.isWhitespace((char)ch);
+            if (match) return i + (reverse ? 1 : 0);
+        }
+        return reverse ? from : to;
+    }
+
+    private static void checkScan() throws Throwable {
+        // Repeated initialization must preserve compiled scan targets.
+        int firstConfiguration = (int)INITIALIZE.invokeExact();
+        if ((int)INITIALIZE.invokeExact() != firstConfiguration) {
+            throw new AssertionError("Kernel selection changed");
+        }
+        byte[] value = new byte[65537 + 8];
+        for (int i = 0; i < value.length; i++) value[i] = (byte)i;
+        for (int[] range : new int[][]{{0, 0}, {value.length, value.length}, {0, 1}, {1, 257},
+                                      {0, 65536}, {0, 65537}, {7, 65544}}) {
+            for (int mode = 0; mode <= 4; mode++) {
+                if (probeScan(value, range[0], range[1], mode)
+                        != scanOracle(value, range[0], range[1], mode)) {
+                    throw new AssertionError("Scan result at " + Arrays.toString(range) + " mode=" + mode);
+                }
+            }
+        }
+        if (probeScan(new byte[0], 0, 0, 0) != 0 || probeScan(value, 0, 1, 5) != -2) {
+            throw new AssertionError("Empty scan or unsupported mode");
+        }
+        for (int[] range : new int[][]{{-1, 1}, {0, value.length + 1}, {1, 0},
+                                      {Integer.MAX_VALUE, Integer.MAX_VALUE}, {0, Integer.MAX_VALUE}}) {
+            try {
+                probeScan(value, range[0], range[1], 0);
+                throw new AssertionError("Missing scan physical bounds check");
+            } catch (IndexOutOfBoundsException expected) { }
+        }
+        // Every byte value in every lane, including high bits and both search
+        // directions. The oracle uses Character's public whitespace predicate.
+        byte[] word = new byte[16];
+        for (int mode = 0; mode <= 4; mode++) {
+            for (int symbol = 0; symbol < 256; symbol++) {
+                for (int position = 0; position < 8; position++) {
+                    Arrays.fill(word, (byte)(mode == 0 ? 'x' : ' '));
+                    word[4 + position] = (byte)symbol;
+                    if (probeScan(word, 4, 12, mode) != scanOracle(word, 4, 12, mode)) {
+                        throw new AssertionError("Byte-set word probe mode=" + mode
+                                + " value=" + symbol + " lane=" + position);
+                    }
+                }
+            }
+        }
     }
 
     private static Case fixture(int length, int count, boolean mixed) {
@@ -124,17 +191,23 @@ public class TestStringZillaUTF16Bounds {
             cases.add(fixture(length, 4, false));
         }
         for (int count : new int[]{4, 9, 16, 32, 64, 65, 129}) {
+            cases.add(fixture(count, count, false));
+            cases.add(fixture(Math.max(16, count + 8), count, false));
+            cases.add(fixture(256, count, false));
             cases.add(fixture(count, count, true));
             cases.add(fixture(Math.max(16, count + 8), count, true));
             cases.add(fixture(256, count, true));
         }
-        for (int count : new int[]{4, 9, 16, 32, 64, 129, 257}) {
+        for (int count : new int[]{1, 2, 3, 4, 7, 8, 9, 16, 32, 64, 129, 257}) {
             for (int length : new int[]{count, Math.max(256, count + 8), 4096}) {
                 byte[] value = new byte[length];
                 Arrays.fill(value, (byte)'a');
                 latin1.add(new Case(value, length, "a".repeat(count), length - count));
             }
         }
+        byte[] blank = new byte[65537];
+        byte[] near = new byte[16];
+        Arrays.fill(blank, (byte)' ');
         for (int i = 0; i < (level == 0 ? cases.size() : 10_000); i++) {
             Case test = cases.get(i % cases.size());
             if (probe(test.value, test.logicalCount, test.needle, test.from) != test.from) {
@@ -143,6 +216,16 @@ public class TestStringZillaUTF16Bounds {
             Case latin = latin1.get(i % latin1.size());
             if (probeLatin1(latin.value, latin.logicalCount, latin.needle, latin.from) != latin.from) {
                 throw new AssertionError("Valid Latin-1 fixture");
+            }
+            int end = (i & 1) == 0 ? 33 : blank.length;
+            int mode = i % 5;
+            if (probeScan(blank, 0, end, mode) != (mode == 2 || mode == 4 ? 0 : end)) {
+                throw new AssertionError("Valid empty-result scan");
+            }
+            Arrays.fill(near, (byte)(mode == 0 ? 'x' : ' '));
+            near[4 + (i & 7)] = (byte)i;
+            if (probeScan(near, 4, 12, mode) != scanOracle(near, 4, 12, mode)) {
+                throw new AssertionError("Valid near-result scan");
             }
         }
         if (level != 0) {
@@ -153,6 +236,8 @@ public class TestStringZillaUTF16Bounds {
                         byte[].class, int.class, String.class, int.class),
                 TestStringZillaUTF16Bounds.class.getMethod("probeLatin1",
                         byte[].class, int.class, String.class, int.class),
+                TestStringZillaUTF16Bounds.class.getMethod("probeScan",
+                        byte[].class, int.class, int.class, int.class),
                 Class.forName("java.lang.StringLatin1").getDeclaredMethod("lastIndexOf",
                         byte[].class, int.class, byte[].class, int.class, int.class),
                 utf16.getDeclaredMethod("lastIndexOf",
@@ -172,5 +257,6 @@ public class TestStringZillaUTF16Bounds {
         }
         for (Case test : cases) check(test);
         for (Case test : latin1) checkLatin1(test);
+        checkScan();
     }
 }

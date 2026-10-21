@@ -622,14 +622,9 @@ final class StringLatin1 {
         int searchLength = fromIndex + tgtCount;
         if (tier == StringZilla.UNRESOLVED_TIER) {
             if (StringZilla.ENABLED) {
-                // Check physical ranges once before native searches or word probes.
-                if (fromIndex < 0 || tgtCount < 0 || fromIndex > src.length - tgtCount) {
-                    String.checkBoundsOffCount(fromIndex, tgtCount, src.length);
-                }
-                if (tgtCount > tgt.length) {
-                    String.checkBoundsOffCount(0, tgtCount, tgt.length);
-                }
-                if (tgtCount <= 8) {
+                // Ordinary byte loads retain their own physical bounds checks.
+                // Defer the complete-range guard until a word probe or native path.
+                if (tgtCount > 0 && tgtCount <= 8) {
                     if (tgtCount == 4) {
                         if (src[fromIndex + 3] == tgt[3]
                                 && src[fromIndex + 2] == tgt[2]
@@ -646,28 +641,37 @@ final class StringLatin1 {
                             return fromIndex;
                         }
                     }
-                } else if (tgtCount > 256 && fromIndex <= 1) {
-                    int last = tgtCount - 1;
-                    byte tail = tgt[last];
-                    byte beforeTail = tgt[last - 1];
-                    boolean rightPossible = src[fromIndex + last] == tail
-                            && src[fromIndex + last - 1] == beforeTail;
-                    if (!rightPossible && (fromIndex == 0
-                            || src[last] != tail || src[last - 1] != beforeTail)) {
-                        return -1;
-                    }
                 }
             }
             if (searchLength < StringZilla.MIN_INTERPRETER_REVERSE_BYTES || !StringZilla.ENABLED) {
                 return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             tier = StringZilla.compilerTier();
-            if (tier == StringZilla.C1) {
-                // Scalar windows need only the call to the original loop.
-                if (searchLength < StringZilla.MIN_BYTES) {
-                    return lastIndexOfJava(src, tgt, tgtCount,
-                            tgtCount <= 8 ? fromIndex - 1 : fromIndex);
+            // No unsafe access occurs on this scalar C1 path. The Java loop
+            // checks every actual array access, including stale backing arrays.
+            if (tier == StringZilla.C1 && searchLength < StringZilla.MIN_BYTES) {
+                return lastIndexOfJava(src, tgt, tgtCount,
+                        tgtCount > 0 && tgtCount <= 8 ? fromIndex - 1 : fromIndex);
+            }
+            // All following word probes and native calls require complete ranges.
+            if (fromIndex < 0 || tgtCount < 0 || fromIndex > src.length - tgtCount) {
+                String.checkBoundsOffCount(fromIndex, tgtCount, src.length);
+            }
+            if (tgtCount > tgt.length) {
+                String.checkBoundsOffCount(0, tgtCount, tgt.length);
+            }
+            if (tgtCount > 256 && fromIndex <= 1) {
+                int last = tgtCount - 1;
+                byte tail = tgt[last];
+                byte beforeTail = tgt[last - 1];
+                boolean rightPossible = src[fromIndex + last] == tail
+                        && src[fromIndex + last - 1] == beforeTail;
+                if (!rightPossible && (fromIndex == 0
+                        || src[last] != tail || src[last - 1] != beforeTail)) {
+                    return -1;
                 }
+            }
+            if (tier == StringZilla.C1) {
                 if (tgtCount > 256 && fromIndex <= 1
                         && !StringZilla.useReverseLatin1(searchLength, tgtCount, tier)) {
                     return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
@@ -755,7 +759,8 @@ final class StringLatin1 {
         return -1;
     }
 
-    // Keep native-call setup out of C1's scalar fallback register allocation.
+    // Inline the scalar fallback so short C1 searches need no extra Java frame.
+    @ForceInline
     static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
         int min = tgtCount - 1;
         int i = min + fromIndex;
@@ -1134,8 +1139,17 @@ final class StringLatin1 {
         if (len == 0 || ((value[0] & 0xff) > ' ' && (value[len - 1] & 0xff) > ' ')) {
             return null;
         }
-        int limit = len >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
-                ? StringZilla.SCAN_PROBE : len;
+        if (len < StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                || !StringZilla.SCANS_ENABLED) {
+            while (st < len && (value[st] & 0xff) <= ' ') {
+                st++;
+            }
+            while (st < len && (value[len - 1] & 0xff) <= ' ') {
+                len--;
+            }
+            return newString(value, st, len - st);
+        }
+        int limit = StringZilla.SCAN_PROBE;
         while ((st < limit) && ((value[st] & 0xff) <= ' ')) {
             st++;
         }
@@ -1195,6 +1209,7 @@ final class StringLatin1 {
         }
         int left = 1;
         int limit = length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                && StringZilla.SCANS_ENABLED
                 ? StringZilla.SCAN_PROBE : length;
         while (left < limit) {
             char ch = getChar(value, left);
@@ -1236,6 +1251,7 @@ final class StringLatin1 {
         }
         right--;
         int stop = value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                && StringZilla.SCANS_ENABLED
                 ? value.length - StringZilla.SCAN_PROBE : 0;
         while (right > stop) {
             char ch = getChar(value, right - 1);
@@ -1298,6 +1314,7 @@ final class StringLatin1 {
 
         private int indexOfLineSeparator(int start) {
             int stop = fence - start >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
+                    && StringZilla.SCANS_ENABLED
                     ? start + StringZilla.SCAN_PROBE : fence;
             for (int current = start; current < stop; current++) {
                 char ch = getChar(value, current);

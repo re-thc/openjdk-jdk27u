@@ -35,7 +35,8 @@ import org.openjdk.jmh.annotations.*;
 public class StringZillaScans {
     @State(Scope.Thread)
     public static class Whitespace {
-        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "prefix8", "prefix9", "suffix8", "suffix9", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter", "gateBefore", "gateAt",
+        @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "prefix8", "prefix9", "suffix8", "suffix9", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter",
+                "prefix39", "prefix40", "prefix41", "prefix63", "prefix64", "prefix65", "suffix39", "suffix40", "suffix41", "suffix63", "suffix64", "suffix65", "length319", "length320", "length321", "gateBefore", "gateAt",
                 "longBlank", "longClean", "longLeading", "longTrailing", "longBoth", "lateNbsp", "nul", "window", "utf16"})
         public String workload;
         private String[] values;
@@ -61,6 +62,21 @@ public class StringZillaScans {
                     case "probeAfter" -> " ".repeat(33) + text.repeat(4096);
                     case "tailProbeAt" -> text.repeat(4096) + " ".repeat(32);
                     case "tailProbeAfter" -> text.repeat(4096) + " ".repeat(33);
+                    case "prefix39" -> " ".repeat(39) + text.repeat(4096);
+                    case "prefix40" -> " ".repeat(40) + text.repeat(4096);
+                    case "prefix41" -> " ".repeat(41) + text.repeat(4096);
+                    case "prefix63" -> " ".repeat(63) + text.repeat(4096);
+                    case "prefix64" -> " ".repeat(64) + text.repeat(4096);
+                    case "prefix65" -> " ".repeat(65) + text.repeat(4096);
+                    case "suffix39" -> text.repeat(4096) + " ".repeat(39);
+                    case "suffix40" -> text.repeat(4096) + " ".repeat(40);
+                    case "suffix41" -> text.repeat(4096) + " ".repeat(41);
+                    case "suffix63" -> text.repeat(4096) + " ".repeat(63);
+                    case "suffix64" -> text.repeat(4096) + " ".repeat(64);
+                    case "suffix65" -> text.repeat(4096) + " ".repeat(65);
+                    case "length319" -> " ".repeat(319);
+                    case "length320" -> " ".repeat(320);
+                    case "length321" -> " ".repeat(321);
                     case "gateBefore" -> " ".repeat(287);
                     case "gateAt" -> " ".repeat(288);
                     case "longBlank" -> pad;
@@ -86,7 +102,10 @@ public class StringZillaScans {
 
     @State(Scope.Thread)
     public static class Lines {
-        @Param({"empty", "short", "immediate", "prefix8", "prefix9", "probeAt", "probeAfter", "lines16", "lines80", "lines128", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
+        @Param({"empty", "short", "immediate", "prefix8", "prefix9", "probeAt", "probeAfter",
+                "prefix39", "prefix40", "prefix41", "prefix63", "prefix64", "prefix65", "prefix287", "prefix288", "prefix289", "prefix319", "prefix320", "prefix321",
+                "length319", "length320", "length321", "length543", "length544", "length545", "length575", "length576", "length577",
+                "lines16", "lines80", "lines128", "gateBefore", "gateAt", "noMatch", "longLines", "dense", "windowCRLF", "utf16"})
         public String workload;
         private String[] values;
         private int cursor;
@@ -104,6 +123,27 @@ public class StringZillaScans {
                     case "prefix9" -> text.repeat(9) + "\r\n" + text.repeat(4096);
                     case "probeAt" -> text.repeat(32) + "\r\n" + text.repeat(4096);
                     case "probeAfter" -> text.repeat(33) + "\r\n" + text.repeat(4096);
+                    case "prefix39" -> text.repeat(39) + "\r\n" + text.repeat(4096);
+                    case "prefix40" -> text.repeat(40) + "\r\n" + text.repeat(4096);
+                    case "prefix41" -> text.repeat(41) + "\r\n" + text.repeat(4096);
+                    case "prefix63" -> text.repeat(63) + "\r\n" + text.repeat(4096);
+                    case "prefix64" -> text.repeat(64) + "\r\n" + text.repeat(4096);
+                    case "prefix65" -> text.repeat(65) + "\r\n" + text.repeat(4096);
+                    case "prefix287" -> text.repeat(287) + "\r\n" + text.repeat(4096);
+                    case "prefix288" -> text.repeat(288) + "\r\n" + text.repeat(4096);
+                    case "prefix289" -> text.repeat(289) + "\r\n" + text.repeat(4096);
+                    case "prefix319" -> text.repeat(319) + "\r\n" + text.repeat(4096);
+                    case "prefix320" -> text.repeat(320) + "\r\n" + text.repeat(4096);
+                    case "prefix321" -> text.repeat(321) + "\r\n" + text.repeat(4096);
+                    case "length319" -> text.repeat(319);
+                    case "length320" -> text.repeat(320);
+                    case "length321" -> text.repeat(321);
+                    case "length543" -> text.repeat(543);
+                    case "length544" -> text.repeat(544);
+                    case "length545" -> text.repeat(545);
+                    case "length575" -> text.repeat(575);
+                    case "length576" -> text.repeat(576);
+                    case "length577" -> text.repeat(577);
                     case "lines16" -> (text.repeat(16) + "\r\n").repeat(256);
                     case "lines80" -> (text.repeat(80) + "\r\n").repeat(256);
                     case "lines128" -> (text.repeat(128) + "\r\n").repeat(256);

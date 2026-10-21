@@ -1,178 +1,33 @@
 # Latin-1 line and whitespace scans
 
-This follow-on depends on PR4's StringZilla integration at
-`7048d6f2c74e25737850789812da063900ec18c0`. Live PR4 and fork master
-(`70c91df3`) were checked before development. PR4's owned branch and retained
-qualification were not changed. Its earlier evidence remains scoped to its own
-source and images.
+The shared StringZilla integration also accelerates eligible Latin-1
+`lines`, `trim`, `strip`, `stripLeading`, `stripTrailing` and `isBlank` scans.
+UTF-16 retains the existing Unicode scanners.
 
-The new paths scan for CR/LF and for the first/last byte outside Java's two
-whitespace predicates. `trim` removes `0x00`–`0x20`; Latin-1 Character whitespace
-is exactly `0x09`–`0x0D` and `0x1C`–`0x20`. NEL and NBSP remain non-whitespace
-for strip/blank operations. UTF-16 uses the existing scanners. Public hashing,
-compact-string layout and codecs are unchanged.
+`trim` removes bytes `0x00`–`0x20`. Latin-1 Character whitespace is exactly
+`0x09`–`0x0D` and `0x1C`–`0x20`; NEL and NBSP remain non-whitespace for
+strip/blank operations. Line splitting recognizes CR, LF and CRLF.
 
-An immediate character check preserves cheap whitespace exits; trim also
-returns immediately for empty or unchanged inputs. A 32-byte Java probe
-precedes native dispatch, which requires at least 256 remaining bytes. Native
-calls cover at most 64 KiB, with Java backedges between windows. C1/C2 use a
-leaf bridge; the interpreter uses JNI. The x86 SIMD tables use upstream AVX2
-byte-set kernels, including when PR4 selects its Skylake table. NEON is wired
-for AArch64; serial backends retain Java scanning.
+An immediate character check and a 32-byte scalar probe handle short matches.
+Native admission requires at least 256 remaining bytes. A compiled probe of
+one checked word can resolve a nearby match before entering native code.
+Each native call covers at most 64 KiB; Java loops between windows retain
+safepoint opportunities. C1 and C2 use leaf calls, and the interpreter uses JNI.
+The initialized kernel table stays fixed for the VM lifetime, allowing compiled
+scan calls to target the selected kernel directly.
 
-Line consumption, CRLF handling, allocation, lazy traversal, spliterator fences,
-splitting and consumer exceptions remain in Java. String identity returns and
-the feature-off control are preserved.
+The x86 SIMD tables use AVX2 byte-set kernels, including when the search backend
+selects Skylake. AArch64 uses NEON. Serial backends and the feature-off control
+use Java scans. `-XX:-UseStringZillaIntrinsics` disables native admission.
 
-The final candidate runtime source is `c881f89fb5cde1a5ec20fcf22adb0faa849303f6`.
-The earlier candidate at `a5576dd33ea` and assertions at `4aa7d23e697` are retained
-with their own complete fixed study. Linux x86-64 complete release
-images were built with GCC 16.2 and the repository's `bin/configure-dev` profile.
-The comparison baseline is the same PR4 base with StringZilla already enabled;
-the feature-off control uses the same candidate image with
-`-XX:-UseStringZillaIntrinsics`.
-Image hashes, configuration, sources and commands are retained in the evidence.
+String identity, allocation, lazy line consumption, CRLF handling, splitting,
+spliterator fences and consumer exceptions remain in Java. Tests cover all
+256 Latin-1 values, both predicates, physical bounds, short/probe/admission and
+64 KiB window boundaries, forced interpreter/C1/C2, JNI fallback, compact
+strings off, feature off and concurrent GC.
 
-Normal `make test` runs passed all 98 String descriptions and 29 applicable
-string-intrinsic descriptions; two descriptions were inapplicable. Coverage
-includes all 256 Latin-1 values, both whitespace rules, identity, empty and
-unchanged inputs, 31/32/33-byte probes, dispatch/window boundaries, CRLF,
-parallel/partial splitting, consumer exceptions, UTF-16, compact strings off,
-feature off, interpreter/JNI, C1, C2, forced compilation and concurrent SerialGC.
-Native ASan/UBSan checks cover executable tables, exact allocation ends,
-alignment, predicates and bounds. The native files and `libjava`/`libjvm` hashes
-did not change during the Java probe polish. Independent read-only source and
-measurement-method reviews found no remaining blocking issue.
-
-JMH 1.37 runs complete public operations: `trim`, `strip`, `stripLeading`,
-`stripTrailing`, `isBlank`, `lines().count()` and `lines().findFirst()`.
-Ordinary JIT allocation elimination remains possible. The full C2 matrix has
-154 rows; selected C1 and interpreter matrices each have 77. Each has five
-interleaved baseline/candidate/off rounds. The final C2 study also includes the
-preserved pre-refinement candidate image as a fourth control. It directly
-measures the refinement without comparing results from different studies.
-The reported speedup is the median
-of same-round ratios, using each round's median of three samples. Every row,
-individual sample and measured loss is retained; there is no aggregate win.
-Paired ranges are minima and maxima, not confidence intervals.
-
-Each external JVM runs a fixed-order, profile-conditioned sweep with standard
-JMH compiler hints and compiler-blackhole flags generated by JMH's own API.
-The retained identical hint file has SHA-256
-`fad54f45959d8e6e31caa57e8ca258a41bdac9ec5b0adf6fa2cfad3f2fb8a3a7`.
-Compilation traces verify the scan and blackhole intrinsics during warmup.
-Runs use one pinned CPU, 256 MiB heap, SerialGC and `UseAVX=2`; two 100 ms
-warmups precede three 100 ms samples. These are fresh-process sweeps, not
-isolated per-case JVM measurements. Nine repeated fresh-process first-call
-checks separately retain operation and process latency, using prebuilt inputs.
-C2 uses one 154-case sweep per process. C1 and interpreter whitespace (55 cases)
-and line (22 cases) groups use separate processes.
-
-The first fixed 32-byte-probe study had 68 C2 ratios below 1x, including 44
-below 0.95x. Thirteen of the latter entered native code at a probe edge; 12 of
-those also lost to same-image feature-off. The other 31 could not incur native
-setup. Repeated costs included about 1–2 ns on unchanged/empty whitespace
-operations and roughly 45–95 ns in selected allocating probe-edge cases.
-All initial rows, tier/cold results and the path classification remain retained.
-
-A selected-case diagnostic showed hot inlining of both original and candidate
-helpers, so missed inlining is not established as the cause. The final
-refinement shares one scalar loop between short scanning and the 32-byte probe,
-then enters private long continuations. It keeps immediate returns, allocation
-in the original callers, and 7/8/9-byte matches outside the added calls. It
-preserves the native admission boundary. The direct old-image control measures
-whether the smaller frontend offsets the additional long-path call.
-
-Selected final C2 results (ns per complete public operation). Old/final compares the preserved pre-refinement image directly.
-
-| Operation | Input | Base ns | Final ns | Base/final | Paired range | Old/final |
-|---|---|---:|---:|---:|---:|---:|
-| `trim` | 4096 whitespace bytes | 1197.12 | 132.56 | 9.370x | 8.552..18.724 | 0.992x |
-| `strip` | 4096 whitespace bytes on each side | 5177.27 | 296.01 | 16.820x | 16.176..19.517 | 0.973x |
-| `stripLeading` | 4096 whitespace bytes | 2657.51 | 147.20 | 19.806x | 13.461..20.776 | 0.917x |
-| `stripTrailing` | 4096 whitespace bytes on each side | 3105.57 | 520.80 | 5.924x | 5.867..6.111 | 0.926x |
-| `isBlank` | 4096 whitespace bytes | 3275.24 | 135.24 | 24.218x | 21.324..25.479 | 1.014x |
-| `lines().count()` | 4096 bytes, no CR/LF | 1785.69 | 513.47 | 3.465x | 3.362..3.589 | 0.991x |
-| `lines().count()` | four 4096-byte lines | 6604.81 | 1968.03 | 3.356x | 3.332..3.442 | 0.956x |
-| `lines().count()` | 256 16-byte lines | 4229.31 | 4840.03 | 0.874x | 0.798..1.170 | 0.962x |
-| `lines().count()` | 256 80-byte lines | 9932.04 | 8923.38 | 1.136x | 0.940..1.151 | 0.966x |
-| `lines().count()` | 256 128-byte lines | 14050.47 | 9805.61 | 1.433x | 1.279..1.496 | 0.969x |
-| `stripTrailing` | empty | 1.40 | 1.53 | 0.966x | 0.755..1.113 | 2.099x |
-| `stripTrailing` | 16 unchanged text bytes | 2.02 | 1.98 | 0.998x | 0.977..1.324 | 1.652x |
-| `trim` | 4096 unchanged text bytes | 2.41 | 2.15 | 1.160x | 0.998..1.200 | 1.634x |
-| `isBlank` | 16 whitespace bytes | 21.73 | 18.90 | 1.167x | 0.924..1.209 | 1.173x |
-| `isBlank` | nonblank after seven spaces | 7.55 | 4.60 | 1.506x | 1.188..1.984 | 0.858x |
-| `lines().findFirst()` | CRLF after 32 bytes | 41.60 | 54.00 | 0.783x | 0.698..0.918 | 1.007x |
-| `strip` | 33 leading spaces, 4096 text bytes | 348.60 | 374.12 | 0.932x | 0.725..1.190 | 0.954x |
-
-The final C2 table has 55 ratios below 1x, including 34 below 0.95x. The
-refinement recovers the repeated empty/unchanged `stripTrailing` cost: direct
-old/final ratios are 1.65–2.10x, with all paired ranges above 1x, and the final
-operations are close to baseline. Clean `trim` improves 1.63x against the old
-image and 1.16x against baseline. The larger long-scan gains remain.
-
-This has tradeoffs. There are also 87 direct-old ratios below 1x, including 40
-below 0.95x. Examples include about 0.6–1 ns on early blank checks (which still
-beat baseline), 27 ns on a 287-space `stripLeading` fallback, and 0.74 ns on an
-unchanged 4096-byte `strip`. The latter two lose to baseline in every pair and
-cannot be native setup. A 32/33-byte line probe edge still loses about 12 ns to
-baseline and 9–10 ns to same-image off in every pair, consistent with a native
-dispatch cost. Selected allocating edge cases have median costs of 45–75 ns;
-some paired ranges cross 1x. The full tables retain every loss against both
-baseline and the old image. Counts are not a workload-weighted conclusion.
-UTF-16 controls also vary between images despite unchanged scanner source;
-those changes are not attributed to SIMD.
-
-Ordinary short operations also have costs: `lines().count()` on 13 bytes loses
-7.44 ns (0.836x), `lines().findFirst()` on 16-byte lines loses 3.03 ns (0.926x),
-and `strip` on five padded bytes loses 2.77 ns (0.820x). Each loses in every
-pair. The long-scan gains do not establish a benefit for short-operation-heavy
-applications.
-Selected C1 results have 25 ratios below 1x, including 16 below 0.95x, out of
-77 rows. Long all-whitespace `isBlank` and `trim` improve 27.517x and 19.168x;
-`lines().count()` without CR/LF improves 5.753x. All their paired ranges exceed
-1x, including comparisons with feature-off. Blank checks at the 32/33-byte
-probe edge lose 9.93/8.49 ns (0.767x/0.803x); the candidate is slower in every
-baseline and off pair. Early/short blank checks and short blank trim lose about 1–2 ns in
-every baseline pair. Some trailing allocation-edge medians lose 48–69 ns,
-with paired ranges crossing 1x. Short line operations are close to baseline in
-C1; the C2 short-line costs do not generalize across tiers.
-
-The interpreter matrix has 30 ratios below 1x, including 23 below 0.95x, out
-of 77 rows. Long all-whitespace `isBlank`/`trim` and no-separator line counting
-improve 76.304x/38.355x/27.957x, with every baseline and off pair above 1x.
-The 32/33-byte trim edges lose 375/351 ns (0.768x/0.782x), short blank trim
-loses 67 ns (0.819x), and early `isBlank` loses 45 ns (0.898x), each slower
-than baseline in every pair. Selected allocating edge costs reach 384 ns.
-JNI accelerates these long scans but does not remove short-path overhead.
-
-All 378 first-call samples passed validation. Long-input paired speedups range
-from 1.275x to 6.231x: `strip` falls from 361.83 to 58.53 microseconds (5.912x)
-and line counting from 1434.40 to 652.63 microseconds (2.261x). Long trim and
-`findFirst` ranges cross 1x. Empty `strip` has medians 3.92 versus 4.73
-microseconds, paired ratio 0.858x (range 0.531..1.059); empty leading-strip
-and blank checks also have median paired losses. Full-process medians remain
-roughly 34–51 ms without a consistent improvement. These measurements include
-ordinary first-call runtime effects, not isolated StringZilla initialization
-or cold-disk startup. Raw call/process timings and all empty-operation costs
-are retained separately.
-
-Qualification is local to this Linux/AVX2 host and these cases. It does not
-establish a universal win, application throughput, or AArch64/Windows/default
-AVX-512 performance. Short timings are sensitive to compilation profiles and
-host noise; the retained paired ranges expose that spread. The exploratory
-eight-byte-probe screen, including its losses, is retained separately and is
-excluded from the qualified results.
-
-The draft targets PR4's branch. Existing ordinary hosted CI filters PRs to
-master, so platform CI remains pending retargeting after the dependency lands.
-No manual hosted performance campaign was dispatched or infrastructure changed.
-
-The separate [retained evidence](https://github.com/re-thc/openjdk-jdk27u/blob/da2640c879887b6e72d61fda0c71f21ed3573f51/README.md)
-contains all raw samples, commands and earlier results. Start with the
-[all-tier tables](https://github.com/re-thc/openjdk-jdk27u/blob/da2640c879887b6e72d61fda0c71f21ed3573f51/REPORT-TABLES.md),
-[complete C2 results and losses](https://github.com/re-thc/openjdk-jdk27u/blob/da2640c879887b6e72d61fda0c71f21ed3573f51/qualify/c2-avx2/SUMMARY.md),
-[final test summary](https://github.com/re-thc/openjdk-jdk27u/blob/da2640c879887b6e72d61fda0c71f21ed3573f51/final-test-summary.txt)
-and [independent review](https://github.com/re-thc/openjdk-jdk27u/blob/da2640c879887b6e72d61fda0c71f21ed3573f51/kernel-final-review.txt).
-The evidence branch contains text only; compiled artifacts stay outside both PR
-and evidence branches.
+[Combined-source measurements and validation](https://github.com/re-thc/openjdk-jdk27u/blob/codex/stringzilla-final-artifacts/doc/stringzilla/integration-20261021/RESULTS.md)
+retain independent-original, prior-source, enabled and disabled controls,
+individual samples, paired medians, spread and measured losses. Qualification
+applies to the source and complete-image identities recorded there. Earlier
+PR4 and PR63 measurements retain their original source identities.

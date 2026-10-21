@@ -70,7 +70,11 @@ int equal_bytes(const char* src, const char* tgt, int length) {
 
 void StringZilla::register_kernels(const void* table) {
   assert(table != nullptr, "kernel table");
-  published_kernels.release_store((const StringZillaKernels*)table);
+  const StringZillaKernels* selected = (const StringZillaKernels*)table;
+  const StringZillaKernels* previous =
+      published_kernels.compare_exchange(nullptr, selected, memory_order_release);
+  guarantee(previous == nullptr || previous == selected,
+            "StringZilla kernel selection is fixed after initialization");
 }
 
 address StringZilla::kernels_address() {
@@ -118,7 +122,13 @@ int StringZilla::search_char(const char* src, int length, int ch, bool utf16, bo
 
 address StringZilla::entry(vmIntrinsics::ID id) {
   switch (id) {
-    case vmIntrinsics::_stringzillaScanLatin1: return CAST_FROM_FN_PTR(address, StringZilla::scan_latin1);
+    case vmIntrinsics::_stringzillaScanLatin1: {
+      const StringZillaKernels* table = published_kernels.load_acquire();
+      // Initialization fixes this table for the VM lifetime. Early compilation
+      // retains the bootstrap wrapper until Java has initialized StringZilla.
+      return table == nullptr ? CAST_FROM_FN_PTR(address, StringZilla::scan_latin1)
+                              : CAST_FROM_FN_PTR(address, table->scanLatin1);
+    }
     case vmIntrinsics::_stringzillaEqualsRange: return CAST_FROM_FN_PTR(address, StringZilla::equal_range);
     case vmIntrinsics::_equalsL: return CAST_FROM_FN_PTR(address, equal_bytes);
     case vmIntrinsics::_stringzillaFindCharLatin1: return CAST_FROM_FN_PTR(address, find_char_latin1);
