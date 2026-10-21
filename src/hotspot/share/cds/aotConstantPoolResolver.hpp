@@ -87,6 +87,7 @@ public:
   static void preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_indy_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_string_cp_entries(InstanceKlass* ik, TRAPS);
+  static void preresolve_common_intrinsic_cp_entries(JavaThread* current, InstanceKlass* ik);
 
   static bool is_resolution_deterministic(ConstantPool* cp, int cp_index);
 };
