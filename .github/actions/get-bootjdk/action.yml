@@ -41,7 +41,7 @@ runs:
       id: platform-prefix
       run: |
         # Convert platform name to upper case
-        platform_prefix="$(echo ${{ inputs.platform }} | tr [a-z-] [A-Z_])"
+        platform_prefix="$(echo ${{ inputs.platform }} | tr '[a-z-]' '[A-Z_]')"
         echo "value=$platform_prefix" >> $GITHUB_OUTPUT
       shell: bash
 
