@@ -245,13 +245,35 @@ public final class ScopedMemoryAccess {
                 // intrinsic. The loop between chunks provides safepoint polls.
                 int maximum = 65536 >> log2ArrayIndexScale;
                 if (length > maximum) {
+                    if (aarch64) {
+                        if (a == null) {
+                            return vectorizedMismatchLarge(null, aOffset, b, bOffset, length, log2ArrayIndexScale);
+                        }
+                        return vectorizedMismatchLarge(a, aOffset, null, bOffset, length, log2ArrayIndexScale);
+                    }
                     return vectorizedMismatchLarge(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
                 }
                 if (aarch64 && length >= minimum) {
                     // Expose the checked bounds before C2 intrinsification;
                     // the guarded length and original Java arguments are unchanged.
+                    // A view's array-typed base can still be null. Preserve
+                    // the native operand's type before C2 selects its range.
+                    int boundedLength = Math.min(Math.max(length, minimum), maximum);
+                    if (a == null) {
+                        return ArraysSupport.vectorizedMismatch(null, aOffset, b, bOffset,
+                                boundedLength, log2ArrayIndexScale);
+                    }
+                    return ArraysSupport.vectorizedMismatch(a, aOffset, null, bOffset,
+                            boundedLength, log2ArrayIndexScale);
+                }
+            }
+            if (Architecture.isAARCH64() && log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
+                int heapLimit = 2048 >> log2ArrayIndexScale;
+                if (length > heapLimit) {
+                    // Positive native ranges returned above. Keep larger heap
+                    // comparisons in Java, exposing the checked lower bound.
                     return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset,
-                            Math.min(Math.max(length, minimum), maximum), log2ArrayIndexScale);
+                            Math.max(length, heapLimit + 1), log2ArrayIndexScale);
                 }
             }
             return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length, log2ArrayIndexScale);

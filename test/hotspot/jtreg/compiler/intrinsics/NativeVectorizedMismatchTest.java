@@ -209,6 +209,7 @@ public class NativeVectorizedMismatchTest {
     @IR(applyIfPlatform = {"aarch64", "false"}, counts = {LEAF, "1"}, phase = CompilePhase.BEFORE_MATCHING)
     @IR(applyIfPlatform = {"aarch64", "true"},
         failOn = {LEAF, "VectorCmpMasked", IRNode.SAFEPOINT,
+                  IRNode.COUNT_TRAILING_ZEROS_L, IRNode.COUNT_LEADING_ZEROS_L,
                   "CallStaticJava.*ArraysSupport::vectorizedMismatch"}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeLongs(long a, long b) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, MINIMUM >> 3, 3);
@@ -404,6 +405,22 @@ public class NativeVectorizedMismatchTest {
         return heap.mismatch(direct);
     }
 
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {LEAF, ">= 1"},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int scopedNullableAtLimit(byte[] a, long aOffset, byte[] b, long bOffset) {
+        return ScopedMemoryAccess.getScopedMemoryAccess().vectorizedMismatch(
+                null, null, a, aOffset, b, bOffset, LIMIT, 0);
+    }
+
+    @Test
+    @IR(applyIfPlatform = {"aarch64", "true"}, counts = {LEAF, ">= 1", IRNode.SAFEPOINT, ">= 1"},
+        phase = CompilePhase.BEFORE_MATCHING)
+    public static int scopedNullableChunked(byte[] a, long aOffset, byte[] b, long bOffset) {
+        return ScopedMemoryAccess.getScopedMemoryAccess().vectorizedMismatch(
+                null, null, a, aOffset, b, bOffset, 2 * LIMIT, 0);
+    }
+
     // Views of the first length bytes; the direct ones share the static buffers' memory.
     private static ByteBuffer directA(int length) {
         return DA.slice(0, length);
@@ -428,7 +445,8 @@ public class NativeVectorizedMismatchTest {
                  "nativeCharsAboveLimit", "nativeIntsAboveLimit", "nativeLongsAboveLimit",
                  "mixedBelowMinimum", "mixedAtMinimum", "mixedAtLimit", "mixedAboveLimit",
                  "mixedReverseAtLimit", "mixedIntsAtLimit", "mixedIntsAboveLimit",
-                 "scopedRange", "heapSegmentRange", "nioRange", "nioMixedRange"})
+                 "scopedRange", "heapSegmentRange", "nioRange", "nioMixedRange",
+                 "scopedNullableAtLimit", "scopedNullableChunked"})
     // Enough calls for interpreter profiles, so that the scoped and segment
     // call chains inline and expose their bounded leaf and chunk polls.
     @Warmup(10000)
@@ -438,6 +456,15 @@ public class NativeVectorizedMismatchTest {
         } else {
             verifyAll();
         }
+    }
+
+    private static int nullableMixed(boolean reverse, int length) {
+        byte[] a = reverse ? null : HEAP;
+        byte[] b = reverse ? HEAP : null;
+        long aOffset = reverse ? NB : Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        long bOffset = reverse ? Unsafe.ARRAY_BYTE_BASE_OFFSET : NB;
+        return length == LIMIT ? scopedNullableAtLimit(a, aOffset, b, bOffset)
+                : scopedNullableChunked(a, aOffset, b, bOffset);
     }
 
     private static int warmups;
@@ -455,6 +482,15 @@ public class NativeVectorizedMismatchTest {
         // Chunked scans also see two-chunk ranges, so the profile keeps their loop.
         int chunked = i % 50 == 0 ? 2 * LIMIT : length;
         scopedRange(a, b, chunked);
+        // Both bases remain nullable in the compiled signature. Alternate native
+        // operands so a monomorphic null profile cannot hide the mixed dispatch.
+        if ((i & 1) == 0) {
+            scopedNullableAtLimit(HEAP, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, b);
+            scopedNullableChunked(HEAP, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, b);
+        } else {
+            scopedNullableAtLimit(null, b, HEAP, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+            scopedNullableChunked(null, b, HEAP, Unsafe.ARRAY_BYTE_BASE_OFFSET);
+        }
         heapSegmentRange(HEAP, OTHER_HEAP, chunked);
         nioRange(directA(chunked), directB(chunked));
         nioMixedRange(heapA(chunked), directB(chunked));
@@ -553,6 +589,18 @@ public class NativeVectorizedMismatchTest {
                     throw new AssertionError("NIO difference: " + length + " at " + position);
                 }
                 DB.put(position, (byte) 0);
+            }
+        }
+
+        for (int length : new int[] {LIMIT, 2 * LIMIT}) {
+            for (int position : new int[] {0, 7, LIMIT - 1, LIMIT, length - 1}) {
+                if (position >= length) continue;
+                check(nullableMixed(false, length), length, 0, -1);
+                check(nullableMixed(true, length), length, 0, -1);
+                setB(position, 1);
+                check(nullableMixed(false, length), length, 0, position);
+                check(nullableMixed(true, length), length, 0, position);
+                setB(position, 0);
             }
         }
 

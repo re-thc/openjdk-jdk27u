@@ -131,6 +131,7 @@ final class BufferMismatch {
         return -1;
     }
 
+    @ForceInline
     static int mismatch(FloatBuffer a, int aOff, FloatBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
@@ -203,6 +204,7 @@ final class BufferMismatch {
         return -1;
     }
 
+    @ForceInline
     static int mismatch(DoubleBuffer a, int aOff, DoubleBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {

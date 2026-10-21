@@ -340,6 +340,9 @@ class Direct$Type$Buffer$RW$$BO$
         }
     }
 
+#if[float]
+    @ForceInline
+#end[float]
     public $type$ get(int i) {
         try {
             return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(session(), null, ix(checkIndex(i)))));

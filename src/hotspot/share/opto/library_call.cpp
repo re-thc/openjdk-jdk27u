@@ -6936,13 +6936,17 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
       set_control(_gvn.transform(different_region));
       Node* diff = _gvn.transform(different_word);
       Node* byte_offset = _gvn.transform(different_offset);
-#ifdef VM_LITTLE_ENDIAN
-      Node* zeros = _gvn.transform(new CountTrailingZerosLNode(diff));
-#else
-      Node* zeros = _gvn.transform(new CountLeadingZerosLNode(diff));
-#endif
       int scale_value = _gvn.type(scale)->is_int()->get_con();
-      Node* word_index = _gvn.transform(new RShiftINode(zeros, intcon(3 + scale_value)));
+      // A differing word already identifies an eight-byte element.
+      Node* word_index = intcon(0);
+      if (scale_value < LogBytesPerLong) {
+#ifdef VM_LITTLE_ENDIAN
+        Node* zeros = _gvn.transform(new CountTrailingZerosLNode(diff));
+#else
+        Node* zeros = _gvn.transform(new CountLeadingZerosLNode(diff));
+#endif
+        word_index = _gvn.transform(new RShiftINode(zeros, intcon(3 + scale_value)));
+      }
       Node* offset_index = _gvn.transform(new RShiftINode(byte_offset, intcon(scale_value)));
       Node* index = _gvn.transform(new AddINode(offset_index, word_index));
       exit_block->init_req(first_word_path, control());

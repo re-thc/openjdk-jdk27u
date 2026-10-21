@@ -151,6 +151,9 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         return $fromBits$(x);
     }
 
+#if[float]
+    @ForceInline
+#end[float]
     public $type$ get(int i) {
         $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(session(), bb.hb, byteOffset(checkIndex(i)),
             {#if[boB]?true:false});
