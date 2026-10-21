@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,6 +314,7 @@ public final class SharedUtils {
         }
     }
 
+    @ForceInline
     public static void checkNative(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
@@ -369,7 +370,7 @@ public final class SharedUtils {
     @ForceInline
     public static void checkSymbol(MemorySegment symbol) {
         Objects.requireNonNull(symbol);
-        if (symbol.equals(MemorySegment.NULL))
+        if (symbol.isNative() && symbol.address() == 0)
             throw new IllegalArgumentException("Symbol is NULL: " + symbol);
     }
 
