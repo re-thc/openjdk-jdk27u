@@ -88,6 +88,14 @@ public static class Pr45Native {
     public static int PromptCount(string text) {
         return Regex.Matches(Normalize(text), Regex.Escape(Prompt)).Count;
     }
+    static SIX StartupInfo(bool console) {
+        var value = new SIX(); value.si.cb = (uint)Marshal.SizeOf<SIX>();
+        // Suppress duplication of a redirected parent's standard handles.
+        // Null handles are connected to ConPTY, not to its transport pipes.
+        // https://github.com/microsoft/terminal/discussions/15814
+        if (console) value.si.flags=0x100; // STARTF_USESTDHANDLES, all hStd* NULL
+        return value;
+    }
     public static void Validate() {
         if (IntPtr.Size != 8 || Marshal.SizeOf<SI>() != 104 || Marshal.SizeOf<SIX>() != 112 ||
             Marshal.SizeOf<JobLimits>() != 144) throw new Exception("x64 Win32 layout mismatch");
@@ -95,6 +103,10 @@ public static class Pr45Native {
             Quote("a\"b") != "\"a\\\"b\"") throw new Exception("Windows quoting mismatch");
         if (PromptCount("\u001b[32mEnter y or N: ") != 1 || PromptCount("plain") != 0)
             throw new Exception("Console prompt parser mismatch");
+        var pty=StartupInfo(true);
+        if (pty.si.flags != 0x100 || pty.si.input != IntPtr.Zero ||
+            pty.si.output != IntPtr.Zero || pty.si.error != IntPtr.Zero)
+            throw new Exception("ConPTY must suppress redirected parent standard handles");
     }
 
     sealed class Drain {
@@ -153,7 +165,7 @@ public static class Pr45Native {
             Check(SetHandleInformation(inW, 1, 0), "stdin parent inheritance");
             Check(SetHandleInformation(outR, 1, 0), "stdout parent inheritance");
             if (!console) Check(SetHandleInformation(errR, 1, 0), "stderr parent inheritance");
-            var six = new SIX(); six.si.cb = (uint)Marshal.SizeOf<SIX>();
+            var six = StartupInfo(console);
             IntPtr bytes = IntPtr.Zero;
             InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref bytes);
             attr = Marshal.AllocHGlobal(bytes);
@@ -370,6 +382,14 @@ foreach ($console in @($false,$true)) {
     $results.Add([pscustomobject]@{case=$case;argv=@($image.daemon,'-Djava.class.path=.');java_tool_options=$options;process=$result;error=$failure})
     $results | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $Evidence 'results.json')
     if (!$result.cleanup_complete) {throw 'Fatal controller cleanup incomplete; do not launch another child'}
+}
+foreach ($record in $results) {
+    [pscustomobject]@{case=$record.case;pid=$record.process.pid;exit_code=$record.process.exit_code;
+        prompts=$record.process.prompt_count;sent_n=$record.process.sent_n;
+        cleanup=$record.process.cleanup_complete;error=$record.error} | ConvertTo-Json -Compress | Write-Host
+}
+foreach ($audit in $audits) {
+    [pscustomobject]@{file=$audit.file;sha256=$audit.sha256;error=$audit.error} | ConvertTo-Json -Compress | Write-Host
 }
 $dumps=@(Get-ChildItem $Evidence -Recurse -File | Where-Object {$_.Name -match '(^core($|\.)|\.dmp$|\.mdmp$)'})
 Assert-True ($dumps.Count -eq 0) 'Unexpected core/minidump'
