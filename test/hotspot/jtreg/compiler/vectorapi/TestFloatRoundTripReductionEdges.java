@@ -136,8 +136,7 @@ public class TestFloatRoundTripReductionEdges {
         if (info.isWarmUp()) {
             check(A, new int[]{0, 4, 8, 12, 20}[warmIndex++ % 5], 1, (warmIndex & 1) == 0 ? 5 : 15);
         } else {
-            // These cases now execute after the framework's forced C2 matching,
-            // including @ForceInline on roundTrip. Require the entries to stay C2.
+            // Check exceptional inputs after forced C2 compilation and verify residency.
             cases();
             verifyLevels(WhiteBox.getWhiteBox(), 4, "ir-after-cases");
         }

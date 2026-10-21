@@ -270,7 +270,7 @@ public class TestFloatRoundTripReduction {
         b[0]=-16777216.0f; b[16]=1.0f; b[32]=16777216.0f;
         for(int i=0;i<a.length;i++) d[i]=a[i];
         check(a,b,d,49,0.0f); // Outer reassociation would change the float result.
-        // At most one exceptional/large value per16lanes makes each lane
+        // At most one exceptional/large value per 16 lanes makes each lane
         // reduction order-independent. Small full vectors are exact quarters.
         // Large/small/large blocks still expose illegal outer reassociation.
         for (int round=0;round<32;round++) {

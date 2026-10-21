@@ -41,16 +41,9 @@ import jdk.incubator.vector.VectorSpecies;
  */
 
 /**
- * Vector.withLane with a non-constant lane index cannot be intrinsified: the
- * insert inline expander bails out because the index is not a compile-time constant.
- * This is a species- and platform-agnostic limitation of the expander -- it is independent
- * of the element type, vector shape and the available CPU features -- so the vector
- * intrinsic reliably fails to expand and the fallback implementation
- * is exercised on every configuration.
- *
- * With IncrementalInlineVector enabled (the default) the fallback is late-inlined into the
- * caller, so no static call to intrinsic entry point survives; with the flag disabled, the
- * static call to the fallback remains.
+ * A variable lane index prevents insert intrinsification. With the fallback
+ * forced eligible for normal inlining, IncrementalInlineVector controls whether
+ * its static call survives. Both flag settings must preserve lane values.
  */
 public class TestVectorFallbackInlining {
     private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_MAX;
@@ -69,11 +62,8 @@ public class TestVectorFallbackInlining {
         }
     }
 
-    // The fallback is only late-inlined if it also passes the regular inlining heuristics.
-    // During warmup VectorSupport::insert is called from the interpreter often enough to be
-    // compiled on its own, and with assertions enabled its nmethod grows beyond
-    // InlineSmallCode, so C2 rejects it as "already compiled into a big method". Keep it
-    // inlinable so that the rules below only depend on the late inlining machinery.
+    // Isolate late inlining from InlineSmallCode rejection of an independently
+    // compiled fastdebug fallback.
     private static final String FORCE_INLINE_FALLBACK =
             "-XX:CompileCommand=inline,jdk.internal.vm.vector.VectorSupport::insert";
 

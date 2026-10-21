@@ -69,9 +69,6 @@ public class TestByteVectorVariableLaneBounds {
         try { badLaneAfterArray(SHORT); throw new AssertionError("short array before lane"); }
         catch (IndexOutOfBoundsException expected) { }
     }
-    // The tests select UseSVE=0 for a focused native run. The implementation
-    // also uses NEON for small vectors with SVE enabled. Range-proven MAX
-    // accesses can now intrinsify at 8/16 lanes despite unchanged MAX source.
     @Test
     @IR(phase = CompilePhase.BEFORE_MATCHING, counts = {"\\bExtractBVar\\b", "1"},
         failOn = {"\\bJump\\b"}, applyIfPlatform = {"aarch64", "true"},

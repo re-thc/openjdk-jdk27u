@@ -42,11 +42,8 @@ import static jdk.incubator.vector.VectorOperators.*;
 /*
  * Extra diagnostics: pass -retain:all and
  * -javaoptions:-Dvector.selfcompare.diagnostics=true to jtreg.
- * This records the 128-bit methods' assembly, compilation/deoptimization log,
- * VM vector flags, and C2 residency before and after the checked invocation.
- * The two-lane native mask IR rules are AArch64-specific. Other platforms may
- * execute scalar/fallback paths even when the enclosing method resides in C2.
- * NEON coverage does not qualify SVE full/partial-width or predicated cases.
+ * Records assembly, compilation logs, vector flags and C2 residency for the
+ * 128-bit methods. Their two-lane native mask IR rules are AArch64-specific.
  */
 public class TestVectorSelfCompare {
     private static final byte[] BYTES = new byte[64];
@@ -77,8 +74,7 @@ public class TestVectorSelfCompare {
         if (!value) throw new AssertionError();
     }
     public static void main(String[] args) {
-        // As in the other vector identity tests, populate shared access-check
-        // profiles before capturing IR; retain the positive vector-load checks.
+        // Populate shared access-check profiles before capturing IR.
         boolean diagnostics = Boolean.getBoolean("vector.selfcompare.diagnostics");
         if (diagnostics) System.setProperty("ReportStdout", "true");
         TestFramework framework = new TestFramework().setDefaultWarmup(10000)

@@ -43,7 +43,7 @@ public class TestFloatRoundTripCompileControls {
     static final VectorSpecies<Integer> I4 = IntVector.SPECIES_128;
     static final float[] A = new float[1024];
     static volatile float sink;
-    // javap verification in the native driver checks that the loop backedge targets2.
+    // Bytecode index of the loop header in osrNegative.
     static final int OSR_BCI = 2;
     static { for (int i = 0; i < A.length; i++) A[i] = i % 7 - 3; }
 
@@ -236,7 +236,7 @@ public class TestFloatRoundTripCompileControls {
         for (int count : new int[]{1, 8, 32, 64}) {
             if (Integer.getInteger("chainLength", count) != count) continue;
             Method method = TestFloatRoundTripCompileControls.class.getDeclaredMethod("chain" + count, float[].class, float.class);
-            // Warm profiles before measuring explicit compilation; all work is diagnostic.
+            // Populate profiles before explicitly requesting C2 compilation.
             for (int i = 0; i < 20; i++) sink = (float)method.invoke(null, A, 0.0f);
             for (int round = 0; round < 1; round++) {
                 if (wb.getMethodCompilationLevel(method, false) != 0) throw new AssertionError("Unexpected pre-existing ordinary entry");

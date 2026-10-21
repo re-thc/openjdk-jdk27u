@@ -130,9 +130,8 @@ source %{
         !VM_Version::use_neon_for_vector(16)) {
       return;
     }
-    // Most floating adds have no conversion/reduction input. Do not allocate
-    // phase-classification state for those unrelated compilations. find_shared
-    // does not reshape this supported unmasked chain; prepare still rechecks it.
+    // Allocate classification state only for candidate chains. find_shared
+    // preserves this unmasked chain; preparation rechecks its shape.
     if (float_roundtrip_reduction_input(n) == nullptr) {
       return;
     }
@@ -142,13 +141,10 @@ source %{
     _float_roundtrip_adds->push(n);
   }
 
-  // Called once after find_shared, before the arena swap and node-index reset.
-  // Collection performs K constant-depth checks for K visited floating adds.
-  // For A registered/reached entries, preparation inspections are at most 2A and
-  // loop uses are scanned once. Rejected paths are memoized too. Indexed
-  // storage/initialization also depends on the old node-index span U: total
-  // cost is O(K + U + A + E_loop), with O(U + A) storage and O(1) lookup.
-  // No classification containers are allocated when collection admits no adds.
+  // Classify old-Ideal recurrences after find_shared, before node indices reset.
+  // Memoize accepted and rejected paths and scan each loop's Phi uses once.
+  // Preparation is linear in visited nodes, node-index span and loop uses;
+  // instruction selection then uses constant-time identity lookups.
   void Matcher::prepare_float_roundtrip_accumulations() {
     if (_float_roundtrip_adds == nullptr) {
       return;

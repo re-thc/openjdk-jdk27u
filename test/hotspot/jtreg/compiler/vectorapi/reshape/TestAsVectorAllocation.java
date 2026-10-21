@@ -49,7 +49,6 @@ public class TestAsVectorAllocation {
             VectorSpecies.of(float.class, VectorShape.forBitSize(VECTOR_BITS));
 
     public static void main(String[] args) {
-        // Test with default MaxVectorSize
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 
