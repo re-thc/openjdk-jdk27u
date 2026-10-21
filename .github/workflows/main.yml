@@ -32,6 +32,10 @@ on:
     branches: [master]
   workflow_dispatch:
     inputs:
+      pr9_arm_cds:
+        description: 'Run only the pinned PR9 ARM CDS comparison; no builds'
+        type: boolean
+        default: false
       platforms:
         description: 'Targets: linux-x64, linux-aarch64, macos-aarch64, windows-x64'
         required: true
@@ -53,11 +57,12 @@ permissions:
 concurrency:
   # PR updates share refs/pull/<number>/merge; branch runs share refs/heads/<branch>.
   # Keep this key independent of the commit so new runs cancel stale builds/tests.
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event_name == 'workflow_dispatch' && inputs.pr9_arm_cds && '-pr9-arm-cds' || '' }}
   cancel-in-progress: true
 
 jobs:
   prepare:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.pr9_arm_cds }}
     name: 'Prepare the run'
     runs-on: ubuntu-26.04
     outputs:
@@ -206,3 +211,182 @@ jobs:
       runs-on: windows-2025
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
       debug-suffix: -debug
+
+  pr9-arm-cds:
+    name: PR9 bounded ARM CDS comparison
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.pr9_arm_cds }}
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Anchor the diagnostic budget to this job's start
+        timeout-minutes: 2
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            const fs = require('fs');
+            fs.mkdirSync('archive-results', {recursive:true});
+            const {data} = await github.rest.actions.listJobsForWorkflowRun({...context.repo, run_id:context.runId, filter:'latest', per_page:100});
+            const jobs = data.jobs.filter(j => j.name === 'PR9 bounded ARM CDS comparison' && j.status === 'in_progress');
+            if (jobs.length !== 1 || !jobs[0].started_at) throw new Error('Could not establish the authoritative job start');
+            const start = Date.parse(jobs[0].started_at);
+            if (!Number.isFinite(start)) throw new Error('Invalid job start timestamp');
+            fs.writeFileSync('archive-results/budget.json', JSON.stringify({job_started_at:jobs[0].started_at, diagnostic_deadline_epoch:(start+75*60000)/1000, job_limit_minutes:90, artifact_reserve_minutes:15},null,2));
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        timeout-minutes: 3
+        with:
+          ref: 70c91df3528a9c95bfde606a8fbe1bfaee957271
+          path: baseline
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        timeout-minutes: 3
+        with:
+          ref: cad7ad305aeb6000f2c3a75a6f19c2c539936a5f
+          path: pr
+      - name: Verify and retrieve only the pinned ordinary CI artifacts
+        timeout-minutes: 8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            const fs = require('fs');
+            const crypto = require('crypto');
+            const pins = [
+              {label:'baseline', id:12221458303, run:39278153914, head:'70c91df3528a9c95bfde606a8fbe1bfaee957271', name:'bundles-linux-aarch64-debug', sha256:'8c68f357613ae9f25fe30d3bae766895ecaf69aaec24801b518bb5cce8fd4b17'},
+              {label:'pr', id:12268971729, run:39416608569, head:'d201808992746cb86401cece84dd433998f4798e', name:'bundles-linux-aarch64-debug', sha256:'87bc4515e39689bee29fad2af37e9cfb56ef8dc30a11589ae48a18422418e738'},
+              {label:'jtreg', id:12264847111, run:39416608569, head:'d201808992746cb86401cece84dd433998f4798e', name:'bundles-jtreg-8.2.1+1', sha256:'ec6c6761c0da1bac890c9eb80336ca9aef06e86126a33fccbf1814c684a541a1'}
+            ];
+            fs.mkdirSync('archive-results', {recursive:true});
+            fs.writeFileSync('archive-results/artifact-pins.json', JSON.stringify(pins,null,2));
+            for (const p of pins) {
+              const {data:a} = await github.rest.actions.getArtifact({...context.repo, artifact_id:p.id});
+              if (a.expired || a.name !== p.name || a.workflow_run?.id !== p.run || a.workflow_run?.head_sha !== p.head || a.digest !== `sha256:${p.sha256}`) throw new Error(`Artifact identity mismatch: ${p.label}`);
+              const {data} = await github.rest.actions.downloadArtifact({...context.repo, artifact_id:p.id, archive_format:'zip'});
+              const bytes = Buffer.from(data);
+              if (crypto.createHash('sha256').update(bytes).digest('hex') !== p.sha256) throw new Error(`Downloaded artifact digest mismatch: ${p.label}`);
+              fs.writeFileSync(`artifact-${p.label}.zip`, bytes);
+            }
+      - name: Run at most 20 rotating three-way blocks
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, itertools, json, os, platform, re, shutil, signal, subprocess, tarfile, time, zipfile
+          from pathlib import Path
+          root = Path.cwd()
+          out = root / 'archive-results'
+          budget = json.loads((out/'budget.json').read_text())
+          deadline = time.monotonic() + max(0,budget['diagnostic_deadline_epoch']-time.time())
+          retained_limit = 4*1024**3
+          def guard(setup=False):
+              if time.monotonic() >= deadline:
+                  raise RuntimeError('Fixed diagnostic deadline reached; no extension')
+              retained = sum(p.stat().st_size for p in out.rglob('*') if p.is_file())
+              free = shutil.disk_usage(root).free
+              if retained >= retained_limit or free < (8 if setup else 4)*1024**3:
+                  raise RuntimeError('Storage guard reached; existing evidence preserved, no extension')
+          guard(setup=True)
+          assert platform.machine() == 'aarch64', platform.machine()
+          refs = {'baseline':'70c91df3528a9c95bfde606a8fbe1bfaee957271', 'pr':'cad7ad305aeb6000f2c3a75a6f19c2c539936a5f'}
+          hashes = {
+              'test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java':'271c71686ab5517ca4291550c1db4a43c283a772f662cc5a009213b859474c45',
+              'test/hotspot/jtreg/runtime/cds/DeterministicDump.java':'fe01f7ba1346b9cc3493c5f58a7ca3e3f3e7e00117b849af14ca508f42430458',
+              'test/lib/jdk/test/lib/cds/CDSTestUtils.java':'349616e0f9d3bcb16f37fe34258c4448e6afef343f67e3f67afe4c04af8b1cb2'}
+          for name, ref in refs.items():
+              assert subprocess.check_output(['git','-C',str(root/name),'rev-parse','HEAD'], text=True).strip() == ref
+              for path, expected in hashes.items():
+                  assert hashlib.sha256((root/name/path).read_bytes()).hexdigest() == expected, (name,path)
+          pins = json.loads((out/'artifact-pins.json').read_text())
+          images, identities = {}, {}
+          for p in pins:
+              guard(setup=True)
+              path = root/f"artifact-{p['label']}.zip"
+              assert hashlib.file_digest(path.open('rb'),'sha256').hexdigest() == p['sha256']
+              dest = root/'downloads'/p['label']
+              dest.mkdir(parents=True)
+              with zipfile.ZipFile(path) as z:
+                  z.extractall(dest)
+              if p['label'] == 'jtreg':
+                  jars = list(dest.rglob('lib/jtreg.jar'))
+                  assert len(jars) == 1, jars
+                  jtreg = jars[0]
+                  continue
+              archives = list(dest.rglob('jdk-linux-aarch64-debug.tar.gz'))
+              assert len(archives) == 1, archives
+              image_dir = root/'images'/p['label']
+              image_dir.mkdir(parents=True)
+              with tarfile.open(archives[0]) as t:
+                  t.extractall(image_dir, filter='data')
+              launchers = list(image_dir.rglob('bin/java'))
+              assert len(launchers) == 1, launchers
+              image = launchers[0].parent.parent
+              release = (image/'release').read_text()
+              assert refs[p['label']][:12] in release, ('Image SOURCE identity missing or mismatched',p['label'],release)
+              images[p['label']] = image
+              identities[p['label']] = {'java':str(launchers[0]),'release':release,'libjvm_sha256':hashlib.file_digest((image/'lib/server/libjvm.so').open('rb'),'sha256').hexdigest()}
+          (out/'environment.json').write_text(json.dumps({'refs':refs,'test_sha256':hashes,'images':identities,'machine':platform.machine(),'workflow_run':os.environ['GITHUB_RUN_ID'],'limits':{'blocks':20,'test_invocations':60,'job_minutes':90,'diagnostic_minutes_from_job_start':75,'retained_bytes_guard':retained_limit,'free_bytes_guard':4*1024**3}},indent=2))
+          variants = {'baseline':('baseline',[]),'disabled':('pr',['-XX:-UseCommonIntrinsics']),'enabled':('pr',['-XX:+UseCommonIntrinsics'])}
+          orders = list(itertools.permutations(variants))
+          results, complete = [], False
+          test = root/'pr/test/hotspot/jtreg/runtime/cds/FourByteHeaderArchiveDeterminism.java'
+          try:
+              for block in range(20):
+                  for variant in orders[block % len(orders)]:
+                      guard(setup=True)
+                      assert len(results) < 60
+                      name, options = variants[variant]
+                      case = out/f'{block:02}-{variant}'
+                      case.mkdir()
+                      command = [str(images['baseline']/'bin/java'),'-jar',str(jtreg),'-jdk:'+str(images[name]),'-othervm','-conc:1','-timeoutFactor:4','-retain:all','-verbose:fail,error,time','-vmoptions:'+' '.join(['-XX:MaxRAMPercentage=12.5']+options),'-javaoptions:-XX:-CreateCoredumpOnCrash','-w:'+str(case/'work'),'-r:'+str(case/'report'),str(test)+'#z']
+                      record = {'block':block,'variant':variant,'command':command,'status':'started'}
+                      results.append(record)
+                      (out/'results.json').write_text(json.dumps(results,indent=2))
+                      with (case/'jtreg.log').open('w') as log:
+                          process = subprocess.Popen(command,cwd=root/'pr',stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+                          try:
+                              while process.poll() is None:
+                                  guard()
+                                  try: process.wait(timeout=min(5,max(0.1,deadline-time.monotonic())))
+                                  except subprocess.TimeoutExpired: pass
+                              code = process.returncode
+                          except BaseException:
+                              if process.poll() is None:
+                                  os.killpg(process.pid,signal.SIGTERM)
+                                  try: process.wait(timeout=10)
+                                  except subprocess.TimeoutExpired:
+                                      os.killpg(process.pid,signal.SIGKILL)
+                                      process.wait()
+                              record.update(status='stopped',exit_code=process.returncode)
+                              raise
+                      jtrs = list((case/'work').rglob('*.jtr'))
+                      text = '\n'.join(p.read_text(errors='replace') for p in jtrs)
+                      mismatches = sorted(set(re.findall(r'File content different at byte #(\d+), b0 = (-?\d+), b1 = (-?\d+)',text)))
+                      summary = case/'report/text/summary.txt'
+                      record.update(status='completed',exit_code=code,mismatches=mismatches,summary=summary.read_text() if summary.exists() else '')
+                      (out/'results.json').write_text(json.dumps(results,indent=2))
+                      print(json.dumps(record),flush=True)
+                      if any((case/'work').rglob('hs_err*.log')):
+                          raise RuntimeError('Crash evidence preserved; stopped without retry')
+                      if code == 0:
+                          if not re.search(r'FourByteHeaderArchiveDeterminism\.java#z\s+Passed\. Execution successful',record['summary']):
+                              raise RuntimeError('Test was skipped or did not execute successfully; stopped without retry')
+                          for jtr in jtrs: shutil.copyfile(jtr,case/jtr.name)
+                          shutil.rmtree(case/'work')
+                      elif not mismatches:
+                          raise RuntimeError('Unexpected test/setup failure; preserved and stopped without retry')
+              complete = True
+          finally:
+              (out/'results.json').write_text(json.dumps(results,indent=2))
+              status = 'bounded-non-reproduction' if complete and all(r.get('exit_code')==0 for r in results) else 'archive-mismatch' if complete else 'incomplete'
+              (out/'completion.json').write_text(json.dumps({'complete':complete,'invocations':len(results),'status':status,'interpretation':'A clean bounded non-reproduction is not a proven root-cause fix.'},indent=2))
+          if any(r.get('exit_code') != 0 for r in results):
+              raise SystemExit('Archive mismatch retained; this diagnostic is not a clean-test result')
+          PY
+      - name: Preserve diagnostic results and failed archives/maps
+        timeout-minutes: 12
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr9-bounded-arm-cds-${{ github.run_id }}
+          path: archive-results
+          compression-level: 1
+          if-no-files-found: error
