@@ -714,51 +714,53 @@ public class ArraysSupport {
                                boolean[] b, int bFromIndex,
                                int length) {
         int i = 0;
-        int prefix = 0;
         if (length > 7) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
-            if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            // Larger suffixes cannot use C2's heap leaf; retain the Java route.
+            if (PlatformProps.TARGET_ARCH_IS_AARCH64 &&
+                    length <= MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES) {
+                if (a[aFromIndex] != b[bFromIndex]) return 0;
                 long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
                 long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
-                int prefixResult = mismatchPrefix(a, aOffset, b, bOffset,
+                int firstMismatch = mismatchPrefix(a, aOffset, b, bOffset,
                         length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
-                if (prefixResult >= 0) return prefixResult;
-                if (length <= (16 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)) return -1;
-                if (length <= MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES) {
-                    int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)
-                            ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE;
-                    int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
-                            prefixLength, LOG2_ARRAY_BOOLEAN_INDEX_SCALE, 16);
-                    if (prefixMismatch >= 0) return prefixMismatch;
-                    if (length == prefixLength) return -1;
-                    int result = mismatchLarge(a, aFromIndex + prefixLength,
-                            b, bFromIndex + prefixLength, length - prefixLength);
-                    return result < 0 ? -1 : prefixLength + result;
-                }
-                prefix = 16;
-                aFromIndex += prefix;
-                bFromIndex += prefix;
-                length -= prefix;
+                if (firstMismatch >= 0) return firstMismatch;
+                if (firstMismatch < 0 && length <= (16 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)) return -1;
+                int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)
+                        ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE;
+                int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                        prefixLength, LOG2_ARRAY_BOOLEAN_INDEX_SCALE, 16);
+                if (prefixMismatch >= 0) return prefixMismatch;
+                if (length == prefixLength) return -1;
+                int result = mismatchLarge(a, aFromIndex + prefixLength,
+                        b, bFromIndex + prefixLength, length - prefixLength);
+                return result < 0 ? -1 : prefixLength + result;
             }
+
+            if (a[aFromIndex] != b[bFromIndex])
+                return 0;
             long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
             long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
+            // On AArch64 this path is above the cap. Expose that bound to C2
+            // before intrinsification; the guarded length is unchanged.
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     PlatformProps.TARGET_ARCH_IS_AARCH64
-                            ? Math.max(length, MISMATCH_HEAP_STUB_BYTES + 1)
-                            : length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+                            ? Math.max(length, MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES + 1)
+                            : length,
+                    LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
             if (i >= 0)
-                return prefix + i;
+                return i;
             i = length - ~i;
         }
         for (; i < length; i++) {
             if (a[aFromIndex + i] != b[bFromIndex + i])
-                return prefix + i;
+                return i;
         }
         return -1;
     }
+
+    // Bytes
 
     /**
      * Find the smallest index of a mismatch between two arrays.
