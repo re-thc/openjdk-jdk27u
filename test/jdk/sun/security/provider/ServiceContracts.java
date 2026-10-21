@@ -112,8 +112,6 @@ public class ServiceContracts {
             if (p.getService(service.getType(), service.getAlgorithm()) != service) {
                 throw new AssertionError("Registration lost service identity: " + service);
             }
-            System.out.println(service.getType() + ":" + service.getAlgorithm() + ":" +
-                    service.getClassName());
         }
         TreeMap<String, String> metadata = new TreeMap<>();
         p.forEach((key, value) -> metadata.put(key.toString(), value.toString()));
@@ -128,6 +126,5 @@ public class ServiceContracts {
                 }
             }
         });
-        System.out.println("metadata=" + metadata);
     }
 }
