@@ -1,0 +1,92 @@
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# Distributed under GNU GPL version 2; see the repository LICENSE file.
+name: PR43 matched native comparison
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 135
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Bind scope and current product
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          assert os.environ['GITHUB_REPOSITORY'] == 're-thc/openjdk-jdk27u'
+          assert os.environ['GITHUB_REF'] == 'refs/heads/codex/pr43-macos-qualification'
+          assert os.environ['GITHUB_EVENT_NAME'] == 'workflow_dispatch'
+          event = json.load(open(os.environ['GITHUB_EVENT_PATH']))
+          assert str(event['inputs'].get('pr43_native_comparison')).lower() == 'true'
+          assert str(event['inputs'].get('pr43_native_parser_probe', False)).lower() == 'false'
+          req = urllib.request.Request('https://api.github.com/repos/re-thc/openjdk-jdk27u/pulls/43', headers={'Authorization': 'Bearer '+os.environ['GH_TOKEN']})
+          with urllib.request.urlopen(req, timeout=30) as response:
+              pr = json.load(response)
+          assert pr['head']['sha'] == '2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1'
+          assert pr['state'] == 'open' and pr['draft'] and not pr['merged']
+          print('Bound product', pr['head']['sha'], 'diagnostic', os.environ['GITHUB_SHA'])
+          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 456afea88231bc9ebf17dfa48811db90a8bae8b8
+          path: A
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 2b7b6060bea2b7ea057bbb52ddb81f63937e9cb1
+          path: B
+          persist-credentials: false
+      - name: Get the standard ARM BootJDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-aarch64
+      - name: Install standard compiler and dependencies
+        run: |
+          sudo apt update
+          sudo apt install --only-upgrade apt
+          sudo apt install gcc-16 g++-16 ccache
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 --slave /usr/bin/g++ g++ /usr/bin/g++-16
+          test "$(gcc -dumpversion)" = 16
+          test "$(g++ -dumpversion)" = 16
+      - name: Install standard pinned mold
+        run: |
+          archive="$RUNNER_TEMP/pr43-mold.tar.gz"
+          curl --fail --location https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-aarch64-linux.tar.gz --output "$archive"
+          echo "52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577  $archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/pr43-mold"
+          tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/pr43-mold"
+          echo "$RUNNER_TEMP/pr43-mold/bin" >> "$GITHUB_PATH"
+      - name: Build two matched release images (45 minutes each)
+        timeout-minutes: 91
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/compare.py build --root . --out build-evidence --boot '${{ steps.bootjdk.outputs.path }}'
+      - name: Two diagnostics and fixed twelve adjacent pairs
+        timeout-minutes: 30
+        run: python3 doc/qualification/pr43-macos/cloud-parser-probe/compare.py compare --root . --out comparison-evidence
+      - name: Retain all records including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr43-comparison-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build-evidence
+            comparison-evidence
+          retention-days: 5
+          if-no-files-found: warn
+      - name: Retain exact built images
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pr43-comparison-images-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            A/build/pr43/images/jdk
+            B/build/pr43/images/jdk
+          retention-days: 5
+          if-no-files-found: warn

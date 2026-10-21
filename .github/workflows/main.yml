@@ -46,6 +46,10 @@ on:
         description: 'Skip builds and tests; only prepare dependencies and configure'
         type: boolean
         default: false
+      pr43_native_comparison:
+        description: 'Only PR43 matched A/B release builds and 12 native timing pairs'
+        type: boolean
+        default: false
       pr43_native_parser_probe:
         description: 'Only PR43 pinned native ARM parser/codegen capture; no builds or timing'
         type: boolean
@@ -61,9 +65,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pr43-comparison:
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_comparison
+    uses: ./.github/workflows/pr43-compare.yml
+
   pr43-native-parser:
     name: 'PR43 native ARM parser codegen'
-    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_parser_probe
+    if: github.event_name == 'workflow_dispatch' && inputs.pr43_native_parser_probe && !inputs.pr43_native_comparison
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 15
     permissions:
@@ -105,7 +113,7 @@ jobs:
 
   prepare:
     name: 'Prepare the run'
-    if: github.event_name != 'workflow_dispatch' || !inputs.pr43_native_parser_probe
+    if: github.event_name != 'workflow_dispatch' || (!inputs.pr43_native_parser_probe && !inputs.pr43_native_comparison)
     runs-on: ubuntu-26.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
