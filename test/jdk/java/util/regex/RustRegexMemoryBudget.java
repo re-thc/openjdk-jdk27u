@@ -63,9 +63,10 @@ public class RustRegexMemoryBudget {
             if (matcher.find() || !matcher.hitEnd()) throw new AssertionError("Java miss fallback");
         }
         // A definite prefix miss can finish without allocating native storage.
-        // Force an unresolved search so the exhausted allocation budget must
+        // Keep the complete mandatory literal in an unresolved search, so
+        // literal rejection cannot bypass the exhausted allocation budget. It must
         // select Java, while retaining the same fallback and recovery gates.
-        var unresolved = pattern.matcher("e" + "x".repeat(2047));
+        var unresolved = pattern.matcher("x".repeat(2042) + "errorx");
         if (unresolved.find() || !unresolved.hitEnd() || unresolved.requireEnd())
             throw new AssertionError("exhausted native allocation fallback");
         var field = Pattern.class.getDeclaredField("rustRegex");

@@ -268,8 +268,9 @@ public class RustRegexTest {
             if (TIER.getInt(null) == 2 && HANDLE.getLong(owner) != 0)
                 throw new AssertionError("definite prefix miss compiled unused native storage");
             nativeOnly(p);
-            // A possible first character still requires the native handoff.
-            if (p.matcher("r" + "x".repeat(4095)).find() || HANDLE.getLong(owner)==0)
+            // A complete literal keeps this long search unresolved by the
+            // literal rejection and requires the native handoff.
+            if (p.matcher("x".repeat(4090) + "readyx").find() || HANDLE.getLong(owner)==0)
                 throw new AssertionError("unresolved long search did not select Rust");
             nativeOnly(p);
         }
@@ -470,6 +471,8 @@ public class RustRegexTest {
         shortEmailMatches();
         emailSuccessEndFlags();
         collectedPreparation();
+        mandatoryLiteralReject();
+        literalSearchAdmission();
         resetCapturePublication();
         preparedPlans();
         preparedBoundaries();
@@ -629,6 +632,98 @@ public class RustRegexTest {
                 }
             }
         }
+    }
+
+    private static void mandatoryLiteralReject() throws Exception {
+        String expression = "lazyprobe([0-9]+)";
+        Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
+        Object engine = NATIVE.get(p);
+        Matcher actual = p.matcher(""), expected = ref.matcher("");
+        // The mandatory literal is absent throughout each region. Rejecting it
+        // must avoid unused native automata in compiler-enabled configurations.
+        // The interpreter retains native scanning for long inputs.
+        int preparation = 0;
+        for (int length : new int[]{16, 32, 256, 257, 4096, 65536}) {
+            for (String character : new String[]{"x", "l", "\u0100", "\uD83D\uDE00"}) {
+                expression = "lazyprobe" + preparation++ + "_([0-9]+)";
+                p = Pattern.compile(expression);
+                ref = reference(expression, 0);
+                expected = ref.matcher("");
+                engine = NATIVE.get(p);
+                actual = p.matcher("");
+                String input = character.repeat(length / character.length());
+                for (int offset : new int[]{0, 3}) {
+                    actual.reset(input).region(offset, input.length() - offset);
+                    expected.reset(input).region(offset, input.length() - offset);
+                    equal(actual, expected, actual.find(), expected.find(), true);
+                    if (TIER.getInt(null) == 2 || character.equals("x") || character.equals("l")
+                            || TIER.getInt(null) == 1 && offset == 0) nativeOnly(p);
+                    if (RustRegex.ENABLED && TIER.getInt(null) != 0 && offset == 0 && HANDLE.getLong(engine) != 0)
+                        throw new AssertionError("literal miss constructed unused native automata");
+                }
+            }
+        }
+        // A later literal must still reach the general engine. Region bounds
+        // and find(start) must not hide a valid match after an initial miss.
+        expression = "lazyprobe([0-9]+)";
+        p = Pattern.compile(expression);
+        ref = reference(expression, 0);
+        expected = ref.matcher("");
+        engine = NATIVE.get(p);
+        actual = p.matcher("");
+        String input = "x".repeat(4096) + "lazyprobe123";
+        actual.reset(input); expected.reset(input);
+        equal(actual, expected, actual.find(), expected.find(), true);
+        nativeOnly(p);
+        if (RustRegex.ENABLED && HANDLE.getLong(engine) == 0)
+            throw new AssertionError("later literal did not initialize the native backend");
+        for (int start : new int[]{0, 4096, 4097, input.length()}) {
+            actual.reset(input); expected.reset(input);
+            equal(actual, expected, actual.find(start), expected.find(start), true);
+            nativeOnly(p);
+        }
+        input = "lazyprobe123" + "x".repeat(4096) + "lazyprobe456";
+        actual.reset(input).region(12, input.length() - 12);
+        expected.reset(input).region(12, input.length() - 12);
+        equal(actual, expected, actual.find(), expected.find(), true);
+        nativeOnly(p);
+        java.lang.ref.Reference.reachabilityFence(engine);
+        expression = "boundedprobe([0-9]+)";
+        Pattern bounded = Pattern.compile(expression);
+        ref = reference(expression, 0);
+        input = "x".repeat(RustRegex.MAX_LENGTH + 1);
+        actual = bounded.matcher(input); expected = ref.matcher(input);
+        equal(actual, expected, actual.find(), expected.find(), true);
+        if (RustRegex.ENABLED && NATIVE.get(bounded) != null)
+            throw new AssertionError("oversized miss bypassed native input budget");
+        Pattern early = Pattern.compile(expression);
+        input = "boundedprobe123" + input;
+        actual = early.matcher(input); expected = ref.matcher(input);
+        equal(actual, expected, actual.find(), expected.find(), true);
+        nativeOnly(early);
+    }
+
+    private static void literalSearchAdmission() throws Exception {
+        if (!RustRegex.ENABLED || TIER.getInt(null) != 1) return;
+        String expression = "admitprobe([0-9]+)";
+        Pattern p = Pattern.compile(expression), ref = reference(expression, 0);
+        Object owner = NATIVE.get(p);
+        Matcher actual = p.matcher("x".repeat(4096)), expected = ref.matcher("x".repeat(4096));
+        equal(actual, expected, actual.find(), expected.find(), true);
+        nativeOnly(p);
+        if (HANDLE.getLong(owner) != 0) throw new AssertionError("cold literal miss compiled native storage");
+        for (int i = 0; i < 512 && HANDLE.getLong(owner) == 0; i++) {
+            actual.reset(); expected.reset();
+            equal(actual, expected, actual.find(), expected.find(), true);
+            nativeOnly(p);
+        }
+        if (HANDLE.getLong(owner) == 0) throw new AssertionError("reused long searches never admitted native storage");
+        for (int i = 0; i < 32; i++) {
+            actual.reset(); expected.reset();
+            equal(actual, expected, actual.find(), expected.find(), true);
+            nativeOnly(p);
+        }
+        java.lang.ref.Reference.reachabilityFence(owner);
     }
 
     private static void collectedPreparation() throws Exception {

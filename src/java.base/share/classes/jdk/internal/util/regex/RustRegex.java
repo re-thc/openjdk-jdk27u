@@ -26,7 +26,6 @@ package jdk.internal.util.regex;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,12 +45,13 @@ public final class RustRegex {
     public final int groupCount;
     public final Map<String, Integer> namedGroups;
     private volatile long handle;
-    private final Subset deferred;
+    private final Preparation deferred;
     private final boolean contextSensitive;
     private final boolean finalTerminatorSensitive;
     private final FastPlan fastPlan;
     private final int javaPlanWidth;
     private volatile int shortSearches;
+    private volatile int literalSearchWork;
     private final boolean fixedWidth, shortAlternatives;
     private volatile Pattern javaPattern;
 
@@ -61,21 +61,47 @@ public final class RustRegex {
         JAVA_TIER = javaTier0();
     }
 
-    private RustRegex(long handle, Subset subset, FastPlan fastPlan) {
+    private RustRegex(long handle, Preparation preparation) {
         this.handle = handle;
-        groupCount = subset.groups;
-        namedGroups = subset.names;
-        contextSensitive = subset.contextSensitive;
-        finalTerminatorSensitive = subset.finalTerminatorSensitive;
-        this.fastPlan = fastPlan;
-        String prefix = shortLiteralPrefix();
-        // The small prepared skip traversal avoids adapter work in interpreter
-        // and C1 configurations. Keep the C2 window narrow for vector searches.
-        javaPlanWidth = prefix == null ? 8 : JAVA_TIER == 2 ? 16 : Math.min(64, 8 * prefix.length());
-        fixedWidth = !subset.variableLength;
-        shortAlternatives = shortLiteralAlternatives(subset.source);
-        deferred = handle == 0 ? subset : null;
+        groupCount = preparation.groupCount;
+        namedGroups = preparation.namedGroups;
+        contextSensitive = preparation.contextSensitive;
+        finalTerminatorSensitive = preparation.finalTerminatorSensitive;
+        fastPlan = preparation.fastPlan;
+        javaPlanWidth = preparation.javaPlanWidth;
+        fixedWidth = preparation.fixedWidth;
+        shortAlternatives = preparation.shortAlternatives;
+        deferred = handle == 0 ? preparation : null;
         if (handle != 0) registerCleanup(handle);
+    }
+
+    // Retain only immutable execution metadata after parsing. Reconstructing a
+    // collected backend must not parse, encode, or derive routing metadata again.
+    private static final class Preparation {
+        final byte[] expression;
+        final int flags, groupCount, javaPlanWidth;
+        final Map<String, Integer> namedGroups;
+        final FastPlan fastPlan;
+        final boolean contextSensitive, finalTerminatorSensitive, fixedWidth, shortAlternatives;
+
+        Preparation(Subset subset, FastPlan fastPlan) {
+            // The subset rejects non-ASCII source and emits escaped bytes.
+            // Copy directly, avoiding charset initialization on Java-only plans.
+            expression = new byte[subset.output.length()];
+            for (int i = 0; i < expression.length; i++)
+                expression[i] = (byte) subset.output.charAt(i);
+            flags = subset.flags;
+            groupCount = subset.groups;
+            namedGroups = Map.copyOf(subset.names);
+            this.fastPlan = fastPlan;
+            contextSensitive = subset.contextSensitive;
+            finalTerminatorSensitive = subset.finalTerminatorSensitive;
+            fixedWidth = !subset.variableLength;
+            shortAlternatives = shortLiteralAlternatives(subset.source);
+            String prefix = groupCount == 1 && fastPlan instanceof FastDigits digits
+                    && digits.prefix.length() >= 4 && digits.prefix.length() <= 15 ? digits.prefix : null;
+            javaPlanWidth = prefix == null ? 8 : JAVA_TIER == 2 ? 16 : Math.min(64, 8 * prefix.length());
+        }
     }
 
     private void registerCleanup(long handle) {
@@ -89,8 +115,7 @@ public final class RustRegex {
 
     private synchronized long nativeHandle() {
         if (handle != 0) return handle;
-        long compiled = compile0(deferred.output.toString().getBytes(StandardCharsets.US_ASCII),
-                deferred.flags, groupCount);
+        long compiled = compile0(deferred.expression, deferred.flags, groupCount);
         if (compiled != 0) {
             registerCleanup(compiled);
             handle = compiled;
@@ -113,8 +138,8 @@ public final class RustRegex {
                 if (cached.javaOnly) return null;
                 RustRegex engine = cached.engine.get();
                 if (engine != null) return engine;
-                if (cached.preparedSubset != null) {
-                    engine = new RustRegex(0, cached.preparedSubset, cached.fastPlan);
+                if (cached.preparation != null) {
+                    engine = new RustRegex(0, cached.preparation);
                     cached.engine = new WeakReference<>(engine);
                     return engine;
                 }
@@ -124,12 +149,9 @@ public final class RustRegex {
             Subset subset = new Subset(pattern, flags);
             subset.expression(0);
             if (subset.cursor != subset.source.length() || !subset.complex) {
-                cache(key, new CacheEntry(true, null, null, null));
+                cache(key, new CacheEntry(true, null, null));
                 return null;
             }
-            // Freeze capture metadata once, before publishing a preparation.
-            // Reconstructing a collected wrapper can share the immutable map.
-            subset.names = Map.copyOf(subset.names);
             FastPlan fast = (flags & Pattern.CASE_INSENSITIVE) == 0 ? FastDigits.parse(subset.source, subset.groups) : null;
             if (fast == null && (flags & Pattern.CASE_INSENSITIVE) == 0)
                 fast = FastEmail.parse(subset.source, subset.groups);
@@ -139,18 +161,18 @@ public final class RustRegex {
                     (subset.source.equals("[0-9]{3}-[0-9]{2}-[0-9]{4}") ||
                      subset.source.equals("\\d{3}-\\d{2}-\\d{4}"))) fast = FastFixedDigits.INSTANCE;
             boolean defer = fast != null || JAVA_TIER == 2 && !subset.variableLength;
-            long handle = defer ? 0
-                    : compile0(subset.output.toString().getBytes(StandardCharsets.US_ASCII), flags, subset.groups);
+            Preparation preparation = new Preparation(subset, fast);
+            long handle = defer ? 0 : compile0(preparation.expression, flags, subset.groups);
             if (handle == 0 && !defer) return null; // Budget failures remain retryable for new Patterns.
-            RustRegex engine = new RustRegex(handle, subset, fast);
+            RustRegex engine = new RustRegex(handle, preparation);
             // A previously compiled native backend validates this preparation.
             // Small preparations can survive collection of the weak backend;
             // its replacement builds automata only if matching needs them.
             cache(key, new CacheEntry(false, new WeakReference<>(engine),
-                    defer || pattern.length() <= 256 ? subset : null, fast));
+                    defer || pattern.length() <= 256 ? preparation : null));
             return engine;
         } catch (UnsupportedSyntax e) {
-            cache(key, new CacheEntry(true, null, null, null));
+            cache(key, new CacheEntry(true, null, null));
             return null;
         }
     }
@@ -170,14 +192,11 @@ public final class RustRegex {
         final boolean javaOnly;
         // The mutable weak slot is guarded by CompiledCache.ENTRIES.
         WeakReference<RustRegex> engine;
-        final Subset preparedSubset;
-        final FastPlan fastPlan;
-        CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine,
-                   Subset preparedSubset, FastPlan fastPlan) {
+        final Preparation preparation;
+        CacheEntry(boolean javaOnly, WeakReference<RustRegex> engine, Preparation preparation) {
             this.javaOnly = javaOnly;
             this.engine = engine;
-            this.preparedSubset = preparedSubset;
-            this.fastPlan = fastPlan;
+            this.preparation = preparation;
         }
     }
     private static final class CompiledCache {
@@ -224,6 +243,22 @@ public final class RustRegex {
     public boolean hasShortPlan() { return fastPlan != null; }
     // Supply the validated literal/digit layout when a Java traversal is needed.
     public String literalDigitsPrefix() { return fastPlan instanceof FastDigits digits ? digits.prefix : null; }
+    // Interpreted String searches cannot use the compiled vector intrinsic.
+    public boolean hasLiteralSearch() {
+        return JAVA_TIER != 0 && handle == 0 && literalDigitsFirstChar() >= 0;
+    }
+    public boolean shouldCheckLiteral(int length) {
+        if (handle != 0) return false;
+        // C1 substring searches are scalar. Bound their total work before
+        // admitting the native engine, rather than rescanning indefinitely.
+        // This is a per-backend hint; collection retains no admission history.
+        if (JAVA_TIER == 1 && length > 256) {
+            int work = literalSearchWork;
+            if (work >= MAX_LENGTH) return false;
+            literalSearchWork = work + length;
+        }
+        return true;
+    }
     public int literalDigitsFirstChar() { return fastPlan instanceof FastDigits digits ? digits.firstChar : -1; }
     public int literalPrefixGroup() { return ((FastDigits) fastPlan).prefixGroup; }
     public int literalDigitsGroup() { return ((FastDigits) fastPlan).digitsGroup; }

@@ -248,7 +248,8 @@ public final class Matcher implements MatchResult {
     private int nativeEndLast, nativeEndOldLast;
     private JavaMatchChoice javaMatchChoice;
     private boolean javaOnly;
-    private boolean directSearch;
+    private byte directSearch;
+    private static final byte MIXED_SEARCH = 0, JAVA_SEARCH = 1, FIXED_SEARCH = 2, LITERAL_SEARCH = 3;
     private static final int FIXED_FIND_CONTINUATION = 3;
     // Empty local storage has no mutable elements and can be shared.
     private static final int[] EMPTY_LOCALS = new int[0];
@@ -268,11 +269,12 @@ public final class Matcher implements MatchResult {
     Matcher(Pattern parent, CharSequence text) {
         this.parentPattern = parent;
         this.text = text;
-        javaOnly = parent.rustRegex == null;
-        directSearch = javaOnly || parent.rustRegex.hasShortFixedWidth();
+        RustRegex engine = parent.rustRegex;
+        javaOnly = engine == null;
+        directSearch = searchKind(engine);
 
         // Allocate state storage
-        groups = new int[parent.capturingGroupCount * 2 + (parent.rustRegex != null ? 4 : 0)];
+        groups = new int[parent.capturingGroupCount * 2 + (engine != null ? 4 : 0)];
         locals = parent.localCount == 0 ? EMPTY_LOCALS : new int[parent.localCount];
         localsPos = parent.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[parent.localTCNCount];
 
@@ -445,12 +447,13 @@ public final class Matcher implements MatchResult {
         ensureContinuation();
         javaMatchChoice = null;
         parentPattern = newPattern;
-        javaOnly = newPattern.rustRegex == null;
-        directSearch = javaOnly || newPattern.rustRegex.hasShortFixedWidth();
+        RustRegex engine = newPattern.rustRegex;
+        javaOnly = engine == null;
+        directSearch = searchKind(engine);
         namedGroups = null;
 
         // Reallocate state storage
-        groups = new int[newPattern.capturingGroupCount * 2 + (newPattern.rustRegex != null ? 4 : 0)];
+        groups = new int[newPattern.capturingGroupCount * 2 + (engine != null ? 4 : 0)];
         locals = newPattern.localCount == 0 ? EMPTY_LOCALS : new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
@@ -1782,7 +1785,42 @@ public final class Matcher implements MatchResult {
      * the end of the previous match.
      */
     boolean search(int from) {
-        return directSearch ? searchDirect(from) : searchMixed(from);
+        if (directSearch == LITERAL_SEARCH) return searchLiteral(from);
+        return directSearch != MIXED_SEARCH ? searchDirect(from) : searchMixed(from);
+    }
+
+    private static byte searchKind(RustRegex engine) {
+        if (engine == null) return JAVA_SEARCH;
+        if (engine.hasShortFixedWidth()) return FIXED_SEARCH;
+        return engine.hasLiteralSearch() ? LITERAL_SEARCH : MIXED_SEARCH;
+    }
+
+    private boolean searchLiteral(int from) {
+        RustRegex engine = parentPattern.rustRegex;
+        if (engine != null && to - this.from <= RustRegex.MAX_LENGTH && text instanceof String input) {
+            if (engine.shouldCheckLiteral(to - this.from)) {
+                String prefix = engine.literalDigitsPrefix();
+                int start = Math.max(0, from);
+                if (input.startsWith(prefix, start)) return searchMixed(from);
+                int literalStart = input.indexOf(engine.literalDigitsFirstChar(), start, to);
+                if (literalStart < 0 || to - this.from > 256 &&
+                        input.indexOf(prefix, literalStart, to) < 0) {
+                    clearNativeEnd();
+                    nativePendingLast = false;
+                    hitEnd = true;
+                    requireEnd = false;
+                    acceptMode = NOANCHOR;
+                    first = -1;
+                    oldLast = last;
+                    modCount++;
+                    return false;
+                }
+            } else {
+                // Reuse the native route after preparation or C1 admission.
+                directSearch = MIXED_SEARCH;
+            }
+        }
+        return searchMixed(from);
     }
 
     private boolean searchDirect(int from) {
@@ -1881,7 +1919,7 @@ public final class Matcher implements MatchResult {
             clearNativeEnd();
             return matchJava(from, anchor);
         }
-        if (directSearch) return matchFixed(from, anchor);
+        if (directSearch == FIXED_SEARCH) return matchFixed(from, anchor);
         return matchMixed(from, anchor);
     }
 
@@ -2149,7 +2187,7 @@ public final class Matcher implements MatchResult {
     private void selectJavaOnly() {
         javaStorage(parentPattern);
         javaOnly = true;
-        directSearch = true;
+        directSearch = JAVA_SEARCH;
         javaMatchChoice = null;
         clearNativeEnd();
     }
