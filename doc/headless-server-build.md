@@ -31,26 +31,22 @@ retained. The core launcher compiles out splash support, macOS Cocoa startup
 and dock integration, and Windows AWT preload/dialog initialization. The
 Windows `javaw` launcher is omitted. Normal console launchers remain.
 
-Windows HotSpot retains `user32` for window-station visibility checks that
-preserve service logoff behavior, and `winmm` for timer-resolution APIs. These
-uses do not enable dialog or audio code. GDI, printing and common-dialog
-libraries are omitted from its link inputs. Fatal-error prompts use standard
-error and read a response only from an attached console. Callers without a
-console, including services and JNI applications, return immediately.
-
-The Windows core launcher also retains `user32` for `CharNextExA`'s multibyte
-command-line traversal.
+Windows retains `user32` for service logoff checks and the launcher's
+`CharNextExA` multibyte command-line traversal, and `winmm` for timer-resolution
+APIs. These uses do not enable dialog or audio code. GDI, printing and
+common-dialog libraries are omitted from HotSpot's link inputs. Fatal-error
+prompts use standard error and read a response only from an attached console.
+Callers without a console, including services and JNI applications, return
+immediately.
 
 On macOS, the instrumentation agent uses its JDK libraries, iconv and zlib.
 Kerberos configuration retains Foundation collections, Kerberos credentials
 and SystemConfiguration services. Configuration-change notifications run on a
 private serial dispatch queue, independent of the launcher's main thread.
-Foundation's OS-transitive graphics mappings are separate from compilation of
-excluded JDK desktop code. The shared `splashscreen.h` contains declarations,
-not splash implementations; native symbol and compiler-input checks establish
-which code is present.
+Foundation can load graphics libraries transitively through the OS; this does
+not add excluded JDK desktop code to the product.
 
-## Build and validation
+## Building
 
 Use GNU make, the normal platform toolchain and a supported boot JDK. Choose
 unused configuration names for clean release and fastdebug builds. For example:
@@ -71,81 +67,23 @@ done
 To exercise the development wrapper, use `bash bin/configure-dev` with the
 same arguments. On Linux it expects mold unless `CONFIGURE_DEV_NO_MOLD=1` is
 set. Use `gmake` where that is the GNU make command.
-Configure-generating tests locate Autoconf on PATH when a cached configure run
-recorded no executable; a valid configured Autoconf path is still honored.
+Tests that generate configure scripts use the recorded Autoconf executable or
+find one on PATH.
 
 Reconfiguration rejects output directories from a desktop build or a different
 collector set. Use a new `--with-conf-name`, or `make CONF="$conf" dist-clean`
 before reusing a configuration. The build also rejects stale excluded module
 directories; `make CONF="$conf" clean` clears its build outputs.
 
-`check-dev-profile.sh` requires the build tree as well as its image. It checks
-actual product javac file lists, native compilation records, GC objects,
-classes/generated outputs, jmods and image files. It runs allocation and GC,
-virtual-thread socket, crypto/TLS initialization, JMX, JFR and attach/jcmd
-smokes, C1/C2 arithmetic compilation, source-file launch, javac, javadoc, jar
-and jlink. It verifies that Epsilon, Parallel and Shenandoah cannot start.
-Native test bundles also omit tests for collectors absent from every configured
-JVM variant.
+`test-make-headless` checks build-policy enforcement, module imports and
+launcher behavior. On macOS it also checks native Kerberos callbacks without
+changing system configuration. That notification check injects changes; it
+does not exercise real configd delivery.
 
-`make:headless` exercises the four supported module/launcher graphs, imported
-source generation and product compilation, compiled descriptor semantics,
-direct-target rejection, stale outputs and configure/make overrides. It covers
-open modules, static/transitive requires, Unicode-escaped braces, qualified
-exports/opens, Windows path conversion and the portable console helper.
-It also checks launcher archive diagnostics, valid jar launch and native
-instrumentation. On macOS it checks direct framework links and native Kerberos
-configuration initialization; an unconfigured Kerberos store is allowed.
-The prebuilt regression runs the real entry point through generated-spec
-discovery and child test execution, checking that the synthetic spec retains
-the headless module graph and rejects incompatible desktop and collector
-overrides.
-The macOS notification regression interposes the dynamic-store observer to
-inject both watched keys through real native scheduling and the built image's
-callback. It checks automatic Java configuration refresh, unrelated keys,
-exception recovery and process exit without privileged system changes. It
-does not exercise the OS daemon's delivery of real configuration changes.
-
-At `1f9f7312aa3`, Linux x64 and AArch64 CI passed release and fastdebug builds,
-make suites and full profiles. Each profile recorded 56 product javac lists;
-native-record totals were 1,634 on x64 and 1,578 on AArch64, including host
-objects. Five prebuilt jtreg smokes passed locally across HotSpot command-line
-and GC selection, JDK, langtools and lib-test with CI's pinned Boot JDK 26 and
-jtreg 8.2.1.
-
-Later [CI at `cc2239ee101`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39141579708)
-passed all 36 Linux x64/AArch64 and macOS AArch64 tier1 jobs. At
-[`03cd152691d`](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39177374811),
-all eight release/fastdebug platform build jobs, including headless make suites
-and full profiles, and all 24 Linux and 12 Windows tier1 jobs passed. Full
-per-platform outcomes are recorded in the linked run.
-
-Native macOS AArch64 images built at `f0824d88112` passed compilation-database,
-profile and direct-link checks under Command Line Tools, without Metal
-discovery or artifacts. At `1f9f7312aa3`, both retained configurations passed
-`test-make-headless` with AUTOCONF unset. This included prebuilt-spec execution
-and override rejection, launcher/archive checks, and Kerberos callbacks on a
-real dispatch worker for both watched keys and refresh-exception recovery,
-without JNI warnings or exceptions. The image manifests remained byte-identical,
-and the intervening changes affected tests, documentation and the prebuilt
-runner spec, preserving product equivalence. No configure, rebuild or clean
-was needed. The callback regression does not exercise real configd delivery.
-
-The earlier Mac baseline at `5b3534b7` passed 29 runtime smokes per image,
-including console errors/exit, JNI invocation and signal handling. Those
-smokes, profiles and link inspections were not repeated for the
-`1f9f7312aa3` make-suite confirmation.
-
-Dedicated native Windows console/JNI validation and `JLI_Launch` embedding
-remain unrun. Direct `dumpbin /imports` inspection of `jli.dll` and `jvm.dll`
-also remains required. The native Windows CI evidence above covers builds,
-launcher/archive checks and profiles, including absence of `javaw.exe`.
-Foreign-platform graphs, stubbed probes and mocked console I/O do not replace
-native checks.
-
-Excluded source/target counts establish removed compilation work. A build-time
-speedup requires measurements with matching hardware, compiler, debug level,
-cache state and build settings; no measured speedup is claimed here.
+`check-dev-profile.sh` needs the build tree as well as its image. It audits
+compiler inputs, collector objects and image contents, and runs server-runtime
+and tool checks. It rejects excluded collectors and desktop, audio or Metal
+outputs.
 
 ## Host tools and compatibility data
 
@@ -155,8 +93,7 @@ these are host/bootstrap tools under `buildtools`, not installed target
 modules. Desktop-only Nimbus, font-config, DTD, icon and X11 generators are
 excluded. Static HTML, image and font resources used by javadoc remain data.
 When cross compiling, the build-managed host JDK retains its upstream Serial/G1
-collector subset; the target JDK still requires Serial/G1/ZGC. Its graph is
-covered by the make regression test.
+collector subset; the target JDK still requires Serial/G1/ZGC.
 
 Building the JDK's own API documentation uses the boot JDK's compiled API
 symbols to resolve retained comments that link to desktop types. That optional

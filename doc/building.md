@@ -1,8 +1,8 @@
 % Building the JDK
 
-This fork defaults to a [headless server build](headless-server-build.md).
-That guide describes its enforced module/collector policy and validation;
-desktop dependency instructions below apply to the retained upstream sources.
+This fork enforces a [headless server build](headless-server-build.md).
+See that guide for supported targets, build commands and compatibility notes.
+Desktop dependency instructions below describe the retained upstream sources.
 
 ## TL;DR (Instructions for the Impatient)
 
