@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,11 +179,14 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
 
   DEBUG_ONLY(const u1* const old_current = stream->current();)
 
-  // Used for batching symbol allocations.
-  const char* names[SymbolTable::symbol_alloc_batch_size];
-  int lengths[SymbolTable::symbol_alloc_batch_size];
-  int indices[SymbolTable::symbol_alloc_batch_size];
-  unsigned int hashValues[SymbolTable::symbol_alloc_batch_size];
+  // Bound temporary storage for large pools and release it before loading superclasses.
+  ResourceMark rm(THREAD);
+  const bool batch_lookup = length <= 8192;
+  const int batch_size = batch_lookup ? MIN2(length, 4096) : 20;
+  const char** names = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, const char*, batch_size);
+  int* lengths = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, int, batch_size);
+  int* indices = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, int, batch_size);
+  unsigned int* hashes = batch_lookup ? nullptr : NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, unsigned int, batch_size);
   int names_count = 0;
 
   // parsing  Index 0 is unused
@@ -338,27 +342,27 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
           verify_legal_utf8(utf8_buffer, utf8_length, CHECK);
         }
 
-        unsigned int hash;
-        Symbol* const result = SymbolTable::lookup_only((const char*)utf8_buffer,
-                                                        utf8_length,
-                                                        hash);
-        if (result == nullptr) {
-          names[names_count] = (const char*)utf8_buffer;
-          lengths[names_count] = utf8_length;
-          indices[names_count] = index;
-          hashValues[names_count++] = hash;
-          if (names_count == SymbolTable::symbol_alloc_batch_size) {
-            SymbolTable::new_symbols(_loader_data,
-                                     constantPoolHandle(THREAD, cp),
-                                     names_count,
-                                     names,
-                                     lengths,
-                                     indices,
-                                     hashValues);
-            names_count = 0;
+        unsigned int hash = 0;
+        if (!batch_lookup) {
+          Symbol* sym = SymbolTable::lookup_only((const char*)utf8_buffer, utf8_length, hash);
+          if (sym != nullptr) {
+            cp->symbol_at_put(index, sym);
+            break;
           }
-        } else {
-          cp->symbol_at_put(index, result);
+          hashes[names_count] = hash;
+        }
+        names[names_count] = (const char*)utf8_buffer;
+        lengths[names_count] = utf8_length;
+        indices[names_count++] = index;
+        if (names_count == batch_size) {
+          SymbolTable::new_symbols(_loader_data,
+                                   constantPoolHandle(THREAD, cp),
+                                   names_count,
+                                   names,
+                                   lengths,
+                                   indices,
+                                   hashes);
+          names_count = 0;
         }
         break;
       }
@@ -383,16 +387,13 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
     } // end of switch(tag)
   } // end of for
 
-  // Allocate the remaining symbols
-  if (names_count > 0) {
-    SymbolTable::new_symbols(_loader_data,
-                             constantPoolHandle(THREAD, cp),
-                             names_count,
-                             names,
-                             lengths,
-                             indices,
-                             hashValues);
-  }
+  SymbolTable::new_symbols(_loader_data,
+                           constantPoolHandle(THREAD, cp),
+                           names_count,
+                           names,
+                           lengths,
+                           indices,
+                           hashes);
 
   // Copy _current pointer of local copy back to stream.
   assert(stream->current() == old_current, "non-exclusive use of stream");
