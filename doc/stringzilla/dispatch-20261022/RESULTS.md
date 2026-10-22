@@ -146,7 +146,11 @@ where the retained checked-word implementation takes 8.35 ns.
 - Focused tier, JNI, opt-out, physical bounds, overlap, safepoint and native
   ASan/UBSan/alignment checks passed in the producer runs.
 - [Final exact-head four-platform CI](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39812822993)
-  is separate from measurements; its terminal verdict must be checked before merge.
+  and its [automatic independent audit](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39834664110)
+  provide the final merge gate. The read-only audit follows the existing run,
+  requires all 57 jobs to succeed, checks all 58 StringZilla descriptions and
+  source hashes, and retains the original CI logs. Its single Linux job is
+  bounded to six hours and fails if the source changes or validation fails.
 
 ## Earlier experiments retain their own identity
 
