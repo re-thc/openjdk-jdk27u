@@ -1,0 +1,249 @@
+{
+  "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+  "cases": 184,
+  "jmh_files": 2944,
+  "samples": 14720,
+  "union_loss_rows": 133,
+  "paired_losses_by_control": {
+    "original": 76,
+    "prior": 76,
+    "disabled": 86
+  },
+  "studies": [
+    {
+      "label": "linux-primary",
+      "cases": 46,
+      "jmh_files": 736,
+      "samples": 3680,
+      "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+      "controls": {
+        "original": {
+          "image": "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk",
+          "spec": "/workspace/stringzilla-baseline/build/stringzilla-original/spec.gmk",
+          "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "expected_tree_sha256": "9b633c468b0c2924fd5b686f6232e4c7e42554badeab7ea7a0135c7ee9c3b9a5"
+        },
+        "prior": {
+          "image": "/workspace/stringzilla-recovery/integration-20261021/images/pr63",
+          "spec": "/workspace/stringzilla-recovery/integration-20261021/pr63-spec.gmk",
+          "source": "3c06040bad5a43930dbbcbd463156e885473badf",
+          "expected_tree_sha256": "6ee2f92a6042f02803aed1ded70c7fb0be0201556f8fadb7da6b5f4d125e3ccb"
+        },
+        "candidate": {
+          "image": "/workspace/stringzilla-recovery/integration-20261021/images/final-b19",
+          "spec": "/workspace/openjdk-jdk27u/build/stringzilla-final/spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "64c2514dcb98208befba300da58159f8b1979c51cc4e1bfd71381caab6cc9193"
+        },
+        "disabled": {
+          "image": "/workspace/stringzilla-recovery/integration-20261021/images/final-b19",
+          "spec": "/workspace/openjdk-jdk27u/build/stringzilla-final/spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "flags": [
+            "-XX:-UseStringZillaIntrinsics"
+          ],
+          "expected_tree_sha256": "64c2514dcb98208befba300da58159f8b1979c51cc4e1bfd71381caab6cc9193"
+        }
+      },
+      "provenance_sha256": "db0342812bed497780b3e39d314ffb4985a28e5e4e3fc8dee85f7b0210769d31",
+      "results_sha256": "5018c5fbd9553b620b9adbb65994cc06f79fecbb3dbc27d731295f826ea70038",
+      "complete_sha256": "acb7f461d85e5907dc5285da5076ac86d2050a034d8c5d2fae942fde7558f987"
+    },
+    {
+      "label": "linux-followup",
+      "cases": 28,
+      "jmh_files": 448,
+      "samples": 2240,
+      "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+      "controls": {
+        "original": {
+          "image": "/workspace/stringzilla-baseline/build/stringzilla-original/images/jdk",
+          "spec": "/workspace/stringzilla-baseline/build/stringzilla-original/spec.gmk",
+          "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "expected_tree_sha256": "9b633c468b0c2924fd5b686f6232e4c7e42554badeab7ea7a0135c7ee9c3b9a5"
+        },
+        "prior": {
+          "image": "/workspace/stringzilla-recovery/integration-20261021/images/pr63",
+          "spec": "/workspace/stringzilla-recovery/integration-20261021/pr63-spec.gmk",
+          "source": "3c06040bad5a43930dbbcbd463156e885473badf",
+          "expected_tree_sha256": "6ee2f92a6042f02803aed1ded70c7fb0be0201556f8fadb7da6b5f4d125e3ccb"
+        },
+        "candidate": {
+          "image": "/workspace/stringzilla-recovery/integration-20261021/images/final-b19",
+          "spec": "/workspace/openjdk-jdk27u/build/stringzilla-final/spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "64c2514dcb98208befba300da58159f8b1979c51cc4e1bfd71381caab6cc9193"
+        },
+        "disabled": {
+          "image": "/workspace/stringzilla-recovery/integration-20261021/images/final-b19",
+          "spec": "/workspace/openjdk-jdk27u/build/stringzilla-final/spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "flags": [
+            "-XX:-UseStringZillaIntrinsics"
+          ],
+          "expected_tree_sha256": "64c2514dcb98208befba300da58159f8b1979c51cc4e1bfd71381caab6cc9193"
+        }
+      },
+      "provenance_sha256": "826503032c329050f1f565dab567e63b8a187d996951b20c5102370c8c058a5d",
+      "results_sha256": "da6657bee589eddd4e53085cedfcdbe797ad2ddeec2b0698034d935f220f463f",
+      "complete_sha256": "2b676cfd0336cd3045e37781b334adab478acbd9c3628777e7a6567da4dc3a9e"
+    },
+    {
+      "label": "neon-primary",
+      "cases": 39,
+      "jmh_files": 624,
+      "samples": 3120,
+      "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+      "controls": {
+        "original": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/original",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/original-spec.gmk",
+          "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "expected_tree_sha256": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37"
+        },
+        "prior": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/reference-artifact/fork",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/reference-artifact/fork-spec.gmk",
+          "source": "7048d6f2c74e25737850789812da063900ec18c0",
+          "expected_tree_sha256": "8a232841a47ee287edf546853a0f2c64dad6d6fea43f4114e360483f920b079f"
+        },
+        "candidate": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "1d1982ad0c0c0a14c5cf245b691328c4330223bfe80ef7b93831a74864b2605e"
+        },
+        "disabled": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "1d1982ad0c0c0a14c5cf245b691328c4330223bfe80ef7b93831a74864b2605e",
+          "flags": [
+            "-XX:-UseStringZillaIntrinsics"
+          ]
+        }
+      },
+      "provenance_sha256": "7219eaecc75f8a1d24c88460f1426cccc43f591ec6202179d8f56dda7630e0bb",
+      "results_sha256": "8d5547fa7d90c49b44cb755237d77a941deb2dc70a37a42dbc93957c89d0832b",
+      "complete_sha256": "ba8f3615d76221f557f78be13b763620f1b7dbc749f968f25fc4f2dbad650263"
+    },
+    {
+      "label": "neon-followup",
+      "cases": 16,
+      "jmh_files": 256,
+      "samples": 1280,
+      "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+      "controls": {
+        "original": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/original",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/original-spec.gmk",
+          "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "expected_tree_sha256": "93889021ff0fe5199e6dbae2f743fe0265c7ab0e2f7a72e1977fd9b9ca044e37"
+        },
+        "prior": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/reference-artifact/fork",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/reference-artifact/fork-spec.gmk",
+          "source": "7048d6f2c74e25737850789812da063900ec18c0",
+          "expected_tree_sha256": "8a232841a47ee287edf546853a0f2c64dad6d6fea43f4114e360483f920b079f"
+        },
+        "candidate": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/candidate-artifact/fork",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/candidate-artifact/fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "1d1982ad0c0c0a14c5cf245b691328c4330223bfe80ef7b93831a74864b2605e"
+        },
+        "disabled": {
+          "image": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/candidate-artifact/fork",
+          "spec": "/home/runner/work/openjdk-jdk27u/openjdk-jdk27u/pair/candidate-artifact/fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "1d1982ad0c0c0a14c5cf245b691328c4330223bfe80ef7b93831a74864b2605e",
+          "flags": [
+            "-XX:-UseStringZillaIntrinsics"
+          ]
+        }
+      },
+      "provenance_sha256": "268fcf10182ab91ff0fd5f6beec3ab9a0804696dd1f4f65b99a71eaa2ca114d9",
+      "results_sha256": "b301d4849171dfb7287d591d539ec07f49afa90089f1a6b2572b93b0ecd3972f",
+      "complete_sha256": "59ee8623603a704c8dc307bb7a5d216152ebae50cb56f96fba70314aa36127d6"
+    },
+    {
+      "label": "msvc-primary",
+      "cases": 39,
+      "jmh_files": 624,
+      "samples": 3120,
+      "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+      "controls": {
+        "original": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\original",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\original-spec.gmk",
+          "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "expected_tree_sha256": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202"
+        },
+        "prior": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\reference-artifact\\build\\perf\\images\\jdk",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\reference-artifact\\candidate-retained\\fork-spec.gmk",
+          "source": "7048d6f2c74e25737850789812da063900ec18c0",
+          "expected_tree_sha256": "36ef0c51779c86a7936c3ed65b6db93a70cef1fef4158fcf29940f90505ef7b0"
+        },
+        "candidate": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "c71a99f314489fbc4111f4c74b211d31944961c32a364746c4b5791ba1e3c425"
+        },
+        "disabled": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "c71a99f314489fbc4111f4c74b211d31944961c32a364746c4b5791ba1e3c425",
+          "flags": [
+            "-XX:-UseStringZillaIntrinsics"
+          ]
+        }
+      },
+      "provenance_sha256": "21e365bd93433a5c57c7992a5ee516196df4e85f59834072d2801af155f98c91",
+      "results_sha256": "b3bac8bece3255a9f8d58e80f680288205c3604686908a1846392a1541fe9306",
+      "complete_sha256": "deb9ecd8159854f41905536ac173c5b2165b3305f7cb70ea9e9f95313b5bf748"
+    },
+    {
+      "label": "msvc-followup",
+      "cases": 16,
+      "jmh_files": 256,
+      "samples": 1280,
+      "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+      "controls": {
+        "original": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\original",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\original-spec.gmk",
+          "source": "416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda",
+          "expected_tree_sha256": "97417c894aac491cf065347d490002f9638a1f6bf5633fbce4e6626d03d50202"
+        },
+        "prior": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\reference-artifact\\build\\perf\\images\\jdk",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\reference-artifact\\candidate-retained\\fork-spec.gmk",
+          "source": "7048d6f2c74e25737850789812da063900ec18c0",
+          "expected_tree_sha256": "36ef0c51779c86a7936c3ed65b6db93a70cef1fef4158fcf29940f90505ef7b0"
+        },
+        "candidate": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\candidate-artifact\\build\\perf\\images\\jdk",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\candidate-artifact\\candidate-retained\\fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "c71a99f314489fbc4111f4c74b211d31944961c32a364746c4b5791ba1e3c425"
+        },
+        "disabled": {
+          "image": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\candidate-artifact\\build\\perf\\images\\jdk",
+          "spec": "D:\\a\\openjdk-jdk27u\\openjdk-jdk27u\\pair\\candidate-artifact\\candidate-retained\\fork-spec.gmk",
+          "source": "b19af25c4ccac240e017ca15bfbfc955d4798aa4",
+          "expected_tree_sha256": "c71a99f314489fbc4111f4c74b211d31944961c32a364746c4b5791ba1e3c425",
+          "flags": [
+            "-XX:-UseStringZillaIntrinsics"
+          ]
+        }
+      },
+      "provenance_sha256": "82c60d1d43d00f56728a3e6987794549de44648dbdbe5fb1aa58ff81cf61d8f0",
+      "results_sha256": "d1ba3f3a064f9713157ec0c5f41ab1141dab8183acf5870b186fbc9a84c80d14",
+      "complete_sha256": "6093457d4994a03203fe22926b886fbc64810c567d15a28ad4100630e40edabb"
+    }
+  ],
+  "complete_raw_files_audited": true
+}
