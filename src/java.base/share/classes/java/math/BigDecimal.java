@@ -25,6 +25,7 @@
 
 /*
  * Portions Copyright IBM Corporation, 2001. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  */
 
 package java.math;
@@ -3204,8 +3205,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                       (xs == INFLATED ||
                       (xs = longMultiplyPowerTen(xs, (int)-sdiff)) == INFLATED) &&
                      ys == INFLATED) {
-                    BigInteger rb = bigMultiplyPowerTen((int)-sdiff);
-                    return rb.compareMagnitude(val.intVal);
+                    return compareMagnitudeScaled(val, (int)-sdiff);
                 }
             } else { // sdiff > 0
                 // The cases sdiff > Integer.MAX_VALUE intentionally fall through.
@@ -3213,8 +3213,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                       (ys == INFLATED ||
                       (ys = longMultiplyPowerTen(ys, (int)sdiff)) == INFLATED) &&
                      xs == INFLATED) {
-                    BigInteger rb = val.bigMultiplyPowerTen((int)sdiff);
-                    return this.intVal.compareMagnitude(rb);
+                    return -val.compareMagnitudeScaled(this, (int)sdiff);
                 }
             }
         }
@@ -3224,6 +3223,53 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return 1;
         else
             return this.intVal.compareMagnitude(val.intVal);
+    }
+
+    /**
+     * Compares abs(this.unscaledValue()) * 10^n with abs(val.unscaledValue()),
+     * using two unsigned longs for bounded magnitudes. The caller has already
+     * matched adjusted exponents, n is positive, and val is inflated.
+     */
+    private int compareMagnitudeScaled(BigDecimal val, int n) {
+        // At most 39 decimal digits per magnitude imply n <= 38 when
+        // adjusted exponents match. Keep the bound explicit before scaling.
+        if (n > 38 || val.intVal.mag.length > 4 ||
+            (intCompact == INFLATED && intVal.mag.length > 4)) {
+            return bigMultiplyPowerTen(n).compareMagnitude(val.intVal);
+        }
+        int[] ym = val.intVal.mag;
+        int[] xm = intCompact == INFLATED ? intVal.mag : null;
+        long xlo = xm == null ? Math.abs(intCompact) : comparisonMagnitudeLong(xm, xm.length);
+        long xhi = xm == null ? 0 : comparisonMagnitudeLong(xm, xm.length - 2);
+
+        do {
+            int step = Math.min(n, 18);
+            long power = LONG_TEN_POWERS_TABLE[step];
+            long carry = Math.unsignedMultiplyHigh(xlo, power);
+            long hi = xhi * power;
+            long sum = hi + carry;
+            // A carry beyond 128 bits makes the scaled magnitude larger
+            // than any admitted target, even if more scaling remains.
+            if (Math.unsignedMultiplyHigh(xhi, power) != 0 ||
+                Long.compareUnsigned(sum, hi) < 0)
+                return 1;
+            xhi = sum;
+            xlo *= power;
+            n -= step;
+        } while (n > 0);
+
+        long ylo = comparisonMagnitudeLong(ym, ym.length);
+        long yhi = comparisonMagnitudeLong(ym, ym.length - 2);
+        int cmp = Long.compareUnsigned(xhi, yhi);
+        return cmp != 0 ? cmp : Long.compareUnsigned(xlo, ylo);
+    }
+
+    // Pack at most two magnitude words ending at end (exclusive).
+    private static long comparisonMagnitudeLong(int[] mag, int end) {
+        if (end <= 0)
+            return 0;
+        long lo = mag[end - 1] & LONG_MASK;
+        return end > 1 ? lo | (long)mag[end - 2] << 32 : lo;
     }
 
     /**
