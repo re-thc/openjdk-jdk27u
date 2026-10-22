@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,6 +258,11 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
         }
 
         count += written;
+        // The cursor has advanced by the requested bytes. A short send must
+        // return so that the next call starts at the first unsent byte.
+        if (written < (DWORD)(MAX_BUFFER_SIZE - rem)) {
+            break;
+        }
     }
 
     /* clean up */
