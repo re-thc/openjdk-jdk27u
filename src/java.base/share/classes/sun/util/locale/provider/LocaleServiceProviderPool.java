@@ -135,10 +135,48 @@ public final class LocaleServiceProviderPool {
 
         static {
             Set<Locale> all = new HashSet<>();
-            for (Class<? extends LocaleServiceProvider> c : spiClasses) {
-                LocaleServiceProviderPool pool =
-                    LocaleServiceProviderPool.getPool(c);
-                all.addAll(pool.getAvailableLocaleSet());
+            // Preserve the first pool's in-progress state during logging from
+            // adapter initialization, before deciding how to collect locales.
+            all.addAll(LocaleServiceProviderPool.getPool(spiClasses[0]).getAvailableLocaleSet());
+            var types = LocaleProviderAdapter.getAdapterPreference();
+            boolean builtInOnly = true;
+            for (LocaleProviderAdapter.Type type : types) {
+                if (type != LocaleProviderAdapter.Type.CLDR
+                        && type != LocaleProviderAdapter.Type.FALLBACK) {
+                    builtInOnly = false;
+                    break;
+                }
+            }
+            if (builtInOnly) {
+                for (LocaleProviderAdapter.Type type : types) {
+                    LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
+                    if (adapter == null) {
+                        continue;
+                    }
+                    if (type == LocaleProviderAdapter.Type.CLDR) {
+                        // CLDR uses the same available locales for every service.
+                        for (Locale locale : adapter.getAvailableLocales()) {
+                            all.add(getLookupLocale(locale));
+                        }
+                    } else {
+                        for (Class<? extends LocaleServiceProvider> c : spiClasses) {
+                            LocaleServiceProvider provider = adapter.getLocaleServiceProvider(c);
+                            if (provider != null) {
+                                for (Locale locale : provider.getAvailableLocales()) {
+                                    all.add(getLookupLocale(locale));
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Preserve discovery order and in-progress pool state for
+                // adapters whose providers can call back into locale services.
+                for (Class<? extends LocaleServiceProvider> c : spiClasses) {
+                    LocaleServiceProviderPool pool =
+                        LocaleServiceProviderPool.getPool(c);
+                    all.addAll(pool.getAvailableLocaleSet());
+                }
             }
             allAvailableLocales = all.toArray(new Locale[0]);
         }
