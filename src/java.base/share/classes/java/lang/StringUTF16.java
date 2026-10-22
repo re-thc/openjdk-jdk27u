@@ -1437,11 +1437,23 @@ final class StringUTF16 {
     @ForceInline
     private static int lastIndexOfJavaC2Filtered(byte[] src, byte[] tgt, int count, int from) {
         int last = count - 1;
-        if (indexOfChar0(src, getChar(tgt, last), last, from + count) < 0) {
+        char lastChar = getChar(tgt, last);
+        if (StringZilla.MSVC_SERIAL) {
+            // Each skipped block excludes every candidate ending in that block.
+            int end = from + count;
+            while (end > last) {
+                int start = Math.max(last, end - 256);
+                if (indexOfChar0(src, lastChar, start, end) >= 0) {
+                    return lastIndexOfJavaFallback(src, tgt, count, end - count);
+                }
+                end = start;
+            }
             return -1;
         }
-        return StringZilla.MSVC_SERIAL ? lastIndexOfJavaFallback(src, tgt, count, from)
-                                      : lastIndexOfJavaFiltered(src, tgt, count, from);
+        if (indexOfChar0(src, lastChar, last, from + count) < 0) {
+            return -1;
+        }
+        return lastIndexOfJavaFiltered(src, tgt, count, from);
     }
 
     @DontInline
