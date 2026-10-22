@@ -109,6 +109,8 @@ for image in json.loads(a.manifest.read_text())['images']:
     proofs[label] = proof
     print('SDK_PROOF ' + json.dumps({'label': label, 'artifact': meta, 'proof': proof},
                                    separators=(',', ':')), flush=True)
+    # The immutable producer artifact retains the SDK; keep the audit compact.
+    archive.unlink()
 assert len(proofs) == 3
 classes = [proof['shipped_classes_sha256'] for proof in proofs.values()]
 assert classes[0] == classes[1] == classes[2], 'Shipped String-family classes differ between final SDKs'
