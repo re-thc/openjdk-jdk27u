@@ -78,6 +78,13 @@ public class TestInstantSpeedate {
                 throw new AssertionError("Native fraction miss or mismatch: " + text);
             }
         }
+        for (String text : new String[] {"0000-01-01T00:00:00Z", "0000-02-29T12:34:56.000001Z",
+                "9999-12-31T23:59:59.999999Z"}) {
+            Instant expected = DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
+            if (!expected.equals(fast.invoke(null, text))) {
+                throw new AssertionError("Native year boundary mismatch: " + text);
+            }
+        }
         String negativeText = "1969-12-31T23:59:59.000001Z";
         compare(negativeText);
         Instant negative = (Instant)fast.invoke(null, negativeText);

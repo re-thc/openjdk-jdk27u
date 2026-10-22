@@ -33,7 +33,7 @@ assert actual==os.environ['EXPECTED_RUSTC'], actual
 assert 'fixpath' not in actual and ' exec ' not in actual,actual
 assert 'CARGO_ENCODED_RUSTFLAGS' not in os.environ
 assert os.environ['CARGO_BUILD_JOBS']=='2'
-assert os.environ['RUSTFLAGS']=='-C target-cpu=x86-64-v3 -C panic=unwind'
+assert os.environ['RUSTFLAGS']=='-C target-cpu=x86-64 -C panic=unwind'
 assert sys.argv[1:4]==['build','--frozen','--release'],sys.argv
 assert sys.argv[sys.argv.index('--manifest-path')+1]==os.environ['EXPECTED_MANIFEST'],sys.argv
 assert sys.argv[sys.argv.index('--target-dir')+1]==os.environ['EXPECTED_TARGET'],sys.argv
@@ -85,7 +85,7 @@ AC_OUTPUT
         (work / 'Makefile').write_text('include paths.mk\n'
             f'SPEEDATE_SRC := {source}\nSPEEDATE_OUT := {output}\n'
             'SPEEDATE_RUST_TARGET := x86_64-pc-windows-msvc\n'
-            'SPEEDATE_RUST_CPU := x86-64-v3\nall:\n\t' + recipe + '\n')
+            'SPEEDATE_RUST_CPU := x86-64\nall:\n\t' + recipe + '\n')
         def converted(path):
             return 'c:\\' + str(path.relative_to(work / 'c')).replace('/', '\\') if windows else str(path)
         env = dict(os.environ, EXPECTED_RUSTC=converted(rust),
