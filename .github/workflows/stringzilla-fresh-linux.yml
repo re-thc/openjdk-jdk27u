@@ -1,0 +1,103 @@
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla corrected dispatch Linux measurements
+on:
+  push:
+    branches: [codex/stringzilla-final-artifacts]
+    paths: [.github/workflows/stringzilla-fresh-linux.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-fresh-linux-7ca3eeb
+  cancel-in-progress: false
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  CC: gcc-16
+  CXX: g++-16
+  CONFIGURE_DEV_NO_MOLD: '1'
+jobs:
+  linux:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 573e785e5d459c2a96f3042c48651c8cf17a75de
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          path: .stringzilla-driver
+          persist-credentials: false
+          sparse-checkout: doc/stringzilla/merge-20261022
+      - uses: ./.github/actions/get-bootjdk
+        id: bootjdk
+        with:
+          platform: linux-x64
+      - name: Install matching GCC 16
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16
+      - name: Build and seal three matched complete SDKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+        run: python3 .stringzilla-driver/doc/stringzilla/merge-20261022/fresh-linux.py
+      - name: Retain complete controls and candidate
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-fresh-linux-images-${{ github.sha }}
+          path: |
+            pair/original
+            pair/master
+            pair/fork
+            pair/*.json
+            pair/*.gmk
+            pair/*.log
+            pair/*.cmdline
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - name: Check native contracts and memory safety
+        run: |
+          python3 .stringzilla-driver/doc/stringzilla/merge-20261022/validate-neon.py
+          python3 .stringzilla-driver/doc/stringzilla/merge-20261022/native-sanitizers.py --source . --jdk pair/fork --compiler /usr/bin/gcc-16 --output native-sanitizers
+      - name: Check dispatch, physical bounds, overlap and safepoints
+        run: python3 .stringzilla-driver/doc/stringzilla/merge-20261022/jtreg.py
+      - name: Eight balanced rounds on complete images
+        run: >-
+          python3 .stringzilla-driver/doc/stringzilla/merge-20261022/compare.py
+          --source . --controls pair/controls.json --manifest pair/linux-cases.json
+          --output paired-results --rounds 8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda
+          path: .stringzilla-corpus
+          persist-credentials: false
+          sparse-checkout: src/java.base/share/classes/java/lang
+      - name: Ordinary startup, compilation and source-indexing comparisons
+        run: >-
+          python3 .stringzilla-driver/doc/stringzilla/merge-20261022/process-controls.py
+          --source . --controls pair/process-controls.json --corpus .stringzilla-corpus --output process-results
+      - name: Retain raw measurements and checks
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-fresh-linux-results-${{ github.sha }}
+          path: |
+            paired-results
+            process-results
+            validation
+            native-sanitizers/*.json
+            native-sanitizers/*.log
+            native-sanitizers/*.c
+            jtreg-evidence
+            pair/*.json
+            pair/*.gmk
+            pair/*.log
+            pair/*.cmdline
+          retention-days: 30
+          if-no-files-found: error
