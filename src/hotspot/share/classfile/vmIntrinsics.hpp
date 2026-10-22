@@ -386,7 +386,7 @@ class methodHandle;
    do_name(     compareTo_name,                                  "compareTo0")                                          \
    do_name(     compareToLU_name,                                "compareToUTF16_0")                                    \
    do_name(     compareToUL_name,                                "compareToLatin1_0")                                   \
-  do_intrinsic(_stringzillaCompilerTier, java_lang_StringZilla, stringzilla_compilerTier_name, void_int_signature, F_S) \
+  do_intrinsic(_stringzillaCompilerTier, java_lang_String, stringzilla_compilerTier_name, void_int_signature, F_S) \
    do_name(stringzilla_compilerTier_name, "compilerTier") \
   do_intrinsic(_stringzillaEqualsRange, java_lang_StringZilla, stringzilla_equalsRange_name, stringzilla_search_signature, F_SN) \
    do_name(stringzilla_equalsRange_name, "equalsRange") \

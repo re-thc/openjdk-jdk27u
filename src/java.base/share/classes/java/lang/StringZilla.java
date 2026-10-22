@@ -129,7 +129,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16(byte[] src, int offset, byte[] tgt, int length) {
-        return matchesUTF16(src, offset, tgt, length, compilerTier());
+        return matchesUTF16(src, offset, tgt, length, String.compilerTier());
     }
 
     @ForceInline
@@ -197,7 +197,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean useForwardUTF16(int count, boolean mixed) {
-        return BACKEND != SERIAL || compilerTier() != C1
+        return BACKEND != SERIAL || String.compilerTier() != C1
                 || (mixed && count == MAX_MIXED_NEEDLE);
     }
 
@@ -205,16 +205,16 @@ final class StringZilla {
     static boolean useCharUTF16(int length, boolean reverse) {
         if (BACKEND != SERIAL) {
             return (BACKEND != HASWELL && BACKEND != NEON)
-                    || !reverse || length >= (BACKEND == NEON ? 768 : 256) || compilerTier() != C2;
+                    || !reverse || length >= (BACKEND == NEON ? 768 : 256) || String.compilerTier() != C2;
         }
-        int tier = compilerTier();
+        int tier = String.compilerTier();
         return !(reverse && tier == C2)
                 && (!MSVC_SERIAL || tier != C1);
     }
 
     @ForceInline
     static boolean probeMixedImmediate(int count) {
-        return probeMixedImmediate(count, compilerTier());
+        return probeMixedImmediate(count, String.compilerTier());
     }
 
     @ForceInline
@@ -230,7 +230,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean useMixedRangeIntrinsic(int count) {
-        return useMixedRangeIntrinsic(count, compilerTier());
+        return useMixedRangeIntrinsic(count, String.compilerTier());
     }
 
     @ForceInline
@@ -241,7 +241,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean matchesUTF16Latin1Reverse(byte[] src, int offset, byte[] tgt, int count) {
-        return matchesUTF16Latin1Reverse(src, offset, tgt, count, compilerTier());
+        return matchesUTF16Latin1Reverse(src, offset, tgt, count, String.compilerTier());
     }
 
     @ForceInline
@@ -463,7 +463,7 @@ final class StringZilla {
         if (length == 0) {
             return from;
         }
-        if (length >= Long.BYTES && compilerTier() != 0 && mode >= LINE_SEPARATOR
+        if (length >= Long.BYTES && String.compilerTier() != 0 && mode >= LINE_SEPARATOR
                 && mode <= NON_WHITESPACE_REVERSE) {
             int result = scanWord(src, from, to, mode);
             if (result != FALLBACK) {
@@ -547,18 +547,11 @@ final class StringZilla {
     // The selected kernel, including serial-only builds, and the VM enable flag.
     private static native int initialize();
 
-    // Compilers fold this into their tier; the Java body keeps interpreter routing.
-    @IntrinsicCandidate
-    @ForceInline
-    static int compilerTier() {
-        return 0;
-    }
-
     // Same-coder reverse gates use the searched prefix length and needle count
     // in code units, after the public API has normalized fromIndex.
     @ForceInline
     static boolean useReverseLatin1(int length, int count) {
-        return useReverseLatin1(length, count, compilerTier());
+        return useReverseLatin1(length, count, String.compilerTier());
     }
 
     @ForceInline
@@ -597,7 +590,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean useReverseLatin1Filter() {
-        return useReverseLatin1Filter(compilerTier());
+        return useReverseLatin1Filter(String.compilerTier());
     }
 
     @ForceInline
@@ -616,7 +609,7 @@ final class StringZilla {
 
     @ForceInline
     static boolean useReverseUTF16(int length, int count) {
-        return useReverseUTF16(length, count, compilerTier());
+        return useReverseUTF16(length, count, String.compilerTier());
     }
 
     @ForceInline

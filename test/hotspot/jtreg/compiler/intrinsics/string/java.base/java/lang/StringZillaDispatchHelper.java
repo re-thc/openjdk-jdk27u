@@ -25,7 +25,7 @@ package java.lang;
 
 public class StringZillaDispatchHelper {
     public static int tier() {
-        return StringZilla.compilerTier();
+        return String.compilerTier();
     }
 
     public static boolean latin(int length, int count) {

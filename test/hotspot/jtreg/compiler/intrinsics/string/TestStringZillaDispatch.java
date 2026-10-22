@@ -81,7 +81,7 @@ public class TestStringZillaDispatch {
         Method search = helper.getMethod("search", String.class, String.class, int.class);
         Method forwardUTF16 = helper.getMethod("forwardUTF16", int.class, boolean.class);
         Method charUTF16 = helper.getMethod("charUTF16", int.class, boolean.class);
-        Method intrinsic = bridge.getDeclaredMethod("compilerTier");
+        Method intrinsic = String.class.getDeclaredMethod("compilerTier");
         if (args.length != 0) {
             checkForwardAndChar(forwardUTF16, charUTF16, backend, msvcSerial, 0);
             checkNarrowCandidates(search);

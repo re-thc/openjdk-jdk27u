@@ -646,7 +646,7 @@ final class StringLatin1 {
             if (searchLength < StringZilla.MIN_INTERPRETER_REVERSE_BYTES || !StringZilla.ENABLED) {
                 return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
-            tier = StringZilla.compilerTier();
+            tier = String.compilerTier();
             // No unsafe access occurs on this scalar C1 path. The Java loop
             // checks every actual array access, including stale backing arrays.
             if (tier == StringZilla.C1 && searchLength < StringZilla.MIN_BYTES) {
@@ -1246,9 +1246,13 @@ final class StringLatin1 {
             return 0;
         }
         int left = 1;
-        int limit = length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
-                && StringZilla.SCANS_ENABLED
-                ? StringZilla.SCAN_PROBE : length;
+        int limit = length;
+        if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            if (!StringZilla.SCANS_ENABLED) {
+                return indexOfNonWhitespaceJava(value);
+            }
+            limit = StringZilla.SCAN_PROBE;
+        }
         while (left < limit) {
             char ch = getChar(value, left);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -1257,6 +1261,21 @@ final class StringLatin1 {
             left++;
         }
         return left == length ? left : indexOfNonWhitespaceLong(value, left);
+    }
+
+    // Keep the Java-only loop bound directly tied to the physical array length.
+    @ForceInline
+    private static int indexOfNonWhitespaceJava(byte[] value) {
+        int left = 0;
+        int length = value.length;
+        while (left < length) {
+            char ch = getChar(value, left);
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                return left;
+            }
+            left++;
+        }
+        return left;
     }
 
     @DontInline
@@ -1288,9 +1307,13 @@ final class StringLatin1 {
             return right;
         }
         right--;
-        int stop = value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
-                && StringZilla.SCANS_ENABLED
-                ? value.length - StringZilla.SCAN_PROBE : 0;
+        int stop = 0;
+        if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
+            if (!StringZilla.SCANS_ENABLED) {
+                return lastIndexOfNonWhitespaceJava(value);
+            }
+            stop = value.length - StringZilla.SCAN_PROBE;
+        }
         while (right > stop) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -1299,6 +1322,19 @@ final class StringLatin1 {
             right--;
         }
         return right == 0 ? 0 : lastIndexOfNonWhitespaceLong(value, right);
+    }
+
+    @ForceInline
+    private static int lastIndexOfNonWhitespaceJava(byte[] value) {
+        int right = value.length;
+        while (right > 0) {
+            char ch = getChar(value, right - 1);
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                return right;
+            }
+            right--;
+        }
+        return right;
     }
 
     @DontInline

@@ -3187,6 +3187,13 @@ public final class String
         return lastIndexOf(value, coder(), length(), str, fromIndex);
     }
 
+    // String is initialized before its compiled callers query their tier.
+    @IntrinsicCandidate
+    @ForceInline
+    static int compilerTier() {
+        return 0;
+    }
+
     /**
      * Code shared by String and AbstractStringBuilder to do searches. The
      * source is the character array being searched, and the target
@@ -3231,7 +3238,7 @@ public final class String
                 return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             if (searchLength < (StringZilla.MIN_BYTES >> 1)
-                    && (!StringZilla.ENABLED || StringZilla.compilerTier() == StringZilla.C1)) {
+                    && (compilerTier() == StringZilla.C1 || !StringZilla.ENABLED)) {
                 return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex,

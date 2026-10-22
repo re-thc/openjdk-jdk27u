@@ -1204,7 +1204,7 @@ final class StringUTF16 {
             assert tgtCount > 0;
             assert tgtCount <= length(tgt);
             if (tgtCount <= 8 && StringZilla.ENABLED) {
-                tier = StringZilla.compilerTier();
+                tier = String.compilerTier();
                 if (tier == StringZilla.C1
                         && fromIndex + tgtCount < (StringZilla.MIN_BYTES >> 1)) {
                     // The scalar helper checks both physical ends itself.
@@ -1225,7 +1225,7 @@ final class StringUTF16 {
                 return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
             if (tier == StringZilla.UNRESOLVED_TIER) {
-                tier = StringZilla.compilerTier();
+                tier = String.compilerTier();
             }
             if (tier == StringZilla.C1) {
                 int prefixLength = fromIndex + tgtCount;
@@ -2358,7 +2358,7 @@ final class StringUTF16 {
                 Preconditions.checkIndex(fromIndex + tgtCount - 1, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
                 if (fromIndex == 0) {
                     if (tgtCount <= StringZilla.MAX_MIXED_NEEDLE
-                            && StringZilla.ENABLED && StringZilla.compilerTier() == 0) {
+                            && StringZilla.ENABLED && String.compilerTier() == 0) {
                         int result = StringZilla.rfindUTF16Latin1(src, 0, tgtCount << 1, tgt, tgtCount);
                         if (result != StringZilla.FALLBACK) {
                             return result < 0 ? -1 : 0;
@@ -2380,7 +2380,7 @@ final class StringUTF16 {
                         && StringZilla.matchesUTF16Latin1(src, fromIndex, tgt, tgtCount)) {
                     return fromIndex;
                 }
-                tier = StringZilla.compilerTier();
+                tier = String.compilerTier();
                 if (tier == StringZilla.C1) {
                     if (searchLength >= (StringZilla.MIN_BYTES >> 1)
                             && tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
@@ -2516,7 +2516,7 @@ final class StringUTF16 {
 
         Preconditions.checkIndex(i, src.length >> 1, Preconditions.SIOOBE_FORMATTER);
 
-        if (StringZilla.compilerTier() == StringZilla.C2) {
+        if (String.compilerTier() == StringZilla.C2) {
             while (i - min >= 32 && getChar(src, i) != strLastChar) {
                 int start = Math.max(min, i - 127);
                 if (indexOfChar0(src, strLastChar, start, i + 1) >= 0) {
