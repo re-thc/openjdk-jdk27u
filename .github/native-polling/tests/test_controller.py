@@ -167,6 +167,80 @@ class ControllerTests(unittest.TestCase):
             self.assertEqual(firsts.count('baseline'), 2)
             self.assertEqual(firsts.count('candidate'), 2)
 
+    def test_formula_gate_rejects_version_drift_and_noncore_sources(self):
+        formulae = [{'name': name, 'tap': 'homebrew/core', 'versions': {'stable': version}}
+                    for name, version in controller.BREW_VERSIONS.items()]
+        controller.check_brew_versions(json.dumps({'formulae': formulae}))
+        for index in range(len(formulae)):
+            for key, value in (('tap', 'other/tap'), ('versions', {'stable': 'unexpected'})):
+                changed = json.loads(json.dumps(formulae))
+                changed[index][key] = value
+                with self.assertRaises(controller.CommandFailure):
+                    controller.check_brew_versions(json.dumps({'formulae': changed}))
+
+    def tool_outputs(self, name, *_args, **_kwargs):
+        values = {'xcode-version': 'Xcode 26.6\nBuild version 17F113', 'sdk-version': '26.5',
+                  'brew-prefix': '/opt/homebrew', 'autoconf-version': 'autoconf (GNU Autoconf) 2.73',
+                  'make-version': 'GNU Make 4.4.1', 'm4-version': 'm4 (GNU M4) 1.4.21',
+                  'brew-build-tool-formulae': json.dumps({'formulae': [
+                      {'name': name, 'tap': 'homebrew/core', 'versions': {'stable': version}}
+                      for name, version in controller.BREW_VERSIONS.items()]})}
+        return values[name]
+
+    def test_missing_runner_utilities_are_reported_together_before_install(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            q = controller.Qualification(ROOT.parents[1], d, 'a' * 40)
+            with patch.object(controller.shutil, 'which', side_effect=lambda name: None if name in ('brew', 'curl') else '/fixture'), \
+                    patch.object(Path, 'is_dir', return_value=True), patch.object(q, 'command') as command:
+                with self.assertRaisesRegex(controller.CommandFailure, 'brew, curl'):
+                    q.prepare_tools()
+                command.assert_not_called()
+
+    def test_missing_xcode_components_are_reported_together_before_install(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            q = controller.Qualification(ROOT.parents[1], d, 'a' * 40)
+            def fail_components(name, *_args, **_kwargs):
+                if name in ('xcode-version-metal', 'xcode-version-metallib'):
+                    raise controller.CommandFailure('missing component')
+            with patch.object(controller.shutil, 'which', return_value='/fixture'), \
+                    patch.object(controller.shutil, 'disk_usage', return_value=type('Disk', (), {'free': 20 * 1024**3})()), \
+                    patch.object(Path, 'is_dir', return_value=True), \
+                    patch.object(q, 'command_output', side_effect=self.tool_outputs), \
+                    patch.object(q, 'command', side_effect=fail_components) as command:
+                with self.assertRaisesRegex(controller.CommandFailure, 'metal, metallib'):
+                    q.prepare_tools()
+                self.assertEqual(len(command.call_args_list), 14)
+                self.assertFalse(any(row.args[0] == 'install-build-tools' for row in command.call_args_list))
+
+    def test_tool_setup_limits_install_and_rejects_formula_drift_before_it(self):
+        from unittest.mock import patch
+        for drift in (False, True):
+            with self.subTest(drift=drift), tempfile.TemporaryDirectory() as d:
+                q = controller.Qualification(ROOT.parents[1], d, 'a' * 40)
+                def outputs(name, *args, **kwargs):
+                    value = self.tool_outputs(name, *args, **kwargs)
+                    return value.replace('2.73', '2.74') if drift and name == 'brew-build-tool-formulae' else value
+                with patch.object(controller.shutil, 'which', return_value='/fixture'), \
+                        patch.object(controller.shutil, 'disk_usage', return_value=type('Disk', (), {'free': 20 * 1024**3})()), \
+                        patch.object(Path, 'is_dir', return_value=True), \
+                        patch.object(q, 'command_output', side_effect=outputs), patch.object(q, 'command') as command:
+                    if drift:
+                        with self.assertRaises(controller.CommandFailure): q.prepare_tools()
+                        self.assertFalse(any(row.args[0] == 'install-build-tools' for row in command.call_args_list))
+                    else:
+                        q.prepare_tools()
+                        install = [row for row in command.call_args_list if row.args[0] == 'install-build-tools']
+                        self.assertEqual(len(install), 1)
+                        self.assertEqual(install[0].args[1], ['brew', 'install', '--formula',
+                            'homebrew/core/autoconf', 'homebrew/core/make'])
+                        self.assertEqual(install[0].kwargs['cap'], 120)
+                        self.assertEqual(q.make, '/opt/homebrew/opt/make/bin/gmake')
+                        self.assertEqual(q.runner.env['M4'], '/opt/homebrew/opt/m4/bin/m4')
+                        for name in ('HOMEBREW_NO_AUTO_UPDATE', 'HOMEBREW_NO_INSTALL_UPGRADE', 'HOMEBREW_NO_INSTALL_CLEANUP'):
+                            self.assertEqual(q.runner.env[name], '1')
+
     def test_bad_or_unverified_footer_is_rejected(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / 'output'
@@ -271,7 +345,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(job['steps'][-1]['with']['include-hidden-files'], 'false')
         self.assertEqual(job['steps'][-2]['if'], 'always()')
         self.assertEqual(job['steps'][1]['timeout-minutes'], '5')
-        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '4')
+        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '5')
         self.assertEqual(job['steps'][1]['with']['persist-credentials'], 'false')
 
 

@@ -19,7 +19,15 @@ import traceback
 BASE = "8d030adbd245b19e6339e3ccd052eb7fe3635319"
 B = "a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c"
 C = "28a8b6162eaf5b4584e9b5d66c28359a336aa831"
+PREVIOUS_VALIDATION = "a343d648a9b5a0cd9ab85a4f3c466db203bd07ae"
 BRANCH = "refs/heads/qualify/native-kqueue-macos-once"
+BREW_VERSIONS = {"autoconf": "2.73", "make": "4.4.1", "m4": "1.4.21"}
+HOST_TOOLS = ("awk", "basename", "bash", "brew", "cat", "chmod", "cp", "curl",
+              "cut", "date", "diff", "dirname", "echo", "expr", "file", "find",
+              "git", "grep", "gunzip", "gzip", "head", "ln", "ls", "mkdir",
+              "mktemp", "mv", "perl", "printf", "ps", "rm", "rmdir", "sed",
+              "sh", "sort", "sw_vers", "tail", "tar", "tee", "touch", "tr",
+              "uname", "unzip", "wc", "xargs", "xattr", "xcodebuild", "xcrun", "zip")
 STAGE_CAPS = {"setup": 300, "build-baseline": 2400, "build-candidate": 600,
               "build-fastdebug": 2400, "correctness": 1200, "measurements": 900}
 BOOT_URL = "https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_macos-aarch64_bin.tar.gz"
@@ -272,8 +280,9 @@ def validate_sources(repo, expected):
         raise CommandFailure("expected_validation_sha must be a full lowercase SHA")
     if git(repo, "rev-parse", "HEAD") != expected:
         raise CommandFailure("Validation checkout does not match expected SHA")
-    if git(repo, "rev-parse", "HEAD^") != C:
-        raise CommandFailure("Validation commit must be one CI-only commit directly on C")
+    if (git(repo, "rev-parse", "HEAD^") != PREVIOUS_VALIDATION or
+            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != C):
+        raise CommandFailure("Validation correction must directly follow the frozen first validation")
     if git(repo, "rev-parse", C + "^") != B or git(repo, "rev-parse", B + "^") != BASE:
         raise CommandFailure("Comparison ancestry mismatch")
     if git(repo, "status", "--porcelain"):
@@ -296,6 +305,14 @@ def validate_sources(repo, expected):
     return {label: {"commit": sha, "tree": git(repo, "rev-parse", sha + "^{tree}")}
             for label, sha in (("master", BASE), ("baseline", B), ("candidate", C),
                                ("validation", expected))}
+
+
+def check_brew_versions(text):
+    formulae = {row["name"]: row for row in json.loads(text)["formulae"]}
+    for name, version in BREW_VERSIONS.items():
+        row = formulae.get(name, {})
+        if row.get("tap") != "homebrew/core" or row.get("versions", {}).get("stable") != version:
+            raise CommandFailure("Unexpected Homebrew formula/version: " + name)
 
 
 def image_manifest(image, output, source):
@@ -410,6 +427,62 @@ class Qualification:
     def command(self, *args, **kwargs):
         return self.runner.run(*args, **kwargs)
 
+    def command_output(self, *args, **kwargs):
+        return Path(self.command(*args, **kwargs)["log"]).read_text().strip()
+
+    def prepare_tools(self):
+        developer = "/Applications/Xcode_26.6.app/Contents/Developer"
+        missing = [name for name in HOST_TOOLS if not shutil.which(name)]
+        if not Path(developer).is_dir():
+            missing.append(developer)
+        if missing:
+            raise CommandFailure("Required runner tools missing: " + ", ".join(missing))
+        if shutil.disk_usage(self.output).free < 10 * 1024**3:
+            raise CommandFailure("Less than 10 GiB free for sources/builds/images")
+        self.runner.env["DEVELOPER_DIR"] = developer
+        xcode = self.command_output("xcode-version", ["xcodebuild", "-version"], cap=20)
+        sdk = self.command_output("sdk-version", ["xcrun", "--sdk", "macosx", "--show-sdk-version"], cap=20)
+        if xcode.splitlines() != ["Xcode 26.6", "Build version 17F113"] or sdk != "26.5":
+            raise CommandFailure("Expected Xcode 26.6 (17F113) and macOS SDK 26.5")
+        failures = []
+        for tool in ("clang", "clang++", "ar", "nm", "strip", "dsymutil", "mig",
+                     "SetFile", "otool", "install_name_tool", "lipo", "codesign"):
+            try:
+                self.command("xcode-find-" + tool, ["xcrun", "--find", tool], cap=10)
+            except CommandFailure:
+                failures.append(tool)
+        for tool in ("metal", "metallib"):
+            try:
+                self.command("xcode-version-" + tool,
+                             ["xcrun", "--sdk", "macosx", tool, "--version"], cap=20)
+            except CommandFailure:
+                failures.append(tool)
+        if failures:
+            raise CommandFailure("Required Xcode tools unavailable: " + ", ".join(failures))
+        # Use the ordinary macOS build's Homebrew formulae, without unrelated maintenance.
+        self.runner.env.update(HOMEBREW_NO_AUTO_UPDATE="1", HOMEBREW_NO_INSTALL_CLEANUP="1",
+                               HOMEBREW_NO_INSTALL_UPGRADE="1")
+        info = self.command_output("brew-build-tool-formulae",
+            ["brew", "info", "--json=v2", "--formula", *["homebrew/core/" + name for name in BREW_VERSIONS]], cap=20)
+        check_brew_versions(info)
+        self.command("install-build-tools",
+                     ["brew", "install", "--formula", "homebrew/core/autoconf", "homebrew/core/make"], cap=120)
+        prefix = Path(self.command_output("brew-prefix", ["brew", "--prefix"], cap=10))
+        if prefix != Path("/opt/homebrew"):
+            raise CommandFailure("Native arm64 Homebrew prefix required")
+        tools = {"autoconf": prefix / "opt/autoconf/bin/autoconf",
+                 "make": prefix / "opt/make/bin/gmake", "m4": prefix / "opt/m4/bin/m4"}
+        for name, program in tools.items():
+            version = self.command_output(name + "-version", [program, "--version"], cap=20).splitlines()[0]
+            if not version.endswith(" " + BREW_VERSIONS[name]):
+                raise CommandFailure("Installed build tool version mismatch: " + name)
+        self.make = str(tools["make"])
+        self.runner.env.update(AUTOCONF=str(tools["autoconf"]), M4=str(tools["m4"]), MAKE=self.make)
+        self.runner.env["PATH"] = str(prefix / "opt/make/libexec/gnubin") + ":" + self.runner.env["PATH"]
+        for name, argv in (("sw-vers", ["sw_vers"]), ("clang-version", ["xcrun", "clang", "--version"]),
+                           ("sdk", ["xcrun", "--show-sdk-path"])):
+            self.command(name, argv, cap=20)
+
     def setup(self):
         with self.runner.phase("setup", STAGE_CAPS["setup"]):
             identities = validate_sources(self.repo, self.expected)
@@ -418,24 +491,7 @@ class Qualification:
                 raise CommandFailure("Native Darwin arm64 required; no emulation/fallback")
             if os.environ.get("GITHUB_REF") != BRANCH:
                 raise CommandFailure("Dedicated validation branch required")
-            for program in ("autoconf", "curl", "tar", "xcrun"):
-                if not shutil.which(program):
-                    raise CommandFailure(f"Required preinstalled tool missing: {program}")
-            self.make = shutil.which("gmake")
-            if not self.make:
-                candidate = Path("/opt/homebrew/opt/make/libexec/gnubin/make")
-                self.make = str(candidate) if candidate.exists() else None
-            if not self.make:
-                raise CommandFailure("Preinstalled GNU make missing")
-            self.command("make-version", [self.make, "--version"], cap=20)
-            if shutil.disk_usage(self.output).free < 10 * 1024**3:
-                raise CommandFailure("Less than 10 GiB free for sources/builds/images")
-            self.runner.env["DEVELOPER_DIR"] = "/Applications/Xcode_26.6.app/Contents/Developer"
-            if not Path(self.runner.env["DEVELOPER_DIR"]).is_dir():
-                raise CommandFailure("Expected installed Xcode 26.6 missing")
-            for name, argv in (("sw-vers", ["sw_vers"]), ("clang-version", ["xcrun", "clang", "--version"]),
-                               ("sdk", ["xcrun", "--show-sdk-path"]), ("autoconf-version", ["autoconf", "--version"])):
-                self.command(name, argv, cap=20)
+            self.prepare_tools()
             dependencies = self.workspace / "dependencies"
             dependencies.mkdir(parents=True)
             for label, url, expected in (("bootjdk", BOOT_URL, BOOT_SHA), ("jtreg", JTREG_URL, JTREG_SHA)):
