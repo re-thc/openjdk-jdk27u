@@ -21,7 +21,8 @@ import zipfile
 BASE = "8d030adbd245b19e6339e3ccd052eb7fe3635319"
 B = "a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c"
 C = "28a8b6162eaf5b4584e9b5d66c28359a336aa831"
-PREVIOUS_VALIDATION = "943033351b31baa7e021afdf2382ef03c872bfab"
+PREVIOUS_VALIDATION = "10fd6215e38fdd4423ebe737c81c3baf6ad6e7ff"
+PREREQUISITE_VALIDATION = "943033351b31baa7e021afdf2382ef03c872bfab"
 SETUP_VALIDATION = "ef4eeb6d70db6404f84b3d211183a81c42b9c161"
 FIRST_VALIDATION = "a343d648a9b5a0cd9ab85a4f3c466db203bd07ae"
 BRANCH = "refs/heads/qualify/native-kqueue-macos-once"
@@ -294,7 +295,8 @@ def validate_sources(repo, expected):
     if git(repo, "rev-parse", "HEAD") != expected:
         raise CommandFailure("Validation checkout does not match expected SHA")
     if (git(repo, "rev-parse", "HEAD^") != PREVIOUS_VALIDATION or
-            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != SETUP_VALIDATION or
+            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != PREREQUISITE_VALIDATION or
+            git(repo, "rev-parse", PREREQUISITE_VALIDATION + "^") != SETUP_VALIDATION or
             git(repo, "rev-parse", SETUP_VALIDATION + "^") != FIRST_VALIDATION or
             git(repo, "rev-parse", FIRST_VALIDATION + "^") != C):
         raise CommandFailure("Validation correction ancestry mismatch")
@@ -403,8 +405,6 @@ def prepare_prerequisites(repo, source, output, transfer, expected):
     started = json.loads((output / "job-start.json").read_text())["monotonic"]
     runner = Runner(output, Path(__file__).with_name("supervise.py"), started + 10 * 60)
     status = {"status": "running", "validation": expected}
-    def capture(name, argv, cap=20):
-        return Path(runner.run(name, argv, cap=cap)["log"]).read_text().strip()
     try:
         with runner.phase("setup", 10 * 60):
             write_json(output / "source-identities.json", validate_sources(repo, expected))
@@ -416,17 +416,10 @@ def prepare_prerequisites(repo, source, output, transfer, expected):
                 if sha256(source / name) != digest:
                     raise CommandFailure("Unexpected jtreg build input: " + name)
             jdk = Path(os.environ.get("JAVA_HOME_17_X64", "/missing-jdk17"))
-            brew = Path("/home/linuxbrew/.linuxbrew/bin/brew")
             missing = [tool for tool in ("bash", "curl", "git", "make", "sha1sum", "tar", "unzip", "wget") if not shutil.which(tool)]
-            if not brew.is_file() or not (jdk / "bin/javac").is_file() or missing:
-                raise CommandFailure("Prerequisite runner missing Homebrew/JDK17/tools: " + ", ".join(missing))
-            capture("prerequisite-jdk-version", [jdk / "bin/java", "-version"])
-            runner.env.update(HOMEBREW_NO_AUTO_UPDATE="1", HOMEBREW_NO_INSTALL_UPGRADE="1", HOMEBREW_NO_INSTALL_CLEANUP="1")
-            info = capture("brew-build-tool-formulae", [brew, "info", "--json=v2", "--formula",
-                            *["homebrew/core/" + name for name in BREW_VERSIONS]])
-            check_brew_versions(info)
-            runner.run("fetch-mac-build-tool-bottles", [brew, "fetch", "--formula", "--force-bottle",
-                "--bottle-tag=arm64_tahoe", *["homebrew/core/" + name for name in BREW_VERSIONS]], cap=120)
+            if not (jdk / "bin/javac").is_file() or missing:
+                raise CommandFailure("Prerequisite runner missing JDK17/tools: " + ", ".join(missing))
+            runner.run("prerequisite-jdk-version", [jdk / "bin/java", "-version"], cap=20)
             package = output.parent / "mac-bootjdk-preflight.tar.gz"
             runner.run("download-bootjdk", ["curl", "--fail", "--location", "--connect-timeout", "20",
                 "--max-time", "240", "--output", package, BOOT_URL], cap=250)

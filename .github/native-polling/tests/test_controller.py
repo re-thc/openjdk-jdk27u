@@ -335,6 +335,64 @@ class ControllerTests(unittest.TestCase):
             self.assertEqual(json.loads((output / 'status.json').read_text())['status'], 'failed')
             self.assertEqual(json.loads((output / 'phases/setup.json').read_text())['status'], 'failed')
 
+    def test_linux_prerequisite_flow_needs_no_homebrew_and_verifies_transfer(self):
+        import io, tarfile, zipfile
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d); source = root / 'source'; output = root / 'evidence'; output.mkdir()
+            jdk = root / 'jdk17'; (jdk / 'bin').mkdir(parents=True)
+            (jdk / 'bin/java').write_text('fixture'); (jdk / 'bin/javac').write_text('fixture')
+            pins = {}
+            for name in controller.JTREG_SOURCE_PINS:
+                path = source / name; path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('source fixture: ' + name); pins[name] = controller.sha256(path)
+            boot = root / 'boot-fixture.tar.gz'
+            with tarfile.open(boot, 'w:gz') as archive:
+                for name, data in {'bin/java':b'fixture', 'bin/javac':b'fixture',
+                                   'release':b'JAVA_VERSION="26"\nOS_ARCH="aarch64"\n'}.items():
+                    entry = tarfile.TarInfo('jdk-26.jdk/Contents/Home/' + name); entry.size = len(data)
+                    archive.addfile(entry, io.BytesIO(data))
+            jars = {name:('jar fixture: ' + name).encode() for name in controller.JTREG_JAR_PINS}
+            jar_pins = {name:controller.hashlib.sha256(data).hexdigest() for name, data in jars.items()}
+            commands = []
+            def replay(runner, name, argv, **kwargs):
+                commands.append((name, [str(x) for x in argv], kwargs))
+                if name == 'download-bootjdk':
+                    Path(argv[-2]).write_bytes(boot.read_bytes())
+                elif name == 'extract-bootjdk':
+                    with tarfile.open(argv[2]) as archive:
+                        for entry in archive.getmembers():
+                            entry.name = entry.name.split('/', 1)[1]
+                            archive.extract(entry, argv[4], filter='data')
+                elif name == 'build-official-jtreg':
+                    self.assertEqual([str(x) for x in argv], ['bash', 'make/build.sh', '--jdk', str(jdk)])
+                    self.assertEqual(runner.env['SKIP_CHECKSUM_CHECK'], '')
+                    image = source / 'build/images/jtreg/lib'; image.mkdir(parents=True)
+                    for filename, data in jars.items(): (image / filename).write_bytes(data)
+                    with zipfile.ZipFile(image / 'jtreg.jar', 'w') as jar:
+                        jar.writestr('META-INF/MANIFEST.MF', 'jtreg-VersionString: ' + controller.JTREG_VERSION + '\r\n')
+                return {'log':str(output / 'unused.log')}
+            controller.write_json(output / 'job-start.json', {'monotonic':time.monotonic()})
+            github_output = root / 'github-output'
+            with patch.object(controller, 'validate_sources', return_value={'fixture':True}), \
+                    patch.object(controller, 'git', side_effect=lambda _repo, *args: controller.JTREG_SOURCE if args[0] == 'rev-parse' else ''), \
+                    patch.object(controller, 'JTREG_SOURCE_PINS', pins), \
+                    patch.object(controller, 'JTREG_JAR_PINS', jar_pins), \
+                    patch.object(controller, 'BOOT_SHA', controller.sha256(boot)), \
+                    patch.object(controller.shutil, 'which', side_effect=lambda tool: None if tool == 'brew' else '/fixture/' + tool), \
+                    patch.object(controller.Runner, 'run', replay), \
+                    patch.dict(os.environ, {'GITHUB_REF':controller.BRANCH, 'JAVA_HOME_17_X64':str(jdk), 'GITHUB_OUTPUT':str(github_output)}):
+                controller.prepare_prerequisites(ROOT.parents[1], source, output, root / 'transfer', 'a' * 40)
+            self.assertEqual([row[0] for row in commands], ['prerequisite-jdk-version', 'download-bootjdk',
+                             'extract-bootjdk', 'build-official-jtreg', 'built-jtreg-version'])
+            self.assertEqual(json.loads((output / 'status.json').read_text())['status'], 'passed')
+            self.assertFalse((root / 'mac-bootjdk-preflight').exists())
+            self.assertFalse((root / 'mac-bootjdk-preflight.tar.gz').exists())
+            manifest = json.loads((root / 'transfer/jtreg-manifest.json').read_text())
+            self.assertEqual(manifest['source'], controller.JTREG_SOURCE)
+            self.assertIn('archive_sha256=' + manifest['archive_sha256'], github_output.read_text())
+            self.assertEqual((root / 'jtreg-verified/jtreg/lib/testng-7.3.0.jar').read_bytes(), jars['testng-7.3.0.jar'])
+
     def test_transfer_rejects_tampered_digest_or_wrong_source_before_extraction(self):
         for mode in ('archive', 'manifest', 'source', 'validation', 'version'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as d:
@@ -476,7 +534,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(job['steps'][-1]['with']['include-hidden-files'], 'false')
         self.assertEqual(job['steps'][-2]['if'], 'always()')
         self.assertEqual(job['steps'][1]['timeout-minutes'], '5')
-        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '7')
+        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '8')
         self.assertEqual(job['steps'][1]['with']['persist-credentials'], 'false')
 
 
