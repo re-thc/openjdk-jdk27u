@@ -6,8 +6,9 @@ This applies to `Instant.parse`, `ISO_INSTANT` and `appendInstant()` on every bu
 Fixed fractional widths keep their existing parser construction.
 
 A bounded speedate 0.18.0 backend additionally accelerates `Instant.parse(String)`.
-Configure defaults to `--enable-instant-speedate=auto`: native Linux GNU x64
-builds enable it when installed Rust 1.88+, Cargo, the target standard library,
+Configure defaults to `--enable-instant-speedate=auto`: native Linux GNU
+x64/AArch64, macOS arm64 and Windows x64 builds enable it when installed
+Rust 1.88+, Cargo, the target standard library,
 its `COPYRIGHT-library.html` notices and all locked Cargo dependencies are usable
 locally. Otherwise configure selects Java parsing. Configure and make neither
 fetch dependencies nor install Rust toolchains. `--disable-instant-speedate`
@@ -15,9 +16,10 @@ skips Rust probing and compiles out native routing; parser reuse still applies.
 
 Explicit `--enable-instant-speedate` requires those prerequisites and a supported
 native target. The available targets are Linux GNU x64/AArch64, macOS arm64 and
-Windows x64. Cross compilation and other targets use Java. Only Linux x64 has
-current integrated performance qualification; the other native targets require
-explicit enablement and platform validation. Tagged upstream CI is Ubuntu-only.
+Windows x64. Cross compilation and other targets use Java. Complete-operation
+performance has been measured on Linux x64; no speedup is asserted for the other
+platforms. Platform checks must assert actual native hits, since successful
+Java fallback alone does not validate a native integration.
 
 Rust x64 code targets baseline `x86-64`, AArch64 Linux uses `generic`, and macOS
 uses `apple-m1`. The feature adds no x64-v3 requirement; the repository's

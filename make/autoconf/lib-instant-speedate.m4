@@ -14,12 +14,6 @@ esac
 if test "x$COMPILE_TYPE" = xcross; then
   speedate_unavailable="cross compilation"
 fi
-# Only Linux x64 has current integrated performance qualification.
-# Other native targets remain available through explicit enablement.
-if test "x$enable_instant_speedate" != xyes && \
-    test "x$OPENJDK_TARGET_OS:$OPENJDK_TARGET_CPU" != xlinux:x86_64; then
-  speedate_unavailable="native parsing has not been qualified by default on this target"
-fi
 if test "x$enable_instant_speedate" != xno && test -z "$speedate_unavailable"; then
   UTIL_LOOKUP_PROGS(CARGO, cargo)
   UTIL_LOOKUP_PROGS(RUSTC, rustc)

@@ -169,9 +169,22 @@ AC_OUTPUT
                 (('linux', 'aarch64', 'gnu'), 'aarch64-unknown-linux-gnu', 'generic'),
                 (('macosx', 'aarch64', ''), 'aarch64-apple-darwin', 'apple-m1'),
                 (('windows', 'x86_64', ''), 'x86_64-pc-windows-msvc', 'x86-64')):
-            check(target[0] + ' other-target auto', target=target, no_probes=True)
+            check(target[0] + ' default cached', target=target,
+                  enabled=True, rust_target=rust_target, cpu=cpu)
+            check(target[0] + ' explicit auto cached', target=target,
+                  option='--enable-instant-speedate=auto',
+                  enabled=True, rust_target=rust_target, cpu=cpu)
             check(target[0] + ' other-target explicit', target=target, option='--enable-instant-speedate',
                   enabled=True, rust_target=rust_target, cpu=cpu)
+            check(target[0] + ' disabled never probes', target=target,
+                  option='--disable-instant-speedate', no_probes=True)
+            for broken in ('missing-cargo', 'missing-rustc', 'old-rust', 'missing-std',
+                           'missing-notices', 'offline'):
+                check(target[0] + ' ' + broken + ' auto', target=target, broken=broken,
+                      rust_target=rust_target, cpu=cpu)
+                check(target[0] + ' ' + broken + ' explicit', target=target, broken=broken,
+                      option='--enable-instant-speedate', succeeds=False,
+                      rust_target=rust_target, cpu=cpu)
         print(f'{cases} production configure-policy cases PASS; no native code compiled')
 
 
