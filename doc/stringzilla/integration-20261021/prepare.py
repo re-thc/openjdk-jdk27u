@@ -111,11 +111,11 @@ def verify_release_source(release_text, specification, backend):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('mode',choices=('restore','seal'))
+    p.add_argument('mode',choices=('restore','images','seal'))
     p.add_argument('--backend',choices=tuple(ARTIFACTS),required=True)
     a=p.parse_args()
     root=Path('pair')
-    if a.mode=='restore':
+    if a.mode in ('restore','images'):
         exclude=Path(subprocess.check_output(['git','rev-parse','--git-path','info/exclude'],text=True).strip())
         with exclude.open('a') as f:
             f.write('\n# Isolated qualification outputs; product sources remain tracked.\n')
@@ -148,6 +148,8 @@ def main():
             'reuse':'Independent original image only; rebuild candidate from the exact product source',
             'product_target':SOURCE},indent=2)+'\n')
         restore_reference(root, a.backend, headers)
+        if a.mode == 'images':
+            return
         ident=12150561563
         digest='bea9bcdcd407c1badace23cbad69aebd75f6d8478693738ea3b8e2b9ec52374d'
         base='https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/'+str(ident)

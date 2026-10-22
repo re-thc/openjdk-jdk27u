@@ -46,7 +46,31 @@ app = Path(__file__).with_name('SourceScan.java')
 classes = a.output/'classes'
 classes.mkdir()
 subprocess.run([str(images['original']/'bin/javac'), '-proc:none', '-d', str(classes), str(app)], check=True)
-source_hashes = {str(f): support.sha(f) for f in [*sources, *corpus, app, Path(__file__)]}
+probe = a.output/'DefaultBackend.java'
+probe.write_text('class DefaultBackend {public static void main(String[] a)throws Exception{'
+                 'Class<?> c=Class.forName("java.lang.StringZilla");'
+                 'for(String n:new String[]{"BACKEND","ENABLED","SCANS_ENABLED"})'
+                 '{try{var f=c.getDeclaredField(n);f.setAccessible(true);System.out.println(n+"="+f.get(null));}'
+                 'catch(NoSuchFieldException e){System.out.println(n+"=absent");}}}}')
+subprocess.run([str(images['original']/'bin/javac'),'-d',str(classes),str(probe)],check=True)
+attestations={}
+for name,control in controls.items():
+    flags=control.get('flags',[])
+    selected=support.command([images[name]/'bin/java',*flags,'-XX:+PrintFlagsFinal','-version'])
+    value={'default_vm_flags':[line for line in selected.splitlines() if any(key in line for key in
+           ('UseAVX ', 'UseStringZillaIntrinsics ', 'TieredCompilation ', 'UseSerialGC ', 'UseG1GC ',
+            'UseZGC ', 'UseCompactObjectHeaders ', 'ObjectAlignmentInBytes ', 'ActiveProcessorCount '))]}
+    if name!='original':
+        raw=support.command([images[name]/'bin/java',*flags,'--add-opens=java.base/java.lang=ALL-UNNAMED',
+                             '-cp',classes,'DefaultBackend'])
+        fields=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        enabled='-XX:-UseStringZillaIntrinsics' not in flags
+        assert fields['ENABLED']==str(enabled).lower()
+        assert fields['BACKEND']=='2', 'Expected this qualified local host default AVX-512 backend'
+        value['backend']=raw
+    attestations[name]=value
+harness_hashes={str(f.relative_to(classes)):support.sha(f) for f in classes.rglob('*') if f.is_file()}
+source_hashes = {str(f): support.sha(f) for f in [*sources, *corpus, app, probe, Path(__file__)]}
 checksum = None
 results = []
 for wi, workload in enumerate(('startup', 'javac', 'source-index')):
@@ -101,8 +125,9 @@ for wi, workload in enumerate(('startup', 'javac', 'source-index')):
     (a.output/'results.json').write_text(json.dumps(results, indent=2)+'\n')
 assert all(support.image(images[n])['files'] == inventory['files'] for n, inventory in inventories.items())
 assert all(support.sha(Path(f)) == h for f, h in source_hashes.items())
+assert {str(f.relative_to(classes)):support.sha(f) for f in classes.rglob('*') if f.is_file()}==harness_hashes
 receipt = {'controls': controls, 'images': inventories, 'matched_settings': settings, 'affinity': affinity,
-           'machine': platform.platform(), 'source_hashes': source_hashes, 'source_index_checksum': checksum,
+           'machine': platform.platform(), 'source_hashes': source_hashes, 'compiled_harness':harness_hashes, 'default_backend_attestations':attestations, 'source_index_checksum': checksum,
            'protocol': 'Four controls; one untimed full round then eight balanced rotating rounds; ordinary JVM defaults including tiering/CDS; blocking whole-process wall time; no timeout polling',
            'scope': 'java -version, javac compilation of three fixed source files, and one fixed token/reverse/line source-indexing task; no general application claim',
            'complete': True}

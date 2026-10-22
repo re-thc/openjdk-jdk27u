@@ -1,8 +1,8 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-name: StringZilla final paired native checks
-# Bounded combined PR4/PR63 qualification: 39 affected/control cases per platform.
-# Four complete-image controls, four balanced rounds, five samples per fork.
+name: StringZilla remaining-loss paired checks
+# Distinct follow-on: 16 previously uncovered loss/boundary controls per platform.
+# Reuse digest-bound complete images from the primary run; no rebuild or test repeat.
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -13,12 +13,12 @@ permissions:
 env:
   PYTHONDONTWRITEBYTECODE: '1'
 concurrency:
-  group: stringzilla-combined-20261021
+  group: stringzilla-remaining-loss-b19af25c
   cancel-in-progress: false
 jobs:
   neon:
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -30,66 +30,39 @@ jobs:
           path: .stringzilla-driver
           persist-credentials: false
           sparse-checkout: doc/stringzilla/integration-20261021
-      - name: Restore verified independent native ARM baseline
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 .stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py restore --backend neon
-      - uses: ./.github/actions/get-bootjdk
-        id: bootjdk
-        with:
-          platform: linux-aarch64
-      - name: Install matching GCC 16
+      - name: Install matching C++ runtime
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-16 g++-16
-      - name: Build complete native ARM candidate
+          sudo apt-get install -y libstdc++6 libgcc-s1
+      - name: Restore verified original, prior and exact-head complete images
         env:
-          CC: gcc-16
-          CXX: g++-16
-          CONFIGURE_DEV_NO_MOLD: '1'
-          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .stringzilla-driver/doc/stringzilla/integration-20261021/reuse.py --backend neon
+      - name: Record native runtime identity
         run: |
-          bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
-            --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
-            --with-source-date=1792195200 --with-native-debug-symbols=none --with-jmod-compress=zip-1
-          make CONF=perf JOBS=2 images
-          python3 .stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py seal --backend neon
-      - name: Retain complete ARM candidate before tests
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: stringzilla-paired-candidate-neon-${{ github.sha }}
-          path: candidate-retained
-          retention-days: 30
-          if-no-files-found: error
-      - name: Validate native ARM dispatch, bounds and safepoints
-        run: python3 .stringzilla-driver/doc/stringzilla/integration-20261021/jtreg.py
-      - name: Repeated paired ARM measurements
+          ldd --version
+          dpkg-query -W libstdc++6 libgcc-s1 libc6
+      - name: Measure remaining loss and boundary controls
         run: >-
           python3 .stringzilla-driver/doc/stringzilla/integration-20261021/compare.py
           --source . --controls pair/controls.json
-          --manifest .stringzilla-driver/doc/stringzilla/integration-20261021/native-cases.json
+          --manifest .stringzilla-driver/doc/stringzilla/integration-20261021/native-followup-cases.json
           --output paired-results
-      - name: Retain ARM evidence
+      - name: Retain complete follow-on evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: stringzilla-paired-neon-${{ github.sha }}
+          name: stringzilla-remaining-loss-neon-${{ github.sha }}
           path: |
             paired-results
             pair/*.json
-            build/perf/configure.log
             pair/*.gmk
-            pair/*.cmdline
-            jtreg-evidence
-          if-no-files-found: error
           retention-days: 30
+          if-no-files-found: error
   msvc:
     runs-on: windows-2025
-    timeout-minutes: 180
+    timeout-minutes: 45
     env:
-      MSYS2_PATH_TYPE: minimal
-      CHERE_INVOKING: 1
-      CONFIGURE_DEV_NO_MOLD: 1
       GIT_CONFIG_COUNT: 1
       GIT_CONFIG_KEY_0: core.autocrlf
       GIT_CONFIG_VALUE_0: 'false'
@@ -104,88 +77,29 @@ jobs:
           path: .stringzilla-driver
           persist-credentials: false
           sparse-checkout: doc/stringzilla/integration-20261021
-      - name: Restore verified independent Windows baseline
+      - name: Restore verified original, prior and exact-head complete images
         shell: python
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py','restore','--backend','msvc'],check=True)
-      - uses: ./.github/actions/get-msys2
-        with:
-          architecture: x86.x64
-      - uses: ./.github/actions/get-bootjdk
-        id: bootjdk
-        with:
-          platform: windows-x64
-      - name: Check MSVC 14.44 toolset
-        id: msvc
-        shell: bash
-        run: |
-          set +e
-          '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44
-          if [ $? -eq 0 ]; then echo 'installed=true' >> "$GITHUB_OUTPUT"; else echo 'installed=false' >> "$GITHUB_OUTPUT"; fi
-      - name: Install matching MSVC toolset if absent
-        if: steps.msvc.outputs.installed != 'true'
-        shell: bash
-        run: >-
-          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe'
-          modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise'
-          --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
-      - name: Build complete candidate with production kernel flags
-        shell: env /usr/bin/bash --login -eo pipefail {0}
-        env:
-          PATH: ''
-          BOOT_JDK: ${{ steps.bootjdk.outputs.path }}
-        run: |
-          bash bin/configure-dev --with-conf-name=perf --with-debug-level=release \
-            --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
-            --with-source-date=1792195200 --with-native-debug-symbols=none \
-            --with-toolchain-version=2026 --with-msvc-toolset-version=14.44 --with-jmod-compress=zip-1
-          make CONF=perf JOBS=2 images
-      - name: Seal new candidate and verify actual compiler command
-        shell: python
-        run: |
-          import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/prepare.py','seal','--backend','msvc'],check=True)
-      - name: Retain complete Windows candidate before tests
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: stringzilla-paired-candidate-msvc-${{ github.sha }}
-          path: |
-            candidate-retained
-            build/perf/images/jdk
-          retention-days: 30
-          if-no-files-found: error
-      - name: Check native contracts, tiers, opt-out and forced JNI
-        shell: python
-        run: |
-          import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/validate-windows.py'],check=True)
-      - name: Validate Windows dispatch, physical bounds and safepoints
-        shell: python
-        run: |
-          import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/jtreg.py'],check=True)
-      - name: Repeated paired Windows measurements
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/reuse.py','--backend','msvc'],check=True)
+      - name: Measure remaining loss and boundary controls
         shell: python
         run: |
           import subprocess
           subprocess.run(['python','.stringzilla-driver/doc/stringzilla/integration-20261021/compare.py',
             '--source','.','--controls','pair/controls.json',
-            '--manifest','.stringzilla-driver/doc/stringzilla/integration-20261021/native-cases.json','--output','paired-results'],check=True)
-      - name: Retain Windows evidence
+            '--manifest','.stringzilla-driver/doc/stringzilla/integration-20261021/native-followup-cases.json',
+            '--output','paired-results'],check=True)
+      - name: Retain complete follow-on evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: stringzilla-paired-msvc-${{ github.sha }}
+          name: stringzilla-remaining-loss-msvc-${{ github.sha }}
           path: |
             paired-results
             pair/*.json
             pair/*.gmk
-            pair/*.cmdline
-            build/perf/configure.log
-            validation
-            jtreg-evidence
-          if-no-files-found: error
           retention-days: 30
+          if-no-files-found: error
