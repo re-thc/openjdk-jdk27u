@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Failed secure directory opens must close both file descriptors
+ * @summary Failed secure directory opens must close their opened descriptors
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @run junit/othervm DirectoryStreamDescriptorLeak
  */
@@ -96,7 +96,7 @@ public class DirectoryStreamDescriptorLeak {
                         parent.newDirectoryStream(Path.of("child")).close());
                 assertThrows(NotDirectoryException.class, () ->
                         nested.newDirectoryStream(Path.of("regular")).close());
-                // The child must retain both its iteration and relative-open descriptors.
+                // The child must retain its iteration and relative-open operations.
                 assertEquals(2, countEntries(nested));
                 try (var grandchild = nested.newDirectoryStream(Path.of("grandchild"),
                         LinkOption.NOFOLLOW_LINKS)) {
