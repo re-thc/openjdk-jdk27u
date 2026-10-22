@@ -190,7 +190,8 @@ public class TestStringZillaUTF16Bounds {
         for (int length : new int[]{4, 15, 16, 17, 31}) {
             cases.add(fixture(length, 4, false));
         }
-        for (int count : new int[]{4, 9, 16, 32, 64, 65, 129}) {
+        for (int count : new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                                   17, 32, 64, 65, 129}) {
             cases.add(fixture(count, count, false));
             cases.add(fixture(Math.max(16, count + 8), count, false));
             cases.add(fixture(256, count, false));
