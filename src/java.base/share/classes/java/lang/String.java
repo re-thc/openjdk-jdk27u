@@ -3205,6 +3205,9 @@ public final class String
      * @param   tgtStr      the characters being searched for.
      * @param   fromIndex   the index to begin searching from.
      */
+    // Keep normalization and scalar loops inline; encoding-specific entries
+    // isolate native setup from the caller's register allocation.
+    @ForceInline
     static int lastIndexOf(byte[] src, byte srcCoder, int srcCount,
                            String tgtStr, int fromIndex) {
         byte[] tgt = tgtStr.value;
@@ -3230,7 +3233,7 @@ public final class String
                 return srcCount < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
                         || fromIndex + tgtCount < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
                         ? StringLatin1.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
-                        : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
+                        : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
             }
             int searchLength = fromIndex + tgtCount;
             if (srcCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
@@ -3241,14 +3244,22 @@ public final class String
                     && (compilerTier() == StringZilla.C1 || !StringZilla.ENABLED)) {
                 return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
-            return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex,
-                    StringZilla.UNRESOLVED_TIER);
+            if (tgtCount <= 128 && compilerTier() == StringZilla.C2 && StringZilla.ENABLED) {
+                if (StringUTF16.matchesAt(src, fromIndex, tgt, tgtCount)) {
+                    return fromIndex;
+                }
+                if (fromIndex == 0) {
+                    return -1;
+                }
+                fromIndex--;
+            }
+            return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
         }
         if (srcCoder == LATIN1) {    // && tgtCoder == UTF16
             return -1;
         }
         // srcCoder == UTF16 && tgtCoder == LATIN1
-        return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
+        return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex);
     }
 
     /**

@@ -30,7 +30,7 @@
  * @run main/othervm -Xcomp -XX:-TieredCompilation StringZillaSearch
  * @run main/othervm -Xbatch -XX:-CompactStrings StringZillaSearch
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaSearch
- * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaSearch
+ * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL,_vectorizedMismatch StringZillaSearch
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaSearch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UseCompactObjectHeaders -XX:ObjectAlignmentInBytes=16 StringZillaSearch
  */
@@ -50,6 +50,22 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StringZillaSearch {
+    private static void filteredReverseBlocks() {
+        for (int count : new int[]{9, 31, 32, 63, 64, 65, 127, 128}) {
+            String target = "a".repeat(count - 5) + "b" + "a".repeat(4);
+            for (int hit : new int[]{-1, 0, 255, 256, 257, 3839}) {
+                char[] source = "a".repeat(4096).toCharArray();
+                if (hit >= 0) target.getChars(0, count, source, hit);
+                String value = new String(source);
+                check(value, target, Integer.MAX_VALUE);
+                if (hit >= 0) {
+                    equal(value.lastIndexOf(target, hit - 1), -1);
+                    equal(value.lastIndexOf(target, hit), hit);
+                }
+            }
+        }
+    }
+
     private static void equal(int actual, int expected) {
         if (actual != expected) throw new AssertionError(actual + " != " + expected);
     }
@@ -176,6 +192,7 @@ public class StringZillaSearch {
     }
 
     public static void main(String[] args) throws Exception {
+        filteredReverseBlocks();
         // Equality is used during native-library and timezone initialization.
         // Exercise these consumers before warming up the string-search corpus.
         if (System.getProperty(new String("java.vm.info".toCharArray())) == null)

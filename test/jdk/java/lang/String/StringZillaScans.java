@@ -175,6 +175,13 @@ public class StringZillaScans {
         }
         for (int ch = 0; ch < 256; ch++) {
             String c = String.valueOf((char)ch);
+            // Every byte position in a word, plus the Java/native handoff.
+            for (int prefix : new int[]{33, 34, 35, 36, 37, 38, 39, 40, 249, 255, 256, 257, 263}) {
+                String before = " \t\u001c\n".repeat(80).substring(0, prefix);
+                String after = "\t \n\u001c".repeat(80);
+                check(before + c + after);
+                check(after + c + before);
+            }
             for (int n : new int[]{0, 1, 7, 8, 9, 31, 32, 33, 63, 64, 65, 263, 264, 265, 287, 288, 289, 319, 320, 321, 521}) {
                 String pad = c.repeat(n);
                 check(pad);

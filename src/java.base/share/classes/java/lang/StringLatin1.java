@@ -610,7 +610,7 @@ final class StringLatin1 {
         return -1;
     }
 
-    @ForceInline
+    @DontInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
         return lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
@@ -693,14 +693,9 @@ final class StringLatin1 {
                         || (mismatch < tgtCount - Integer.BYTES
                             && (StringZilla.MSVC_SERIAL ? mismatch > (tgtCount >> 1)
                                                        : mismatch >= tgtCount - Long.BYTES))) {
-                    // Keep a bulk C2 scalar loop outside native-call setup.
-                    if (searchLength >= StringZilla.MIN_BYTES) {
-                        if (tgtCount == tgt.length) {
-                            return lastIndexOfPrefixJavaC2(src, tgt, searchLength - 1);
-                        }
-                        return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex - 1);
-                    }
-                    return lastIndexOfJava(src, tgt, tgtCount, fromIndex - 1);
+                    // A byte which rejected the rightmost candidate can also
+                    // reject whole earlier blocks before the scalar search.
+                    return lastIndexOfJavaFiltered(src, tgt, tgtCount, fromIndex - 1, mismatch);
                 }
             }
             if (searchLength >= StringZilla.MIN_INTERPRETER_REVERSE_BYTES) {
@@ -748,18 +743,22 @@ final class StringLatin1 {
     }
 
     // Use C2's existing character-search intrinsic to skip empty reverse blocks.
-    // Once a block contains the last character, resume the original reverse loop.
+    // Once a block contains the candidate byte, resume the original reverse loop.
     @ForceInline
     private static int lastIndexOfJavaFiltered(byte[] src, byte[] tgt, int count, int from) {
+        return lastIndexOfJavaFiltered(src, tgt, count, from, count - 1);
+    }
+
+    @ForceInline
+    private static int lastIndexOfJavaFiltered(byte[] src, byte[] tgt, int count, int from, int probe) {
         if (count > 256) {
             return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, count, from);
         }
-        int last = count - 1;
-        int end = from + count;
-        while (end > last) {
-            int start = Math.max(last, end - 256);
-            if (indexOf(src, tgt[last] & 0xff, start, end) >= 0) {
-                return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, count, end - count);
+        int end = from + probe + 1;
+        while (end > probe) {
+            int start = Math.max(probe, end - 256);
+            if (indexOf(src, tgt[probe] & 0xff, start, end) >= 0) {
+                return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, count, end - probe - 1);
             }
             end = start;
         }
@@ -769,37 +768,6 @@ final class StringLatin1 {
     // Inline the scalar fallback so short C1 searches need no extra Java frame.
     @ForceInline
     static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
-        int min = tgtCount - 1;
-        int i = min + fromIndex;
-        int strLastIndex = tgtCount - 1;
-        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
-
-  startSearchForLastChar:
-        while (true) {
-            while (i >= min && (src[i] & 0xff) != strLastChar) {
-                i--;
-            }
-            if (i < min) {
-                return -1;
-            }
-            int j = i - 1;
-            int start = j - strLastIndex;
-            int k = strLastIndex - 1;
-            while (j > start) {
-                if ((src[j--] & 0xff) != (tgt[k--] & 0xff)) {
-                    i--;
-                    continue startSearchForLastChar;
-                }
-            }
-            return start + 1;
-        }
-    }
-
-    // Derive loop bounds from the arrays within a compact C2 compilation.
-    @DontInline
-    private static int lastIndexOfPrefixJavaC2(byte[] src, byte[] tgt, int prefixLength) {
-        int tgtCount = tgt.length;
-        int fromIndex = Math.min(prefixLength, src.length) - tgtCount;
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
@@ -1251,6 +1219,18 @@ final class StringLatin1 {
             if (!StringZilla.SCANS_ENABLED) {
                 return indexOfNonWhitespaceJava(value);
             }
+            // Compiled word probes cover short prefixes before native entry.
+            // The length check proves every eight-byte probe is in the array.
+            if (String.compilerTier() != 0) {
+                while (left < StringZilla.SCAN_WORD_PROBE) {
+                    int result = StringZilla.scanWord(value, left, length, StringZilla.NON_WHITESPACE);
+                    if (result != StringZilla.FALLBACK) {
+                        return result;
+                    }
+                    left += Long.BYTES;
+                }
+                return indexOfNonWhitespaceLong(value, left);
+            }
             limit = StringZilla.SCAN_PROBE;
         }
         while (left < limit) {
@@ -1311,6 +1291,17 @@ final class StringLatin1 {
         if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
             if (!StringZilla.SCANS_ENABLED) {
                 return lastIndexOfNonWhitespaceJava(value);
+            }
+            if (String.compilerTier() != 0) {
+                int limit = value.length - StringZilla.SCAN_WORD_PROBE;
+                while (right > limit) {
+                    int result = StringZilla.scanWord(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
+                    if (result != StringZilla.FALLBACK) {
+                        return result;
+                    }
+                    right -= Long.BYTES;
+                }
+                return lastIndexOfNonWhitespaceLong(value, right);
             }
             stop = value.length - StringZilla.SCAN_PROBE;
         }
@@ -1390,6 +1381,18 @@ final class StringLatin1 {
             int stop = fence - start >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE
                     && StringZilla.SCANS_ENABLED
                     ? start + StringZilla.SCAN_PROBE : fence;
+            if (stop < fence && String.compilerTier() != 0) {
+                byte[] bytes = value;
+                String.checkBoundsBeginEnd(start, fence, bytes.length);
+                int limit = start + StringZilla.SCAN_WORD_PROBE;
+                for (int current = start; current < limit; current += Long.BYTES) {
+                    int result = StringZilla.scanWord(bytes, current, fence, StringZilla.LINE_SEPARATOR);
+                    if (result != StringZilla.FALLBACK) {
+                        return result;
+                    }
+                }
+                return indexOfLineSeparatorLong(limit);
+            }
             for (int current = start; current < stop; current++) {
                 char ch = getChar(value, current);
                 if (ch == '\n' || ch == '\r') {

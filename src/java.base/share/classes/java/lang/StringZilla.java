@@ -48,6 +48,7 @@ final class StringZilla {
     // Byte-set kernels use AVX2 (also on the Skylake backend) or NEON.
     static final boolean SCANS_ENABLED = ENABLED && BACKEND != SERIAL;
     static final int SCAN_PROBE = 32;
+    static final int SCAN_WORD_PROBE = 64;
     static final int MIN_SCAN_BYTES = 256;
     static final int LINE_SEPARATOR = 0;
     static final int NON_TRIM = 1;
@@ -487,12 +488,16 @@ final class StringZilla {
     // The caller checks the complete interval and proves at least eight bytes.
     // A miss leaves the native interval unchanged, preserving window boundaries.
     @ForceInline
-    private static int scanWord(byte[] src, int from, int to, int mode) {
+    static int scanWord(byte[] src, int from, int to, int mode) {
         boolean reverse = mode == NON_TRIM_REVERSE || mode == NON_WHITESPACE_REVERSE;
         int offset = reverse ? to - Long.BYTES : from;
         Unsafe unsafe = Unsafe.getUnsafe();
         long base = Unsafe.ARRAY_BYTE_BASE_OFFSET;
         long word = unsafe.getLongUnaligned(src, base + offset);
+        if ((mode == NON_WHITESPACE || mode == NON_WHITESPACE_REVERSE)
+                && word == 0x2020202020202020L) {
+            return FALLBACK;
+        }
         long high = 0x8080808080808080L;
         long low = word & 0x7f7f7f7f7f7f7f7fL;
         long hits;

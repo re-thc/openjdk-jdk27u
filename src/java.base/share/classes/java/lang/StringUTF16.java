@@ -1189,8 +1189,17 @@ final class StringUTF16 {
         return -1;
     }
 
-    // srcCoder == UTF16 && tgtCoder == UTF16
+    // Reject or accept the rightmost C2 candidate before native dispatch.
     @ForceInline
+    static boolean matchesAt(byte[] src, int from, byte[] tgt, int count) {
+        checkIndex(count - 1, tgt);
+        checkIndex(from + count - 1, src);
+        return count <= 8 ? StringZilla.matchesUTF16(src, from, tgt, count, StringZilla.C2)
+                : ArraysSupport.mismatch(src, from << 1, tgt, 0, count << 1) < 0;
+    }
+
+    // srcCoder == UTF16 && tgtCoder == UTF16
+    @DontInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
         return lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
@@ -2343,7 +2352,7 @@ final class StringUTF16 {
     }
 
     // srcCoder == UTF16 && tgtCoder == LATIN1
-    @ForceInline
+    @DontInline
     static int lastIndexOfLatin1(byte[] src, int srcCount,
                                         byte[] tgt, int tgtCount, int fromIndex) {
         return lastIndexOfLatin1(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);

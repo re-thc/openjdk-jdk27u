@@ -36,7 +36,13 @@ public class StringZillaScans {
     @State(Scope.Thread)
     public static class Whitespace {
         @Param({"empty", "shortBlank", "shortClean", "shortPad", "early", "prefix8", "prefix9", "suffix8", "suffix9", "probeAt", "probeAfter", "tailProbeAt", "tailProbeAfter",
-                "prefix39", "prefix40", "prefix41", "prefix63", "prefix64", "prefix65", "suffix39", "suffix40", "suffix41", "suffix63", "suffix64", "suffix65", "length319", "length320", "length321", "gateBefore", "gateAt",
+                "prefix39", "prefix40", "prefix41", "prefix63", "prefix64", "prefix65",
+                "prefix71", "prefix72", "prefix73", "prefix127", "prefix128", "prefix129",
+                "prefix255", "prefix256", "prefix257",
+                "suffix39", "suffix40", "suffix41", "suffix63", "suffix64", "suffix65",
+                "suffix71", "suffix72", "suffix73", "suffix127", "suffix128", "suffix129",
+                "suffix255", "suffix256", "suffix257",
+                "length319", "length320", "length321", "gateBefore", "gateAt",
                 "longBlank", "longClean", "longLeading", "longTrailing", "longBoth", "lateNbsp", "nul", "window", "utf16"})
         public String workload;
         private String[] values;
@@ -68,12 +74,30 @@ public class StringZillaScans {
                     case "prefix63" -> " ".repeat(63) + text.repeat(4096);
                     case "prefix64" -> " ".repeat(64) + text.repeat(4096);
                     case "prefix65" -> " ".repeat(65) + text.repeat(4096);
+                    case "prefix71" -> " ".repeat(71) + text.repeat(4096);
+                    case "prefix72" -> " ".repeat(72) + text.repeat(4096);
+                    case "prefix73" -> " ".repeat(73) + text.repeat(4096);
+                    case "prefix127" -> " ".repeat(127) + text.repeat(4096);
+                    case "prefix128" -> " ".repeat(128) + text.repeat(4096);
+                    case "prefix129" -> " ".repeat(129) + text.repeat(4096);
+                    case "prefix255" -> " ".repeat(255) + text.repeat(4096);
+                    case "prefix256" -> " ".repeat(256) + text.repeat(4096);
+                    case "prefix257" -> " ".repeat(257) + text.repeat(4096);
                     case "suffix39" -> text.repeat(4096) + " ".repeat(39);
                     case "suffix40" -> text.repeat(4096) + " ".repeat(40);
                     case "suffix41" -> text.repeat(4096) + " ".repeat(41);
                     case "suffix63" -> text.repeat(4096) + " ".repeat(63);
                     case "suffix64" -> text.repeat(4096) + " ".repeat(64);
                     case "suffix65" -> text.repeat(4096) + " ".repeat(65);
+                    case "suffix71" -> text.repeat(4096) + " ".repeat(71);
+                    case "suffix72" -> text.repeat(4096) + " ".repeat(72);
+                    case "suffix73" -> text.repeat(4096) + " ".repeat(73);
+                    case "suffix127" -> text.repeat(4096) + " ".repeat(127);
+                    case "suffix128" -> text.repeat(4096) + " ".repeat(128);
+                    case "suffix129" -> text.repeat(4096) + " ".repeat(129);
+                    case "suffix255" -> text.repeat(4096) + " ".repeat(255);
+                    case "suffix256" -> text.repeat(4096) + " ".repeat(256);
+                    case "suffix257" -> text.repeat(4096) + " ".repeat(257);
                     case "length319" -> " ".repeat(319);
                     case "length320" -> " ".repeat(320);
                     case "length321" -> " ".repeat(321);
