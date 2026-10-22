@@ -46,6 +46,8 @@ public class RustRegexState {
     public String position;
     @Param({"false", "true"})
     public boolean endFlags;
+    @Param({"0"})
+    public int searchStart;
     private Matcher matcher;
     private Pattern sourcePattern, continuationPattern;
 
@@ -107,6 +109,12 @@ public class RustRegexState {
             throw new IllegalStateException("input does not fit the benchmark scenario");
         // Validate observations during setup as well as consuming them below.
         observe(found);
+        if (operation.endsWith(".findFrom")) {
+            Matcher reference = reference(expression).matcher(input);
+            if (observe(matcher, matcher.find(searchStart))
+                    != observe(reference, reference.find(searchStart)))
+                throw new IllegalStateException("remaining search state differs from Java");
+        }
         if (continuation) {
             Matcher reference = reference(expression).matcher(input);
             if (observe(matcher, found) != observe(reference, reference.find()))
@@ -147,6 +155,12 @@ public class RustRegexState {
     @Benchmark
     public long match() {
         return observe(matcher.reset().find());
+    }
+
+    @Benchmark
+    @Fork(value = 3, jvmArgsAppend = "--add-opens=java.base/java.util.regex=ALL-UNNAMED")
+    public long findFrom() {
+        return observe(matcher.find(searchStart));
     }
 
     @Benchmark

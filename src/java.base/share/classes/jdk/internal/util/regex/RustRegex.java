@@ -372,30 +372,46 @@ public final class RustRegex {
                 input.indexOf(digits.prefix.charAt(0), start, to - digits.prefix.length()) < 0)
             return 0;
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
-        if (bytes == null) {
-            if (input.length() > MAX_LENGTH) return -1;
-            // Handles Latin-1 contents when compact Strings are disabled,
-            // without constructing a second engine.
-            bytes = new byte[input.length()];
-            for (int i = 0; i < bytes.length; i++) {
-                char c = input.charAt(i);
-                if (c > 255) return -1;
-                bytes[i] = (byte)c;
-            }
+        try {
+            if (bytes == null)
+                return matchEncodedRegion(input, state, from, to, start, mode, nativeHandle);
+            return matchBytes(bytes, state, from, to, start, mode, nativeHandle);
+        } finally {
+            Reference.reachabilityFence(this);
         }
+    }
+
+    private int matchEncodedRegion(String input, int[] state, int from, int to,
+                                   int start, int mode, long nativeHandle) {
+        // Context-sensitive searches with transparent or non-anchoring bounds
+        // have already returned to Java. Only the active region is needed here,
+        // including when compact Strings are disabled or wider text surrounds it.
+        byte[] bytes = new byte[to - from];
+        for (int i = 0; i < bytes.length; i++) {
+            char c = input.charAt(from + i);
+            if (c > 255) return -1;
+            bytes[i] = (byte)c;
+        }
+        int result = matchBytes(bytes, state, 0, bytes.length, start - from, mode, nativeHandle);
+        if (result == 1 && from != 0) {
+            for (int i = 0; i < groupCount * 2; i++)
+                if (state[i] >= 0) state[i] += from;
+        }
+        return result;
+    }
+
+    @ForceInline
+    private int matchBytes(byte[] bytes, int[] state, int from, int to, int start,
+                           int mode, long nativeHandle) {
         int base = groupCount * 2;
         state[base] = from;
         state[base+1] = to;
         state[base+2] = start;
         state[base+3] = mode;
-        try {
-            if (nativeHandle == 0) nativeHandle = nativeHandle();
-            if (nativeHandle == 0) return -1;
-            int result = match0(nativeHandle, bytes, state);
-            return result == -2 ? matchSafepoint0(nativeHandle, bytes, state) : result;
-        } finally {
-            Reference.reachabilityFence(this);
-        }
+        if (nativeHandle == 0) nativeHandle = nativeHandle();
+        if (nativeHandle == 0) return -1;
+        int result = match0(nativeHandle, bytes, state);
+        return result == -2 ? matchSafepoint0(nativeHandle, bytes, state) : result;
     }
 
     // A narrow specialization of already parsed/validated expressions. This

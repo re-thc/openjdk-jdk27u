@@ -49,12 +49,12 @@ preserved. Prepared plans handle some short/early matches without constructing
 a Rust engine. Complete validated preparations supply capture metadata without
 a second Java source parse.
 
-Compact Latin-1 Strings use their bytes directly. Noncompact Latin-1 Strings
-are encoded when needed. Other `CharSequence` implementations use ordinary
-Java traversal without taking a whole-input `toString()` snapshot or promoting
+Compact Latin-1 Strings use their bytes directly. Otherwise, Latin-1 regions
+are encoded when needed, excluding text outside the region. Other
+`CharSequence` implementations use ordinary Java traversal without taking a whole-input `toString()` snapshot or promoting
 the shared Pattern. Resetting to a String can use the native backend again.
-Non-Latin-1 input that cannot be answered by a prepared plan uses Java. The
-native region limit is 65,536 characters; longer regions can still use a
+Non-Latin-1 characters inside the region that cannot be answered by a prepared
+plan use Java. The native region limit is 65,536 characters; longer regions can still use a
 prepared early match or immediate rejection. Unresolved longer operations,
 unsupported bounds and final-terminator cases promote to Java.
 
@@ -83,7 +83,9 @@ new Patterns can retry after resources are released. Full DFA construction and
 the bounded backtracker are disabled; Thompson/PikeVM fallback remains available.
 
 The C ABI uses pointers, sizes and integer results, never a Rust `bool` return.
-Bounded leaf calls use relocated array-element addresses. Work beyond the leaf
+Bounded leaf calls borrow the Latin-1 String's backing bytes through relocated
+array-element addresses. The leaf budget counts the remaining search span;
+the full region remains visible to boundary assertions. Work beyond that
 budget uses stable native copies and safepoint-capable thread state.
 Rust panics are contained at the FFI boundary; release builds retain
 `panic = "unwind"`. Changing header layout, GC handling, capture publication or

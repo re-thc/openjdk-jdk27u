@@ -76,7 +76,8 @@ public class RustRegexArrayLayout {
             int capturesHash = System.identityHashCode(captures);
             for (int cycle = 0; cycle < 3; cycle++) {
                 for (int i = 0; i < 12000; i++) {
-                    if (!m.reset().find() || m.start() != 4096 || m.end() != 4104
+                    boolean found = (i & 1) == 0 ? m.reset().find() : m.find(4090);
+                    if (!found || m.start() != 4096 || m.end() != 4104
                             || m.start(1) != 4101 || m.end(1) != 4104 || !m.group(1).equals("123"))
                         throw new AssertionError("relocated capture state");
                 }

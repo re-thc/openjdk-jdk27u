@@ -539,7 +539,10 @@ unsafe fn match_impl(
         if ((to - start) as usize) < handle.minimum_len {
             return 0;
         }
-        if !safepoint && (to - from) as usize > handle.max_input {
+        // Search engines stay within Input::span, including reverse searches
+        // and capture recovery. Retain the whole region for look assertions,
+        // but charge leaf work only for the remaining search span.
+        if !safepoint && (to - start) as usize > handle.max_input {
             return SAFE_CALL;
         }
         let region = slice::from_raw_parts(bytes.add(from as usize), (to - from) as usize);
@@ -602,10 +605,15 @@ unsafe fn match_impl(
                 output[0] = m.start() as i32 + from;
                 output[1] = m.end() as i32 + from;
             } else {
-                for i in 0..handle.groups {
+                for (i, pair) in output[..handle.groups * 2]
+                    .as_chunks_mut::<2>()
+                    .0
+                    .iter_mut()
+                    .enumerate()
+                {
                     let span = captures.get_group(i);
-                    output[2 * i] = span.map_or(-1, |s| s.start as i32 + from);
-                    output[2 * i + 1] = span.map_or(-1, |s| s.end as i32 + from);
+                    pair[0] = span.map_or(-1, |s| s.start as i32 + from);
+                    pair[1] = span.map_or(-1, |s| s.end as i32 + from);
                 }
             }
             true
@@ -713,6 +721,72 @@ mod tests {
         }
         let handle = compile_handle("error[0-9]+", 0, 1, &budget).unwrap();
         assert_eq!(handle.max_input, MAX_INPUT);
+    }
+
+    #[test]
+    fn leaf_work_uses_remaining_span_and_preserves_context() {
+        let budget = Budget::new(64 * MIB);
+        for source in [
+            "(a)?b",
+            "(a|ab)+",
+            "^([ab]+)",
+            "([ab]+)$",
+            "\\b([ab]+)",
+            "([a-z]+)suffix",
+            "(a*)",
+            "(?:[ab]{0,500})*[bc]",
+        ] {
+            let groups = regex::bytes::Regex::new(source).unwrap().captures_len();
+            let handle = compile_handle(source, 0, groups, &budget).unwrap();
+            for prefix in *b"!a" {
+                for suffix in [b"ab".as_slice(), b"b", b"absuffix", b"!", b""] {
+                    let mut text = vec![prefix; MAX_INPUT];
+                    let start = text.len() - suffix.len();
+                    text[start..].copy_from_slice(suffix);
+                    for from in [0, 7] {
+                        for mode in 0..=2 {
+                            let mut leaf = vec![-1; groups * 2 + 4];
+                            leaf[groups * 2..].copy_from_slice(&[
+                                from,
+                                text.len() as i32,
+                                start as i32,
+                                mode,
+                            ]);
+                            let mut safe = leaf.clone();
+                            let actual = unsafe {
+                                jdk_regex_match(&*handle, text.as_ptr(), leaf.as_mut_ptr())
+                            };
+                            let expected = unsafe {
+                                jdk_regex_match_safepoint(
+                                    &*handle,
+                                    text.as_ptr(),
+                                    text.len(),
+                                    safe.as_mut_ptr(),
+                                    safe.len(),
+                                )
+                            };
+                            assert_eq!(actual, expected, "{source} {from} {start} {mode}");
+                            assert!(matches!(actual, 0 | 1));
+                            if actual == 1 {
+                                assert_eq!(&leaf[..groups * 2], &safe[..groups * 2]);
+                            }
+                        }
+                    }
+                }
+            }
+            let text = vec![b'a'; MAX_INPUT];
+            let mut state = vec![-1; groups * 2 + 4];
+            state[groups * 2..].copy_from_slice(&[
+                0,
+                MAX_INPUT as i32,
+                (MAX_INPUT - handle.max_input - 1) as i32,
+                0,
+            ]);
+            assert_eq!(
+                unsafe { jdk_regex_match(&*handle, text.as_ptr(), state.as_mut_ptr()) },
+                SAFE_CALL
+            );
+        }
     }
 
     #[test]

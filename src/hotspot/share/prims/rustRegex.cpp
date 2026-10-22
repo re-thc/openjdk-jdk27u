@@ -128,7 +128,7 @@ JNI_ENTRY(jint, RR_matchSafepoint(JNIEnv* env, jclass cls, jlong handle, jbyteAr
                                      copy, length, copy_state, slots);
   }
   FREE_C_HEAP_ARRAY(copy);
-  if (result >= 0) {
+  if (result == 1) {
     typeArrayOop output = typeArrayOop(JNIHandles::resolve_non_null(state));
     for (int i = 0; i < base; i++) {
       output->int_at_put(i, copy_state[i] < 0 ? copy_state[i] : copy_state[i] + from);

@@ -473,6 +473,8 @@ public class RustRegexTest {
         collectedPreparation();
         mandatoryLiteralReject();
         literalSearchAdmission();
+        remainingSearchSpan();
+        encodedRegions();
         resetCapturePublication();
         preparedPlans();
         preparedBoundaries();
@@ -485,6 +487,72 @@ public class RustRegexTest {
         sharingAndLifetime();
         apiState();
         System.out.println("Compared "+comparisons+" native/Java results and API states; enabled="+RustRegex.ENABLED);
+    }
+
+    private static void remainingSearchSpan() throws Exception {
+        for (String regex : new String[]{"(a)?b", "(a|ab)+", "^([ab]+)",
+                "([ab]+)$", "\\b([ab]+)", "([a-z]+)suffix", "(a*)"}) {
+            for (int length : new int[]{4097, 32768, 65536}) {
+                for (String tail : new String[]{"ab", "b", "absuffix", "!", ""}) {
+                    String input = "!".repeat(length - tail.length()) + tail;
+                    int start = length - tail.length();
+                    Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
+                    Matcher a = p.matcher(input), b = ref.matcher(input);
+                    boolean found = a.find(start);
+                    equal(a, b, found, b.find(start), false);
+                    nativeOnly(p);
+                    if (found) {
+                        equal(a, b, a.find(), b.find(), false);
+                        nativeOnly(p);
+                    }
+                    a.reset(); b.reset();
+                    nativeOnly(p);
+                    equal(a, b, a.find(start), b.find(start), false);
+                    nativeOnly(p);
+
+                    // End-flag replay must not replace the native-only reuse sequence.
+                    Pattern flags = Pattern.compile(regex);
+                    a = flags.matcher(input); b = ref.matcher(input);
+                    equal(a, b, a.find(start), b.find(start), true);
+                }
+            }
+        }
+    }
+
+    private static void encodedRegions() throws Exception {
+        String[][] cases = {{"(a)?b", "b"}, {"(a|ab)+", "ab"},
+                {"^([ab]+)$", "abb"}, {"\\b([ab]+)\\b", "abb"},
+                {"([^x]+)(x)", "\u00ff".repeat(32) + "x"},
+                {"([ab]{32,64})+(c+)", "a".repeat(2048) + "c"}, {"(a*)", ""}};
+        for (String[] c : cases) {
+            for (int prefix : new int[]{0, 7, 131072}) {
+                String input = "\u0100".repeat(prefix) + c[1] + "\u0100";
+                int to = prefix + c[1].length();
+                Pattern p = Pattern.compile(c[0]), ref = reference(c[0], 0);
+                Matcher a = p.matcher(input), b = ref.matcher(input);
+                for (int mode = 0; mode < 3; mode++) {
+                    a.reset().region(prefix, to); b.reset().region(prefix, to);
+                    nativeOnly(p);
+                    equal(a, b, mode == 0 ? a.find() : mode == 1 ? a.lookingAt() : a.matches(),
+                            mode == 0 ? b.find() : mode == 1 ? b.lookingAt() : b.matches(), false);
+                    nativeOnly(p);
+                }
+                for (boolean transparent : new boolean[]{false, true}) {
+                    for (boolean anchoring : new boolean[]{false, true}) {
+                        Pattern flags = Pattern.compile(c[0]);
+                        a = flags.matcher(input).region(prefix, to)
+                                .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+                        b = ref.matcher(input).region(prefix, to)
+                                .useTransparentBounds(transparent).useAnchoringBounds(anchoring);
+                        equal(a, b, a.find(), b.find(), true);
+                    }
+                }
+            }
+        }
+        Pattern p = Pattern.compile("([ab]+)(c?)"), ref = reference("([ab]+)(c?)", 0);
+        String input = "\u0100a\u0100b\u0100";
+        Matcher a = p.matcher(input).region(1, 4), b = ref.matcher(input).region(1, 4);
+        equal(a, b, a.find(), b.find(), true);
     }
 
     private static void fixedCountContinuation() throws Exception {
