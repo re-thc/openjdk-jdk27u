@@ -113,7 +113,7 @@ final class DebugLogger implements Logger {
         public static final LoggerConfig ERROUT = new LoggerConfig(Level.ALL, Level.ALL, Level.OFF);
 
         public static LoggerConfig of(LoggerConfig config) {
-            if (config.equals(OFF)) return OFF;
+            if (config == OFF || config.equals(OFF)) return OFF;
             if (config.equals(ERRLOG)) return ERRLOG;
             if (config.equals(ERROUT)) return ERROUT;
             if (config.equals(STDERR)) return STDERR;
