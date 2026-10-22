@@ -13,6 +13,7 @@ p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--study',action='append',required=True,help='label=results directory')
 p.add_argument('--output',type=Path,required=True)
 p.add_argument('--candidate-source',required=True)
+p.add_argument('--prior-source',default='cd785f1c66fb72404c12b150d5f3d8e0fe0a4776')
 a=p.parse_args();a.output.mkdir(exist_ok=False)
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 all_rows=[];studies=[]
@@ -34,10 +35,11 @@ for specification in a.study:
  assert provenance['controls']['master']['source']=='8d030adbd245b19e6339e3ccd052eb7fe3635319'
  assert provenance['controls']['disabled']['source']==a.candidate_source
  assert provenance['controls']['disabled']['flags']==['-XX:-UseStringZillaIntrinsics']
- if 'prior' in names:assert provenance['controls']['prior']['source']=='cd785f1c66fb72404c12b150d5f3d8e0fe0a4776'
+ if 'prior' in names:assert provenance['controls']['prior']['source']==a.prior_source
  assert provenance['images']['candidate']['files']==provenance['images']['disabled']['files']
  for name in names:
   assert provenance['images'][name]['tree_sha256']==provenance['controls'][name]['expected_tree_sha256']
+  assert hashlib.sha256(json.dumps(provenance['images'][name]['files'],separators=(',',':')).encode()).hexdigest()==provenance['images'][name]['tree_sha256']
  for relative,digest in provenance['benchmark_sources'].items():
   assert sha(root/'benchmark-sources'/relative.replace(chr(92),'/').split('/')[-1])==digest
  files=[];samples=0
@@ -58,6 +60,12 @@ for specification in a.study:
     assert all(math.isfinite(v) and v>0 for v in value['samples'])
     assert math.isclose(value['median'],statistics.median(value['samples']))
     assert raw['params']=={k:str(v) for k,v in case['params'].items()}
+    benchmark=case['benchmark'] if case['benchmark'].startswith('org.openjdk.') else 'org.openjdk.bench.java.lang.'+case['benchmark']
+    assert raw['benchmark']==benchmark
+    assert '-Xms256m' in raw['jvmArgs'] and '-Xmx256m' in raw['jvmArgs']
+    assert '-XX:ActiveProcessorCount=1' in raw['jvmArgs'] and '-XX:+UseSerialGC' in raw['jvmArgs'] and '-Xshare:off' in raw['jvmArgs']
+    assert {'c1':'-XX:TieredStopAtLevel=1','c2':'-XX:-TieredCompilation','interpreter':'-Xint'}[case['tier']] in raw['jvmArgs']
+    assert ('-XX:-UseStringZillaIntrinsics' in raw['jvmArgs'])==(name=='disabled')
     assert raw['forks']==1 and raw['warmupIterations']==3 and raw['measurementIterations']==5
     assert raw['warmupTime']==raw['measurementTime']=='300 ms'
     assert raw['jvmArgs']==value['command'][1:value['command'].index('-cp')]

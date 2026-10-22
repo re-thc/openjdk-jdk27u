@@ -66,7 +66,13 @@ for name,control in controls.items():
         fields=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
         enabled='-XX:-UseStringZillaIntrinsics' not in flags
         assert fields['ENABLED']==str(enabled).lower()
-        expected_backend=0 if os.name=='nt' else 4 if platform.machine().lower() in ('aarch64','arm64') else 2
+        selected_avx = None
+        if os.name != 'nt' and platform.machine().lower() not in ('aarch64', 'arm64'):
+            import re
+            selected_avx = int(re.search(r'^\s*(?:intx|int)\s+UseAVX\s*=\s*(\d+)', selected, re.M)[1])
+        expected_backend = (0 if os.name == 'nt' else 4
+                            if platform.machine().lower() in ('aarch64', 'arm64')
+                            else 2 if selected_avx >= 3 else 1 if selected_avx >= 2 else 0)
         assert fields['BACKEND']==str(expected_backend), 'Unexpected qualified native backend'
         value['backend']=raw
     attestations[name]=value
