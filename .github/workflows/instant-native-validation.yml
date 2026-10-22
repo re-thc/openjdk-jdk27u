@@ -1,0 +1,229 @@
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: PR53 native Instant integration
+
+on:
+  push:
+    branches: [validation/pr53-instant-native-auto]
+
+permissions:
+  contents: read
+
+jobs:
+  native-integration:
+    name: ${{ matrix.platform }} release native
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-aarch64
+            runner: ubuntu-26.04-arm
+            rust-target: aarch64-unknown-linux-gnu
+            toolchain: gcc-16
+            python: python3
+            onload: libInstantNativeOnLoad.so
+          - platform: macos-aarch64
+            runner: macos-26
+            rust-target: aarch64-apple-darwin
+            toolchain: xcode-26.6
+            python: python3
+            onload: libInstantNativeOnLoad.dylib
+          - platform: windows-x64
+            runner: windows-2025
+            rust-target: x86_64-pc-windows-msvc
+            toolchain: msvc-14.44
+            python: python
+            onload: InstantNativeOnLoad.dll
+    defaults:
+      run:
+        shell: bash
+    env:
+      RUSTUP_AUTO_INSTALL: '0'
+      CARGO_NET_RETRY: '0'
+      MSYS2_PATH_TYPE: minimal
+      CHERE_INVOKING: '1'
+
+    steps:
+      - name: Checkout reviewed candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize evidence
+        run: |
+          mkdir instant-native-evidence
+          git rev-parse HEAD | tee instant-native-evidence/source.txt
+          git status --short | tee instant-native-evidence/worktree.txt
+          df -h . | tee instant-native-evidence/capacity.txt
+
+      - name: Get existing Windows build environment
+        if: runner.os == 'Windows'
+        uses: ./.github/actions/get-msys2
+        with:
+          architecture: x86.x64
+
+      - name: Expose installed Windows Rust and Python
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $rustup = (Get-Command rustup.exe -CommandType Application -ErrorAction Stop).Source
+          $rustc = (& $rustup which rustc).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Installed rustc is unavailable' }
+          $cargo = (& $rustup which cargo).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Installed Cargo is unavailable' }
+          $python = (Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
+          foreach ($tool in @($rustc, $cargo, $python)) {
+            if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Missing tool: $tool" }
+            Split-Path -Parent $tool >> $env:GITHUB_PATH
+          }
+          "INSTANT_RUSTC=$rustc" >> $env:GITHUB_ENV
+          "INSTANT_CARGO=$cargo" >> $env:GITHUB_ENV
+          & $rustc -vV
+          if ($LASTEXITCODE -ne 0) { throw 'rustc identity failed' }
+          & $cargo -V
+          if ($LASTEXITCODE -ne 0) { throw 'Cargo identity failed' }
+
+      - name: Resolve installed Unix Rust executables
+        if: runner.os != 'Windows'
+        run: |
+          rustc=$(rustup which rustc)
+          cargo=$(rustup which cargo)
+          test -x "$rustc"
+          test -x "$cargo"
+          echo "INSTANT_RUSTC=$rustc" >> "$GITHUB_ENV"
+          echo "INSTANT_CARGO=$cargo" >> "$GITHUB_ENV"
+          dirname "$rustc" >> "$GITHUB_PATH"
+          dirname "$cargo" >> "$GITHUB_PATH"
+
+      - name: Set up ordinary Linux toolchain
+        if: runner.os == 'Linux'
+        timeout-minutes: 15
+        run: |
+          sudo apt update
+          sudo apt install --only-upgrade apt
+          sudo apt install gcc-16 g++-16 ccache autoconf
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-16 100 --slave /usr/bin/g++ g++ /usr/bin/g++-16
+          archive="$RUNNER_TEMP/mold.tar.gz"
+          curl --fail --location https://github.com/rui314/mold/releases/download/v3.0.0/mold-3.0.0-aarch64-linux.tar.gz --output "$archive"
+          echo "52c759d3689babaea4c42af2f31062a74ab83e17ffb5a8090232534c67b70577  $archive" | sha256sum --check
+          mkdir "$RUNNER_TEMP/mold"
+          tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/mold"
+          echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
+          gcc --version
+          "$RUNNER_TEMP/mold/bin/mold" --version
+
+      - name: Set up ordinary macOS toolchain
+        if: runner.os == 'macOS'
+        timeout-minutes: 15
+        run: |
+          brew install autoconf make ccache
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
+          xcodebuild -version
+          clang --version
+
+      - name: Check ordinary Windows toolchain
+        id: msvc
+        if: runner.os == 'Windows'
+        run: |
+          if '/c/Program Files/Microsoft Visual Studio/18/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=14.44; then
+            echo 'installed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'installed=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up ordinary Windows toolchain when needed
+        if: runner.os == 'Windows' && steps.msvc.outputs.installed != 'true'
+        timeout-minutes: 15
+        run: |
+          '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
+            modify --quiet --installPath 'C:\Program Files\Microsoft Visual Studio\18\Enterprise' \
+            --add Microsoft.VisualStudio.Component.VC.14.44.x86.x64
+
+      - name: Get ordinary Boot JDK
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ matrix.platform }}
+
+      - name: Restore ordinary compiler cache
+        if: runner.os != 'Windows'
+        uses: ./.github/actions/compiler-cache
+        with:
+          platform: ${{ matrix.platform }}
+          debug-level: release
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: Prepare locked Cargo dependencies using installed tools
+        timeout-minutes: 5
+        env:
+          RUST_TARGET: ${{ matrix.rust-target }}
+        run: |
+          rustc=$INSTANT_RUSTC
+          cargo=$INSTANT_CARGO
+          if [[ $RUNNER_OS == Windows ]]; then
+            rustc=$(cygpath -u "$rustc")
+            cargo=$(cygpath -u "$cargo")
+          fi
+          "$rustc" -vV | tee instant-native-evidence/rustc.txt
+          "$cargo" -V | tee instant-native-evidence/cargo.txt
+          export RUSTC=$INSTANT_RUSTC
+          "$cargo" fetch --locked --target "$RUST_TARGET" --manifest-path src/java.base/share/native/libinstant/rust/Cargo.toml
+
+      - name: Configure automatic native selection on Unix
+        if: runner.os != 'Windows'
+        timeout-minutes: 5
+        run: bash .github/scripts/configure-instant-native.sh '${{ steps.bootjdk.outputs.path }}' 2>&1 | tee instant-native-evidence/configure.txt
+
+      - name: Configure automatic native selection with Windows minimal PATH
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: env /usr/bin/bash --login -eo pipefail {0}
+        env:
+          PATH: ''
+        run: bash .github/scripts/configure-instant-native.sh '${{ steps.bootjdk.outputs.path }}' 2>&1 | tee instant-native-evidence/configure.txt
+
+      - name: Require native selection before building
+        run: |
+          grep -E '^ENABLE_INSTANT_SPEEDATE *:?= *true *$' build/instant-native-validation/spec.gmk
+          grep -F "speedate Instant parser should be built... enabled, from default 'auto'" build/instant-native-validation/configure.log
+
+      - name: Build release image and focused JNI callback with ordinary recipes
+        timeout-minutes: 65
+        run: |
+          make CONF=instant-native-validation JOBS=4 LOG=info images 2>&1 | tee instant-native-evidence/build.txt
+          make CONF=instant-native-validation JOBS=4 LOG=info build-test-jdk-jtreg-native \
+            "BUILD_JDK_JTREG_NATIVE_SRC=$(pwd)/.github/scripts/instant-native" 2>&1 | tee instant-native-evidence/build-onload.txt
+
+      - name: Check native integration and small fallback controls
+        timeout-minutes: 10
+        env:
+          RUST_TARGET: ${{ matrix.rust-target }}
+          ONLOAD_NAME: ${{ matrix.onload }}
+        run: |
+          ${{ matrix.python }} .github/scripts/check-instant-native.py \
+            --image build/instant-native-validation/images/jdk \
+            --spec build/instant-native-validation/spec.gmk \
+            --onload "build/instant-native-validation/support/test/jdk/jtreg/native/lib/$ONLOAD_NAME" \
+            --target "$RUST_TARGET" --out instant-native-evidence/runtime
+
+      - name: Preserve exact configuration and native build logs
+        if: always()
+        run: |
+          mkdir -p instant-native-evidence/configuration
+          for log in config.log build/instant-native-validation/spec.gmk \
+              build/instant-native-validation/configure.log \
+              build/instant-native-validation/support/native/java.base/libinstant-rust/cargo.log; do
+            if [[ -f $log ]]; then cp "$log" instant-native-evidence/configuration/; fi
+          done
+          git rev-parse HEAD >> instant-native-evidence/source.txt
+
+      - name: Upload focused evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr53-native-${{ matrix.platform }}-${{ github.sha }}
+          path: instant-native-evidence
+          retention-days: 14
+          if-no-files-found: error
