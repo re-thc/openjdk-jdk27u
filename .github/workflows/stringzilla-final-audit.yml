@@ -1,6 +1,6 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-name: StringZilla retained U raw-file verification
+name: StringZilla final exact-head CI verification
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -9,32 +9,48 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: stringzilla-raw-audit
+  group: stringzilla-final-ci-audit
   cancel-in-progress: false
 jobs:
   audit:
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    timeout-minutes: 360
     env:
       PYTHONDONTWRITEBYTECODE: '1'
+      GH_REPO: re-thc/openjdk-jdk27u
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: b14f7783c59409b06c52fd40ce7fcf8afe6075ca
+          ref: 9bcf8afc23095f71e627b5177e254c349779320c
           persist-credentials: false
           sparse-checkout: doc/stringzilla
-      - name: Verify original U JMH files and every paired round
+      - name: Check the exact product and merge revision
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          python3 doc/stringzilla/merge-20261022/final-audit.py
-          --manifest doc/stringzilla/dispatch-20261022/final-audit-artifacts.json
-          --output retained-audit
-      - name: Retain U raw verification
+        run: |
+          actual_snapshot=$(gh api repos/re-thc/openjdk-jdk27u/pulls/4 --jq '[.head.sha, .merge_commit_sha] | join(" ")')
+          test "$actual_snapshot" = "426d70bbf4f81af2d955f1d3435142567c4cd74c 8727f91b22406ffc9ccd97aab6837dc65b521287"
+      - name: Wait for the existing four-platform CI run
+        timeout-minutes: 330
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run watch 39812822993 --repo re-thc/openjdk-jdk27u --interval 60 --exit-status
+      - name: Verify all final builds, tests, source hashes and StringZilla descriptions
+        timeout-minutes: 20
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          actual_snapshot=$(gh api repos/re-thc/openjdk-jdk27u/pulls/4 --jq '[.head.sha, .merge_commit_sha] | join(" ")')
+          test "$actual_snapshot" = "426d70bbf4f81af2d955f1d3435142567c4cd74c 8727f91b22406ffc9ccd97aab6837dc65b521287"
+          python3 doc/stringzilla/merge-20261022/final-ci-audit.py \
+            --expected doc/stringzilla/dispatch-20261022/final-ci-expected.json \
+            --output ci-audit --run 39812822993 \
+            --merge 8727f91b22406ffc9ccd97aab6837dc65b521287
+      - name: Retain exact-head CI logs and verification
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: stringzilla-u-raw-verification-${{ github.sha }}
-          path: retained-audit
+          name: stringzilla-final-ci-verification-${{ github.sha }}
+          path: ci-audit
           retention-days: 30
-          if-no-files-found: error
+          if-no-files-found: warn
