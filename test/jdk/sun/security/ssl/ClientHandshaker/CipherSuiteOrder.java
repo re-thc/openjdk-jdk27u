@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +112,9 @@ public class CipherSuiteOrder {
                         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"
                         };
         sslSocket.setEnabledCipherSuites(enabledSuites);
+        SSLParameters parameters = sslSocket.getSSLParameters();
+        parameters.setUseCipherSuitesOrder(false);
+        sslSocket.setSSLParameters(parameters);
         System.out.println("");
         System.out.println("server enabled suites: ");
         System.out.println("=====================");
@@ -154,13 +158,10 @@ public class CipherSuiteOrder {
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
 
-        /*
-         * Pick a random order for the suites that is different from the
-         * default ordering.
-         */
+        // The two common suites have opposite client and server preferences.
         String enabledSuites[] = {
                         "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-                        "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
                         "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
                         "TLS_DHE_RSA_WITH_AES_128_CBC_SHA"
                         };

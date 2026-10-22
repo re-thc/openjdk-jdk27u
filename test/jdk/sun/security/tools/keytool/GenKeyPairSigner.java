@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,21 +230,29 @@ public class GenKeyPairSigner {
          */
         System.out.println("Testing the signer alias with the -signerkeypass option");
         ktkp("-genkeypair -keyalg RSA -keysize 1024 -alias ca -dname CN=CA -ext bc:c",
-                "kskp", "changeit");
+                "kskp", "changeit").shouldHaveExitValue(0);
+        changeSignerPassword("ca", "cakeypass");
+
+        SecurityTools.keytool("-keystore kskp -storepass changeit " +
+                "-genkeypair -keyalg EC -alias wrongpass -dname CN=Wrong " +
+                "-signer ca -signerkeypass incorrect")
+                .shouldContain("UnrecoverableKeyException")
+                .shouldHaveExitValue(1);
 
         System.out.println("Generating an EC cert with -signer and -signerkeypass options");
         SecurityTools.keytool("-keystore kskp -storepass changeit " +
                 "-genkeypair -keyalg EC -alias ca1 -dname CN=CA1 " +
-                "-keypass changeit -signer ca -signerkeypass changeit")
+                "-keypass changeit -signer ca -signerkeypass cakeypass")
                 .shouldContain("Generating 384-bit EC (secp384r1) key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
                 .shouldContain("for: CN=CA1")
                 .shouldContain("The generated certificate #2 of 2 uses a 1024-bit RSA key which is considered a security risk")
                 .shouldHaveExitValue(0);
+        changeSignerPassword("ca1", "ca1keypass");
 
         System.out.println("Generating an XDH cert with -signer and -signerkeypass options");
         SecurityTools.keytool("-keystore kskp -storepass changeit " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 " +
-                "-keypass changeit -signer ca1 -signerkeypass changeit")
+                "-keypass changeit -signer ca1 -signerkeypass ca1keypass")
                 .shouldContain("Generating X25519 key pair and a certificate (SHA384withECDSA) issued by <ca1> with a validity of 90 days")
                 .shouldContain("for: CN=E1")
                 .shouldContain("The generated certificate #3 of 3 uses a 1024-bit RSA key which is considered a security risk")
@@ -281,6 +290,18 @@ public class GenKeyPairSigner {
                 .shouldContain("Signature algorithm name: SHA384withECDSA")
                 .shouldContain("Subject Public Key Algorithm: X25519 key")
                 .shouldHaveExitValue(0);
+    }
+
+    private static void changeSignerPassword(String alias, String password)
+            throws Exception {
+        // PKCS12 supports distinct key passwords through the KeyStore API.
+        char[] storepass = "changeit".toCharArray();
+        KeyStore store = KeyStore.getInstance(new File("kskp"), storepass);
+        store.setKeyEntry(alias, store.getKey(alias, storepass),
+                password.toCharArray(), store.getCertificateChain(alias));
+        try (var out = new FileOutputStream("kskp")) {
+            store.store(out, storepass);
+        }
     }
 
     static void testSignerOpt() throws Exception {

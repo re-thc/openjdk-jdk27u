@@ -184,12 +184,14 @@ public class OIDMap {
         final ObjectIdentifier oid;
         final String name;
         final String className;
+        private final boolean internal;
         private volatile Class<?> clazz;
 
         OIDInfo(String name, ObjectIdentifier oid, String className) {
             this.name = name;
             this.oid = oid;
             this.className = className;
+            this.internal = true;
         }
 
         OIDInfo(String name, ObjectIdentifier oid, Class<?> clazz) {
@@ -197,6 +199,7 @@ public class OIDMap {
             this.oid = oid;
             this.className = clazz.getName();
             this.clazz = clazz;
+            this.internal = false;
         }
 
         /**
@@ -208,6 +211,10 @@ public class OIDMap {
          */
         Extension newExtension(Boolean critical, Object value)
                 throws IOException, CertificateException {
+            // Explicit registrations can name a class from another loader.
+            if (!internal) {
+                return null;
+            }
             return switch (className) {
                 case "sun.security.x509.SubjectKeyIdentifierExtension" ->
                         new SubjectKeyIdentifierExtension(critical, value);
