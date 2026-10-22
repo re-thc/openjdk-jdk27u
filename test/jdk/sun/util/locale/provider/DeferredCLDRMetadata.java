@@ -32,6 +32,7 @@
 
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -91,11 +92,26 @@ public class DeferredCLDRMetadata {
             if (!Arrays.equals(children, sorted)) throw new AssertionError("unsorted parent array");
         }
         var adapter = new CLDRLocaleProviderAdapter();
-        for (String tag : new String[] {"en-GB", "es-AR", "zh-Hant-MO", "az-Arab",
-                                      "ru-Latn", "nb", "no", "nb-NO", "nn-NO",
-                                      "en-US-u-ca-buddhist", "zh-Hant-MO-u-nu-latn"}) {
-            var candidates = adapter.getCandidateLocales("", Locale.forLanguageTag(tag));
-            if (!candidates.getLast().equals(Locale.ROOT)) throw new AssertionError(tag);
+        String[][] cases = {
+            {"en-GB", "en-GB", "en-001", "en", "und"},
+            {"es-AR", "es-AR", "es-419", "es", "und"},
+            {"zh-Hant-MO", "zh-Hant-MO", "zh-Hant-HK", "zh-Hant", "und"},
+            {"az-Arab", "az-Arab", "und"},
+            {"ru-Latn", "ru-Latn", "und"},
+            {"nb", "nb", "no", "und"},
+            {"no", "no", "nb", "no", "und"},
+            {"nb-NO", "nb-NO", "no-NO", "no", "und"},
+            {"nn-NO", "nn-NO", "nn", "no", "und"},
+            {"en-US-u-ca-buddhist", "en-US", "en", "und"},
+            {"zh-Hant-MO-u-nu-latn", "zh-Hant-MO", "zh-Hant-HK", "zh-Hant", "und"}
+        };
+        for (String[] row : cases) {
+            var expected = List.of(Arrays.copyOfRange(row, 1, row.length));
+            var actual = adapter.getCandidateLocales("", Locale.forLanguageTag(row[0]))
+                    .stream().map(Locale::toLanguageTag).toList();
+            if (!actual.equals(expected)) {
+                throw new AssertionError(row[0] + ": expected " + expected + ", got " + actual);
+            }
         }
     }
 }

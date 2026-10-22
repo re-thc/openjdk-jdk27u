@@ -61,7 +61,8 @@ public class CanonicalCase {
             field.setAccessible(true);
             if (field.get(provider) != null) throw new AssertionError(name + " initialized");
         }
-        for (String miss : new String[] {"UTF-8x", "US-ASCIIx", "ISO-8859-10x", "UTF_8", "uTF--8"}) {
+        for (String miss : new String[] {"UTF-9", "US-ASCIX", "ISO-8859-0",
+                                       "UTF-8x", "US-ASCIIx", "ISO-8859-10x", "UTF_8", "uTF--8"}) {
             if (provider.charsetForName(miss) != null) throw new AssertionError(miss);
             try {
                 Charset.forName(miss);

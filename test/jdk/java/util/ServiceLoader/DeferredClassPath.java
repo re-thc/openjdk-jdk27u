@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ConcurrentModificationException;
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
@@ -72,6 +73,23 @@ public class DeferredClassPath {
                 error = true;
             }
             if (!error || loader.searches == 0) throw new AssertionError("classpath error timing");
+            if (iterator.hasNext() || iterator.hasNext()) {
+                throw new AssertionError("duplicate provider after error");
+            }
+            try {
+                iterator.next();
+                throw new AssertionError("next after exhaustion");
+            } catch (NoSuchElementException expected) { }
+            int searches = loader.searches;
+            error = false;
+            try {
+                while (stream.hasNext()) stream.next();
+            } catch (ServiceConfigurationError expected) {
+                error = true;
+            }
+            if (!error || loader.searches != searches + 1 || stream.hasNext()) {
+                throw new AssertionError("independent stream error and duplicate suppression");
+            }
             services.reload();
             try {
                 iterator.hasNext();
