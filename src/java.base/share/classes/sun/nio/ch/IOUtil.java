@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,16 +499,34 @@ public final class IOUtil {
     static Runnable acquireScopes(ByteBuffer buf, ByteBuffer[] buffers) {
         if (buffers == null) {
             assert buf != null;
+            // Allocate the release action before acquiring the session.
+            Runnable releaser = IOUtil.Releaser.of(buf);
             IOUtil.acquireScope(buf, true);
-            return IOUtil.Releaser.of(buf);
+            return releaser;
         } else {
             assert buf == null;
-            Runnable handleReleasers = null;
-            for (var b : buffers) {
-                IOUtil.acquireScope(b, true);
-                handleReleasers = IOUtil.LinkedRunnable.of(IOUtil.Releaser.of(b), handleReleasers);
+            LinkedRunnable handleReleasers = null;
+            try {
+                for (var b : buffers) {
+                    LinkedRunnable next = IOUtil.LinkedRunnable.of(
+                            IOUtil.Releaser.of(b), handleReleasers);
+                    IOUtil.acquireScope(b, true);
+                    // Record only successful acquisitions, including duplicates.
+                    handleReleasers = next;
+                }
+                return handleReleasers;
+            } catch (Throwable failure) {
+                for (LinkedRunnable current = handleReleasers; current != null;
+                     current = (LinkedRunnable) current.next()) {
+                    try {
+                        current.node().run();
+                    } catch (Throwable cleanupFailure) {
+                        if (cleanupFailure != failure)
+                            failure.addSuppressed(cleanupFailure);
+                    }
+                }
+                throw failure;
             }
-            return handleReleasers;
         }
     }
 
