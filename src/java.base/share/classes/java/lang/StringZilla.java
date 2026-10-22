@@ -177,7 +177,7 @@ final class StringZilla {
     }
 
     // The caller validates both complete ranges and selects 9..16 code units.
-    // Overlapping word windows cover all 18..32 bytes without a mismatch call.
+    // Three or four overlapping windows cover all 18..32 validated bytes.
     @ForceInline
     static boolean matchesUTF16Words(byte[] src, int offset, byte[] tgt, int length) {
         assert length > 8 && length <= 16;
