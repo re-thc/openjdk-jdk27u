@@ -80,6 +80,26 @@ public class DeterministicClasslist {
         return null;
     }
 
+    static void checkCollectionClasses(String classlist) throws Exception {
+        List<String> classes = Files.readAllLines(Path.of(classlist)).stream()
+                .map(line -> line.split(" ", 2)[0])
+                .toList();
+        for (String name : List.of(
+                "java/util/NavigableSet",
+                "java/util/SortedSet",
+                "java/util/concurrent/ConcurrentNavigableMap",
+                "java/util/concurrent/ConcurrentSkipListMap",
+                "java/util/concurrent/ConcurrentSkipListMap$Index",
+                "java/util/concurrent/ConcurrentSkipListMap$Node",
+                "java/util/concurrent/ConcurrentSkipListSet",
+                "java/util/concurrent/atomic/LongAdder",
+                "java/util/concurrent/atomic/Striped64")) {
+            if (!classes.contains(name)) {
+                throw new RuntimeException("Classlist is missing " + name);
+            }
+        }
+    }
+
     public static void main (String[] args) throws Exception {
         String[] classlist = { "build/tools/classlist/HelloClasslist", "build/tools/classlist/HelloClasslist$1A", "build/tools/classlist/HelloClasslist$1B" };
         String appClass = classlist[0];
@@ -107,5 +127,6 @@ public class DeterministicClasslist {
         CDSTestUtils.dumpClassList(testClasslist, "-cp", appJar, "-Xint", appClass);
 
         compareClasslists(baseClasslist, testClasslist);
+        checkCollectionClasses(baseClasslist);
     }
 }
