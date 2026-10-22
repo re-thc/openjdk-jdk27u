@@ -1113,7 +1113,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                         return Net.getSocketOption(fd, StandardSocketOptions.SO_REUSEADDR);
                     }
                 case SO_BINDADDR:
-                    return Net.localAddress(fd).getAddress();
+                    return Net.localInetAddress(fd);
                 case SO_SNDBUF:
                     return Net.getSocketOption(fd, StandardSocketOptions.SO_SNDBUF);
                 case SO_RCVBUF:

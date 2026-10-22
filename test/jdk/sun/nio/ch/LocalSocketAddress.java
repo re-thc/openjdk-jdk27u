@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Check native local socket address and port queries
+ * @summary Check native local socket endpoint, address-only, and port-only queries
  * @library /test/lib
  * @modules java.base/sun.nio.ch:+open
  * @run main/othervm -Xcheck:jni LocalSocketAddress
@@ -58,11 +58,14 @@ public class LocalSocketAddress {
     private static final byte[] PAYLOAD = { 0, 1, 2, 127, (byte) 128, (byte) 255 };
     private static final long TIMEOUT_NANOS = 30_000_000_000L;
     private static final Method LOCAL_PORT;
+    private static final Method LOCAL_INET_ADDRESS;
 
     static {
         try {
             LOCAL_PORT = Net.class.getDeclaredMethod("localPort", FileDescriptor.class);
             LOCAL_PORT.setAccessible(true);
+            LOCAL_INET_ADDRESS = Net.class.getDeclaredMethod("localInetAddress", FileDescriptor.class);
+            LOCAL_INET_ADDRESS.setAccessible(true);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -84,6 +87,7 @@ public class LocalSocketAddress {
         IPSupport.throwSkippedExceptionIfNonOperational();
         expectSocketException(() -> Net.localAddress(new FileDescriptor()));
         expectSocketException(() -> localPort(new FileDescriptor()));
+        expectSocketException(() -> localInetAddress(new FileDescriptor()));
         if (IPSupport.hasIPv4()) {
             testFamily(StandardProtocolFamily.INET, InetAddress.getByName("127.0.0.1"),
                     InetAddress.getByName("0.0.0.0"));
@@ -114,9 +118,11 @@ public class LocalSocketAddress {
                 if (Platform.isWindows()) {
                     expectSocketException(() -> Net.localAddress(fd));
                     expectSocketException(() -> localPort(fd));
+                    expectSocketException(() -> localInetAddress(fd));
                 } else {
                     InetSocketAddress actual = Net.localAddress(fd);
                     checkAddress(actual.getAddress(), wildcard);
+                    checkAddress(localInetAddress(fd), actual.getAddress());
                     check(actual.getPort() == 0, "Unbound port: " + actual);
                     check(localPort(fd) == 0, "Nonzero unbound native port");
                 }
@@ -130,6 +136,7 @@ public class LocalSocketAddress {
             channel.close();
             expectSocketException(() -> Net.localAddress(fd));
             expectSocketException(() -> localPort(fd));
+            expectSocketException(() -> localInetAddress(fd));
         }
         testStream(family, loopback, wildcard);
         testDatagram(family, loopback);
@@ -296,12 +303,14 @@ public class LocalSocketAddress {
         InetSocketAddress actual = Net.localAddress(fd(channel));
         check(actual.equals(expected), "Native endpoint " + actual + " != " + expected);
         checkAddress(actual.getAddress(), expected.getAddress());
+        checkAddress(localInetAddress(fd(channel)), actual.getAddress());
         check(localPort(fd(channel)) == actual.getPort(), "Native port differs: " + actual);
         return actual;
     }
 
     private static void checkAddress(InetAddress actual, InetAddress expected) {
-        check(actual.equals(expected) && actual.getClass() == expected.getClass(),
+        check(Arrays.equals(actual.getAddress(), expected.getAddress())
+                        && actual.getClass() == expected.getClass(),
                 "Address " + actual + " != " + expected);
         if (expected instanceof Inet6Address e && actual instanceof Inet6Address a) {
             check(a.getScopeId() == e.getScopeId(), "Scope " + a + " != " + e);
@@ -309,8 +318,16 @@ public class LocalSocketAddress {
     }
 
     private static int localPort(FileDescriptor fd) throws Exception {
+        return (int) invoke(LOCAL_PORT, fd);
+    }
+
+    private static InetAddress localInetAddress(FileDescriptor fd) throws Exception {
+        return (InetAddress) invoke(LOCAL_INET_ADDRESS, fd);
+    }
+
+    private static Object invoke(Method method, FileDescriptor fd) throws Exception {
         try {
-            return (int) LOCAL_PORT.invoke(null, fd);
+            return method.invoke(null, fd);
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof Exception cause) {
                 throw cause;

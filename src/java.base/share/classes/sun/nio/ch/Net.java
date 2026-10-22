@@ -580,6 +580,9 @@ public class Net {
     static native int localPort(FileDescriptor fd)
         throws IOException;
 
+    static native InetAddress localInetAddress(FileDescriptor fd)
+        throws IOException;
+
     public static native InetSocketAddress localAddress(FileDescriptor fd)
         throws IOException;
 

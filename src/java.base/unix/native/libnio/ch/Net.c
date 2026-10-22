@@ -452,26 +452,18 @@ Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfd
     return 1;
 }
 
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
+static int getLocalSocketAddress(JNIEnv *env, jobject fdo, SOCKETADDRESS *sa)
 {
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
-    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
+    socklen_t sa_len = sizeof(*sa);
+    if (getsockname(fdval(env, fdo), &sa->sa, &sa_len) < 0) {
 #ifdef _ALLBSD_SOURCE
-        /*
-         * XXXBSD:
-         * ECONNRESET is specific to the BSDs. We can not return an error,
-         * as the calling Java code with raise a java.lang.Error given the expectation
-         * that getsockname() will never fail. According to the Single UNIX Specification,
-         * it shouldn't fail. As such, we just fill in generic Linux-compatible values.
-         */
+        /* Preserve the BSD reset fallback to an IPv4 wildcard endpoint. */
         if (errno == ECONNRESET) {
-            bzero(&sa.sa4, sizeof(sa));
-            sa.sa4.sin_len = sizeof(struct sockaddr_in);
-            sa.sa4.sin_family = AF_INET;
-            sa.sa4.sin_port = htonl(0);
-            sa.sa4.sin_addr.s_addr = INADDR_ANY;
+            bzero(sa, sizeof(*sa));
+            sa->sa4.sin_len = sizeof(struct sockaddr_in);
+            sa->sa4.sin_family = AF_INET;
+            sa->sa4.sin_port = htonl(0);
+            sa->sa4.sin_addr.s_addr = INADDR_ANY;
         } else {
             handleSocketError(env, errno);
             return -1;
@@ -481,40 +473,40 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
         return -1;
 #endif /* _ALLBSD_SOURCE */
     }
+    return 0;
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    SOCKETADDRESS sa;
+    if (getLocalSocketAddress(env, fdo, &sa) < 0) {
+        return -1;
+    }
     return NET_GetPortFromSockaddr(&sa);
+}
+
+JNIEXPORT jobject JNICALL
+Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    SOCKETADDRESS sa;
+    int port;
+    if (getLocalSocketAddress(env, fdo, &sa) < 0) {
+        return NULL;
+    }
+    return NET_SockaddrToInetAddress(env, &sa, &port);
 }
 
 JNIEXPORT jobject JNICALL
 Java_sun_nio_ch_Net_localAddress(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
     int port;
-    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) < 0) {
-#ifdef _ALLBSD_SOURCE
-        /*
-         * XXXBSD:
-         * ECONNRESET is specific to the BSDs. We can not return an error,
-         * as the calling Java code with raise a java.lang.Error with the expectation
-         * that getsockname() will never fail. According to the Single UNIX Specification,
-         * it shouldn't fail. As such, we just fill in generic Linux-compatible values.
-         */
-        if (errno == ECONNRESET) {
-            bzero(&sa.sa4, sizeof(sa));
-            sa.sa4.sin_len  = sizeof(struct sockaddr_in);
-            sa.sa4.sin_family = AF_INET;
-            sa.sa4.sin_port = htonl(0);
-            sa.sa4.sin_addr.s_addr = INADDR_ANY;
-        } else {
-            handleSocketError(env, errno);
-            return NULL;
-        }
-#else /* _ALLBSD_SOURCE */
-        handleSocketError(env, errno);
+    jobject ia;
+    if (getLocalSocketAddress(env, fdo, &sa) < 0) {
         return NULL;
-#endif /* _ALLBSD_SOURCE */
     }
-    jobject ia = NET_SockaddrToInetAddress(env, &sa, &port);
+    ia = NET_SockaddrToInetAddress(env, &sa, &port);
     CHECK_NULL_RETURN(ia, NULL);
     return (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
 }
