@@ -29,8 +29,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-# Product policy is enforced by configure, including for callers of plain
-# configure. This wrapper only adds native CPU and development-tool defaults.
+# Configure enforces product policy; this wrapper adds development defaults.
 options=()
 
 case "$(uname -s):$(uname -m)" in

@@ -22,7 +22,6 @@
 # questions.
 #
 
-# Focused launcher/archive and retained native-service checks.
 set -euo pipefail
 jdk=$(cd "${1:?Usage: check-headless-launcher.sh JDK_PATH}" && pwd)
 java="$jdk/bin/java"

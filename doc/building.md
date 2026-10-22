@@ -1,8 +1,7 @@
 % Building the JDK
 
-This fork enforces a [headless server build](headless-server-build.md).
-See that guide for supported targets, build commands and compatibility notes.
-Desktop dependency instructions below describe the retained upstream sources.
+This fork enforces a [headless server build](#headless-server-build).
+Desktop dependency and other-target guidance below describes upstream configurations.
 
 ## TL;DR (Instructions for the Impatient)
 
@@ -35,6 +34,60 @@ running on Windows), and want to clone the main-line JDK repository.
 
 If any of these steps failed, or if you want to know more about build
 requirements or build functionality, please continue reading this document.
+
+## Headless server build
+
+Supported targets are Linux x64/AArch64, macOS AArch64 and Windows x64. Plain
+`configure` and `bin/configure-dev` enforce headless Java and native compilation,
+with desktop, audio and Metal components disabled and exactly Serial, G1 and
+ZGC in each configured target JVM variant. Incompatible configure or make
+overrides are errors.
+
+The image excludes `java.desktop`, `java.datatransfer`, `java.se`,
+`jdk.accessibility`, `jdk.editpad`, `jdk.hotspot.agent`, `jdk.jconsole`,
+`jdk.jpackage` and `jdk.unsupported.desktop`. Their APIs and tools are unavailable;
+the upstream sources remain in the checkout. Server diagnostics and development
+tools, including jcmd, JMX, JFR, javac, javadoc and jlink, remain available.
+Windows omits `javaw` and graphical error dialogs; use console launchers.
+
+Use GNU make, the platform toolchain and a supported boot JDK. Set `BOOT_JDK`
+to its location and choose unused configuration names, for example:
+
+```
+set -eu
+for level in release fastdebug; do
+  conf="server-$level"
+  bash configure --with-conf-name="$conf" --with-boot-jdk="$BOOT_JDK" \
+    --with-debug-level="$level"
+  make CONF="$conf" images compile-commands
+  make CONF="$conf" test-make-headless
+  bash .github/scripts/check-dev-profile.sh \
+    "build/$conf/images/jdk" "build/$conf/spec.gmk"
+done
+```
+
+Use `bash bin/configure-dev` with the same arguments for CPU, linker and ccache
+development defaults. On Linux it expects mold unless `CONFIGURE_DEV_NO_MOLD=1`
+is set. Use `gmake` where that is the GNU make command.
+
+Reconfiguration rejects output directories from a desktop build or a different
+collector set. Choose a new `--with-conf-name` or run `make CONF="$conf" dist-clean`
+before reusing one. For stale excluded module outputs, run `make CONF="$conf" clean`.
+
+`test-make-headless` requires Autoconf. `check-dev-profile.sh` audits compilation
+records and image contents and needs both the build tree and its image.
+
+The external boot JDK can contain desktop modules. When cross compiling, the
+build-managed host JDK retains its upstream Serial/G1 collector subset; the
+target JDK still requires Serial/G1/ZGC.
+
+Building the JDK's own API documentation requires a boot JDK containing desktop
+API symbols to resolve links in retained comments; only included target sources
+are processed. The installed javadoc tool does not require a desktop JDK.
+
+`ct.sym` and historical javadoc element lists retain older Java API signatures,
+including desktop signatures, for compiler compatibility. They are generated
+from symbol data and do not add desktop modules to the runtime.
 
 ## Introduction
 

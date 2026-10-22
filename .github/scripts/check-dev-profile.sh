@@ -65,7 +65,6 @@ for compiler in -XX:TieredStopAtLevel=1 -XX:-TieredCompilation; do
     echo "No smoke-method compilation with $compiler" >&2; exit 1;
   }
 done
-# Also preserve source-file launching and the ordinary compiler tools.
 "$java" -Xmx256m "$repo_root/.github/scripts/DevProfileSmoke.java"
 "$jdk/bin/javadoc" -quiet -d "$work/docs" "$repo_root/.github/scripts/DevProfileSmoke.java"
 "$jdk/bin/jar" --create --file "$work/smoke.jar" -C "$work" DevProfileSmoke.class
@@ -104,7 +103,6 @@ if [[ -n $unexpected ]]; then
   echo "Unexpected desktop files in development image: $unexpected" >&2
   exit 1
 fi
-# Compilation evidence, including generated sources, host tools and stale output.
 # test-support contains deliberately invalid regression fixtures, not product outputs.
 build_dir="$(cd "$(dirname "$spec")" && pwd)"
 inputs="$work/inputs"
@@ -158,7 +156,6 @@ if find "$build_dir/jdk/modules" -name '*.cmdline' -exec grep -En -- \
   echo 'Excluded or wildcard module source path exposed to product javac.' >&2
   exit 1
 fi
-# libjli is core launcher code; it must compile its desktop paths out too.
 if ! find "$build_dir/support/native/java.base" -name 'java.o.cmdline' -o -name 'java.obj.cmdline' \
     | grep -q .; then
   echo 'Missing libjli compiler record.' >&2; exit 1
@@ -167,7 +164,6 @@ for command in "$build_dir"/support/native/java.base/libjli/java.{o,obj}.cmdline
   [[ -f $command ]] || continue
   grep -Eq -- '[-/]DHEADLESS' "$command" || { echo "Launcher lacks HEADLESS: $command" >&2; exit 1; }
 done
-# HotSpot's Windows diagnostics must also compile out the dialog path.
 for command in "$build_dir"/hotspot/variant-*/libjvm/objs/os_windows.obj.cmdline; do
   [[ -f $command ]] || continue
   grep -Eq -- '[-/]DHEADLESS' "$command" || { echo "HotSpot lacks HEADLESS: $command" >&2; exit 1; }
