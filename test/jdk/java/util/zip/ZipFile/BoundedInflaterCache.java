@@ -178,6 +178,20 @@ public class BoundedInflaterCache {
                 streams.get(i).close();
             }
             // Reuse after a partial read must start with clean decompression state.
+            // Hold each stream open so that every cached inflater is exercised.
+            var reused = new ArrayList<InputStream>();
+            for (int i = 0; i < LIMIT; i++) {
+                InputStream in = zip.getInputStream(zip.getEntry("deflated"));
+                reused.add(in);
+                check(inflaters.subList(0, LIMIT).contains(inflater(in)),
+                        "Cached inflater was not reused");
+                read(in, 0, DATA.length);
+                check(in.read() == -1, "Missing EOF after cached reuse");
+            }
+            check(cacheSize(zip) == 0, "Cached inflaters were not all acquired");
+            for (InputStream in : reused) {
+                in.close();
+            }
             for (int i = 0; i < 32; i++) {
                 try (InputStream in = zip.getInputStream(zip.getEntry("deflated"))) {
                     read(in, 0, DATA.length);
@@ -225,25 +239,26 @@ public class BoundedInflaterCache {
 
     private static void zipCleanup(Path path) throws Exception {
         List<Inflater> inflaters = new ArrayList<>();
-        ZipFile zip = new ZipFile(path.toFile());
-        var streams = new ArrayList<InputStream>();
-        for (int i = 0; i < BURST; i++) {
-            InputStream in = zip.getInputStream(zip.getEntry("deflated"));
-            streams.add(in);
-            inflaters.add(inflater(in));
-            read(in, 0, 1);
-        }
-        // Exercise ZipFile's own registered Cleaner, with active and idle inflaters.
-        for (int i = 0; i < LIMIT; i++) {
-            streams.get(i).close();
-        }
-        ((Cleanable) field(field(zip, "res"), "cleanable")).clean();
-        ended(inflaters);
-        check(cacheSize(zip) == -1, "Archive cleanup did not close cache");
-        zip.close();
-        zip.close();
-        for (InputStream in : streams) {
-            in.close();
+        try (ZipFile zip = new ZipFile(path.toFile())) {
+            var streams = new ArrayList<InputStream>();
+            for (int i = 0; i < BURST; i++) {
+                InputStream in = zip.getInputStream(zip.getEntry("deflated"));
+                streams.add(in);
+                inflaters.add(inflater(in));
+                read(in, 0, 1);
+            }
+            // Exercise ZipFile's own registered Cleaner, with active and idle inflaters.
+            for (int i = 0; i < LIMIT; i++) {
+                streams.get(i).close();
+            }
+            ((Cleanable) field(field(zip, "res"), "cleanable")).clean();
+            ended(inflaters);
+            check(cacheSize(zip) == -1, "Archive cleanup did not close cache");
+            zip.close();
+            zip.close();
+            for (InputStream in : streams) {
+                in.close();
+            }
         }
     }
 
@@ -314,68 +329,67 @@ public class BoundedInflaterCache {
 
     private static void closeRaces(Path path) throws Exception {
         for (int round = 0; round < 40; round++) {
-            ZipFile zip = new ZipFile(path.toFile());
-            var streams = new ArrayList<InputStream>();
             var inflaters = java.util.Collections.synchronizedList(new ArrayList<Inflater>());
-            for (int i = 0; i < BURST; i++) {
-                InputStream in = zip.getInputStream(zip.getEntry("deflated"));
-                streams.add(in);
-                inflaters.add(inflater(in));
-                read(in, 0, 32);
-            }
-            CountDownLatch start = new CountDownLatch(1);
-            CountDownLatch acquired = new CountDownLatch(1);
-            try (var pool = Executors.newFixedThreadPool(6)) {
-                var tasks = new ArrayList<java.util.concurrent.Future<?>>();
-                for (int worker = 0; worker < 4; worker++) {
-                    final int first = worker;
+            ZipFile zip = new ZipFile(path.toFile());
+            try (zip) {
+                var streams = new ArrayList<InputStream>();
+                for (int i = 0; i < BURST; i++) {
+                    InputStream in = zip.getInputStream(zip.getEntry("deflated"));
+                    streams.add(in);
+                    inflaters.add(inflater(in));
+                    read(in, 0, 32);
+                }
+                CountDownLatch start = new CountDownLatch(1);
+                CountDownLatch acquired = new CountDownLatch(1);
+                try (var pool = Executors.newFixedThreadPool(6)) {
+                    var tasks = new ArrayList<java.util.concurrent.Future<?>>();
+                    for (int worker = 0; worker < 4; worker++) {
+                        final int first = worker;
+                        tasks.add(pool.submit(() -> {
+                            start.await();
+                            for (int i = first; i < streams.size(); i += 4) {
+                                streams.get(i).close();
+                                streams.get(i).close();
+                            }
+                            return null;
+                        }));
+                    }
                     tasks.add(pool.submit(() -> {
                         start.await();
-                        for (int i = first; i < streams.size(); i += 4) {
-                            streams.get(i).close();
-                            streams.get(i).close();
-                        }
-                        return null;
-                    }));
-                }
-                tasks.add(pool.submit(() -> {
-                    start.await();
-                    try (InputStream in = zip.getInputStream(new ZipEntry("deflated"))) {
-                        inflaters.add(inflater(in));
-                        read(in, 0, 1);
-                        acquired.countDown();
-                    }
-                    for (int i = 1; i < BURST; i++) {
                         try (InputStream in = zip.getInputStream(new ZipEntry("deflated"))) {
                             inflaters.add(inflater(in));
                             read(in, 0, 1);
-                        } catch (IOException | IllegalStateException expectedOnClose) {
-                            break;
+                            acquired.countDown();
                         }
+                        for (int i = 1; i < BURST; i++) {
+                            try (InputStream in = zip.getInputStream(new ZipEntry("deflated"))) {
+                                inflaters.add(inflater(in));
+                                read(in, 0, 1);
+                            } catch (IOException | IllegalStateException expectedOnClose) {
+                                break;
+                            }
+                        }
+                        return null;
+                    }));
+                    tasks.add(pool.submit(() -> {
+                        start.await();
+                        check(acquired.await(10, TimeUnit.SECONDS), "No concurrent acquisition");
+                        zip.close();
+                        zip.close();
+                        return null;
+                    }));
+                    start.countDown();
+                    try {
+                        for (var task : tasks) {
+                            task.get(30, TimeUnit.SECONDS);
+                        }
+                    } finally {
+                        pool.shutdownNow();
                     }
-                    return null;
-                }));
-                tasks.add(pool.submit(() -> {
-                    start.await();
-                    check(acquired.await(10, TimeUnit.SECONDS), "No concurrent acquisition");
-                    zip.close();
-                    zip.close();
-                    return null;
-                }));
-                start.countDown();
-                try {
-                    for (var task : tasks) {
-                        task.get(30, TimeUnit.SECONDS);
-                    }
-                } finally {
-                    pool.shutdownNow();
                 }
-            } finally {
-                zip.close();
             }
             ended(inflaters);
             check(cacheSize(zip) == -1, "Racing close did not close cache");
         }
     }
 }
-
