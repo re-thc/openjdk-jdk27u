@@ -576,8 +576,12 @@ public class Net {
 
     static native void shutdown(FileDescriptor fd, int how) throws IOException;
 
+    // Retains the legacy Windows behavior of returning zero for WSAEINVAL.
+    private static native int localPort(FileDescriptor fd)
+        throws IOException;
+
     // Like localAddress, throws if the local endpoint cannot be queried.
-    static native int localPort(FileDescriptor fd)
+    static native int localPortStrict(FileDescriptor fd)
         throws IOException;
 
     static native InetAddress localInetAddress(FileDescriptor fd)

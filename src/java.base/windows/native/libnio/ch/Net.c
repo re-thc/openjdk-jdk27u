@@ -318,6 +318,23 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKETADDRESS sa;
+    int sa_len = sizeof(sa);
+
+    if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) == SOCKET_ERROR) {
+        int error = WSAGetLastError();
+        if (error == WSAEINVAL) {
+            return 0;
+        }
+        NET_ThrowNew(env, error, "getsockname");
+        return IOS_THROWN;
+    }
+    return NET_GetPortFromSockaddr(&sa);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_localPortStrict(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    SOCKETADDRESS sa;
     if (getLocalSocketAddress(env, fdo, &sa) < 0) {
         return IOS_THROWN;
     }

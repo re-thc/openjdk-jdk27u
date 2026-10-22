@@ -476,14 +476,25 @@ static int getLocalSocketAddress(JNIEnv *env, jobject fdo, SOCKETADDRESS *sa)
     return 0;
 }
 
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
+static jint getLocalSocketPort(JNIEnv *env, jobject fdo)
 {
     SOCKETADDRESS sa;
     if (getLocalSocketAddress(env, fdo, &sa) < 0) {
         return -1;
     }
     return NET_GetPortFromSockaddr(&sa);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    return getLocalSocketPort(env, fdo);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_localPortStrict(JNIEnv *env, jclass clazz, jobject fdo)
+{
+    return getLocalSocketPort(env, fdo);
 }
 
 JNIEXPORT jobject JNICALL

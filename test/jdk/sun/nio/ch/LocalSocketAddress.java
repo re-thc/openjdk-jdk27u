@@ -58,12 +58,15 @@ public class LocalSocketAddress {
     private static final byte[] PAYLOAD = { 0, 1, 2, 127, (byte) 128, (byte) 255 };
     private static final long TIMEOUT_NANOS = 30_000_000_000L;
     private static final Method LOCAL_PORT;
+    private static final Method LOCAL_PORT_STRICT;
     private static final Method LOCAL_INET_ADDRESS;
 
     static {
         try {
             LOCAL_PORT = Net.class.getDeclaredMethod("localPort", FileDescriptor.class);
             LOCAL_PORT.setAccessible(true);
+            LOCAL_PORT_STRICT = Net.class.getDeclaredMethod("localPortStrict", FileDescriptor.class);
+            LOCAL_PORT_STRICT.setAccessible(true);
             LOCAL_INET_ADDRESS = Net.class.getDeclaredMethod("localInetAddress", FileDescriptor.class);
             LOCAL_INET_ADDRESS.setAccessible(true);
         } catch (ReflectiveOperationException e) {
@@ -87,6 +90,7 @@ public class LocalSocketAddress {
         IPSupport.throwSkippedExceptionIfNonOperational();
         expectSocketException(() -> Net.localAddress(new FileDescriptor()));
         expectSocketException(() -> localPort(new FileDescriptor()));
+        expectSocketException(() -> localPortStrict(new FileDescriptor()));
         expectSocketException(() -> localInetAddress(new FileDescriptor()));
         if (IPSupport.hasIPv4()) {
             testFamily(StandardProtocolFamily.INET, InetAddress.getByName("127.0.0.1"),
@@ -117,14 +121,16 @@ public class LocalSocketAddress {
                 FileDescriptor fd = fd(channel);
                 if (Platform.isWindows()) {
                     expectSocketException(() -> Net.localAddress(fd));
-                    expectSocketException(() -> localPort(fd));
+                    check(localPort(fd) == 0, "Nonzero unbound legacy native port");
+                    expectSocketException(() -> localPortStrict(fd));
                     expectSocketException(() -> localInetAddress(fd));
                 } else {
                     InetSocketAddress actual = Net.localAddress(fd);
                     checkAddress(actual.getAddress(), wildcard);
                     checkAddress(localInetAddress(fd), actual.getAddress());
                     check(actual.getPort() == 0, "Unbound port: " + actual);
-                    check(localPort(fd) == 0, "Nonzero unbound native port");
+                    check(localPort(fd) == 0, "Nonzero unbound legacy native port");
+                    check(localPortStrict(fd) == 0, "Nonzero unbound strict native port");
                 }
             }
             for (InetAddress address : new InetAddress[] { wildcard, loopback }) {
@@ -136,6 +142,7 @@ public class LocalSocketAddress {
             channel.close();
             expectSocketException(() -> Net.localAddress(fd));
             expectSocketException(() -> localPort(fd));
+            expectSocketException(() -> localPortStrict(fd));
             expectSocketException(() -> localInetAddress(fd));
         }
         testStream(family, loopback, wildcard);
@@ -304,7 +311,8 @@ public class LocalSocketAddress {
         check(actual.equals(expected), "Native endpoint " + actual + " != " + expected);
         checkAddress(actual.getAddress(), expected.getAddress());
         checkAddress(localInetAddress(fd(channel)), actual.getAddress());
-        check(localPort(fd(channel)) == actual.getPort(), "Native port differs: " + actual);
+        check(localPort(fd(channel)) == actual.getPort(), "Legacy native port differs: " + actual);
+        check(localPortStrict(fd(channel)) == actual.getPort(), "Strict native port differs: " + actual);
         return actual;
     }
 
@@ -319,6 +327,10 @@ public class LocalSocketAddress {
 
     private static int localPort(FileDescriptor fd) throws Exception {
         return (int) invoke(LOCAL_PORT, fd);
+    }
+
+    private static int localPortStrict(FileDescriptor fd) throws Exception {
+        return (int) invoke(LOCAL_PORT_STRICT, fd);
     }
 
     private static InetAddress localInetAddress(FileDescriptor fd) throws Exception {

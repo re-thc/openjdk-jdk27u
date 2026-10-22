@@ -528,7 +528,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 tryFinishClose();
             if (completed && state == ST_CONNECTING) {
                 this.state = ST_CONNECTED;
-                localport = Net.localPort(fd);
+                localport = Net.localPortStrict(fd);
             } else if (!completed && state >= ST_CLOSING) {
                 throw new SocketException("Socket closed");
             }
@@ -643,7 +643,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             // maintain long standing behavior. When binding to 0.0.0.0
             // then the actual local address will be ::0 when IPv6 is enabled.
             address = host;
-            localport = Net.localPort(fd);
+            localport = Net.localPortStrict(fd);
         }
     }
 
@@ -765,7 +765,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         // get local port and configure accepted socket to blocking mode
         int localPort;
         try {
-            localPort = Net.localPort(newfd);
+            localPort = Net.localPortStrict(newfd);
             IOUtil.configureBlocking(newfd, true);
         } catch (IOException ioe) {
             nd.close(newfd);
