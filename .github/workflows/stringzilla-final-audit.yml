@@ -1,6 +1,6 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-name: StringZilla independent SDK payload audit
+name: StringZilla retained raw-result audit
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -20,17 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 5ee998a5f5ec4d433ad02743c0570e6baef06897
+          ref: 886013a16c33c047abd5eb9a27605e779b2a299e
           persist-credentials: false
           sparse-checkout: doc/stringzilla
-      - name: Verify all three immutable SDK payloads
+      - name: Audit retained raw results without rebuilding or remeasuring
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          python3 doc/stringzilla/merge-20261022/final-sdk-audit.py
-          --manifest doc/stringzilla/dispatch-20261022/final-sdk-artifacts.json
+          python3 doc/stringzilla/merge-20261022/final-audit.py
+          --manifest doc/stringzilla/dispatch-20261022/final-audit-artifacts.json
           --output retained-audit
-      - name: Retain independent SDK payload verification
+      - name: Retain original text and raw JMH files plus independent audit
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
