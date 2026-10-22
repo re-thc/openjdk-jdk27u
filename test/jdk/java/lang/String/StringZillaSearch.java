@@ -66,6 +66,24 @@ public class StringZillaSearch {
         }
     }
 
+
+    private static void filteredUTF16ReverseBlocks() {
+        for (int count : new int[]{9, 10, 11, 12, 16, 17, 64, 128}) {
+            String target = "\u0402".repeat(count);
+            for (int hit : new int[]{-1, 0, 1, 127, 128, 255, 256, 257, 3839}) {
+                for (boolean falseEnding : new boolean[]{false, true}) {
+                    char[] source = "\u0401".repeat(4096).toCharArray();
+                    if (falseEnding) source[3000] = '\u0402';
+                    if (hit >= 0) target.getChars(0, count, source, hit);
+                    String value = new String(source);
+                    for (int from : new int[]{Integer.MAX_VALUE, hit - 1, hit, 255, 256, 257}) {
+                        check(value, target, from);
+                    }
+                }
+            }
+        }
+    }
+
     private static void equal(int actual, int expected) {
         if (actual != expected) throw new AssertionError(actual + " != " + expected);
     }
@@ -194,6 +212,7 @@ public class StringZillaSearch {
 
     public static void main(String[] args) throws Exception {
         filteredReverseBlocks();
+        filteredUTF16ReverseBlocks();
         // Equality is used during native-library and timezone initialization.
         // Exercise these consumers before warming up the string-search corpus.
         if (System.getProperty(new String("java.vm.info".toCharArray())) == null)
