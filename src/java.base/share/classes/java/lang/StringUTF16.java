@@ -1439,12 +1439,24 @@ final class StringUTF16 {
         int last = count - 1;
         char lastChar = getChar(tgt, last);
         if (StringZilla.MSVC_SERIAL) {
-            // Each skipped block excludes every candidate ending in that block.
             int end = from + count;
             while (end > last) {
                 int start = Math.max(last, end - 256);
-                if (indexOfChar0(src, lastChar, start, end) >= 0) {
-                    return lastIndexOfJavaFallback(src, tgt, count, end - count);
+                int candidate = indexOfChar0(src, lastChar, start, end);
+                int found = -1;
+                int probes = 0;
+                while (candidate >= 0) {
+                    if (matchesAt(src, candidate - last, tgt, count)) {
+                        found = candidate - last;
+                    }
+                    // Dense ending characters retain the existing scalar loop.
+                    if (++probes == 8) {
+                        return lastIndexOfJavaFallback(src, tgt, count, end - count);
+                    }
+                    candidate = indexOfChar0(src, lastChar, candidate + 1, end);
+                }
+                if (found >= 0) {
+                    return found;
                 }
                 end = start;
             }

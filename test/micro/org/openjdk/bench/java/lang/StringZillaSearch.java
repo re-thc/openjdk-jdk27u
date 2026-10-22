@@ -80,6 +80,11 @@ public class StringZillaSearch {
             java.util.Arrays.fill(target, (char)repeatedBase);
             target[target.length - 1] = (char)ch;
             needle = new String(target);
+        } else if (position.equals("FALSE_ENDING") && needle.length() <= length) {
+            needle.getChars(0, needle.length(), chars, 0);
+            if (target.length > 1 && length / 2 >= target.length) {
+                chars[length / 2] = target[target.length - 1];
+            }
         } else if (!position.equals("MISS") && needle.length() <= length) {
             int offset = position.equals("START") ? 0 : length - needle.length();
             needle.getChars(0, needle.length(), chars, offset);
