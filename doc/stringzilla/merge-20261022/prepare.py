@@ -16,7 +16,7 @@ import urllib.request
 import urllib.parse
 import zipfile
 
-SOURCE = '573e785e5d459c2a96f3042c48651c8cf17a75de'
+SOURCE = 'c17c5cb06297e25681b4dab2eddbd60ceffe0300'
 PRODUCER = 'a677a179522428c24b85cf76dbf0895f3aa1825f'
 ARTIFACTS = {
     'neon':(12168885783,'2ff97e0af5bee64f0fb410d9befc7afe9697dbcddc2476c7a293c968a3380099'),
@@ -34,9 +34,9 @@ class ArtifactRedirect(urllib.request.HTTPRedirectHandler):
 OPEN=urllib.request.build_opener(ArtifactRedirect()).open
 
 
-REFERENCE = 'cd785f1c66fb72404c12b150d5f3d8e0fe0a4776'
-REFERENCE_PRODUCER = 'a068c05c1ace6c29c600e742e618669b25c77624'
-REFERENCES = {'neon': (12407463036, '25adf623cab92c48cc0e7f19ab9dc5be805287db6ccfe680b3660415266d5749', '4bbf0a78623a1415b68810a33d789f7daaa5b81d7a2ea18d7086c637fb478c54'), 'msvc': (12407074568, '9c1c98ef4922a59e5459d63447f09ca8dd2c7dad403675773cadab721ee5e06d', 'f865dab3b1e68513a2fc54771ee6ebb2f3db35d964f9a63e9573f1129ccad0cc')}
+REFERENCE = '573e785e5d459c2a96f3042c48651c8cf17a75de'
+REFERENCE_PRODUCER = '96e8aa81d6c2c59196272b114c336f3ec7291e6f'
+REFERENCES = {"neon":[12418780556,"0898b03d763ee642abf9da64b854ee1f21aeb45d8d4b2e9bc3ceeb359b826f7e","97347687d6e1d9bc35565e1f6aa8b5c4c250209a08ab097f41601085e3b0fb6f"],"msvc":[12419420214,"56c888c8141dd38858473e100c6b888f2aaa3634180e297eace341c9cde0c30c","5ad5f5ec87155392f1ea2bd1a575ae9cd89edf8d6e54fc004d4c055bbec0a49a"]}
 
 
 def restore_reference(root, backend, headers):
@@ -45,7 +45,7 @@ def restore_reference(root, backend, headers):
     with OPEN(urllib.request.Request(base, headers=headers)) as response:
         meta = json.load(response)
     assert meta['id'] == ident and meta['digest'] == 'sha256:' + digest and not meta['expired']
-    assert meta['workflow_run']['id'] == 39734131176
+    assert meta['workflow_run']['id'] == 39759713276
     assert meta['workflow_run']['head_sha'] == REFERENCE_PRODUCER
     archive = root / 'reference.zip'
     with OPEN(urllib.request.Request(base + '/zip', headers=headers)) as src, archive.open('wb') as dst:
