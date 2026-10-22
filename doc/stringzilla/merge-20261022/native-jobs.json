@@ -1,0 +1,421 @@
+{
+  "total_count": 2,
+  "jobs": [
+    {
+      "id": 119675767808,
+      "run_id": 39734131176,
+      "workflow_name": "StringZilla final paired native checks",
+      "head_branch": "codex/stringzilla-final-artifacts",
+      "run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/runs/39734131176",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOU4oQ1c8AAAAb3TtMAA",
+      "head_sha": "a068c05c1ace6c29c600e742e618669b25c77624",
+      "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/jobs/119675767808",
+      "html_url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39734131176/job/119675767808",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-22T06:28:19Z",
+      "started_at": "2026-10-22T06:28:22Z",
+      "completed_at": "2026-10-22T07:36:10Z",
+      "name": "msvc",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-22T06:28:22Z",
+          "completed_at": "2026-10-22T06:28:23Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-22T06:28:23Z",
+          "completed_at": "2026-10-22T06:29:07Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-22T06:29:07Z",
+          "completed_at": "2026-10-22T06:29:12Z"
+        },
+        {
+          "name": "Restore verified independent Windows baseline",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-22T06:29:12Z",
+          "completed_at": "2026-10-22T06:29:34Z"
+        },
+        {
+          "name": "Run ./.github/actions/get-msys2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-22T06:29:34Z",
+          "completed_at": "2026-10-22T06:29:47Z"
+        },
+        {
+          "name": "Run ./.github/actions/get-bootjdk",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-22T06:29:47Z",
+          "completed_at": "2026-10-22T06:30:59Z"
+        },
+        {
+          "name": "Check MSVC 14.44 toolset",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-22T06:30:59Z",
+          "completed_at": "2026-10-22T06:31:03Z"
+        },
+        {
+          "name": "Install matching MSVC toolset if absent",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 8,
+          "started_at": "2026-10-22T06:31:03Z",
+          "completed_at": "2026-10-22T06:31:03Z"
+        },
+        {
+          "name": "Select matched current-master control",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-22T06:31:03Z",
+          "completed_at": "2026-10-22T06:31:04Z"
+        },
+        {
+          "name": "Build matched current-master control",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-22T06:31:04Z",
+          "completed_at": "2026-10-22T06:44:44Z"
+        },
+        {
+          "name": "Seal master control and select actual merge checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-22T06:44:44Z",
+          "completed_at": "2026-10-22T06:44:46Z"
+        },
+        {
+          "name": "Build complete candidate with production kernel flags",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-22T06:44:46Z",
+          "completed_at": "2026-10-22T06:55:31Z"
+        },
+        {
+          "name": "Seal new candidate and verify actual compiler command",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-22T06:55:31Z",
+          "completed_at": "2026-10-22T06:55:35Z"
+        },
+        {
+          "name": "Retain complete Windows candidate before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-10-22T06:55:35Z",
+          "completed_at": "2026-10-22T06:55:51Z"
+        },
+        {
+          "name": "Check native contracts, tiers, opt-out and forced JNI",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-22T06:55:51Z",
+          "completed_at": "2026-10-22T06:57:53Z"
+        },
+        {
+          "name": "Validate Windows dispatch, physical bounds and safepoints",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-10-22T06:57:53Z",
+          "completed_at": "2026-10-22T07:03:10Z"
+        },
+        {
+          "name": "Repeated paired Windows measurements",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-10-22T07:03:10Z",
+          "completed_at": "2026-10-22T07:34:36Z"
+        },
+        {
+          "name": "Check out fixed independent source-indexing corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-10-22T07:34:36Z",
+          "completed_at": "2026-10-22T07:34:42Z"
+        },
+        {
+          "name": "Ordinary Windows process comparisons",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-10-22T07:34:42Z",
+          "completed_at": "2026-10-22T07:36:01Z"
+        },
+        {
+          "name": "Retain Windows evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-10-22T07:36:01Z",
+          "completed_at": "2026-10-22T07:36:04Z"
+        },
+        {
+          "name": "Post Check out fixed independent source-indexing corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 37,
+          "started_at": "2026-10-22T07:36:04Z",
+          "completed_at": "2026-10-22T07:36:05Z"
+        },
+        {
+          "name": "Post Run ./.github/actions/get-bootjdk",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 38,
+          "started_at": "2026-10-22T07:36:05Z",
+          "completed_at": "2026-10-22T07:36:05Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 39,
+          "started_at": "2026-10-22T07:36:05Z",
+          "completed_at": "2026-10-22T07:36:07Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 40,
+          "started_at": "2026-10-22T07:36:07Z",
+          "completed_at": "2026-10-22T07:36:08Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 41,
+          "started_at": "2026-10-22T07:36:08Z",
+          "completed_at": "2026-10-22T07:36:08Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/check-runs/119675767808",
+      "labels": [
+        "windows-2025"
+      ],
+      "runner_id": 1000024745,
+      "runner_name": "GitHub Actions 1000024745",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 119675768262,
+      "run_id": 39734131176,
+      "workflow_name": "StringZilla final paired native checks",
+      "head_branch": "codex/stringzilla-final-artifacts",
+      "run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/runs/39734131176",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOU4oQ1c8AAAAb3TtNxg",
+      "head_sha": "a068c05c1ace6c29c600e742e618669b25c77624",
+      "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/jobs/119675768262",
+      "html_url": "https://github.com/re-thc/openjdk-jdk27u/actions/runs/39734131176/job/119675768262",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-10-22T06:28:19Z",
+      "started_at": "2026-10-22T06:28:26Z",
+      "completed_at": "2026-10-22T07:29:55Z",
+      "name": "neon",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-22T06:28:27Z",
+          "completed_at": "2026-10-22T06:28:28Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-22T06:28:28Z",
+          "completed_at": "2026-10-22T06:29:01Z"
+        },
+        {
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-22T06:29:01Z",
+          "completed_at": "2026-10-22T06:29:03Z"
+        },
+        {
+          "name": "Restore verified independent native ARM baseline",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-22T06:29:03Z",
+          "completed_at": "2026-10-22T06:29:31Z"
+        },
+        {
+          "name": "Run ./.github/actions/get-bootjdk",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-22T06:29:31Z",
+          "completed_at": "2026-10-22T06:29:34Z"
+        },
+        {
+          "name": "Install matching GCC 16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-22T06:29:34Z",
+          "completed_at": "2026-10-22T06:33:46Z"
+        },
+        {
+          "name": "Build and seal matched current-master control",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-22T06:33:46Z",
+          "completed_at": "2026-10-22T06:44:14Z"
+        },
+        {
+          "name": "Build complete native ARM candidate",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-22T06:44:14Z",
+          "completed_at": "2026-10-22T06:55:04Z"
+        },
+        {
+          "name": "Retain complete ARM candidate before tests",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-10-22T06:55:04Z",
+          "completed_at": "2026-10-22T06:55:14Z"
+        },
+        {
+          "name": "Validate native ARM contracts and sanitizers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-22T06:55:14Z",
+          "completed_at": "2026-10-22T06:55:27Z"
+        },
+        {
+          "name": "Validate native ARM dispatch, bounds and safepoints",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-10-22T06:55:27Z",
+          "completed_at": "2026-10-22T06:59:03Z"
+        },
+        {
+          "name": "Repeated paired ARM measurements",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-10-22T06:59:03Z",
+          "completed_at": "2026-10-22T07:28:22Z"
+        },
+        {
+          "name": "Check out fixed independent source-indexing corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-10-22T07:28:22Z",
+          "completed_at": "2026-10-22T07:28:25Z"
+        },
+        {
+          "name": "Ordinary ARM process comparisons",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-10-22T07:28:25Z",
+          "completed_at": "2026-10-22T07:29:48Z"
+        },
+        {
+          "name": "Retain ARM evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-10-22T07:29:48Z",
+          "completed_at": "2026-10-22T07:29:51Z"
+        },
+        {
+          "name": "Post Check out fixed independent source-indexing corpus",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 27,
+          "started_at": "2026-10-22T07:29:51Z",
+          "completed_at": "2026-10-22T07:29:51Z"
+        },
+        {
+          "name": "Post Run ./.github/actions/get-bootjdk",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 28,
+          "started_at": "2026-10-22T07:29:51Z",
+          "completed_at": "2026-10-22T07:29:52Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 29,
+          "started_at": "2026-10-22T07:29:52Z",
+          "completed_at": "2026-10-22T07:29:52Z"
+        },
+        {
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 30,
+          "started_at": "2026-10-22T07:29:52Z",
+          "completed_at": "2026-10-22T07:29:52Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 31,
+          "started_at": "2026-10-22T07:29:52Z",
+          "completed_at": "2026-10-22T07:29:52Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/check-runs/119675768262",
+      "labels": [
+        "ubuntu-26.04-arm"
+      ],
+      "runner_id": 1000024746,
+      "runner_name": "GitHub Actions 1000024746",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

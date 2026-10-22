@@ -1,3 +1,5 @@
+**Superseded by the [final actual-merge assessment](../merge-20261022/RESULTS.md), which rejects the current default-enabled dispatch as merge-ready. The results below remain qualification of branch922 only.**
+
 # Complete branch-source assessment: 92221215d9e
 
 Product `92221215d9e350b8c2b6ae9d9238cfc96ebe81ee`; independent original `416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda`; prior `f7148bae3645efcfdf57e2a63b041bd62334dc23`; candidate enabled and disabled. PR63's complete history is included. This report qualifies this branch source only. The [actual merge assessment](../merge-20261022/RESULTS.md) separately accounts for current master's newer C2 compiler.

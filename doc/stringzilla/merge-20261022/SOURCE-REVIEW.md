@@ -13,3 +13,5 @@ The final benchmark scope is bounded to 74 groups across serial, AVX2, AVX512, N
 One producer-side pathspec omitted `lib/` from CoreLibraries.gmk. The explicit source comparison above reads and hashes the existing file on both product and merge, supplementing that check. Native receipts independently assert the actual generated release kernel compiler command. Macro verification of release/fastdebug/slowdebug is kept distinct from native release build execution.
 
 No PR4 merge, upstream write, forced update or new product branch is involved. PR63's original eight commits remain in history.
+
+The final product b454 changes only the compiler-cache action. All runtime/build/test source trees match measured product2538. A normal final-merge04a393 image refresh verifies every executable, library, module and CDS archive byte-identical to the measured complete Linux image; only the release SOURCE revision label changes. [Image equality](cache-final-image-equivalence.json) and [source-tree equality](cache-fix-source-equivalence.json) bind the final product without changing raw measurement identities. Performance rejection is recorded in the final assessment.
