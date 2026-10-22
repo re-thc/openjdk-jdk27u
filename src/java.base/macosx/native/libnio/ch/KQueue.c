@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,92 @@ Java_sun_nio_ch_KQueue_register(JNIEnv *env, jclass clazz, jint kqfd,
     EV_SET(&changes[0], fd, filter, flags, 0, 0, 0);
     RESTARTABLE(kevent(kqfd, &changes[0], 1, NULL, 0, NULL), res);
     return (res == -1) ? errno : 0;
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_KQueue_registerChanges(JNIEnv *env, jclass clazz, jint kqfd,
+                                     jintArray changeArray, jint count,
+                                     jintArray errorArray)
+{
+    jint values[sun_nio_ch_KQueue_MAX_CHANGES * 3];
+    jint errors[sun_nio_ch_KQueue_MAX_CHANGES];
+    struct kevent changes[sun_nio_ch_KQueue_MAX_CHANGES];
+    struct kevent receipts[sun_nio_ch_KQueue_MAX_CHANGES];
+    struct timespec timeout = { 0, 0 };
+    int completed = 0;
+
+    if (changeArray == NULL || errorArray == NULL || count <= 0 ||
+        count > sun_nio_ch_KQueue_MAX_CHANGES ||
+        (*env)->GetArrayLength(env, changeArray) < count * 3 ||
+        (*env)->GetArrayLength(env, errorArray) < count) {
+        JNU_ThrowIllegalArgumentException(env, "Invalid registration batch");
+        return;
+    }
+    (*env)->GetIntArrayRegion(env, changeArray, 0, count * 3, values);
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
+    for (int i = 0; i < count; i++) {
+        int fd = values[i * 3];
+        int filter = values[i * 3 + 1];
+        int flags = values[i * 3 + 2];
+        if ((filter != EVFILT_READ && filter != EVFILT_WRITE) ||
+            (flags != EV_ADD && flags != EV_DELETE)) {
+            JNU_ThrowIllegalArgumentException(env, "Invalid registration change");
+            return;
+        }
+        for (int j = 0; j < i; j++) {
+            if (values[j * 3] == fd && values[j * 3 + 1] == filter) {
+                JNU_ThrowIllegalArgumentException(env, "Repeated registration filter");
+                return;
+            }
+        }
+        EV_SET(&changes[i], fd, filter, flags | EV_RECEIPT, 0, 0,
+               (void *)(uintptr_t)(i + 1));
+    }
+
+    while (completed < count) {
+        int remaining = count - completed;
+        int n = kevent(kqfd, changes + completed, remaining,
+                       receipts, remaining, &timeout);
+        if (n < 0) {
+            // No one-shot or ordered same-filter sequences are accepted here.
+            // Retrying distinct level-triggered changes is idempotent, even
+            // when an interrupted call has already applied some of them.
+            if (errno == EINTR) {
+                continue;
+            }
+            JNU_ThrowIOExceptionWithLastError(env, "kevent registration failed");
+            return;
+        }
+        if (n == 0 || n > remaining) {
+            JNU_ThrowIOException(env, "Missing kevent registration receipts");
+            return;
+        }
+        for (int i = 0; i < n; i++) {
+            int index = completed + i;
+            if ((receipts[i].flags & EV_ERROR) == 0 ||
+                receipts[i].ident != changes[index].ident ||
+                receipts[i].filter != changes[index].filter ||
+                receipts[i].udata != changes[index].udata) {
+                JNU_ThrowIOException(env, "Invalid kevent registration receipt");
+                return;
+            }
+            errors[index] = (jint)receipts[i].data;
+        }
+        completed += n;
+    }
+    for (int i = 0; i < count; i++) {
+        // Match the single-change registration's handling of an interrupted
+        // filter operation. Other filters have already received their outcomes.
+        if (errors[i] == EINTR) {
+            int res;
+            changes[i].flags &= ~EV_RECEIPT;
+            RESTARTABLE(kevent(kqfd, &changes[i], 1, NULL, 0, &timeout), res);
+            errors[i] = (res == -1) ? errno : 0;
+        }
+    }
+    (*env)->SetIntArrayRegion(env, errorArray, 0, count, errors);
 }
 
 JNIEXPORT jint JNICALL

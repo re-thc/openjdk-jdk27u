@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ class KQueue {
     static final int EV_ONESHOT = 0x0010;
     static final int EV_CLEAR   = 0x0020;
 
+    // Maximum number of selector filter changes in a registration batch.
+    static final int MAX_CHANGES = 64;
+
     /**
      * Allocates a poll array to handle up to {@code count} events.
      */
@@ -114,6 +117,15 @@ class KQueue {
     static native int create() throws IOException;
 
     static native int register(int kqfd, int fd, int filter, int flags);
+
+    /**
+     * Applies distinct (fd, filter) changes, encoded as fd/filter/flags triples.
+     * Only level-triggered EV_ADD and EV_DELETE are accepted, so interrupted
+     * calls can safely retry changes without receipts. Each error is returned
+     * in errors (zero for success); readiness is left for poll.
+     */
+    static native void registerChanges(int kqfd, int[] changes, int count, int[] errors)
+        throws IOException;
 
     static native int poll(int kqfd, long pollAddress, int nevents, long timeout)
         throws IOException;

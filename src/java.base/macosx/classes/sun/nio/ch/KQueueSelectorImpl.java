@@ -67,6 +67,11 @@ class KQueueSelectorImpl extends SelectorImpl {
     private final Object updateLock = new Object();
     private final Deque<SelectionKeyImpl> updateKeys = new ArrayDeque<>();
 
+    // Reused registration buffers, accessed while holding the selector lock.
+    private final int[] changes = new int[KQueue.MAX_CHANGES * 3];
+    private final int[] changeErrors = new int[KQueue.MAX_CHANGES];
+    private int changeCount;
+
     // interrupt triggering and clearing
     private final Object interruptLock = new Object();
     private boolean interruptTriggered;
@@ -176,12 +181,18 @@ class KQueueSelectorImpl extends SelectorImpl {
     /**
      * Process changes to the interest ops.
      */
-    private void processUpdateQueue() {
+    private void processUpdateQueue() throws IOException {
         assert Thread.holdsLock(this);
 
+        // Complete any batch retained after an unsuccessful registration call.
+        flushUpdates();
         synchronized (updateLock) {
             SelectionKeyImpl ski;
-            while ((ski = updateKeys.pollFirst()) != null) {
+            while ((ski = updateKeys.peekFirst()) != null) {
+                if (ski.isValid()) {
+                    prepareChanges(ski.getFDVal());
+                }
+                updateKeys.removeFirst();
                 if (ski.isValid()) {
                     int fd = ski.getFDVal();
                     // add to fdToKey if needed
@@ -193,6 +204,12 @@ class KQueueSelectorImpl extends SelectorImpl {
 
                     // DatagramChannelImpl::disconnect has reset socket
                     if (ski.getAndClearReset() && registeredEvents != 0) {
+                        try {
+                            flushUpdates();
+                        } catch (IOException ioe) {
+                            ski.reset();
+                            throw ioe;
+                        }
                         KQueue.register(kqfd, fd, EVFILT_READ, EV_DELETE);
                         registeredEvents = 0;
                         ski.registeredEvents(0);
@@ -203,25 +220,58 @@ class KQueueSelectorImpl extends SelectorImpl {
                         // add or delete interest in read events
                         if ((registeredEvents & Net.POLLIN) != 0) {
                             if ((newEvents & Net.POLLIN) == 0) {
-                                KQueue.register(kqfd, fd, EVFILT_READ, EV_DELETE);
+                                addChange(fd, EVFILT_READ, EV_DELETE);
                             }
                         } else if ((newEvents & Net.POLLIN) != 0) {
-                            KQueue.register(kqfd, fd, EVFILT_READ, EV_ADD);
+                            addChange(fd, EVFILT_READ, EV_ADD);
                         }
 
                         // add or delete interest in write events
                         if ((registeredEvents & Net.POLLOUT) != 0) {
                             if ((newEvents & Net.POLLOUT) == 0) {
-                                KQueue.register(kqfd, fd, EVFILT_WRITE, EV_DELETE);
+                                addChange(fd, EVFILT_WRITE, EV_DELETE);
                             }
                         } else if ((newEvents & Net.POLLOUT) != 0) {
-                            KQueue.register(kqfd, fd, EVFILT_WRITE, EV_ADD);
+                            addChange(fd, EVFILT_WRITE, EV_ADD);
                         }
 
                         ski.registeredEvents(newEvents);
                     }
                 }
             }
+            flushUpdates();
+        }
+    }
+
+    private void prepareChanges(int fd) throws IOException {
+        // Reserve both filters before removing a key from the update queue.
+        if (changeCount > KQueue.MAX_CHANGES - 2) {
+            flushUpdates();
+        }
+        // Keep successive changes to the same descriptor in separate batches.
+        for (int i = 0; i < changeCount; i++) {
+            if (changes[i * 3] == fd) {
+                flushUpdates();
+                break;
+            }
+        }
+    }
+
+    private void addChange(int fd, int filter, int flags) {
+        assert changeCount < KQueue.MAX_CHANGES;
+        int offset = changeCount * 3;
+        changes[offset] = fd;
+        changes[offset + 1] = filter;
+        changes[offset + 2] = flags;
+        changeCount++;
+    }
+
+    private void flushUpdates() throws IOException {
+        if (changeCount > 0) {
+            KQueue.registerChanges(kqfd, changes, changeCount, changeErrors);
+            // As with individual selector registrations, per-filter errors
+            // (for example, a delete after close) do not abort later changes.
+            changeCount = 0;
         }
     }
 
