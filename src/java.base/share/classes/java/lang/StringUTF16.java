@@ -1199,12 +1199,22 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex, int tier) {
-        if (tier == StringZilla.UNRESOLVED_TIER) {
+        return lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, tier,
+                tier == StringZilla.UNRESOLVED_TIER);
+    }
+
+    // A tier hint does not imply that physical ranges have been checked.
+    @ForceInline
+    static int lastIndexOf(byte[] src, int srcCount,
+                           byte[] tgt, int tgtCount, int fromIndex, int tier, boolean checkRanges) {
+        if (checkRanges) {
             assert fromIndex >= 0;
             assert tgtCount > 0;
             assert tgtCount <= length(tgt);
             if (tgtCount <= 8 && StringZilla.ENABLED) {
-                tier = StringZilla.compilerTier();
+                if (tier == StringZilla.UNRESOLVED_TIER) {
+                    tier = StringZilla.compilerTier();
+                }
                 if (tier == StringZilla.C1
                         && fromIndex + tgtCount < (StringZilla.MIN_BYTES >> 1)) {
                     // The scalar helper checks both physical ends itself.

@@ -3225,10 +3225,22 @@ public final class String
                         ? StringLatin1.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
                         : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
             }
-            return srcCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
-                    || fromIndex + tgtCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
-                    ? StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
-                    : StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, StringZilla.UNRESOLVED_TIER);
+            int searchLength = fromIndex + tgtCount;
+            if (srcCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                    || searchLength < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)) {
+                return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+            }
+            int tier = StringZilla.UNRESOLVED_TIER;
+            if (searchLength < (StringZilla.MIN_BYTES >> 1)) {
+                if (!StringZilla.ENABLED) {
+                    return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+                }
+                tier = StringZilla.compilerTier();
+                if (tier == StringZilla.C1) {
+                    return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+                }
+            }
+            return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, tier, true);
         }
         if (srcCoder == LATIN1) {    // && tgtCoder == UTF16
             return -1;

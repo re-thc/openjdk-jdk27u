@@ -23,8 +23,9 @@ Latin-1 byte-set scans use a C1/C2 leaf bridge and JNI in the interpreter.
 They reuse AVX2 on both x86 SIMD backends and NEON on AArch64; serial backends
 retain Java scanning. After a 32-byte scalar probe, at least 256 remaining
 bytes are required. Each native window is bounded to 64 KiB and Java polls
-between windows. Short inputs and early matches avoid native setup and
-`StringZilla` initialization. A checked one-word probe can resolve compiled
+between windows. Size checks keep short inputs from initializing `StringZilla`.
+Whitespace helpers also return before initialization on immediate boundary
+matches. Early matches avoid native calls. A checked one-word probe can resolve compiled
 matches just beyond the scalar probe; initialized scan targets bypass the VM
 table-dispatch wrapper.
 The scalar probe shares a loop with short-input scanning; private long

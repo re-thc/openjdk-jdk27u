@@ -693,6 +693,10 @@ final class StringLatin1 {
                         || (mismatch < tgtCount - Integer.BYTES
                             && (StringZilla.MSVC_SERIAL ? mismatch > (tgtCount >> 1)
                                                        : mismatch >= tgtCount - Long.BYTES))) {
+                    // Keep a bulk C2 scalar loop outside native-call setup.
+                    if (searchLength >= StringZilla.MIN_BYTES) {
+                        return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex - 1);
+                    }
                     return lastIndexOfJava(src, tgt, tgtCount, fromIndex - 1);
                 }
             }

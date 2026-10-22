@@ -30,6 +30,7 @@
 #define StringZilla_initialize test_initialize
 #include "StringZillaKernels.c"
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 #include <cpuid.h>
