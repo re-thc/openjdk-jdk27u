@@ -1,0 +1,28 @@
+{
+  "product": "7ca3eeb4368afdf43961c2c674a663e2d2cdf9b4",
+  "actual_merge": "573e785e5d459c2a96f3042c48651c8cf17a75de",
+  "changed_files": [
+    "src/java.base/share/classes/java/lang/String.java",
+    "src/java.base/share/classes/java/lang/StringLatin1.java",
+    "src/java.base/share/classes/java/lang/StringUTF16.java",
+    "src/java.base/share/classes/java/lang/StringZilla.java",
+    "test/jdk/java/lang/String/StringZillaScans.java",
+    "test/jdk/java/lang/String/StringZillaSearch.java",
+    "test/micro/org/openjdk/bench/java/lang/StringZillaScans.java"
+  ],
+  "runtime_and_tests_match_actual_merge": true,
+  "native_vm_vendor_and_build_sources_unchanged_from_measured_cd785": true,
+  "native_paths_checked": [
+    "src/hotspot",
+    "src/java.base/share/native/libjava",
+    "make/modules/java.base/lib/CoreLibraries.gmk"
+  ],
+  "review": {
+    "utf16_probe": "Normalized nonnegative candidate, positive count <=128, both physical character ends checked; byte offsets and twice-count fit arrays. A rejected candidate is skipped once; from=0 misses terminate. Raw byte equality preserves UTF-16 code units and surrogate behavior.",
+    "reverse_filter": "Probe offset is a checked mismatch within count. Blocks cover candidate probe positions [probe, from+probe+1). Empty blocks cannot contain a match; scalar continuation includes every earlier candidate.",
+    "word_scans": "Length >=288 proves complete eight-byte loads over the compiled prefix; endpoints retain original handling. Interpreter uses the scalar probe. Reverse indices remain exclusive. Latin1 masks preserve Java whitespace and CR/LF rules.",
+    "line_words": "Snapshot the byte-array reference and check complete [start,fence) before Unsafe word reads. The admission bound proves start+64 <= fence, including split spliterator ranges.",
+    "dispatch": "Native entry wrappers are outlined while normalized short Java loops remain inline. Physical guards precede Unsafe/native operations. Native kernel code and bounded-window/safepoint policy are unchanged."
+  },
+  "validation_status": "R final primitive comparison is being tested on fresh complete native/fresh-Linux SDKs; local R complete-image build failed packaging with fork/resource errors. Do not qualify R from prototype data."
+}
