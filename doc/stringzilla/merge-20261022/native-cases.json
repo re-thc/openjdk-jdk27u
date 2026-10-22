@@ -1,18 +1,6 @@
 [
   {
-    "id": "t-c2-utf16-8-END",
-    "benchmark": "StringZillaSearch.lastIndexOf",
-    "params": {
-      "length": "4096",
-      "needleLength": "8",
-      "coder": "UTF16",
-      "position": "END"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "t-c2-utf16-9-END",
+    "id": "u-c2-utf16-9-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -24,7 +12,7 @@
     "avx": 2
   },
   {
-    "id": "t-c2-utf16-10-END",
+    "id": "u-c2-utf16-10-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -36,7 +24,7 @@
     "avx": 2
   },
   {
-    "id": "t-c2-utf16-11-END",
+    "id": "u-c2-utf16-11-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -48,7 +36,7 @@
     "avx": 2
   },
   {
-    "id": "t-c2-utf16-12-END",
+    "id": "u-c2-utf16-12-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -60,19 +48,7 @@
     "avx": 2
   },
   {
-    "id": "t-c2-utf16-13-END",
-    "benchmark": "StringZillaSearch.lastIndexOf",
-    "params": {
-      "length": "4096",
-      "needleLength": "13",
-      "coder": "UTF16",
-      "position": "END"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "t-c2-utf16-16-END",
+    "id": "u-c2-utf16-16-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -84,7 +60,7 @@
     "avx": 2
   },
   {
-    "id": "t-c2-utf16-17-END",
+    "id": "u-c2-utf16-17-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -96,19 +72,7 @@
     "avx": 2
   },
   {
-    "id": "s-c2-utf16-9-MISS",
-    "benchmark": "StringZillaSearch.lastIndexOf",
-    "params": {
-      "length": "4096",
-      "needleLength": "9",
-      "coder": "UTF16",
-      "position": "MISS"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "s-c2-utf16-9-START",
+    "id": "u-c2-utf16-9-START",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -120,14 +84,39 @@
     "avx": 2
   },
   {
-    "id": "follow-c1-avx2-utf16-uniform-129",
-    "benchmark": "StringZillaTailSearch.lastIndexOf",
+    "id": "u-c2-utf16-9-FALSE_ENDING",
+    "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
-      "length": "129",
-      "needleLength": "129",
-      "shape": "UTF16_UNIFORM_END"
+      "length": "4096",
+      "needleLength": "9",
+      "coder": "UTF16",
+      "position": "FALSE_ENDING"
     },
-    "tier": "c1",
+    "tier": "c2",
+    "avx": 2
+  },
+  {
+    "id": "u-c2-utf16-9-MISS",
+    "benchmark": "StringZillaSearch.lastIndexOf",
+    "params": {
+      "length": "4096",
+      "needleLength": "9",
+      "coder": "UTF16",
+      "position": "MISS"
+    },
+    "tier": "c2",
+    "avx": 2
+  },
+  {
+    "id": "u-c2-utf16-128-START",
+    "benchmark": "StringZillaSearch.lastIndexOf",
+    "params": {
+      "length": "4096",
+      "needleLength": "128",
+      "coder": "UTF16",
+      "position": "START"
+    },
+    "tier": "c2",
     "avx": 2
   },
   {
@@ -143,13 +132,12 @@
     "avx": 2
   },
   {
-    "id": "follow-c1-avx2-lastIndexOf-UTF16-128-4-END",
-    "benchmark": "StringZillaSearch.lastIndexOf",
+    "id": "follow-c1-avx2-utf16-uniform-129",
+    "benchmark": "StringZillaTailSearch.lastIndexOf",
     "params": {
-      "length": "128",
-      "needleLength": "4",
-      "coder": "UTF16",
-      "position": "END"
+      "length": "129",
+      "needleLength": "129",
+      "shape": "UTF16_UNIFORM_END"
     },
     "tier": "c1",
     "avx": 2
@@ -179,18 +167,6 @@
       "length": "4096",
       "needleLength": "65",
       "shape": "LATIN_FIFTH_FROM_END_MISS"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "t-c2-mixed17-END",
-    "benchmark": "StringZillaSearch.lastIndexOf",
-    "params": {
-      "length": "4096",
-      "needleLength": "17",
-      "coder": "MIXED",
-      "position": "END"
     },
     "tier": "c2",
     "avx": 2
