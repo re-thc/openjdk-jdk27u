@@ -62,7 +62,7 @@ jobs:
         with:
           architecture: x86.x64
 
-      - name: Expose installed Windows Rust and Python
+      - name: Expose installed Windows Rust, Git and Python
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -73,7 +73,8 @@ jobs:
           $cargo = (& $rustup which cargo).Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Installed Cargo is unavailable' }
           $python = (Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
-          foreach ($tool in @($rustc, $cargo, $python)) {
+          $git = (Get-Command git.exe -CommandType Application -ErrorAction Stop).Source
+          foreach ($tool in @($rustc, $cargo, $python, $git)) {
             if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Missing tool: $tool" }
             Split-Path -Parent $tool >> $env:GITHUB_PATH
           }

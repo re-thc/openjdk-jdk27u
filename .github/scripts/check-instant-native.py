@@ -12,6 +12,29 @@ import subprocess
 import sys
 
 
+def verify_source(release, expected, head, tracked_status, status):
+    source = re.search(r'^SOURCE="\.:git:([0-9a-f]{12})(\+?)"\s*$', release, re.MULTILINE)
+    version = re.search(r'^JAVA_RUNTIME_VERSION="([^"]+)"', release, re.MULTILINE)
+    if expected:
+        if head != expected or tracked_status.strip():
+            raise RuntimeError("Workflow commit or tracked source changed during the build")
+        if any(line not in ("?? bootjdk/", "?? instant-native-evidence/")
+               for line in status.splitlines()):
+            raise RuntimeError("Unexpected untracked source or build input")
+        if not source or not expected.startswith(source.group(1)):
+            raise RuntimeError("Image SOURCE does not match the workflow commit")
+        if not version or not version.group(1).endswith("-" + expected):
+            raise RuntimeError("Image runtime version does not contain the configured workflow commit")
+    # OpenJDK marks SOURCE with '+' for untracked dependency/evidence directories
+    # as well as tracked edits. Check tracked edits directly instead of treating
+    # that build metadata marker as proof that source was modified.
+    return {"git_head": head, "tracked_status": tracked_status,
+            "untracked_status": status,
+            "image_source": source.group(0) if source else None,
+            "untracked_marker": bool(source and source.group(2)),
+            "image_version": version.group(1) if version else None}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", required=True, type=Path)
@@ -46,6 +69,7 @@ def main():
                      text, re.IGNORECASE):
             raise RuntimeError(f"{label}: JNI diagnostic despite exit 0")
         result["passed"].append(label)
+        return text.partition("\n")[2].strip()
 
     def fingerprint(path):
         path = path.resolve()
@@ -71,12 +95,6 @@ def main():
                            "lib/libinstant.dylib" if sys.platform == "darwin" else "lib/libinstant.so")
         if not library.is_file() or not args.onload.is_file():
             raise RuntimeError("Packaged parser or normal-build JNI callback library is missing")
-        source_id = re.search(r'^SOURCE=".*git:([0-9a-f]+)(\+?)',
-                              (image / "release").read_text(), re.MULTILINE)
-        expected_source = os.environ.get("GITHUB_SHA")
-        if expected_source and (not source_id or source_id.group(2)
-                                or not expected_source.startswith(source_id.group(1))):
-            raise RuntimeError("Image source identity does not match the clean workflow commit")
         java = image / ("bin/java" + extension)
         for path in (java, image / ("bin/javac" + extension), image / "release",
                      image / "lib/modules", library, args.onload, args.spec,
@@ -86,6 +104,12 @@ def main():
         vm = image / ("bin/server/jvm.dll" if windows else
                       "lib/server/libjvm.dylib" if sys.platform == "darwin" else "lib/server/libjvm.so")
         fingerprint(vm)
+        head = run("git-head", ["git", "rev-parse", "HEAD"])
+        tracked = run("git-tracked-status", ["git", "status", "--porcelain", "--untracked-files=no"])
+        status = run("git-status", ["git", "status", "--porcelain", "--untracked-files=normal"])
+        identities["source_check"] = verify_source((image / "release").read_text(),
+                                                   os.environ.get("GITHUB_SHA"), head, tracked, status)
+        run("git-version", ["git", "--version"])
         run("java-version", [java, "-Xinternalversion"])
         run("java-settings", [java, "-XshowSettings:properties", "-version"])
         for name in ("RUSTC", "CARGO"):
