@@ -26,11 +26,6 @@ make images
 make test TEST="hotspot/jtreg/compiler/intrinsics/simdutf hotspot/jtreg/compiler/escapeAnalysis/TestSimdUTFLeaf.java jdk/java/lang/String/SimdUTFWideTest.java jdk/java/nio/charset/CharsetDecoder/ReplacementCopy.java jdk/java/util/Base64"
 ```
 
-Tests exercise interpreter and compiled execution, JNI fallback, opt-out,
-buffer and chunk boundaries, mutable input and Java-specific Unicode semantics.
-Performance depends on architecture, execution tier, operation and input size;
-correctness results do not establish performance on another configuration.
-
 ## Update the vendor sources
 
 Use a clean checkout of an official stable release from
@@ -45,5 +40,3 @@ amalgamation and copies the MIT and BSD notices. `src/utils/simdutf/UPSTREAM`
 records the exact commit, enabled features and generated-file SHA-256 digests.
 Review the upstream changes and reproduce the generated files before committing.
 Keep upstream source unmodified and retain its generated notices and licenses.
-A vendor or integration source change requires new validation; earlier results
-remain evidence for their original source and build identities only.
