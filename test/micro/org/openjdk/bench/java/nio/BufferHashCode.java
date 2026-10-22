@@ -57,12 +57,15 @@ public class BufferHashCode {
     public int size;
 
     /**
-     * Array-backed buffers, ordinary direct bytes, and typed views of a direct
-     * byte buffer in the opposite byte order.
+     * Array-backed and direct buffers, and typed byte-buffer views in native
+     * and opposite byte orders.
      */
     @Param({"BYTE_HEAP", "BYTE_DIRECT", "CHAR_HEAP", "SHORT_HEAP", "INT_HEAP",
             "LONG_HEAP", "FLOAT_HEAP", "DOUBLE_HEAP", "CHAR_VIEW", "SHORT_VIEW",
-            "INT_VIEW", "LONG_VIEW", "FLOAT_VIEW", "DOUBLE_VIEW"})
+            "INT_VIEW", "LONG_VIEW", "FLOAT_VIEW", "DOUBLE_VIEW",
+            "INT_HEAP_VIEW", "INT_HEAP_VIEW_NATIVE", "LONG_HEAP_VIEW", "LONG_HEAP_VIEW_NATIVE",
+            "FLOAT_HEAP_VIEW", "FLOAT_HEAP_VIEW_NATIVE", "DOUBLE_HEAP_VIEW", "DOUBLE_HEAP_VIEW_NATIVE",
+            "FLOAT_DIRECT_NATIVE", "DOUBLE_DIRECT_NATIVE"})
     public String kind;
 
     private Buffer buffer;
@@ -92,6 +95,22 @@ public class BufferHashCode {
             case "LONG_VIEW" -> fill(ByteBuffer.allocateDirect(8 * size)).order(swapped).asLongBuffer();
             case "FLOAT_VIEW" -> fill(ByteBuffer.allocateDirect(4 * size)).order(swapped).asFloatBuffer();
             case "DOUBLE_VIEW" -> fill(ByteBuffer.allocateDirect(8 * size)).order(swapped).asDoubleBuffer();
+            case "INT_HEAP_VIEW" -> fill(ByteBuffer.allocate(4 * size)).order(swapped).asIntBuffer();
+            case "INT_HEAP_VIEW_NATIVE" -> fill(ByteBuffer.allocate(4 * size))
+                    .order(ByteOrder.nativeOrder()).asIntBuffer();
+            case "LONG_HEAP_VIEW" -> fill(ByteBuffer.allocate(8 * size)).order(swapped).asLongBuffer();
+            case "LONG_HEAP_VIEW_NATIVE" -> fill(ByteBuffer.allocate(8 * size))
+                    .order(ByteOrder.nativeOrder()).asLongBuffer();
+            case "FLOAT_HEAP_VIEW" -> fill(ByteBuffer.allocate(4 * size)).order(swapped).asFloatBuffer();
+            case "FLOAT_HEAP_VIEW_NATIVE" -> fill(ByteBuffer.allocate(4 * size))
+                    .order(ByteOrder.nativeOrder()).asFloatBuffer();
+            case "DOUBLE_HEAP_VIEW" -> fill(ByteBuffer.allocate(8 * size)).order(swapped).asDoubleBuffer();
+            case "DOUBLE_HEAP_VIEW_NATIVE" -> fill(ByteBuffer.allocate(8 * size))
+                    .order(ByteOrder.nativeOrder()).asDoubleBuffer();
+            case "FLOAT_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(4 * size))
+                    .order(ByteOrder.nativeOrder()).asFloatBuffer();
+            case "DOUBLE_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(8 * size))
+                    .order(ByteOrder.nativeOrder()).asDoubleBuffer();
             default -> throw new IllegalArgumentException(kind);
         };
     }
