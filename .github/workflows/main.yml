@@ -16,13 +16,125 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  native-macos:
+  prerequisites:
     if: github.ref == 'refs/heads/qualify/native-kqueue-macos-once'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    outputs:
+      archive_sha256: ${{ steps.prepare.outputs.archive_sha256 }}
+      manifest_sha256: ${{ steps.prepare.outputs.manifest_sha256 }}
+    env:
+      PYTHONUNBUFFERED: '1'
+      EXPECTED_VALIDATION_SHA: ${{ inputs.expected_validation_sha }}
+    steps:
+      - name: Initialize prerequisite evidence before checkout
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/native-prerequisite-evidence"
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          target = Path(os.environ['RUNNER_TEMP']) / 'native-prerequisite-evidence/job-start.json'
+          target.write_text(json.dumps({'monotonic': time.monotonic(), 'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}) + '\n')
+          PY
+
+      - name: Checkout validation source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        timeout-minutes: 5
+        with:
+          fetch-depth: 6
+          persist-credentials: false
+          path: validation
+
+      - name: Checkout official jtreg release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        timeout-minutes: 5
+        with:
+          repository: openjdk/jtreg
+          ref: 551e17adac0579859012c4c46318b8fa3cf2ff37
+          fetch-depth: 1
+          persist-credentials: false
+          path: jtreg-source
+
+      - name: Verify all downloads and build official jtreg
+        id: prepare
+        shell: bash
+        timeout-minutes: 10
+        run: |
+          python3 validation/.github/native-polling/controller.py \
+            --prepare-prerequisites --repo "$GITHUB_WORKSPACE/validation" \
+            --jtreg-source "$GITHUB_WORKSPACE/jtreg-source" \
+            --output "$RUNNER_TEMP/native-prerequisite-evidence" \
+            --transfer-dir "$RUNNER_TEMP/native-jtreg-transfer" \
+            --expected-sha "$EXPECTED_VALIDATION_SHA"
+
+      - name: Transfer verified jtreg prerequisite
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        timeout-minutes: 2
+        with:
+          name: native-kqueue-jtreg-${{ github.run_id }}
+          path: ${{ runner.temp }}/native-jtreg-transfer
+          include-hidden-files: false
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+      - name: Collect prerequisite status and filtered logs
+        if: always()
+        shell: bash
+        timeout-minutes: 1
+        env:
+          PREVIOUS_JOB_STATUS: ${{ job.status }}
+        run: |
+          prerequisite_evidence="$RUNNER_TEMP/native-prerequisite-evidence"
+          mkdir -p "$prerequisite_evidence"
+          prerequisite_cleanup_status=0
+          if test -f validation/.github/native-polling/controller.py; then
+            python3 validation/.github/native-polling/controller.py --cleanup --output "$prerequisite_evidence" || prerequisite_cleanup_status=$?
+          fi
+          export PREREQUISITE_CLEANUP_STATUS="$prerequisite_cleanup_status"
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          target = Path(os.environ['RUNNER_TEMP']) / 'native-prerequisite-evidence/collection.json'
+          target.write_text(json.dumps({'job_status_before_collection': os.environ.get('PREVIOUS_JOB_STATUS'), 'cleanup_status': os.environ['PREREQUISITE_CLEANUP_STATUS'], 'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}) + '\n')
+          PY
+          prerequisite_export_status=0
+          if test -f validation/.github/native-polling/controller.py; then
+            python3 validation/.github/native-polling/controller.py --output "$prerequisite_evidence" --export-dir "$RUNNER_TEMP/native-prerequisite-artifacts" || prerequisite_export_status=$?
+          else
+            mkdir -p "$RUNNER_TEMP/native-prerequisite-artifacts"
+            cp "$prerequisite_evidence/job-start.json" "$prerequisite_evidence/collection.json" "$RUNNER_TEMP/native-prerequisite-artifacts/"
+          fi
+          if test "$prerequisite_export_status" != 0; then
+            mkdir -p "$RUNNER_TEMP/native-prerequisite-artifacts"
+            cp "$prerequisite_evidence/collection.json" "$RUNNER_TEMP/native-prerequisite-artifacts/export-failure.json"
+          fi
+          if test "$prerequisite_cleanup_status" != 0; then exit "$prerequisite_cleanup_status"; fi
+          exit "$prerequisite_export_status"
+
+      - name: Upload filtered prerequisite results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        timeout-minutes: 1
+        with:
+          name: native-kqueue-prerequisites-${{ github.run_id }}-${{ github.sha }}
+          path: ${{ runner.temp }}/native-prerequisite-artifacts
+          include-hidden-files: false
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 5
+
+  native-macos:
+    needs: prerequisites
+    if: success() && github.ref == 'refs/heads/qualify/native-kqueue-macos-once'
     runs-on: macos-26
     timeout-minutes: 150
     env:
       PYTHONUNBUFFERED: '1'
       EXPECTED_VALIDATION_SHA: ${{ inputs.expected_validation_sha }}
+      JTREG_ARCHIVE_SHA: ${{ needs.prerequisites.outputs.archive_sha256 }}
+      JTREG_MANIFEST_SHA: ${{ needs.prerequisites.outputs.manifest_sha256 }}
     steps:
       - name: Initialize evidence before checkout
         shell: bash
@@ -43,8 +155,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         timeout-minutes: 5
         with:
-          fetch-depth: 5
+          fetch-depth: 6
           persist-credentials: false
+
+      - name: Get verified jtreg prerequisite from this run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        timeout-minutes: 2
+        with:
+          name: native-kqueue-jtreg-${{ github.run_id }}
+          path: ${{ runner.temp }}/native-jtreg-transfer
 
       - name: Build, check, and compare once
         shell: bash
@@ -53,7 +172,9 @@ jobs:
           python3 .github/native-polling/controller.py \
             --repo "$GITHUB_WORKSPACE" \
             --output "$RUNNER_TEMP/native-polling-evidence" \
-            --expected-sha "$EXPECTED_VALIDATION_SHA"
+            --expected-sha "$EXPECTED_VALIDATION_SHA" \
+            --prerequisite-dir "$RUNNER_TEMP/native-jtreg-transfer" \
+            --archive-sha "$JTREG_ARCHIVE_SHA" --manifest-sha "$JTREG_MANIFEST_SHA"
 
       - name: Teardown and preserve final status
         if: always()

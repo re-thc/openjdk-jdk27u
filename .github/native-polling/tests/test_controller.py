@@ -106,22 +106,22 @@ class ControllerTests(unittest.TestCase):
     def test_checkout_failure_collection_needs_no_source(self):
         import yaml
         workflow = yaml.load((ROOT.parents[1] / '.github/workflows/main.yml').read_text(), Loader=yaml.BaseLoader)
-        steps = workflow['jobs']['native-macos']['steps']
-        with tempfile.TemporaryDirectory() as d:
-            env = os.environ.copy()
-            env.update(RUNNER_TEMP=d, PREVIOUS_JOB_STATUS='failure')
-            for step in (steps[0], steps[-2]):
-                result = subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', step['run']],
-                                        cwd=d, env=env, capture_output=True, text=True, timeout=10)
-                self.assertEqual(result.returncode, 0, result.stderr)
-            root = Path(d) / 'native-polling-evidence'
-            self.assertTrue((root / 'job-start.json').exists())
-            record = json.loads((root / 'collection.json').read_text())
-            self.assertEqual(record['job_status_before_collection'], 'failure')
-            self.assertIn('not started', record['controller_status'])
-            exported = Path(d) / 'native-polling-artifacts'
-            self.assertTrue((exported / 'job-start.json').exists())
-            self.assertTrue((exported / 'collection.json').exists())
+        for job, prefix in (('native-macos', 'native-polling'), ('prerequisites', 'native-prerequisite')):
+            steps = workflow['jobs'][job]['steps']
+            with self.subTest(job=job), tempfile.TemporaryDirectory() as d:
+                env = os.environ.copy()
+                env.update(RUNNER_TEMP=d, PREVIOUS_JOB_STATUS='failure')
+                for step in (steps[0], steps[-2]):
+                    result = subprocess.run(['bash', '-e', '-o', 'pipefail', '-c', step['run']],
+                                            cwd=d, env=env, capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                root = Path(d) / (prefix + '-evidence')
+                self.assertTrue((root / 'job-start.json').exists())
+                record = json.loads((root / 'collection.json').read_text())
+                self.assertEqual(record['job_status_before_collection'], 'failure')
+                exported = Path(d) / (prefix + '-artifacts')
+                self.assertTrue((exported / 'job-start.json').exists())
+                self.assertTrue((exported / 'collection.json').exists())
 
     def test_signal_interruption_tears_down_grandchild(self):
         import signal
@@ -161,7 +161,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(sum(r['command_cap_seconds'] for r in rows), 768)
         self.assertLess(768 + len(rows) * .25, 900)
         self.assertEqual(sum(controller.STAGE_CAPS.values()), 130 * 60)
-        self.assertEqual(sum(controller.STAGE_CAPS.values()) + 5 * 60 + 5 * 60, 140 * 60)
+        self.assertEqual(sum(controller.STAGE_CAPS.values()) + (5 + 2 + 3) * 60, 140 * 60)
         for case in controller.MAIN_CASES + controller.CONTROL_CASES:
             firsts = [rows[i]['arm'] for i in range(0, len(rows), 2) if rows[i]['case'] == case]
             self.assertEqual(firsts.count('baseline'), 2)
@@ -250,6 +250,71 @@ class ControllerTests(unittest.TestCase):
                 with self.assertRaises(controller.CommandFailure):
                     controller.parse_benchmark(p)
 
+    def transfer_fixture(self, directory, member='jtreg/lib/jtreg.jar', link=False):
+        import io, tarfile
+        root = Path(directory) / 'transfer'; root.mkdir()
+        content = b'local verification fixture'
+        with tarfile.open(root / 'jtreg.tar.gz', 'w:gz') as archive:
+            entry = tarfile.TarInfo(member)
+            if link:
+                entry.type = tarfile.SYMTYPE; entry.linkname = '/tmp/unexpected'
+                archive.addfile(entry)
+            else:
+                entry.size = len(content); archive.addfile(entry, io.BytesIO(content))
+        import hashlib
+        manifest = {'source':controller.JTREG_SOURCE, 'version':controller.JTREG_VERSION,
+                    'validation':'a' * 40, 'archive_sha256':controller.sha256(root / 'jtreg.tar.gz'),
+                    'files':[{'path':'lib/jtreg.jar','size':len(content),'sha256':hashlib.sha256(content).hexdigest()}]}
+        controller.write_json(root / 'jtreg-manifest.json', manifest)
+        return root, manifest['archive_sha256'], controller.sha256(root / 'jtreg-manifest.json')
+
+    def test_verified_transfer_extracts_expected_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            root, archive, metadata = self.transfer_fixture(d)
+            manifest, image = controller.verify_jtreg_transfer(root, archive, metadata, 'a' * 40, Path(d) / 'installed')
+            self.assertEqual(manifest['source'], controller.JTREG_SOURCE)
+            self.assertEqual((image / 'lib/jtreg.jar').read_bytes(), b'local verification fixture')
+
+    def test_prerequisite_source_failure_records_status_without_downloading(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            output = Path(d) / 'evidence'; output.mkdir()
+            controller.write_json(output / 'job-start.json', {'monotonic':time.monotonic()})
+            with patch.object(controller, 'validate_sources', return_value={'fixture':True}), \
+                    patch.object(controller, 'git', return_value='unexpected'), \
+                    patch.dict(os.environ, {'GITHUB_REF':controller.BRANCH}), \
+                    patch.object(controller.Runner, 'run') as run:
+                with self.assertRaisesRegex(controller.CommandFailure, 'jtreg source'):
+                    controller.prepare_prerequisites(ROOT.parents[1], Path(d) / 'source', output,
+                                                     Path(d) / 'transfer', 'a' * 40)
+                run.assert_not_called()
+            self.assertEqual(json.loads((output / 'status.json').read_text())['status'], 'failed')
+            self.assertEqual(json.loads((output / 'phases/setup.json').read_text())['status'], 'failed')
+
+    def test_transfer_rejects_tampered_digest_or_wrong_source_before_extraction(self):
+        for mode in ('archive', 'manifest', 'source', 'validation', 'version'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as d:
+                root, archive, metadata = self.transfer_fixture(d)
+                if mode == 'archive': archive = '0' * 64
+                elif mode == 'manifest': metadata = '0' * 64
+                else:
+                    value = json.loads((root / 'jtreg-manifest.json').read_text())
+                    value[mode] = 'unexpected'
+                    controller.write_json(root / 'jtreg-manifest.json', value)
+                    metadata = controller.sha256(root / 'jtreg-manifest.json')
+                target = Path(d) / 'installed'
+                with self.assertRaises(controller.CommandFailure):
+                    controller.verify_jtreg_transfer(root, archive, metadata, 'a' * 40, target)
+                self.assertFalse(target.exists())
+
+    def test_transfer_rejects_traversal_symlinks_and_unlisted_files(self):
+        for member, link in (('../escape', False), ('jtreg/extra', False), ('jtreg/lib/jtreg.jar', True)):
+            with self.subTest(member=member, link=link), tempfile.TemporaryDirectory() as d:
+                root, archive, metadata = self.transfer_fixture(d, member, link)
+                with self.assertRaises(controller.CommandFailure):
+                    controller.verify_jtreg_transfer(root, archive, metadata, 'a' * 40, Path(d) / 'installed')
+                self.assertFalse((Path(d) / 'installed').exists())
+
     def test_incomplete_pair_is_retained(self):
         result = controller.summarize([{'pair':'stable-0','case':'stable','arm':'baseline','status':'failed'}])
         self.assertEqual(result['complete_pairs'], 0)
@@ -307,6 +372,7 @@ class ControllerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             source, target = Path(d) / 'evidence', Path(d) / 'export'
             allowed = ('source-identities.json', 'observations.json', 'commands/001/output.log',
+                       'prerequisites.json', 'jtreg-prerequisite.json',
                        'jtreg/test/report/text/summary.txt', 'validation-source/controller.py',
                        'native-diagnostics/sun_nio_ch_KQueue.h')
             denied = ('images/candidate/lib/modules', 'benchmark-classes/Probe.class',
@@ -315,6 +381,7 @@ class ControllerTests(unittest.TestCase):
                       'validation-source/SELF-REVIEW.md', 'review.md', 'commands/001/private-review.json',
                       'phases/private-review.json',
                       'jtreg/test/work/Probe.class', 'source-snapshots/private-review.md')
+            denied += ('native-jtreg-transfer/jtreg.tar.gz', 'dependencies/bootjdk.tar.gz')
             for name in allowed + denied:
                 p = source / name; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('fixture')
             manifest = controller.export_artifacts(source, target)
@@ -322,30 +389,39 @@ class ControllerTests(unittest.TestCase):
             for name in denied: self.assertFalse((target / name).exists(), name)
             self.assertTrue((target / 'artifact-manifest.json').exists())
 
-    def test_workflow_is_one_literal_shell_job_with_always_collection(self):
+    def test_workflow_gates_one_mac_job_on_prerequisites_with_always_collection(self):
         import yaml
         workflow = yaml.load((ROOT.parents[1] / '.github/workflows/main.yml').read_text(), Loader=yaml.BaseLoader)
         self.assertEqual(set(workflow['on']), {'workflow_dispatch'})
-        self.assertEqual(len(workflow['jobs']), 1)
+        self.assertEqual(set(workflow['jobs']), {'prerequisites', 'native-macos'})
         job = workflow['jobs']['native-macos']
+        self.assertEqual(job['needs'], 'prerequisites')
+        self.assertTrue(job['if'].startswith('success() &&'))
         self.assertEqual(job['timeout-minutes'], '150')
-        self.assertNotIn('strategy', job)
-        for step in job['steps']:
-            if 'run' in step:
-                self.assertEqual(step['shell'], 'bash')
-                # Also parse every literal run block as bash, without executing it.
-                self.assertEqual(subprocess.run(['bash', '-n'], input=step['run'], text=True).returncode, 0)
-                import re
-                for marker in ('PY', 'PYTHON'):
-                    for body in re.findall(r"python3 - <<'" + marker + r"'\n(.*?)\n" + marker, step['run'], re.S):
-                        compile(body, '<workflow-python-heredoc>', 'exec')
+        for current in workflow['jobs'].values():
+            self.assertNotIn('strategy', current)
+            for step in current['steps']:
+                if 'run' in step:
+                    self.assertEqual(step['shell'], 'bash')
+                    self.assertEqual(subprocess.run(['bash', '-n'], input=step['run'], text=True).returncode, 0)
+                    import re
+                    for marker in ('PY', 'PYTHON'):
+                        for body in re.findall(r"python3 - <<'" + marker + r"'\n(.*?)\n" + marker, step['run'], re.S):
+                            compile(body, '<workflow-python-heredoc>', 'exec')
+        prerequisite = workflow['jobs']['prerequisites']
+        self.assertEqual(prerequisite['timeout-minutes'], '15')
+        self.assertEqual(prerequisite['steps'][2]['with']['ref'], controller.JTREG_SOURCE)
+        transfer = prerequisite['steps'][4]
+        self.assertEqual(transfer['with']['retention-days'], '1')
+        self.assertEqual(transfer['with']['path'], '${{ runner.temp }}/native-jtreg-transfer')
+        self.assertEqual(prerequisite['steps'][-1]['with']['retention-days'], '5')
         self.assertEqual(job['steps'][-1]['if'], 'always()')
         self.assertEqual(job['steps'][-1]['with']['path'], '${{ runner.temp }}/native-polling-artifacts')
         self.assertEqual(job['steps'][-1]['with']['retention-days'], '5')
         self.assertEqual(job['steps'][-1]['with']['include-hidden-files'], 'false')
         self.assertEqual(job['steps'][-2]['if'], 'always()')
         self.assertEqual(job['steps'][1]['timeout-minutes'], '5')
-        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '5')
+        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '6')
         self.assertEqual(job['steps'][1]['with']['persist-credentials'], 'false')
 
 

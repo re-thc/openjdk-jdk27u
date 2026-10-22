@@ -1,6 +1,6 @@
 # One bounded native kqueue validation
 
-One manual macOS job builds and compares fixed source revisions. There are no push/PR triggers, matrices, reusable-workflow fanout or automatic retries.
+One Linux prerequisite job gates one macOS job that builds and compares fixed source revisions. There are no push/PR triggers, matrices, reusable-workflow fanout or automatic retries.
 
 ## Sources and run contract
 
@@ -8,27 +8,34 @@ One manual macOS job builds and compares fixed source revisions. There are no pu
 - Release baseline B: `a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c`.
 - Release/fastdebug candidate C: `28a8b6162eaf5b4584e9b5d66c28359a336aa831`.
 - B changes only the cached-registration reset statement and copyright. C adds native batching. Neither arm contains Java queue deduplication, its pending marker, or the Linux eventfd change.
-- The validation correction must be one CI-only child of `a343d648a9b5a0cd9ab85a4f3c466db203bd07ae`, whose parent is C; workflow input `expected_validation_sha` must equal its full expected SHA. Controller verifies ancestry, clean source, CI-only scope and untouched SelectionKeyImpl/Linux sources.
+- The validation correction must be one CI-only child of `ef4eeb6d70db6404f84b3d211183a81c42b9c161`, followed by the frozen earlier validation and C; workflow input `expected_validation_sha` must equal its full expected SHA. Controller verifies ancestry, clean source, CI-only scope and untouched SelectionKeyImpl/Linux sources.
 
-Use the already registered `.github/workflows/main.yml` with the dedicated branch `qualify/native-kqueue-macos-once`. One `macos-26` job checks native Darwin/arm64, standard build utilities, installed Xcode 26.6 (17F113), macOS SDK 26.5 and required Apple tools, including Metal. Xcode selection uses DEVELOPER_DIR without changing the system selection or downloading components. Like the ordinary macOS workflow, setup installs Homebrew's official `autoconf` and `make` formulae, including Autoconf's `m4` dependency. Formula versions are checked before installation and executable versions after it: Autoconf 2.73, GNU make 4.4.1, m4 1.4.21. Homebrew verifies its downloads; automatic updates, unrelated upgrades and cleanup are disabled for these commands. The install command has a 120-second cap inside the existing five-minute setup phase. Compiler caching, coreutils and GTest are unnecessary for these image builds and selected tests. BootJDK 26 and jtreg 8.3-dev+1 archives are downloaded once and checksum-verified; URLs/digests are frozen in controller.py.
+Use the registered `.github/workflows/main.yml` on `qualify/native-kqueue-macos-once`. First, `ubuntu-26.04` checks the Homebrew formula versions and fetches/verifies all three arm64 Tahoe bottles; it also downloads and verifies the pinned Mac BootJDK. It then follows ordinary CI's source-build route for jtreg: `openjdk/jtreg` tag `jtreg-8.3+1`, frozen at `551e17adac0579859012c4c46318b8fa3cf2ff37`, built with the installed JDK 17. The official build script verifies all dependency downloads against the release's checksums. Selected build-input and runtime-jar SHA-256 pins add checks against the reviewed inputs. Build metadata is fixed to `8.3-dev+1`; no byte-equivalence with a separately built distribution is asserted. No Mac runner is requested unless the complete prerequisite job succeeds.
 
-CI checkout is shallow depth 5, sufficient for correction -> first validation -> C -> B -> base. It remains untouched. A separate detached worktree builds B release, preserves its complete image locally, switches to C for an incremental release build, then builds C fastdebug in a separate configuration. Both release configurations are identical, including fixed version suffix and no native debug symbols. A differing release VM hash blocks further builds/timing. Fastdebug baseline and full test-image builds are unnecessary. The pinner helper is compiled once; benchmark classes are compiled once by C and reused on both release images.
+The Linux job transfers only the built jtreg distribution and its source/file manifest through a separate one-day artifact, following ordinary CI's artifact route. Archive and manifest SHA-256 values pass directly between jobs; Mac verifies those values, source/version and every file before extraction. No external jtreg download occurs on Mac. Filtered prerequisite logs, hashes and results retain five days; downloaded bottles, BootJDK binaries, build trees and caches are excluded from those results.
+
+The `macos-26` job checks native Darwin/arm64, standard build utilities, installed Xcode 26.6 (17F113), macOS SDK 26.5 and required Apple tools, including Metal. Xcode selection uses DEVELOPER_DIR without changing the system selection or downloading components. Like ordinary macOS CI, setup installs Homebrew's official `autoconf` and `make` formulae, including Autoconf's `m4` dependency. Formula and executable versions must be Autoconf 2.73, GNU make 4.4.1 and m4 1.4.21. Homebrew verifies downloads; automatic updates, unrelated upgrades and cleanup are disabled for these commands. Installation has a 120-second cap within the five-minute Mac setup phase. Compiler caching, coreutils and GTest are unnecessary. Mac repeats the pinned BootJDK download/hash check; temporary remote failures stop the run without fallback or retry.
+
+CI checkout is shallow depth 6, sufficient for the three validation commits -> C -> B -> base. It remains untouched. A separate detached worktree builds B release, preserves its complete image locally, switches to C for an incremental release build, then builds C fastdebug in a separate configuration. Both release configurations are identical, including fixed version suffix and no native debug symbols. A differing release VM hash blocks further builds/timing. Fastdebug baseline and full test-image builds are unnecessary. The pinner helper is compiled once; benchmark classes are compiled once by C and reused on both release images.
 
 ## Exact limits
+
+The prerequisite job has a 15-minute hard cap and a ten-minute work deadline measured before checkout, leaving five minutes for transfer, collection and upload. It runs once, with no cache shortcut or retries. The Mac limits below are unchanged; the two sequential jobs consume at most 165 runner-minutes in total, with Mac skipped on prerequisite failure.
 
 | Component | Maximum minutes |
 | --- | ---: |
 | Checkout | 5 |
+| Get verified jtreg transfer | 2 |
 | Preflight/dependencies | 5 |
 | B release build/copy/hash | 40 |
 | Incremental C release build/copy/hash | 10 |
 | C fastdebug build/copy/hash | 40 |
 | Correctness, native diagnostics, harness compilation | 20 |
 | All measurements, launches, setup and teardown | 15 |
-| Metadata/bookkeeping allowance | 5 |
+| Metadata/bookkeeping allowance | 3 |
 | Final cleanup / artifact upload | 2 / 8 |
 
-Stage caps total 130 minutes. Checkout plus bookkeeping gives the 140-minute work deadline, measured from before checkout. Job hard cap is 150 minutes; the remaining ten minutes are reserved for always-run teardown/upload. Stage and command deadlines can only shorten the remaining global budget. A failure/timeout stops work; nothing is silently shortened, extended or rerun. External runner termination or an upload-service failure can still prevent artifact completion; the reserved collection steps are best effort under that infrastructure limitation.
+Stage caps total 130 minutes. Checkout, prerequisite transfer and bookkeeping give the 140-minute work deadline, measured from before checkout. Mac job hard cap is 150 minutes; the remaining ten minutes are reserved for always-run teardown/upload. Stage and command deadlines can only shorten the remaining global budget. A failure/timeout stops work; nothing is silently shortened, extended or rerun. External runner termination or an upload-service failure can still prevent artifact completion; the reserved collection steps are best effort under that infrastructure limitation.
 
 ## Correctness plan
 

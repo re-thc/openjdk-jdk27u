@@ -13,13 +13,16 @@ import signal
 import statistics
 import subprocess
 import sys
+import tarfile
 import time
 import traceback
+import zipfile
 
 BASE = "8d030adbd245b19e6339e3ccd052eb7fe3635319"
 B = "a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c"
 C = "28a8b6162eaf5b4584e9b5d66c28359a336aa831"
-PREVIOUS_VALIDATION = "a343d648a9b5a0cd9ab85a4f3c466db203bd07ae"
+PREVIOUS_VALIDATION = "ef4eeb6d70db6404f84b3d211183a81c42b9c161"
+FIRST_VALIDATION = "a343d648a9b5a0cd9ab85a4f3c466db203bd07ae"
 BRANCH = "refs/heads/qualify/native-kqueue-macos-once"
 BREW_VERSIONS = {"autoconf": "2.73", "make": "4.4.1", "m4": "1.4.21"}
 HOST_TOOLS = ("awk", "basename", "bash", "brew", "cat", "chmod", "cp", "curl",
@@ -32,8 +35,16 @@ STAGE_CAPS = {"setup": 300, "build-baseline": 2400, "build-candidate": 600,
               "build-fastdebug": 2400, "correctness": 1200, "measurements": 900}
 BOOT_URL = "https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_macos-aarch64_bin.tar.gz"
 BOOT_SHA = "254586bcd1bf6dcd125ad667ac32562cb1e2ab1abf3a61fb117b6fabb571e765"
-JTREG_URL = "https://ci.adoptium.net/job/dependency_pipeline/20/artifact/jtreg/jtreg-8.3+1.tar.gz"
-JTREG_SHA = "6b5a36898448d35ee86024379fc3df81f08be5225b26db0db2b7e3d31feb0d88"
+JTREG_SOURCE = "551e17adac0579859012c4c46318b8fa3cf2ff37"
+JTREG_VERSION = "8.3-dev+1"
+JTREG_SOURCE_PINS = {
+    "make/build.sh": "7d2868680b0b34ec7b8ff8629a27628dfde4a99f8b93d89a8312d4c8daa6454c",
+    "make/build-support/version-numbers": "b3fb76eb7e4589962a854feb82658909445bf55306f768f665400174a08f6431"}
+JTREG_JAR_PINS = {
+    "guice-5.1.0.jar": "4130e50bfac48099c860f0d903b91860c81a249c90f38245f8fed58fc817bc26",
+    "jcommander-1.82.jar": "deeac157c8de6822878d85d0c7bc8467a19cc8484d37788f7804f039dde280b1",
+    "junit-platform-console-standalone-1.14.2.jar": "5566ffe2aa48263867bca745925f73bf7b01591b30d9a60f191c0b16fa0955e9",
+    "testng-7.3.0.jar": "63727488f9717d57f0d0a0fee5a1fc10a2be9cfcff2ec3a7187656d663c0774e"}
 SELECTOR = "java/nio/channels/Selector/"
 DATAGRAM = "java/nio/channels/DatagramChannel/"
 SHARED = [SELECTOR + n + ".java" for n in (
@@ -72,7 +83,7 @@ ARTIFACT_ROOT_FILES = (
     "job-start.json", "collection.json", "status.json", "source-identities.json",
     "release-vm-comparison.json", "measurement-plan.json", "observations.json",
     "paired-summary.json", "benchmark-class-hashes.json", "controller-source-hashes.json",
-    "native-helper-sha256.json", "bootjdk-download.json", "jtreg-download.json",
+    "native-helper-sha256.json", "bootjdk-download.json", "jtreg-prerequisite.json", "prerequisites.json",
     "baseline-image.json", "candidate-image.json", "fastdebug-image.json",
     "master.commit", "baseline.commit", "candidate.commit", "validation.commit")
 ARTIFACT_TREE_SUFFIXES = {
@@ -281,8 +292,9 @@ def validate_sources(repo, expected):
     if git(repo, "rev-parse", "HEAD") != expected:
         raise CommandFailure("Validation checkout does not match expected SHA")
     if (git(repo, "rev-parse", "HEAD^") != PREVIOUS_VALIDATION or
-            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != C):
-        raise CommandFailure("Validation correction must directly follow the frozen first validation")
+            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != FIRST_VALIDATION or
+            git(repo, "rev-parse", FIRST_VALIDATION + "^") != C):
+        raise CommandFailure("Validation correction ancestry mismatch")
     if git(repo, "rev-parse", C + "^") != B or git(repo, "rev-parse", B + "^") != BASE:
         raise CommandFailure("Comparison ancestry mismatch")
     if git(repo, "status", "--porcelain"):
@@ -313,6 +325,131 @@ def check_brew_versions(text):
         row = formulae.get(name, {})
         if row.get("tap") != "homebrew/core" or row.get("versions", {}).get("stable") != version:
             raise CommandFailure("Unexpected Homebrew formula/version: " + name)
+
+
+def jtreg_files(directory):
+    rows = []
+    for path in sorted(Path(directory).rglob("*")):
+        if path.is_symlink():
+            raise CommandFailure("Unexpected jtreg symlink")
+        if path.is_file():
+            rows.append({"path": str(path.relative_to(directory)), "size": path.stat().st_size,
+                         "sha256": sha256(path)})
+    return rows
+
+
+def verify_jtreg_transfer(directory, archive_sha, manifest_sha, expected, destination):
+    if directory is None:
+        raise CommandFailure("Verified prerequisite transfer required")
+    directory, destination = Path(directory), Path(destination)
+    for value in (archive_sha, manifest_sha):
+        if not re.fullmatch(r"[0-9a-f]{64}", value or ""):
+            raise CommandFailure("Expected prerequisite SHA-256 required")
+    package, metadata = directory / "jtreg.tar.gz", directory / "jtreg-manifest.json"
+    if sha256(package) != archive_sha or sha256(metadata) != manifest_sha:
+        raise CommandFailure("jtreg transfer checksum mismatch")
+    manifest = json.loads(metadata.read_text())
+    if (manifest.get("source") != JTREG_SOURCE or manifest.get("version") != JTREG_VERSION or
+            manifest.get("validation") != expected or manifest.get("archive_sha256") != archive_sha):
+        raise CommandFailure("jtreg transfer source/version mismatch")
+    expected_files = {row["path"]: row for row in manifest["files"]}
+    with tarfile.open(package) as archive:
+        observed = set()
+        for member in archive.getmembers():
+            path = Path(member.name)
+            if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] != "jtreg":
+                raise CommandFailure("Invalid jtreg archive path")
+            if member.isdir():
+                continue
+            name = str(path.relative_to("jtreg"))
+            if not member.isfile() or name in observed or name not in expected_files:
+                raise CommandFailure("Unexpected jtreg archive entry")
+            observed.add(name)
+            row = expected_files[name]
+            if member.size != row["size"] or hashlib.sha256(archive.extractfile(member).read()).hexdigest() != row["sha256"]:
+                raise CommandFailure("jtreg file checksum mismatch")
+        if observed != set(expected_files) or "lib/jtreg.jar" not in observed:
+            raise CommandFailure("Incomplete jtreg transfer")
+        destination.mkdir(parents=True)
+        archive.extractall(destination, filter="data")
+    return manifest, destination / "jtreg"
+
+
+def prepare_prerequisites(repo, source, output, transfer, expected):
+    output, source, transfer = Path(output), Path(source), Path(transfer)
+    output.mkdir(parents=True, exist_ok=True)
+    started = json.loads((output / "job-start.json").read_text())["monotonic"]
+    runner = Runner(output, Path(__file__).with_name("supervise.py"), started + 10 * 60)
+    status = {"status": "running", "validation": expected}
+    def capture(name, argv, cap=20):
+        return Path(runner.run(name, argv, cap=cap)["log"]).read_text().strip()
+    try:
+        with runner.phase("setup", 10 * 60):
+            write_json(output / "source-identities.json", validate_sources(repo, expected))
+            if sys.platform != "linux" or os.environ.get("GITHUB_REF") != BRANCH:
+                raise CommandFailure("Dedicated Linux prerequisite job required")
+            if git(source, "rev-parse", "HEAD") != JTREG_SOURCE or git(source, "status", "--porcelain"):
+                raise CommandFailure("Unexpected or dirty jtreg source")
+            for name, digest in JTREG_SOURCE_PINS.items():
+                if sha256(source / name) != digest:
+                    raise CommandFailure("Unexpected jtreg build input: " + name)
+            jdk = Path(os.environ.get("JAVA_HOME_17_X64", "/missing-jdk17"))
+            brew = Path("/home/linuxbrew/.linuxbrew/bin/brew")
+            missing = [tool for tool in ("bash", "curl", "git", "make", "sha1sum", "tar", "unzip", "wget") if not shutil.which(tool)]
+            if not brew.is_file() or not (jdk / "bin/javac").is_file() or missing:
+                raise CommandFailure("Prerequisite runner missing Homebrew/JDK17/tools: " + ", ".join(missing))
+            capture("prerequisite-jdk-version", [jdk / "bin/java", "-version"])
+            runner.env.update(HOMEBREW_NO_AUTO_UPDATE="1", HOMEBREW_NO_INSTALL_UPGRADE="1", HOMEBREW_NO_INSTALL_CLEANUP="1")
+            info = capture("brew-build-tool-formulae", [brew, "info", "--json=v2", "--formula",
+                            *["homebrew/core/" + name for name in BREW_VERSIONS]])
+            check_brew_versions(info)
+            runner.run("fetch-mac-build-tool-bottles", [brew, "fetch", "--formula", "--force-bottle",
+                "--bottle-tag=arm64_tahoe", *["homebrew/core/" + name for name in BREW_VERSIONS]], cap=120)
+            package = output.parent / "mac-bootjdk-preflight.tar.gz"
+            runner.run("download-bootjdk", ["curl", "--fail", "--location", "--connect-timeout", "20",
+                "--max-time", "240", "--output", package, BOOT_URL], cap=250)
+            actual = sha256(package)
+            write_json(output / "bootjdk-download.json", {"url": BOOT_URL, "expected_sha256": BOOT_SHA, "actual_sha256": actual})
+            if actual != BOOT_SHA:
+                raise CommandFailure("BootJDK prerequisite checksum mismatch")
+            package.unlink()
+            for key in list(runner.env):
+                if key.startswith(("JTREG_", "JTHARNESS_", "ASMTOOLS_", "JUNIT_", "TESTNG_", "GOOGLE_GUICE_", "JCOMMANDER_", "ANT_", "MAVEN_REPO_", "CODE_TOOLS_")) or key in ("ANT", "SHASUM", "WGET", "CURL", "MAKE_ARGS", "BUILD_DIR", "DEPS_DIR", "ROOT"):
+                    runner.env.pop(key)
+            runner.env.update(JTREG_BUILD_NUMBER="1", JTREG_BUILD_MILESTONE="dev", JTREG_VERSION_STRING=JTREG_VERSION,
+                VERSION_NUMBERS=str(source / "make/build-support/version-numbers"),
+                SKIP_DOWNLOAD="", SKIP_CHECKSUM_CHECK="", WGET_OPTIONS="--quiet --timeout=30 --tries=1")
+            runner.run("build-official-jtreg", ["bash", "make/build.sh", "--jdk", jdk], cwd=source, cap=480)
+            image = source / "build/images/jtreg"
+            for name, digest in JTREG_JAR_PINS.items():
+                if sha256(image / "lib" / name) != digest:
+                    raise CommandFailure("jtreg dependency jar mismatch: " + name)
+            with zipfile.ZipFile(image / "lib/jtreg.jar") as jar:
+                text = jar.read("META-INF/MANIFEST.MF").decode()
+                if "jtreg-VersionString: " + JTREG_VERSION not in text.splitlines():
+                    raise CommandFailure("Unexpected built jtreg version")
+            runner.run("built-jtreg-version", [jdk / "bin/java", "-jar", image / "lib/jtreg.jar", "-version"], cap=30)
+            manifest = {"source": JTREG_SOURCE, "version": JTREG_VERSION, "validation": expected,
+                        "source_pins": JTREG_SOURCE_PINS, "dependency_jar_pins": JTREG_JAR_PINS, "files": jtreg_files(image)}
+            transfer.mkdir(parents=True)
+            with tarfile.open(transfer / "jtreg.tar.gz", "w:gz") as archive:
+                archive.add(image, arcname="jtreg")
+            manifest["archive_sha256"] = sha256(transfer / "jtreg.tar.gz")
+            write_json(transfer / "jtreg-manifest.json", manifest)
+            manifest_sha = sha256(transfer / "jtreg-manifest.json")
+            verify_jtreg_transfer(transfer, manifest["archive_sha256"], manifest_sha, expected, output.parent / "jtreg-verified")
+            write_json(output / "prerequisites.json", {**manifest, "manifest_sha256": manifest_sha})
+            with Path(os.environ["GITHUB_OUTPUT"]).open("a") as stream:
+                stream.write("archive_sha256=" + manifest["archive_sha256"] + "\nmanifest_sha256=" + manifest_sha + "\n")
+        status["status"] = "passed"
+    except BaseException as exc:
+        status.update(status="failed", error=repr(exc), traceback=traceback.format_exc())
+        raise
+    finally:
+        try:
+            cleanup_registry(output)
+        finally:
+            write_json(output / "status.json", status)
 
 
 def image_manifest(image, output, source):
@@ -408,7 +545,7 @@ def summarize(observations):
 
 
 class Qualification:
-    def __init__(self, repo, output, expected):
+    def __init__(self, repo, output, expected, prerequisite=None, archive_sha=None, manifest_sha=None):
         self.repo = Path(repo).resolve()
         self.output = Path(output).resolve()
         self.expected = expected
@@ -423,6 +560,7 @@ class Qualification:
         self.source = self.workspace / "source"
         self.images = {}
         self.observations = []
+        self.prerequisite = (prerequisite, archive_sha, manifest_sha)
 
     def command(self, *args, **kwargs):
         return self.runner.run(*args, **kwargs)
@@ -491,10 +629,13 @@ class Qualification:
                 raise CommandFailure("Native Darwin arm64 required; no emulation/fallback")
             if os.environ.get("GITHUB_REF") != BRANCH:
                 raise CommandFailure("Dedicated validation branch required")
-            self.prepare_tools()
             dependencies = self.workspace / "dependencies"
-            dependencies.mkdir(parents=True)
-            for label, url, expected in (("bootjdk", BOOT_URL, BOOT_SHA), ("jtreg", JTREG_URL, JTREG_SHA)):
+            manifest, self.jtreg = verify_jtreg_transfer(*self.prerequisite, self.expected,
+                                                        dependencies / "jtreg-transfer")
+            write_json(self.output / "jtreg-prerequisite.json", manifest)
+            self.prepare_tools()
+            dependencies.mkdir(parents=True, exist_ok=True)
+            for label, url, expected in (("bootjdk", BOOT_URL, BOOT_SHA),):
                 package = dependencies / (label + ".tar.gz")
                 self.command("download-" + label,
                              ["curl", "--fail", "--location", "--connect-timeout", "20", "--max-time", "240",
@@ -507,7 +648,6 @@ class Qualification:
                 target.mkdir()
                 self.command("extract-" + label, ["tar", "-xzf", package, "-C", target, "--strip-components", "1"], cap=60)
             self.boot = dependencies / "bootjdk/Contents/Home"
-            self.jtreg = dependencies / "jtreg"
             if not (self.boot / "bin/java").is_file() or not (self.jtreg / "lib/jtreg.jar").is_file():
                 raise CommandFailure("Unexpected pinned dependency layout")
             self.runner.env["JAVA_HOME"] = str(self.boot)
@@ -704,6 +844,12 @@ def main():
     parser.add_argument("--expected-sha")
     parser.add_argument("--cleanup", action="store_true")
     parser.add_argument("--export-dir", type=Path)
+    parser.add_argument("--prepare-prerequisites", action="store_true")
+    parser.add_argument("--jtreg-source", type=Path)
+    parser.add_argument("--transfer-dir", type=Path)
+    parser.add_argument("--prerequisite-dir", type=Path)
+    parser.add_argument("--archive-sha")
+    parser.add_argument("--manifest-sha")
     args = parser.parse_args()
     if args.cleanup:
         cleanup_registry(args.output)
@@ -715,7 +861,11 @@ def main():
         raise CommandFailure(f"Controller interrupted by signal {signum}")
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
-    Qualification(args.repo, args.output, args.expected_sha).execute()
+    if args.prepare_prerequisites:
+        prepare_prerequisites(args.repo, args.jtreg_source, args.output, args.transfer_dir, args.expected_sha)
+    else:
+        Qualification(args.repo, args.output, args.expected_sha, args.prerequisite_dir,
+                      args.archive_sha, args.manifest_sha).execute()
 
 
 if __name__ == "__main__":
