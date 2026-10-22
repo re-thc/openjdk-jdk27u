@@ -72,7 +72,24 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Installed rustc is unavailable' }
           $cargo = (& $rustup which cargo).Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Installed Cargo is unavailable' }
-          $python = (Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
+          $pythonCandidates = @(
+            Get-ChildItem -Path "$env:RUNNER_TOOL_CACHE/Python/*/x64/python.exe" -File -ErrorAction SilentlyContinue |
+              Where-Object { $_.Directory.Parent.Name -match '^\d+\.\d+\.\d+$' } |
+              Sort-Object { [Version]$_.Directory.Parent.Name } -Descending |
+              ForEach-Object { $_.FullName }
+            Get-Command python.exe -All -CommandType Application -ErrorAction SilentlyContinue |
+              Where-Object { $_.Source -notmatch '\\Microsoft\\WindowsApps\\' } |
+              ForEach-Object { $_.Source }
+          )
+          $python = $null
+          foreach ($candidate in $pythonCandidates) {
+            $platform = (& $candidate -c 'import sys; print(sys.platform)' | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and $platform -eq 'win32') {
+              $python = $candidate
+              break
+            }
+          }
+          if (-not $python) { throw 'Installed native Python is unavailable; no toolchain was installed' }
           $git = (Get-Command git.exe -CommandType Application -ErrorAction Stop).Source
           foreach ($tool in @($rustc, $cargo, $python, $git)) {
             if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Missing tool: $tool" }
@@ -80,6 +97,11 @@ jobs:
           }
           "INSTANT_RUSTC=$rustc" >> $env:GITHUB_ENV
           "INSTANT_CARGO=$cargo" >> $env:GITHUB_ENV
+          "INSTANT_PYTHON=$python" >> $env:GITHUB_ENV
+          "INSTANT_GIT=$git" >> $env:GITHUB_ENV
+          Write-Output "Native Python: $python"
+          & $python -VV
+          if ($LASTEXITCODE -ne 0) { throw 'Python identity failed' }
           & $rustc -vV
           if ($LASTEXITCODE -ne 0) { throw 'rustc identity failed' }
           & $cargo -V
@@ -199,11 +221,14 @@ jobs:
 
       - name: Check native integration and small fallback controls
         timeout-minutes: 10
+        shell: ${{ runner.os == 'Windows' && 'C:/msys64/usr/bin/bash.exe --noprofile --norc -e -o pipefail {0}' || 'bash' }}
         env:
           RUST_TARGET: ${{ matrix.rust-target }}
           ONLOAD_NAME: ${{ matrix.onload }}
         run: |
-          ${{ matrix.python }} .github/scripts/check-instant-native.py \
+          python=${{ matrix.python }}
+          if [[ $RUNNER_OS == Windows ]]; then python=$(cygpath -u "$INSTANT_PYTHON"); fi
+          "$python" .github/scripts/check-instant-native.py \
             --image build/instant-native-validation/images/jdk \
             --spec build/instant-native-validation/spec.gmk \
             --onload "build/instant-native-validation/support/test/jdk/jtreg/native/lib/$ONLOAD_NAME" \
@@ -211,6 +236,7 @@ jobs:
 
       - name: Preserve exact configuration and native build logs
         if: always()
+        shell: ${{ runner.os == 'Windows' && 'C:/msys64/usr/bin/bash.exe --noprofile --norc -e -o pipefail {0}' || 'bash' }}
         run: |
           mkdir -p instant-native-evidence/configuration
           for log in config.log build/instant-native-validation/spec.gmk \

@@ -104,12 +104,13 @@ def main():
         vm = image / ("bin/server/jvm.dll" if windows else
                       "lib/server/libjvm.dylib" if sys.platform == "darwin" else "lib/server/libjvm.so")
         fingerprint(vm)
-        head = run("git-head", ["git", "rev-parse", "HEAD"])
-        tracked = run("git-tracked-status", ["git", "status", "--porcelain", "--untracked-files=no"])
-        status = run("git-status", ["git", "status", "--porcelain", "--untracked-files=normal"])
+        git = os.environ.get("INSTANT_GIT", "git")
+        head = run("git-head", [git, "rev-parse", "HEAD"])
+        tracked = run("git-tracked-status", [git, "status", "--porcelain", "--untracked-files=no"])
+        status = run("git-status", [git, "status", "--porcelain", "--untracked-files=normal"])
         identities["source_check"] = verify_source((image / "release").read_text(),
                                                    os.environ.get("GITHUB_SHA"), head, tracked, status)
-        run("git-version", ["git", "--version"])
+        run("git-version", [git, "--version"])
         run("java-version", [java, "-Xinternalversion"])
         run("java-settings", [java, "-XshowSettings:properties", "-version"])
         for name in ("RUSTC", "CARGO"):

@@ -10,6 +10,7 @@ if [[ $RUNNER_OS == Windows ]]; then
   rustc=$(cygpath -u "$rustc")
   cargo=$(cygpath -u "$cargo")
   options+=(--with-toolchain-version=2026 --with-msvc-toolset-version=14.44)
+  options+=("GIT=$(cygpath -u "$INSTANT_GIT")")
 else
   options+=(--with-zlib=system --with-native-debug-symbols-level=1)
 fi
