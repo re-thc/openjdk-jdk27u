@@ -1,206 +1,49 @@
 # StringZilla integration
 
-StringZilla 5.3.0 provides bounded native kernels for eligible string searches and
-interpreter/C1 equality. It is enabled by default. Use
-`-XX:-UseStringZillaIntrinsics` to select the existing JDK implementations.
+StringZilla 5.3.0 supplies bounded native kernels for eligible string searches,
+interpreter/C1 equality and Latin-1 line and whitespace scans. It is enabled by
+default; `-XX:-UseStringZillaIntrinsics` selects the existing JDK implementations.
 Public APIs, compact-string representation, range checks and Unicode semantics
-are unchanged.
+are preserved.
 
 ## Execution
 
-The package-private `java.lang.StringZilla` bridges use kernels in `libjava`.
-HotSpot supplies the interpreter entries and compiler calling conventions; no
-additional shared library is required.
+Package-private `java.lang.StringZilla` bridges call kernels in `libjava`.
+HotSpot supplies interpreter entries and compiler calling conventions.
 
 | Layer | Integration |
 | --- | --- |
-| Interpreter | x86-64/AArch64 entries poll before deriving heap addresses and call bounded native kernels |
-| C1 | Native leaf calls, checked equality and separate Java bridges for reverse substring search |
-| C2 | Reverse-search leaf calls; existing JDK forward-search, forward BMP-character and equality intrinsics |
+| Interpreter | x86-64/AArch64 entries poll before deriving heap addresses and call bounded kernels |
+| C1 | Native leaf calls, checked equality and reverse-search bridges carrying the caller's tier |
+| C2 | Reverse-search and Latin-1 scan leaf calls; existing forward-search and equality intrinsics |
 | JNI fallback | The same kernels and bounds through JVM entry points |
 
-Latin-1 byte-set scans use a C1/C2 leaf bridge and JNI in the interpreter.
-They reuse AVX2 on both x86 SIMD backends and NEON on AArch64; serial backends
-retain Java scanning. After a 32-byte scalar probe, at least 256 remaining
-bytes are required. Each native window is bounded to 64 KiB and Java polls
-between windows. Size checks keep short inputs from initializing `StringZilla`.
-Whitespace helpers also return before initialization on immediate boundary
-matches. Early matches avoid native calls. A checked one-word probe can resolve compiled
-matches just beyond the scalar probe; initialized scan targets bypass the VM
-table-dispatch wrapper.
-The scalar probe shares a loop with short-input scanning; private long
-continuations keep native dispatch outside the common helpers.
+An immutable kernel table is published during `System.registerNatives`.
+Equality has a scalar bootstrap fallback. GCC/Clang x86 selects AVX2 or AVX-512
+using HotSpot capabilities and `UseAVX`; AArch64 uses NEON. MSVC x64, Zero and
+other ports use serial kernels. SIMD capability checks include the instructions
+required by each selected implementation.
 
-The line-separator set contains only CR and LF. The inverted trim set accepts
-exactly bytes above `0x20`; the inverted Character whitespace set excludes
-`0x09`–`0x0D` and `0x1C`–`0x20`. NEL (`0x85`) and NBSP (`0xA0`) are not
-Character whitespace. UTF-16 continues to use its existing code-point scanners.
-Line allocation, CRLF consumption, laziness and spliterator splitting stay in
-Java. [Latin-1 scan qualification](LATIN1-SCANS.md) records the measured scope.
+Native setup is outlined from short Java searches. Immediate matches and small
+prefixes remain in Java; backend and caller tier govern bulk admission.
+Checked overlapping word comparisons verify 9–16-character C2 UTF-16 candidates.
+On MSVC, bounded character-search blocks filter sparse reverse candidates;
+dense ending characters resume the existing Java loop. C1 narrow long-needle
+windows can use bounded native equality.
 
-C1 reverse bridges carry the caller's tier explicitly, preserving C1 policy when
-the bridge compiles in C2. Scalar windows and eligible mixed-coder continuations
-avoid the bridge. Small public reverse-search wrappers are forced inline so C2
-can reach these paths after the wrappers have compiled.
-An immutable kernel table is published with release/acquire ordering during
-`System.registerNatives`; equality has a scalar bootstrap fallback.
+Latin-1 `trim`, `strip`, `stripLeading`, `stripTrailing`, `isBlank` and
+`lines` use eligible byte-set scans. Compiled code probes up to 64 bytes by
+words; interpreted code probes up to 32 scalar bytes. Native admission requires
+at least 256 remaining bytes. Serial backends use Java scanning.
+Line allocation, laziness, CRLF handling and splitting remain in Java.
+UTF-16 retains its Unicode scanners. [Scan semantics](LATIN1-SCANS.md) describes
+the exact Latin-1 predicates.
 
-GCC/Clang x86 selects AVX2 or AVX-512 using HotSpot capabilities and `UseAVX`.
-Both require AVX2/BMI1/BMI2/LZCNT; AVX-512 also requires VL/BW capabilities.
-AArch64 uses NEON; MSVC x64, Zero and other ports use serial kernels.
-GCC/Clang use portable scalar loads for unaligned byte-array offsets.
-MSVC compiles the kernel file with `HIGHEST` optimization: `/O2` in release and
-fastdebug, while slowdebug retains `/Od`.
+## Bounds and safepoints
 
-## Search dispatch
-
-Sizes refer to the logical search range after public API normalization. UTF-16
-helpers check the physical array ends before unchecked code-unit access.
-The shared same-coder reverse dispatcher sends prefixes below 32 source bytes directly to
-the original Java helpers, without initializing `StringZilla`.
-
-Compiled substring search requires 256 source bytes before native dispatch;
-interpreted reverse search requires 32. Interpreted whole-string forward intrinsics
-handle all sizes, resuming Java for malformed UTF-16 ranges, unavailable bootstrap,
-mixed needles over 64 code units or excessive work. Interpreted mixed reverse
-search with one candidate can use the bounded kernel below the size gate.
-
-### Same-coder reverse search
-
-Let `N` be the needle length, `L = fromIndex + N` the searched prefix,
-`S = L - N` the span and `W = (S + 1) * N`. Lengths use code units and work
-arithmetic uses 64 bits. After the compiled source-size gate, native eligibility is:
-
-| Backend/tier | Latin-1 | UTF-16 |
-| --- | --- | --- |
-| Serial or NEON C1 | `N <= 256` or `W >= 1024` | `N <= 128` or `W >= 1024` |
-| AVX2 C1 | `N <= 256`, `A`, or `W >= 1024` | `N <= 128` or `W >= 1024` |
-| Serial C2 | `32 <= N <= 256 && L >= 1024`, or `N > 256 && W >= 4096` | `N <= 128 && L >= 512`, or `N > 128 && W >= 2048` |
-| AVX2 C2 | `N <= 128`; `129 <= N <= 256 && W >= 1024`; or `N > 256 && (A || (S >= 32 && W >= 4096))` | `N <= 128 && L >= 512`, or `N > 128 && S >= 16 && W >= 2048` |
-| NEON C2 | `N <= 256`, or `N > 256 && S >= 16 && W >= 4096` | `N <= 8 && L >= 1024`; `9 <= N <= 128 && L >= 512`; or `N > 128 && S >= 8 && W >= 2048` |
-| AVX-512 C1/C2 | Source-size gate | Source-size gate |
-
-`A` is the bounded AVX2 long-Latin-1 route:
-`N > 256 && S < 64 && L * N <= 4194304`.
-
-MSVC serial C1 also accepts UTF-16 needles over 128 with at most two candidates
-when `L * N <= 1048576`. MSVC serial C2 keeps UTF-16 widths through 128 in Java.
-The interpreter has no additional backend threshold after its size gate.
-Independent native bounds apply to every call.
-
-When C1 declines native UTF-16 reverse search for a long needle with one or
-two candidate positions, bounded native equality verifies those candidates.
-An initial code-unit check rejects obvious misses; unavailable native entry
-points retain the checked Java fallback.
-
-Same-coder widths through eight probe the rightmost candidate before bulk
-dispatch; interpreted UTF-16 uses bounded native equality. C1 UTF-16 prefixes
-below 128 code units use the original Java loop without this probe. Long Latin-1 needles
-with at most two candidates reject impossible two-byte tails first. Serial C2
-Latin-1 also probes widths 9 through 128 with checked unaligned word loads:
-an eight-byte suffix below width 32 and a sixteen-byte suffix otherwise.
-Prefixes through sixteen bytes use bounded overlapping word comparisons;
-larger prefixes use the existing JDK mismatch intrinsic. Failed bulk probes
-resume Java for widths below 32 and late suffix mismatches: bytes five through
-eight from the end on GCC/Clang, or the right half before the final four bytes
-on MSVC. Other eligible bulk searches retain StringZilla.
-
-Serial C1 probes UTF-16 widths 9 through 128 before entering its bridge,
-checking the first code unit before backward verification. Non-MSVC serial C2
-uses the checked word verifier for widths 9 through 256. MSVC C2 widths 9 through 128
-resume the existing Java search when the rightmost ending character matches;
-absent ending characters retain the JDK character filter.
-A failed complete verification with no earlier candidate returns immediately.
-C2 four-code-unit probes use one checked eight-byte comparison. Other
-non-serial C2 single-candidate prefixes below 128 code units use the existing
-backward Java verifier.
-
-NEON C2 UTF-16 widths 9 through 128 with `512 <= L < 1024` use the JDK
-character miss filter when the rightmost ending character differs. Widths through
-32 probe the rightmost candidate, or its predecessor after proving the rightmost
-ending character impossible, using a sixteen-byte suffix before the JDK prefix
-comparison. The native window remains unchanged.
-MSVC C1 uses bounded native ending-character filtering inside its bridge and
-shortens the prefix after a successful filter.
-
-Native-eligible serial C2 UTF-16 widths over 128 skip ending-character-free
-blocks of at most 256 code units with the existing JDK character-search intrinsic.
-Only proven-empty blocks are removed; a possible ending character retains the
-native search.
-
-Below the compiled gate, C1 calls the original Java loop directly after any
-failed immediate probe; C2 uses the JDK character miss filter. Ineligible
-serial/AVX2/NEON C2 UTF-16 widths through 128 use that filter, followed by Java
-verification. Serial C2 Latin-1 skips empty 256-byte blocks. Compiled long-needle
-fallbacks filter first-character mismatches before comparing interiors.
-
-Ineligible C2 windows with at most two candidates use checked word comparisons
-for Latin-1 widths 257 through 512 and UTF-16 widths 129 through 256. Each
-comparison covers at most 512 bytes. Native-eligible windows keep their backend
-route. Longer narrow UTF-16 windows reject impossible ending characters first.
-Ineligible C1 long-needle windows with at most two candidates use the original
-loop when the rightmost first character matches; otherwise they retain the
-first-character filter.
-
-### Mixed UTF-16/Latin-1 reverse search
-
-Native widening is limited to 64 code units. The source-size gate applies except
-for a single candidate. Needles through eight have an immediate Java probe.
-For widths 9 through 64, additional rightmost-candidate verification is:
-
-| Backend/tier | Immediate verification |
-| --- | --- |
-| GCC/Clang serial C1 | Backward Java through 31; bounded native verification from 32 |
-| MSVC serial C1 | Backward Java through 63; bounded native verification at 64 |
-| Serial C2 | Backward Java |
-| AVX2/AVX-512/NEON C1 | Backward Java through 24 |
-| AVX2 C2 | Backward Java through 15; existing mixed forward intrinsic over one candidate from 16 through 64 |
-| AVX-512 C2 | Backward Java through 15; existing mixed forward intrinsic over one candidate from 16 through 64 |
-| NEON C2 | Backward Java through 30; bounded native verification from 31 through 64 |
-
-C1 runs its eligible probe before entering a bridge. Non-MSVC widths 9 through
-31 check the ending character inline and outline the remaining Java comparison.
-Widths through 64 then
-call the existing native continuation directly; widths over 128 with a matching
-rightmost ending character resume the existing scalar loop.
-Rejected probes resume bulk search. MSVC C2 widths through 64 use the JDK
-character filter and Java verification; other eligible cases use native search.
-
-For longer needles, a mismatching ending character uses bounded native character
-filtering in the interpreter/C1; C2 skips empty 128-code-unit blocks with the JDK
-intrinsic. A matching ending character allows a backward Java suffix check plus
-bounded native verification of the first 64 code units. The interpreter uses this
-for all lengths, C1 through 128 and NEON C2 for all longer immediate candidates.
-Other C2 widths 65 through 128 use the existing mixed forward intrinsic over one
-candidate. Failed verification resumes at the preceding start. Other compiled
-needles over 128 retain Java search.
-
-### Forward and character search
-
-C1 serial UTF-16 forward substring searches use Java, retaining mixed native
-eligibility at width 64. Short same-coder immediate matches precede this policy.
-SIMD backends retain native eligibility; C2 retains its forward intrinsics.
-
-Reverse character wrappers probe eight positions before feature/backend selection.
-Latin-1 prefixes below the native size gate use the original scalar loop after
-the first probe. Eligibility uses the original prefix; native search skips the
-checked positions.
-Native setup and chunk fallback are separate helpers. BMP forward search probes
-one position first.
-
-Ordinary character-native thresholds are 256 remaining Latin-1 bytes or 128
-remaining UTF-16 code units. A full-range forward miss therefore enters native
-code at length 257 or 129 respectively. Reverse eligibility uses a prefix of at
-least 256 source bytes. MSVC C1 UTF-16 character searches use Java in both
-directions. Serial C2 reverse UTF-16 character searches use Java. AVX2 C2 uses
-Java below 256 code units; NEON C2 uses Java below 768. AVX-512 retains the
-ordinary 128-code-unit threshold.
-
-## Native bounds and safepoints
-
-Native bridges accept validated ranges and return relative byte offsets.
-Java converts UTF-16 offsets to code-unit indices; builders retain logical length,
-spare capacity and synchronization.
+Physical range checks precede unchecked UTF-16 and word access. Builders retain
+their logical length, spare capacity and synchronization. Native adapters reject
+odd-byte UTF-16 occurrences and preserve overlapping candidate starts.
 
 | Limit per native call | Bound |
 | --- | --- |
@@ -208,99 +51,55 @@ spare capacity and synchronization.
 | Source bytes × needle bytes | 4,194,304 |
 | Mixed needle widened on the stack | 64 code units |
 
-Guards precede reads. Excess work returns `-2` for Java fallback; `-1` means
-no match. Bounds limit leaf work, not elapsed time. Large searches overlap windows
-by the needle length minus one code unit; needles over half the allowed window
-retain Java search. Equality uses bounded range calls. Java backedges poll
-between calls, which derive fresh addresses from rooted arrays. Long mixed suffix
-verification also polls in Java.
+Excess work returns `-2` for Java fallback; `-1` means no match.
+Large searches overlap windows by the needle length minus one code unit.
+Java backedges poll between calls, which derive fresh addresses from rooted
+arrays. Equality also uses bounded range calls. These limits bound leaf work
+rather than elapsed time.
 
-Single native candidates use upstream equality. Long reverse adapters combine
-upstream search and equality with bounded probes before resuming bulk search.
-A rejected AVX-512 Latin-1 candidate selects actual mismatching bytes with at
-most three presence queries before bulk fallback. Serial UTF-16 widths 33 through
-128 use the same bounded strategy when the rightmost first, last and penultimate
-characters pass the aligned filter; sparse rejections retain the original batches.
-The short fallback uses upstream two-byte search for presence queries and the
-original aligned search for full needles, without recursive probing.
-UTF-16 pivots retain both bytes of a code unit; shortened windows preserve
-overlapping starts. AVX-512 UTF-16 windows with two starts use two equality checks.
-
-Odd-byte UTF-16 occurrences are rejected. A portable C filter verifies aligned
-candidates from the search-direction end. Long needles also filter the adjacent
-code unit. MSVC reverse searches apply this check from width three; short ARM
-reverse batches apply it only after the first/last filter finds candidates.
-GCC/Clang compile an AVX2 version under the VM capability gate. The adapters contain
-no handwritten SIMD instructions.
-
-## API coverage
-
-| API family | Handling |
-| --- | --- |
-| `String.indexOf` / `lastIndexOf` substring overloads, including begin/end ranges | Shared Latin-1, UTF-16 and mixed helpers |
-| Code-point search | Latin-1, BMP, surrogate code units and supplementary pairs; invalid points retain Java handling |
-| `AbstractStringBuilder`, `StringBuilder`, `StringBuffer` searches | Existing delegation, logical length and synchronization |
-| `contains`, sequence replacement, single-character `split` | Existing calls to shared substring/character searches |
-| Class loading, reflection, modules, file attributes, pattern quoting | Inherit eligible `String` searches |
-| `String.equals` | Both coders use bounded interpreter/C1 equality; C2 retains its JDK intrinsic |
-| `contentEquals` | String arguments inherit equality; builders and other sequences retain mismatch/code-unit implementations |
-| Prefix/suffix/region checks, sequence comparison, regex | Existing range-mismatch, sequence-access and specialized implementations |
-| Ordering, hashing, case conversion, encoding | Existing comparison, Unicode and charset semantics |
-| Copy/mismatch, inflate/compress, builder mutations | Existing intrinsics, allocation and write barriers |
-| Lines, trim/strip, blank and indent helpers | Eligible Latin-1 byte-set scans; existing UTF-16 Unicode scanners |
+The kernel file uses `HIGHEST` optimization. MSVC release and fastdebug use
+`/O2`; slowdebug retains `/Od`. GCC/Clang use portable scalar loads for
+unaligned byte-array offsets. No additional shared library is required.
 
 ## Vendoring
 
-The 28 upstream files are pinned to Apache-2.0 StringZilla 5.3.0,
-commit `86d73f1021e6cce022c3cceb1f7837eb50338774`.
+The 28 upstream files are pinned to Apache-2.0 StringZilla 5.3.0, commit
+`86d73f1021e6cce022c3cceb1f7837eb50338774`.
 [UPSTREAM.json](../../src/java.base/share/native/libjava/stringzilla/UPSTREAM.json)
 records upstream, patch and patched-file SHA-256 hashes.
-[The shipped notice](../../src/java.base/share/legal/stringzilla.md) contains the
-license. Independent adapters follow `ADDITIONAL_LICENSE_INFO`.
+[The shipped notice](../../src/java.base/share/legal/stringzilla.md) contains
+the license. Independent adapters follow `ADDITIONAL_LICENSE_INFO`.
 
-The [5.3.0 release](https://github.com/ashvardanian/StringZilla/releases/tag/v5.3.0)
-adds SWAR backward search for two-to-four-byte needles and alignment-sanitizer
-helpers. Two tracked patches remain necessary; the other 26 files are unmodified:
-
-- [Reverse overlaps](../../src/java.base/share/native/libjava/stringzilla/patches/0001-preserve-reverse-search-overlaps.patch)
-  preserves overlapping suffix candidates after a rejected long-needle prefix.
-- [MSVC baseline bit operations](../../src/java.base/share/native/libjava/stringzilla/patches/0002-msvc-baseline-bit-operations.patch)
-  preserves bit-count and zero-input semantics with baseline instructions.
+Two tracked patches preserve reverse-search overlaps and MSVC baseline
+bit-operation semantics. The other 26 files are unmodified.
 
 ```sh
 python3 make/scripts/update-stringzilla.py --verify
 python3 make/scripts/update-stringzilla.py --version NEW_VERSION --commit FULL_UPSTREAM_COMMIT_SHA
 ```
 
-The updater stages the pinned dependency closure and patches, refreshes hashes and
+The updater stages the dependency closure and patches, refreshes hashes and
 license text, and removes obsolete headers. It rejects fuzz/reversed patches and
-leaves the checkout untouched on failure. Review patches against the new pin;
-remove upstreamed fixes. Rebuild x86-64/AArch64 and rerun correctness and
-tier-specific performance checks.
+leaves the checkout untouched on failure. Review patches against each new pin
+and repeat correctness and performance checks on native platforms.
 
 ## Validation
 
-[BENCHMARKS.md](BENCHMARKS.md) records matched complete-image measurements,
-source/toolchain identities and measured losses.
-[The measurement index](measurements/README.md) links raw evidence and preceding
-results. Qualification applies to the exact source and image hashes in those
-receipts; proposed source changes require a new matched run.
+[BENCHMARKS.md](BENCHMARKS.md) describes complete-image comparisons and links
+source-qualified results, all measured losses and raw evidence.
 
-Tests cover tiers, JNI, opt-out, thresholds/windows, repeated needles, overlaps,
-coders, surrogates, builder capacity, concurrent GC and caller state.
+Tests cover forced interpreter/C1/C2, JNI, opt-out, thresholds, windows, repeated
+needles, overlaps, coders, surrogates, builder capacity and concurrent GC.
 Native tests cover executable kernels, exact allocations, alignment and work
-limits. Sanitizer receipts identify kernel source/backend; they do not imply
-whole-JDK sanitization.
+limits. Sanitizer receipts identify their tested kernel source and backend.
 
 ```sh
 make test \
-  'TEST=jtreg:test/jdk/java/lang/String jtreg:test/jdk/java/lang/StringBuilder jtreg:test/jdk/java/lang/StringBuffer jtreg:test/hotspot/jtreg/compiler/intrinsics/string jtreg:test/jdk/java/lang/System/LoggerFinder' \
+  'TEST=jtreg:test/jdk/java/lang/String jtreg:test/jdk/java/lang/StringBuilder jtreg:test/jdk/java/lang/StringBuffer jtreg:test/hotspot/jtreg/compiler/intrinsics/string' \
   'JTREG=TIMEOUT_FACTOR=4'
 ```
 
-To exercise JNI fallback, disable bridge intrinsics with
-`-XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=...`.
-Search bridges use `_stringzilla*` names. Equality uses `_equalsL`,
-`_equalsLChecked` and `_stringzillaEqualsRange`; disabling `_equalsL` also disables
-its checked alias. Disable the applicable existing `_indexOf*` intrinsics when
-testing compiled forward-search JNI fallback.
+JNI fallback tests disable the relevant `_stringzilla*` bridge intrinsics.
+Equality uses `_equalsL`, `_equalsLChecked` and `_stringzillaEqualsRange`;
+disabling `_equalsL` also disables its checked alias. Forward-search fallback
+tests also disable the applicable existing `_indexOf*` intrinsics.
