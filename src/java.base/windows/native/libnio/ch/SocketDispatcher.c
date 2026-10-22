@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,12 +93,20 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
     DWORD flags = 0;
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
-    WSABUF *bufs = malloc(len * sizeof(WSABUF));
+    WSABUF stackBufs[16];  // IOUtil.iovMax on Windows
+    WSABUF *bufs = stackBufs;
     jint rem = MAX_BUFFER_SIZE;
 
-    if (bufs == 0) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+    if (len < 0 || (size_t)len > (size_t)-1 / sizeof(WSABUF)) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
         return IOS_THROWN;
+    }
+    if (len > (int)(sizeof(stackBufs) / sizeof(stackBufs[0]))) {
+        bufs = malloc((size_t)len * sizeof(WSABUF));
+        if (bufs == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return IOS_THROWN;
+        }
     }
 
     /* copy iovec into WSABUF */
@@ -125,7 +133,9 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
             0);             /* no completion routine */
 
     /* clean up */
-    free(bufs);
+    if (bufs != stackBufs) {
+        free(bufs);
+    }
 
     if (i != 0) {
         int theErr = (jint)WSAGetLastError();
@@ -208,12 +218,20 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
     DWORD written = 0;
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
-    WSABUF *bufs = malloc(len * sizeof(WSABUF));
+    WSABUF stackBufs[16];  // IOUtil.iovMax on Windows
+    WSABUF *bufs = stackBufs;
     jlong count = 0;
 
-    if (bufs == 0) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+    if (len < 0 || (size_t)len > (size_t)-1 / sizeof(WSABUF)) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
         return IOS_THROWN;
+    }
+    if (len > (int)(sizeof(stackBufs) / sizeof(stackBufs[0]))) {
+        bufs = malloc((size_t)len * sizeof(WSABUF));
+        if (bufs == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return IOS_THROWN;
+        }
     }
 
     // next buffer and offset to consume
@@ -261,7 +279,9 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
     }
 
     /* clean up */
-    free(bufs);
+    if (bufs != stackBufs) {
+        free(bufs);
+    }
 
     if (ret == SOCKET_ERROR && count == 0) {
         int theErr = (jint)WSAGetLastError();
