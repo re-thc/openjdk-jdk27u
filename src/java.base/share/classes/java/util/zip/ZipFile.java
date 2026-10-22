@@ -735,7 +735,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private static class CleanableResource implements Runnable {
         // Bound idle native decompression state retained after a concurrency spike.
-        private static final int MAX_CACHED_INFLATERS = 8;
+        private static final int MAX_CACHED_INFLATERS = 128;
 
         // The outstanding inputstreams that need to be closed
         final Set<InputStream> istreams;

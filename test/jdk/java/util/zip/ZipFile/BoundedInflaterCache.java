@@ -53,8 +53,8 @@ import java.util.zip.ZipOutputStream;
 import jdk.test.lib.util.ForceGC;
 
 public class BoundedInflaterCache {
-    private static final int LIMIT = Integer.getInteger("test.cache.limit", 8);
-    private static final int BURST = 128;
+    private static final int LIMIT = Integer.getInteger("test.cache.limit", 128);
+    private static final int BURST = Math.max(128, LIMIT * 4);
     private static final byte[] DATA = new byte[65536];
 
     public static void main(String[] args) throws Exception {
@@ -324,6 +324,7 @@ public class BoundedInflaterCache {
                 read(in, 0, 32);
             }
             CountDownLatch start = new CountDownLatch(1);
+            CountDownLatch acquired = new CountDownLatch(1);
             try (var pool = Executors.newFixedThreadPool(6)) {
                 var tasks = new ArrayList<java.util.concurrent.Future<?>>();
                 for (int worker = 0; worker < 4; worker++) {
@@ -339,7 +340,12 @@ public class BoundedInflaterCache {
                 }
                 tasks.add(pool.submit(() -> {
                     start.await();
-                    for (int i = 0; i < BURST; i++) {
+                    try (InputStream in = zip.getInputStream(new ZipEntry("deflated"))) {
+                        inflaters.add(inflater(in));
+                        read(in, 0, 1);
+                        acquired.countDown();
+                    }
+                    for (int i = 1; i < BURST; i++) {
                         try (InputStream in = zip.getInputStream(new ZipEntry("deflated"))) {
                             inflaters.add(inflater(in));
                             read(in, 0, 1);
@@ -351,6 +357,7 @@ public class BoundedInflaterCache {
                 }));
                 tasks.add(pool.submit(() -> {
                     start.await();
+                    check(acquired.await(10, TimeUnit.SECONDS), "No concurrent acquisition");
                     zip.close();
                     zip.close();
                     return null;
