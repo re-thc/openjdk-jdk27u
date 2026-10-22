@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,6 +849,11 @@ class DatagramChannelImpl
                     p.setAddress(remote.getAddress());
                     p.setPort(remote.getPort());
                     target = remote;
+                } else if (previousTarget != null
+                        && previousTarget.getAddress() == p.getAddress()
+                        && previousTarget.getPort() == p.getPort()) {
+                    // Address identity preserves IPv6 scope when reusing the encoded target.
+                    target = previousTarget;
                 } else {
                     target = (InetSocketAddress) p.getSocketAddress();
                 }
