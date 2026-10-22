@@ -18,9 +18,9 @@ ROOT = Path.cwd()
 PAIR = ROOT / 'pair'
 SOURCES = {'original': '416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda',
            'master': '8d030adbd245b19e6339e3ccd052eb7fe3635319',
-           'fork': '15da3c455ba3f15993f581150c775bb7a941fccd',
+           'fork': '93a0e98a80ea4807a45cc59a5334483a44b8cec6',
            'prior': 'c17c5cb06297e25681b4dab2eddbd60ceffe0300'}
-PRODUCT = '0e8b7b13ca0a72433476061b3ae257710773b952'
+PRODUCT = '73d8c5581d76e6a395a85ba2ff3f1c2a2be2fc5e'
 
 
 def module(name):
