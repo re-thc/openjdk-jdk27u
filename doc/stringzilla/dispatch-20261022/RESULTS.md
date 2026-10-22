@@ -11,11 +11,11 @@ in Actions:
 - [Linux serial, AVX2 and AVX-512 comparisons](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39798410962)
 - [Independent final SDK payload verification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39806466970)
 - [Independent final raw-file verification](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39808185117)
-- [Exact-head four-platform sanity checks](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39803028705)
+- [Exact-head four-platform sanity checks](https://github.com/re-thc/openjdk-jdk27u/actions/runs/39812822993)
 
 Each measurement keeps its own source and complete-image identity.
-The PR's final documentation cleanup does not change the measured build, source
-or test trees. Actions artifacts carry their displayed expiration dates.
+The PR's later documentation and bounded CI setup changes leave its measured
+`src`, `make` and `test` trees identical. Actions artifacts carry their displayed expiration dates.
 
 Earlier S comparisons are permanently retained at
 [commit 5647ab3](https://github.com/re-thc/openjdk-jdk27u/commit/5647ab36d15fad53b99a0e722dce9216d3485999):
