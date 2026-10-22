@@ -473,26 +473,22 @@ public abstract class UnixFileSystemProvider
             }
         }
 
-        // open directory and dup file descriptor for use by
-        // opendir/readdir/closedir
-        int dfd1 = -1;
-        int dfd2 = -1;
+        // fdopendir owns the descriptor after success; closedir releases it.
+        // Secure relative operations share it under the stream read lock.
+        int dfd = -1;
         long dp = 0L;
         try {
-            dfd1 = open(dir, O_RDONLY, 0);
-            dfd2 = dup(dfd1);
-            dp = fdopendir(dfd1);
+            dfd = open(dir, O_RDONLY, 0);
+            dp = fdopendir(dfd);
         } catch (UnixException x) {
             IOException ioe = x.errno() == UnixConstants.ENOTDIR ?
                 new NotDirectoryException(dir.getPathForExceptionMessage()) :
                 x.asIOException(dir);
-            if (dfd1 != -1)
-                UnixNativeDispatcher.close(dfd1, e -> null);
-            if (dfd2 != -1)
-                UnixNativeDispatcher.close(dfd2, e -> null);
+            if (dfd != -1)
+                UnixNativeDispatcher.close(dfd, e -> null);
             throw ioe;
         }
-        return new UnixSecureDirectoryStream(dir, dp, dfd2, filter);
+        return new UnixSecureDirectoryStream(dir, dp, dfd, filter);
     }
 
     @Override

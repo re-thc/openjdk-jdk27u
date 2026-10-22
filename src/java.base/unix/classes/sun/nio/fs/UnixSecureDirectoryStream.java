@@ -43,6 +43,7 @@ class UnixSecureDirectoryStream
     implements SecureDirectoryStream<Path>
 {
     private final UnixDirectoryStream ds;
+    // Borrowed from ds under its read lock; only closedir releases it.
     private final int dfd;
 
     UnixSecureDirectoryStream(UnixPath dir,
@@ -60,9 +61,7 @@ class UnixSecureDirectoryStream
     {
         ds.writeLock().lock();
         try {
-            if (ds.closeImpl()) {
-                UnixNativeDispatcher.close(dfd, e -> e.asIOException(ds.directory()));
-            }
+            ds.closeImpl();
         } finally {
             ds.writeLock().unlock();
         }
@@ -99,27 +98,23 @@ class UnixSecureDirectoryStream
                 throw new ClosedDirectoryStreamException();
 
             // open directory and create new secure directory stream
-            int newdfd1 = -1;
-            int newdfd2 = -1;
+            int newdfd = -1;
             long ptr = 0L;
             try {
                 int flags = O_RDONLY;
                 if (!followLinks)
                     flags |= O_NOFOLLOW;
-                newdfd1 = openat(dfd, file.asByteArray(), flags , 0);
-                newdfd2 = dup(newdfd1);
-                ptr = fdopendir(newdfd1);
+                newdfd = openat(dfd, file.asByteArray(), flags , 0);
+                ptr = fdopendir(newdfd);
             } catch (UnixException x) {
                 IOException ioe = x.errno() == UnixConstants.ENOTDIR ?
                     new NotDirectoryException(file.toString()) :
                     x.asIOException(file);
-                if (newdfd1 != -1)
-                    UnixNativeDispatcher.close(newdfd1, e -> null);
-                if (newdfd2 != -1)
-                    UnixNativeDispatcher.close(newdfd2, e -> null);
+                if (newdfd != -1)
+                    UnixNativeDispatcher.close(newdfd, e -> null);
                 throw ioe;
             }
-            return new UnixSecureDirectoryStream(child, ptr, newdfd2, null);
+            return new UnixSecureDirectoryStream(child, ptr, newdfd, null);
         } finally {
             ds.readLock().unlock();
         }
