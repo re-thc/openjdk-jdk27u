@@ -1199,22 +1199,12 @@ final class StringUTF16 {
     @ForceInline
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex, int tier) {
-        return lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, tier,
-                tier == StringZilla.UNRESOLVED_TIER);
-    }
-
-    // A tier hint does not imply that physical ranges have been checked.
-    @ForceInline
-    static int lastIndexOf(byte[] src, int srcCount,
-                           byte[] tgt, int tgtCount, int fromIndex, int tier, boolean checkRanges) {
-        if (checkRanges) {
+        if (tier == StringZilla.UNRESOLVED_TIER) {
             assert fromIndex >= 0;
             assert tgtCount > 0;
             assert tgtCount <= length(tgt);
             if (tgtCount <= 8 && StringZilla.ENABLED) {
-                if (tier == StringZilla.UNRESOLVED_TIER) {
-                    tier = StringZilla.compilerTier();
-                }
+                tier = StringZilla.compilerTier();
                 if (tier == StringZilla.C1
                         && fromIndex + tgtCount < (StringZilla.MIN_BYTES >> 1)) {
                     // The scalar helper checks both physical ends itself.
@@ -1248,8 +1238,16 @@ final class StringUTF16 {
                         && StringZilla.matchesUTF16(src, fromIndex, tgt, tgtCount, tier)) {
                     return fromIndex;
                 }
-                if (tgtCount > 128 && fromIndex <= 1
+                if (tgtCount > 128 && (fromIndex == 0 || fromIndex == 1)
                         && !StringZilla.useReverseUTF16(prefixLength, tgtCount, tier)) {
+                    if (tgtCount <= (StringZilla.MAX_BYTES >> 1)) {
+                        char first = getChar(tgt, 0);
+                        if (getChar(src, fromIndex) == first) {
+                            return StringZilla.lastIndexOfUTF16FewCandidatesC1(src, tgt, tgtCount, fromIndex);
+                        }
+                        return fromIndex == 1 && getChar(src, 0) == first
+                                ? StringZilla.lastIndexOfUTF16FewCandidatesC1(src, tgt, tgtCount, 0) : -1;
+                    }
                     if (getChar(src, fromIndex) == getChar(tgt, 0)) {
                         return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
                     }

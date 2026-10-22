@@ -39,8 +39,11 @@
  * @test id=limitedAVX
  * @summary Exercise bounded word probes and search fallbacks without AVX and with AVX2
  * @requires (os.arch == "amd64" | os.arch == "x86_64")
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=0 StringZillaSearch
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 StringZillaSearch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:UseAVX=0 StringZillaSearch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:UseAVX=2 StringZillaSearch
  */
 
 import java.util.Random;
@@ -135,6 +138,43 @@ public class StringZillaSearch {
         }
     }
 
+    private static void fewCandidateUTF16() {
+        String warm = "\u0401".repeat(129);
+        String right = "\u0402" + warm;
+        String left = warm + "\u0402";
+        String miss = "\u0403".repeat(130);
+        for (int i = 0; i < 3000; i++) {
+            equal(right.lastIndexOf(warm), 1);
+            equal(left.lastIndexOf(warm), 0);
+            equal(miss.lastIndexOf(warm), -1);
+        }
+        for (int count : new int[]{127, 128, 129, 32768, 32769}) {
+            String target = "\u0401".repeat(count);
+            String changed = target.substring(0, count / 2) + "\u0402"
+                    + target.substring(count / 2 + 1);
+            for (String source : new String[]{target, "\u0402" + target,
+                    target + "\u0402", changed, changed + "\u0402"}) {
+                for (int from : new int[]{0, 1, Integer.MAX_VALUE}) {
+                    check(source, target, from);
+                }
+            }
+        }
+    }
+
+    private static void latinScalarPrefixes() {
+        for (int count : new int[]{63, 64, 65, 66}) {
+            String target = "a".repeat(count - 5) + "b" + "a".repeat(4);
+            String missing = "a".repeat(4096);
+            for (int from : new int[]{0, 1, missing.length() - count - 1, Integer.MAX_VALUE}) {
+                check(missing, target, from);
+            }
+            String matching = "a".repeat(512) + target + "a".repeat(512);
+            for (int from : new int[]{511, 512, Integer.MAX_VALUE}) {
+                check(matching, target, from);
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         // Equality is used during native-library and timezone initialization.
         // Exercise these consumers before warming up the string-search corpus.
@@ -142,6 +182,8 @@ public class StringZillaSearch {
             throw new AssertionError("VM property lookup");
         java.time.ZoneId.of("America/New_York").getRules();
         mixedWords();
+        fewCandidateUTF16();
+        latinScalarPrefixes();
         int[] sizes = {0, 1, 2, 15, 31, 127, 128, 129, 255, 256, 257, 1024, 4096};
         String[] needles = {"", "a", "aa", "ab", "abc", "b", "\0", "\u00ff", "\u0100", "\ud800", "\udc00", "\ud83d\ude00", "a".repeat(64), "a".repeat(65)};
         int[] codepoints = {-1, 0, 'a', 'b', 255, 256, 0xd800, 0xdc00, 0x1f600, 0x10ffff, 0x110000};

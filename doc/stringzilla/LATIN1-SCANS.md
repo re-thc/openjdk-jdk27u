@@ -26,7 +26,7 @@ spliterator fences and consumer exceptions remain in Java. Tests cover all
 64 KiB window boundaries, forced interpreter/C1/C2, JNI fallback, compact
 strings off, feature off and concurrent GC.
 
-[Combined-source measurements and validation](https://github.com/re-thc/openjdk-jdk27u/blob/codex/stringzilla-final-artifacts/doc/stringzilla/integration-20261021/RESULTS.md)
+[Combined-source measurements and validation](https://github.com/re-thc/openjdk-jdk27u/blob/codex/stringzilla-final-artifacts/doc/stringzilla/selected-20261022/RESULTS.md)
 retain independent-original, prior-source, enabled and disabled controls,
 individual samples, paired medians, spread and measured losses. Qualification
 applies to the source and complete-image identities recorded there. Earlier

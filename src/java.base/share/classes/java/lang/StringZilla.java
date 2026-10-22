@@ -417,6 +417,33 @@ final class StringZilla {
         return StringUTF16.lastIndexOf(src, srcCount, tgt, count, from, C1);
     }
 
+    // The checked C1 entry has validated both complete physical ranges.
+    // Reuse bounded equality when reverse search would select a Java fallback.
+    @DontInline
+    static int lastIndexOfUTF16FewCandidatesC1(byte[] src, byte[] tgt, int count, int from) {
+        assert from == 0 || from == 1;
+        assert count >= (MIN_BYTES >> 1) && count <= (MAX_BYTES >> 1);
+        int bytes = count << 1;
+        assert (long)(from + count) * 2 <= src.length && bytes <= tgt.length;
+        int result = equalsRange(src, from << 1, bytes, tgt, 0);
+        if (result == FALLBACK) {
+            return StringUTF16.lastIndexOfJava(src, tgt, count, from);
+        }
+        if (result != 0) {
+            return from;
+        }
+        if (from == 1 && StringUTF16.getChar(src, 0) == StringUTF16.getChar(tgt, 0)) {
+            result = equalsRange(src, 0, bytes, tgt, 0);
+            if (result == FALLBACK) {
+                return StringUTF16.lastIndexOfJava(src, tgt, count, 0);
+            }
+            if (result != 0) {
+                return 0;
+            }
+        }
+        return -1;
+    }
+
     @DontInline
     static int lastIndexOfUTF16Latin1C1(byte[] src, int srcCount, byte[] tgt, int count, int from) {
         return StringUTF16.lastIndexOfLatin1(src, srcCount, tgt, count, from, C1);

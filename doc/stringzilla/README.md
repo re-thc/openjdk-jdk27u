@@ -88,6 +88,11 @@ when `L * N <= 1048576`. MSVC serial C2 keeps UTF-16 widths through 128 in Java.
 The interpreter has no additional backend threshold after its size gate.
 Independent native bounds apply to every call.
 
+When C1 declines native UTF-16 reverse search for a long needle with one or
+two candidate positions, bounded native equality verifies those candidates.
+An initial code-unit check rejects obvious misses; unavailable native entry
+points retain the checked Java fallback.
+
 Same-coder widths through eight probe the rightmost candidate before bulk
 dispatch; interpreted UTF-16 uses bounded native equality. C1 UTF-16 prefixes
 below 128 code units use the original Java loop without this probe. Long Latin-1 needles

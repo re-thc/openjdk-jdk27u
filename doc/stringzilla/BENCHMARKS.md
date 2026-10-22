@@ -3,7 +3,7 @@
 The complete-image matrix compares original OpenJDK, the fork with StringZilla
 enabled, and the same fork image with `-XX:-UseStringZillaIntrinsics`.
 
-[Results, every measured loss and raw evidence](https://github.com/re-thc/openjdk-jdk27u/blob/codex/stringzilla-final-artifacts/doc/stringzilla/measurements/34e3d8f9/RESULTS.md)
+[Combined PR4/PR63 results, every measured loss and raw evidence](https://github.com/re-thc/openjdk-jdk27u/blob/codex/stringzilla-final-artifacts/doc/stringzilla/selected-20261022/RESULTS.md)
 identify the exact source, image, compiler, workload and workflow hashes.
 Qualification belongs to those identities. Planned cases and preceding revisions
 are not measurements of the final source.
@@ -14,7 +14,7 @@ The preceding complete-image campaign completed 1,624 of 1,886 planned triplets
 on runtime `916ba895`: 4,872 control records and 48,720 samples. Those results
 diagnose the earlier dispatch and do not qualify later corrections.
 
-The [final paired comparisons](https://github.com/re-thc/openjdk-jdk27u/tree/codex/stringzilla-final-artifacts/doc/stringzilla/qualification-20261019)
+The [preceding paired comparisons](https://github.com/re-thc/openjdk-jdk27u/tree/codex/stringzilla-final-artifacts/doc/stringzilla/qualification-20261019)
 use a fixed focused manifest covering losing dispatch paths, bulk wins, equality,
 overlaps and boundary controls. Its receipts report actual completed scope,
 source, compiler and image identities; planned cases are not results.

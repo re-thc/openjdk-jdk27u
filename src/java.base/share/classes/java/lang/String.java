@@ -3230,17 +3230,12 @@ public final class String
                     || searchLength < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)) {
                 return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
-            int tier = StringZilla.UNRESOLVED_TIER;
-            if (searchLength < (StringZilla.MIN_BYTES >> 1)) {
-                if (!StringZilla.ENABLED) {
-                    return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
-                }
-                tier = StringZilla.compilerTier();
-                if (tier == StringZilla.C1) {
-                    return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
-                }
+            if (searchLength < (StringZilla.MIN_BYTES >> 1)
+                    && (!StringZilla.ENABLED || StringZilla.compilerTier() == StringZilla.C1)) {
+                return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
             }
-            return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex, tier, true);
+            return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex,
+                    StringZilla.UNRESOLVED_TIER);
         }
         if (srcCoder == LATIN1) {    // && tgtCoder == UTF16
             return -1;

@@ -695,6 +695,9 @@ final class StringLatin1 {
                                                        : mismatch >= tgtCount - Long.BYTES))) {
                     // Keep a bulk C2 scalar loop outside native-call setup.
                     if (searchLength >= StringZilla.MIN_BYTES) {
+                        if (tgtCount == tgt.length) {
+                            return lastIndexOfPrefixJavaC2(src, tgt, searchLength - 1);
+                        }
                         return StringZilla.lastIndexOfLatin1JavaC2(src, tgt, tgtCount, fromIndex - 1);
                     }
                     return lastIndexOfJava(src, tgt, tgtCount, fromIndex - 1);
@@ -766,6 +769,37 @@ final class StringLatin1 {
     // Inline the scalar fallback so short C1 searches need no extra Java frame.
     @ForceInline
     static int lastIndexOfJava(byte[] src, byte[] tgt, int tgtCount, int fromIndex) {
+        int min = tgtCount - 1;
+        int i = min + fromIndex;
+        int strLastIndex = tgtCount - 1;
+        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
+
+  startSearchForLastChar:
+        while (true) {
+            while (i >= min && (src[i] & 0xff) != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - strLastIndex;
+            int k = strLastIndex - 1;
+            while (j > start) {
+                if ((src[j--] & 0xff) != (tgt[k--] & 0xff)) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start + 1;
+        }
+    }
+
+    // Derive loop bounds from the arrays within a compact C2 compilation.
+    @DontInline
+    private static int lastIndexOfPrefixJavaC2(byte[] src, byte[] tgt, int prefixLength) {
+        int tgtCount = tgt.length;
+        int fromIndex = Math.min(prefixLength, src.length) - tgtCount;
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;

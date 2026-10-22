@@ -160,10 +160,18 @@ public class StringZillaTailSearch {
         if (value.indexOf(needle) != first || value.lastIndexOf(needle) != last) {
             throw new AssertionError("Public search disagrees with scalar fixture");
         }
+        int prefix = length - needleLength - 1;
+        if (value.lastIndexOf(needle, prefix) != scalar(haystack, target, true, prefix)) {
+            throw new AssertionError("Public prefix search disagrees with scalar fixture");
+        }
     }
 
     private static int scalar(char[] haystack, char[] target, boolean reverse) {
-        int limit = haystack.length - target.length;
+        return scalar(haystack, target, reverse, haystack.length - target.length);
+    }
+
+    private static int scalar(char[] haystack, char[] target, boolean reverse, int from) {
+        int limit = Math.min(from, haystack.length - target.length);
         for (int i = reverse ? limit : 0; i >= 0 && i <= limit; i += reverse ? -1 : 1) {
             int j = 0;
             while (j < target.length && haystack[i + j] == target[j]) j++;
@@ -175,5 +183,10 @@ public class StringZillaTailSearch {
     @Benchmark
     public int lastIndexOf() {
         return value.lastIndexOf(needle);
+    }
+
+    @Benchmark
+    public int lastIndexOfPrefix() {
+        return value.lastIndexOf(needle, value.length() - needle.length() - 1);
     }
 }
