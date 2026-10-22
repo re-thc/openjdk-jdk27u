@@ -77,9 +77,8 @@ license_text = (upstream / "LICENSE-MIT").read_text()
 checksums = "".join(
     f"SHA-256 ({name}): {hashlib.sha256((destination / name).read_bytes()).hexdigest()}\n"
     for name in ("simdutf.h", "simdutf.cpp"))
-(destination / "UPSTREAM").write_text(
+(destination / "UPDATING.txt").write_text(
     f"Repository: https://github.com/simdutf/simdutf\nRelease: {tag}\nCommit: {commit}\n"
-    "License: MIT (ISA detector: BSD 3-Clause)\n"
     "Features: UTF-8, UTF-16, UTF-32, Latin-1, ASCII, Base64\n"
     "Local source changes: none\n"
     f"{checksums}"
