@@ -198,7 +198,8 @@ public class TestStringZillaUTF16Bounds {
             cases.add(fixture(Math.max(16, count + 8), count, true));
             cases.add(fixture(256, count, true));
         }
-        for (int count : new int[]{1, 2, 3, 4, 7, 8, 9, 16, 32, 64, 129, 257}) {
+        for (int count : new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                                   17, 32, 64, 129, 257}) {
             for (int length : new int[]{count, Math.max(256, count + 8), 4096}) {
                 byte[] value = new byte[length];
                 Arrays.fill(value, (byte)'a');

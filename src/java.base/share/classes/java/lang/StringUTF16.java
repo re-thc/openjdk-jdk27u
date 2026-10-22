@@ -1194,7 +1194,10 @@ final class StringUTF16 {
     static boolean matchesAt(byte[] src, int from, byte[] tgt, int count) {
         checkIndex(count - 1, tgt);
         checkIndex(from + count - 1, src);
-        return count <= 8 ? StringZilla.matchesUTF16(src, from, tgt, count, StringZilla.C2)
+        if (count <= 8) {
+            return StringZilla.matchesUTF16(src, from, tgt, count, StringZilla.C2);
+        }
+        return count <= 16 ? StringZilla.matchesUTF16Words(src, from, tgt, count)
                 : ArraysSupport.mismatch(src, from << 1, tgt, 0, count << 1) < 0;
     }
 

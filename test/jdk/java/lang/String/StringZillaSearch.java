@@ -133,7 +133,8 @@ public class StringZillaSearch {
         // Vary byte order, high Latin1 bits, residual word widths and all
         // UTF16 alignments. A later near-match must preserve the earlier hit.
         for (int symbol = 0; symbol < 512; symbol++) {
-            for (int count : new int[]{4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64}) {
+            for (int count : new int[]{4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                                       17, 31, 32, 33, 63, 64}) {
                 char[] chars = new char[count];
                 for (int i = 0; i < count; i++) {
                     chars[i] = (char)((symbol < 256 ? 0 : 0x400) + ((symbol + 37 * i) & 0xff));

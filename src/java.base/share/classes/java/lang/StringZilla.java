@@ -176,6 +176,25 @@ final class StringZilla {
         return matchesUTF16(src, offset, tgt, length);
     }
 
+    // The caller validates both complete ranges and selects 9..16 code units.
+    // Overlapping word windows cover all 18..32 bytes without a mismatch call.
+    @ForceInline
+    static boolean matchesUTF16Words(byte[] src, int offset, byte[] tgt, int length) {
+        assert length > 8 && length <= 16;
+        Unsafe unsafe = Unsafe.getUnsafe();
+        long base = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        long from = base + ((long)offset << 1);
+        int bytes = length << 1;
+        return unsafe.getLongUnaligned(src, from + bytes - Long.BYTES)
+                        == unsafe.getLongUnaligned(tgt, base + bytes - Long.BYTES)
+                && unsafe.getLongUnaligned(src, from) == unsafe.getLongUnaligned(tgt, base)
+                && unsafe.getLongUnaligned(src, from + Long.BYTES)
+                        == unsafe.getLongUnaligned(tgt, base + Long.BYTES)
+                && (bytes <= 3 * Long.BYTES
+                    || unsafe.getLongUnaligned(src, from + bytes - 2 * Long.BYTES)
+                        == unsafe.getLongUnaligned(tgt, base + bytes - 2 * Long.BYTES));
+    }
+
     @ForceInline
     static boolean matchesUTF16Latin1(byte[] src, int offset, byte[] tgt, int length) {
         for (int i = 0; i < length; i++) {
