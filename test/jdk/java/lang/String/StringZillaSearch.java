@@ -71,6 +71,7 @@ public class StringZillaSearch {
         for (int count : new int[]{9, 10, 11, 12, 16, 17, 64, 128}) {
             String target = "\u0402".repeat(count);
             for (int hit : new int[]{-1, 0, 1, 127, 128, 255, 256, 257, 3839}) {
+                // A false ending must preserve every earlier complete match.
                 for (boolean falseEnding : new boolean[]{false, true}) {
                     char[] source = "\u0401".repeat(4096).toCharArray();
                     if (falseEnding) source[3000] = '\u0402';
