@@ -18,9 +18,9 @@ ROOT = Path.cwd()
 PAIR = ROOT / 'pair'
 SOURCES = {'original': '416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda',
            'master': '8d030adbd245b19e6339e3ccd052eb7fe3635319',
-           'fork': 'c17c5cb06297e25681b4dab2eddbd60ceffe0300',
-           'prior': '573e785e5d459c2a96f3042c48651c8cf17a75de'}
-PRODUCT = 'd62bef5c813645af659f052c70f5f960f56b8c48'
+           'fork': '01da158d814cc6858556a4c48e5b9a2983e2860f',
+           'prior': 'c17c5cb06297e25681b4dab2eddbd60ceffe0300'}
+PRODUCT = 'ac0eabae4d4d577d1d36afc6de69ec1604c8aa82'
 
 
 def module(name):
@@ -79,7 +79,7 @@ receipt_paths = list(retained.rglob('original-receipt.json'))
 assert len(receipt_paths) == 1
 sealed = receipt_paths[0].parent
 receipts = {}
-for old, label in [('original', 'original'), ('master', 'master'), ('fork', 'prior')]:
+for old, label in [('original', 'original'), ('master', 'master')]:
     receipt = json.loads((sealed / (old + '-receipt.json')).read_text())
     inventory = json.loads((sealed / (old + '-inventory.json')).read_text())
     assert receipt['source'] == SOURCES[label] and receipt['clean_source']
@@ -100,6 +100,51 @@ for old, label in [('original', 'original'), ('master', 'master'), ('fork', 'pri
     assert receipt['settings'] == receipts['original']['settings']
     assert receipt['compiler_boot_banners'] == receipts['original']['compiler_boot_banners']
     run([str(PAIR / label / 'bin/java'), '-version'], PAIR / (label + '-restored-version.log'))
+# The prior is the complete word-probe candidate, restored independently.
+original_meta, original_digest = meta, digest
+shutil.rmtree(retained)
+archive.unlink()
+ident = 12424910363
+digest = '90d2dc58639b244f6c5213a31b4f82fc31baa045d939f3b0907ce7b1f7ad8cda'
+base = 'https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/artifacts/' + str(ident)
+with prepare.OPEN(urllib.request.Request(base, headers=headers)) as response:
+    meta = json.load(response)
+assert meta['id'] == ident and meta['digest'] == 'sha256:' + digest and not meta['expired']
+assert meta['workflow_run']['id'] == 39773662264
+assert meta['workflow_run']['head_sha'] == 'bdde16e3fceaf4473a095d8b526d8c337f84e2ea'
+archive = PAIR / 'retained-prior.zip'
+with prepare.OPEN(urllib.request.Request(base + '/zip', headers=headers)) as source, archive.open('wb') as dest:
+    shutil.copyfileobj(source, dest)
+assert support.sha(archive) == digest
+retained = PAIR / 'retained-prior'
+with zipfile.ZipFile(archive) as z:
+    assert len(z.namelist()) == len(set(z.namelist()))
+    assert all(not Path(n).is_absolute() and '..' not in Path(n).parts
+               and chr(92) not in n and ':' not in n for n in z.namelist())
+    z.extractall(retained)
+paths = list(retained.rglob('fork-receipt.json'))
+assert len(paths) == 1
+sealed = paths[0].parent
+receipt = json.loads(paths[0].read_text())
+inventory = json.loads((sealed / 'fork-inventory.json').read_text())
+assert receipt['source'] == SOURCES['prior'] and receipt['clean_source'] and receipt['classes_match_build_outputs']
+actual = support.image(sealed / 'fork')
+assert actual['tree_sha256'] == inventory['tree_sha256'] == receipt['image_tree_sha256']
+assert actual['files'] == inventory['files']
+shutil.move(sealed / 'fork', PAIR / 'prior')
+for path in list((PAIR / 'prior/bin').iterdir()) + [PAIR / 'prior/lib/jspawnhelper', PAIR / 'prior/lib/jexec']:
+    if path.is_file():
+        path.chmod(path.stat().st_mode | 0o111)
+for suffix in ['receipt.json', 'inventory.json', 'spec.gmk', 'configure.log']:
+    shutil.copyfile(sealed / ('fork-' + suffix), PAIR / ('prior-' + suffix))
+assert receipt['settings'] == receipts['original']['settings']
+assert receipt['compiler_boot_banners'] == receipts['original']['compiler_boot_banners']
+receipts['prior'] = receipt
+run([str(PAIR / 'prior/bin/java'), '-version'], PAIR / 'prior-restored-version.log')
+shutil.rmtree(retained)
+archive.unlink()
+write(PAIR / 'original-master-reuse.json', {'artifact': original_meta, 'verified_zip_sha256': original_digest,
+      'complete_file_inventories_verified': True})
 write(PAIR / 'control-reuse.json', {'artifact': meta, 'verified_zip_sha256': digest,
       'complete_file_inventories_verified': True,
       'sources': {name: receipt['source'] for name, receipt in receipts.items()}})
