@@ -116,7 +116,7 @@ class UnixSecureDirectoryStream
                 if (newdfd1 != -1)
                     UnixNativeDispatcher.close(newdfd1, e -> null);
                 if (newdfd2 != -1)
-                    UnixNativeDispatcher.close(newdfd1, e -> null);
+                    UnixNativeDispatcher.close(newdfd2, e -> null);
                 throw ioe;
             }
             return new UnixSecureDirectoryStream(child, ptr, newdfd2, null);
