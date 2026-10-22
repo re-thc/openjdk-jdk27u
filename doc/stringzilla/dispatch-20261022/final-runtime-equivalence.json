@@ -1,0 +1,46 @@
+{
+  "final_product": "278ed94857daf53f2fc7ba961cbb9cbdec777ba5",
+  "measured_product": "d62bef5c813645af659f052c70f5f960f56b8c48",
+  "final_merge": "01daa4130d8a252c6e1a15869fefa3c4a75f805f",
+  "measured_merge": "c17c5cb06297e25681b4dab2eddbd60ceffe0300",
+  "master": "8d030adbd245b19e6339e3ccd052eb7fe3635319",
+  "only_changed_file": "test/hotspot/jtreg/compiler/intrinsics/string/TestStringZillaUTF16Bounds.java",
+  "runtime_tree_unchanged": true,
+  "git_compare": "https://github.com/re-thc/openjdk-jdk27u/compare/d62bef5c813645af659f052c70f5f960f56b8c48...278ed94857daf53f2fc7ba961cbb9cbdec777ba5",
+  "change": "@@ -190,7 +190,8 @@ public static void main(String[] args) throws Throwable {\n         for (int length : new int[]{4, 15, 16, 17, 31}) {\n             cases.add(fixture(length, 4, false));\n         }\n-        for (int count : new int[]{4, 9, 16, 32, 64, 65, 129}) {\n+        for (int count : new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,\n+                                   17, 32, 64, 65, 129}) {\n             cases.add(fixture(count, count, false));\n             cases.add(fixture(Math.max(16, count + 8), count, false));\n             cases.add(fixture(256, count, false));",
+  "commit_identity": {
+    "sha": "278ed94857daf53f2fc7ba961cbb9cbdec777ba5",
+    "node_id": "C_kwDOU4oQ1doAKDI3OGVkOTQ4NTdkYWY1M2YyZmM3YmE5NjFjYmI5Y2JkZWM3NzdiYTU",
+    "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/commits/278ed94857daf53f2fc7ba961cbb9cbdec777ba5",
+    "html_url": "https://github.com/re-thc/openjdk-jdk27u/commit/278ed94857daf53f2fc7ba961cbb9cbdec777ba5",
+    "author": {
+      "name": "Harry Chan",
+      "email": "38070640+re-thc@users.noreply.github.com",
+      "date": "2026-10-22T11:53:49Z"
+    },
+    "committer": {
+      "name": "Harry Chan",
+      "email": "38070640+re-thc@users.noreply.github.com",
+      "date": "2026-10-22T11:53:49Z"
+    },
+    "tree": {
+      "sha": "f28daa630efc225e3e5da6d7aa139d96c27dd135",
+      "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/trees/f28daa630efc225e3e5da6d7aa139d96c27dd135"
+    },
+    "message": "Cover every short UTF-16 width in physical bounds tests",
+    "parents": [
+      {
+        "sha": "d62bef5c813645af659f052c70f5f960f56b8c48",
+        "url": "https://api.github.com/repos/re-thc/openjdk-jdk27u/git/commits/d62bef5c813645af659f052c70f5f960f56b8c48",
+        "html_url": "https://github.com/re-thc/openjdk-jdk27u/commit/d62bef5c813645af659f052c70f5f960f56b8c48"
+      }
+    ],
+    "verification": {
+      "verified": false,
+      "reason": "unsigned",
+      "signature": null,
+      "payload": null,
+      "verified_at": null
+    }
+  }
+}
