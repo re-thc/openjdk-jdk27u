@@ -1,0 +1,26 @@
+{
+  "product": "7ca3eeb4368afdf43961c2c674a663e2d2cdf9b4",
+  "actual_merge": "573e785e5d459c2a96f3042c48651c8cf17a75de",
+  "master": "8d030adbd245b19e6339e3ccd052eb7fe3635319",
+  "prior": "cd785f1c66fb72404c12b150d5f3d8e0fe0a4776",
+  "backends": [
+    "neon",
+    "msvc-serial"
+  ],
+  "jobs": 2,
+  "new_complete_image_builds_per_job": 1,
+  "cases_per_job": 33,
+  "controls": [
+    "original",
+    "master",
+    "prior",
+    "candidate",
+    "disabled"
+  ],
+  "rounds": 5,
+  "warmup_iterations": 3,
+  "measurement_iterations": 5,
+  "duration_ms": 300,
+  "process_rounds": 8,
+  "control_reuse": "Digest-bound complete original, master and prior images; verify compiler, boot JDK, SDK and full file inventories."
+}

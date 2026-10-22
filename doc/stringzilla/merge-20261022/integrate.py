@@ -13,9 +13,9 @@ import tarfile
 sys.dont_write_bytecode=True
 HERE=Path(__file__).resolve().parent
 MASTER='8d030adbd245b19e6339e3ccd052eb7fe3635319'
-MERGE='cd785f1c66fb72404c12b150d5f3d8e0fe0a4776'
-PRODUCT='2538e2fd80a363ea19d45044950701df62a0162f'
-REFERENCE='92221215d9e350b8c2b6ae9d9238cfc96ebe81ee'
+MERGE='573e785e5d459c2a96f3042c48651c8cf17a75de'
+PRODUCT='7ca3eeb4368afdf43961c2c674a663e2d2cdf9b4'
+REFERENCE='cd785f1c66fb72404c12b150d5f3d8e0fe0a4776'
 def module(name):
  spec=importlib.util.spec_from_file_location(name,HERE/(name+'.py'))
  value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
@@ -48,7 +48,7 @@ else:
  assert head==MERGE
  assert subprocess.check_output(['git','show','-s','--format=%P',MERGE],text=True).strip().split()==[MASTER,PRODUCT]
  same=['src/java.base/share/classes/java/lang/'+name+'.java' for name in ['String','StringLatin1','StringUTF16','StringZilla']]
- same+=['make/modules/java.base/CoreLibraries.gmk','src/java.base/share/native/libjava/StringZillaKernels.c']
+ same+=['make/modules/java.base/lib/CoreLibraries.gmk','src/java.base/share/native/libjava/StringZillaKernels.c']
  subprocess.run(['git','diff','--exit-code',PRODUCT,MERGE,'--',*same],check=True)
  values=json.loads((root/'controls.json').read_text());inventory=json.loads((root/'master-inventory.json').read_text())
  assert support.image(root/'master')['files']==inventory['files']

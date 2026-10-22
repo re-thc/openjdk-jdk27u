@@ -81,7 +81,7 @@ def main():
     probe=args.output/'BackendProbe.java'
     probe.write_text('class BackendProbe {public static void main(String[] a)throws Exception {'
                      'Class<?> c=Class.forName("java.lang.StringZilla");'
-                     'for(String n:new String[]{"BACKEND","ENABLED","MSVC_SERIAL","SCANS_ENABLED","SCAN_PROBE"})'
+                     'for(String n:new String[]{"BACKEND","ENABLED","MSVC_SERIAL","SCANS_ENABLED","SCAN_PROBE","SCAN_WORD_PROBE"})'
                      '{try{var f=c.getDeclaredField(n);f.setAccessible(true);System.out.println(n+"="+f.get(null));}'
                      'catch(NoSuchFieldException e){System.out.println(n+"=absent");}}}}')
     subprocess.run([str(javac),'-d',str(classes),str(probe)],check=True)
