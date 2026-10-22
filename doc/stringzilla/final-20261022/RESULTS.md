@@ -15,3 +15,5 @@ Eight balanced ordinary-process rounds retain identical outputs and image invent
 PR63's complete history is integrated. The native test fixture now includes its allocation header, fixing the observed ARM/macOS test-library build error. Local 171 descriptions pass 166 and skip five; native contracts, platform jtreg tests, and NEON production-source sanitizers pass. Ordinary CI is recorded separately with its actual merge checkout; it is not reused to qualify later product source.
 
 The previous [b19 results](../integration-20261021/RESULTS.md) remain associated with b19. The [selected-source study](../selected-20261022/RESULTS.md) contains the subsequent product assessment.
+
+Ordinary CI run39702696442 ended after publication of the newer head: all eight builds and 47 test groups passed; Windows compiler part3 was cancelled. This is not a complete green matrix and is not used to qualify a later source. [Terminal CI receipt](f714-terminal-ci.receipt.json), [all 57 collected logs and metadata](f714-terminal-ci.tar.gz).
