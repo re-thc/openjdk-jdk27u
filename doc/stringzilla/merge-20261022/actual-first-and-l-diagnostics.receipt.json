@@ -1,0 +1,44 @@
+{
+  "archive": "actual-first-and-l-diagnostics.tar.gz",
+  "bytes": 391281,
+  "sha256": "a1043fc5c63d33c7f16731699ef786f06af3c87c4a78962b3698568a195267b4",
+  "members": 683,
+  "studies": [
+    {
+      "label": "actual-first",
+      "cases": 4,
+      "rounds": 5,
+      "jmh_files": 100,
+      "samples": 500,
+      "images_unchanged": true,
+      "completed": 1792646607.6929843,
+      "candidate": {
+        "image": "/workspace/stringzilla-recovery/integration-20261021/images/merge-candidate",
+        "spec": "/workspace/stringzilla-recovery/integration-20261021/merge-candidate-spec.gmk",
+        "source": "2883aefd62a6a6cdd5e30f4f3d22049d155df938",
+        "expected_tree_sha256": "fd4385b54bb660ca6b252c105640136b78d1fdd0e06dfe19b45115203e1ce9ed"
+      },
+      "qualification_of_later_source": false
+    },
+    {
+      "label": "l",
+      "cases": 9,
+      "rounds": 5,
+      "jmh_files": 225,
+      "samples": 675,
+      "images_unchanged": true,
+      "completed": 1792647737.082854,
+      "candidate": {
+        "image": "/workspace/stringzilla-recovery/integration-20261021/images/variant-l",
+        "spec": "/workspace/stringzilla-merge-check/build/stringzilla-merge/spec.gmk",
+        "source": "2883aefd62a6a6cdd5e30f4f3d22049d155df938 plus variant-l.patch",
+        "expected_tree_sha256": "565dda3ee4db1b479a437a32377938ad6d199dc736276445c822ed7d19acfe73"
+      },
+      "qualification_of_later_source": false
+    }
+  ],
+  "jmh_files": 325,
+  "samples": 1175,
+  "all_members_verified": true,
+  "proposal_snapshot_note": "The initial proposal JSON is retained unchanged. Executed L build/test logs and all completed measurements establish its later applied/tested state."
+}

@@ -1,0 +1,47 @@
+{
+  "product": "2538e2fd80a363ea19d45044950701df62a0162f",
+  "master": "8d030adbd245b19e6339e3ccd052eb7fe3635319",
+  "actual_merge": "cd785f1c66fb72404c12b150d5f3d8e0fe0a4776",
+  "local_cases": 30,
+  "native_cases_per_platform": 22,
+  "total_cases": 74,
+  "jmh_files": 1850,
+  "samples": 9250,
+  "controls": [
+    "original416",
+    "master8d",
+    "prior922",
+    "actual_merge_enabled",
+    "actual_merge_disabled"
+  ],
+  "balanced_rounds": 5,
+  "native_jobs": 2,
+  "native_build_jobs": 2,
+  "native_timeout_minutes": {
+    "neon": 90,
+    "msvc": 180
+  },
+  "source_policy": "Build existing actual GitHub CI merge commit in detached checkouts; no product branch change, git merge, upstream write or PR merge.",
+  "purpose": "Separate current-master C2 compiler changes from the PR runtime; focused material losses/new paths and winning controls. Broad branch-source qualification remains separately reported.",
+  "process_comparisons": {
+    "platforms": [
+      "linux",
+      "neon",
+      "msvc"
+    ],
+    "rounds": 8,
+    "balanced_rotating_controls": [
+      "original416",
+      "master8d",
+      "actual_merge_enabled",
+      "actual_merge_disabled"
+    ],
+    "workloads": [
+      "startup",
+      "javac",
+      "fixed-source-indexing"
+    ],
+    "tiering_and_cds": "ordinary defaults with recorded runtime flags"
+  },
+  "scope_note": "Frozen final source: L direct Java-only scan fallbacks and M existing tier-query owner correction. All final measurements use clean complete images of the actual merge; preceding 922/2883 and patched prototype measurements remain separate diagnostics."
+}
