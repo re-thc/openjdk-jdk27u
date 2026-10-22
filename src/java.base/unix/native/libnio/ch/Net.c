@@ -485,7 +485,7 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
 }
 
 JNIEXPORT jobject JNICALL
-Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
+Java_sun_nio_ch_Net_localAddress(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKETADDRESS sa;
     socklen_t sa_len = sizeof(SOCKETADDRESS);
@@ -514,7 +514,9 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         return NULL;
 #endif /* _ALLBSD_SOURCE */
     }
-    return NET_SockaddrToInetAddress(env, &sa, &port);
+    jobject ia = NET_SockaddrToInetAddress(env, &sa, &port);
+    CHECK_NULL_RETURN(ia, NULL);
+    return (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
 }
 
 JNIEXPORT jint JNICALL

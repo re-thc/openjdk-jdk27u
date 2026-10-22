@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,7 +528,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 tryFinishClose();
             if (completed && state == ST_CONNECTING) {
                 this.state = ST_CONNECTED;
-                localport = Net.localAddress(fd).getPort();
+                localport = Net.localPort(fd);
             } else if (!completed && state >= ST_CLOSING) {
                 throw new SocketException("Socket closed");
             }
@@ -643,7 +643,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             // maintain long standing behavior. When binding to 0.0.0.0
             // then the actual local address will be ::0 when IPv6 is enabled.
             address = host;
-            localport = Net.localAddress(fd).getPort();
+            localport = Net.localPort(fd);
         }
     }
 
@@ -762,10 +762,10 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             acceptLock.unlock();
         }
 
-        // get local address and configure accepted socket to blocking mode
-        InetSocketAddress localAddress;
+        // get local port and configure accepted socket to blocking mode
+        int localPort;
         try {
-            localAddress = Net.localAddress(newfd);
+            localPort = Net.localPort(newfd);
             IOUtil.configureBlocking(newfd, true);
         } catch (IOException ioe) {
             nd.close(newfd);
@@ -777,7 +777,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         synchronized (nsi.stateLock) {
             nsi.fd = newfd;
             nsi.cleaner = CleanerFactory.cleaner().register(nsi, closer);
-            nsi.localport = localAddress.getPort();
+            nsi.localport = localPort;
             nsi.address = isaa[0].getAddress();
             nsi.port = isaa[0].getPort();
             nsi.state = ST_CONNECTED;

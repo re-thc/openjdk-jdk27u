@@ -311,18 +311,14 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
     int sa_len = sizeof(sa);
 
     if (getsockname(fdval(env, fdo), &sa.sa, &sa_len) == SOCKET_ERROR) {
-        int error = WSAGetLastError();
-        if (error == WSAEINVAL) {
-            return 0;
-        }
-        NET_ThrowNew(env, error, "getsockname");
+        NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return IOS_THROWN;
     }
     return NET_GetPortFromSockaddr(&sa);
 }
 
 JNIEXPORT jobject JNICALL
-Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
+Java_sun_nio_ch_Net_localAddress(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKETADDRESS sa;
     int sa_len = sizeof(sa);
@@ -332,7 +328,9 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         NET_ThrowNew(env, WSAGetLastError(), "getsockname");
         return NULL;
     }
-    return NET_SockaddrToInetAddress(env, &sa, &port);
+    jobject ia = NET_SockaddrToInetAddress(env, &sa, &port);
+    CHECK_NULL_RETURN(ia, NULL);
+    return (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
 }
 
 JNIEXPORT jint JNICALL
