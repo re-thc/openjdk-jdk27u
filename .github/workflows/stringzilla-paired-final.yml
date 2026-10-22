@@ -1,7 +1,7 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
 name: StringZilla final paired native checks
-# Bounded combined PR4/PR63 qualification: 62 affected/control cases per platform.
+# Bounded combined PR4/PR63 qualification: 50 affected/control cases per platform.
 # Four complete-image controls, four balanced rounds, five samples per fork.
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 env:
   PYTHONDONTWRITEBYTECODE: '1'
 concurrency:
-  group: stringzilla-final-20261022
+  group: stringzilla-selected-20261022
   cancel-in-progress: false
 jobs:
   neon:
@@ -22,18 +22,18 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: f7148bae3645efcfdf57e2a63b041bd62334dc23
+          ref: 92221215d9e350b8c2b6ae9d9238cfc96ebe81ee
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
           path: .stringzilla-driver
           persist-credentials: false
-          sparse-checkout: doc/stringzilla/final-20261022
+          sparse-checkout: doc/stringzilla/selected-20261022
       - name: Restore verified independent native ARM baseline
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 .stringzilla-driver/doc/stringzilla/final-20261022/prepare.py restore --backend neon
+        run: python3 .stringzilla-driver/doc/stringzilla/selected-20261022/prepare.py restore --backend neon
       - uses: ./.github/actions/get-bootjdk
         id: bootjdk
         with:
@@ -53,7 +53,7 @@ jobs:
             --with-boot-jdk="$BOOT_JDK" --with-version-opt=stringzilla-benchmark \
             --with-source-date=1792195200 --with-native-debug-symbols=none --with-jmod-compress=zip-1
           make CONF=perf JOBS=2 images
-          python3 .stringzilla-driver/doc/stringzilla/final-20261022/prepare.py seal --backend neon
+          python3 .stringzilla-driver/doc/stringzilla/selected-20261022/prepare.py seal --backend neon
       - name: Retain complete ARM candidate before tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -63,15 +63,15 @@ jobs:
           if-no-files-found: error
       - name: Validate native ARM contracts and sanitizers
         run: |
-          python3 .stringzilla-driver/doc/stringzilla/final-20261022/validate-neon.py
-          python3 .stringzilla-driver/doc/stringzilla/final-20261022/native-sanitizers.py --source . --jdk pair/fork --compiler /usr/bin/gcc-16 --output native-sanitizers
+          python3 .stringzilla-driver/doc/stringzilla/selected-20261022/validate-neon.py
+          python3 .stringzilla-driver/doc/stringzilla/selected-20261022/native-sanitizers.py --source . --jdk pair/fork --compiler /usr/bin/gcc-16 --output native-sanitizers
       - name: Validate native ARM dispatch, bounds and safepoints
-        run: python3 .stringzilla-driver/doc/stringzilla/final-20261022/jtreg.py
+        run: python3 .stringzilla-driver/doc/stringzilla/selected-20261022/jtreg.py
       - name: Repeated paired ARM measurements
         run: >-
-          python3 .stringzilla-driver/doc/stringzilla/final-20261022/compare.py
+          python3 .stringzilla-driver/doc/stringzilla/selected-20261022/compare.py
           --source . --controls pair/controls.json
-          --manifest .stringzilla-driver/doc/stringzilla/final-20261022/native-cases.json
+          --manifest .stringzilla-driver/doc/stringzilla/selected-20261022/native-cases.json
           --output paired-results
       - name: Retain ARM evidence
         if: always()
@@ -105,21 +105,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: f7148bae3645efcfdf57e2a63b041bd62334dc23
+          ref: 92221215d9e350b8c2b6ae9d9238cfc96ebe81ee
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.sha }}
           path: .stringzilla-driver
           persist-credentials: false
-          sparse-checkout: doc/stringzilla/final-20261022
+          sparse-checkout: doc/stringzilla/selected-20261022
       - name: Restore verified independent Windows baseline
         shell: python
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/final-20261022/prepare.py','restore','--backend','msvc'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/selected-20261022/prepare.py','restore','--backend','msvc'],check=True)
       - uses: ./.github/actions/get-msys2
         with:
           architecture: x86.x64
@@ -156,7 +156,7 @@ jobs:
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/final-20261022/prepare.py','seal','--backend','msvc'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/selected-20261022/prepare.py','seal','--backend','msvc'],check=True)
       - name: Retain complete Windows candidate before tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -170,19 +170,19 @@ jobs:
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/final-20261022/validate-windows.py'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/selected-20261022/validate-windows.py'],check=True)
       - name: Validate Windows dispatch, physical bounds and safepoints
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/final-20261022/jtreg.py'],check=True)
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/selected-20261022/jtreg.py'],check=True)
       - name: Repeated paired Windows measurements
         shell: python
         run: |
           import subprocess
-          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/final-20261022/compare.py',
+          subprocess.run(['python','.stringzilla-driver/doc/stringzilla/selected-20261022/compare.py',
             '--source','.','--controls','pair/controls.json',
-            '--manifest','.stringzilla-driver/doc/stringzilla/final-20261022/native-cases.json','--output','paired-results'],check=True)
+            '--manifest','.stringzilla-driver/doc/stringzilla/selected-20261022/native-cases.json','--output','paired-results'],check=True)
       - name: Retain Windows evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

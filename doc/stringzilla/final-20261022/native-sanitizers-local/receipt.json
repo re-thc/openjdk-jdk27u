@@ -1,0 +1,39 @@
+{
+  "source": "f7148bae3645efcfdf57e2a63b041bd62334dc23",
+  "compiler": "gcc-16 (Debian 16.2.0-3) 16.2.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "compile_command": [
+    "/workspace/toolchains/gcc16/bin/gcc",
+    "-std=c11",
+    "-O2",
+    "-g",
+    "-fno-omit-frame-pointer",
+    "-fsanitize=address,undefined,alignment",
+    "-fno-sanitize-recover=all",
+    "-Wno-unknown-pragmas",
+    "-I/workspace/openjdk-jdk27u",
+    "-I/workspace/openjdk-jdk27u/src/java.base/share/native/libjava",
+    "-I/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla",
+    "-I/workspace/openjdk-jdk27u/src/hotspot/share/include",
+    "-I/workspace/openjdk-jdk27u/src/hotspot/os/posix/include",
+    "-I/workspace/stringzilla-recovery/integration-20261021/images/final-f714/include",
+    "-I/workspace/stringzilla-recovery/integration-20261021/images/final-f714/include/linux",
+    "/workspace/stringzilla-recovery/integration-20261021/final-native-sanitizers/driver.c",
+    "-o",
+    "/workspace/stringzilla-recovery/integration-20261021/final-native-sanitizers/native-sanitizers"
+  ],
+  "environment": {
+    "LD_LIBRARY_PATH": "/workspace/toolchains/gcc16-root/usr/lib/x86_64-linux-gnu",
+    "ASAN_OPTIONS": "abort_on_error=1:detect_leaks=1:strict_string_checks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+  },
+  "files": {
+    "/workspace/stringzilla-recovery/integration-20261021/final-native-sanitizers/driver.c": "aa0c4bd81bfa5886c9d288e491994ad58402a1d5e93e71884ce1997d144ff926",
+    "/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/StringZillaKernels.c": "109cbaa72ab2604b1f5ab015cd4362d307864e98749b67d9a0b09fc401e82d5d",
+    "/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/StringZillaKernels.h": "d43b03cac74db7a55c08f592ea4898b466371f82872b3a6532487e13d68fd8c0",
+    "/workspace/openjdk-jdk27u/src/java.base/share/native/libjava/stringzilla/UPSTREAM.json": "95e0ec6bec90e27d6312550fd2a3a3257beb58dd6abd7dc0eb8d6f061b3ae4df",
+    "/workspace/openjdk-jdk27u/test/jdk/java/lang/String/libStringZillaKernelsTest.c": "58a43f11cb81656645f4f4de2ea54b8ccfca6c75ca20ebb5d8c708afb5e43b53",
+    "/workspace/stringzilla-recovery/integration-20261021/images/final-f714/include/jni.h": "1e03bd83d1662ac00647f7a06c11d32333767ee537803ec1d153e89888414520",
+    "/workspace/stringzilla-recovery/integration-20261021/images/final-f714/include/linux/jni_md.h": "8232a5a68d36060aaa426fbfdb4537983ecfdfc5fe07a43230005ddd1a4b986a"
+  },
+  "passed": true
+}

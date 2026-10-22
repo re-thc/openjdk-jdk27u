@@ -19,8 +19,9 @@ The integration combines StringZilla 5.3.0 kernels, bounded Java probes and
 existing JDK intrinsics. The recovery adds four concrete corrections:
 
 - MSVC compiles `StringZillaKernels.c` with the repository's per-file `HIGHEST`
-  setting. Actual generated commands verify `/O2` for release/fastdebug and `/Od`
-  for slowdebug. GCC settings remain unchanged.
+  setting. Make-variable checks verify `/O2` for release/fastdebug and `/Od`
+  for slowdebug; native release receipts verify the generated `/O2` compile
+  command. GCC settings remain unchanged.
 - The four-code-unit UTF-16 C2 immediate probe uses one bounded word equality.
 - The shared reverse verifier inlines its valid bounds and compares prefixes
   through sixteen bytes with overlapping words after checking the suffix. Its
