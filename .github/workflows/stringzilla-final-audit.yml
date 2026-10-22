@@ -1,0 +1,40 @@
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: StringZilla retained raw-result audit
+on:
+  push:
+    branches: [codex/stringzilla-final-artifacts]
+    paths: [.github/workflows/stringzilla-final-audit.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: stringzilla-raw-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: 7e728d83fdada34491f4c019061cb03a829ecc5b
+          persist-credentials: false
+          sparse-checkout: doc/stringzilla
+      - name: Audit retained raw results without rebuilding or remeasuring
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          python3 doc/stringzilla/merge-20261022/final-audit.py
+          --manifest doc/stringzilla/dispatch-20261022/final-audit-artifacts.json
+          --output retained-audit
+      - name: Retain original text and raw JMH files plus independent audit
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: stringzilla-independent-raw-audit-${{ github.sha }}
+          path: retained-audit
+          retention-days: 30
+          if-no-files-found: error
