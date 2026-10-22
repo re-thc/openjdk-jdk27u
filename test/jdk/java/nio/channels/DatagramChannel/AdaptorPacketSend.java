@@ -55,7 +55,10 @@ public class AdaptorPacketSend {
 
     public static void main(String[] args) throws Exception {
         IPSupport.throwSkippedExceptionIfNonOperational();
-        if (IPSupport.hasIPv4()) test(INET, InetAddress.getByName("127.0.0.1"));
+        if (IPSupport.hasIPv4()) {
+            test(INET, InetAddress.getByName("127.0.0.1"));
+            testPreflight();
+        }
         if (IPSupport.hasIPv6()) test(INET6, InetAddress.getByName("::1"));
         if (IPSupport.hasIPv4() && IPSupport.hasIPv6()) testDefaultChannel();
     }
@@ -130,6 +133,43 @@ public class AdaptorPacketSend {
             repeat(socket, second.socket(), packet);
             sender.close();
             expect(SocketException.class, () -> socket.send(packet));
+        }
+    }
+
+    private static void testPreflight() throws Exception {
+        try (var sender = DatagramChannel.open(INET);
+             var receiver = DatagramChannel.open(INET)) {
+            receiver.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
+            receiver.socket().setSoTimeout(TIMEOUT);
+            var packet = new DatagramPacket(new byte[] {42}, 1,
+                    InetAddress.getByName("::1"), receiver.socket().getLocalPort());
+
+            // Address validation precedes binding and the interrupt hook.
+            Thread.currentThread().interrupt();
+            try {
+                expect(UnsupportedAddressTypeException.class, () -> sender.socket().send(packet));
+            } finally {
+                assertTrue(Thread.interrupted(), "address check consumed interrupt status");
+            }
+            assertTrue(sender.isOpen());
+            assertNull(sender.getLocalAddress());
+
+            // A valid address with port zero is rejected after the implicit bind.
+            packet.setAddress(InetAddress.getByName("127.0.0.1"));
+            packet.setPort(0);
+            expect(SocketException.class, () -> sender.socket().send(packet));
+            assertNotNull(sender.getLocalAddress());
+            packet.setSocketAddress(receiver.getLocalAddress());
+            repeat(sender.socket(), receiver.socket(), packet);
+
+            sender.connect(receiver.getLocalAddress());
+            packet.setAddress(InetAddress.getByName("::1"));
+            expect(UnsupportedAddressTypeException.class, () -> sender.socket().send(packet));
+            packet.setAddress(InetAddress.getByName("127.0.0.1"));
+            packet.setPort(0);
+            expect(IllegalArgumentException.class, () -> sender.socket().send(packet));
+            packet.setSocketAddress(receiver.getLocalAddress());
+            repeat(sender.socket(), receiver.socket(), packet);
         }
     }
 

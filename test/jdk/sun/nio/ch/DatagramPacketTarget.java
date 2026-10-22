@@ -128,6 +128,13 @@ public class DatagramPacketTarget {
 
             // Connected writes must not alter the last unconnected target.
             sender.connect(b);
+            packet.setSocketAddress(a);
+            try {
+                socket.send(packet);
+                throw new AssertionError("Cached target bypassed connected destination check");
+            } catch (IllegalArgumentException expected) {
+                assertSame(target(sender), a);
+            }
             packet.setSocketAddress(b);
             exchange(socket, other.socket(), packet);
             assertSame(target(sender), a);

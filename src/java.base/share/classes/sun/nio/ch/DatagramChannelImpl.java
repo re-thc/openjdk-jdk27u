@@ -58,6 +58,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.MembershipKey;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.UnsupportedAddressTypeException;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
@@ -765,6 +766,17 @@ class DatagramChannelImpl
     {
         Objects.requireNonNull(src);
         InetSocketAddress isa = Net.checkAddress(target, family);
+        return send(src, isa, null);
+    }
+
+    /**
+     * Sends to an already checked target, or resolves the target from a packet.
+     * Packet sends hold the packet monitor and writeLock before entering here.
+     */
+    private int send(ByteBuffer src, InetSocketAddress isa, DatagramPacket packet)
+        throws IOException
+    {
+        assert isa != null || Thread.holdsLock(packet);
 
         writeLock.lock();
         try {
@@ -777,7 +789,9 @@ class DatagramChannelImpl
                 configureSocketNonBlockingIfVirtualThread();
                 if (remote != null) {
                     // connected
-                    if (!target.equals(remote)) {
+                    if (isa == null)
+                        isa = (InetSocketAddress) packet.getSocketAddress();
+                    if (!isa.equals(remote)) {
                         throw new AlreadyConnectedException();
                     }
                     n = IOUtil.write(fd, src, -1, nd);
@@ -790,6 +804,8 @@ class DatagramChannelImpl
                     completed = (n > 0);
                 } else {
                     // not connected
+                    if (isa == null)
+                        isa = packetTarget(packet);
                     InetAddress ia = isa.getAddress();
                     if (ia.isLinkLocalAddress())
                         isa = IPAddressUtil.toScopedAddress(isa);
@@ -839,7 +855,7 @@ class DatagramChannelImpl
                 src.flip();
 
                 // target address
-                InetSocketAddress target;
+                InetSocketAddress target = null;
                 if (p.getAddress() == null) {
                     InetSocketAddress remote = remoteAddress();
                     if (remote == null) {
@@ -849,17 +865,12 @@ class DatagramChannelImpl
                     p.setAddress(remote.getAddress());
                     p.setPort(remote.getPort());
                     target = remote;
-                } else if (previousTarget != null
-                        && previousTarget.getAddress() == p.getAddress()
-                        && previousTarget.getPort() == p.getPort()) {
-                    // Address identity preserves IPv6 scope when reusing the encoded target.
-                    target = previousTarget;
                 } else {
-                    target = (InetSocketAddress) p.getSocketAddress();
+                    checkPacketAddress(p);
                 }
 
                 // send the datagram (does not block)
-                send(src, target);
+                send(src, target, p);
             } finally {
                 Util.offerFirstTemporaryDirectBuffer(src);
             }
@@ -867,6 +878,30 @@ class DatagramChannelImpl
         } finally {
             writeLock.unlock();
         }
+    }
+
+    /**
+     * Checks the packet address before beginWrite can bind or install an
+     * interrupt hook, without allocating an InetSocketAddress.
+     */
+    private void checkPacketAddress(DatagramPacket packet) {
+        InetAddress address = packet.getAddress();
+        if (!(address instanceof Inet4Address || address instanceof Inet6Address))
+            throw new IllegalArgumentException("Invalid address type: " + address.getClass().getName());
+        if (family == StandardProtocolFamily.INET && !(address instanceof Inet4Address))
+            throw new UnsupportedAddressTypeException();
+    }
+
+    /** Returns the target for an unconnected packet send. */
+    private InetSocketAddress packetTarget(DatagramPacket packet) {
+        assert writeLock.isHeldByCurrentThread() && Thread.holdsLock(packet);
+        InetSocketAddress target = previousTarget;
+        // Address identity preserves IPv6 scope when reusing the encoded target.
+        if (target != null && target.getAddress() == packet.getAddress()
+                && target.getPort() == packet.getPort()) {
+            return target;
+        }
+        return (InetSocketAddress) packet.getSocketAddress();
     }
 
     private int send(FileDescriptor fd, ByteBuffer src, InetSocketAddress target)
