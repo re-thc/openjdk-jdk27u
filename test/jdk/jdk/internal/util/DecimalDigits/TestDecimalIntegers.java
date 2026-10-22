@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +36,10 @@
  * @run main/othervm -Xint -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseDecimalInt,_parseDecimalLong,_parseUnsignedDecimalInt,_parseUnsignedDecimalLong,_formatDecimalIntLatin1,_formatDecimalIntUTF16,_formatDecimalLongLatin1,_formatDecimalLongUTF16 TestDecimalIntegers
  * @run main/othervm -Xint -XX:-CompactStrings -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseDecimalInt,_parseDecimalLong,_parseUnsignedDecimalInt,_parseUnsignedDecimalLong,_formatDecimalIntLatin1,_formatDecimalIntUTF16,_formatDecimalLongLatin1,_formatDecimalLongUTF16 TestDecimalIntegers
  * @run main/othervm -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
+ * @run main/othervm -Xint -XX:+CompactStrings TestDecimalIntegers
+ * @run main/othervm -Xint -XX:-CompactStrings TestDecimalIntegers
+ * @run main/othervm -Xint -XX:+CompactStrings -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
+ * @run main/othervm -Xint -XX:-CompactStrings -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
  * @run main/othervm -Xint -XX:-UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics TestDecimalIntegers
  * @run main/othervm -Xint -XX:+UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
  */

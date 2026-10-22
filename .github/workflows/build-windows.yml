@@ -78,10 +78,10 @@ jobs:
     strategy:
       matrix:
         debug-level: ${{ fromJSON(inputs.debug-levels) }}
-        include: >-
-          ${{ contains(fromJSON(inputs.debug-levels), 'debug') &&
-              fromJSON('[{"debug-level":"debug","flags":"--with-debug-level=fastdebug","suffix":"-debug"}]') ||
-              fromJSON('[]') }}
+        include:
+          - debug-level: debug
+            flags: --with-debug-level=fastdebug
+            suffix: -debug
 
     steps:
       - name: 'Checkout the JDK source'

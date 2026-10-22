@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('upstream', type=Path, help='clean vitaut/zmij checkout with integer formatting')
 parser.add_argument('--cxx', default=os.environ.get('CXX', 'c++'),
                     help='host C++ compiler used to verify the metadata bridge')
-parser.add_argument('--commit', help='exact 40-hex main commit to evaluate instead of a release tag')
+parser.add_argument('--commit', help='exact 40-hex upstream HEAD to import instead of a release tag')
 args = parser.parse_args()
 upstream = args.upstream.resolve()
 root = Path(__file__).resolve().parents[2]

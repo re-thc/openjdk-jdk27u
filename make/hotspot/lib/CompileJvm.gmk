@@ -137,7 +137,7 @@ endif
 JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 
 # Clang's x86 allocator header redeclares glibc's posix_memalign without
-# noexcept. Import it before HotSpot's allocator declarations in the three
+# noexcept. Import it before HotSpot's allocator declarations in the five
 # vendor translation units. These files must also avoid the precompiled header.
 ifeq ($(TOOLCHAIN_TYPE), clang)
   ifeq ($(call isTargetOs, linux), true)

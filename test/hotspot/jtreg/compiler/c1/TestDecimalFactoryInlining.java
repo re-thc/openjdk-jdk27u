@@ -60,8 +60,8 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestDecimalFactoryInlining {
-    private static final String BIG = "java.math.BigDecimal::valueOf (53 bytes)";
-    private static final String FD = "jdk.internal.math.FormattedFPDecimal::valueForDoubleToString (147 bytes)";
+    private static final String BIG = "java.math.BigDecimal::valueOf";
+    private static final String FD = "jdk.internal.math.FormattedFPDecimal::valueForDoubleToString";
     private static final String BIG_PATTERN = "java/math/BigDecimal.valueOf(D)Ljava/math/BigDecimal;";
     private static final String FD_PATTERN = "jdk/internal/math/FormattedFPDecimal.valueForDoubleToString(D)Ljdk/internal/math/FormattedFPDecimal;";
 
@@ -174,7 +174,7 @@ public class TestDecimalFactoryInlining {
         if (start < 0 || end < 0) throw new AssertionError("Missing compilation phase " + phase);
         String block = output.substring(start, end);
         for (String line : block.split("\n")) {
-            int at = line.indexOf(method);
+            int at = line.indexOf(method + " (");
             if (at < 0) continue;
             int close = line.indexOf(" bytes)", at);
             if (close < 0) continue;

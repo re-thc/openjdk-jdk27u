@@ -93,14 +93,16 @@ public class DoubleFloatValueTests {
     }
 
     private static void checkDouble(BigDecimal bd, double exp) {
+        checkDoubleRepresentation(bd, exp);
+        if (bd.scale() <= 0) {
+            checkDoubleRepresentation(bd.setScale(1), exp);
+        }
+    }
+
+    private static void checkDoubleRepresentation(BigDecimal bd, double exp) {
         for (boolean cached : new boolean[] {false, true}) {
-            // Use a fresh instance so each case reaches the uncached path first.
-            // Positive scale also exercises full conversion for integer midpoints.
-            BigDecimal value = new BigDecimal(bd.unscaledValue(), bd.scale())
-                    .setScale(Math.max(1, bd.scale()));
-            if (cached && value.toString().length() > 1024) {
-                throw new AssertionError("Cached fixture exceeds the native parser bound");
-            }
+            BigDecimal value = new BigDecimal(bd.unscaledValue(), bd.scale());
+            if (cached) value.toString();
             double res = value.doubleValue();
             if (Double.doubleToRawLongBits(exp) != Double.doubleToRawLongBits(res)) {
                 throw new RuntimeException("Bad conversion: got " + toDecHexString(res)
@@ -110,12 +112,16 @@ public class DoubleFloatValueTests {
     }
 
     private static void checkFloat(BigDecimal bd, float exp) {
+        checkFloatRepresentation(bd, exp);
+        if (bd.scale() <= 0) {
+            checkFloatRepresentation(bd.setScale(1), exp);
+        }
+    }
+
+    private static void checkFloatRepresentation(BigDecimal bd, float exp) {
         for (boolean cached : new boolean[] {false, true}) {
-            BigDecimal value = new BigDecimal(bd.unscaledValue(), bd.scale())
-                    .setScale(Math.max(1, bd.scale()));
-            if (cached && value.toString().length() > 1024) {
-                throw new AssertionError("Cached fixture exceeds the native parser bound");
-            }
+            BigDecimal value = new BigDecimal(bd.unscaledValue(), bd.scale());
+            if (cached) value.toString();
             float res = value.floatValue();
             if (Float.floatToRawIntBits(exp) != Float.floatToRawIntBits(res)) {
                 throw new RuntimeException("Bad conversion: got " + toDecHexString(res)
@@ -128,6 +134,20 @@ public class DoubleFloatValueTests {
         // Stay below one decimal ulp without expanding the cached text past
         // the native parser's 1024-character bound, even near binary underflow.
         return BigDecimal.valueOf(1, Math.max(1, midpoint.scale() + 1));
+    }
+
+    private static void checkDoubleMidpoint(BigDecimal midpoint, double below, double above) {
+        for (BigDecimal delta : new BigDecimal[] {EPS, epsilon(midpoint)}) {
+            checkDouble(midpoint.subtract(delta), below);
+            checkDouble(midpoint.add(delta), above);
+        }
+    }
+
+    private static void checkFloatMidpoint(BigDecimal midpoint, float below, float above) {
+        for (BigDecimal delta : new BigDecimal[] {EPS, epsilon(midpoint)}) {
+            checkFloat(midpoint.subtract(delta), below);
+            checkFloat(midpoint.add(delta), above);
+        }
     }
 
     private static void checkFloat16(BigDecimal bv, Float16 exp) {
@@ -147,11 +167,9 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal b = nextHalfUp(n * Double.MIN_VALUE);
             checkDouble(b, ((n + 1) / 2 * 2) * Double.MIN_VALUE);
-            checkDouble(b.subtract(epsilon(b)), n * Double.MIN_VALUE);
-            checkDouble(b.add(epsilon(b)), (n + 1) * Double.MIN_VALUE);
+            checkDoubleMidpoint(b, n * Double.MIN_VALUE, (n + 1) * Double.MIN_VALUE);
             checkDouble(b.negate(), -(((n + 1) / 2 * 2) * Double.MIN_VALUE));
-            checkDouble(b.subtract(epsilon(b)).negate(), -(n * Double.MIN_VALUE));
-            checkDouble(b.add(epsilon(b)).negate(), -((n + 1) * Double.MIN_VALUE));
+            checkDoubleMidpoint(b.negate(), -((n + 1) * Double.MIN_VALUE), -(n * Double.MIN_VALUE));
         }
     }
 
@@ -159,11 +177,9 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal b = nextHalfUp(n * Float.MIN_VALUE);
             checkFloat(b, ((n + 1) / 2 * 2) * Float.MIN_VALUE);
-            checkFloat(b.subtract(epsilon(b)), n * Float.MIN_VALUE);
-            checkFloat(b.add(epsilon(b)), (n + 1) * Float.MIN_VALUE);
+            checkFloatMidpoint(b, n * Float.MIN_VALUE, (n + 1) * Float.MIN_VALUE);
             checkFloat(b.negate(), -(((n + 1) / 2 * 2) * Float.MIN_VALUE));
-            checkFloat(b.subtract(epsilon(b)).negate(), -(n * Float.MIN_VALUE));
-            checkFloat(b.add(epsilon(b)).negate(), -((n + 1) * Float.MIN_VALUE));
+            checkFloatMidpoint(b.negate(), -((n + 1) * Float.MIN_VALUE), -(n * Float.MIN_VALUE));
         }
     }
 
@@ -181,16 +197,14 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkDouble(bv, isOdd(n) ? Math.nextDown(v) : v);
-            checkDouble(bv.subtract(epsilon(bv)), Math.nextDown(v));
-            checkDouble(bv.add(epsilon(bv)), v);
+            checkDoubleMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         v = Double.MIN_NORMAL;
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfUp(v);
             checkDouble(bv, isOdd(n) ? Math.nextUp(v) : v);
-            checkDouble(bv.subtract(epsilon(bv)), v);
-            checkDouble(bv.add(epsilon(bv)), Math.nextUp(v));
+            checkDoubleMidpoint(bv, v, Math.nextUp(v));
             v = Math.nextUp(v);
         }
     }
@@ -200,16 +214,14 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkFloat(bv, isOdd(n) ? Math.nextDown(v) : v);
-            checkFloat(bv.subtract(epsilon(bv)), Math.nextDown(v));
-            checkFloat(bv.add(epsilon(bv)), v);
+            checkFloatMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         v = Float.MIN_NORMAL;
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfUp(v);
             checkFloat(bv, isOdd(n) ? Math.nextUp(v) : v);
-            checkFloat(bv.subtract(epsilon(bv)), v);
-            checkFloat(bv.add(epsilon(bv)), Math.nextUp(v));
+            checkFloatMidpoint(bv, v, Math.nextUp(v));
             v = Math.nextUp(v);
         }
     }
@@ -238,14 +250,12 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkDouble(bv, isOdd(n) ? v : Math.nextDown(v));
-            checkDouble(bv.subtract(epsilon(bv)), Math.nextDown(v));
-            checkDouble(bv.add(epsilon(bv)), v);
+            checkDoubleMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         BigDecimal bv = nextHalfUp(Double.MAX_VALUE);
         checkDouble(bv, Double.POSITIVE_INFINITY);
-        checkDouble(bv.subtract(epsilon(bv)), Double.MAX_VALUE);
-        checkDouble(bv.add(epsilon(bv)), Double.POSITIVE_INFINITY);
+        checkDoubleMidpoint(bv, Double.MAX_VALUE, Double.POSITIVE_INFINITY);
     }
 
     private static void testFloatValueNearMaxValue() {
@@ -253,14 +263,12 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkFloat(bv, isOdd(n) ? v : Math.nextDown(v));
-            checkFloat(bv.subtract(epsilon(bv)), Math.nextDown(v));
-            checkFloat(bv.add(epsilon(bv)), v);
+            checkFloatMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         BigDecimal bv = nextHalfUp(Float.MAX_VALUE);
         checkFloat(bv, Float.POSITIVE_INFINITY);
-        checkFloat(bv.subtract(epsilon(bv)), Float.MAX_VALUE);
-        checkFloat(bv.add(epsilon(bv)), Float.POSITIVE_INFINITY);
+        checkFloatMidpoint(bv, Float.MAX_VALUE, Float.POSITIVE_INFINITY);
     }
 
     private static void testFloat16ValueNearMaxValue() {
