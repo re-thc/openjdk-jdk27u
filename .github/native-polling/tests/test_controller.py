@@ -35,7 +35,25 @@ class ControllerTests(unittest.TestCase):
             record = json.loads(records[0].read_text())
             self.assertEqual(record['status'], 'failed')
             self.assertEqual(record['returncode'], 17)
-            self.assertIn('failure evidence', Path(record['log']).read_text())
+            self.assertIn('failure evidence', Path(record['stderr_log']).read_text())
+            self.assertNotIn('failure evidence', Path(record['log']).read_text())
+
+    def test_machine_json_stdout_is_separate_from_stderr_in_either_order(self):
+        value = json.dumps({'formulae':[{'name':name, 'tap':'homebrew/core', 'versions':{'stable':version}}
+                                       for name, version in controller.BREW_VERSIONS.items()]})
+        for before in (False, True):
+            with self.subTest(stderr_first=before), tempfile.TemporaryDirectory() as d:
+                script = "import sys;before=sys.argv[1]=='True';" \
+                    "sys.stderr.write('diagnostic before\\n') if before else None;" \
+                    "sys.stderr.flush();print(sys.argv[2],flush=True);" \
+                    "sys.stderr.write('diagnostic after\\n') if not before else None;sys.stderr.flush()"
+                result = self.runner(d).run('channels', [sys.executable, '-c', script, str(before), value], cap=3)
+                stdout = Path(result['log']).read_text()
+                controller.check_brew_versions(stdout)
+                self.assertEqual(json.loads(stdout), json.loads(value))
+                self.assertIn('diagnostic', Path(result['stderr_log']).read_text())
+                with self.assertRaises(controller.CommandFailure):
+                    controller.check_brew_versions(stdout + '{}')
 
     def test_timeout_kills_child_and_grandchild(self):
         with tempfile.TemporaryDirectory() as d:
@@ -178,6 +196,17 @@ class ControllerTests(unittest.TestCase):
                 with self.assertRaises(controller.CommandFailure):
                     controller.check_brew_versions(json.dumps({'formulae': changed}))
 
+    def test_formula_gate_accepts_cold_cache_diagnostics_before_one_json_document(self):
+        formulae = [{'name':name, 'tap':'homebrew/core', 'versions':{'stable':version}}
+                    for name, version in controller.BREW_VERSIONS.items()]
+        prefix = '\x1b[32m==>\x1b[0m \x1b[1mDownloading Homebrew API data\x1b[0m\n✔︎ JSON API packages.x86_64_linux.jws.json\n'
+        controller.check_brew_versions(prefix + json.dumps({'formulae':formulae}) + '\n')
+
+    def test_formula_gate_rejects_missing_malformed_or_multiple_json_documents(self):
+        for text in ('diagnostic only', 'diagnostic\n{broken', '{}\n{}', '{"formulae":[]} trailing'):
+            with self.subTest(text=text), self.assertRaises(controller.CommandFailure):
+                controller.check_brew_versions(text)
+
     def tool_outputs(self, name, *_args, **_kwargs):
         values = {'xcode-version': 'Xcode 26.6\nBuild version 17F113', 'sdk-version': '26.5',
                   'brew-prefix': '/opt/homebrew', 'autoconf-version': 'autoconf (GNU Autoconf) 2.73',
@@ -275,6 +304,21 @@ class ControllerTests(unittest.TestCase):
             self.assertEqual(manifest['source'], controller.JTREG_SOURCE)
             self.assertEqual((image / 'lib/jtreg.jar').read_bytes(), b'local verification fixture')
 
+    def test_mac_bootjdk_layout_checks_launchers_version_and_architecture(self):
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d) / 'Contents/Home'; (home / 'bin').mkdir(parents=True)
+            for name in ('java', 'javac'): (home / 'bin' / name).write_text('layout fixture')
+            release = home / 'release'
+            release.write_text('JAVA_VERSION="26"\nOS_ARCH="aarch64"\n')
+            self.assertEqual(controller.check_mac_bootjdk_layout(d)['java_version'], '26')
+            for text in ('JAVA_VERSION="27"\nOS_ARCH="aarch64"\n', 'JAVA_VERSION="26"\nOS_ARCH="amd64"\n'):
+                release.write_text(text)
+                with self.assertRaises(controller.CommandFailure): controller.check_mac_bootjdk_layout(d)
+            release.write_text('JAVA_VERSION="26"\r\nOS_ARCH="arm64"\r\n')
+            self.assertEqual(controller.check_mac_bootjdk_layout(d)['os_arch'], 'arm64')
+            (home / 'bin/javac').unlink()
+            with self.assertRaises(controller.CommandFailure): controller.check_mac_bootjdk_layout(d)
+
     def test_prerequisite_source_failure_records_status_without_downloading(self):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as d:
@@ -314,6 +358,17 @@ class ControllerTests(unittest.TestCase):
                 with self.assertRaises(controller.CommandFailure):
                     controller.verify_jtreg_transfer(root, archive, metadata, 'a' * 40, Path(d) / 'installed')
                 self.assertFalse((Path(d) / 'installed').exists())
+
+    def test_transfer_rejects_duplicate_manifest_rows_before_extraction(self):
+        with tempfile.TemporaryDirectory() as d:
+            root, archive, metadata = self.transfer_fixture(d)
+            value = json.loads((root / 'jtreg-manifest.json').read_text())
+            value['files'].append(dict(value['files'][0]))
+            controller.write_json(root / 'jtreg-manifest.json', value)
+            metadata = controller.sha256(root / 'jtreg-manifest.json')
+            with self.assertRaisesRegex(controller.CommandFailure, 'Duplicate'):
+                controller.verify_jtreg_transfer(root, archive, metadata, 'a' * 40, Path(d) / 'installed')
+            self.assertFalse((Path(d) / 'installed').exists())
 
     def test_incomplete_pair_is_retained(self):
         result = controller.summarize([{'pair':'stable-0','case':'stable','arm':'baseline','status':'failed'}])
@@ -371,7 +426,7 @@ class ControllerTests(unittest.TestCase):
     def test_hosted_export_excludes_images_binaries_private_state_and_reviews(self):
         with tempfile.TemporaryDirectory() as d:
             source, target = Path(d) / 'evidence', Path(d) / 'export'
-            allowed = ('source-identities.json', 'observations.json', 'commands/001/output.log',
+            allowed = ('source-identities.json', 'observations.json', 'commands/001/output.log', 'commands/001/stderr.log',
                        'prerequisites.json', 'jtreg-prerequisite.json',
                        'jtreg/test/report/text/summary.txt', 'validation-source/controller.py',
                        'native-diagnostics/sun_nio_ch_KQueue.h')
@@ -421,7 +476,7 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(job['steps'][-1]['with']['include-hidden-files'], 'false')
         self.assertEqual(job['steps'][-2]['if'], 'always()')
         self.assertEqual(job['steps'][1]['timeout-minutes'], '5')
-        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '6')
+        self.assertEqual(job['steps'][1]['with']['fetch-depth'], '7')
         self.assertEqual(job['steps'][1]['with']['persist-credentials'], 'false')
 
 

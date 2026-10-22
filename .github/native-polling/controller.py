@@ -21,7 +21,8 @@ import zipfile
 BASE = "8d030adbd245b19e6339e3ccd052eb7fe3635319"
 B = "a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c"
 C = "28a8b6162eaf5b4584e9b5d66c28359a336aa831"
-PREVIOUS_VALIDATION = "ef4eeb6d70db6404f84b3d211183a81c42b9c161"
+PREVIOUS_VALIDATION = "943033351b31baa7e021afdf2382ef03c872bfab"
+SETUP_VALIDATION = "ef4eeb6d70db6404f84b3d211183a81c42b9c161"
 FIRST_VALIDATION = "a343d648a9b5a0cd9ab85a4f3c466db203bd07ae"
 BRANCH = "refs/heads/qualify/native-kqueue-macos-once"
 BREW_VERSIONS = {"autoconf": "2.73", "make": "4.4.1", "m4": "1.4.21"}
@@ -106,7 +107,7 @@ def export_artifacts(output, destination):
         for path in (output / directory).rglob("*"):
             if not path.is_file() or path.is_symlink() or path.suffix not in suffixes:
                 continue
-            if directory == "commands" and path.name not in {"output.log", "command.json", "receipt.json"}:
+            if directory == "commands" and path.name not in {"output.log", "stderr.log", "command.json", "receipt.json"}:
                 continue
             if directory == "phases" and path.name not in {name + ".json" for name in STAGE_CAPS}:
                 continue
@@ -225,17 +226,18 @@ class Runner:
         limit = min(self.deadline, self.phase_deadline, start + cap)
         record = {"name": name, "argv": [str(x) for x in argv], "cwd": str(cwd or Path.cwd()),
                   "cap_seconds": cap, "start_monotonic": start, "deadline": limit,
-                  "status": "not-started", "log": str(directory / "output.log")}
+                  "status": "not-started", "log": str(directory / "output.log"),
+                  "stderr_log": str(directory / "stderr.log")}
         write_json(directory / "command.json", record)
         print(json.dumps({"event": "command_start", "name": name, "cap_seconds": cap}), flush=True)
         if limit <= start:
             raise CommandFailure(f"Deadline exhausted before {name}")
         process = None
         try:
-            with (directory / "output.log").open("wb") as stream:
+            with (directory / "output.log").open("wb") as stream, (directory / "stderr.log").open("wb") as errors:
                 process = subprocess.Popen(
                     [sys.executable, str(self.supervisor), str(receipt), *map(str, argv)],
-                    cwd=cwd, env=self.env, stdout=stream, stderr=subprocess.STDOUT,
+                    cwd=cwd, env=self.env, stdout=stream, stderr=errors,
                     start_new_session=True)
                 row = {"pid": process.pid, "start_identity": start_identity(process.pid),
                        "command": str(directory)}
@@ -292,7 +294,8 @@ def validate_sources(repo, expected):
     if git(repo, "rev-parse", "HEAD") != expected:
         raise CommandFailure("Validation checkout does not match expected SHA")
     if (git(repo, "rev-parse", "HEAD^") != PREVIOUS_VALIDATION or
-            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != FIRST_VALIDATION or
+            git(repo, "rev-parse", PREVIOUS_VALIDATION + "^") != SETUP_VALIDATION or
+            git(repo, "rev-parse", SETUP_VALIDATION + "^") != FIRST_VALIDATION or
             git(repo, "rev-parse", FIRST_VALIDATION + "^") != C):
         raise CommandFailure("Validation correction ancestry mismatch")
     if git(repo, "rev-parse", C + "^") != B or git(repo, "rev-parse", B + "^") != BASE:
@@ -320,7 +323,14 @@ def validate_sources(repo, expected):
 
 
 def check_brew_versions(text):
-    formulae = {row["name"]: row for row in json.loads(text)["formulae"]}
+    # First-use API-cache diagnostics can precede JSON in the retained combined log.
+    try:
+        value, end = json.JSONDecoder().raw_decode(text, text.index("{"))
+        if text[end:].strip():
+            raise ValueError("Trailing data after Homebrew JSON")
+        formulae = {row["name"]: row for row in value["formulae"]}
+    except (ValueError, KeyError, TypeError) as exc:
+        raise CommandFailure("Invalid or ambiguous Homebrew JSON") from exc
     for name, version in BREW_VERSIONS.items():
         row = formulae.get(name, {})
         if row.get("tap") != "homebrew/core" or row.get("versions", {}).get("stable") != version:
@@ -338,6 +348,16 @@ def jtreg_files(directory):
     return rows
 
 
+def check_mac_bootjdk_layout(directory):
+    home = Path(directory) / "Contents/Home"
+    if not all((home / name).is_file() for name in ("bin/java", "bin/javac", "release")):
+        raise CommandFailure("Unexpected Mac BootJDK archive layout")
+    fields = dict(re.findall(r'^([A-Z0-9_]+)="([^"\r\n]*)"\r?$', (home / "release").read_text(), re.M))
+    if not re.fullmatch(r"26(?:[.+-].*)?", fields.get("JAVA_VERSION", "")) or fields.get("OS_ARCH") not in ("aarch64", "arm64"):
+        raise CommandFailure("Unexpected Mac BootJDK version/architecture")
+    return {"java_version": fields["JAVA_VERSION"], "os_arch": fields["OS_ARCH"], "archive_layout": "Contents/Home"}
+
+
 def verify_jtreg_transfer(directory, archive_sha, manifest_sha, expected, destination):
     if directory is None:
         raise CommandFailure("Verified prerequisite transfer required")
@@ -353,6 +373,8 @@ def verify_jtreg_transfer(directory, archive_sha, manifest_sha, expected, destin
             manifest.get("validation") != expected or manifest.get("archive_sha256") != archive_sha):
         raise CommandFailure("jtreg transfer source/version mismatch")
     expected_files = {row["path"]: row for row in manifest["files"]}
+    if len(expected_files) != len(manifest["files"]):
+        raise CommandFailure("Duplicate jtreg manifest path")
     with tarfile.open(package) as archive:
         observed = set()
         for member in archive.getmembers():
@@ -412,6 +434,13 @@ def prepare_prerequisites(repo, source, output, transfer, expected):
             write_json(output / "bootjdk-download.json", {"url": BOOT_URL, "expected_sha256": BOOT_SHA, "actual_sha256": actual})
             if actual != BOOT_SHA:
                 raise CommandFailure("BootJDK prerequisite checksum mismatch")
+            unpacked = output.parent / "mac-bootjdk-preflight"
+            unpacked.mkdir()
+            runner.run("extract-bootjdk", ["tar", "-xzf", package, "-C", unpacked, "--strip-components", "1"], cap=60)
+            layout = check_mac_bootjdk_layout(unpacked)
+            write_json(output / "bootjdk-download.json", {"url": BOOT_URL, "expected_sha256": BOOT_SHA,
+                       "actual_sha256": actual, **layout})
+            shutil.rmtree(unpacked)
             package.unlink()
             for key in list(runner.env):
                 if key.startswith(("JTREG_", "JTHARNESS_", "ASMTOOLS_", "JUNIT_", "TESTNG_", "GOOGLE_GUICE_", "JCOMMANDER_", "ANT_", "MAVEN_REPO_", "CODE_TOOLS_")) or key in ("ANT", "SHASUM", "WGET", "CURL", "MAKE_ARGS", "BUILD_DIR", "DEPS_DIR", "ROOT"):
