@@ -484,8 +484,7 @@ public final class GenerateDowncallTemplates {
             Files.move(stage, version, StandardCopyOption.ATOMIC_MOVE);
             System.out.println("FFM generate " + key + " resources=" + classes.size());
         }
-        // The key was computed from current compiler/execution identities on
-        // every invocation, including validated reuse and A -> B -> A.
+        // The cache key must reflect current JDKs even when reusing a version.
         install(version, module, cache);
     }
     public static void main(String[] args) throws Exception {
