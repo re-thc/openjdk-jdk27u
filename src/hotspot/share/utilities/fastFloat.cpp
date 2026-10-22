@@ -40,9 +40,7 @@ NOINLINE double parse_long_java_integer(const C* first, const C* last) {
     ++first;
   }
   const C* significant = first;
-  while (significant != last && *significant == C('0')) {
-    ++significant;
-  }
+  fast_float::skip_zeros(significant, last);
   const C* prefix_end = significant + MIN2(int(last - significant), 19);
   const C* cursor = significant;
   uint64_t mantissa = 0;
@@ -91,7 +89,8 @@ double parse_java_decimal(const C* first, const C* last) {
   const auto format = fast_float::chars_format::general |
                       fast_float::chars_format::allow_leading_plus |
                       fast_float::chars_format::no_infnan;
-  if (last - first > 19) {
+  // Keep canonical Double.toString output (at most 24 characters) on the general path.
+  if (last - first > 24) {
     double result = parse_long_java_integer<T>(first, last);
     if (!std::isnan(result)) {
       return result;

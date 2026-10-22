@@ -149,7 +149,7 @@ public class TestFastFloat {
     }
 
     private static void checkLongIntegers() throws Throwable {
-        for (int length : new int[] {19, 20, 38, 39, 63, 64, 65, 1023, 1024, 1025}) {
+        for (int length : new int[] {19, 20, 24, 25, 26, 38, 39, 63, 64, 65, 1023, 1024, 1025}) {
             for (String digits : new String[] {"0".repeat(length), "9".repeat(length),
                     "0".repeat(length - 8) + "16777217"}) {
                 for (String sign : new String[] {"", "+", "-"}) {
@@ -179,7 +179,7 @@ public class TestFastFloat {
             }
         }
         // Validate full UTF16 code units before narrowing, at every scan lane.
-        for (int length : new int[] {20, 38, 39, 64}) {
+        for (int length : new int[] {20, 24, 25, 26, 38, 39, 64}) {
             for (int index = 0; index < length; index++) {
                 for (char invalid : new char[] {'\u00b0', '\u00ff', '\u0130', '\u0139',
                         '\uff10', '\uff19', '\ud800', '\udfff'}) {
