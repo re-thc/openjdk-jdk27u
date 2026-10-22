@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,8 +340,9 @@ class UnixSecureDirectoryStream
 
                 int fd = (file == null) ? dfd : open();
                 try {
-                    // if not changing both attributes then need existing attributes
-                    if (lastModifiedTime == null || lastAccessTime == null) {
+                    // Retain the existing all-null update and its permission
+                    // checks. Two UTIME_OMIT values would bypass those checks.
+                    if (lastModifiedTime == null && lastAccessTime == null) {
                         try {
                             UnixFileAttributes attrs = UnixFileAttributes.get(fd);
                             if (lastModifiedTime == null)
@@ -355,8 +356,9 @@ class UnixSecureDirectoryStream
                     // update times
                     try {
                         futimens(fd,
-                                 lastAccessTime.to(TimeUnit.NANOSECONDS),
-                                 lastModifiedTime.to(TimeUnit.NANOSECONDS));
+                                 lastAccessTime == null ? 0L : lastAccessTime.to(TimeUnit.NANOSECONDS),
+                                 lastModifiedTime == null ? 0L : lastModifiedTime.to(TimeUnit.NANOSECONDS),
+                                 lastAccessTime == null, lastModifiedTime == null);
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }

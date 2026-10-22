@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -869,18 +869,28 @@ Java_sun_nio_fs_UnixNativeDispatcher_utimes0(JNIEnv* env, jclass this,
     }
 }
 
+/* A supplied negative remainder is invalid, not UTIME_NOW/UTIME_OMIT
+ * (which have negative values on some platforms). Preserve EINVAL so the
+ * caller can apply its existing filesystem fallback for supplied times.
+ */
+static int timestampToTimespec(jlong value, jboolean omit, struct timespec* time) {
+    time->tv_sec = omit ? 0 : value / 1000000000;
+    time->tv_nsec = omit ? UTIME_OMIT : value % 1000000000;
+    return omit || time->tv_nsec >= 0;
+}
+
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_futimens0(JNIEnv* env, jclass this, jint filedes,
-    jlong accessTime, jlong modificationTime)
+    jlong accessTime, jlong modificationTime, jboolean omitAccess, jboolean omitModification)
 {
     struct timespec times[2];
     int err = 0;
 
-    times[0].tv_sec = accessTime / 1000000000;
-    times[0].tv_nsec = accessTime % 1000000000;
-
-    times[1].tv_sec = modificationTime / 1000000000;
-    times[1].tv_nsec = modificationTime % 1000000000;
+    if (!timestampToTimespec(accessTime, omitAccess, &times[0]) ||
+        !timestampToTimespec(modificationTime, omitModification, &times[1])) {
+        throwUnixException(env, EINVAL);
+        return;
+    }
 
     RESTARTABLE(futimens(filedes, &times[0]), err);
     if (err == -1) {
@@ -890,16 +900,17 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimens0(JNIEnv* env, jclass this, jint fi
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_utimensat0(JNIEnv* env, jclass this,
-    jint fd, jlong pathAddress, jlong accessTime, jlong modificationTime, jint flags) {
+    jint fd, jlong pathAddress, jlong accessTime, jlong modificationTime, jint flags,
+    jboolean omitAccess, jboolean omitModification) {
     int err;
     struct timespec times[2];
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
-    times[0].tv_sec = accessTime / 1000000000;
-    times[0].tv_nsec = accessTime % 1000000000;
-
-    times[1].tv_sec = modificationTime / 1000000000;
-    times[1].tv_nsec = modificationTime % 1000000000;
+    if (!timestampToTimespec(accessTime, omitAccess, &times[0]) ||
+        !timestampToTimespec(modificationTime, omitModification, &times[1])) {
+        throwUnixException(env, EINVAL);
+        return;
+    }
 
     RESTARTABLE(utimensat(fd, path, &times[0], flags), err);
 
