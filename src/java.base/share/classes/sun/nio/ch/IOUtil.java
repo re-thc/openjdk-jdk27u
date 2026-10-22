@@ -170,7 +170,7 @@ public final class IOUtil {
                       int alignment, NativeDispatcher nd)
         throws IOException
     {
-        IOVecWrapper vec = IOVecWrapper.get(length);
+        IOVecWrapper vec = IOVecWrapper.get(Math.min(length, IOV_MAX));
 
         boolean completed = false;
         int iov_len = 0;
@@ -382,7 +382,7 @@ public final class IOUtil {
 
         throws IOException
     {
-        IOVecWrapper vec = IOVecWrapper.get(length);
+        IOVecWrapper vec = IOVecWrapper.get(Math.min(length, IOV_MAX));
 
         boolean completed = false;
         int iov_len = 0;
