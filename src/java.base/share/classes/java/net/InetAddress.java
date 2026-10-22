@@ -874,15 +874,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             + "/" + getHostAddress();
     }
 
-    // mapping from host name to Addresses - either NameServiceAddresses (while
-    // still being looked-up by NameService(s)) or CachedAddresses when cached
-    private static final ConcurrentMap<String, Addresses> cache =
-        new ConcurrentHashMap<>();
+    // DNS lookup caches are not needed for numeric or loopback addresses.
+    private static final class CacheHolder {
+        // Mapping from host name to pending or cached lookup.
+        private static final ConcurrentMap<String, Addresses> cache =
+            new ConcurrentHashMap<>();
 
-    // CachedAddresses that have to expire are kept ordered in this NavigableSet
-    // which is scanned on each access
-    private static final NavigableSet<CachedLookup> expirySet =
-        new ConcurrentSkipListSet<>();
+        // Expiring entries, ordered for cleanup on name lookup.
+        private static final NavigableSet<CachedLookup> expirySet =
+            new ConcurrentSkipListSet<>();
+    }
 
     // common interface
     private interface Addresses {
@@ -944,9 +945,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if ((expiryTime - now) < 0L) {
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
-                if (expirySet.remove(this)) {
+                if (CacheHolder.expirySet.remove(this)) {
                     // ... remove from cache
-                    cache.remove(host, this);
+                    CacheHolder.cache.remove(host, this);
                 }
                 return true;
             }
@@ -1023,9 +1024,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 }
                 // ConcurrentSkipListSet uses weakly consistent iterator,
                 // so removing while iterating is OK...
-                if (expirySet.remove(this)) {
+                if (CacheHolder.expirySet.remove(this)) {
                     expiryTime = staleTime;
-                    expirySet.add(this);
+                    CacheHolder.expirySet.add(this);
                 }
             }
             return false;
@@ -1050,7 +1051,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             lookupLock.lock();
             try {
                 // re-check that we are still us + re-install us if slot empty
-                addresses = cache.putIfAbsent(host, this);
+                addresses = CacheHolder.cache.putIfAbsent(host, this);
                 if (addresses == null) {
                     // this can happen when we were replaced by CachedAddresses in
                     // some other thread, then CachedAddresses expired and were
@@ -1074,7 +1075,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                     // remove or replace us with cached addresses according to cachePolicy
                     if (cachePolicy == InetAddressCachePolicy.NEVER) {
-                        cache.remove(host, this);
+                        CacheHolder.cache.remove(host, this);
                     } else {
                         long now = System.nanoTime();
                         long expiryTime =
@@ -1099,10 +1100,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                                                             inetAddresses,
                                                             expiryTime);
                         }
-                        if (cache.replace(host, this, cachedLookup) &&
+                        if (CacheHolder.cache.replace(host, this, cachedLookup) &&
                             cachePolicy != InetAddressCachePolicy.FOREVER) {
                             // schedule expiry
-                            expirySet.add(cachedLookup);
+                            CacheHolder.expirySet.add(cachedLookup);
                         }
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
@@ -1674,7 +1675,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // remove expired addresses from cache - expirySet keeps them ordered
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
-        for (CachedLookup caddrs : expirySet) {
+        for (CachedLookup caddrs : CacheHolder.expirySet) {
             if (!caddrs.tryRemoveExpiredAddress(now)) {
                 // we encountered 1st element that expires in future
                 break;
@@ -1684,13 +1685,13 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // look-up or remove from cache
         Addresses addrs;
         if (useCache) {
-            addrs = cache.get(host);
+            addrs = CacheHolder.cache.get(host);
         } else {
-            addrs = cache.remove(host);
+            addrs = CacheHolder.cache.remove(host);
             if (addrs != null) {
                 if (addrs instanceof CachedLookup) {
                     // try removing from expirySet too if CachedAddresses
-                    expirySet.remove(addrs);
+                    CacheHolder.expirySet.remove(addrs);
                 }
                 addrs = null;
             }
@@ -1699,7 +1700,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         if (addrs == null) {
             // create a NameServiceAddresses instance which will look up
             // the name service and install it within cache...
-            Addresses oldAddrs = cache.putIfAbsent(
+            Addresses oldAddrs = CacheHolder.cache.putIfAbsent(
                 host,
                     addrs = new NameServiceAddresses(host)
             );
