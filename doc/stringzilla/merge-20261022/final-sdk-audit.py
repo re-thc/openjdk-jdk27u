@@ -60,7 +60,7 @@ for image in json.loads(a.manifest.read_text())['images']:
             read = lambda name: json.loads(z.read(prefix + name))
             sources = {'original': '416d7db3ec3cf03d0e4b05f919dce6aa9f9b5eda',
                        'master': '8d030adbd245b19e6339e3ccd052eb7fe3635319',
-                       'prior': '573e785e5d459c2a96f3042c48651c8cf17a75de',
+                       'prior': image['prior'],
                        'fork': image['source']}
             sealed = {}
             for label2, source in sources.items():
