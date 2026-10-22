@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_EventFD_eventfd0(JNIEnv *env, jclass klazz)
 {
-    int efd = eventfd((uint64_t)0, 0);
+    int efd = eventfd((uint64_t)0, EFD_NONBLOCK);
     if (efd == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "eventfd failed");
         return IOS_THROWN;
