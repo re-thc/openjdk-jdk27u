@@ -1,6 +1,6 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-name: StringZilla final raw-file verification
+name: StringZilla retained U raw-file verification
 on:
   push:
     branches: [codex/stringzilla-final-artifacts]
@@ -20,48 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 519b2bf77f161cae881fdd26db26ed5e4935bcc0
+          ref: b14f7783c59409b06c52fd40ce7fcf8afe6075ca
           persist-credentials: false
           sparse-checkout: doc/stringzilla
-      - name: Locate completed final result artifacts without publishing a Git manifest
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import json, os, urllib.request
-          from pathlib import Path
-          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'}
-          cases = json.loads('[{"label":"v-neon","run":39798393906,"producer":"41576002458dad870944cff79ae17cfb2a1f7044","name":"stringzilla-paired-neon-","cases":11},{"label":"v-msvc","run":39798393906,"producer":"41576002458dad870944cff79ae17cfb2a1f7044","name":"stringzilla-paired-msvc-","cases":11},{"label":"v-linux","run":39798410962,"producer":"8baad0509910c79eaf172afa4d3fbaef7f7b71c0","name":"stringzilla-fresh-linux-results-","cases":19}]')
-          studies = []
-          for config in cases:
-              run, producer = config['run'], config['producer']
-              url = f'https://api.github.com/repos/re-thc/openjdk-jdk27u/actions/runs/{run}/artifacts?per_page=100'
-              with urllib.request.urlopen(urllib.request.Request(url, headers=headers)) as response:
-                  artifacts = json.load(response)['artifacts']
-              matches = [a for a in artifacts if a['name'] == config['name'] + producer]
-              assert len(matches) == 1
-              a = matches[0]
-              assert not a['expired'] and a['workflow_run']['id'] == run
-              assert a['workflow_run']['head_sha'] == producer and a['digest'].startswith('sha256:')
-              studies.append({'label': config['label'], 'artifact': a['id'], 'sha256': a['digest'][7:],
-                              'run': run, 'producer': producer, 'cases': config['cases'],
-                              'source': '93a0e98a80ea4807a45cc59a5334483a44b8cec6',
-                              'prior': 'c17c5cb06297e25681b4dab2eddbd60ceffe0300'})
-          Path('result-inputs.json').write_text(json.dumps({'studies': studies}, indent=2) + '\n')
-          PY
-      - name: Verify original JMH files and every paired round
+      - name: Verify original U JMH files and every paired round
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           python3 doc/stringzilla/merge-20261022/final-audit.py
-          --manifest result-inputs.json --output retained-audit
-      - name: Retain read-only raw verification in Actions
+          --manifest doc/stringzilla/dispatch-20261022/final-audit-artifacts.json
+          --output retained-audit
+      - name: Retain U raw verification
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: stringzilla-final-raw-verification-${{ github.sha }}
-          path: |
-            result-inputs.json
-            retained-audit
+          name: stringzilla-u-raw-verification-${{ github.sha }}
+          path: retained-audit
           retention-days: 30
           if-no-files-found: error
