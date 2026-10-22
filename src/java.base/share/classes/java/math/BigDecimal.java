@@ -43,6 +43,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -3230,6 +3231,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * using two unsigned longs for bounded magnitudes. The caller has already
      * matched adjusted exponents, n is positive, and val is inflated.
      */
+    @DontInline // Keep scale-alignment work out of compact comparison callers.
     private int compareMagnitudeScaled(BigDecimal val, int n) {
         // At most 39 decimal digits per magnitude imply n <= 38 when
         // adjusted exponents match. Keep the bound explicit before scaling.
