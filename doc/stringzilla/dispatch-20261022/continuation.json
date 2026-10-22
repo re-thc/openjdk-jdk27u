@@ -1,24 +1,86 @@
 {
-  "product": "7ca3eeb4368afdf43961c2c674a663e2d2cdf9b4",
-  "actual_merge": "573e785e5d459c2a96f3042c48651c8cf17a75de",
+  "product": "426d70bbf4f81af2d955f1d3435142567c4cd74c",
+  "actual_merge": "8727f91b22406ffc9ccd97aab6837dc65b521287",
   "base": "8d030adbd245b19e6339e3ccd052eb7fe3635319",
-  "ordinary_ci": 39757902295,
-  "native_comparison_run": 39759713276,
-  "native_producer": "96e8aa81d6c2c59196272b114c336f3ec7291e6f",
-  "fresh_linux_run": 39761363024,
-  "fresh_linux_producer": "a713cc1974d56a838f50746e5ce95d153ec954ac",
-  "local_build_failure": "Both JOBS=3 and JOBS=1 failed at ZipSource.gmk:78/support/src.zip: fork/resource temporarily unavailable. The incomplete SDK is excluded.",
-  "qualification": "Pending the actual merge revision. Prototype diagnostics are retained separately and do not qualify the published correction.",
+  "measured_product": "73d8c5581d76e6a395a85ba2ff3f1c2a2be2fc5e",
+  "measured_merge": "93a0e98a80ea4807a45cc59a5334483a44b8cec6",
+  "runtime_equivalence": "v-source-equivalence.json confirms identical src, make and test trees; later changes only doc/.github.",
+  "ordinary_ci": 39812822993,
+  "automatic_final_audit": 39834664110,
+  "automatic_final_audit_job": 120019687870,
+  "automatic_audit_workflow_commit": "48c98798febbff037d43c591315a34810f15ae69",
+  "ci_snapshot": {
+    "successful_jobs": 44,
+    "total_jobs": 57,
+    "all_eight_builds_passed": true,
+    "windows_compiler_part_3": "running",
+    "macos_compiler_part_3": "running",
+    "other_macos_groups": "11 queued",
+    "failures": 0,
+    "terminal": false
+  },
+  "final_native_run": 39798393906,
+  "final_linux_run": 39798410962,
+  "final_sdk_audit": 39806466970,
+  "final_raw_audit": 39808185117,
+  "u_raw_audit": 39825472551,
+  "permanent_evidence": {
+    "v": "f0cd2a57882ede811887dbbe88f8e720fbcf998f",
+    "u_and_complete_final_summary": "9bcf8afc23095f71e627b5177e254c349779320c",
+    "v_cases": 41,
+    "v_jmh_files": 1025,
+    "v_samples": 5125,
+    "u_cases": 48,
+    "u_jmh_files": 1200,
+    "u_samples": 6000,
+    "all_published_blob_identities_verified": 28
+  },
+  "recommendation": "Retain the final implementation and merge after the exact-head CI and independent audit pass. No source defect remains identified by completed source review, targeted correctness tests or final comparisons.",
+  "measured_tradeoffs": "Source-index paired speedups vs master: Linux1.1809x, ARM1.1450x, Windows1.0800x; all eight pairs win per platform. Windows early4.83x and false-ending9.63x; miss211ns vs prior131ns, still3.54xmaster. Immediate-match costs about0.6–1.9ns. Linux javac paired center about6%slower; full range crosses parity. All losses, means, rounds and spread retained; no noise gate.",
+  "pr": {
+    "number": 4,
+    "draft": false,
+    "merged": false,
+    "pr63_integrated": true,
+    "pr63_commits_preserved": 8
+  },
+  "explicit_user_approvals": [
+    "Public permanent U and final V raw files, artifact metadata and hosted-runner paths on existing evidence branch.",
+    "Mark PR4 ready for review."
+  ],
+  "current_local_execution_failure": "Refreshed executor cannot start commands: bwrap namespace creation fails Resource temporarily unavailable; exec-server -32603 / os error11; do not repair infrastructure or install unmanaged tools.",
+  "qualification": "Final matched complete SDKs, every raw file and process comparison independently audited. Tier/JNI/opt-out/bounds/overlap/safepoint/native sanitizer checks passed. Full exact-head CI remains pending; the read-only audit automatically waits for its terminal result and then verifies57successfuljobs/58StringZilladescriptions/11testsourcehashes. It fails on source change or validation failure; one Linux job bounded to360minutes.",
   "remaining": [
-    "Verify retained complete SDK inventories and compile/source receipts.",
-    "Audit all raw paired JMH samples, every loss and spread, and ordinary process comparisons.",
-    "Resolve material remaining regressions through bounded source experiments if required.",
-    "Finish exact-head CI: eight builds, 48 tier-1 groups, 58 StringZilla descriptions.",
-    "Update concise PR description and deliver an evidence-based merge recommendation without merging."
+    "Observe final CI/audit terminal result; inspect actual failing logs if either fails.",
+    "If successful, retain CI proof and update only factual validation status/recommendation. Do not merge or push upstream."
   ],
   "constraints": [
-    "No upstream writes, force push, new product branch or PR4 merge.",
-    "No model switches, process-supervision or runner-election detours.",
-    "Preserve independent original controls and all raw observations."
-  ]
+    "No upstream writes, force push, new product branch, PR4 merge or model switch.",
+    "Keep independent original/master/prior controls and all raw observations; U/S/old matrix remain diagnostics with their actual source identities.",
+    "Do not remeasure or repeat rejected scalar experiments without a new source defect or evidence."
+  ],
+  "earlier_snapshot": {
+    "product": "7ca3eeb4368afdf43961c2c674a663e2d2cdf9b4",
+    "actual_merge": "573e785e5d459c2a96f3042c48651c8cf17a75de",
+    "base": "8d030adbd245b19e6339e3ccd052eb7fe3635319",
+    "ordinary_ci": 39757902295,
+    "native_comparison_run": 39759713276,
+    "native_producer": "96e8aa81d6c2c59196272b114c336f3ec7291e6f",
+    "fresh_linux_run": 39761363024,
+    "fresh_linux_producer": "a713cc1974d56a838f50746e5ce95d153ec954ac",
+    "local_build_failure": "Both JOBS=3 and JOBS=1 failed at ZipSource.gmk:78/support/src.zip: fork/resource temporarily unavailable. The incomplete SDK is excluded.",
+    "qualification": "Pending the actual merge revision. Prototype diagnostics are retained separately and do not qualify the published correction.",
+    "remaining": [
+      "Verify retained complete SDK inventories and compile/source receipts.",
+      "Audit all raw paired JMH samples, every loss and spread, and ordinary process comparisons.",
+      "Resolve material remaining regressions through bounded source experiments if required.",
+      "Finish exact-head CI: eight builds, 48 tier-1 groups, 58 StringZilla descriptions.",
+      "Update concise PR description and deliver an evidence-based merge recommendation without merging."
+    ],
+    "constraints": [
+      "No upstream writes, force push, new product branch or PR4 merge.",
+      "No model switches, process-supervision or runner-election detours.",
+      "Preserve independent original controls and all raw observations."
+    ]
+  }
 }
