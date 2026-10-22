@@ -1,6 +1,6 @@
 [
   {
-    "id": "u-c2-utf16-9-END",
+    "id": "v-c2-utf16-9-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -12,7 +12,7 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-10-END",
+    "id": "v-c2-utf16-10-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -24,7 +24,7 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-11-END",
+    "id": "v-c2-utf16-11-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -36,7 +36,7 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-12-END",
+    "id": "v-c2-utf16-12-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -48,19 +48,7 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-16-END",
-    "benchmark": "StringZillaSearch.lastIndexOf",
-    "params": {
-      "length": "4096",
-      "needleLength": "16",
-      "coder": "UTF16",
-      "position": "END"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "u-c2-utf16-17-END",
+    "id": "v-c2-utf16-17-END",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -72,7 +60,7 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-9-START",
+    "id": "v-c2-utf16-9-START",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -84,7 +72,7 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-9-FALSE_ENDING",
+    "id": "v-c2-utf16-9-FALSE_ENDING",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
@@ -96,25 +84,13 @@
     "avx": 2
   },
   {
-    "id": "u-c2-utf16-9-MISS",
+    "id": "v-c2-utf16-9-MISS",
     "benchmark": "StringZillaSearch.lastIndexOf",
     "params": {
       "length": "4096",
       "needleLength": "9",
       "coder": "UTF16",
       "position": "MISS"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "u-c2-utf16-128-START",
-    "benchmark": "StringZillaSearch.lastIndexOf",
-    "params": {
-      "length": "4096",
-      "needleLength": "128",
-      "coder": "UTF16",
-      "position": "START"
     },
     "tier": "c2",
     "avx": 2
@@ -132,30 +108,10 @@
     "avx": 2
   },
   {
-    "id": "follow-c1-avx2-utf16-uniform-129",
-    "benchmark": "StringZillaTailSearch.lastIndexOf",
-    "params": {
-      "length": "129",
-      "needleLength": "129",
-      "shape": "UTF16_UNIFORM_END"
-    },
-    "tier": "c1",
-    "avx": 2
-  },
-  {
     "id": "c2-isBlank-prefix40",
     "benchmark": "StringZillaScans.isBlank",
     "params": {
       "workload": "prefix40"
-    },
-    "tier": "c2",
-    "avx": 2
-  },
-  {
-    "id": "c2-isBlank-longBlank",
-    "benchmark": "StringZillaScans.isBlank",
-    "params": {
-      "workload": "longBlank"
     },
     "tier": "c2",
     "avx": 2
