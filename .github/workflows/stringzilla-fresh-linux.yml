@@ -10,7 +10,7 @@ permissions:
   actions: read
 concurrency:
   group: stringzilla-followup-linux-ac0eaba
-  cancel-in-progress: true
+  cancel-in-progress: false
 env:
   PYTHONDONTWRITEBYTECODE: '1'
   CC: gcc-16
@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: 15da3c455ba3f15993f581150c775bb7a941fccd
+          ref: 93a0e98a80ea4807a45cc59a5334483a44b8cec6
           fetch-depth: 2
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
