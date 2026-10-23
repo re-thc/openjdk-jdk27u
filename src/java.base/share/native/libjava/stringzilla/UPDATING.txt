@@ -1,0 +1,12 @@
+Updating StringZilla
+
+UPSTREAM.json records the version, commit, file hashes and local patches.
+From the repository root, run:
+
+    python3 make/scripts/update-stringzilla.py --version VERSION --commit FULL_COMMIT_SHA
+    python3 make/scripts/update-stringzilla.py --verify
+
+The updater imports the required headers and license, applies patches/ without
+fuzz, and refreshes UPSTREAM.json and src/java.base/share/legal/stringzilla.md.
+Review patch and license changes, then build, test and benchmark on supported
+native platforms. This local note is maintained separately from upstream files.
