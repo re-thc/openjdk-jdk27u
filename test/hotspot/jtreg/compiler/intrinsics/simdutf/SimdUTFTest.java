@@ -823,6 +823,56 @@ public class SimdUTFTest {
         }
     }
 
+    private static void nativeLatin1(Method process) throws Exception {
+        for (int boundary : new int[]{4095, 4096, 4097}) {
+            // Exercise exact input lengths and two-byte sequences straddling
+            // successive private-output chunks.
+            for (String text : new String[]{"a".repeat(boundary - 2) + "é",
+                    "a".repeat(boundary) + "é" + "ÿ".repeat(4096)}) {
+                byte[] expected = new byte[text.length()];
+                for (int i = 0; i < expected.length; i++) expected[i] = (byte)text.charAt(i);
+                nativeLatin1Case(process, utf8(text), expected);
+            }
+        }
+        for (int prefix : new int[]{0, 4095, 4096, 4097, 8193}) {
+            for (String suffix : new String[]{"漢", "😃"}) {
+                nativeLatin1Case(process, utf8("a".repeat(prefix) + suffix + "é".repeat(32)), null);
+            }
+            for (byte invalid : new byte[]{(byte)0x80, (byte)0xc3}) {
+                byte[] input = new byte[prefix + 1];
+                Arrays.fill(input, (byte)'a');
+                input[prefix] = invalid;
+                nativeLatin1Case(process, input, null);
+            }
+        }
+    }
+
+    private static void nativeLatin1Case(Method process, byte[] input, byte[] decoded) throws Exception {
+        // DECODE_LATIN1 is operation 24. Its conservative capacity contract
+        // requires input.length even when the decoded output would be shorter.
+        for (boolean shortCapacity : new boolean[]{false, true}) {
+            for (int mode = 0; mode < 4; mode++) {
+                byte[] source = new byte[input.length + 32];
+                Arrays.fill(source, SENTINEL);
+                System.arraycopy(input, 0, source, 7, input.length);
+                byte[] sourceBefore = source.clone();
+                byte[] output = mode == 0 ? new byte[source.length] : source;
+                if (mode == 0) Arrays.fill(output, SENTINEL);
+                int dp = switch (mode) { case 0 -> 5; case 1 -> 7; case 2 -> 3; default -> 8; };
+                int capacity = input.length - (shortCapacity ? 1 : 0);
+                byte[] expected = output.clone();
+                boolean success = accelerationAvailable && decoded != null && !shortCapacity && mode != 3;
+                if (success) System.arraycopy(decoded, 0, expected, dp, decoded.length);
+                int result = (int)process.invoke(null, source, 7, input.length, output, dp, capacity, 24);
+                String label = "native Latin1 length=" + input.length + " mode=" + mode
+                        + " short=" + shortCapacity + " valid=" + (decoded != null);
+                check(result == (success ? decoded.length : -1), label + " result");
+                check(Arrays.equals(output, expected), label + " output and guards");
+                if (mode == 0) check(Arrays.equals(source, sourceBefore), label + " unchanged input");
+            }
+        }
+    }
+
     private static void mutableLatin1(Method process) throws Exception {
         // Exercise compressed prefixes followed by overlapping ASCII tails.
         // Validate only bounds during mutation: no consistent text is promised.
@@ -896,6 +946,7 @@ public class SimdUTFTest {
                     Arrays.copyOfRange(dst, 7, 7 + written));
             guards(dst, 7, written);
         }
+        nativeLatin1(process);
         mutableLatin1(process);
         nativeWideConversions(process);
     }

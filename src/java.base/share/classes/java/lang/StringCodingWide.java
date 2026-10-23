@@ -446,8 +446,13 @@ final class StringCodingWide {
         if (!SimdUTF.isEligible(len) && (len != 1 || !SimdUTF.isEnabled())) return null;
         Kind kind = kind(cs);
         if (kind == null) return null;
-        if (len == 1 && coder == String.UTF16
-                && Character.isSurrogate(StringUTF16.getChar(value, 0))) return null;
+        if (coder == String.UTF16) {
+            char first = StringUTF16.getChar(value, 0);
+            if (Character.isSurrogate(first) && (!Character.isHighSurrogate(first)
+                    || len == 1 || !Character.isLowSurrogate(StringUTF16.getChar(value, 1)))) {
+                return null;
+            }
+        }
         int count = coder == String.UTF16 && kind.unit == 4 && len > 1
                 ? StringUTF16.codePointCount(value, 0, len) : len;
         int prefix = kind.emitBOM ? kind.unit : 0;

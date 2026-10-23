@@ -141,7 +141,7 @@ public class SimdUTFWideTest {
             }
         }
         for (String text : new String[]{"a".repeat(32) + "\ud800", "\udc00" + "a".repeat(32),
-                "a".repeat(32) + "\ud800x", "a".repeat(32) + "\udc00"}) {
+                "\ud800x" + "a".repeat(32), "a".repeat(32) + "\ud800x", "a".repeat(32) + "\udc00"}) {
             check(Arrays.equals(text.getBytes(cs), encodeReference(text, cs, CodingErrorAction.REPLACE)),
                     cs + " replacement encode");
             try {
@@ -151,6 +151,11 @@ public class SimdUTFWideTest {
                 check(expected.getInputLength() == 1, cs + " malformed encode length");
             }
         }
+        String leadingPair = "😃" + "a".repeat(32);
+        byte[] leadingPairBytes = encodeReference(leadingPair, cs, CodingErrorAction.REPORT);
+        check(Arrays.equals(leadingPair.getBytes(cs), leadingPairBytes), cs + " leading pair encode");
+        check(Arrays.equals(JLA.uncheckedGetBytesOrThrow(leadingPair, cs), leadingPairBytes),
+                cs + " leading pair throwing encode");
         for (byte[] bytes : new byte[][]{new byte[33], new byte[35],
                 concat(encodeReference("a".repeat(32), cs, CodingErrorAction.REPLACE),
                         new byte[]{(byte)0xd8, 0, 0, 1, (byte)0xff})}) {
@@ -340,6 +345,101 @@ public class SimdUTFWideTest {
                                     check(encoded.equals(referenceEncoded) && chars.position() == referenceChars.position(), cs + " resumed encoder content");
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Nonzero slice offsets and positions exercise alignment of the backing array,
+    // rather than alignment of the buffer position alone. Keep guards on both sides.
+    private static ByteBuffer slicedBytes(int capacity, int kind, int offset) {
+        ByteBuffer storage = kind == 1 ? ByteBuffer.allocateDirect(capacity + 16)
+                : ByteBuffer.allocate(capacity + 16);
+        ByteBuffer buffer = storage.position(4).slice();
+        for (int i = 0; i < buffer.capacity(); i++) buffer.put(i, (byte) 0x5a);
+        return buffer.position(4 + offset).limit(4 + offset + capacity);
+    }
+
+    private static CharBuffer slicedChars(int capacity, int kind, int offset) {
+        CharBuffer storage = kind == 1 ? ByteBuffer.allocateDirect((capacity + 16) * 2).asCharBuffer()
+                : CharBuffer.allocate(capacity + 16);
+        CharBuffer buffer = storage.position(4).slice();
+        for (int i = 0; i < buffer.capacity(); i++) buffer.put(i, '\ua55a');
+        return buffer.position(4 + offset).limit(4 + offset + capacity);
+    }
+
+    private static void mixedBuffers(Charset cs) throws Exception {
+        // Fixed byte orders isolate staging from the BOM state-machine cases above.
+        String name = cs.name();
+        if (!name.equals("UTF-16BE") && !name.equals("UTF-16LE")
+                && !name.equals("UTF-32BE") && !name.equals("UTF-32LE")) return;
+        int width = name.startsWith("UTF-16") ? 2 : 4;
+        ByteBuffer badUnit = ByteBuffer.allocate(width).order(name.endsWith("LE")
+                ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
+        if (width == 2) badUnit.putChar('\udc00');
+        else badUnit.putInt(0x110000);
+        byte[] dense = new byte[width * 64];
+        for (int i = 0; i < dense.length; i += width) {
+            System.arraycopy(badUnit.array(), 0, dense, i, width);
+        }
+        String valid = "a".repeat(4095) + "😃" + "漢".repeat(17);
+        byte[] validBytes = encodeReference(valid, cs, CodingErrorAction.REPORT);
+        String latePrefix = "a".repeat(8191);
+        byte[] lateBytes = encodeReference(latePrefix, cs, CodingErrorAction.REPORT);
+        String[] texts = {valid, valid + "\udc00", "\udc00".repeat(64),
+                latePrefix + "\udc00", latePrefix + "\ud800x"};
+        byte[][] inputs = {validBytes, concat(validBytes, badUnit.array()), dense,
+                concat(lateBytes, badUnit.array()), concat(lateBytes, badUnit.array())};
+        for (CodingErrorAction action : new CodingErrorAction[]{CodingErrorAction.REPORT,
+                CodingErrorAction.REPLACE, CodingErrorAction.IGNORE}) {
+            for (int sample = 0; sample < texts.length; sample++) {
+                String text = texts[sample];
+                byte[] bytes = inputs[sample];
+                for (int[] kinds : new int[][]{{0, 1}, {1, 0}, {2, 0}, {1, 1}}) {
+                    for (int offset : new int[]{0, 1}) {
+                        // The dense malformed case also tests replacement overflow.
+                        for (int capacity : sample == 2 ? new int[]{3, 512}
+                                : new int[]{text.length() * 4 + 8}) {
+                            String label = cs + " mixed " + action + " sample=" + sample
+                                    + " kinds=" + Arrays.toString(kinds) + " offset=" + offset
+                                    + " capacity=" + capacity;
+                            ByteBuffer in = slicedBytes(bytes.length, kinds[0], offset);
+                            int start = in.position();
+                            in.put(bytes).position(start);
+                            if (kinds[0] == 2) in = in.asReadOnlyBuffer();
+                            ByteBuffer referenceIn = slicedBytes(bytes.length, 0, offset);
+                            referenceIn.put(bytes).position(start);
+                            CharBuffer out = slicedChars(capacity, kinds[1], offset);
+                            CharBuffer referenceOut = slicedChars(capacity, 0, offset);
+                            CoderResult actual = decodeStep(cs.newDecoder().onMalformedInput(action),
+                                    in, out, true, false);
+                            CoderResult expected = decodeStep(cs.newDecoder().onMalformedInput(action),
+                                    referenceIn, referenceOut, true, true);
+                            check(actual.toString().equals(expected.toString()), label + " decode result");
+                            check(in.position() == referenceIn.position(), label + " decode input position");
+                            check(out.position() == referenceOut.position(), label + " decode output position");
+                            check(out.duplicate().clear().equals(referenceOut.duplicate().clear()),
+                                    label + " decode content and guards");
+
+                            CharBuffer chars = slicedChars(text.length(), kinds[0], offset);
+                            start = chars.position();
+                            chars.put(text).position(start);
+                            if (kinds[0] == 2) chars = chars.asReadOnlyBuffer();
+                            CharBuffer referenceChars = slicedChars(text.length(), 0, offset);
+                            referenceChars.put(text).position(start);
+                            ByteBuffer encoded = slicedBytes(capacity, kinds[1], offset);
+                            ByteBuffer referenceEncoded = slicedBytes(capacity, 0, offset);
+                            actual = encodeStep(cs.newEncoder().onMalformedInput(action),
+                                    chars, encoded, true, false);
+                            expected = encodeStep(cs.newEncoder().onMalformedInput(action),
+                                    referenceChars, referenceEncoded, true, true);
+                            check(actual.toString().equals(expected.toString()), label + " encode result");
+                            check(chars.position() == referenceChars.position(), label + " encode input position");
+                            check(encoded.position() == referenceEncoded.position(), label + " encode output position");
+                            check(encoded.duplicate().clear().equals(referenceEncoded.duplicate().clear()),
+                                    label + " encode content and guards");
                         }
                     }
                 }
@@ -590,6 +690,7 @@ public class SimdUTFWideTest {
             strings(cs);
             buffers(cs);
             partialBuffers(cs);
+            mixedBuffers(cs);
             aliases(cs);
             inaccessibleDestination(cs, false);
             inaccessibleDestination(cs, true);
