@@ -74,8 +74,8 @@ class ConsumerTest(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.artifacts = [
-            {"id": 1, "name": "bundles-windows-x64", "expired": False,
-             "digest": "sha256:" + "a" * 64, "created_at": "2026-10-23T06:01:00Z",
+            {"id": c.JDK_ID, "name": "bundles-windows-x64", "expired": False,
+             "digest": "sha256:" + c.JDK_SHA, "created_at": "2026-10-23T06:01:00Z",
              "workflow_run": {"id": c.RUN, "head_sha": c.HEAD}},
             {"id": c.JTREG_ID, "name": "bundles-jtreg-8.2.1+1", "expired": False,
              "digest": "sha256:" + c.JTREG_SHA, "workflow_run": {"id": c.RUN, "head_sha": c.HEAD}},
@@ -129,6 +129,13 @@ class ConsumerTest(unittest.TestCase):
             values = dict(self.responses)
             values[f"actions/runs/{c.RUN}/artifacts?per_page=100&page=1"] = {"artifacts": items}
             with self.subTest(items=items), self.assertRaises(c.Prerequisite):
+                c.admission(values.__getitem__)
+
+    def test_windows_artifact_id_and_digest_are_pinned(self):
+        for field, bad in [("id", 0), ("digest", "sha256:" + "a" * 64)]:
+            values = copy.deepcopy(self.responses)
+            values[f"actions/runs/{c.RUN}/artifacts?per_page=100&page=1"]["artifacts"][0][field] = bad
+            with self.subTest(field=field), self.assertRaises(c.Prerequisite):
                 c.admission(values.__getitem__)
 
     def test_api_denial_one_call_no_url_leak(self):

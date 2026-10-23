@@ -37,6 +37,8 @@ JOB = 120218865571
 HEAD = "d26205119c9ac625fdf28d8455fb14618f912846"
 BASE = "d5291018851658625d16c3d26a9a4be8974e6354"
 SOURCE = "1694c2019ba5ad033983859c063c1c671d90cb01"
+JDK_ID = 12483273390
+JDK_SHA = "f18f64699b9ed5f6b6ff4f8918772c79873d1b9cac277bb8a422ab218c89b2e2"
 JTREG_ID = 12461863760
 JTREG_SHA = "df298065351436b48100f2790e062996a422c2916c4798cefdce9d43161e4b62"
 TESTS = ("LocalSocketAddress", "LocalSocketPort")
@@ -119,6 +121,8 @@ def admission(get=api):
                 and a["workflow_run"]["head_sha"] == HEAD, "Wrong/expired artifact")
         require(re.fullmatch(r"sha256:[0-9a-f]{64}", a.get("digest", "")), "Missing digest")
         if name == "bundles-windows-x64":
+            require(a["id"] == JDK_ID and a["digest"] == "sha256:" + JDK_SHA,
+                    "Wrong pinned Windows release artifact")
             require(job["started_at"] <= a["created_at"] <= job["completed_at"],
                     "Artifact not from selected successful release build")
         else:
