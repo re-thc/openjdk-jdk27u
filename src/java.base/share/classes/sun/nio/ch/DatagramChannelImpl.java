@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +92,9 @@ class DatagramChannelImpl
     private static final NativeDispatcher nd = new DatagramDispatcher();
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
+
+    // Maximum length used by the platform's receive0 implementation.
+    private static final int MAX_RECEIVE_SIZE;
 
     // true if interruptible (can be false to emulate legacy DatagramSocket)
     private final boolean interruptible;
@@ -704,7 +708,7 @@ class DatagramChannelImpl
         // Substitute a native buffer. If the supplied buffer is empty
         // we must instead use a nonempty buffer, otherwise the call
         // will not block waiting for a datagram on some platforms.
-        int newSize = Math.max(rem, 1);
+        int newSize = Math.max(Math.min(rem, MAX_RECEIVE_SIZE), 1);
         ByteBuffer bb = Util.getTemporaryDirectBuffer(newSize);
         try {
             int n = receiveIntoNativeBuffer(bb, newSize, 0, connected);
@@ -1935,6 +1939,8 @@ class DatagramChannelImpl
     private static native void disconnect0(FileDescriptor fd, boolean isIPv6)
         throws IOException;
 
+    private static native int maxReceiveSize0();
+
     private static native int receive0(FileDescriptor fd, long address, int len,
                                        long senderAddress, boolean connected)
         throws IOException;
@@ -1945,5 +1951,6 @@ class DatagramChannelImpl
 
     static {
         IOUtil.load();
+        MAX_RECEIVE_SIZE = maxReceiveSize0();
     }
 }
