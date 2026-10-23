@@ -39,12 +39,6 @@ import compiler.lib.ir_framework.TestFramework;
 import jdk.incubator.vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
-/*
- * Extra diagnostics: pass -retain:all and
- * -javaoptions:-Dvector.selfcompare.diagnostics=true to jtreg.
- * Records assembly, compilation logs, vector flags and C2 residency for the
- * 128-bit methods. Their two-lane native mask IR rules are AArch64-specific.
- */
 public class TestVectorSelfCompare {
     private static final byte[] BYTES = new byte[64];
     private static final short[] SHORTS = new short[32];
@@ -75,21 +69,8 @@ public class TestVectorSelfCompare {
     }
     public static void main(String[] args) {
         // Populate shared access-check profiles before capturing IR.
-        boolean diagnostics = Boolean.getBoolean("vector.selfcompare.diagnostics");
-        if (diagnostics) System.setProperty("ReportStdout", "true");
         TestFramework framework = new TestFramework().setDefaultWarmup(10000)
                 .addFlags("--add-modules=jdk.incubator.vector");
-        if (diagnostics) {
-            framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintCompilation",
-                    "-XX:+LogCompilation", "-XX:+PrintFlagsFinal",
-                    "-XX:CompileCommand=PrintAssembly,compiler.vectorapi.TestVectorSelfCompare::long128*",
-                    "-XX:CompileCommand=PrintAssembly,compiler.vectorapi.TestVectorSelfCompare::double128*");
-            if (!System.getProperty("jdk.debug", "release").equals("release")) {
-                framework.addFlags(
-                        "-XX:CompileCommand=PrintIdeal,compiler.vectorapi.TestVectorSelfCompare::long128*",
-                        "-XX:CompileCommand=PrintIdeal,compiler.vectorapi.TestVectorSelfCompare::double128*");
-            }
-        }
         framework.start();
     }
 
@@ -507,8 +488,8 @@ public class TestVectorSelfCompare {
     private static final double[] DOUBLE128_B = {1.0d, +0.0d};
     private static final boolean[] MASK128_RESULT = new boolean[20];
 
-    // C2 residency alone does not establish native Vector API lowering. The
-    // AArch64 IR rules and optional assembly diagnostics establish that separately.
+    // C2 residency alone does not establish native Vector API lowering.
+    // The AArch64 IR rules check native lowering separately.
     private static boolean mask128Before(RunInfo info) {
         if (info.isWarmUp()) return false;
         boolean required = info.isC2CompilationEnabled() && !info.isCompilationSkipped();

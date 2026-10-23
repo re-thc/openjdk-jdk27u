@@ -251,6 +251,6 @@ public class TestFloatRoundTripCompileControls {
                         + " enqueue_to_install_ns=" + elapsed + " actual=4");
             }
         }
-        System.out.println("ROUNDTRIP_CHAIN_PASS bound=64 rounds=1; native driver uses fresh JVMs for repetitions");
+        System.out.println("ROUNDTRIP_CHAIN_PASS bound=64 rounds=1");
     }
 }
