@@ -46,7 +46,6 @@ public enum Alert {
     RECORD_OVERFLOW         ((byte)22,  "record_overflow", false),
     DECOMPRESSION_FAILURE   ((byte)30,  "decompression_failure", false),
     HANDSHAKE_FAILURE       ((byte)40,  "handshake_failure", true),
-    NO_CERTIFICATE          ((byte)41,  "no_certificate", true),
     BAD_CERTIFICATE         ((byte)42,  "bad_certificate", true),
     UNSUPPORTED_CERTIFICATE ((byte)43,  "unsupported_certificate", true),
     CERTIFICATE_REVOKED     ((byte)44,  "certificate_revoked", true),
@@ -265,41 +264,10 @@ public enum Alert {
                 }
             } else if ((level == Level.WARNING) && (alert != null)) {
                 // Terminate the connection if an alert with a level of warning
-                // is received during handshaking, except the no_certificate
-                // warning for SSLv3.
-                HandshakeContext hc = tc.handshakeContext;
-                if (alert.handshakeOnly && (hc != null)) {
-                    // In SSLv3, it's OK to get a no_certificate alert from a
-                    // client where we requested (want) client authentication.
-                    // If we required it (need), this is not acceptable
-                    // and must fail.
-                    //
-                    // no_certificate alerts are not acceptable in TLSv1.*.
-                    //
-                    if (!tc.sslConfig.isClientMode &&
-                            (hc.negotiatedProtocol == ProtocolVersion.SSL30) &&
-                            (alert == Alert.NO_CERTIFICATE) &&
-                            (tc.sslConfig.clientAuthType ==
-                                    ClientAuthType.CLIENT_AUTH_REQUESTED)) {
-
-                        // We'll ignore the warning and remove the Certificate,
-                        // CompressedCertificate and CertificateVerify handshake
-                        // consumers so the state machine isn't expecting them.
-                        if (hc.handshakeConsumers.remove(
-                                SSLHandshake.CERTIFICATE.id) != null) {
-                            hc.handshakeConsumers.remove(
-                                SSLHandshake.COMPRESSED_CERTIFICATE.id);
-                            hc.handshakeConsumers.remove(
-                                SSLHandshake.CERTIFICATE_VERIFY.id);
-                        } else {
-                            throw tc.fatal(Alert.HANDSHAKE_FAILURE,
-                                    "NO_CERTIFICATE alert received when certs" +
-                                    " were not expected or already received");
-                        }
-                    } else {
-                        throw tc.fatal(Alert.HANDSHAKE_FAILURE,
-                            "Received handshake warning: " + alert.description);
-                    }
+                // is received during handshaking.
+                if (alert.handshakeOnly && (tc.handshakeContext != null)) {
+                    throw tc.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Received handshake warning: " + alert.description);
                 }  // Otherwise, ignore the warning
             } else {    // fatal or unknown
                 String diagnostic;

@@ -207,53 +207,52 @@ public final class ECKeyFactory extends KeyFactorySpi {
     }
 
     // internal implementation of generatePublic. See JCA doc
+    // Not a pattern switch, which is costly to link the first time
     private PublicKey implGeneratePublic(KeySpec keySpec)
         throws GeneralSecurityException {
-        return switch (keySpec) {
-            case X509EncodedKeySpec x -> new ECPublicKeyImpl(x.getEncoded());
-            case ECPublicKeySpec e ->
-                new ECPublicKeyImpl(e.getW(), e.getParams());
-            case PKCS8EncodedKeySpec p8 -> {
-                byte[] encoded = p8.getEncoded();
-                PKCS8Key p8key = null;
-                try {
-                    p8key = new ECPrivateKeyImpl(encoded);
-                    if (!p8key.hasPublicKey()) {
-                        throw new InvalidKeySpecException("No public key found.");
-                    }
-                    yield new ECPublicKeyImpl(p8key.getPubKeyEncoded());
-                } finally {
-                    KeyUtil.clear(encoded, p8key);
+        if (keySpec instanceof X509EncodedKeySpec x) {
+            return new ECPublicKeyImpl(x.getEncoded());
+        } else if (keySpec instanceof ECPublicKeySpec e) {
+            return new ECPublicKeyImpl(e.getW(), e.getParams());
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            byte[] encoded = p8.getEncoded();
+            PKCS8Key p8key = null;
+            try {
+                p8key = new ECPrivateKeyImpl(encoded);
+                if (!p8key.hasPublicKey()) {
+                    throw new InvalidKeySpecException("No public key found.");
                 }
+                return new ECPublicKeyImpl(p8key.getPubKeyEncoded());
+            } finally {
+                KeyUtil.clear(encoded, p8key);
             }
-            case null -> throw new InvalidKeySpecException(
-                "keySpec must not be null");
-            default ->
-                throw new InvalidKeySpecException(keySpec.getClass().getName() +
-                    " not supported.");
-        };
+        } else if (keySpec == null) {
+            throw new InvalidKeySpecException("keySpec must not be null");
+        } else {
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                " not supported.");
+        }
     }
 
     // internal implementation of generatePrivate. See JCA doc
+    // Not a pattern switch, which is costly to link the first time
     private PrivateKey implGeneratePrivate(KeySpec keySpec)
         throws GeneralSecurityException {
-        return switch (keySpec) {
-            case PKCS8EncodedKeySpec p8 -> {
-                byte[] encoded = p8.getEncoded();
-                try {
-                    yield new ECPrivateKeyImpl(encoded);
-                } finally {
-                    Arrays.fill(encoded, (byte) 0);
-                }
+        if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            byte[] encoded = p8.getEncoded();
+            try {
+                return new ECPrivateKeyImpl(encoded);
+            } finally {
+                Arrays.fill(encoded, (byte) 0);
             }
-            case ECPrivateKeySpec e ->
-                new ECPrivateKeyImpl(e.getS(), e.getParams());
-            case null -> throw new InvalidKeySpecException(
-                "keySpec must not be null");
-            default ->
-                throw new InvalidKeySpecException(keySpec.getClass().getName() +
-                    " not supported.");
-        };
+        } else if (keySpec instanceof ECPrivateKeySpec e) {
+            return new ECPrivateKeyImpl(e.getS(), e.getParams());
+        } else if (keySpec == null) {
+            throw new InvalidKeySpecException("keySpec must not be null");
+        } else {
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                " not supported.");
+        }
     }
 
     protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)

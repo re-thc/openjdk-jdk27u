@@ -33,8 +33,8 @@ import javax.crypto.BadPaddingException;
 
 /**
  * This class implements the DES algorithm in its various modes
- * (<code>ECB</code>, <code>CFB</code>, <code>OFB</code>, <code>CBC</code>,
- * <code>PCBC</code>) and padding schemes (<code>PKCS5Padding</code>,
+ * (<code>ECB</code>, <code>CFB</code>, <code>OFB</code>, <code>CBC</code>)
+ * and padding schemes (<code>PKCS5Padding</code>,
  * <code>NoPadding</code>, <code>ISO10126Padding</code>).
  *
  * @author Gigi Ankeny

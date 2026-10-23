@@ -374,50 +374,6 @@ public final class RSAPadding {
         }
     }
 
-    public byte[] unpadForTls(byte[] padded, int clientVersion,
-            int serverVersion) {
-        int paddedLength = padded.length;
-
-        // bp is positive if the padding is bad and 0 if it is good so far
-        int bp = (((int) padded[0] | ((int)padded[1] - PAD_BLOCKTYPE_2)) &
-                0xFFF);
-
-        int k = 2;
-        while (k < paddedLength - 49) {
-            int b = padded[k++] & 0xFF;
-            bp = bp | (1 - (-b >>> 31)); // if (padded[k] == 0) bp |= 1;
-        }
-        bp |= ((int)padded[k++] & 0xFF);
-        int encodedVersion = ((padded[k] & 0xFF) << 8) | (padded[k + 1] & 0xFF);
-
-        int bv1 = clientVersion - encodedVersion;
-        bv1 |= -bv1;
-        int bv3 = serverVersion - encodedVersion;
-        bv3 |= -bv3;
-        int bv2 = (0x301 - clientVersion);
-
-        bp |= ((bv1 & (bv2 | bv3)) >>> 28);
-
-        byte[] data = Arrays.copyOfRange(padded, paddedLength - 48,
-                paddedLength);
-        if (random == null) {
-            random = JCAUtil.getSecureRandom();
-        }
-
-        byte[] fake = new byte[48];
-        random.nextBytes(fake);
-
-        bp = (-bp >> 24);
-
-        // Now bp is 0 if the padding and version number were good and
-        // -1 otherwise.
-        for (int i = 0; i < 48; i++) {
-            data[i] = (byte)((~bp & data[i]) | (bp & fake[i]));
-        }
-
-        return data;
-    }
-
     /**
      * PKCS#1 v2.0 OAEP padding (MGF1).
      * Paragraph references refer to PKCS#1 v2.1 (June 14, 2002)

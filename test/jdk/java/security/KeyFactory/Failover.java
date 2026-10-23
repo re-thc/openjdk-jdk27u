@@ -70,24 +70,24 @@ public class Failover {
         kf = KeyFactory.getInstance("FOO");
         kf.translateKey(null);
 
-        // somewhat more real tests using DSA
-        System.out.println("DSA tests...");
+        // somewhat more real tests using EC
+        System.out.println("EC tests...");
 
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
         kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
-        kf = KeyFactory.getInstance("DSA");
+        kf = KeyFactory.getInstance("EC");
         System.out.println(kf.translateKey(kp.getPrivate()));
 
-        kf = KeyFactory.getInstance("DSA");
-        KeySpec spec = kf.getKeySpec(kp.getPublic(), DSAPublicKeySpec.class);
+        kf = KeyFactory.getInstance("EC");
+        KeySpec spec = kf.getKeySpec(kp.getPublic(), ECPublicKeySpec.class);
 
-        kf = KeyFactory.getInstance("DSA");
+        kf = KeyFactory.getInstance("EC");
         System.out.println(kf.generatePublic(spec));
 
-        kf = KeyFactory.getInstance("DSA");
+        kf = KeyFactory.getInstance("EC");
         try {
             kf.generatePrivate(spec);
             throw new Exception("no exception");
@@ -107,7 +107,7 @@ public class Failover {
         ProviderFail() {
             super("Fail", "1.0", "Fail");
             put("KeyFactory.FOO" , "Failover$KeyFactoryFail");
-            put("KeyFactory.DSA" , "Failover$KeyFactoryFail");
+            put("KeyFactory.EC" , "Failover$KeyFactoryFail");
         }
     }
 

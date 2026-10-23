@@ -27,10 +27,11 @@
  * @library /test/lib
  * @summary Ensure the random source supplied in
  * Signature.initSign(PrivateKey, SecureRandom) is used.
- * @run main TestInitSignWithMyOwnRandom DSA 512
- * @run main TestInitSignWithMyOwnRandom SHA256withDSA 2048
+ * @run main TestInitSignWithMyOwnRandom SHA256withECDSA 256
+ * @run main TestInitSignWithMyOwnRandom SHA384withECDSA 384
  */
 import java.security.*;
+import java.util.Arrays;
 import jdk.test.lib.security.SecurityUtils;
 
 public class TestInitSignWithMyOwnRandom {
@@ -39,8 +40,8 @@ public class TestInitSignWithMyOwnRandom {
         // any signature implementation will do as long as
         // it needs a random source
         Provider p = Security.getProvider(
-                System.getProperty("test.provider.name", "SUN"));
-        String kpgAlgorithm = "DSA";
+                System.getProperty("test.provider.name", "SunEC"));
+        String kpgAlgorithm = "EC";
         int keySize = Integer.parseInt(args[1]);
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
         kpg.initialize(keySize);
@@ -66,6 +67,7 @@ class TestRandomSource extends SecureRandom {
     @Override
     public void nextBytes(byte[] rs) {
         count++;
+        Arrays.fill(rs, (byte) 0x5a);
     }
 
     public boolean isUsed() {

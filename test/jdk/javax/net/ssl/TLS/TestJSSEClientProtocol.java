@@ -31,52 +31,37 @@
  *          and all checking is done on the client side.
  * @compile CipherTestUtils.java JSSEClient.java JSSEServer.java
  * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
- *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
- *              -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
+ *              -DCLIENT_PROTOCOL=TLSv1.2,TLSv1.3
+ *              -DCIPHER=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
  *          TestJSSE
  * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
- *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
+ *              -DCLIENT_PROTOCOL=TLSv1.2,TLSv1.3
  *              -DCIPHER=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
  *          TestJSSE
  * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
- *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
+ *              -DCLIENT_PROTOCOL=TLSv1.2,TLSv1.3
  *              -DCIPHER=TLS_DHE_RSA_WITH_AES_128_CBC_SHA
  *          TestJSSE
  * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
- *              -DCLIENT_PROTOCOL=SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
+ *              -DCLIENT_PROTOCOL=TLSv1.2,TLSv1.3
  *              -DCIPHER=TLS_AES_256_GCM_SHA384
  *          TestJSSE
  * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv3
- *              -DCLIENT_PROTOCOL=SSLv3
- *              -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
- *          TestJSSE
- * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv3,TLSv1
- *              -DCLIENT_PROTOCOL=TLSv1
- *              -DCIPHER=TLS_RSA_WITH_AES_128_CBC_SHA
- *          TestJSSE
- * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1
- *              -DCLIENT_PROTOCOL=TLSv1.1
- *              -DCIPHER=TLS_RSA_WITH_AES_256_CBC_SHA
- *          TestJSSE
- * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
  *              -DCLIENT_PROTOCOL=TLSv1.2
- *              -DCIPHER=TLS_RSA_WITH_AES_128_GCM_SHA256
+ *              -DCIPHER=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
  *          TestJSSE
  * @run main/othervm
- *              -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
  *              -DCLIENT_PROTOCOL=TLSv1.3
  *              -DCIPHER=TLS_AES_256_GCM_SHA384
  *          TestJSSE
  * @run main/othervm --limit-modules java.base
- *              -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DSERVER_PROTOCOL=TLSv1.2,TLSv1.3
  *              -DCLIENT_PROTOCOL=TLSv1.3
  *              -DCIPHER=TLS_AES_256_GCM_SHA384
  *          TestJSSE

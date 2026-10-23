@@ -78,7 +78,6 @@ import java.nio.*;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.security.SecurityUtils;
 
 public class DebugReportsOneExtraByte extends SSLEngineTemplate {
 
@@ -96,13 +95,10 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
             OutputAnalyzer output = ProcessTools.executeTestJava(
                 "-Dtest.src=" + System.getProperty("test.src"),
                 "-Djavax.net.debug=all", "DebugReportsOneExtraByte", "p");
-            output.shouldContain("WRITE: TLSv1 application_data, length = 8");
+            output.shouldContain("WRITE: TLSv1.2 application_data, length = 9");
 
             System.out.println("Test Passed.");
         } else {
-            // Re-enable TLSv1 and TLS_RSA_* since test depends on it
-            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
-
             DebugReportsOneExtraByte test = new DebugReportsOneExtraByte();
             test.runTest();
         }
@@ -120,18 +116,18 @@ public class DebugReportsOneExtraByte extends SSLEngineTemplate {
         serverEngine.setUseClientMode(false);
         // Force a block-oriented ciphersuite.
         serverEngine.setEnabledCipherSuites(
-                new String [] {"TLS_RSA_WITH_AES_128_CBC_SHA"});
+                new String [] {"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"});
         return serverEngine;
     }
 
     @Override
     protected ContextParameters getClientContextParameters() {
-        return new ContextParameters("TLSv1", "PKIX", "NewSunX509");
+        return new ContextParameters("TLSv1.2", "PKIX", "NewSunX509");
     }
 
     @Override
     protected ContextParameters getServerContextParameters() {
-        return new ContextParameters("TLSv1", "PKIX", "NewSunX509");
+        return new ContextParameters("TLSv1.2", "PKIX", "NewSunX509");
     }
 
     @Override

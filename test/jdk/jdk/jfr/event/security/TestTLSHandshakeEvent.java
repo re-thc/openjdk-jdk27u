@@ -30,7 +30,6 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.security.TestTLSHandshake;
-import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
@@ -47,20 +46,18 @@ public class TestTLSHandshakeEvent {
 
     private static final List<TLSConfig> CONFIGS = List.of(
         new TLSConfig("TLSv1.3", "TLS_AES_256_GCM_SHA384", "X25519MLKEM768",
-                      3237675498L),
+                      2098007022L),
         new TLSConfig("TLSv1.3", "TLS_CHACHA20_POLY1305_SHA256",
-                      "X25519MLKEM768", 3237675498L),
+                      "X25519MLKEM768", 2098007022L),
         new TLSConfig("TLSv1.2", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-                      "secp256r1", 3237675498L),
-        new TLSConfig("TLSv1.2", "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
-                      "ffdhe2048", 3188175476L),
-        new TLSConfig("TLSv1.2", "TLS_RSA_WITH_AES_256_CBC_SHA",
-                      "N/A", 3010289526L)
+                      "secp256r1", 2098007022L),
+        new TLSConfig("TLSv1.2", "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+                      "ffdhe2048", 3010289526L),
+        new TLSConfig("TLSv1.2", "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+                      "secp256r1", 3010289526L)
     );
 
     public static void main(String[] args) throws Exception {
-        // re-enable TLS_RSA suites as one test depends on it
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         for (TLSConfig config : CONFIGS) {
             System.out.println(config);
             try (Recording recording = new Recording()) {

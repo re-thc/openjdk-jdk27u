@@ -33,7 +33,6 @@ import javax.security.auth.x500.X500Principal;
 
 import sun.net.util.IPAddressUtil;
 import sun.security.util.*;
-import sun.security.pkcs.PKCS9Attribute;
 
 /**
  * This class defines the Name Constraints Extension.
@@ -420,7 +419,7 @@ public class NameConstraintsExtension extends Extension
             // type emailAddress in the subject distinguished name.
             for (AVA ava : subject.allAvas()) {
                 ObjectIdentifier attrOID = ava.getObjectIdentifier();
-                if (attrOID.equals(PKCS9Attribute.EMAIL_ADDRESS_OID)) {
+                if (attrOID.equals(X500Name.EMAIL_ADDRESS_OID)) {
                     String attrValue = ava.getValueString();
                     if (attrValue != null) {
                         try {

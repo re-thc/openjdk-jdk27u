@@ -184,10 +184,7 @@ public final class KrbAsReqBuilder {
                     PAData.SaltAndParams snp =
                             PAData.getSaltAndParams(eTypes[i], paList);
                     if (snp != null) {
-                        // Never uses a salt for rc4-hmac, it does not use
-                        // a salt at all
-                        if (eTypes[i] != EncryptedData.ETYPE_ARCFOUR_HMAC &&
-                                snp.salt != null) {
+                        if (snp.salt != null) {
                             salt = snp.salt;
                         }
                         result[i] = EncryptionKey.acquireSecretKey(cname,
@@ -196,7 +193,7 @@ public final class KrbAsReqBuilder {
                                 snp);
                     }
                 }
-                // No new salt from PA, maybe empty, maybe only rc4-hmac
+                // No new salt from PA, maybe empty
                 if (salt == null) salt = cname.getSalt();
                 for (int i=0; i<eTypes.length; i++) {
                     // Second round, calculate those with no PA entry

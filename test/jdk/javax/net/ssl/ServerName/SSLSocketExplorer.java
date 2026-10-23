@@ -32,10 +32,6 @@
  * @summary Support TLS Server Name Indication (SNI) Extension in JSSE Server
  * @library ../templates
  * @build SSLCapabilities SSLExplorer
- * @run main/othervm SSLSocketExplorer SSLv2Hello,SSLv3
- * @run main/othervm SSLSocketExplorer SSLv3
- * @run main/othervm SSLSocketExplorer TLSv1
- * @run main/othervm SSLSocketExplorer TLSv1.1
  * @run main/othervm SSLSocketExplorer TLSv1.2
  */
 
@@ -148,7 +144,7 @@ public class SSLSocketExplorer {
             new ByteArrayInputStream(buffer, 0, position);
         SSLSocket sslSocket = (SSLSocket)sslsf.createSocket(socket, bais, true);
 
-        // Enable all supported protocols on server side to test SSLv3
+        // Enable all supported protocols on server side
         sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
 
         InputStream sslIS = sslSocket.getInputStream();

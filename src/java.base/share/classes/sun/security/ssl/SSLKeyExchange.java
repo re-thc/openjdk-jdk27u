@@ -28,7 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import sun.security.ssl.X509Authentication.X509Possession;
 
 final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         SSLHandshakeBinding {
@@ -68,43 +67,13 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         }
 
         // key agreement
-        SSLPossession kaPossession;
-        if (keyAgreement == T12KeyAgreement.RSA_EXPORT) {
-            // a special case
-            X509Possession x509Possession = (X509Possession)authPossession;
-            if (JsseJce.getRSAKeyLength(
-                    x509Possession.popCerts[0].getPublicKey()) > 512) {
-                kaPossession = keyAgreement.createPossession(context);
-
-                if (kaPossession == null) {
-                    return new SSLPossession[0];
-                } else {
-                    return authentication != null ?
-                            new SSLPossession[] {authPossession, kaPossession} :
-                            new SSLPossession[] {kaPossession};
-                }
-            } else {
-                return authentication != null ?
-                        new SSLPossession[] {authPossession} :
-                        new SSLPossession[0];
-            }
+        SSLPossession kaPossession = keyAgreement.createPossession(context);
+        if (kaPossession == null) {
+            return new SSLPossession[0];
         } else {
-            kaPossession = keyAgreement.createPossession(context);
-            if (kaPossession == null) {
-                // special cases
-                if (keyAgreement == T12KeyAgreement.RSA ||
-                        keyAgreement == T12KeyAgreement.ECDH) {
-                    return authentication != null ?
-                            new SSLPossession[] {authPossession} :
-                            new SSLPossession[0];
-                } else {
-                    return new SSLPossession[0];
-                }
-            } else {
-                return authentication != null ?
-                        new SSLPossession[] {authPossession, kaPossession} :
-                        new SSLPossession[] {kaPossession};
-            }
+            return authentication != null ?
+                    new SSLPossession[] {authPossession, kaPossession} :
+                    new SSLPossession[] {kaPossession};
         }
     }
 
@@ -201,7 +170,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         }
     }
 
-    // SSL 3.0 - (D)TLS 1.2
+    // (D)TLS 1.2
     static SSLKeyExchange valueOf(
             CipherSuite.KeyExchange keyExchange,
             ProtocolVersion protocolVersion) {
@@ -210,40 +179,12 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         }
 
         switch (keyExchange) {
-            case K_RSA:
-                return SSLKeyExRSA.KE;
-            case K_RSA_EXPORT:
-                return SSLKeyExRSAExport.KE;
-            case K_DHE_DSS:
-                return SSLKeyExDHEDSS.KE;
-            case K_DHE_DSS_EXPORT:
-                return SSLKeyExDHEDSSExport.KE;
             case K_DHE_RSA:
-                if (protocolVersion.useTLS12PlusSpec()) {   // (D)TLS 1.2
-                    return SSLKeyExDHERSAOrPSS.KE;
-                } else {    // SSL 3.0, TLS 1.0/1.1
-                    return SSLKeyExDHERSA.KE;
-                }
-            case K_DHE_RSA_EXPORT:
-                return SSLKeyExDHERSAExport.KE;
-            case K_DH_ANON:
-                return SSLKeyExDHANON.KE;
-            case K_DH_ANON_EXPORT:
-                return SSLKeyExDHANONExport.KE;
-            case K_ECDH_ECDSA:
-                return SSLKeyExECDHECDSA.KE;
-            case K_ECDH_RSA:
-                return SSLKeyExECDHRSA.KE;
+                return SSLKeyExDHERSAOrPSS.KE;
             case K_ECDHE_ECDSA:
                 return SSLKeyExECDHEECDSA.KE;
             case K_ECDHE_RSA:
-                if (protocolVersion.useTLS12PlusSpec()) {   // (D)TLS 1.2
-                    return SSLKeyExECDHERSAOrPSS.KE;
-                } else {    // SSL 3.0, TLS 1.0/1.1
-                    return SSLKeyExECDHERSA.KE;
-                }
-            case K_ECDH_ANON:
-                return SSLKeyExECDHANON.KE;
+                return SSLKeyExECDHERSAOrPSS.KE;
         }
 
         return null;
@@ -259,59 +200,9 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         return null;
     }
 
-    private static class SSLKeyExRSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.RSA);
-    }
-
-    private static class SSLKeyExRSAExport {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.RSA_EXPORT);
-    }
-
-    private static class SSLKeyExDHEDSS {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.DSA), T12KeyAgreement.DHE);
-    }
-
-    private static class SSLKeyExDHEDSSExport {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.DSA), T12KeyAgreement.DHE_EXPORT);
-    }
-
-    private static class SSLKeyExDHERSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.DHE);
-    }
-
     private static class SSLKeyExDHERSAOrPSS {
         private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.DHE);
-    }
-
-    private static class SSLKeyExDHERSAExport {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.DHE_EXPORT);
-    }
-
-    private static class SSLKeyExDHANON {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                null, T12KeyAgreement.DHE);
-    }
-
-    private static class SSLKeyExDHANONExport {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                null, T12KeyAgreement.DHE_EXPORT);
-    }
-
-    private static class SSLKeyExECDHECDSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
-    }
-
-    private static class SSLKeyExECDHRSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.EC), T12KeyAgreement.ECDH);
     }
 
     private static class SSLKeyExECDHEECDSA {
@@ -320,32 +211,14 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 T12KeyAgreement.ECDHE);
     }
 
-    private static class SSLKeyExECDHERSA {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                List.of(X509Authentication.RSA), T12KeyAgreement.ECDHE);
-    }
-
     private static class SSLKeyExECDHERSAOrPSS {
         private static final SSLKeyExchange KE = new SSLKeyExchange(
                 List.of(X509Authentication.RSA_OR_PSS), T12KeyAgreement.ECDHE);
     }
 
-    private static class SSLKeyExECDHANON {
-        private static final SSLKeyExchange KE = new SSLKeyExchange(
-                null, T12KeyAgreement.ECDHE);
-    }
-
     private enum T12KeyAgreement implements SSLKeyAgreement {
-        RSA             ("rsa",         null,
-                                        RSAKeyExchange.kaGenerator),
-        RSA_EXPORT      ("rsa_export",  RSAKeyExchange.poGenerator,
-                                        RSAKeyExchange.kaGenerator),
         DHE             ("dhe",         DHKeyExchange.poGenerator,
                                         DHKeyExchange.kaGenerator),
-        DHE_EXPORT      ("dhe_export",  DHKeyExchange.poExportableGenerator,
-                                        DHKeyExchange.kaGenerator),
-        ECDH            ("ecdh",        null,
-                                        ECDHKeyExchange.ecdhKAGenerator),
         ECDHE           ("ecdhe",       ECDHKeyExchange.poGenerator,
                                         ECDHKeyExchange.ecdheXdhKAGenerator);
 
@@ -363,11 +236,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
         @Override
         public SSLPossession createPossession(HandshakeContext context) {
-            if (possessionGenerator != null) {
-                return possessionGenerator.createPossession(context);
-            }
-
-            return null;
+            return possessionGenerator.createPossession(context);
         }
 
         @Override
@@ -380,11 +249,9 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
         public SSLHandshake[] getRelatedHandshakers(
                 HandshakeContext handshakeContext) {
             if (!handshakeContext.negotiatedProtocol.useTLS13PlusSpec()) {
-                if (this.possessionGenerator != null) {
-                    return new SSLHandshake[] {
-                            SSLHandshake.SERVER_KEY_EXCHANGE
-                        };
-                }
+                return new SSLHandshake[] {
+                        SSLHandshake.SERVER_KEY_EXCHANGE
+                    };
             }
 
             return new SSLHandshake[0];
@@ -400,32 +267,12 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
             if (handshakeContext.sslConfig.isClientMode) {
                 switch (this) {
-                    case RSA:
-                    case RSA_EXPORT:
-                        return (Map.Entry<Byte,
-                                HandshakeProducer>[])(new Map.Entry[] {
-                            new SimpleImmutableEntry<>(
-                                    SSLHandshake.CLIENT_KEY_EXCHANGE.id,
-                                    RSAClientKeyExchange.rsaHandshakeProducer
-                            )
-                        });
-
                     case DHE:
-                    case DHE_EXPORT:
                         return (Map.Entry<Byte,
                                 HandshakeProducer>[])(new Map.Entry[] {
                             new SimpleImmutableEntry<Byte, HandshakeProducer>(
                                     SSLHandshake.CLIENT_KEY_EXCHANGE.id,
                                     DHClientKeyExchange.dhHandshakeProducer
-                            )
-                        });
-
-                    case ECDH:
-                        return (Map.Entry<Byte,
-                                HandshakeProducer>[])(new Map.Entry[] {
-                            new SimpleImmutableEntry<>(
-                                SSLHandshake.CLIENT_KEY_EXCHANGE.id,
-                                ECDHClientKeyExchange.ecdhHandshakeProducer
                             )
                         });
 
@@ -440,17 +287,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 }
             } else {
                 switch (this) {
-                    case RSA_EXPORT:
-                        return (Map.Entry<Byte,
-                                HandshakeProducer>[])(new Map.Entry[] {
-                            new SimpleImmutableEntry<>(
-                                    SSLHandshake.SERVER_KEY_EXCHANGE.id,
-                                    RSAServerKeyExchange.rsaHandshakeProducer
-                            )
-                        });
-
                     case DHE:
-                    case DHE_EXPORT:
                         return (Map.Entry<Byte,
                                 HandshakeProducer>[])(new Map.Entry[] {
                             new SimpleImmutableEntry<>(
@@ -483,17 +320,7 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
             if (handshakeContext.sslConfig.isClientMode) {
                 switch (this) {
-                    case RSA_EXPORT:
-                        return (Map.Entry<Byte,
-                                SSLConsumer>[])(new Map.Entry[] {
-                            new SimpleImmutableEntry<>(
-                                    SSLHandshake.SERVER_KEY_EXCHANGE.id,
-                                    RSAServerKeyExchange.rsaHandshakeConsumer
-                            )
-                        });
-
                     case DHE:
-                    case DHE_EXPORT:
                         return (Map.Entry<Byte,
                                 SSLConsumer>[])(new Map.Entry[] {
                             new SimpleImmutableEntry<>(
@@ -513,32 +340,12 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
                 }
             } else {
                 switch (this) {
-                    case RSA:
-                    case RSA_EXPORT:
-                        return (Map.Entry<Byte,
-                                SSLConsumer>[])(new Map.Entry[] {
-                            new SimpleImmutableEntry<>(
-                                    SSLHandshake.CLIENT_KEY_EXCHANGE.id,
-                                    RSAClientKeyExchange.rsaHandshakeConsumer
-                            )
-                        });
-
                     case DHE:
-                    case DHE_EXPORT:
                         return (Map.Entry<Byte,
                                 SSLConsumer>[])(new Map.Entry[] {
                             new SimpleImmutableEntry<>(
                                     SSLHandshake.CLIENT_KEY_EXCHANGE.id,
                                     DHClientKeyExchange.dhHandshakeConsumer
-                            )
-                        });
-
-                    case ECDH:
-                        return (Map.Entry<Byte,
-                                SSLConsumer>[])(new Map.Entry[] {
-                            new SimpleImmutableEntry<>(
-                                SSLHandshake.CLIENT_KEY_EXCHANGE.id,
-                                ECDHClientKeyExchange.ecdhHandshakeConsumer
                             )
                         });
 

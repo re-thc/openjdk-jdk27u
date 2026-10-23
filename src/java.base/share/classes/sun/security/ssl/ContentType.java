@@ -32,13 +32,13 @@ enum ContentType {
     INVALID             ((byte)0,   "invalid",
                             ProtocolVersion.PROTOCOLS_OF_13),
     CHANGE_CIPHER_SPEC  ((byte)20,  "change_cipher_spec",
-                            ProtocolVersion.PROTOCOLS_TO_12),
+                            ProtocolVersion.PROTOCOLS_OF_12),
     ALERT               ((byte)21,  "alert",
-                            ProtocolVersion.PROTOCOLS_TO_13),
+                            ProtocolVersion.PROTOCOLS_12_13),
     HANDSHAKE           ((byte)22,  "handshake",
-                            ProtocolVersion.PROTOCOLS_TO_13),
+                            ProtocolVersion.PROTOCOLS_12_13),
     APPLICATION_DATA    ((byte)23,  "application_data",
-                            ProtocolVersion.PROTOCOLS_TO_13);
+                            ProtocolVersion.PROTOCOLS_12_13);
 
     final byte id;
     final String name;

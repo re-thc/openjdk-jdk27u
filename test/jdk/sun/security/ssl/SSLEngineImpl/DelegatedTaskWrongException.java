@@ -44,14 +44,14 @@ public class DelegatedTaskWrongException extends SSLEngineTemplate {
     @Override
     protected SSLEngine configureServerEngine(SSLEngine engine) {
         engine.setUseClientMode(false);
-        engine.setEnabledProtocols(new String [] { "TLSv1" });
+        engine.setEnabledProtocols(new String [] { "TLSv1.3" });
         return engine;
     }
 
     @Override
     protected SSLEngine configureClientEngine(SSLEngine engine) {
         engine.setUseClientMode(true);
-        engine.setEnabledProtocols(new String [] { "SSLv3" });
+        engine.setEnabledProtocols(new String [] { "TLSv1.2" });
         return engine;
     }
 

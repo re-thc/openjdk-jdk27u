@@ -75,7 +75,7 @@ public class MVJarSigningTest {
     private static final String TEST_SRC = System.getProperty("test.src", ".");
     private static final String USR_DIR = System.getProperty("user.dir", ".");
     private static final String JAR_NAME = "MV.jar";
-    private static final String KEYSTORE = "keystore.jks";
+    private static final String KEYSTORE = "keystore.p12";
     private static final String ALIAS = "JavaTest";
     private static final String STOREPASS = "changeit";
     private static final String KEYPASS = "changeit";
@@ -149,7 +149,7 @@ public class MVJarSigningTest {
                 "-J-Duser.language=en",
                 "-J-Duser.country=US",
                 "-genkey",
-                "-keyalg", "dsa",
+                "-keyalg", "ec",
                 "-alias", ALIAS,
                 "-keystore", KEYSTORE,
                 "-keypass", KEYPASS,
@@ -213,7 +213,7 @@ public class MVJarSigningTest {
             throws Throwable {
         // Get JarSigner
         try (FileInputStream fis = new FileInputStream(KEYSTORE)) {
-                KeyStore ks = KeyStore.getInstance("JKS");
+                KeyStore ks = KeyStore.getInstance("PKCS12");
                 ks.load(fis, STOREPASS.toCharArray());
                 PrivateKey pk = (PrivateKey)ks.getKey(ALIAS, KEYPASS.toCharArray());
                 Certificate cert = ks.getCertificate(ALIAS);

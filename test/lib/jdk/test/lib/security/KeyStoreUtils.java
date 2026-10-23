@@ -300,7 +300,7 @@ public class KeyStoreUtils {
      */
     public static void createCacerts(String ks, String... crts) throws Exception {
         try (OutputStream os = new FileOutputStream(ks)) {
-            KeyStore k = KeyStore.getInstance("JKS");
+            KeyStore k = KeyStore.getInstance("PKCS12");
             k.load(null, null);
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             for (int pos = 0; pos < crts.length; pos++) {
@@ -309,7 +309,8 @@ public class KeyStoreUtils {
                             cf.generateCertificate(is));
                 }
             }
-            k.store(os, "changeit".toCharArray());
+            // No password, like the JDK's own cacerts
+            k.store(os, null);
         }
     }
 }

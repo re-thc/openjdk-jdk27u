@@ -75,9 +75,8 @@ public class UseStrongDHSizes extends SSLSocketTemplate {
     protected void runServerApplication(SSLSocket socket) throws Exception {
         String ciphers[] = {
                 "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-                "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-                "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA"};
+                "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256"};
 
         socket.setEnabledCipherSuites(ciphers);
         socket.setWantClientAuth(true);
@@ -94,9 +93,8 @@ public class UseStrongDHSizes extends SSLSocketTemplate {
     protected void runClientApplication(SSLSocket socket) throws Exception {
         String ciphers[] = {
                 "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-                "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-                "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA"};
+                "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256"};
         socket.setEnabledCipherSuites(ciphers);
         socket.setUseClientMode(true);
 

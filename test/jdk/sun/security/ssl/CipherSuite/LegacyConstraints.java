@@ -43,16 +43,18 @@ public class LegacyConstraints extends SSLSocketTemplate {
     // none of the legacy suites are supported in TLS 1.3, so don't
     // test TLS 1.3
     private final static List<String> TLS_PROTOCOLS = List.of(
-        "TLSv1", "TLSv1.1", "TLSv1.2");
+        "TLSv1.2");
 
     // cipher suites that contain legacy algorithms
     private final static List<String> LEGACY_SUITES = List.of(
-        "TLS_RSA_WITH_NULL_SHA256",
-        "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-        "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
-        "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-        "TLS_RSA_WITH_DES_CBC_SHA",
-        "TLS_RSA_WITH_3DES_EDE_CBC_SHA");
+        "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+        "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA");
+
+    // legacy algorithms that cover the suites above
+    private final static String LEGACY_ALGORITHMS =
+        "AES_128_CBC, DHE_RSA, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA";
 
     private static String protocol;
 
@@ -60,6 +62,7 @@ public class LegacyConstraints extends SSLSocketTemplate {
         // Clear disabled algorithms so that it doesn't interfere
         // with legacy suites
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.tls.legacyAlgorithms", LEGACY_ALGORITHMS);
         for (String tlsProtocol : TLS_PROTOCOLS) {
             protocol = tlsProtocol;
             System.out.println("Testing " + protocol);
@@ -74,6 +77,7 @@ public class LegacyConstraints extends SSLSocketTemplate {
         socket.setEnabledProtocols(new String[] {protocol});
         List<String> newSuites = new ArrayList(LEGACY_SUITES);
         Arrays.stream(socket.getEnabledCipherSuites())
+                            .filter(suite -> !newSuites.contains(suite))
                             .forEachOrdered(suite -> newSuites.add(suite));
         socket.setEnabledCipherSuites(newSuites.toArray(new String[0]));
     }

@@ -38,6 +38,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import jdk.internal.util.OperatingSystem;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
@@ -49,17 +50,17 @@ enum SignatureScheme {
                                     "SHA256withECDSA",
                                     "EC",
                                     NamedGroup.SECP256_R1,
-                                    ProtocolVersion.PROTOCOLS_TO_13),
+                                    ProtocolVersion.PROTOCOLS_12_13),
     ECDSA_SECP384R1_SHA384  (0x0503, "ecdsa_secp384r1_sha384",
                                     "SHA384withECDSA",
                                     "EC",
                                     NamedGroup.SECP384_R1,
-                                    ProtocolVersion.PROTOCOLS_TO_13),
+                                    ProtocolVersion.PROTOCOLS_12_13),
     ECDSA_SECP521R1_SHA512  (0x0603, "ecdsa_secp521r1_sha512",
                                     "SHA512withECDSA",
                                     "EC",
                                     NamedGroup.SECP521_R1,
-                                    ProtocolVersion.PROTOCOLS_TO_13),
+                                    ProtocolVersion.PROTOCOLS_12_13),
 
     // EdDSA algorithms
     ED25519                 (0x0807, "ed25519", "Ed25519",
@@ -106,44 +107,26 @@ enum SignatureScheme {
     // RSASSA-PKCS1-v1_5 algorithms
     RSA_PKCS1_SHA256        (0x0401, "rsa_pkcs1_sha256", "SHA256withRSA",
                                     "RSA", null, null, 511,
-                                    ProtocolVersion.PROTOCOLS_TO_13,
-                                    ProtocolVersion.PROTOCOLS_TO_12),
+                                    ProtocolVersion.PROTOCOLS_12_13,
+                                    ProtocolVersion.PROTOCOLS_OF_12),
     RSA_PKCS1_SHA384        (0x0501, "rsa_pkcs1_sha384", "SHA384withRSA",
                                     "RSA", null, null, 768,
-                                    ProtocolVersion.PROTOCOLS_TO_13,
-                                    ProtocolVersion.PROTOCOLS_TO_12),
+                                    ProtocolVersion.PROTOCOLS_12_13,
+                                    ProtocolVersion.PROTOCOLS_OF_12),
     RSA_PKCS1_SHA512        (0x0601, "rsa_pkcs1_sha512", "SHA512withRSA",
                                     "RSA", null, null, 768,
-                                    ProtocolVersion.PROTOCOLS_TO_13,
-                                    ProtocolVersion.PROTOCOLS_TO_12),
+                                    ProtocolVersion.PROTOCOLS_12_13,
+                                    ProtocolVersion.PROTOCOLS_OF_12),
 
     // Legacy algorithms
-    DSA_SHA256              (0x0402, "dsa_sha256", "SHA256withDSA",
-                                    "DSA",
-                                    ProtocolVersion.PROTOCOLS_TO_12),
-    ECDSA_SHA224            (0x0303, "ecdsa_sha224", "SHA224withECDSA",
-                                    "EC",
-                                    ProtocolVersion.PROTOCOLS_TO_12),
-    RSA_SHA224              (0x0301, "rsa_sha224", "SHA224withRSA",
-                                    "RSA", 511,
-                                    ProtocolVersion.PROTOCOLS_TO_12),
-    DSA_SHA224              (0x0302, "dsa_sha224", "SHA224withDSA",
-                                    "DSA",
-                                    ProtocolVersion.PROTOCOLS_TO_12),
     ECDSA_SHA1              (0x0203, "ecdsa_sha1", "SHA1withECDSA",
                                     "EC", null, null, -1,
-                                    ProtocolVersion.PROTOCOLS_TO_13,
-                                    ProtocolVersion.PROTOCOLS_TO_12),
+                                    ProtocolVersion.PROTOCOLS_12_13,
+                                    ProtocolVersion.PROTOCOLS_OF_12),
     RSA_PKCS1_SHA1          (0x0201, "rsa_pkcs1_sha1", "SHA1withRSA",
                                     "RSA", null, null, 511,
-                                    ProtocolVersion.PROTOCOLS_TO_13,
-                                    ProtocolVersion.PROTOCOLS_TO_12),
-    DSA_SHA1                (0x0202, "dsa_sha1", "SHA1withDSA",
-                                    "DSA",
-                                    ProtocolVersion.PROTOCOLS_TO_12),
-    RSA_MD5                 (0x0101, "rsa_md5", "MD5withRSA",
-                                    "RSA", 511,
-                                    ProtocolVersion.PROTOCOLS_TO_12);
+                                    ProtocolVersion.PROTOCOLS_12_13,
+                                    ProtocolVersion.PROTOCOLS_OF_12);
 
     final int id;                         // hash + signature
     final String name;                    // literal name
@@ -309,8 +292,11 @@ enum SignatureScheme {
         }
 
         if (mediator && ((id >> 8) & 0xFF) == 0x03) {   // SHA224
-            // There are some problems to use SHA224 on Windows.
-            if (Security.getProvider("SunMSCAPI") != null) {
+            // There are some problems to use SHA224 on Windows.  Note that
+            // looking up a provider that is not installed loads all the
+            // providers, and SunMSCAPI is only available on Windows.
+            if (OperatingSystem.isWindows()
+                    && Security.getProvider("SunMSCAPI") != null) {
                 mediator = false;
             }
         }
@@ -680,11 +666,18 @@ enum SignatureScheme {
     // Default signature schemes for SSLConfiguration.
     static final class SupportedSigSchemes {
 
-        static final String[] DEFAULT = Arrays.stream(
-                        SignatureScheme.values())
-                .filter(ss -> ss.isAvailable
-                        && ss.isPermitted(
-                        SSLAlgorithmConstraints.DEFAULT, null))
-                .map(ss -> ss.name).toArray(String[]::new);
+        static final String[] DEFAULT = getDefault();
+
+        private static String[] getDefault() {
+            List<String> names = new ArrayList<>();
+            for (SignatureScheme ss : SignatureScheme.values()) {
+                if (ss.isAvailable && ss.isPermitted(
+                        SSLAlgorithmConstraints.DEFAULT, null)) {
+                    names.add(ss.name);
+                }
+            }
+
+            return names.toArray(new String[0]);
+        }
     }
 }

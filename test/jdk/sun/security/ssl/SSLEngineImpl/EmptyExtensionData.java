@@ -38,8 +38,6 @@ import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 import java.nio.*;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class EmptyExtensionData extends SSLContextTemplate {
 
     private static boolean debug = Boolean.getBoolean("test.debug");
@@ -48,8 +46,8 @@ public class EmptyExtensionData extends SSLContextTemplate {
         // a client hello message with an empty extension data
         byte[] msg_clihello = {
                 (byte)0x16, (byte)0x03, (byte)0x01, (byte)0x00,
-                (byte)0x6f, (byte)0x01, (byte)0x00, (byte)0x00,
-                (byte)0x6b, (byte)0x03, (byte)0x01, (byte)0x48,
+                (byte)0x79, (byte)0x01, (byte)0x00, (byte)0x00,
+                (byte)0x75, (byte)0x03, (byte)0x03, (byte)0x48,
                 (byte)0x90, (byte)0x71, (byte)0xfc, (byte)0xf9,
                 (byte)0xa2, (byte)0x3a, (byte)0xd7, (byte)0xa8,
                 (byte)0x0b, (byte)0x25, (byte)0xf1, (byte)0x2b,
@@ -58,24 +56,27 @@ public class EmptyExtensionData extends SSLContextTemplate {
                 (byte)0x9d, (byte)0x62, (byte)0x1d, (byte)0x89,
                 (byte)0xc9, (byte)0x1e, (byte)0x1f, (byte)0xe5,
                 (byte)0x92, (byte)0xfe, (byte)0x8d, (byte)0x00,
-                (byte)0x00, (byte)0x24, (byte)0x00, (byte)0x88,
-                (byte)0x00, (byte)0x87, (byte)0x00, (byte)0x39,
-                (byte)0x00, (byte)0x38, (byte)0x00, (byte)0x84,
-                (byte)0x00, (byte)0x35, (byte)0x00, (byte)0x45,
-                (byte)0x00, (byte)0x44, (byte)0x00, (byte)0x33,
-                (byte)0x00, (byte)0x32, (byte)0x00, (byte)0x41,
-                (byte)0x00, (byte)0x04, (byte)0x00, (byte)0x05,
-                (byte)0x00, (byte)0x2f, (byte)0x00, (byte)0x16,
-                (byte)0x00, (byte)0x13, (byte)0xfe, (byte)0xff,
-                (byte)0x00, (byte)0x0a, (byte)0x01, (byte)0x00,
-                (byte)0x00, (byte)0x1e, (byte)0x00, (byte)0x00,
+                (byte)0x00, (byte)0x18, (byte)0xc0, (byte)0x2f,
+                (byte)0xc0, (byte)0x2b, (byte)0xc0, (byte)0x30,
+                (byte)0xc0, (byte)0x2c, (byte)0xc0, (byte)0x13,
+                (byte)0xc0, (byte)0x09, (byte)0xc0, (byte)0x14,
+                (byte)0xc0, (byte)0x0a, (byte)0x00, (byte)0x9e,
+                (byte)0x00, (byte)0x33, (byte)0x00, (byte)0x39,
+                (byte)0x00, (byte)0xff, (byte)0x01, (byte)0x00,
+                (byte)0x00, (byte)0x34, (byte)0x00, (byte)0x00,
                 (byte)0x00, (byte)0x16, (byte)0x00, (byte)0x14,
                 (byte)0x00, (byte)0x00, (byte)0x11, (byte)0x6a,
                 (byte)0x75, (byte)0x73, (byte)0x74, (byte)0x69,
                 (byte)0x6e, (byte)0x2e, (byte)0x75, (byte)0x6b,
                 (byte)0x2e, (byte)0x73, (byte)0x75, (byte)0x6e,
                 (byte)0x2e, (byte)0x63, (byte)0x6f, (byte)0x6d,
-                (byte)0x00, (byte)0x23, (byte)0x00, (byte)0x00
+                (byte)0x00, (byte)0x0a, (byte)0x00, (byte)0x06,
+                (byte)0x00, (byte)0x04, (byte)0x00, (byte)0x1d,
+                (byte)0x00, (byte)0x17, (byte)0x00, (byte)0x0d,
+                (byte)0x00, (byte)0x08, (byte)0x00, (byte)0x06,
+                (byte)0x08, (byte)0x04, (byte)0x04, (byte)0x01,
+                (byte)0x04, (byte)0x03, (byte)0x00, (byte)0x23,
+                (byte)0x00, (byte)0x00
             };
         ByteBuffer bf_clihello = ByteBuffer.wrap(msg_clihello);
 
@@ -134,8 +135,6 @@ public class EmptyExtensionData extends SSLContextTemplate {
     }
 
     public static void main(String args[]) throws Exception {
-        // Re-enable TLSv1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
         new EmptyExtensionData().run();
     }
 

@@ -30,8 +30,8 @@
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file PKCS10AttrEncoding.java
- * @run main PKCS10AttrEncoding DSA 512
- * @run main PKCS10AttrEncoding Sha256withDSA 2048
+ * @run main PKCS10AttrEncoding SHA256withECDSA 256
+ * @run main PKCS10AttrEncoding Sha384withECDSA 384
  */
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -70,7 +70,7 @@ public class PKCS10AttrEncoding {
             constructedMap.put(ids[j], values[j]);
         }
 
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         X500Name subject = new X500Name("cn=Test");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(kpgAlgorithm);
         String sigAlg = args[0];

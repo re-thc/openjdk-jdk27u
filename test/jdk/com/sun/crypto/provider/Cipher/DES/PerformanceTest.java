@@ -67,7 +67,7 @@ public class PerformanceTest {
 
     static int[] dataSizes = {1024, 8192};
     static String[] crypts = {"DES", "DESede"};
-    static String[] modes = {"ECB", "CBC", "CFB64", "OFB64", "PCBC"};
+    static String[] modes = {"ECB", "CBC", "CFB64", "OFB64"};
     static String[] paddings = {"PKCS5Padding", "NoPadding"};
     static int[] rounds = {100, 1000};
     int sum =0;
