@@ -37,6 +37,7 @@ JOB = 120218865571
 HEAD = "d26205119c9ac625fdf28d8455fb14618f912846"
 BASE = "d5291018851658625d16c3d26a9a4be8974e6354"
 SOURCE = "1694c2019ba5ad033983859c063c1c671d90cb01"
+RUNTIME_VERSION = "27.0.2-internal-re-thc-" + SOURCE
 JDK_ID = 12483273390
 JDK_SHA = "f18f64699b9ed5f6b6ff4f8918772c79873d1b9cac277bb8a422ab218c89b2e2"
 JTREG_ID = 12461863760
@@ -175,12 +176,26 @@ def image_root(directory):
     return roots[0]
 
 
+def check_release(text):
+    fields = {}
+    for name in ("SOURCE", "JAVA_RUNTIME_VERSION"):
+        lines = [line for line in text.splitlines() if line.startswith(name + "=")]
+        require(len(lines) == 1, f"Missing or duplicate release {name}")
+        match = re.fullmatch(name + r'="([^"]*)"', lines[0])
+        require(match is not None, f"Malformed release {name}")
+        fields[name] = match[1]
+    # The pinned ordinary Windows build has no configure-time Git or .src-rev,
+    # so ReleaseFile.gmk emits an empty SOURCE. Its version still pins the merge.
+    require(fields["SOURCE"] == "" or re.fullmatch(r"\.:git:" + SOURCE[:12] + r"\+?", fields["SOURCE"]),
+            "Wrong release SOURCE")
+    require(fields["JAVA_RUNTIME_VERSION"] == RUNTIME_VERSION, "Wrong release runtime version")
+    return fields
+
+
 def check_image(jdk):
     for name in IMAGE_FILES:
         require((jdk / name).is_file(), f"Missing image component {name}")
-    release = (jdk / "release").read_text()
-    require(re.search(r'^SOURCE=".*git:' + SOURCE[:12], release, re.M), "Wrong release SOURCE")
-    require(SOURCE in release, "Missing full build merge identity in release metadata")
+    check_release((jdk / "release").read_text())
     for name in IMAGE_FILES[:5]:
         with (jdk / name).open("rb") as f:
             require(f.read(2) == b"MZ", "Not a Windows PE image")
@@ -247,7 +262,7 @@ def check_runtime(text, jdk):
             and p.get("sun.arch.data.model") == "64" and p.get("jdk.debug") == "release",
             "Wrong runtime OS/architecture/variant")
     require(Path(p.get("java.home", "")).resolve() == jdk.resolve(), "Wrong runtime java.home")
-    require(SOURCE in p.get("java.runtime.version", ""), "Wrong runtime source build")
+    require(p.get("java.runtime.version") == RUNTIME_VERSION, "Wrong runtime source build")
     return {k: p[k][:200] for k in ("java.runtime.version", "os.name", "os.arch",
                                     "sun.arch.data.model", "jdk.debug")} | {"java_home_matches": True}
 
@@ -331,8 +346,7 @@ def consume(source, work, output):
         jtreg = work / "jtreg/lib/jtreg.jar"
         require(jtreg.is_file(), "Wrong portable jtreg archive layout")
         summary["image_sha256"] = check_image(jdk)
-        summary["release_source"] = re.search(r'^SOURCE="([^"]+)"',
-                                               (jdk / "release").read_text(), re.M)[1][:200]
+        summary["release_source"] = check_release((jdk / "release").read_text())["SOURCE"][:200]
         env = child_environment()
         runtime = work / "runtime.txt"
         require(run_java([str(jdk / "bin/java.exe"), "-XshowSettings:properties", "-version"], runtime, env) == 0,

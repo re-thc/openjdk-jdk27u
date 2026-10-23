@@ -199,8 +199,30 @@ class ConsumerTest(unittest.TestCase):
             p = root / name
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_bytes(pe() if name.startswith("bin/") else b"modules")
-        (root / "release").write_text(f'SOURCE=".:git:{c.SOURCE[:12]}"\nJAVA_RUNTIME_VERSION="27-{c.SOURCE}"\n')
+        (root / "release").write_text(f'SOURCE=".:git:{c.SOURCE[:12]}"\nJAVA_RUNTIME_VERSION="{c.RUNTIME_VERSION}"\n')
         return root
+
+    def test_release_identity_with_or_without_optional_git(self):
+        for source in ("", ".:git:" + c.SOURCE[:12], ".:git:" + c.SOURCE[:12] + "+"):
+            with self.subTest(source=source):
+                text = f'SOURCE="{source}"\nJAVA_RUNTIME_VERSION="{c.RUNTIME_VERSION}"\n'
+                self.assertEqual(c.check_release(text), {"SOURCE": source,
+                                                        "JAVA_RUNTIME_VERSION": c.RUNTIME_VERSION})
+
+    def test_release_missing_duplicate_malformed_or_conflicting_identity(self):
+        good = f'SOURCE=""\nJAVA_RUNTIME_VERSION="{c.RUNTIME_VERSION}"\n'
+        cases = [good.replace('SOURCE=""\n', ""), good + 'SOURCE=""\n',
+                 good.replace('SOURCE=""', "SOURCE="),
+                 good.replace('SOURCE=""', f'SOURCE=".:git:{c.HEAD[:12]}"'),
+                 good.replace('SOURCE=""', f'SOURCE="prefix.:git:{c.SOURCE[:12]}"'),
+                 good.splitlines()[0] + "\n", good + f'JAVA_RUNTIME_VERSION="{c.RUNTIME_VERSION}"\n',
+                 good.replace(c.SOURCE, c.HEAD), good.replace(c.RUNTIME_VERSION, c.RUNTIME_VERSION + "-other"),
+                 good.replace(c.RUNTIME_VERSION, "other-" + c.RUNTIME_VERSION),
+                 good.replace(f'JAVA_RUNTIME_VERSION="{c.RUNTIME_VERSION}"',
+                              f'JAVA_RUNTIME_VERSION={c.RUNTIME_VERSION}')]
+        for text in cases:
+            with self.subTest(text=text), self.assertRaises(c.Prerequisite):
+                c.check_release(text)
 
     def test_image_architecture_and_source(self):
         jdk = self.make_image()
@@ -212,10 +234,11 @@ class ConsumerTest(unittest.TestCase):
     def test_runtime_release_source_and_target_identity(self):
         jdk = self.root / "jdk"
         good = (f"os.name = Windows Server 2025\nos.arch = amd64\nsun.arch.data.model = 64\n"
-                f"jdk.debug = release\njava.home = {jdk}\njava.runtime.version = 27-{c.SOURCE}\n")
+                f"jdk.debug = release\njava.home = {jdk}\njava.runtime.version = {c.RUNTIME_VERSION}\n")
         c.check_runtime(good, jdk)
         for bad in [good.replace("release", "fastdebug"), good.replace("amd64", "aarch64"),
-                    good.replace(c.SOURCE, c.HEAD), good.replace("Windows", "Linux")]:
+                    good.replace(c.SOURCE, c.HEAD), good.replace("Windows", "Linux"),
+                    good.replace(c.RUNTIME_VERSION, c.RUNTIME_VERSION + "-other")]:
             with self.subTest(bad=bad), self.assertRaises(c.Prerequisite):
                 c.check_runtime(bad, jdk)
 
@@ -279,7 +302,7 @@ class ConsumerTest(unittest.TestCase):
     def test_complete_fixture_consumer_once_and_keeps_failed_selected_logs(self):
         # Fake PE/ZIP/runtime/JTR data only; no JDK or native Windows code executes.
         files = {"jdk-27/" + n: pe() if n.startswith("bin/") else b"modules" for n in c.IMAGE_FILES}
-        files["jdk-27/release"] = f'SOURCE=".:git:{c.SOURCE[:12]}"\nJAVA_RUNTIME_VERSION="27-{c.SOURCE}"\n'
+        files["jdk-27/release"] = f'SOURCE=""\nJAVA_RUNTIME_VERSION="{c.RUNTIME_VERSION}"\n'
         product = archives({"jdk-windows-x64.zip": archives(files)})
         portable = archives({"lib/jtreg.jar": b"fixture"})
         for failed in (False, True):
@@ -292,7 +315,7 @@ class ConsumerTest(unittest.TestCase):
                     jdk = work / "image/jdk-27"
                     if "-version" in command:
                         log.write_text(f"os.name = Windows Server 2025\nos.arch = amd64\nsun.arch.data.model = 64\n"
-                                       f"jdk.debug = release\njava.home = {jdk}\njava.runtime.version = 27-{c.SOURCE}\n")
+                                       f"jdk.debug = release\njava.home = {jdk}\njava.runtime.version = {c.RUNTIME_VERSION}\n")
                         return 0
                     self.assertEqual(command.count("-concurrency:1"), 1)
                     self.assertEqual(command[-2:], [str(ROOT / f"test/jdk/sun/nio/ch/{n}.java") for n in c.TESTS])
@@ -316,6 +339,7 @@ class ConsumerTest(unittest.TestCase):
                 self.assertEqual(java.call_count, 2)  # startup + one jtreg invocation
                 status = json.loads((out / "summary.json").read_text())
                 self.assertEqual(status["state"], "failed" if failed else "passed")
+                self.assertEqual(status["release_source"], "")
                 self.assertEqual(status["runtime"]["jdk.debug"], "release")
                 self.assertEqual(len(list(out.glob("*.log"))), 2)
                 self.assertNotIn("hidden", (out / "summary.json").read_text())
