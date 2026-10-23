@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,6 +215,13 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
 
+#if defined(AMD64) || defined(AARCH64)
+  method_entry(stringzilla_equals)
+  method_entry(stringzilla_indexOfLatin1)
+  method_entry(stringzilla_indexOfUTF16)
+  method_entry(stringzilla_indexOfUTF16Latin1)
+#endif
+
 #undef method_entry
 
   // all native method kinds
@@ -231,6 +239,19 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
 
+#if defined(AMD64) || defined(AARCH64)
+  native_method_entry(stringzilla_findUTF16Latin1)
+  native_method_entry(stringzilla_equalsRange)
+  native_method_entry(stringzilla_rfindUTF16Latin1)
+  native_method_entry(stringzilla_findCharLatin1)
+  native_method_entry(stringzilla_findCharUTF16)
+  native_method_entry(stringzilla_rfindCharLatin1)
+  native_method_entry(stringzilla_rfindCharUTF16)
+  native_method_entry(stringzilla_findLatin1)
+  native_method_entry(stringzilla_findUTF16)
+  native_method_entry(stringzilla_rfindLatin1)
+  native_method_entry(stringzilla_rfindUTF16)
+#endif
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
@@ -470,6 +491,26 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+#if defined(AMD64) || defined(AARCH64)
+  case Interpreter::stringzilla_equals:
+    entry_point = generate_stringzilla_equals_entry(); break;
+  case Interpreter::stringzilla_findCharLatin1:
+  case Interpreter::stringzilla_findCharUTF16:
+  case Interpreter::stringzilla_rfindCharLatin1:
+  case Interpreter::stringzilla_rfindCharUTF16:
+    entry_point = generate_stringzilla_char_entry(kind); break;
+  case Interpreter::stringzilla_findUTF16Latin1:
+  case Interpreter::stringzilla_indexOfLatin1:
+  case Interpreter::stringzilla_indexOfUTF16:
+  case Interpreter::stringzilla_indexOfUTF16Latin1:
+  case Interpreter::stringzilla_equalsRange:
+  case Interpreter::stringzilla_rfindUTF16Latin1:
+  case Interpreter::stringzilla_findLatin1:
+  case Interpreter::stringzilla_findUTF16:
+  case Interpreter::stringzilla_rfindLatin1:
+  case Interpreter::stringzilla_rfindUTF16:
+    entry_point = generate_stringzilla_entry(kind); break;
+#endif
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes

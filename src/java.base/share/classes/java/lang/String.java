@@ -2971,6 +2971,7 @@ public final class String
      *          character sequence represented by this object, or
      *          {@code -1} if the character does not occur.
      */
+    @ForceInline
     public int lastIndexOf(int ch) {
         return lastIndexOf(ch, length() - 1);
     }
@@ -3009,6 +3010,7 @@ public final class String
      *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur before that point.
      */
+    @ForceInline
     public int lastIndexOf(int ch, int fromIndex) {
         return isLatin1() ? StringLatin1.lastIndexOf(value, ch, fromIndex)
                           : StringUTF16.lastIndexOf(value, ch, fromIndex);
@@ -3158,6 +3160,7 @@ public final class String
      * @return  the index of the last occurrence of the specified substring,
      *          or {@code -1} if there is no such occurrence.
      */
+    @ForceInline
     public int lastIndexOf(String str) {
         return lastIndexOf(str, length());
     }
@@ -3179,8 +3182,16 @@ public final class String
      *          searching backward from the specified index,
      *          or {@code -1} if there is no such occurrence.
      */
+    @ForceInline
     public int lastIndexOf(String str, int fromIndex) {
         return lastIndexOf(value, coder(), length(), str, fromIndex);
+    }
+
+    // String is initialized before its compiled callers query their tier.
+    @IntrinsicCandidate
+    @ForceInline
+    static int compilerTier() {
+        return 0;
     }
 
     /**
@@ -3194,6 +3205,9 @@ public final class String
      * @param   tgtStr      the characters being searched for.
      * @param   fromIndex   the index to begin searching from.
      */
+    // Keep normalization and scalar loops inline; encoding-specific entries
+    // isolate native setup from the caller's register allocation.
+    @ForceInline
     static int lastIndexOf(byte[] src, byte srcCoder, int srcCount,
                            String tgtStr, int fromIndex) {
         byte[] tgt = tgtStr.value;
@@ -3215,9 +3229,31 @@ public final class String
             return fromIndex;
         }
         if (srcCoder == tgtCoder) {
-            return srcCoder == LATIN1
-                ? StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex)
-                : StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
+            if (srcCoder == LATIN1) {
+                return srcCount < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
+                        || fromIndex + tgtCount < StringZilla.MIN_INTERPRETER_REVERSE_BYTES
+                        ? StringLatin1.lastIndexOfJava(src, tgt, tgtCount, fromIndex)
+                        : StringLatin1.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
+            }
+            int searchLength = fromIndex + tgtCount;
+            if (srcCount < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)
+                    || searchLength < (StringZilla.MIN_INTERPRETER_REVERSE_BYTES >> 1)) {
+                return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+            }
+            if (searchLength < (StringZilla.MIN_BYTES >> 1)
+                    && (compilerTier() == StringZilla.C1 || !StringZilla.ENABLED)) {
+                return StringUTF16.lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+            }
+            if (tgtCount <= 128 && compilerTier() == StringZilla.C2 && StringZilla.ENABLED) {
+                if (StringUTF16.matchesAt(src, fromIndex, tgt, tgtCount)) {
+                    return fromIndex;
+                }
+                if (fromIndex == 0) {
+                    return -1;
+                }
+                fromIndex--;
+            }
+            return StringUTF16.lastIndexOf(src, srcCount, tgt, tgtCount, fromIndex);
         }
         if (srcCoder == LATIN1) {    // && tgtCoder == UTF16
             return -1;

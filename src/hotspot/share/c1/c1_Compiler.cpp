@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +110,13 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_stringzillaCompilerTier:
+    return true;
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_equalsL:
+  case vmIntrinsics::_equalsLChecked:
+    return UseStringZillaIntrinsics;
+#endif
   case vmIntrinsics::_getObjectSize:
     // The fixed-layout intrinsic does not include hash expansion. The native
     // JVMTI implementation uses the current mark and also handles mirrors.
@@ -232,6 +240,20 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #if defined(S390) || defined(PPC64) || defined(AARCH64) || defined(AMD64)
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
+#endif
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_stringzillaEqualsRange:
+  case vmIntrinsics::_stringzillaFindUTF16Latin1:
+  case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+  case vmIntrinsics::_stringzillaScanLatin1:
+  case vmIntrinsics::_stringzillaFindCharLatin1:
+  case vmIntrinsics::_stringzillaFindCharUTF16:
+  case vmIntrinsics::_stringzillaRfindCharLatin1:
+  case vmIntrinsics::_stringzillaRfindCharUTF16:
+  case vmIntrinsics::_stringzillaFindLatin1:
+  case vmIntrinsics::_stringzillaFindUTF16:
+  case vmIntrinsics::_stringzillaRfindLatin1:
+  case vmIntrinsics::_stringzillaRfindUTF16:
 #endif
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_compareAndSetInt:

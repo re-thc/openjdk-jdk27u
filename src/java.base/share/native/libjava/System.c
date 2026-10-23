@@ -29,6 +29,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
+#include "StringZillaKernels.h"
 #include "java_props.h"
 
 #include "java_lang_System.h"
@@ -48,6 +49,7 @@ static JNINativeMethod methods[] = {
 JNIEXPORT void JNICALL
 Java_java_lang_System_registerNatives(JNIEnv *env, jclass cls)
 {
+    StringZilla_initialize();
     (*env)->RegisterNatives(env, cls,
                             methods, sizeof(methods)/sizeof(methods[0]));
 }
