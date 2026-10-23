@@ -1,0 +1,30 @@
+--- a/src/java.base/share/classes/java/time/format/DateTimeFormatterBuilder.java
++++ b/src/java.base/share/classes/java/time/format/DateTimeFormatterBuilder.java
+@@ -3791,6 +3791,18 @@
+      * Prints or parses an ISO-8601 instant.
+      */
+     static final class InstantPrinterParser implements DateTimePrinterParser {
++        private static final class CachedInstantDecisionParser {
++            static final CompositePrinterParser PARSER = new DateTimeFormatterBuilder()
++                    .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
++                    .appendValue(HOUR_OF_DAY, 2).appendLiteral(':')
++                    .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
++                    .appendValue(SECOND_OF_MINUTE, 2)
++                    .appendFraction(NANO_OF_SECOND, 0, 9, true)
++                    .parseLenient()
++                    .appendOffset("+HH", "Z")
++                    .toFormatter().toPrinterParser(false);
++        }
++
+         // days in a 400 year cycle = 146097
+         // days in a 10,000 year cycle = 146097 * 25
+         // seconds per day = 86400
+@@ -3887,7 +3899,7 @@
+             // new context to avoid overwriting fields like year/month/day
+             int minDigits = (fractionalDigits < 0 ? 0 : fractionalDigits);
+             int maxDigits = (fractionalDigits < 0 ? 9 : fractionalDigits);
+-            CompositePrinterParser parser = new DateTimeFormatterBuilder()
++            CompositePrinterParser parser = fractionalDigits < 0 ? CachedInstantDecisionParser.PARSER : new DateTimeFormatterBuilder()
+                     .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
+                     .appendValue(HOUR_OF_DAY, 2).appendLiteral(':')
+                     .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
