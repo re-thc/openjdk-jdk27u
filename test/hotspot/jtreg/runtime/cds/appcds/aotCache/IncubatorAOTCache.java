@@ -27,7 +27,9 @@
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.flagless
  * @library /test/lib
- * @modules jdk.incubator.vector
+ * @modules java.management
+ *          jdk.management
+ *          jdk.incubator.vector
  * @build IncubatorAOTCache jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar IncubatorScalarApp IncubatorVectorApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -39,11 +41,14 @@
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntUnaryOperator;
+
+import com.sun.management.HotSpotDiagnosticMXBean;
 
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorOperators;
@@ -125,6 +130,14 @@ public class IncubatorAOTCache {
     }
 
     private static void checkVectorConfiguration(Tester tester, String option) throws Exception {
+        String flag = option.substring("-XX:".length(), option.indexOf('='));
+        try {
+            ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption(flag);
+        } catch (IllegalArgumentException e) {
+            // C1-only and Zero VMs may not provide these CPU/compiler options.
+            System.out.println("Skipping unavailable VM option: " + flag);
+            return;
+        }
         OutputAnalyzer fresh = ProcessTools.executeTestJava(
             "-Xshare:off", option, "--add-modules=jdk.incubator.vector",
             "-cp", "app.jar", "IncubatorVectorApp", "training");
