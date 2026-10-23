@@ -74,6 +74,7 @@ class LIR_Assembler: public CompilationResourceObj {
   bool bailed_out() const                        { return compilation()->bailed_out(); }
 
   // code emission patterns and accessors
+  void common_scalar_op(LIR_Op2* op);
   void check_codespace();
   bool needs_icache(ciMethod* method) const;
 

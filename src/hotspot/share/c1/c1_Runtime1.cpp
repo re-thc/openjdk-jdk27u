@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +56,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -310,6 +312,10 @@ const char* Runtime1::name_for(StubId id) {
 }
 
 const char* Runtime1::name_for_address(address entry) {
+#define COMMON_NAME(id, slots, result) \
+  if (entry == CommonIntrinsics::entry_for(vmIntrinsics::id)) return "common" #id;
+  COMMON_INTRINSICS_DO(COMMON_NAME)
+#undef COMMON_NAME
   // iterate stubs starting from C1 group base
   StubId id = StubInfo::stub_base(StubGroup::C1);
   StubId limit = StubInfo::next(StubInfo::stub_max(StubGroup::C1));
@@ -1442,7 +1448,7 @@ JRT_LEAF(int, Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj))
   return (k != nullptr && obj != nullptr && obj->is_a(k)) ? 1 : 0;
 JRT_END
 
-JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
+static void handle_predicate_failure(JavaThread* current, bool intrinsic) {
   ResourceMark rm;
 
   RegisterMap reg_map(current,
@@ -1456,37 +1462,52 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
   assert (nm != nullptr, "no more nmethod?");
   nm->make_not_entrant(nmethod::InvalidationReason::C1_PREDICATE_FAILED_TRAP);
 
-  methodHandle m(current, nm->method());
+  vframeStream vfst(current);
+  methodHandle m(current, intrinsic ? vfst.method() : nm->method());
+  int trap_bci = vfst.bci();
   MethodData* mdo = m->method_data();
 
-  if (mdo == nullptr && !HAS_PENDING_EXCEPTION) {
+  if (mdo == nullptr && !current->has_pending_exception()) {
     // Build an MDO.  Ignore errors like OutOfMemory;
     // that simply means we won't have an MDO to update.
-    Method::build_profiling_method_data(m, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
+    Method::build_profiling_method_data(m, current);
+    if (current->has_pending_exception()) {
       // Only metaspace OOM is expected. No Java code executed.
-      assert((PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())), "we expect only an OOM error here");
-      CLEAR_PENDING_EXCEPTION;
+      assert(current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass()),
+             "we expect only an OOM error here");
+      current->clear_pending_exception();
     }
     mdo = m->method_data();
   }
 
   if (mdo != nullptr) {
-    mdo->inc_trap_count(Deoptimization::Reason_none);
+    if (intrinsic) {
+      // The debug scope identifies the failing call site even at level 1.
+      Deoptimization::update_method_data_from_interpreter(mdo, trap_bci, Deoptimization::Reason_intrinsic);
+    } else {
+      mdo->inc_trap_count(Deoptimization::Reason_none);
+    }
   }
 
   if (TracePredicateFailedTraps) {
     stringStream ss1, ss2;
-    vframeStream vfst(current);
     Method* inlinee = vfst.method();
     inlinee->print_short_name(&ss1);
-    m->print_short_name(&ss2);
+    nm->method()->print_short_name(&ss2);
     tty->print_cr("Predicate failed trap in method %s at bci %d inlined in %s at pc " INTPTR_FORMAT, ss1.freeze(), vfst.bci(), ss2.freeze(), p2i(caller_frame.pc()));
   }
 
 
   Deoptimization::deoptimize_frame(current, caller_frame.id());
 
+}
+
+JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
+  handle_predicate_failure(current, false);
+JRT_END
+
+JRT_ENTRY(void, Runtime1::intrinsic_failed_trap(JavaThread* current))
+  handle_predicate_failure(current, true);
 JRT_END
 
 // Check exception if AbortVMOnException flag set

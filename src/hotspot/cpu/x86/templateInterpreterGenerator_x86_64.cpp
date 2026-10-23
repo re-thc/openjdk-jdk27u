@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +24,15 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "commonIntrinsics_x86.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "oops/methodCounters.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -498,6 +503,56 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   __ jmp(rax);
 
   return entry_point;
+}
+
+address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
+  address entry = __ pc();
+  Label slow_path;
+  if (JvmtiExport::can_post_interpreter_events()) {
+    __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
+    __ jcc(Assembler::notEqual, slow_path);
+  }
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+#if INCLUDE_JVMTI
+  // Breakpoint events alone do not put the thread in interpreter-only mode.
+  Label no_breakpoints;
+  __ movptr(rscratch1, Address(rbx, Method::method_counters_offset()));
+  __ testptr(rscratch1, rscratch1);
+  __ jcc(Assembler::zero, no_breakpoints);
+  __ cmpw(Address(rscratch1, in_bytes(MethodCounters::number_of_breakpoints_offset())), 0);
+  __ jcc(Assembler::notEqual, slow_path);
+  __ bind(no_breakpoints);
+#endif
+  if (CommonIntrinsics::is_scalar(id)) {
+    bool binary = CommonIntrinsics::is_binary_scalar(id);
+    bool wide = CommonIntrinsics::scalar_is_wide(id);
+    int offset = binary ? (wide ? 3 : 2) * wordSize : wordSize;
+    __ movq(rax, Address(rsp, offset));
+    if (binary) __ movq(rcx, Address(rsp, wordSize));
+    common_scalar_intrinsic(_masm, id, rax, rax, binary ? rcx : noreg, rdx, rsi, &slow_path);
+    __ pop(rcx);
+    __ mov(rsp, r13);
+    __ jmp(rcx);
+    __ bind(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+    return entry;
+  }
+  if (CommonIntrinsics::needs_compiler_stubs(id)) {
+    __ lea(rscratch1, ExternalAddress(StubRoutines::compiler_stubs_initialized_address()));
+    __ cmpb(Address(rscratch1, 0), 0);
+    __ jcc(Assembler::equal, slow_path);
+  }
+  __ lea(c_rarg0, Address(rsp, wordSize));
+  __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
+  __ mov64(rscratch1, CommonIntrinsics::fallback);
+  __ cmpq(rax, rscratch1);
+  __ jcc(Assembler::equal, slow_path);
+  __ pop(rcx);
+  __ mov(rsp, r13);
+  __ jmp(rcx);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
 }
 
 address TemplateInterpreterGenerator::generate_currentThread() {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3632,6 +3633,32 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
+    // Selected by C1; C2 and the interpreter retain the original worker.
+    @ForceInline
+    private static void shiftLeftImplWorkerC1(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
+        // Short C1 loops avoid the fixed cost of the shared C++ leaf.
+        if (numIter >= 32) {
+            shiftLeftImplWorker(newArr, oldArr, newIdx, shiftCount, numIter);
+            return;
+        }
+        int shiftCountRight = 32 - shiftCount;
+        int oldIdx = 0;
+        if (newIdx == 0 && numIter > 0) {
+            // Reuse the overlapping source word. Destination index zero leaves
+            // the next source word unchanged, including for an in-place shift.
+            int current = oldArr[0];
+            while (oldIdx < numIter) {
+                int next = oldArr[oldIdx + 1];
+                newArr[oldIdx++] = (current << shiftCount) | (next >>> shiftCountRight);
+                current = next;
+            }
+            return;
+        }
+        while (oldIdx < numIter) {
+            newArr[newIdx++] = (oldArr[oldIdx++] << shiftCount) | (oldArr[oldIdx] >>> shiftCountRight);
+        }
+    }
+
     /**
      * Returns a BigInteger whose value is {@code (this >> n)}.  Sign
      * extension is performed.  The shift distance, {@code n}, may be
@@ -3709,6 +3736,33 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static void shiftRightImplWorker(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
         int shiftCountLeft = 32 - shiftCount;
         int idx = numIter;
+        int nidx = (newIdx == 0) ? numIter - 1 : numIter;
+        while (nidx >= newIdx) {
+            newArr[nidx--] = (oldArr[idx--] >>> shiftCount) | (oldArr[idx] << shiftCountLeft);
+        }
+    }
+
+    // Selected by C1; C2 and the interpreter retain the original worker.
+    @ForceInline
+    private static void shiftRightImplWorkerC1(int[] newArr, int[] oldArr, int newIdx, int shiftCount, int numIter) {
+        // Short C1 loops avoid the fixed cost of the shared C++ leaf.
+        if (numIter >= 32) {
+            shiftRightImplWorker(newArr, oldArr, newIdx, shiftCount, numIter);
+            return;
+        }
+        int shiftCountLeft = 32 - shiftCount;
+        int idx = numIter;
+        if (newIdx == 1 && idx > 0) {
+            // The next source word precedes the destination, including for an
+            // in-place shift, so it can be carried into the next iteration.
+            int current = oldArr[idx];
+            while (idx > 0) {
+                int next = oldArr[idx - 1];
+                newArr[idx--] = (current >>> shiftCount) | (next << shiftCountLeft);
+                current = next;
+            }
+            return;
+        }
         int nidx = (newIdx == 0) ? numIter - 1 : numIter;
         while (nidx >= newIdx) {
             newArr[nidx--] = (oldArr[idx--] >>> shiftCount) | (oldArr[idx] << shiftCountLeft);

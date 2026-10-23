@@ -2,6 +2,7 @@
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,8 @@
  *
  */
 
-#include "asm/macroAssembler.inline.hpp"
 #include "asm/assembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -36,6 +37,7 @@
 #include "ci/ciInstance.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "commonIntrinsics_aarch64.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -59,6 +61,18 @@ const Register SYNC_header = r0;   // synchronization header
 const Register SHIFT_count = r0;   // where count for shift operations must be
 
 #define __ _masm->
+
+void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
+  LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+  vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+  Register src = op->in_opr1()->as_pointer_register();
+  Register rhs = op->in_opr2()->is_valid() ? op->in_opr2()->as_pointer_register() : noreg;
+  Register dst = op->result_opr()->as_pointer_register();
+  Register tmp1 = op->tmp1_opr()->is_valid() ? op->tmp1_opr()->as_pointer_register() : noreg;
+  Register tmp2 = op->tmp2_opr()->is_valid() ? op->tmp2_opr()->as_pointer_register() : noreg;
+  Label* slow = scalar->fallback() != nullptr ? scalar->fallback()->entry() : nullptr;
+  common_scalar_intrinsic(_masm, id, dst, src, rhs, tmp1, tmp2, op->tmp3_opr()->is_valid() ? op->tmp3_opr()->as_double_reg() : v0, slow);
+}
 
 
 static void select_different_registers(Register preserve,

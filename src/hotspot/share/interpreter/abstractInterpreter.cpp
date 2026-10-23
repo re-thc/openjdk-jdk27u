@@ -88,6 +88,7 @@ bool       AbstractInterpreter::_notice_safepoints                          = fa
 address    AbstractInterpreter::_rethrow_exception_entry                    = nullptr;
 
 address    AbstractInterpreter::_slow_signature_handler;
+address    AbstractInterpreter::_common_entry_table[static_cast<int>(vmIntrinsics::ID_LIMIT)];
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
 
