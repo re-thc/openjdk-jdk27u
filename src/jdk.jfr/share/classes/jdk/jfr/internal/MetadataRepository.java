@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,31 +69,69 @@ public final class MetadataRepository {
 
     private long lastMillis;
 
+    // Initialization is protected by this monitor. The native metadata upcall
+    // only reads the completion flag; it must not acquire this monitor.
+    private volatile boolean nativeInitialized;
+    private boolean nativeInitializing;
+    private Throwable nativeInitializationFailure;
+
     public MetadataRepository() {
+        // Custom events need the built-in field and annotation types, but not
+        // the controls and periodic hooks for JVM events.
+        TypeLibrary.initialize();
+    }
+
+    public synchronized void ensureJVMEventTypes() {
         initializeJVMEventTypes();
     }
 
     private void initializeJVMEventTypes() {
-        TypeLibrary.initialize();
-        for (Type type : TypeLibrary.getTypes()) {
-            if (type instanceof PlatformEventType pEventType) {
-                EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
-                pEventType.setHasCutoff(type.hasAnnotation(Cutoff.class));
-                pEventType.setHasThrottle(type.hasAnnotation(Throttle.class));
-                pEventType.setHasLevel(type.hasAnnotation(Level.class));
-                pEventType.setHasPeriod(type.hasAnnotation(Period.class));
-                // Must add hook before EventControl is created as it removes
-                // annotations, such as Period and Threshold.
-                if (pEventType.hasPeriod()) {
-                    pEventType.setEventHook(true);
-                    if (!pEventType.isMethodSampling()) {
-                        PeriodicEvents.addJVMEvent(pEventType);
+        // A failed attempt can leave controls and hooks partially installed.
+        // Do not retry it or expose that state as fully initialized.
+        if (nativeInitializationFailure != null) {
+            throw new InternalError("Native JFR event initialization failed", nativeInitializationFailure);
+        }
+        if (nativeInitialized) {
+            return;
+        }
+        if (nativeInitializing) {
+            throw new InternalError("Recursive native JFR event initialization");
+        }
+        nativeInitializing = true;
+        try {
+            for (Type type : TypeLibrary.getTypes()) {
+                // Custom events may already have been registered.
+                if (type instanceof PlatformEventType pEventType && pEventType.isJVM()) {
+                    EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
+                    pEventType.setHasCutoff(type.hasAnnotation(Cutoff.class));
+                    pEventType.setHasThrottle(type.hasAnnotation(Throttle.class));
+                    pEventType.setHasLevel(type.hasAnnotation(Level.class));
+                    pEventType.setHasPeriod(type.hasAnnotation(Period.class));
+                    // Must add hook before EventControl is created as it removes
+                    // annotations, such as Period and Threshold.
+                    if (pEventType.hasPeriod()) {
+                        pEventType.setEventHook(true);
+                        if (!pEventType.isMethodSampling()) {
+                            PeriodicEvents.addJVMEvent(pEventType);
+                        }
                     }
+                    String name = eventType.getName();
+                    nativeControls.put(name, new EventControl(pEventType));
+                    nativeEventTypes.put(name, eventType);
                 }
-                String name = eventType.getName();
-                nativeControls.put(name, new EventControl(pEventType));
-                nativeEventTypes.put(name,eventType);
             }
+            nativeInitialized = true;
+        } catch (RuntimeException | Error failure) {
+            nativeInitializationFailure = failure;
+            // These failures used to escape the class initializer as Errors.
+            // In particular, JDKEvents.initialize() must not catch an Exception
+            // and let recorder construction continue with partial JVM controls.
+            if (failure instanceof Error error) {
+                throw error;
+            }
+            throw new ExceptionInInitializerError(failure);
+        } finally {
+            nativeInitializing = false;
         }
     }
 
@@ -101,6 +140,7 @@ public final class MetadataRepository {
     }
 
     public synchronized List<EventType> getRegisteredEventTypes() {
+        initializeJVMEventTypes();
         List<EventConfiguration> configurations = getEventConfigurations();
         List<EventType> eventTypes = new ArrayList<>(configurations.size() + nativeEventTypes.size());
         for (EventConfiguration ec : configurations) {
@@ -193,6 +233,7 @@ public final class MetadataRepository {
         // stack trace. Purpose of the mechanism is to transfer metadata, such as
         // native type IDs, without specialized Java logic for each type.
         if (Utils.isJDKClass(eventClass)) {
+            initializeJVMEventTypes();
             Name name = eventClass.getAnnotation(Name.class);
             if (name != null) {
                 String n = name.value();
@@ -241,6 +282,7 @@ public final class MetadataRepository {
     }
 
     public synchronized List<EventControl> getEventControls() {
+        initializeJVMEventTypes();
         List<Class<? extends jdk.internal.event.Event>> eventClasses = JVM.getAllEventClasses();
         ArrayList<EventControl> controls = new ArrayList<>(eventClasses.size() + nativeControls.size());
         controls.addAll(nativeControls.values());
@@ -271,6 +313,11 @@ public final class MetadataRepository {
     }
 
     private byte[] getBinaryRepresentation() {
+        // Also called by unhideInternalTypes() on the native recorder thread.
+        // Initialization must happen before entering native, never in this upcall.
+        if (!nativeInitialized) {
+            throw new InternalError("Native JFR event types not initialized before serialization");
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream(40000);
         DataOutputStream daos = new DataOutputStream(baos);
         try {
@@ -303,6 +350,7 @@ public final class MetadataRepository {
     // emit events after setOutput and unregister the event class, before a call
     // to storeDescriptorInJVM
     synchronized Instant setOutput(String filename) {
+        initializeJVMEventTypes();
         if (staleMetadata) {
             storeDescriptorInJVM();
         }
@@ -367,6 +415,7 @@ public final class MetadataRepository {
     }
 
     public synchronized void flush() {
+        initializeJVMEventTypes();
         if (staleMetadata) {
             storeDescriptorInJVM();
         }
@@ -387,6 +436,7 @@ public final class MetadataRepository {
     }
 
     public synchronized List<Type> getVisibleTypes() {
+        initializeJVMEventTypes();
         return TypeLibrary.getVisibleTypes();
     }
 
