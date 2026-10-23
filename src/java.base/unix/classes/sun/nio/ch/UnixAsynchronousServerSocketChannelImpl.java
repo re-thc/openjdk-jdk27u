@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,15 +69,19 @@ class UnixAsynchronousServerSocketChannelImpl
 
         try {
             IOUtil.configureBlocking(fd, false);
-        } catch (IOException x) {
-            nd.close(fd);  // prevent leak
+            this.port = port;
+            this.fdVal = IOUtil.fdVal(fd);
+            // add mapping from file descriptor to this channel
+            port.register(fdVal, this);
+        } catch (IOException | ShutdownChannelGroupException x) {
+            // These failures occur before registration, so we still own fd.
+            try {
+                nd.close(fd);
+            } catch (IOException suppressed) {
+                x.addSuppressed(suppressed);
+            }
             throw x;
         }
-        this.port = port;
-        this.fdVal = IOUtil.fdVal(fd);
-
-        // add mapping from file descriptor to this channel
-        port.register(fdVal, this);
     }
 
     @Override
