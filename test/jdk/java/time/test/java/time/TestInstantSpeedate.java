@@ -108,4 +108,49 @@ public class TestInstantSpeedate {
             compare(s);
         }
     }
+
+    @Test
+    public void testMalformedPositions() throws Exception {
+        Class<?> config = Class.forName("java.time.InstantParserConfig");
+        var enabled = config.getDeclaredField("ENABLED");
+        enabled.setAccessible(true);
+        if (!(boolean)enabled.get(null) || "false".equals(System.getProperty("jdk.time.instantSpeedate"))) {
+            return;
+        }
+        Class<?> parser = Class.forName("java.time.InstantParser");
+        Method fast = parser.getDeclaredMethod("tryParse", String.class);
+        Method raw = parser.getDeclaredMethod("parse0", String.class);
+        fast.setAccessible(true);
+        raw.setAccessible(true);
+        if (!Instant.EPOCH.equals(fast.invoke(null, "1970-01-01T00:00:00Z"))) {
+            throw new AssertionError("Native backend did not execute");
+        }
+        for (String fraction : new String[] {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"}) {
+            String valid = "2000-02-29T12:34:56" + fraction + "Z";
+            for (int position = 0; position < valid.length(); position++) {
+                for (char replacement : new char[] {'\0', ' ', '+', '-', '/', ':', ';', '@', 'Z', 'z', '\u007f',
+                        '\u0080', '\u0100', '\u0210', '\ud800', '\uff10'}) {
+                    if (replacement == valid.charAt(position)) {
+                        continue;
+                    }
+                    char[] chars = valid.toCharArray();
+                    chars[position] = replacement;
+                    String invalid = new String(chars);
+                    if (fast.invoke(null, invalid) != null || (long)raw.invoke(null, invalid) != Long.MIN_VALUE) {
+                        throw new AssertionError("Native accepted malformed position " + position
+                                + " with character " + Integer.toHexString(replacement));
+                    }
+                    compare(invalid);
+                }
+            }
+        }
+        for (String invalid : new String[] {"2000-02-29T24:00:00Z", "2000-02-29T99:00:00Z",
+                "2000-02-29T00:60:00Z", "2000-02-29T00:99:00Z",
+                "2016-12-31T23:59:60Z", "2000-02-29T00:00:99Z"}) {
+            if ((long)raw.invoke(null, invalid) != Long.MIN_VALUE) {
+                throw new AssertionError("Native accepted an out-of-range time: " + invalid);
+            }
+            compare(invalid);
+        }
+    }
 }

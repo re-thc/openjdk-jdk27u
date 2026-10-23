@@ -111,7 +111,7 @@ final class InstantParser {
         }
     }
 
-    // Eligibility only: Rust independently enforces the complete ASCII grammar,
+    // Eligibility only: native code independently enforces the ASCII grammar,
     // and speedate validates the calendar. No Java fields are used as a result.
     static boolean eligible(String text) {
         int n = text.length();

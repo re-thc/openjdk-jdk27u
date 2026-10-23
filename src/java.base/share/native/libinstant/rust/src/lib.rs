@@ -8,7 +8,7 @@ const MISS: i64 = i64::MIN;
 const SCALE: i64 = 1 << 20;
 
 fn parse(bytes: &[u8]) -> i64 {
-    // Defense in depth: this is a grammar guard, never calendar validation.
+    // Narrow speedate's grammar; it validates digits, field ranges and dates.
     if !matches!(bytes.len(), 20 | 22..=27)
         || bytes[4] != b'-'
         || bytes[7] != b'-'
@@ -17,21 +17,6 @@ fn parse(bytes: &[u8]) -> i64 {
         || bytes[16] != b':'
         || bytes[bytes.len() - 1] != b'Z'
         || (bytes.len() > 20 && bytes[19] != b'.')
-    {
-        return MISS;
-    }
-    for (i, &b) in bytes[..bytes.len() - 1].iter().enumerate() {
-        if matches!(i, 4 | 7 | 10 | 13 | 16 | 19) {
-            continue;
-        }
-        if !b.is_ascii_digit() {
-            return MISS;
-        }
-    }
-    if bytes[11] > b'2'
-        || (bytes[11] == b'2' && bytes[12] > b'3')
-        || bytes[14] > b'5'
-        || bytes[17] > b'5'
     {
         return MISS;
     }
@@ -91,5 +76,37 @@ mod tests {
             assert_eq!(parse(bytes), MISS);
         }
         assert_eq!(contained(|| panic!("probe")), MISS);
+    }
+
+    #[test]
+    fn malformed_positions() {
+        for fraction in ["", ".1", ".12", ".123", ".1234", ".12345", ".123456"] {
+            let valid = format!("2000-02-29T12:34:56{fraction}Z").into_bytes();
+            assert_ne!(parse(&valid), MISS);
+            for (position, &original) in valid.iter().enumerate() {
+                for replacement in 0..=u8::MAX {
+                    if replacement == original
+                        || (original.is_ascii_digit() && replacement.is_ascii_digit())
+                    {
+                        continue;
+                    }
+                    let mut invalid = valid.clone();
+                    invalid[position] = replacement;
+                    assert_eq!(parse(&invalid), MISS, "position {position}: {invalid:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn out_of_range_time_fields() {
+        for (position, first_invalid) in [(11, 24), (14, 60), (17, 60)] {
+            for value in first_invalid..=99 {
+                let mut invalid = *b"2000-02-29T12:34:56.123456Z";
+                invalid[position] = b'0' + value / 10;
+                invalid[position + 1] = b'0' + value % 10;
+                assert_eq!(parse(&invalid), MISS, "{invalid:?}");
+            }
+        }
     }
 }
