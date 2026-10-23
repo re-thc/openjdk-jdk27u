@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +86,12 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jclass clazz,
 
     if (rv < 0)
         handleSocketError(env, errno);
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_DatagramChannelImpl_maxReceiveSize0(JNIEnv *env, jclass clazz)
+{
+    return MAX_PACKET_LEN;
 }
 
 JNIEXPORT jint JNICALL
