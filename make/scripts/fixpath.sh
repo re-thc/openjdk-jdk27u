@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -245,6 +246,14 @@ function import_command_line() {
 function convert_pathlist() {
   converted_list=""
   pathlist_args="$1"
+  pathlist_prefix=""
+  # javac accepts module-specific paths such as java.base=/src:/gensrc.
+  # Preserve the module name (and an optional opening quote) while converting
+  # every path and the list separator, including inside response files.
+  if [[ $pathlist_args =~ ^([^/:=]+=)(\"?)(/.*)$ ]]; then
+    pathlist_prefix="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+    pathlist_args="${BASH_REMATCH[3]}"
+  fi
 
   IFS=':' read -r -a arg_array <<< "$pathlist_args"
   for arg in "${arg_array[@]}"; do
@@ -288,7 +297,7 @@ function convert_pathlist() {
     fi
   done
 
-  result="$converted_list"
+  result="$pathlist_prefix$converted_list"
   return 0
 }
 
@@ -484,7 +493,7 @@ function exec_command_line() {
   done
 
   # Now execute it
-  if [[ -v DEBUG_FIXPATH ]]; then
+  if [[ ${DEBUG_FIXPATH+x} ]]; then
     echo fixpath: debug: input: "$@" >&2
     echo fixpath: debug: output: "$command" "${collected_args[@]}" >&2
   fi
