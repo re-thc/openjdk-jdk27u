@@ -196,205 +196,200 @@ public class TestDecimalIntegers {
         }
         System.out.println(assertions + " integer parsing/formatting assertions passed");
     }
-    // Unchanged pre-integration JDK parsing algorithms provide the grammar/error oracle.
+    // Retained Java parsing algorithms provide the grammar and error oracle.
     private static final class JavaParser {
         private static NumberFormatException forInputString(String s, int radix) {
             return new NumberFormatException("For input string: \"" + s + "\"" +
                     (radix == 10 ? "" : " under radix " + radix));
         }
-    private static int parseIntJava(String s, int radix)
-                throws NumberFormatException {
-        /*
-         * WARNING: This method may be invoked early during VM initialization
-         * before IntegerCache is initialized. Care must be taken to not use
-         * the valueOf method.
-         */
 
-        if (s == null) {
-            throw new NumberFormatException("Cannot parse null string");
-        }
-
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
-            throw forInputString("", radix);
-        }
-        int digit = ~0xFF;
-        int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar != '-' && firstChar != '+') {
-            digit = Character.digit(firstChar, radix);
-        }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            int limit = firstChar != '-' ? Integer.MIN_VALUE + 1 : Integer.MIN_VALUE;
-            int multmin = limit / radix;
-            int result = -(digit & 0xFF);
-            boolean inRange = true;
-            /* Accumulating negatively avoids surprises near MAX_VALUE */
-            while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = result > multmin
-                        || result == multmin && digit <= radix * multmin - limit)) {
-                result = radix * result - digit;
+        private static int parseIntJava(String s, int radix)
+                    throws NumberFormatException {
+            if (s == null) {
+                throw new NumberFormatException("Cannot parse null string");
             }
-            if (inRange && i == len && digit >= 0) {
-                return firstChar != '-' ? -result : result;
+
+            if (radix < Character.MIN_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s less than Character.MIN_RADIX", radix));
             }
-        }
-        throw forInputString(s, radix);
-    }
 
-    private static int parseUnsignedIntJava(String s, int radix)
-                throws NumberFormatException {
-        if (s == null)  {
-            throw new NumberFormatException("Cannot parse null string");
-        }
+            if (radix > Character.MAX_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s greater than Character.MAX_RADIX", radix));
+            }
 
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
+            int len = s.length();
+            if (len == 0) {
+                throw forInputString("", radix);
+            }
+            int digit = ~0xFF;
+            int i = 0;
+            char firstChar = s.charAt(i++);
+            if (firstChar != '-' && firstChar != '+') {
+                digit = Character.digit(firstChar, radix);
+            }
+            if (digit >= 0 || digit == ~0xFF && len > 1) {
+                int limit = firstChar != '-' ? Integer.MIN_VALUE + 1 : Integer.MIN_VALUE;
+                int multmin = limit / radix;
+                int result = -(digit & 0xFF);
+                boolean inRange = true;
+                /* Accumulating negatively avoids surprises near MAX_VALUE */
+                while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
+                        && (inRange = result > multmin
+                            || result == multmin && digit <= radix * multmin - limit)) {
+                    result = radix * result - digit;
+                }
+                if (inRange && i == len && digit >= 0) {
+                    return firstChar != '-' ? -result : result;
+                }
+            }
             throw forInputString(s, radix);
         }
-        int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar == '-') {
+
+        private static int parseUnsignedIntJava(String s, int radix)
+                    throws NumberFormatException {
+            if (s == null)  {
+                throw new NumberFormatException("Cannot parse null string");
+            }
+
+            if (radix < Character.MIN_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s less than Character.MIN_RADIX", radix));
+            }
+
+            if (radix > Character.MAX_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s greater than Character.MAX_RADIX", radix));
+            }
+
+            int len = s.length();
+            if (len == 0) {
+                throw forInputString(s, radix);
+            }
+            int i = 0;
+            char firstChar = s.charAt(i++);
+            if (firstChar == '-') {
+                throw new NumberFormatException(String.format(
+                    "Illegal leading minus sign on unsigned string %s.", s));
+            }
+            int digit = ~0xFF;
+            if (firstChar != '+') {
+                digit = Character.digit(firstChar, radix);
+            }
+            if (digit >= 0 || digit == ~0xFF && len > 1) {
+                int multmax = Integer.divideUnsigned(-1, radix);  // -1 is max unsigned int
+                int result = digit & 0xFF;
+                boolean inRange = true;
+                while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
+                        && (inRange = Integer.compareUnsigned(result, multmax) < 0
+                            || result == multmax && digit < -radix * multmax)) {
+                    result = radix * result + digit;
+                }
+                if (inRange && i == len && digit >= 0) {
+                    return result;
+                }
+            }
+            if (digit < 0) {
+                throw forInputString(s, radix);
+            }
             throw new NumberFormatException(String.format(
-                "Illegal leading minus sign on unsigned string %s.", s));
+                "String value %s exceeds range of unsigned int.", s));
         }
-        int digit = ~0xFF;
-        if (firstChar != '+') {
-            digit = Character.digit(firstChar, radix);
-        }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            int multmax = Integer.divideUnsigned(-1, radix);  // -1 is max unsigned int
-            int result = digit & 0xFF;
-            boolean inRange = true;
-            while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = Integer.compareUnsigned(result, multmax) < 0
-                        || result == multmax && digit < -radix * multmax)) {
-                result = radix * result + digit;
+
+        private static long parseLongJava(String s, int radix)
+                    throws NumberFormatException {
+            if (s == null) {
+                throw new NumberFormatException("Cannot parse null string");
             }
-            if (inRange && i == len && digit >= 0) {
-                return result;
+
+            if (radix < Character.MIN_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s less than Character.MIN_RADIX", radix));
             }
-        }
-        if (digit < 0) {
+
+            if (radix > Character.MAX_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s greater than Character.MAX_RADIX", radix));
+            }
+
+            int len = s.length();
+            if (len == 0) {
+                throw forInputString("", radix);
+            }
+            int digit = ~0xFF;
+            int i = 0;
+            char firstChar = s.charAt(i++);
+            if (firstChar != '-' && firstChar != '+') {
+                digit = Character.digit(firstChar, radix);
+            }
+            if (digit >= 0 || digit == ~0xFF && len > 1) {
+                long limit = firstChar != '-' ? Long.MIN_VALUE + 1 : Long.MIN_VALUE;
+                long multmin = limit / radix;
+                long result = -(digit & 0xFF);
+                boolean inRange = true;
+                /* Accumulating negatively avoids surprises near MAX_VALUE */
+                while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
+                        && (inRange = result > multmin
+                            || result == multmin && digit <= (int) (radix * multmin - limit))) {
+                    result = radix * result - digit;
+                }
+                if (inRange && i == len && digit >= 0) {
+                    return firstChar != '-' ? -result : result;
+                }
+            }
             throw forInputString(s, radix);
         }
-        throw new NumberFormatException(String.format(
-            "String value %s exceeds range of unsigned int.", s));
-    }
 
-    private static long parseLongJava(String s, int radix)
-                throws NumberFormatException {
-        if (s == null) {
-            throw new NumberFormatException("Cannot parse null string");
-        }
-
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
-            throw forInputString("", radix);
-        }
-        int digit = ~0xFF;
-        int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar != '-' && firstChar != '+') {
-            digit = Character.digit(firstChar, radix);
-        }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            long limit = firstChar != '-' ? Long.MIN_VALUE + 1 : Long.MIN_VALUE;
-            long multmin = limit / radix;
-            long result = -(digit & 0xFF);
-            boolean inRange = true;
-            /* Accumulating negatively avoids surprises near MAX_VALUE */
-            while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = result > multmin
-                        || result == multmin && digit <= (int) (radix * multmin - limit))) {
-                result = radix * result - digit;
+        private static long parseUnsignedLongJava(String s, int radix)
+                    throws NumberFormatException {
+            if (s == null)  {
+                throw new NumberFormatException("Cannot parse null string");
             }
-            if (inRange && i == len && digit >= 0) {
-                return firstChar != '-' ? -result : result;
+
+            if (radix < Character.MIN_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s less than Character.MIN_RADIX", radix));
             }
-        }
-        throw forInputString(s, radix);
-    }
 
-    private static long parseUnsignedLongJava(String s, int radix)
-                throws NumberFormatException {
-        if (s == null)  {
-            throw new NumberFormatException("Cannot parse null string");
-        }
-
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
-            throw forInputString(s, radix);
-        }
-        int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar == '-') {
-            throw new NumberFormatException(String.format(
-                "Illegal leading minus sign on unsigned string %s.", s));
-        }
-        int digit = ~0xFF;
-        if (firstChar != '+') {
-            digit = Character.digit(firstChar, radix);
-        }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            long multmax = Long.divideUnsigned(-1L, radix);  // -1L is max unsigned long
-            long result = digit & 0xFF;
-            boolean inRange = true;
-            while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = Long.compareUnsigned(result, multmax) < 0
-                        || result == multmax && digit < (int) (-radix * multmax))) {
-                result = radix * result + digit;
+            if (radix > Character.MAX_RADIX) {
+                throw new NumberFormatException(String.format(
+                    "radix %s greater than Character.MAX_RADIX", radix));
             }
-            if (inRange && i == len && digit >= 0) {
-                return result;
+
+            int len = s.length();
+            if (len == 0) {
+                throw forInputString(s, radix);
             }
+            int i = 0;
+            char firstChar = s.charAt(i++);
+            if (firstChar == '-') {
+                throw new NumberFormatException(String.format(
+                    "Illegal leading minus sign on unsigned string %s.", s));
+            }
+            int digit = ~0xFF;
+            if (firstChar != '+') {
+                digit = Character.digit(firstChar, radix);
+            }
+            if (digit >= 0 || digit == ~0xFF && len > 1) {
+                long multmax = Long.divideUnsigned(-1L, radix);  // -1L is max unsigned long
+                long result = digit & 0xFF;
+                boolean inRange = true;
+                while (i < len && (digit = Character.digit(s.charAt(i++), radix)) >= 0
+                        && (inRange = Long.compareUnsigned(result, multmax) < 0
+                            || result == multmax && digit < (int) (-radix * multmax))) {
+                    result = radix * result + digit;
+                }
+                if (inRange && i == len && digit >= 0) {
+                    return result;
+                }
+            }
+            if (digit < 0) {
+                throw forInputString(s, radix);
+            }
+            throw new NumberFormatException(String.format(
+                "String value %s exceeds range of unsigned long.", s));
         }
-        if (digit < 0) {
-            throw forInputString(s, radix);
-        }
-        throw new NumberFormatException(String.format(
-            "String value %s exceeds range of unsigned long.", s));
-    }
     }
 
 }
