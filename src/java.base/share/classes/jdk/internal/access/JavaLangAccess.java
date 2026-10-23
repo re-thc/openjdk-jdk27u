@@ -646,7 +646,9 @@ public interface JavaLangAccess {
     String getLoaderNameID(ClassLoader loader);
 
     /**
-     * Copy the string bytes to an existing segment, avoiding intermediate copies.
+     * Copy the string's internal bytes to an existing segment, avoiding intermediate
+     * copies. Source indices and lengths are in chars. UTF-16 storage uses native
+     * byte order; callers must establish compatibility with the destination.
      */
     void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
 

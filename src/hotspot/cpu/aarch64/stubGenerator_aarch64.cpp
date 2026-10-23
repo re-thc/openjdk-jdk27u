@@ -1400,6 +1400,11 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(lr);
     }
 
+    if (type == T_BYTE) {
+      // These leaves share the arraycopy stub's frame, including its unsafe error exit.
+      UnsafeMemoryAccess::add_to_table(start, __ pc(), UnsafeMemoryAccess::common_exit_stub_pc());
+    }
+
     // record the stub entry and end
     store_archive_data(stub_id, start, __ pc());
 
@@ -12751,7 +12756,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Initialize table for copy memory (arraycopy) check.
     if (UnsafeMemoryAccess::_table == nullptr) {
-      UnsafeMemoryAccess::create_table(8 + 4 + 1); // copyMemory, setMemory, vectorizedMismatch
+      UnsafeMemoryAccess::create_table(10 + 4 + 1); // copyMemory (including bulk leaves), setMemory, vectorizedMismatch
     }
 
     if (UseCRC32Intrinsics) {

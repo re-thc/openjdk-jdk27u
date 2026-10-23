@@ -2139,13 +2139,16 @@ public final class String
 
     void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
         if (!isLatin1()) {
-            // This method is intended to be used together with bytesCompatible, which currently only supports
-            // latin1 strings. In the future, bytesCompatible could be updated to handle more cases, like
-            // UTF-16 strings (when the platform and charset endianness match, and the String doesn’t contain
-            // unpaired surrogates). If that happens, copyToSegmentRaw should also be updated.
-            throw new IllegalStateException("This string does not support copyToSegmentRaw");
+            copyUTF16ToSegmentRaw(segment, offset, srcIndex, srcLength);
+            return;
         }
         MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
+    }
+
+    private void copyUTF16ToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        checkBoundsOffCount(srcIndex, srcLength, length());
+        MemorySegment.copy(value, srcIndex << 1, segment, ValueLayout.JAVA_BYTE,
+                offset, srcLength << 1);
     }
 
     /**

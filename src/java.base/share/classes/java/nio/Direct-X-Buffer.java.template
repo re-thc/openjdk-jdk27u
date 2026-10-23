@@ -442,9 +442,7 @@ class Direct$Type$Buffer$RW$$BO$
     private static final int APPEND_BUF_SIZE = 1024;
     private static final byte UTF16_CODER = 1;
 
-    // Shorter strings are put char by char: staging them for the bulk copy
-    // costs an allocation and, for swapped byte order, a native call.
-    // UTF-16 input needs a larger copy to amortize staging.
+    // Short strings stay on the scalar path to avoid bulk-copy setup.
 #if[boU]
     private static final int PUT_STRING_BULK_MINIMUM = 32;
     private static final int PUT_STRING_UTF16_BULK_MINIMUM = 64;
@@ -471,6 +469,19 @@ class Direct$Type$Buffer$RW$$BO$
             index += count;
         }
     }
+
+#if[boU]
+    private void putStringUTF16(String src, int start, int length) {
+        MemorySegment dst = MemorySegment.ofBuffer(this);
+        // Keep the original staging loop's copy bound and polling opportunities.
+        for (int copied = 0; copied < length;) {
+            int count = Math.min(APPEND_BUF_SIZE, length - copied);
+            SharedSecrets.getJavaLangAccess().copyToSegmentRaw(
+                    src, dst, (long)copied << 1, start + copied, count);
+            copied += count;
+        }
+    }
+#end[boU]
 #end[rw]
 
     @Override
@@ -489,7 +500,14 @@ class Direct$Type$Buffer$RW$$BO$
         if (length > rem)
             throw new BufferOverflowException();
 
-        putChars(pos, src, start, end);
+#if[boU]
+        if (SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
+            putStringUTF16(src, start, length);
+        } else
+#end[boU]
+        {
+            putChars(pos, src, start, end);
+        }
 
         position(pos + length);
 
@@ -513,7 +531,15 @@ class Direct$Type$Buffer$RW$$BO$
         if (length > rem)
             throw new BufferOverflowException();
 
-        putChars(pos, csq, start, end);
+#if[boU]
+        if (length >= PUT_STRING_UTF16_BULK_MINIMUM && csq instanceof String src &&
+                SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
+            putStringUTF16(src, start, length);
+        } else
+#end[boU]
+        {
+            putChars(pos, csq, start, end);
+        }
 
         position(pos + length);
 
