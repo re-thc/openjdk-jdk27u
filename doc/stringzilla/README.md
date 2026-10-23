@@ -32,12 +32,15 @@ dense ending characters resume the existing Java loop. C1 narrow long-needle
 windows can use bounded native equality.
 
 Latin-1 `trim`, `strip`, `stripLeading`, `stripTrailing`, `isBlank` and
-`lines` use eligible byte-set scans. Compiled code probes up to 64 bytes by
-words; interpreted code probes up to 32 scalar bytes. Native admission requires
-at least 256 remaining bytes. Serial backends use Java scanning.
-Line allocation, laziness, CRLF handling and splitting remain in Java.
-UTF-16 retains its Unicode scanners. [Scan semantics](LATIN1-SCANS.md) describes
-the exact Latin-1 predicates.
+`lines` use eligible byte-set scans. Compiled producers use bounded word probes
+before native dispatch; interpreted producers use scalar probes. Admission uses
+each producer's logical range, and serial backends use Java scanning.
+
+`trim` removes bytes `0x00`–`0x20`. Latin-1 Character whitespace is exactly
+`0x09`–`0x0D` and `0x1C`–`0x20`; NEL and NBSP remain non-whitespace for
+strip/blank operations. Line splitting recognizes CR, LF and CRLF.
+Identity, allocation, lazy line traversal, splitting and consumer exceptions
+remain in Java. UTF-16 retains its Unicode scanners.
 
 ## Bounds and safepoints
 
@@ -85,8 +88,10 @@ and repeat correctness and performance checks on native platforms.
 
 ## Validation
 
-[BENCHMARKS.md](BENCHMARKS.md) describes complete-image comparisons and links
-source-qualified results, all measured losses and raw evidence.
+Permanent [JMH benchmarks](../../test/micro/org/openjdk/bench/java/lang)
+cover StringZilla searches, scans, alignment and long needles alongside the
+ordinary correctness tests. Run benchmarks through the normal JDK microbenchmark
+build with complete SDK images.
 
 Tests cover forced interpreter/C1/C2, JNI, opt-out, thresholds, windows, repeated
 needles, overlaps, coders, surrogates, builder capacity and concurrent GC.
