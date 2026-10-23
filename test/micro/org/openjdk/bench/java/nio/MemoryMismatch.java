@@ -209,7 +209,8 @@ public class MemoryMismatch {
                 shortMismatch() != typed(index, Short.BYTES) ||
                 floatMismatch() != typed(index, Float.BYTES) ||
                 doubleMismatch() != typed(index, Double.BYTES) ||
-                intMismatchOppositeOrder() != typed(index, Integer.BYTES) || bufferEquals() != (index < 0)) {
+                intMismatchOppositeOrder() != typed(index, Integer.BYTES) ||
+                intMismatchOppositeOrderPublic() != typed(index, Integer.BYTES) || bufferEquals() != (index < 0)) {
             throw new AssertionError("Mismatch fixture disagrees with public API");
         }
     }
@@ -292,7 +293,12 @@ public class MemoryMismatch {
         return srcDoubles.mismatch(dstDoubles);
     }
 
-    /** Control kept local: the public mismatch method changes its inlining policy. */
+    @Benchmark
+    public int intMismatchOppositeOrderPublic() {
+        return srcInts.mismatch(swappedInts);
+    }
+
+    /** Scalar control alongside the public opposite-order mismatch method. */
     @Benchmark
     public int intMismatchOppositeOrder() {
         int aPosition = srcInts.position(), bPosition = swappedInts.position();

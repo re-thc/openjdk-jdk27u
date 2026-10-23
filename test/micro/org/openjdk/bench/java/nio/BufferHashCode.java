@@ -65,6 +65,7 @@ public class BufferHashCode {
             "INT_VIEW", "LONG_VIEW", "FLOAT_VIEW", "DOUBLE_VIEW",
             "INT_HEAP_VIEW", "INT_HEAP_VIEW_NATIVE", "LONG_HEAP_VIEW", "LONG_HEAP_VIEW_NATIVE",
             "FLOAT_HEAP_VIEW", "FLOAT_HEAP_VIEW_NATIVE", "DOUBLE_HEAP_VIEW", "DOUBLE_HEAP_VIEW_NATIVE",
+            "CHAR_DIRECT_NATIVE", "SHORT_DIRECT_NATIVE", "INT_DIRECT_NATIVE", "LONG_DIRECT_NATIVE",
             "FLOAT_DIRECT_NATIVE", "DOUBLE_DIRECT_NATIVE"})
     public String kind;
 
@@ -107,6 +108,14 @@ public class BufferHashCode {
             case "DOUBLE_HEAP_VIEW" -> fill(ByteBuffer.allocate(8 * size)).order(swapped).asDoubleBuffer();
             case "DOUBLE_HEAP_VIEW_NATIVE" -> fill(ByteBuffer.allocate(8 * size))
                     .order(ByteOrder.nativeOrder()).asDoubleBuffer();
+            case "CHAR_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(2 * size))
+                    .order(ByteOrder.nativeOrder()).asCharBuffer();
+            case "SHORT_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(2 * size))
+                    .order(ByteOrder.nativeOrder()).asShortBuffer();
+            case "INT_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(4 * size))
+                    .order(ByteOrder.nativeOrder()).asIntBuffer();
+            case "LONG_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(8 * size))
+                    .order(ByteOrder.nativeOrder()).asLongBuffer();
             case "FLOAT_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(4 * size))
                     .order(ByteOrder.nativeOrder()).asFloatBuffer();
             case "DOUBLE_DIRECT_NATIVE" -> fill(ByteBuffer.allocateDirect(8 * size))

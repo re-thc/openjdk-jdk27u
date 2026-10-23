@@ -48,7 +48,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(3)
 public class CharBufferPutString {
-    @Param({"1", "8", "32", "128", "1024", "32768"})
+    @Param({"1", "8", "32", "63", "64", "65", "128", "1024", "32768"})
     public int length;
 
     /**

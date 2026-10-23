@@ -1045,8 +1045,15 @@ class StubGenerator: public StubCodeGenerator {
   address generate_copy_longs(StubId stub_id, DecoratorSet decorators, Register s, Register d, Register count) {
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
-    address start = load_archive_data(stub_id);
+    const bool unsafe_access = stub_id == StubId::stubgen_copy_byte_f_id ||
+                               stub_id == StubId::stubgen_copy_byte_b_id;
+    GrowableArray<address> extras;
+    address start = load_archive_data(stub_id, nullptr, unsafe_access ? &extras : nullptr);
     if (start != nullptr) {
+      if (unsafe_access) {
+        assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+        register_unsafe_access_handlers(extras, 0, 1);
+      }
       return start;
     }
     BasicType type;
@@ -1400,13 +1407,16 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(lr);
     }
 
-    if (type == T_BYTE) {
+    address end = __ pc();
+    if (unsafe_access) {
       // These leaves share the arraycopy stub's frame, including its unsafe error exit.
-      UnsafeMemoryAccess::add_to_table(start, __ pc(), UnsafeMemoryAccess::common_exit_stub_pc());
+      UnsafeMemoryAccess::add_to_table(start, end, UnsafeMemoryAccess::common_exit_stub_pc());
+      retrieve_unsafe_access_handlers(start, end, extras);
+      assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
     }
 
     // record the stub entry and end
-    store_archive_data(stub_id, start, __ pc());
+    store_archive_data(stub_id, start, end, nullptr, unsafe_access ? &extras : nullptr);
 
     return start;
   }
