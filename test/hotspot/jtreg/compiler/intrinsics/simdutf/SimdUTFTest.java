@@ -83,6 +83,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SimdUTFTest {
     private static final Random RANDOM = new Random(9271);
@@ -822,6 +823,41 @@ public class SimdUTFTest {
         }
     }
 
+    private static void mutableLatin1(Method process) throws Exception {
+        // Exercise compressed prefixes followed by overlapping ASCII tails.
+        // Validate only bounds during mutation: no consistent text is promised.
+        for (int prefix : new int[]{0, 4096}) {
+            byte[] input = new byte[prefix + 81];
+            Arrays.fill(input, (byte)'a');
+            byte[] output = guardedBytes(input.length, 7);
+            AtomicBoolean stop = new AtomicBoolean();
+            Thread mutator = new Thread(() -> {
+                while (!stop.get()) {
+                    for (int i = prefix; i < prefix + 60; i += 2) {
+                        input[i] = (byte)0xc3;
+                        input[i + 1] = (byte)0xa9;
+                    }
+                    Arrays.fill(input, prefix, prefix + 60, (byte)'a');
+                }
+            });
+            mutator.start();
+            try {
+                for (int i = 0; i < 1000; i++) {
+                    int valid = (int)process.invoke(null, input, 0, input.length,
+                            input, 0, 0, 29);
+                    check(valid >= -1 && valid <= 1, "mutable Latin1 validation result");
+                    int count = (int)process.invoke(null, input, 0, input.length,
+                            output, 7, input.length, 24);
+                    check(count >= -1 && count <= input.length, "mutable Latin1 conversion bounds");
+                    guards(output, 7, input.length);
+                }
+            } finally {
+                stop.set(true);
+                mutator.join();
+            }
+        }
+    }
+
     private static void nativeRanges() throws Exception {
         Method process = SimdUTF.class.getDeclaredMethod("process0", Object.class, int.class,
                 int.class, Object.class, int.class, int.class, int.class);
@@ -860,6 +896,7 @@ public class SimdUTFTest {
                     Arrays.copyOfRange(dst, 7, 7 + written));
             guards(dst, 7, written);
         }
+        mutableLatin1(process);
         nativeWideConversions(process);
     }
 

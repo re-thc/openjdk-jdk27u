@@ -190,14 +190,18 @@ static jint simdutf_representable_prefix(const char16_t* input, jint len, char16
 }
 
 static bool simdutf_utf8_is_latin1(const char* input, jint len) {
+  char utf8[4096];
   char latin1[4096];
   for (jint off = 0; off < len;) {
     size_t size = MIN2(sizeof(latin1), size_t(len - off));
+    // Conversion kernels may reload earlier bytes for overlapping tail stores.
+    // Keep those reads stable even when the caller mutates the source array.
+    memcpy(utf8, input + off, size);
     if (off + size < size_t(len)) {
-      size = simdutf::trim_partial_utf8(input + off, size);
+      size = simdutf::trim_partial_utf8(utf8, size);
     }
     if (size == 0 || simdutf::convert_utf8_to_latin1_with_errors(
-        input + off, size, latin1).error != simdutf::SUCCESS) {
+        utf8, size, latin1).error != simdutf::SUCCESS) {
       return false;
     }
     off += checked_cast<jint>(size);
