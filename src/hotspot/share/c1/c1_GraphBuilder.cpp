@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3690,6 +3691,20 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
       return false;
     }
   }
+#ifdef AARCH64
+  if (callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch) {
+    const int args_base = state()->stack_size() - callee->arg_size();
+    const int maximum_bytes = 64 * K;
+    IntConstant* length = state()->stack_at(args_base + 6)->type()->as_IntConstant();
+    IntConstant* scale = state()->stack_at(args_base + 7)->type()->as_IntConstant();
+    // Keep unknown and larger ranges in Java so C1's polling loop is not
+    // replaced by an unbounded leaf call.
+    if (length == nullptr || scale == nullptr || scale->value() < 0 || scale->value() > 3 ||
+        length->value() < 0 || length->value() > (maximum_bytes >> scale->value())) {
+      return false;
+    }
+  }
+#endif
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
     return false;

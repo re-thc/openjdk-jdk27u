@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,9 @@ import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.nio.BufferCleaner;
 import java.util.Objects;
+#if[char]
+import jdk.internal.access.SharedSecrets;
+#end[char]
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
@@ -336,6 +340,11 @@ class Direct$Type$Buffer$RW$$BO$
         }
     }
 
+#if[float]
+#if[boU]
+    @ForceInline
+#end[boU]
+#end[float]
     public $type$ get(int i) {
         try {
             return $fromBits$($swap$(SCOPED_MEMORY_ACCESS.get$Swaptype$(session(), null, ix(checkIndex(i)))));
@@ -431,7 +440,82 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[rw] 
     private static final int APPEND_BUF_SIZE = 1024;
+    private static final byte UTF16_CODER = 1;
+
+    // Short strings stay on the scalar path to avoid bulk-copy setup.
+#if[boU]
+    private static final int PUT_STRING_BULK_MINIMUM = 32;
+    private static final int PUT_STRING_UTF16_BULK_MINIMUM = 64;
+#end[boU]
+#if[boS]
+    private static final int PUT_STRING_BULK_MINIMUM = 128;
+    private static final int PUT_STRING_UTF16_BULK_MINIMUM = 256;
+#end[boS]
+
+    // Copies csq[start, end) to this buffer from index onwards, staging
+    // through a bounded array for the bulk native copy.
+    private void putChars(int index, CharSequence csq, int start, int end) {
+        char[] buf = new char[Math.min(APPEND_BUF_SIZE, end - start)];
+        while (start < end) {
+            int count = end - start;
+            if (count > buf.length)
+                count = buf.length;
+
+            csq.getChars(start, start + count, buf, 0);
+
+            putArray(index, buf, 0, count);
+
+            start += count;
+            index += count;
+        }
+    }
+
+#if[boU]
+    private void putStringUTF16(String src, int start, int length) {
+        MemorySegment dst = MemorySegment.ofBuffer(this);
+        // Keep the original staging loop's copy bound and polling opportunities.
+        for (int copied = 0; copied < length;) {
+            int count = Math.min(APPEND_BUF_SIZE, length - copied);
+            SharedSecrets.getJavaLangAccess().copyToSegmentRaw(
+                    src, dst, (long)copied << 1, start + copied, count);
+            copied += count;
+        }
+    }
+#end[boU]
 #end[rw]
+
+    @Override
+    public $Type$Buffer put(String src, int start, int end) {
+        Objects.checkFromIndexSize(start, end - start, src.length());
+#if[rw]
+        int length = end - start;
+        if (length < PUT_STRING_BULK_MINIMUM ||
+                (length < PUT_STRING_UTF16_BULK_MINIMUM &&
+                 SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER)) {
+            return super.put(src, start, end);
+        }
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        if (length > rem)
+            throw new BufferOverflowException();
+
+#if[boU]
+        if (SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
+            putStringUTF16(src, start, length);
+        } else
+#end[boU]
+        {
+            putChars(pos, src, start, end);
+        }
+
+        position(pos + length);
+
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public $Type$Buffer append(CharSequence csq, int start, int end) {
 #if[rw]
@@ -447,19 +531,14 @@ class Direct$Type$Buffer$RW$$BO$
         if (length > rem)
             throw new BufferOverflowException();
 
-        char[] buf = new char[Math.min(APPEND_BUF_SIZE, length)];
-        int index = pos;
-        while (start < end) {
-            int count = end - start;
-            if (count > buf.length)
-                count = buf.length;
-
-            csq.getChars(start, start + count, buf, 0);
-
-            putArray(index, buf, 0, count);
-
-            start += count;
-            index += count;
+#if[boU]
+        if (length >= PUT_STRING_UTF16_BULK_MINIMUM && csq instanceof String src &&
+                SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
+            putStringUTF16(src, start, length);
+        } else
+#end[boU]
+        {
+            putChars(pos, csq, start, end);
         }
 
         position(pos + length);

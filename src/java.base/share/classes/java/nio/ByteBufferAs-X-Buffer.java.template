@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,9 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.vm.annotation.ForceInline;
+#if[char]
+import jdk.internal.access.SharedSecrets;
+#end[char]
 import java.util.Objects;
 import jdk.internal.misc.Unsafe;
 
@@ -147,6 +151,9 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
         return $fromBits$(x);
     }
 
+#if[floatingPointType]
+    @ForceInline
+#end[floatingPointType]
     public $type$ get(int i) {
         $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(session(), bb.hb, byteOffset(checkIndex(i)),
             {#if[boB]?true:false});
@@ -216,6 +223,50 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     }
 
 #if[char]
+
+#if[rw]
+    private static final int PUT_STRING_BUF_SIZE = 1024;
+    private static final byte UTF16_CODER = 1;
+
+    // Shorter strings are put char by char: staging them for the bulk copy
+    // costs an allocation and, for swapped byte order, a native call.
+    private static final int PUT_STRING_BULK_MINIMUM =
+        ByteOrder.nativeOrder() == ByteOrder.{#if[boB]?BIG_ENDIAN:LITTLE_ENDIAN} ? 32 : 128;
+
+#end[rw]
+    // The appends of CharBuffer reach this method too, through toString().
+    @Override
+    public $Type$Buffer put(String src, int start, int end) {
+        Objects.checkFromIndexSize(start, end - start, src.length());
+#if[rw]
+        int length = end - start;
+        // Retain the superclass loop for UTF-16 and short copies.
+        if (length < PUT_STRING_BULK_MINIMUM ||
+                SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
+            return super.put(src, start, end);
+        }
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        if (length > rem)
+            throw new BufferOverflowException();
+
+        // Stage through a bounded array for the bulk copy.
+        char[] buf = new char[Math.min(PUT_STRING_BUF_SIZE, length)];
+        int index = pos;
+        while (start < end) {
+            int count = Math.min(end - start, buf.length);
+            src.getChars(start, start + count, buf, 0);
+            putArray(index, buf, 0, count);
+            start += count;
+            index += count;
+        }
+        position(pos + length);
+        return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public String toString(int start, int end) {
         Objects.checkFromToIndex(start, end, limit());

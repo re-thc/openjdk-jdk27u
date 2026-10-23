@@ -1,0 +1,252 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test id=default
+ * @summary CharBuffer.put(String, int, int) and append(String) on views of direct and heap
+ *          byte buffers copy the requested range in both byte orders, on either side of
+ *          the bulk-copy threshold, and keep their precondition checks
+ * @run main CharBufferViewPutString
+ * @run main/othervm -Xint CharBufferViewPutString
+ */
+
+/*
+ * @test id=c1
+ * @summary Check CharBuffer string copies with C1
+ * @requires vm.compiler1.enabled
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 CharBufferViewPutString
+ */
+
+/*
+ * @test id=c2
+ * @summary Check CharBuffer string copies with C2
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 CharBufferViewPutString
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-CompactStrings CharBufferViewPutString
+ */
+
+/*
+ * @test id=mapped
+ * @summary Bulk String puts must recover from faults in truncated mappings
+ * @requires (os.family == "mac" | os.family == "linux") & vm.compiler1.enabled & vm.compiler2.enabled
+ * @run main/othervm -Xint CharBufferViewPutString mapped
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 CharBufferViewPutString mapped
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 CharBufferViewPutString mapped
+ */
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.ReadOnlyBufferException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
+public class CharBufferViewPutString {
+    private static final int CAPACITY = 5000;
+
+    private static String text(int length, boolean latin1) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(latin1 ? (char) (i % 256) : switch (i % 7) {
+                case 0 -> '\u0000';
+                case 1 -> '\ud800';
+                case 2 -> '\udc00';
+                case 3 -> '\udfff';
+                default -> (char) (0x3b1 + i % 997);
+            });
+        }
+        return sb.toString();
+    }
+
+    private static void check(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
+    }
+
+    private static void expect(Class<? extends RuntimeException> type, Runnable action, String what) {
+        try {
+            action.run();
+        } catch (RuntimeException e) {
+            if (type.isInstance(e)) {
+                return;
+            }
+            throw new AssertionError(what + ": unexpected " + e, e);
+        }
+        throw new AssertionError(what + ": expected " + type.getSimpleName());
+    }
+
+    private static void verify(CharBuffer cb, int position, String src, int start, int end, String what) {
+        check(cb.position() == position + end - start, what + ": position " + cb.position());
+        for (int i = 0; i < end - start; i++) {
+            check(cb.get(position + i) == src.charAt(start + i), what + ": char " + i);
+        }
+        // Neighbouring chars are untouched.
+        check(position == 0 || cb.get(position - 1) == '#', what + ": before");
+        check(cb.position() == cb.limit() || cb.get(cb.position()) == '#', what + ": after");
+    }
+
+    private static CharBuffer fresh(boolean direct, ByteOrder order, int byteOffset) {
+        int bytes = 2 * CAPACITY + 2;
+        ByteBuffer bb = direct ? ByteBuffer.allocateDirect(bytes) : ByteBuffer.allocate(bytes);
+        // Exercise an odd byte offset as well as char positions within the view.
+        bb.position(byteOffset);
+        CharBuffer cb = bb.order(order).asCharBuffer();
+        check(cb.isDirect() == direct && cb.order() == order, "view of the requested kind");
+        while (cb.hasRemaining()) {
+            cb.put('#');
+        }
+        return cb.clear();
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 0) {
+            testMappedFault();
+            return;
+        }
+        for (int byteOffset : new int[] {0, 1}) {
+            for (boolean direct : new boolean[] {true, false}) {
+                for (ByteOrder order : new ByteOrder[] {ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN}) {
+                    test(direct, order, byteOffset);
+                }
+            }
+        }
+        testSession();
+    }
+
+    private static void testMappedFault() throws Exception {
+        Path path = Files.createTempFile("char-buffer-string", ".bin");
+        String src = text(65536, false);
+        try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ,
+                StandardOpenOption.WRITE); Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = channel.map(FileChannel.MapMode.READ_WRITE, 0, 1 << 20, arena);
+            CharBuffer cb = segment.asByteBuffer().order(ByteOrder.nativeOrder()).asCharBuffer();
+            for (int i = 0; i < 1000; i++) {
+                cb.clear().put(src);
+                mappedCopy(segment, false);
+                mappedCopy(segment, true);
+            }
+            cb.clear().put(src);
+            check(cb.get(3) == src.charAt(3), "mapped copy");
+            channel.truncate(0);
+            channel.force(true);
+            cb.clear();
+            checkMappedFault(() -> cb.put(src));
+            checkMappedFault(() -> mappedCopy(segment, false));
+            checkMappedFault(() -> mappedCopy(segment, true));
+        } finally {
+            Files.delete(path);
+        }
+    }
+
+    private static void mappedCopy(MemorySegment segment, boolean backwards) {
+        MemorySegment.copy(segment, backwards ? 0 : 16, segment, backwards ? 16 : 0, 131072);
+    }
+
+    private static void checkMappedFault(Runnable action) {
+        try {
+            action.run();
+            throw new AssertionError("expected a mapped copy fault");
+        } catch (InternalError expected) {
+            check(expected.getMessage().contains("unsafe memory access"), "mapped fault: " + expected);
+        }
+    }
+
+    private static void testSession() {
+        String src = text(1024, false);
+        CharBuffer cb;
+        try (Arena arena = Arena.ofConfined()) {
+            cb = arena.allocate(4096).asByteBuffer().order(ByteOrder.nativeOrder()).asCharBuffer();
+            cb.position(3).put(src, 1, 1024);
+            check(cb.get(3) == src.charAt(1), "scoped copy");
+            cb.clear();
+            Throwable[] failure = new Throwable[1];
+            Thread thread = new Thread(() -> {
+                expect(WrongThreadException.class, () -> cb.put(src), "wrong-thread copy");
+                check(cb.position() == 0, "wrong-thread position");
+            });
+            thread.setUncaughtExceptionHandler((t, ex) -> failure[0] = ex);
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new AssertionError(e);
+            }
+            if (failure[0] != null)
+                throw new AssertionError(failure[0]);
+        }
+        expect(IllegalStateException.class, () -> cb.put(src), "closed copy");
+        check(cb.position() == 0, "closed position");
+    }
+
+    private static void test(boolean direct, ByteOrder order, int byteOffset) {
+        for (boolean latin1 : new boolean[] {true, false}) {
+            String src = text(4100, latin1);
+            for (int length : new int[] {0, 1, 7, 31, 32, 33, 63, 64, 65, 127, 128, 129,
+                    255, 256, 257, 1023, 1024, 1025, 2049, 4097}) {
+                for (int start : new int[] {0, 1, 3}) {
+                    int end = start + length;
+                    String what = (direct ? "direct/" : "heap/") + order + "/" + (latin1 ? "latin1" : "utf16")
+                                  + "/byteOffset=" + byteOffset + "/" + start + "+" + length;
+                    CharBuffer cb = fresh(direct, order, byteOffset).position(5);
+                    check(cb.put(src, start, end) == cb, what + ": returns this");
+                    verify(cb, 5, src, start, end, what);
+
+                    cb = fresh(direct, order, byteOffset).position(2);
+                    cb.append(src, start, end);
+                    verify(cb, 2, src, start, end, what + "/append");
+
+                    cb = fresh(direct, order, byteOffset).position(1);
+                    cb.put(src.substring(start, end));
+                    verify(cb, 1, src.substring(start, end), 0, length, what + "/whole");
+                }
+            }
+
+            // Preconditions are checked before any char is written.
+            CharBuffer cb = fresh(direct, order, byteOffset).position(3);
+            CharBuffer target = cb;
+            expect(IndexOutOfBoundsException.class, () -> target.put(src, -1, 2), "negative start");
+            expect(IndexOutOfBoundsException.class, () -> target.put(src, 5, 4), "end before start");
+            expect(IndexOutOfBoundsException.class, () -> target.put(src, 0, src.length() + 1), "end");
+            check(cb.position() == 3 && cb.get(3) == '#', "no write after IndexOutOfBoundsException");
+            cb.limit(10);
+            expect(BufferOverflowException.class, () -> target.put(src, 0, 8), "overflow");
+            expect(BufferOverflowException.class, () -> target.put(src, 0, 100), "bulk overflow");
+            check(cb.position() == 3 && cb.get(3) == '#', "no write after BufferOverflowException");
+            // An invalid range is reported before an overflow.
+            expect(IndexOutOfBoundsException.class, () -> target.put("abc", 0, 8), "range first");
+            CharBuffer readOnly = target.asReadOnlyBuffer();
+            expect(ReadOnlyBufferException.class, () -> readOnly.put(src, 0, 2), "read-only");
+            // Read-only is reported before an overflow, and after an invalid range.
+            expect(ReadOnlyBufferException.class, () -> readOnly.put(src, 0, 100), "read-only overflow");
+            expect(ReadOnlyBufferException.class, () -> readOnly.append(src, 0, 100), "read-only append");
+            expect(IndexOutOfBoundsException.class, () -> readOnly.put("abc", 0, 8), "read-only range");
+            check(cb.get(3) == '#', "no write through a read-only view");
+        }
+    }
+}

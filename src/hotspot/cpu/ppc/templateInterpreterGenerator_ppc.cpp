@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright (c) 2015, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1178,6 +1179,8 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
 
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_vectorizedMismatch_entry() { return nullptr; }
 
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
   if (!VM_Version::supports_float16()) return nullptr;

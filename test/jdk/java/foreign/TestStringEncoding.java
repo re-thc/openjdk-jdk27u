@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -575,6 +576,44 @@ public class TestStringEncoding {
                 }
             }
         }
+    }
+
+    @Test
+    public void strlen_wideTerminatorWithinBounds() {
+        // A terminator must lie entirely within the scanned region, also when the
+        // scan starts at an offset that is not a multiple of the terminator size.
+        for (int width : new int[] {Short.BYTES, Integer.BYTES}) {
+            for (int size = 0; size <= 3 * Long.BYTES; size++) {
+                for (int from = 1; from < size; from++) {
+                    try (var arena = Arena.ofConfined()) {
+                        // Zero bytes follow each slice; the slices contain none.
+                        MemorySegment nativeSlice = arena.allocate(size + Long.BYTES).asSlice(0, size);
+                        MemorySegment heapSlice = MemorySegment.ofArray(new byte[size + Long.BYTES]).asSlice(0, size);
+                        for (MemorySegment segment : List.of(nativeSlice, heapSlice)) {
+                            segment.fill((byte) 0x41);
+                            final int start = from;
+                            expectThrows(IndexOutOfBoundsException.class, () -> strlen(width, segment, start));
+                            // A terminator in the last complete unit is found.
+                            long last = from + (size - from) / width * width - width;
+                            if (last >= from) {
+                                segment.asSlice(last, width).fill((byte) 0);
+                                assertEquals(strlen(width, segment, from), last - from);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        byte[] bytes = {0x41, 0x41, 0x41, 0x41, 0, 0, 0, 0};
+        MemorySegment segment = MemorySegment.ofArray(bytes).asSlice(0, 4);
+        expectThrows(IndexOutOfBoundsException.class, () -> segment.getString(1, StandardCharsets.UTF_16LE));
+        expectThrows(IndexOutOfBoundsException.class, () -> segment.getString(3, Charset.forName("UTF-32LE")));
+    }
+
+    private static int strlen(int width, MemorySegment segment, long from) {
+        var impl = (AbstractMemorySegmentImpl) segment;
+        return width == Short.BYTES ? StringSupport.strlenShort(impl, from, segment.byteSize())
+                                    : StringSupport.strlenInt(impl, from, segment.byteSize());
     }
 
     @Test(dataProvider = "charsetsAndSegments")

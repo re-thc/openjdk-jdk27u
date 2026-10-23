@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +151,17 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
     if (cg != nullptr) {
-      if (cg->is_predicated()) {
+      bool needs_predicate = cg->is_predicated();
+#ifndef AARCH64
+      if (needs_predicate && callee->intrinsic_id() == vmIntrinsics::_vectorizedMismatch) {
+        // Keep the existing array expansion and its inlining decisions.
+        // Native addresses alone need size selection against the Java body.
+        SafePointNode* map = jvms->map();
+        needs_predicate = initial_gvn()->type(map->argument(jvms, 0)) == TypePtr::NULL_PTR ||
+                          initial_gvn()->type(map->argument(jvms, 3)) == TypePtr::NULL_PTR;
+      }
+#endif
+      if (needs_predicate) {
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
               vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);

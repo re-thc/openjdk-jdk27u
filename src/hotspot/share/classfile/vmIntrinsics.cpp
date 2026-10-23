@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +202,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
   case vmIntrinsics::_galoisCounterMode_AESCrypt:
+  case vmIntrinsics::_vectorizedMismatch:
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
     return 5;

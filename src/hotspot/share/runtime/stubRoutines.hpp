@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +254,10 @@ public:
   // rationalise this at some point.
 
   static address _string_indexof_array[4];
+
+  // The interpreter is generated before the final stubs. Its mismatch entry
+  // loads this stub address when it is called.
+  static address* vectorizedMismatch_addr()                { return &_vectorizedMismatch; }
 
   /* special case: stub employs array of entries */
 

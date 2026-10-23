@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -723,6 +724,14 @@ public final class Arrays {
         }
         if (toIndex > arrayLength) {
             throw new ArrayIndexOutOfBoundsException(toIndex);
+        }
+    }
+
+    // The fast predicate accepts exactly 0 <= fromIndex <= toIndex <= arrayLength.
+    // Keep failure details and exception order in the existing range check.
+    private static void mismatchRangeCheck(int arrayLength, int fromIndex, int toIndex) {
+        if ((fromIndex | toIndex | (toIndex - fromIndex) | (arrayLength - toIndex)) < 0) {
+            rangeCheck(arrayLength, fromIndex, toIndex);
         }
     }
 
@@ -7561,8 +7570,8 @@ public final class Arrays {
      */
     public static int mismatch(boolean[] a, int aFromIndex, int aToIndex,
                                boolean[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -7688,8 +7697,8 @@ public final class Arrays {
      */
     public static int mismatch(byte[] a, int aFromIndex, int aToIndex,
                                byte[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -7815,8 +7824,8 @@ public final class Arrays {
      */
     public static int mismatch(char[] a, int aFromIndex, int aToIndex,
                                char[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -7942,8 +7951,8 @@ public final class Arrays {
      */
     public static int mismatch(short[] a, int aFromIndex, int aToIndex,
                                short[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -8069,8 +8078,8 @@ public final class Arrays {
      */
     public static int mismatch(int[] a, int aFromIndex, int aToIndex,
                                int[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -8196,8 +8205,8 @@ public final class Arrays {
      */
     public static int mismatch(long[] a, int aFromIndex, int aToIndex,
                                long[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -8323,8 +8332,8 @@ public final class Arrays {
      */
     public static int mismatch(float[] a, int aFromIndex, int aToIndex,
                                float[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -8450,8 +8459,8 @@ public final class Arrays {
      */
     public static int mismatch(double[] a, int aFromIndex, int aToIndex,
                                double[] b, int bFromIndex, int bToIndex) {
-        rangeCheck(a.length, aFromIndex, aToIndex);
-        rangeCheck(b.length, bFromIndex, bToIndex);
+        mismatchRangeCheck(a.length, aFromIndex, aToIndex);
+        mismatchRangeCheck(b.length, bFromIndex, bToIndex);
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;

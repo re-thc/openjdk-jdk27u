@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,12 @@
  */
 package java.nio;
 
+import java.lang.ref.Reference;
+
 import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Mismatch methods for buffers
@@ -34,16 +39,30 @@ final class BufferMismatch {
 
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
+    @ForceInline
+    private static int vectorizedMismatch(Buffer a, Object aBase, long aOffset,
+                                          Buffer b, Object bBase, long bOffset,
+                                          int length, int log2ArrayIndexScale) {
+        try {
+            return SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
+                    aBase, aOffset, bBase, bOffset, length, log2ArrayIndexScale);
+        } finally {
+            // Ordinary direct buffers have no segment session. Keep their
+            // owners alive until the comparison has read their memory,
+            // including across the safepoints between native chunks.
+            if (aBase == null) Reference.reachabilityFence(a);
+            if (bBase == null) Reference.reachabilityFence(b);
+        }
+    }
+
     static int mismatch(ByteBuffer a, int aOff, ByteBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 7) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                    a.base(), a.address + aOff,
-                    b.base(), b.address + bOff,
-                    length,
-                    ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+            i = vectorizedMismatch(a, a.base(), a.address + aOff,
+                    b, b.base(), b.address + bOff,
+                    length, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0) return i;
             i = length - ~i;
         }
@@ -63,11 +82,9 @@ final class BufferMismatch {
             && a.charRegionOrder() != null && b.charRegionOrder() != null) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE);
+            i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
+                    b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
+                    length, ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE);
             if (i >= 0) return i;
             i = length - ~i;
         }
@@ -83,11 +100,9 @@ final class BufferMismatch {
         if (length > 3 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE);
+            i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
+                    b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
+                    length, ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE);
             if (i >= 0) return i;
             i = length - ~i;
         }
@@ -103,11 +118,9 @@ final class BufferMismatch {
         if (length > 1 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
+            i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
+                    b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
+                    length, ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
             if (i >= 0) return i;
             i = length - ~i;
         }
@@ -118,15 +131,18 @@ final class BufferMismatch {
         return -1;
     }
 
+    @ForceInline
     static int mismatch(FloatBuffer a, int aOff, FloatBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
-            if (Float.floatToRawIntBits(a.get(aOff)) == Float.floatToRawIntBits(b.get(bOff))) {
-                i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                        a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
-                        b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
-                        length,
-                        ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+                // Use the typed prefix, including its NaN handling, for heap arrays.
+                i = ArraysSupport.mismatch(a.hb, aOff + a.offset,
+                        b.hb, bOff + b.offset, length);
+            } else if (Float.floatToRawIntBits(a.get(aOff)) == Float.floatToRawIntBits(b.get(bOff))) {
+                i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
+                    b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
+                    length, ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
             }
             // Mismatched
             if (i >= 0) {
@@ -147,9 +163,24 @@ final class BufferMismatch {
                 i = length - ~i;
             }
         }
+        if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+            if (i >= length) return -1;
+            return mismatchHeap(a.hb, aOff + a.offset, b.hb, bOff + b.offset, i, length);
+        }
         for (; i < length; i++) {
             float av = a.get(aOff + i);
             float bv = b.get(bOff + i);
+            if (av != bv && (!Float.isNaN(av) || !Float.isNaN(bv)))
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchHeap(float[] a, int aOff, float[] b, int bOff,
+                                    int i, int length) {
+        for (; i < length; i++) {
+            float av = a[aOff + i];
+            float bv = b[bOff + i];
             if (av != bv && (!Float.isNaN(av) || !Float.isNaN(bv)))
                 return i;
         }
@@ -161,11 +192,9 @@ final class BufferMismatch {
         if (length > 0 && a.order() == b.order()) {
             if (a.get(aOff) != b.get(bOff))
                 return 0;
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
+            i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
+                    b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
+                    length, ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
             return i >= 0 ? i : -1;
         }
         for (; i < length; i++) {
@@ -175,15 +204,17 @@ final class BufferMismatch {
         return -1;
     }
 
+    @ForceInline
     static int mismatch(DoubleBuffer a, int aOff, DoubleBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {
-            if (Double.doubleToRawLongBits(a.get(aOff)) == Double.doubleToRawLongBits(b.get(bOff))) {
-                i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(a.session(), b.session(),
-                        a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
-                        b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
-                        length,
-                        ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+                i = ArraysSupport.mismatch(a.hb, aOff + a.offset,
+                        b.hb, bOff + b.offset, length);
+            } else if (Double.doubleToRawLongBits(a.get(aOff)) == Double.doubleToRawLongBits(b.get(bOff))) {
+                i = vectorizedMismatch(a, a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
+                    b, b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
+                    length, ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
             }
             // Mismatched
             if (i >= 0) {
@@ -204,9 +235,24 @@ final class BufferMismatch {
                 return -1;
             }
         }
+        if (Architecture.isAARCH64() && a.hb != null && b.hb != null) {
+            if (i >= length) return -1;
+            return mismatchHeap(a.hb, aOff + a.offset, b.hb, bOff + b.offset, i, length);
+        }
         for (; i < length; i++) {
             double av = a.get(aOff + i);
             double bv = b.get(bOff + i);
+            if (av != bv && (!Double.isNaN(av) || !Double.isNaN(bv)))
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchHeap(double[] a, int aOff, double[] b, int bOff,
+                                    int i, int length) {
+        for (; i < length; i++) {
+            double av = a[aOff + i];
+            double bv = b[bOff + i];
             if (av != bv && (!Double.isNaN(av) || !Double.isNaN(bv)))
                 return i;
         }

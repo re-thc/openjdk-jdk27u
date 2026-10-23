@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +28,6 @@ package jdk.internal.foreign;
 
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
-import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -56,6 +56,10 @@ public final class SegmentBulkOperations {
     // greater or equal to 2^3.
     private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", 5);
     private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
+    // Masks the whole words of a range shorter than the threshold. A threshold
+    // below a word sends only ranges shorter than a word to that loop, which
+    // the tail of the loop handles, so no word is read there.
+    private static final int MISMATCH_WORDS = Math.max(NATIVE_THRESHOLD_MISMATCH, Long.BYTES) - Long.BYTES;
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
     @ForceInline
@@ -261,15 +265,27 @@ public final class SegmentBulkOperations {
         } else if (length < NATIVE_THRESHOLD_MISMATCH) {
             return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) length, srcAndDstBytesDiffer);
         } else {
+            // Read once: C1 calls these virtually, at every use.
+            final Object srcBase = src.unsafeGetBase();
+            final long srcAddress = src.unsafeGetOffset() + srcFromOffset;
+            final Object dstBase = dst.unsafeGetBase();
+            final long dstAddress = dst.unsafeGetOffset() + dstFromOffset;
             long i;
-            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset) !=
-                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset)) {
+            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), srcBase, srcAddress) !=
+                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dstBase, dstAddress)) {
                 return 0;
             }
-            i = vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
-                    src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
-                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset,
-                    length);
+            // A threshold below a word also brings shorter ranges here. The
+            // first test is a constant, so this costs nothing by default.
+            if (NATIVE_THRESHOLD_MISMATCH >= Long.BYTES || length >= Long.BYTES) {
+                final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), srcBase, srcAddress, false);
+                final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dstBase, dstAddress, false);
+                if (s != d) {
+                    return mismatch(s, d);
+                }
+            }
+            i = SCOPED_MEMORY_ACCESS.vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
+                    srcBase, srcAddress, dstBase, dstAddress, length);
             if (i >= 0) {
                 return i;
             }
@@ -286,7 +302,7 @@ public final class SegmentBulkOperations {
                                  AbstractMemorySegmentImpl dst, long dstFromOffset,
                                  long start, int length, boolean srcAndDstBytesDiffer) {
         int offset = 0;
-        final int limit = length & (NATIVE_THRESHOLD_MISMATCH - 8);
+        final int limit = length & MISMATCH_WORDS;
         for (; offset < limit; offset += Long.BYTES) {
             final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
@@ -343,38 +359,6 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(short first, short second) {
         return ((0xff & first) == (0xff & second)) ? 1 : 0;
-    }
-
-    /**
-     * Mismatch over long lengths.
-     */
-    private static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
-                                                        Object a, long aOffset,
-                                                        Object b, long bOffset,
-                                                        long length) {
-        long off = 0;
-        long remaining = length;
-        int i, size;
-        boolean lastSubRange = false;
-        while (remaining > 7 && !lastSubRange) {
-            if (remaining > Integer.MAX_VALUE) {
-                size = Integer.MAX_VALUE;
-            } else {
-                size = (int) remaining;
-                lastSubRange = true;
-            }
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
-                    a, aOffset + off,
-                    b, bOffset + off,
-                    size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0)
-                return off + i;
-
-            i = size - ~i;
-            off += i;
-            remaining -= i;
-        }
-        return ~remaining;
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
