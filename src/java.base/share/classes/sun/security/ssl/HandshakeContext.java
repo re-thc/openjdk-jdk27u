@@ -235,6 +235,16 @@ abstract class HandshakeContext implements ConnectionContext {
         conContext.outputRecord.setVersion(conContext.protocolVersion);
     }
 
+    // A TLS 1.3 cipher suite has no key exchange. The group-status map is
+    // therefore unused by the original filters in this narrow configuration.
+    // All availability and constraint checks still run in their original order.
+    private static boolean tls13UsesNoGroupCache(SSLConfiguration config,
+            AlgorithmConstraints constraints) {
+        return constraints == SSLAlgorithmConstraints.DEFAULT &&
+                !SSLLogger.isOn() && config.enabledProtocols.size() == 1 &&
+                config.enabledProtocols.get(0) == ProtocolVersion.TLS13;
+    }
+
     private static List<ProtocolVersion> getActiveProtocols(
             SSLConfiguration sslConfig,
             AlgorithmConstraints algorithmConstraints) {
@@ -249,7 +259,8 @@ abstract class HandshakeContext implements ConnectionContext {
 
             boolean found = false;
             Map<NamedGroupSpec, Boolean> cachedStatus =
-                    new EnumMap<>(NamedGroupSpec.class);
+                    tls13UsesNoGroupCache(sslConfig, algorithmConstraints) ?
+                            null : new EnumMap<>(NamedGroupSpec.class);
             for (CipherSuite suite : sslConfig.enabledCipherSuites) {
                 if (suite.isAvailable() && suite.supports(protocol)) {
                     if (isActivatable(sslConfig, suite,
@@ -288,7 +299,8 @@ abstract class HandshakeContext implements ConnectionContext {
         List<CipherSuite> suites = new LinkedList<>();
         if (enabledProtocols != null && !enabledProtocols.isEmpty()) {
             Map<NamedGroupSpec, Boolean> cachedStatus =
-                    new EnumMap<>(NamedGroupSpec.class);
+                    tls13UsesNoGroupCache(sslConfig, algorithmConstraints) ?
+                            null : new EnumMap<>(NamedGroupSpec.class);
             for (CipherSuite suite : sslConfig.enabledCipherSuites) {
                 if (!suite.isAvailable()) {
                     continue;
