@@ -211,6 +211,48 @@ public final class GenerateDowncallTemplates {
         return "new int[][][]{" + String.join(",", rows) + "}";
     }
 
+    private static byte[] bundle(byte[] bytes, String id, int major) throws IOException {
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        try (DataOutputStream data = new DataOutputStream(encoded)) {
+            data.writeInt(0x46464d54);
+            data.writeInt(1);
+            data.writeInt(major);
+            data.writeUTF(id);
+            data.writeInt(bytes.length);
+            data.write(bytes);
+        }
+        return encoded.toByteArray();
+    }
+
+    private static String inline(byte[] bytes, String method) {
+        StringBuilder literal = new StringBuilder();
+        for (byte value : bytes) {
+            int unsigned = Byte.toUnsignedInt(value);
+            literal.append('\\').append((char) ('0' + (unsigned >>> 6)))
+                    .append((char) ('0' + ((unsigned >>> 3) & 7)))
+                    .append((char) ('0' + (unsigned & 7)));
+        }
+        return "static java.io.InputStream " + method + "(){String data=\"" + literal
+                + "\";byte[] bytes=new byte[data.length()];for(int i=0;i<bytes.length;i++)bytes[i]=(byte)data.charAt(i);return new java.io.ByteArrayInputStream(bytes);}\n";
+    }
+
+    private static String abiEntry(String platform, Class<?> abiType, Object abi) throws Exception {
+        StringBuilder entry = new StringBuilder("new DowncallTemplates.Entry(\"")
+                .append(platform).append("\",\"")
+                .append(field(abiType, abi, "arch").getClass().getName()).append("\",");
+        for (String name : List.of("inputStorage", "outputStorage", "volatileStorage")) {
+            entry.append(matrix(field(abiType, abi, name))).append(',');
+        }
+        for (String name : List.of("stackAlignment", "shadowSpace")) {
+            entry.append(field(abiType, abi, name)).append(',');
+        }
+        for (String name : List.of("scratch1", "scratch2", "targetAddrStorage", "retBufAddrStorage",
+                "capturedStateStorage")) {
+            entry.append(storage(field(abiType, abi, name))).append(',');
+        }
+        return entry.toString();
+    }
+
     private static void emit(String[] args) throws Exception {
         Path patch = Path.of(args[1]), output = Path.of(args[2]);
         String id = args[3], config = args[4];
@@ -232,29 +274,23 @@ public final class GenerateDowncallTemplates {
         if (!id.equals(field(specializer, null, "TEMPLATE_SOURCE_ID"))) {
             throw new IOException("Target source/compiler binding mismatch");
         }
-        byte[] bytes = new byte[0];
+        byte[][] payloads = new byte[3][0];
         List<String> entries = new ArrayList<>();
-        // The descriptor below uses the producer's native-order JAVA_INT.
-        // A different build-host byte order must retain normal generation,
-        // rather than making an otherwise supported cross build fail.
+        // The layouts below use the producer's native byte order.
         boolean supported = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN &&
                 (config.startsWith("linux|x86_64|little|64|") || config.startsWith("linux|aarch64|little|64|"));
         if (supported) {
             Class<?> mt = java.lang.invoke.MethodType.class;
             Class<?> fd = Class.forName("java.lang.foreign.FunctionDescriptor");
             Class<?> vl = Class.forName("java.lang.foreign.ValueLayout");
-            Object integer = vl.getField("JAVA_INT").get(null);
             Class<?> layout = Class.forName("java.lang.foreign.MemoryLayout");
-            Object layouts = Array.newInstance(layout, 1);
-            Array.set(layouts, 0, integer);
-            Object descriptor = fd.getMethod("of", layout, layouts.getClass()).invoke(null, integer, layouts);
-            Object type = fd.getMethod("toMethodType").invoke(descriptor);
             Class<?> optionsType = Class.forName("jdk.internal.foreign.abi.LinkerOptions");
             Object options = optionsType.getMethod("empty").invoke(null);
             Class<?> csType = Class.forName("jdk.internal.foreign.abi.CallingSequence");
             Class<?> abiType = Class.forName("jdk.internal.foreign.abi.ABIDescriptor");
             Method emitter = specializer.getDeclaredMethod("specializeHelper", mt, mt, csType, abiType);
             emitter.setAccessible(true);
+            String[] layouts = {"JAVA_INT", "JAVA_LONG", "JAVA_DOUBLE"};
             for (String platform : List.of("linux-x64-sysv", "linux-aarch64")) {
                 Class<?> arrangerType; Object arranger; Object abi;
                 if (platform.equals("linux-x64-sysv")) {
@@ -268,69 +304,64 @@ public final class GenerateDowncallTemplates {
                     abiMethod.setAccessible(true);
                     abi = abiMethod.invoke(arranger);
                 }
-                Object binding = arrangerType.getMethod("getBindings", mt, fd, boolean.class, optionsType)
-                        .invoke(arranger, type, descriptor, false, options);
-                Object sequence = call(binding, "callingSequence");
-                var caller = (java.lang.invoke.MethodType) call(sequence, "callerMethodType");
-                caller = caller.insertParameterTypes(0, Class.forName("java.lang.foreign.SegmentAllocator"));
-                byte[] generated = (byte[]) emitter.invoke(null, call(sequence, "calleeMethodType"), caller,
-                        sequence, abi);
-                if (bytes.length != 0 && !Arrays.equals(bytes, generated)) {
-                    throw new IOException("Target ABI payload mismatch");
+                String common = null;
+                StringBuilder stores = new StringBuilder();
+                for (int kind = 0; kind < layouts.length; kind++) {
+                    Object scalar = vl.getField(layouts[kind]).get(null);
+                    Object arguments = Array.newInstance(layout, 1);
+                    Array.set(arguments, 0, scalar);
+                    Object descriptor = fd.getMethod("of", layout, arguments.getClass())
+                            .invoke(null, scalar, arguments);
+                    Object type = fd.getMethod("toMethodType").invoke(descriptor);
+                    Object binding = arrangerType.getMethod("getBindings", mt, fd, boolean.class, optionsType)
+                            .invoke(arranger, type, descriptor, false, options);
+                    Object sequence = call(binding, "callingSequence");
+                    var caller = (java.lang.invoke.MethodType) call(sequence, "callerMethodType");
+                    caller = caller.insertParameterTypes(0, Class.forName("java.lang.foreign.SegmentAllocator"));
+                    byte[] generated = (byte[]) emitter.invoke(null, call(sequence, "calleeMethodType"), caller,
+                            sequence, abi);
+                    if (payloads[kind].length != 0 && !Arrays.equals(payloads[kind], generated)) {
+                        throw new IOException("Target ABI payload mismatch: " + layouts[kind]);
+                    }
+                    payloads[kind] = generated;
+                    String current = abiEntry(platform, abiType, abi);
+                    if (common != null && !common.equals(current)) {
+                        throw new IOException("Scalar ABI tables differ: " + layouts[kind]);
+                    }
+                    common = current;
+                    Object arg = ((List<?>) csType.getMethod("argumentBindings", int.class)
+                            .invoke(sequence, 1)).get(0);
+                    Object ret = ((List<?>) call(sequence, "returnBindings")).get(0);
+                    if (kind != 0) stores.append(',');
+                    stores.append(storage(call(arg, "storage"))).append(',')
+                            .append(storage(call(ret, "storage")));
                 }
-                bytes = generated;
-                StringBuilder entry = new StringBuilder("new DowncallTemplates.Entry(\"")
-                        .append(platform).append("\",\"")
-                        .append(field(abiType, abi, "arch").getClass().getName()).append("\",");
-                for (String name : List.of("inputStorage", "outputStorage", "volatileStorage")) {
-                    entry.append(matrix(field(abiType, abi, name))).append(',');
-                }
-                for (String name : List.of("stackAlignment", "shadowSpace")) {
-                    entry.append(field(abiType, abi, name)).append(',');
-                }
-                for (String name : List.of("scratch1", "scratch2", "targetAddrStorage", "retBufAddrStorage",
-                        "capturedStateStorage")) {
-                    entry.append(storage(field(abiType, abi, name))).append(',');
-                }
-                Object arg = ((List<?>) csType.getMethod("argumentBindings", int.class)
-                        .invoke(sequence, 1)).get(0);
-                Object ret = ((List<?>) call(sequence, "returnBindings")).get(0);
-                entry.append(storage(call(arg, "storage")))
-                        .append(',')
-                        .append(storage(call(ret, "storage")))
-                        .append(')');
-                entries.add(entry.toString());
+                entries.add(common + stores + ')');
             }
         }
         Files.createDirectories(output);
-        CRC32 crc = new CRC32();
-        crc.update(bytes);
-        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
-        try (DataOutputStream data = new DataOutputStream(encoded)) {
-            data.writeInt(0x46464d54);
-            data.writeInt(1);
-            data.writeInt(major);
-            data.writeUTF(id);
-            data.writeInt(bytes.length);
-            data.write(bytes);
+        String[] names = {"int", "long", "double"};
+        long[] crc = new long[payloads.length];
+        StringBuilder java = new StringBuilder("package jdk.internal.foreign.abi;\nfinal class GeneratedDowncallTemplateData {\n");
+        for (int kind = 0; kind < payloads.length; kind++) {
+            CRC32 checksum = new CRC32();
+            checksum.update(payloads[kind]);
+            crc[kind] = checksum.getValue();
+            byte[] encoded = bundle(payloads[kind], id, major);
+            write(output.resolve("scalar-" + names[kind] + ".bin"), encoded);
+            java.append(inline(encoded, kind == 0 ? "open" : "open" + kind));
+            System.out.println("FFM payload=" + hash(payloads[kind]) + " scalar=" + names[kind]
+                    + " bytes=" + payloads[kind].length);
         }
-        write(output.resolve("scalar-int.bin"), encoded.toByteArray());
-        StringBuilder literal = new StringBuilder();
-        for (byte value : encoded.toByteArray()) {
-            int unsigned = Byte.toUnsignedInt(value);
-            literal.append('\\').append((char) ('0' + (unsigned >>> 6)))
-                    .append((char) ('0' + ((unsigned >>> 3) & 7)))
-                    .append((char) ('0' + (unsigned & 7)));
-        }
-        // Keep the identical source-bound, checksummed bundle. Loading the
-        // generated class avoids initializing the Java module image reader.
-        String inline = "static java.io.InputStream open(){String data=\"" + literal
-                + "\";byte[] bytes=new byte[data.length()];for(int i=0;i<bytes.length;i++)bytes[i]=(byte)data.charAt(i);return new java.io.ByteArrayInputStream(bytes);}\n";
-        String java = "package jdk.internal.foreign.abi;\nfinal class GeneratedDowncallTemplateData {\nstatic int length(){return "
-                + bytes.length + ";}\nstatic long crc(){return " + crc.getValue() + "L;}\n" + inline
-                + "static final DowncallTemplates.Entry[] ENTRIES={" + String.join(",", entries) + "};\n}\n";
-        write(output.resolve("GeneratedDowncallTemplateData.java"), java.getBytes());
-        System.out.println("FFM payload=" + hash(bytes) + " recipes=" + entries.size());
+        java.append("static int length(){return ").append(payloads[0].length).append(";}\n")
+                .append("static long crc(){return ").append(crc[0]).append("L;}\n")
+                .append("static int length(int kind){return switch(kind){case 0->length();case 1->")
+                .append(payloads[1].length).append(";case 2->").append(payloads[2].length).append(";default->0;};}\n")
+                .append("static long crc(int kind){return switch(kind){case 0->crc();case 1->")
+                .append(crc[1]).append("L;case 2->").append(crc[2]).append("L;default->0L;};}\n")
+                .append("static java.io.InputStream open(int kind){return switch(kind){case 0->open();case 1->open1();case 2->open2();default->null;};}\n")
+                .append("static final DowncallTemplates.Entry[] ENTRIES={").append(String.join(",", entries)).append("};\n}\n");
+        write(output.resolve("GeneratedDowncallTemplateData.java"), java.toString().getBytes());
     }
     private static Map<String, String> manifest(Path root) throws Exception {
         Map<String, String> result = new TreeMap<>();

@@ -26,14 +26,26 @@ package jdk.internal.foreign.abi;
 
 final class GeneratedDowncallTemplateData {
     static int length() {
+        return length(0);
+    }
+
+    static int length(int kind) {
         return 0;
     }
 
     static long crc() {
+        return crc(0);
+    }
+
+    static long crc(int kind) {
         return 0;
     }
 
     static java.io.InputStream open() {
+        return open(0);
+    }
+
+    static java.io.InputStream open(int kind) {
         return null;
     }
 

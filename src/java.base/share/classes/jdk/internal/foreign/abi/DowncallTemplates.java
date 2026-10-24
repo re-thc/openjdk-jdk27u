@@ -45,7 +45,27 @@ final class DowncallTemplates {
                  int[][][] input, int[][][] output, int[][][] volatiles,
                  int stackAlignment, int shadowSpace,
                  int[] scratch1, int[] scratch2, int[] target, int[] retbuf, int[] capture,
-                 int[] argStore, int[] returnLoad) {}
+                 int[] argStore, int[] returnLoad,
+                 int[] longArgStore, int[] longReturnLoad,
+                 int[] doubleArgStore, int[] doubleReturnLoad) {
+        int[] argumentStorage(int kind) {
+            return switch (kind) {
+                case 0 -> argStore;
+                case 1 -> longArgStore;
+                case 2 -> doubleArgStore;
+                default -> throw new IllegalArgumentException();
+            };
+        }
+
+        int[] returnStorage(int kind) {
+            return switch (kind) {
+                case 0 -> returnLoad;
+                case 1 -> longReturnLoad;
+                case 2 -> doubleReturnLoad;
+                default -> throw new IllegalArgumentException();
+            };
+        }
+    }
 
     static String platform() {
         String arch = StaticProperty.osArch();
@@ -84,22 +104,35 @@ final class DowncallTemplates {
         return true;
     }
 
+    private static int scalarKind(Class<?> carrier) {
+        return carrier == int.class ? 0 : carrier == long.class ? 1 : carrier == double.class ? 2 : -1;
+    }
+
     private static boolean matchesRecipe(CallingSequence cs, MethodType leaf, MethodType caller) {
         if (!cs.forDowncall() || !cs.hasEmptyLinkerOptions() || cs.needsReturnBuffer()
                 || cs.returnBufferSize() != 0 || cs.allocationSize() != 0 || cs.capturedStateMask() != 0
                 || !cs.needsTransition() || cs.usingAddressPairs() || cs.numLeadingParams() != 2) {
             return false;
         }
-        MethodType expectedLeaf = MethodType.methodType(int.class, long.class, int.class);
-        MethodType expectedCaller = MethodType.methodType(int.class,
-                SegmentAllocator.class, MemorySegment.class, int.class);
+        Class<?> carrier = leaf.returnType();
+        int kind = scalarKind(carrier);
+        if (kind < 0) {
+            return false;
+        }
+        MethodType expectedLeaf = MethodType.methodType(carrier, long.class, carrier);
+        MethodType expectedCaller = MethodType.methodType(carrier,
+                SegmentAllocator.class, MemorySegment.class, carrier);
         if (!leaf.equals(expectedLeaf) || !cs.calleeMethodType().equals(expectedLeaf)
                 || !caller.equals(expectedCaller)
                 || !cs.callerMethodType().equals(expectedCaller.dropParameterTypes(0, 1))) {
             return false;
         }
-        if (!cs.functionDesc().equals(FunctionDescriptor.of(
-                ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_INT))) {
+        ValueLayout layout = switch (kind) {
+            case 0 -> ValueLayout.JAVA_INT;
+            case 1 -> ValueLayout.JAVA_LONG;
+            default -> ValueLayout.JAVA_DOUBLE;
+        };
+        if (!cs.functionDesc().equals(FunctionDescriptor.of(layout, ValueLayout.ADDRESS, layout))) {
             return false;
         }
         if (cs.argumentBindingsCount() != 2) {
@@ -110,8 +143,8 @@ final class DowncallTemplates {
         var result = cs.returnBindings();
         return symbol.size() == 2 && symbol.get(0) instanceof Binding.SegmentOffset s && !s.allowHeap()
                 && symbol.get(1) instanceof Binding.VMStore m && m.type() == long.class
-                && arg.size() == 1 && arg.get(0) instanceof Binding.VMStore a && a.type() == int.class
-                && result.size() == 1 && result.get(0) instanceof Binding.VMLoad r && r.type() == int.class;
+                && arg.size() == 1 && arg.get(0) instanceof Binding.VMStore a && a.type() == carrier
+                && result.size() == 1 && result.get(0) instanceof Binding.VMLoad r && r.type() == carrier;
     }
 
     private static boolean matchesEntry(Entry e, String platform, ABIDescriptor abi, CallingSequence cs) {
@@ -127,9 +160,10 @@ final class DowncallTemplates {
                 || !storage(abi.capturedStateStorage, e.capture())) {
             return false;
         }
+        int kind = scalarKind(cs.calleeMethodType().returnType());
         return storage(((Binding.VMStore) cs.argumentBindings(0).get(1)).storage(), e.target())
-                && storage(((Binding.VMStore) cs.argumentBindings(1).get(0)).storage(), e.argStore())
-                && storage(((Binding.VMLoad) cs.returnBindings().get(0)).storage(), e.returnLoad());
+                && storage(((Binding.VMStore) cs.argumentBindings(1).get(0)).storage(), e.argumentStorage(kind))
+                && storage(((Binding.VMLoad) cs.returnBindings().get(0)).storage(), e.returnStorage(kind));
     }
 
     static boolean matches(Entry e, String platform, ABIDescriptor abi, CallingSequence cs,
@@ -179,11 +213,12 @@ final class DowncallTemplates {
         if (platform.equals("unsupported") || !matchesRecipe(cs, leaf, caller)) {
             return null;
         }
+        int kind = scalarKind(leaf.returnType());
         for (Entry e : GeneratedDowncallTemplateData.ENTRIES) {
             if (matchesEntry(e, platform, abi, cs)) {
                 try {
-                    byte[] bytes = decode(GeneratedDowncallTemplateData.open(), sourceId, major,
-                            GeneratedDowncallTemplateData.length(), GeneratedDowncallTemplateData.crc());
+                    byte[] bytes = decode(GeneratedDowncallTemplateData.open(kind), sourceId, major,
+                            GeneratedDowncallTemplateData.length(kind), GeneratedDowncallTemplateData.crc(kind));
                     if (bytes != null) {
                         return bytes;
                     }
