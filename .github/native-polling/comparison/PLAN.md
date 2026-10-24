@@ -44,10 +44,14 @@ only as historical correctness evidence, not as an expired runtime dependency.
 
 All TCP endpoints use TCP_NODELAY and requested64KiB buffers except pressure's
 16KiB; record actual send/receive buffer ranges on both endpoints before/after
-measurement and require equality within each process and matched pair. Payloads
+measurement. Validate positive, ordered readback ranges and preserve them as
+observed outcomes. Requested options match in both arms; actual capacities may
+change during traffic and differ between independently launched processes. Do not
+require readback equality or claim fixed capacities. Java documents these sizes
+as implementation hints ([socket-option contract](https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/net/StandardSocketOptions.html#SO_RCVBUF)). Payloads
 include connection and sequence identity. Fixed semantic transitions per exchange
 avoid measuring different registration work merely because an arm polls faster.
-Peer failures, incomplete payloads, pressure not reached or unbalanced work fail.
+Peer failures, incomplete payloads, pressure not reached, malformed readbacks or unbalanced requested work fail.
 
 Before timing, run10 separate fresh reach JVMs (one/arm/case),100ms warmup plus
 200ms observation each,15-second command cap. A thread-local dyld interposer scopes
@@ -93,6 +97,12 @@ Report raw paired throughput/CPU/allocation/latency, case medians/geomeans and
 AB/BA strata. All pairs share one host/build pair, and requests/phases within a
 JVM are correlated. Interpret controls and adverse results alongside bulk gains;
 no universal application-throughput or independent-build confidence claim.
+
+Readback drift alone is not a pair-rejection or rerun criterion. Keep every pair,
+report before/after ranges with the outcome, and interpret any buffer differences
+alongside throughput and pressure counters. The study measures complete TCP work
+under identical requests with kernel-managed capacity, rather than isolating a
+fixed-capacity network model.
 
 ## Bounds and artifacts
 

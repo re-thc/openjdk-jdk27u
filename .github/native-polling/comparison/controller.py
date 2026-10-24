@@ -29,7 +29,7 @@ Failure, write_json, sha256, git = common.Failure, common.write_json, common.sha
 BOOT_URL, BOOT_SHA, BREW_VERSIONS = common.BOOT_URL, common.BOOT_SHA, common.BREW_VERSIONS
 BASELINE = 'a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c'
 CANDIDATE = 'cf218dc255de70fcd52903e5d85ef4aef11b564c'
-PREVIOUS = '5fc19adbd7b6b95e5ebe2003c8162c581d05ae8b'
+PREVIOUS = '3f4857131efd570fe78e9b3d181d027eb87eebac'
 BRANCH = 'refs/heads/qualify/native-kqueue-comparison-once'
 CASES = ('stable', 'single', 'bulk', 'backpressure', 'construct')
 CONF = 'native-kqueue-comparison-release'
@@ -136,8 +136,7 @@ def observation(directory, arm, case, trace):
         raise Failure('Unexpected image in workload')
     if value['warmup_ms'] != (100 if trace else 2000) or value['measure_ms'] != (200 if trace else 4000):
         raise Failure('Workload duration changed')
-    if value['buffers_before'] != value['buffers_after']:
-        raise Failure('Socket buffer sizes changed within process')
+    value['buffer_observations'] = validate_buffers(value, case)
     for phase, record in zip(('warmup', 'measurement'), phases):
         stats = value[phase]
         if record['case'] != case or record['stats'] != stats:
@@ -191,8 +190,34 @@ def observation(directory, arm, case, trace):
     return value
 
 
+def validate_buffers(value, case):
+    # Requested sizes are controlled inputs; getsockopt readbacks may change with traffic.
+    connections = 0 if case == 'construct' else 1 if case == 'single' else 137 if case == 'bulk' else 64
+    payload = 0 if case == 'construct' else 128 * 1024 if case == 'backpressure' else 1024
+    requested = 0 if case == 'construct' else 16 * 1024 if case == 'backpressure' else 64 * 1024
+    if any(type(value.get(k)) is not int for k in ('connections', 'payload_bytes', 'requested_buffer_bytes', 'peer_pause_ms')) or value.get('tcp_nodelay') is not True:
+        raise Failure('Invalid requested TCP workload/buffer policy types')
+    if (value.get('connections'), value.get('payload_bytes'), value.get('requested_buffer_bytes'),
+        value.get('peer_pause_ms'), value.get('tcp_nodelay')) != (connections, payload, requested,
+        5 if case == 'backpressure' else 0, True):
+        raise Failure('Unexpected requested TCP workload/buffer policy')
+    before, after = value.get('buffers_before'), value.get('buffers_after')
+    names = ('client_send', 'client_receive', 'peer_send', 'peer_receive')
+    for values in (before, after):
+        if not isinstance(values, list) or len(values) != (0 if case == 'construct' else 8):
+            raise Failure('Malformed endpoint buffer readback ranges')
+        if any(type(n) is not int or n <= 0 or n >= 2**31 for n in values):
+            raise Failure('Invalid endpoint buffer readback size')
+        if any(values[i] > values[i + 1] for i in range(0, len(values), 2)):
+            raise Failure('Reversed endpoint buffer readback range')
+    return {'requested_bytes': requested, 'readbacks_changed_within_process': before != after,
+        'readbacks_are_controlled_inputs': False,
+        'endpoint_ranges': {name: {'before': before[i * 2:i * 2 + 2], 'after': after[i * 2:i * 2 + 2]}
+            for i, name in enumerate(names)} if connections else {}}
+
+
 def validate_pair_inputs(a, b):
-    for field in ('buffers_before', 'buffers_after', 'connections', 'payload_bytes', 'requested_buffer_bytes',
+    for field in ('connections', 'payload_bytes', 'requested_buffer_bytes',
                   'java_vm_version', 'processors', 'max_heap_bytes', 'peer_pause_ms', 'tcp_nodelay'):
         if a[field] != b[field]:
             raise Failure('Matched process inputs differ: ' + field)
@@ -214,13 +239,15 @@ def summarize(rows):
                 'cpu_per_unit_ratio_candidate_over_baseline': (y['cpu_ns'] / y['units']) / (x['cpu_ns'] / x['units']),
                 'allocation_per_unit_baseline': x['allocated_main_thread_bytes'] / x['units'],
                 'allocation_per_unit_candidate': y['allocated_main_thread_bytes'] / y['units'],
-                'p99_upper_ns_baseline': x['latency_p99_upper_ns'], 'p99_upper_ns_candidate': y['latency_p99_upper_ns']})
+                'p99_upper_ns_baseline': x['latency_p99_upper_ns'], 'p99_upper_ns_candidate': y['latency_p99_upper_ns'],
+                'buffer_observations': {'baseline': a['buffer_observations'], 'candidate': b['buffer_observations']}})
         ratios = [p['throughput_ratio_candidate_over_baseline'] for p in pairs]
         result[case] = {'independent_process_pairs': 12, 'pairs': pairs, 'throughput_ratio_median': statistics.median(ratios),
             'throughput_ratio_geomean': math.exp(statistics.mean(map(math.log, ratios))),
             'order_geomeans': {order: math.exp(statistics.mean(math.log(p['throughput_ratio_candidate_over_baseline'])
                 for p in pairs if p['order'] == order)) for order in ('AB', 'BA')}}
     return {'cases': result, 'build_pairs': 1, 'hosts': 1,
+        'buffer_policy': 'Same requested endpoint options; actual readbacks are observed outcomes and may differ across time/arms. No fixed-capacity claim.',
         'scope': 'Fixed-window loopback observations. Each JVM is independent; messages/phases share a process. All pairs share one host/build pair. No general steady-state or application-throughput inference.'}
 
 
