@@ -5,6 +5,7 @@ import importlib.util
 from pathlib import Path
 import sys
 
+sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location('correctness_controller', Path(__file__).with_name('controller.py'))
 controller = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(controller)

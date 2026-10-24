@@ -24,24 +24,27 @@ RESET = 'a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c'
 ORIGINAL = '28a8b6162eaf5b4584e9b5d66c28359a336aa831'
 CANDIDATE = 'cf218dc255de70fcd52903e5d85ef4aef11b564c'
 RECIPE = '02e3c3be1bf529b0b682dc35dbd1fe67b58b6643'
+PREVIOUS = '47fbeb3c4880bf1f9da216f7c4ed5428af24d063'
+RECIPE_SHA = '467cb100a70fade5687ae79c493e7a6fc76d7af6c211b4941bd359d395a51fdc'
+INPUTS_SHA = '031a734329dfb89a8e63d5d414429d48f253411a1a848f872b9c68f14c7dc1db'
 BRANCH = 'refs/heads/qualify/native-kqueue-correctness-once'
 REPOSITORY = 're-thc/openjdk-jdk27u'
 TRANSFER_NAME = 'native-kqueue-clean-jtreg-20261024'
-ARCHIVE_SHA = '3e6696fca570ec2d8d0781d4b4d550d0e30b8414300cd6a6f507a5f2eb8b8697'
 MANIFEST_SHA = '78797074289179427d2522da5b199857c2db2645e6dd6423a8ecc2721ddf8dfb'
-ARCHIVE_BYTES = 10214570
 BOOT_URL = 'https://download.java.net/java/GA/jdk26/c3cc523845074aa0af4f5e1e1ed4151d/35/GPL/openjdk-26_macos-aarch64_bin.tar.gz'
 BOOT_SHA = '254586bcd1bf6dcd125ad667ac32562cb1e2ab1abf3a61fb117b6fabb571e765'
 BREW_VERSIONS = {'autoconf': '2.73', 'make': '4.4.1', 'm4': '1.4.21'}
-PHASES = {'setup': 300, 'build': 2400, 'correctness': 1200}
+PHASES = {'setup': 300, 'build': 2400, 'correctness': 1200, 'staging': 600}
 MiB = 1024 * 1024
 EXPORT_LIMIT = 128 * MiB
 ROOT_RESULTS = ('job-start.json', 'collection.json', 'status.json', 'source-identities.json',
     'command-plan.json', 'harness-verification.json', 'toolchain.json', 'bootjdk.json',
-    'image.json', 'candidate-version.json', 'test-results.json', 'helper-identities.json', 'native-results.json', 'runtime-source-hashes.json')
+    'image.json', 'candidate-version.json', 'test-results.json', 'helper-identities.json', 'native-results.json', 'runtime-source-hashes.json',
+    'download-identities.json', 'staging-identities.json', 'staging-manifest.json', 'build-receipt.json', 'artifact-upload.json')
 RUNTIME_SOURCES = ('controller.py', 'supervise.py', 'manifest_image.py', 'harness-manifest.json',
     'native/signal.c', 'native/mock/test.c', 'native/mock/sys/event.h',
-    'native/stubs/jlong.h', 'native/stubs/jni_util.h', 'native/stubs/nio.h', 'native/stubs/nio_util.h')
+    'native/stubs/jlong.h', 'native/stubs/jni_util.h', 'native/stubs/nio.h', 'native/stubs/nio_util.h',
+    'staging.py', 'prepare-clean-jtreg.sh', 'inputs.json', 'downloads.json')
 SHARED = ['java/nio/channels/Selector/' + name + '.java' for name in (
     'ChangingInterests', 'LotsOfUpdatesTest', 'RaceUpdatesAndClose', 'RacyDeregister',
     'CloseThenRegister', 'RegAfterPreClose', 'SelectAndCancel', 'SelectAndClose',
@@ -118,7 +121,9 @@ class Runner:
         for key in list(self.env):
             if key.startswith(('JTREG_', 'JTHARNESS_', 'ASMTOOLS_', 'JUNIT_', 'TESTNG_', 'ANT_', 'JDK_JAVA_')) or key in (
                     'JAVA_TOOL_OPTIONS', '_JAVA_OPTIONS', 'CLASSPATH', 'JAVA_HOME', 'SDKROOT', 'CC', 'CXX',
-                    'CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'MAKE', 'MAKEFLAGS', 'M4', 'AUTOCONF', 'CONFIG_SITE'):
+                    'CFLAGS', 'CXXFLAGS', 'LDFLAGS', 'MAKE', 'MAKEFLAGS', 'M4', 'AUTOCONF', 'CONFIG_SITE',
+                    'ANT', 'ROOT', 'BUILD_DIR', 'DEPS_DIR', 'VERSION_NUMBERS', 'MAKE_ARGS', 'SHASUM',
+                    'SKIP_DOWNLOAD', 'SKIP_CHECKSUM_CHECK', 'SKIP_MAKE'):
                 self.env.pop(key)
         write_json(self.output / 'active-processes.json', [])
 
@@ -202,7 +207,7 @@ class Runner:
             record.update(status='failed', error=repr(exc))
             raise
         finally:
-            old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM, signal.SIGINT})
+            old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM, signal.SIGINT, signal.SIGALRM})
             try:
                 if process is not None:
                     stop_group(process.pid)
@@ -225,29 +230,98 @@ class Runner:
         return directory
 
 
-def verify_transfer(directory, destination, committed_manifest):
-    directory, destination = Path(directory), Path(destination)
-    if {p.name for p in directory.iterdir()} != {'jtreg.tar.gz', 'jtreg-manifest.json'}:
-        raise Failure('Transfer must contain exactly the pinned archive and manifest')
-    package, metadata = directory / 'jtreg.tar.gz', directory / 'jtreg-manifest.json'
-    if package.stat().st_size != ARCHIVE_BYTES or sha256(package) != ARCHIVE_SHA:
-        raise Failure('Exact clean harness archive required')
-    if sha256(metadata) != MANIFEST_SHA or sha256(committed_manifest) != MANIFEST_SHA:
-        raise Failure('Exact clean source/file manifest required')
-    manifest = json.loads(metadata.read_text())
-    if manifest['source'] != '551e17adac0579859012c4c46318b8fa3cf2ff37' or manifest['validation'] != RECIPE:
-        raise Failure('Harness provenance mismatch')
-    if manifest['clean_source_release'] != ['JTREG_VERSION=8.3 1', 'BUILD_DATE=October 24, 2026', 'SOURCE=git:551e17adac05']:
-        raise Failure('Expected clean harness source metadata')
+def qualified_inputs(code):
+    code = Path(code)
+    if sha256(code / 'harness-manifest.json') != MANIFEST_SHA:
+        raise Failure('Qualified input provenance anchor changed')
+    if sha256(code / 'prepare-clean-jtreg.sh') != RECIPE_SHA or sha256(code / 'inputs.json') != INPUTS_SHA:
+        raise Failure('Qualified recipe or input pins changed')
+    qualified = json.loads((code / 'harness-manifest.json').read_text())
+    pins = qualified['clean_build_inputs']
+    if json.loads((code / 'inputs.json').read_text()) != pins:
+        raise Failure('Recipe inputs differ from qualified source identities')
+    return qualified, pins
+
+
+def validate_sources(repo, expected):
+    if not re.fullmatch(r'[0-9a-f]{40}', expected or '') or git(repo, 'rev-parse', 'HEAD') != expected:
+        raise Failure('Exact validation source required')
+    if git(repo, 'rev-parse', 'HEAD^') != PREVIOUS or git(repo, 'status', '--porcelain'):
+        raise Failure('Expected clean CI-only child of reviewed controller')
+    for sha, parent in ((PREVIOUS, CANDIDATE), (CANDIDATE, ORIGINAL), (ORIGINAL, RESET), (RESET, BASE)):
+        if git(repo, 'rev-parse', sha + '^') != parent:
+            raise Failure('Candidate/controller ancestry mismatch')
+    changed = git(repo, 'diff', '--name-only', CANDIDATE, expected).splitlines()
+    if not changed or any(not (p == '.github/workflows/main.yml' or p.startswith('.github/native-polling/correctness/')) for p in changed):
+        raise Failure('Validation changes production sources')
+    for path in ('src/java.base/linux', 'src/java.base/share/classes/sun/nio/ch/SelectionKeyImpl.java'):
+        if git(repo, 'diff', '--name-only', BASE, CANDIDATE, '--', path):
+            raise Failure('Unexpected Linux or queue-deduplication changes')
+    return {name: {'commit': sha, 'tree': git(repo, 'rev-parse', sha + '^{tree}')}
+        for name, sha in (('base', BASE), ('reset', RESET), ('original', ORIGINAL), ('candidate', CANDIDATE), ('validation', expected))}
+
+
+def verify_transfer(directory, destination, code, validation, run_id, archive_sha, manifest_sha, receipt_sha):
+    directory, destination, code = map(Path, (directory, destination, code))
+    if not re.fullmatch(r'[1-9][0-9]*', run_id or ''):
+        raise Failure('Expected workflow run identity required')
+    for digest in (archive_sha, manifest_sha, receipt_sha):
+        if not re.fullmatch(r'[0-9a-f]{64}', digest or ''):
+            raise Failure('Expected same-run transfer digest required')
+    qualified, pins = qualified_inputs(code)
+    names = {'jtreg.tar.gz', 'jtreg-manifest.json', 'build-receipt.json'}
+    if {p.name for p in directory.iterdir()} != names or any((directory / n).is_symlink() for n in names):
+        raise Failure('Transfer must contain only archive, manifest and build receipt')
+    package, metadata, receipt_file = (directory / n for n in ('jtreg.tar.gz', 'jtreg-manifest.json', 'build-receipt.json'))
+    if package.stat().st_size > 24 * MiB or any(p.stat().st_size > MiB for p in (metadata, receipt_file)):
+        raise Failure('Harness transfer size cap exceeded')
+    if any(sha256(p) != digest for p, digest in ((package, archive_sha), (metadata, manifest_sha), (receipt_file, receipt_sha))):
+        raise Failure('Same-run transfer checksum mismatch')
+    manifest, receipt = json.loads(metadata.read_text()), json.loads(receipt_file.read_text())
+    context = {'schema': 1, 'repository': REPOSITORY, 'run_id': run_id, 'run_attempt': '1', 'validation': validation}
+    for record in (manifest, receipt):
+        if any(record.get(k) != value for k, value in context.items()):
+            raise Failure('Harness build receipt is not from this validation run')
+        if record.get('recipe_sha256') != RECIPE_SHA or record.get('input_pins_sha256') != INPUTS_SHA:
+            raise Failure('Unqualified harness preparation recipe')
+        if record.get('recipe_origin_commit') != RECIPE:
+            raise Failure('Unexpected recipe provenance')
+    commits = {name: pin['commit'] for name, pin in pins['sources'].items()}
+    if receipt.get('source_commits') != commits or receipt.get('tool_archives') != pins['archives']:
+        raise Failure('Receipt source/tool pins differ from qualified inputs')
+    if receipt.get('archive_sha256') != archive_sha or receipt.get('manifest_sha256') != manifest_sha:
+        raise Failure('Receipt does not bind the transferred files')
+    if manifest.get('inputs') != pins or manifest.get('version') != '8.3-dev+1':
+        raise Failure('Fresh harness input/version identity differs')
+    states = manifest.get('source_states', {})
+    if set(states) != set(commits):
+        raise Failure('Incomplete source provenance')
+    for name, commit in commits.items():
+        row = states[name]
+        if row.get('commit') != commit or row.get('clean') is not True or row.get('detached') is not True or not re.fullmatch(r'[0-9a-f]{40}', row.get('tree', '')):
+            raise Failure('Dirty or unpinned harness source')
+    tools = manifest.get('tools', {})
+    if tools.get('archives') != pins['archives'] or tools.get('jdk_release') != {
+            'IMPLEMENTOR': 'Eclipse Adoptium', 'IMPLEMENTOR_VERSION': 'Temurin-17.0.20.1+1',
+            'JAVA_RUNTIME_VERSION': '17.0.20.1+1', 'JAVA_VERSION': '17.0.20.1', 'OS_NAME': 'Linux', 'OS_ARCH': 'x86_64'}:
+        raise Failure('Unexpected build tool identity')
+    if 'Apache Ant(TM) version 1.10.15' not in tools.get('ant_version', ''):
+        raise Failure('Unexpected Ant version')
+    if not re.match(r'GNU Make 4\.', tools.get('make_version', '')):
+        raise Failure('Unsupported staging GNU make version')
+    release = manifest.get('release', [])
+    if len(release) != 3 or release[0] != 'JTREG_VERSION=8.3 1' or not release[1].startswith('BUILD_DATE=') or release[2] != 'SOURCE=git:551e17adac05':
+        raise Failure('Expected clean harness release metadata')
     files = {row['path']: row for row in manifest['files']}
-    if len(files) != 21 or len(files) != len(manifest['files']):
-        raise Failure('Incomplete or duplicate file manifest')
-    seen = set()
+    if set(files) != {row['path'] for row in qualified['files']} or len(files) != len(manifest['files']):
+        raise Failure('Fresh distribution layout differs from qualified build')
+    seen, entries, total = set(), set(), 0
     with tarfile.open(package) as archive:
         for member in archive.getmembers():
             path = Path(member.name)
-            if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0] != 'jtreg':
-                raise Failure('Unsafe harness archive path')
+            if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0] != 'jtreg' or str(path) in entries:
+                raise Failure('Unsafe or duplicate harness archive entry')
+            entries.add(str(path))
             if member.isdir():
                 continue
             name = str(path.relative_to('jtreg'))
@@ -255,8 +329,9 @@ def verify_transfer(directory, destination, committed_manifest):
                 raise Failure('Unexpected harness entry or link')
             seen.add(name)
             row = files[name]
-            if member.size != row['size'] or member.size > 8 * MiB:
-                raise Failure('Harness file size mismatch')
+            total += member.size
+            if member.size != row['size'] or member.size > 8 * MiB or total > 24 * MiB:
+                raise Failure('Harness file size mismatch/cap exceeded')
             if hashlib.sha256(archive.extractfile(member).read()).hexdigest() != row['sha256']:
                 raise Failure('Harness file checksum mismatch')
         if seen != set(files):
@@ -267,10 +342,14 @@ def verify_transfer(directory, destination, committed_manifest):
     for name, row in files.items():
         if sha256(image / name) != row['sha256']:
             raise Failure('Extracted harness checksum mismatch')
-    if (image / 'release').read_text().splitlines() != manifest['clean_source_release']:
+    for name, digest in pins['runtime_jars'].items():
+        if sha256(image / 'lib' / name) != digest:
+            raise Failure('Runtime dependency differs from qualified digest')
+    if (image / 'release').read_text().splitlines() != release:
         raise Failure('Extracted source metadata differs')
-    return {'archive_sha256': ARCHIVE_SHA, 'manifest_sha256': MANIFEST_SHA,
-            'source': manifest['source'], 'files_verified': len(files), 'version': manifest['version']}
+    return {'archive_sha256': archive_sha, 'manifest_sha256': manifest_sha, 'receipt_sha256': receipt_sha,
+            'source_commits': commits, 'files_verified': len(files), 'version': manifest['version'],
+            'validation': validation, 'run_id': run_id, 'recipe_sha256': RECIPE_SHA}
 
 
 def image_manifest(image, output, source):
@@ -375,21 +454,7 @@ class Qualification:
 
     def setup(self):
         with self.runner.phase('setup', PHASES['setup']):
-            if not re.fullmatch(r'[0-9a-f]{40}', self.expected) or git(self.repo, 'rev-parse', 'HEAD') != self.expected:
-                raise Failure('Exact validation source required')
-            if git(self.repo, 'rev-parse', 'HEAD^') != CANDIDATE or git(self.repo, 'status', '--porcelain'):
-                raise Failure('Expected clean CI-only child of candidate')
-            for sha, parent in ((CANDIDATE, ORIGINAL), (ORIGINAL, RESET), (RESET, BASE)):
-                if git(self.repo, 'rev-parse', sha + '^') != parent:
-                    raise Failure('Candidate ancestry mismatch')
-            changed = git(self.repo, 'diff', '--name-only', CANDIDATE, self.expected).splitlines()
-            if not changed or any(not (p == '.github/workflows/main.yml' or p.startswith('.github/native-polling/correctness/')) for p in changed):
-                raise Failure('Validation changes production sources')
-            for path in ('src/java.base/linux', 'src/java.base/share/classes/sun/nio/ch/SelectionKeyImpl.java'):
-                if git(self.repo, 'diff', '--name-only', BASE, CANDIDATE, '--', path):
-                    raise Failure('Unexpected Linux or queue-deduplication changes')
-            write_json(self.output / 'source-identities.json', {name: {'commit': sha, 'tree': git(self.repo, 'rev-parse', sha + '^{tree}')}
-                for name, sha in (('base', BASE), ('reset', RESET), ('original', ORIGINAL), ('candidate', CANDIDATE), ('validation', self.expected))})
+            write_json(self.output / 'source-identities.json', validate_sources(self.repo, self.expected))
             if sys.platform != 'darwin' or os.uname().machine != 'arm64' or os.environ.get('GITHUB_REF') != BRANCH:
                 raise Failure('Dedicated native Darwin arm64 branch required')
             if sys.version_info < (3, 12):
@@ -397,8 +462,13 @@ class Qualification:
             if os.environ.get('GITHUB_REPOSITORY') != REPOSITORY or os.environ.get('GITHUB_RUN_ATTEMPT') != '1':
                 raise Failure('Expected repository and first run attempt')
             self.workspace.mkdir()
-            verification = verify_transfer(self.transfer, self.workspace / 'jtreg', self.code / 'harness-manifest.json')
-            verification.update(transfer_run_id=os.environ.get('JTREG_TRANSFER_RUN_ID'), artifact_name=TRANSFER_NAME)
+            verification = verify_transfer(self.transfer, self.workspace / 'jtreg', self.code, self.expected,
+                os.environ.get('GITHUB_RUN_ID'), os.environ.get('JTREG_ARCHIVE_SHA'),
+                os.environ.get('JTREG_MANIFEST_SHA'), os.environ.get('JTREG_RECEIPT_SHA'))
+            artifact_id, artifact_digest = os.environ.get('JTREG_ARTIFACT_ID', ''), os.environ.get('JTREG_ARTIFACT_DIGEST', '')
+            if not re.fullmatch(r'[1-9][0-9]*', artifact_id) or not re.fullmatch(r'[0-9a-f]{64}', artifact_digest):
+                raise Failure('Expected Actions upload identity/digest required')
+            verification.update(artifact_id=artifact_id, artifact_digest=artifact_digest, artifact_name=TRANSFER_NAME)
             write_json(self.output / 'harness-verification.json', verification)
             self.jtreg = self.workspace / 'jtreg/jtreg'
             developer = Path('/Applications/Xcode_26.6.app/Contents/Developer')

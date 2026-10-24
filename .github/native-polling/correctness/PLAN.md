@@ -2,33 +2,71 @@
 # One native kqueue correctness run
 
 Use only `.github/workflows/main.yml` on `qualify/native-kqueue-correctness-once`,
-with the exact validation SHA and a completed jtreg staging run ID. The workflow
-has one native `macos-26` job, manual dispatch only, no matrix and no retries.
-It builds candidate `cf218dc255de70fcd52903e5d85ef4aef11b564c` once as fastdebug.
-The candidate contains the shared cached-registration reset repair, native selector
-batching and attribution corrections. There is no queue deduplication.
+with the exact validation SHA. One Linux staging job gates one native `macos-26`
+job in the same workflow run. Manual dispatch only; no matrix or retries. The Mac
+job builds candidate `cf218dc255de70fcd52903e5d85ef4aef11b564c` once as fastdebug.
+It contains the shared cached-registration reset repair, native selector batching
+and attribution corrections, without Java queue deduplication.
 
-## Verified harness transfer
+## Complete harness staging and transfer
 
-Before dispatch, stage exactly `jtreg.tar.gz` and `jtreg-manifest.json` as the
-one-day Actions artifact `native-kqueue-clean-jtreg-20261024` in this repository.
-Staging and its completed run ID are prerequisites, not supplied by this workflow.
-Do not rebuild or substitute the verified pair.
+The Linux job checks out the official OpenJDK sources at these commits:
 
-- Archive: 10,214,570 bytes; SHA256
-  `3e6696fca570ec2d8d0781d4b4d550d0e30b8414300cd6a6f507a5f2eb8b8697`.
-- Manifest: SHA256
-  `78797074289179427d2522da5b199857c2db2645e6dd6423a8ecc2721ddf8dfb`.
-- The committed manifest is byte-identical. It records all source pins, build
-  inputs and 21 distribution files. The consumer verifies whole-file hashes, safe
-  archive entries, every file before/after extraction and clean release metadata
-  `SOURCE=git:551e17adac05`. Links, duplicates and extra files are rejected.
+- jtreg `551e17adac0579859012c4c46318b8fa3cf2ff37`.
+- JTHarness `9149bb776f4df5435a6f97d6bbf9b30af1086d5a`.
+- AsmTools `30f96d5c7f24097c756b8360eccd137933f529fa`.
 
-The source-built harness uses jtreg `551e17adac0579859012c4c46318b8fa3cf2ff37`,
-JTHarness `9149bb776f4df5435a6f97d6bbf9b30af1086d5a` and
-AsmTools `30f96d5c7f24097c756b8360eccd137933f529fa`. All were clean detached checkouts.
-The preparation recipe identity is `02e3c3be1bf529b0b682dc35dbd1fe67b58b6643`.
-No harness dependency acquisition or compilation occurs in the Mac job.
+It downloads the exact checksum-pinned JDK17/Ant archives, four runtime JARs and
+TestNG license listed in `downloads.json`, then runs the unchanged qualified recipe
+`prepare-clean-jtreg.sh` with the unchanged `inputs.json`. No package installation,
+source archive fallback, cache shortcut or retained harness binary is used. The
+OpenJDK source checkouts must be clean and detached before and after the build.
+
+The preparation recipe originated at `02e3c3be1bf529b0b682dc35dbd1fe67b58b6643`;
+its SHA256 is `467cb100a70fade5687ae79c493e7a6fc76d7af6c211b4941bd359d395a51fdc`.
+The committed `harness-manifest.json` is the original qualified input-provenance
+anchor, SHA256 `78797074289179427d2522da5b199857c2db2645e6dd6423a8ecc2721ddf8dfb`.
+
+Fresh JARs and archive timestamps can differ from the prior local build. The fresh
+artifact is bound to the same qualified source commits, recipe and input digests;
+byte reproduction of the old archive is neither required nor claimed. Record the
+actual compiler/JDK/Ant/GNU make/Python identities, clean source trees, jtreg version
+execution, release metadata and every output file hash.
+
+Upload exactly `jtreg.tar.gz`, fresh `jtreg-manifest.json` and `build-receipt.json`
+as one-day artifact `native-kqueue-clean-jtreg-20261024`. The receipt binds this
+repository, workflow run/attempt, validation SHA, recipe, sources/tools and archive/
+manifest hashes. Archive, manifest and receipt SHA256 values pass directly through
+job outputs; the Actions artifact ID/envelope digest are recorded separately.
+
+The Mac job downloads that same-run artifact and verifies the receipt hash, all
+context/source/tool pins, archive/manifest digests, safe entries, all 21 files before
+and after extraction, unchanged runtime JAR digests and clean release source metadata.
+The Linux producer runs this same content verifier before upload. No manual staging
+location, external run ID or private transfer endpoint is required.
+
+### Separate Linux budget
+
+The Linux hard cap is 15 minutes. All initialization, four source checkout actions,
+seven downloads, builds, version execution and packaging share an absolute 10-minute
+work deadline measured before checkout. A watchdog covers direct preparation work;
+all supervised commands are clipped by the remaining deadline. Reserve 1 minute for
+the input upload, 2 for always-run teardown/collection and 2 for selected-log upload.
+Per-step maxima overlap that absolute work deadline; they do not extend it.
+
+There are 13 supervised Linux commands: one GNU make version check, seven downloads,
+one recipe build, three tool/harness version checks and one package/verify command.
+The recipe itself builds JTHarness, AsmTools and jtreg using the qualified targets.
+Require native Linux x86_64, Python 3.12+, ordinary GNU make 4.x/build utilities and
+4 GiB free disk; no unmanaged installation. Source checkouts have separate bounded
+Actions steps. A staging/setup/upload/collection failure prevents Mac allocation.
+
+The one-day input payload is capped at 26 MiB: archive at most 24 MiB and each JSON
+at most 1 MiB. Expect roughly 10 MiB based on the qualified build; record the actual
+size instead of assuming identical output. JDK/Ant archives, extracted tool images,
+build trees and caches are excluded from all uploads. Selected staging identities
+and bounded logs retain 5 days under the same 128 MiB result cap described below.
+The two sequential jobs consume at most 100 runner-minutes (15 Linux plus 85 Mac).
 
 ## Runtime prerequisites and limits
 
@@ -95,6 +133,6 @@ Retain source/image/harness/helper identities, actual generated command plan,
 bounded logs/receipts, phase/final status, JTR/text results and runtime test sources
 for 5 days. Exclude JDK/harness images, binaries/classes, build specifications, raw
 environment dumps, private process registry, notes and review journals. The one-day
-input artifact contains only the harness archive/manifest. Always stop process groups
+input artifact contains only the harness archive, manifest and build receipt. Always stop process groups
 before collecting, including setup/build/test failures. Historical refs/evidence stay
 separate and unchanged.
