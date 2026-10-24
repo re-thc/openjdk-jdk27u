@@ -3554,10 +3554,10 @@ final class FdLibm {
                 w = Log.compute(Math.abs(x)) + ln2;
             } else if (ix > 0x4000_0000) {          // 2**28 > |x| > 2.0
                 t = Math.abs(x);
-                w = Log.compute(2.0 * t + 1.0 / (Sqrt.compute(x * x + 1.0) + t));
+                w = Log.compute(2.0 * t + 1.0 / (StrictMath.sqrt(x * x + 1.0) + t));
             } else {                                // 2.0 > |x| > 2**-28
                 t = x * x;
-                w = Log1p.compute(Math.abs(x) + t / (1.0 + Sqrt.compute(1.0 + t)));
+                w = Log1p.compute(Math.abs(x) + t / (1.0 + StrictMath.sqrt(1.0 + t)));
             }
             return hx > 0 ? w : -w;
         }
@@ -3601,10 +3601,10 @@ final class FdLibm {
                 return 0.0;                                   // acosh(1) = 0
             } else if (hx > 0x4000_0000) {                    // 2**28 > x > 2
                 t = x * x;
-                return Log.compute(2.0 * x - 1.0 / (x + Sqrt.compute(t - 1.0)));
+                return Log.compute(2.0 * x - 1.0 / (x + StrictMath.sqrt(t - 1.0)));
             } else {                                          // 1< x <2
                 t = x - 1.0;
-                return Log1p.compute(t + Sqrt.compute(2.0 * t + t * t));
+                return Log1p.compute(t + StrictMath.sqrt(2.0 * t + t * t));
             }
         }
     }
