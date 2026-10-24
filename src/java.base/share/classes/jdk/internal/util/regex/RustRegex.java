@@ -512,7 +512,7 @@ public final class RustRegex {
             boolean scan = mode == 0 && length <= 256;
             int at = start;
             if (scan && !prefix.isEmpty() && (at == to || input.charAt(at) != prefix.charAt(0)))
-                at = candidate(input, at, to);
+                return matchCandidates(input, state, at, to);
             if (scan && prefix.isEmpty()) {
                 // Digit-only expressions have no literal prefix to search for.
                 while (at < to) {
@@ -549,8 +549,7 @@ public final class RustRegex {
                 }
                 if (!scan) return mode == 0 ? -2 : 0;
                 if (at == to) return 0;
-                at = candidate(input, at+1, to);
-                if (at < 0) return 0;
+                return matchCandidates(input, state, at+1, to);
             }
             return 0;
         }
@@ -559,6 +558,34 @@ public final class RustRegex {
         private int candidate(String input, int at, int to) {
             return to == input.length() ? input.indexOf(prefix, at)
                     : input.indexOf(prefix, at, to);
+        }
+
+        private int matchCandidates(String input, int[] state, int from, int to) {
+            // Only unanchored scans with at most 256 remaining characters enter here.
+            // candidate() validates the whole literal; do not check that prefix again.
+            for (int at = candidate(input, from, to); at >= 0; at = candidate(input, at+1, to)) {
+                int digits = at + prefix.length();
+                int end = digits;
+                while (end < to) {
+                    char c = input.charAt(end);
+                    if (c < '0' || c > '9') break;
+                    end++;
+                }
+                if (end != digits) {
+                    state[0] = at; state[1] = end;
+                    if (prefixGroup != 0) {
+                        state[2*prefixGroup] = at;
+                        state[2*prefixGroup+1] = digits;
+                    }
+                    if (digitsGroup != 0) {
+                        state[2*digitsGroup] = digits;
+                        state[2*digitsGroup+1] = end;
+                    }
+                    return 1;
+                }
+                if (at == to) return 0;
+            }
+            return 0;
         }
     }
 
