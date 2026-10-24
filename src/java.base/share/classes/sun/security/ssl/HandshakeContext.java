@@ -34,6 +34,7 @@ import java.security.CryptoPrimitive;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
@@ -42,6 +43,38 @@ import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import static sun.security.ssl.NamedGroup.NamedGroupSpec.*;
 
 abstract class HandshakeContext implements ConnectionContext {
+    // Only the built-in TLS 1.3 string policy is shared. Custom constraints,
+    // other protocol configurations and diagnostic mode use the original path.
+    private static final AtomicReferenceArray<Tls13PolicyPlan> tls13PolicyPlans =
+            new AtomicReferenceArray<>(8);
+
+    private record Tls13PolicyPlan(List<CipherSuite> enabledSuites,
+            List<ProtocolVersion> protocols, List<CipherSuite> suites) { }
+
+    private static Tls13PolicyPlan tls13PolicyPlan(SSLConfiguration config,
+            SSLAlgorithmConstraints constraints) {
+        if (constraints != SSLAlgorithmConstraints.DEFAULT || SSLLogger.isOn() ||
+                config.enabledProtocols.size() != 1 ||
+                config.enabledProtocols.get(0) != ProtocolVersion.TLS13 ||
+                config.enabledCipherSuites.size() > 64) {
+            return null;
+        }
+
+        int slot = config.enabledCipherSuites.hashCode() & 7;
+        Tls13PolicyPlan plan = tls13PolicyPlans.get(slot);
+        if (plan != null && plan.enabledSuites.equals(config.enabledCipherSuites)) {
+            return plan;
+        }
+
+        List<ProtocolVersion> protocols = getActiveProtocols(config, constraints);
+        List<CipherSuite> suites = protocols.isEmpty() ? List.of() :
+                getActiveCipherSuites(config, protocols, constraints);
+        plan = new Tls13PolicyPlan(List.copyOf(config.enabledCipherSuites),
+                List.copyOf(protocols), List.copyOf(suites));
+        tls13PolicyPlans.set(slot, plan);
+        return plan;
+    }
+
     // System properties
 
     // By default, disable the unsafe legacy session renegotiation.
@@ -162,8 +195,10 @@ abstract class HandshakeContext implements ConnectionContext {
 
         this.algorithmConstraints = SSLAlgorithmConstraints.wrap(
                 sslConfig.userSpecifiedAlgorithmConstraints);
-        this.activeProtocols =
-                getActiveProtocols(sslConfig, algorithmConstraints);
+        Tls13PolicyPlan plan = tls13PolicyPlan(sslConfig, algorithmConstraints);
+        this.activeProtocols = plan == null ?
+                getActiveProtocols(sslConfig, algorithmConstraints) :
+                plan.protocols;
         if (activeProtocols.isEmpty()) {
             throw new SSLHandshakeException(
                 "No appropriate protocol (protocol is disabled or " +
@@ -178,8 +213,9 @@ abstract class HandshakeContext implements ConnectionContext {
             }
         }
         this.maximumActiveProtocol = maximumVersion;
-        this.activeCipherSuites = getActiveCipherSuites(sslConfig,
-                this.activeProtocols, algorithmConstraints);
+        this.activeCipherSuites = plan == null ?
+                getActiveCipherSuites(sslConfig, this.activeProtocols,
+                        algorithmConstraints) : plan.suites;
         if (activeCipherSuites.isEmpty()) {
             throw new SSLHandshakeException("No appropriate cipher suite");
         }
