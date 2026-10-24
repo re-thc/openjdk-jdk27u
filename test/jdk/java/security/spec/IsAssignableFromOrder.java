@@ -32,7 +32,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -66,7 +65,6 @@ public class IsAssignableFromOrder {
         testAlgSpec("PBEWithHmacSHA256AndAES_256", new PBEParameterSpec(
                 "saltsalt".getBytes(StandardCharsets.UTF_8), 10000,
                 new IvParameterSpec(new byte[16])));
-        testAlgSpec("RC2", new RC2ParameterSpec(256, new byte[32]));
         testAlgSpec("DSA", new DSAParameterSpec(
                 BigInteger.ONE, BigInteger.TWO, BigInteger.TEN));
         testAlgSpec("RSASSA-PSS", PSSParameterSpec.DEFAULT);

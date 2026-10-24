@@ -335,8 +335,11 @@ public class Net {
 
     // -- Socket options
 
-    static final ExtendedSocketOptions EXTENDED_OPTIONS =
-            ExtendedSocketOptions.getInstance();
+    // Standard socket options do not require jdk.net initialization.
+    private static final class ExtendedOptions {
+        static final ExtendedSocketOptions INSTANCE =
+                ExtendedSocketOptions.getInstance();
+    }
 
     static void setSocketOption(FileDescriptor fd, SocketOption<?> name, Object value)
         throws IOException
@@ -355,8 +358,10 @@ public class Net {
         Class<?> type = name.type();
         boolean isIPv6 = (family == StandardProtocolFamily.INET6);
 
-        if (EXTENDED_OPTIONS.isOptionSupported(name)) {
-            EXTENDED_OPTIONS.setOption(fd, name, value, isIPv6);
+        OptionKey key = SocketOptionRegistry.findOption(name, family);
+
+        if (key == null && ExtendedOptions.INSTANCE.isOptionSupported(name)) {
+            ExtendedOptions.INSTANCE.setOption(fd, name, value, isIPv6);
             return;
         }
 
@@ -389,8 +394,6 @@ public class Net {
                 throw new IllegalArgumentException("Invalid TTL/hop value");
         }
 
-        // map option name to platform level/name
-        OptionKey key = SocketOptionRegistry.findOption(name, family);
         if (key == null)
             throw new AssertionError("Option not found");
 
@@ -434,17 +437,17 @@ public class Net {
     {
         Class<?> type = name.type();
 
-        if (EXTENDED_OPTIONS.isOptionSupported(name)) {
+        OptionKey key = SocketOptionRegistry.findOption(name, family);
+
+        if (key == null && ExtendedOptions.INSTANCE.isOptionSupported(name)) {
             boolean isIPv6 = (family == StandardProtocolFamily.INET6);
-            return EXTENDED_OPTIONS.getOption(fd, name, isIPv6);
+            return ExtendedOptions.INSTANCE.getOption(fd, name, isIPv6);
         }
 
         // only simple values supported by this method
         if (type != Integer.class && type != Boolean.class)
             throw shouldNotReachHere();
 
-        // map option name to platform level/name
-        OptionKey key = SocketOptionRegistry.findOption(name, family);
         if (key == null)
             throw new AssertionError("Option not found");
 

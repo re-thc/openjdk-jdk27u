@@ -49,11 +49,11 @@ public class PKCS12Passwd {
     public static void main(String[] args) throws Exception {
 
         // A PrivateKeyEntry
-        kt("-genkeypair -alias a -dname CN=A -keyalg DSA")
+        kt("-genkeypair -alias a -dname CN=A -keyalg EC")
                 .shouldHaveExitValue(0);
 
         // A TrustedCertificateEntry (genkeypair, export, delete, import)
-        kt("-genkeypair -alias b -dname CN=B -keyalg DSA")
+        kt("-genkeypair -alias b -dname CN=B -keyalg EC")
                 .shouldHaveExitValue(0);
         kt("-exportcert -alias b -file b.cert")
                 .shouldHaveExitValue(0);
@@ -84,56 +84,6 @@ public class PKCS12Passwd {
                 .shouldNotContain("Ignoring user-specified");
 
         check("ks", "newpass", "newpass");
-
-        // Other facts. Not necessarily the correct thing.
-
-        // A PKCS12 keystore can be loaded as a JKS, and it follows JKS rules
-        // which means the storepass and keypass can be changed separately!
-
-        ktFull("-genkeypair -alias a -dname CN=A -storetype pkcs12 -keyalg DSA "
-                    + "-storepass changeit -keypass changeit -keystore p12")
-                .shouldHaveExitValue(0);
-
-        // Only storepass is changed
-        ktFull("-storepasswd -storepass changeit -new newpass "
-                    + "-keystore p12 -storetype jks")
-                .shouldHaveExitValue(0);
-
-        check("p12", "newpass", "changeit");
-
-        // Only keypass is changed
-        ktFull("-keypasswd -storepass newpass -keypass changeit -new newpass "
-                + "-keystore p12 -storetype jks -alias a")
-                .shouldHaveExitValue(0);
-
-        check("p12", "newpass", "newpass");
-
-        // Conversely, a JKS keystore can be loaded as a PKCS12, and it follows
-        // PKCS12 rules that both passwords are changed at the same time and
-        // some commands are rejected.
-
-        ktFull("-genkeypair -alias a -dname CN=A -storetype jks -keyalg DSA "
-                    + "-storepass changeit -keypass changeit -keystore jks")
-                .shouldHaveExitValue(0);
-
-        // Both storepass and keypass changed.
-        ktFull("-storepasswd -storepass changeit -new newpass "
-                        + "-keystore jks -storetype pkcs12")
-                .shouldHaveExitValue(0);
-
-        check("jks", "newpass", "newpass");
-
-        // -keypasswd is not available for pkcs12
-        ktFull("-keypasswd -storepass newpass -keypass newpass -new newerpass "
-                + "-keystore jks -storetype pkcs12 -alias a")
-                .shouldHaveExitValue(1);
-
-        // but available for JKS
-        ktFull("-keypasswd -storepass newpass -keypass newpass -new newerpass "
-                + "-keystore jks -alias a")
-                .shouldHaveExitValue(0);
-
-        check("jks", "newpass", "newerpass");
 
         // A password-less keystore
         ktFull("-keystore nopass -genkeypair -keyalg EC "

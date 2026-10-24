@@ -26,6 +26,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.cpu.features ~= ".*aes.*" | vm.cpu.features ~= ".*zvkn.*"
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=600 -Xbootclasspath/a:.
@@ -38,7 +39,6 @@ package compiler.cpuflags;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 import static jdk.test.lib.cli.CommandLineOptionTest.*;
 
@@ -64,16 +64,15 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAES flag is set to true, TestAESMain is executed <br/>
+     * UseAES flag is set to true, AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to true <br/>
      * If vm type is server then output should contain intrinsics usage <br/>
      *
      * @throws Throwable
      */
     private void testUseAES() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
-                        .USE_AES, true)));
+        OutputAnalyzer outputAnalyzer = runWorkload(
+                prepareBooleanFlag(AESIntrinsicsBase.USE_AES, true));
         final String errorMessage = "Case testUseAES failed";
         if (Platform.isServer() && isTieredLevelGreaterThan(3)) {
             verifyOutput(new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
@@ -94,7 +93,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * Test checks following situation: <br/>
      * UseAES flag is set to true, UseSSE flag is set to 2,
      * Platform should support UseSSE (x86 or x64) <br/>
-     * TestAESMain is executed <br/>
+     * AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
@@ -102,10 +101,9 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      */
     private void testUseAESUseSSE2() throws Throwable {
         if (Platform.isX86() || Platform.isX64()) {
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                    prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
-                                    .USE_AES_INTRINSICS, true),
-                            prepareNumericFlag(AESIntrinsicsBase.USE_SSE, 2)));
+            OutputAnalyzer outputAnalyzer = runWorkload(
+                    prepareBooleanFlag(AESIntrinsicsBase.USE_AES_INTRINSICS, true),
+                    prepareNumericFlag(AESIntrinsicsBase.USE_SSE, 2));
             final String errorMessage = "Case testUseAESUseSSE2 failed";
             verifyOutput(null, new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                             AESIntrinsicsBase.AES_INTRINSIC},
@@ -123,7 +121,7 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      * Test checks following situation: <br/>
      * UseAES flag is set to false, UseSSE flag is set to 2,
      * Platform should support UseSSE (x86 or x64) <br/>
-     * TestAESMain is executed <br/>
+     * AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
@@ -131,10 +129,9 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
      */
     private void testNoUseAESUseSSE2() throws Throwable {
         if (Platform.isX86() || Platform.isX64()) {
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                    prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
-                                    .USE_AES, false),
-                            prepareNumericFlag(AESIntrinsicsBase.USE_SSE, 2)));
+            OutputAnalyzer outputAnalyzer = runWorkload(
+                    prepareBooleanFlag(AESIntrinsicsBase.USE_AES, false),
+                    prepareNumericFlag(AESIntrinsicsBase.USE_SSE, 2));
             final String errorMessage = "Case testNoUseAESUseSSE2 failed";
             verifyOutput(null, new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                             AESIntrinsicsBase.AES_INTRINSIC},
@@ -150,16 +147,15 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAES flag is set to false, TestAESMain is executed <br/>
+     * UseAES flag is set to false, AESWorkload is executed <br/>
      * Expected result: UseAESIntrinsics flag is set to false <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
      * @throws Throwable
      */
     private void testNoUseAES() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
-                        .USE_AES, false)));
+        OutputAnalyzer outputAnalyzer = runWorkload(
+                prepareBooleanFlag(AESIntrinsicsBase.USE_AES, false));
         final String errorMessage = "Case testNoUseAES failed";
         verifyOutput(null, new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                         AESIntrinsicsBase.AES_INTRINSIC},
@@ -172,16 +168,15 @@ public class TestAESIntrinsicsOnSupportedConfig extends AESIntrinsicsBase {
 
     /**
      * Test checks following situation: <br/>
-     * UseAESIntrinsics flag is set to false, TestAESMain is executed <br/>
+     * UseAESIntrinsics flag is set to false, AESWorkload is executed <br/>
      * Expected result: UseAES flag is set to true <br/>
      * Output shouldn't contain intrinsics usage <br/>
      *
      * @throws Throwable
      */
     private void testNoUseAESIntrinsic() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                prepareArguments(prepareBooleanFlag(AESIntrinsicsBase
-                        .USE_AES_INTRINSICS, false)));
+        OutputAnalyzer outputAnalyzer = runWorkload(
+                prepareBooleanFlag(AESIntrinsicsBase.USE_AES_INTRINSICS, false));
         final String errorMessage = "Case testNoUseAESIntrinsic failed";
         verifyOutput(null, new String[]{AESIntrinsicsBase.CIPHER_INTRINSIC,
                         AESIntrinsicsBase.AES_INTRINSIC}, errorMessage,

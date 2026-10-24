@@ -102,10 +102,10 @@ public class PreserveRawManifestEntryAndDigest {
 
     @BeforeTest
     public void prepareCertificates() throws Exception {
-        SecurityTools.keytool("-genkeypair -keyalg DSA -keystore "
+        SecurityTools.keytool("-genkeypair -keyalg EC -keystore "
                 + KEYSTORE_FILENAME + " -storepass changeit -keypass changeit"
                 + " -alias a -dname CN=A").shouldHaveExitValue(0);
-        SecurityTools.keytool("-genkeypair -keyalg DSA -keystore "
+        SecurityTools.keytool("-genkeypair -keyalg EC -keystore "
                 + KEYSTORE_FILENAME + " -storepass changeit -keypass changeit"
                 + " -alias b -dname CN=B").shouldHaveExitValue(0);
     }
@@ -248,9 +248,9 @@ public class PreserveRawManifestEntryAndDigest {
         List<String> expLines = new ArrayList<>();
         expLines.add("s k   *\\d+ " + TS + " META-INF/MANIFEST[.]MF");
         expLines.add("      *\\d+ " + TS + " META-INF/B[.]SF");
-        expLines.add("      *\\d+ " + TS + " META-INF/B[.]DSA");
+        expLines.add("      *\\d+ " + TS + " META-INF/B[.]EC");
         expLines.add("      *\\d+ " + TS + " META-INF/A[.]SF");
-        expLines.add("      *\\d+ " + TS + " META-INF/A[.]DSA");
+        expLines.add("      *\\d+ " + TS + " META-INF/A[.]EC");
         if (firstAddedFilename != null) {
             expLines.add("smk   *\\d+ " + TS + " " + firstAddedFilename);
         }

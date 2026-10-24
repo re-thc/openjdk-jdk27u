@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4890078
- * @summary Basic known-answer-test for RC2 and ARCFOUR
+ * @summary Basic known-answer-test for ARCFOUR
  * @author Andreas Sterbenz
  */
 
@@ -185,28 +185,14 @@ public class CipherKAT {
         t("RC4", "74:95:c0:e4:14:4e:0e:7e:05:42:df:58:3e:82:10:f3 1b:34:61:29:05:0d:73:db:25:d0:dd:64:06:29:f6:8a ad:79:9d:98:d6:38:b1:f8:05:96:5c:e6:75:e7:82:24 ad:79:9d:98:d6:38:b1:f8:05:96:5c:e6:75:e7:82:24",
                  "e1:15:95:fc:79:da:5e:a4:e4:2a:a8:ce:cd:7d:1e:f3:f7:ef:19:a5:05:70:9f:f7:59:49:44:d6:fb:5a:b6:54:04:4d:f8:e6:60:a3:96:7d:40:33:09:78:f2:2e:de:25:fe:ad:54:dd:b9:65:97:d6:d4:4c:a8:a6:f2:2c:13:61",
                  "1b:34:61:29:05:0d:73:db:25:d0:dd:64:06:29:f6:8a"),
-        t("RC2/ECB/NoPadding", "00:00:00:00:00:00:00:00", "81:07:71:4F:0D:81:88:A7",
-                "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"),
-        t("RC2/ECB/NoPadding", "00:00:00:00:00:00:00:00", "39:88:F7:B8:6C:14:D3:F8",
-                "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:01"),
-        t("RC2/ECB/NoPadding", "FF:FF:FF:FF:FF:FF:FF:FF", "BA:B8:12:73:3E:2E:B7:EE",
-                "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"),
-        t("RC2/ECB/NoPadding", "00:00:00:00:00:00:00:00", "9C:4B:FE:6D:FE:73:9C:2B",
-                "00:01:02:03:04:05:06:07:08:09:0A:0B:0C:0D:0E:0F"),
-        t("RC2/ECB/NoPadding", "9C:4B:FE:6D:FE:73:9C:2B", "1d:b2:cb:09:7f:e8:ab:43",
-                "39:88:F7:B8:6C:14:D3:F8:BA:B8:12:73:3E:2E:B7:EE"),
-        t("RC2/ECB/NoPadding", "BA:B8:12:73:3E:2E:B7:EE", "14:e5:5b:62:ca:f5:16:24",
-                "1d:b2:cb:09:7f:e8:ab:43"),
     };
 
     static void runTests(Test[] tests) throws Exception {
         long start = System.currentTimeMillis();
         Provider p = Security.getProvider("SunJCE");
         System.out.println("Testing provider " + p.getName() + "...");
-        Cipher.getInstance("RC2", p);
         Cipher.getInstance("RC4", p);
         Cipher.getInstance("ARCFOUR", p);
-        KeyGenerator.getInstance("RC2", p);
         KeyGenerator.getInstance("RC4", p);
         KeyGenerator.getInstance("ARCFOUR", p);
         for (int i = 0; i < tests.length; i++) {

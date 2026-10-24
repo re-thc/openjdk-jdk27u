@@ -250,6 +250,7 @@ class ResolvedMethodEntry {
   static ByteSize method_offset()                    { return byte_offset_of(ResolvedMethodEntry, _method);       }
   static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedMethodEntry, _entry_specific._resolved_references_index); }
   static ByteSize table_index_offset()               { return byte_offset_of(ResolvedMethodEntry, _entry_specific._table_index);       }
+  static ByteSize constant_pool_index_offset()       { return byte_offset_of(ResolvedMethodEntry, _cpool_index);      }
   static ByteSize num_parameters_offset()            { return byte_offset_of(ResolvedMethodEntry, _number_of_parameters);      }
   static ByteSize type_offset()                      { return byte_offset_of(ResolvedMethodEntry, _tos_state); }
   static ByteSize flags_offset()                     { return byte_offset_of(ResolvedMethodEntry, _flags);        }

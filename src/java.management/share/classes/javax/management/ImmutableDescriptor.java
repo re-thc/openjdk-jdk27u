@@ -31,7 +31,6 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -74,7 +73,13 @@ public class ImmutableDescriptor implements Descriptor {
      * appears more than once.
      */
     public ImmutableDescriptor(String[] fieldNames, Object[] fieldValues) {
-        this(makeMap(fieldNames, fieldValues));
+        if (fieldNames == null || fieldValues == null)
+            throw new IllegalArgumentException("Null array parameter");
+        if (fieldNames.length != fieldValues.length)
+            throw new IllegalArgumentException("Different size arrays");
+        Fields fields = sortFields(fieldNames, fieldValues, fieldNames.length, false);
+        this.names = fields.names;
+        this.values = fields.values;
     }
 
     /**
@@ -91,7 +96,11 @@ public class ImmutableDescriptor implements Descriptor {
      * an {@code =} character.
      */
     public ImmutableDescriptor(String... fields) {
-        this(makeMap(fields));
+        this(splitFields(fields));
+    }
+
+    private ImmutableDescriptor(String[][] namesAndValues) {
+        this(namesAndValues[0], namesAndValues[1]);
     }
 
     /**
@@ -107,19 +116,154 @@ public class ImmutableDescriptor implements Descriptor {
     public ImmutableDescriptor(Map<String, ?> fields) {
         if (fields == null)
             throw new IllegalArgumentException("Null Map");
-        SortedMap<String, Object> map =
-                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        // Iteration may yield more entries than size() reported.
+        String[] names = new String[fields.size()];
+        Object[] values = new Object[names.length];
+        int size = 0;
         for (Map.Entry<String, ?> entry : fields.entrySet()) {
-            String name = entry.getKey();
-            if (name == null || name.isEmpty())
-                throw new IllegalArgumentException("Empty or null field name");
-            if (map.containsKey(name))
-                throw new IllegalArgumentException("Duplicate name: " + name);
-            map.put(name, entry.getValue());
+            if (size == names.length) {
+                names = Arrays.copyOf(names, 2 * size + 1);
+                values = Arrays.copyOf(values, names.length);
+            }
+            names[size] = entry.getKey();
+            values[size] = entry.getValue();
+            size++;
         }
-        int size = map.size();
-        this.names = map.keySet().toArray(new String[size]);
-        this.values = map.values().toArray(new Object[size]);
+        Fields sorted = sortFields(names, values, size, true);
+        this.names = sorted.names;
+        this.values = sorted.values;
+    }
+
+    private record Fields(String[] names, Object[] values) { }
+
+    private static final int MAX_INSERTION_SORT = 32;
+    private static final int INSERTION_SORT_RUN = 16;
+
+    /**
+     * Returns the first {@code n} fields in {@link String#CASE_INSENSITIVE_ORDER},
+     * preserving the result and validation order of sequential TreeMap insertion.
+     * Map inputs reject every duplicate; array inputs reject a duplicate only
+     * when its previous value is non-null.
+     */
+    private static Fields sortFields(String[] names, Object[] values, int n,
+                                     boolean fromMap) {
+        if (n <= MAX_INSERTION_SORT) {
+            String[] sortedNames = new String[n];
+            Object[] sortedValues = new Object[n];
+            int size = 0;
+            for (int i = 0; i < n; i++) {
+                String name = names[i];
+                if (name == null || name.isEmpty())
+                    throw new IllegalArgumentException("Empty or null field name");
+                int index = Arrays.binarySearch(sortedNames, 0, size, name,
+                                                String.CASE_INSENSITIVE_ORDER);
+                if (index >= 0) {
+                    if (fromMap || sortedValues[index] != null)
+                        throw duplicateName(name, fromMap);
+                    sortedValues[index] = values[i];
+                } else {
+                    index = -index - 1;
+                    System.arraycopy(sortedNames, index, sortedNames, index + 1, size - index);
+                    System.arraycopy(sortedValues, index, sortedValues, index + 1, size - index);
+                    sortedNames[index] = name;
+                    sortedValues[index] = values[i];
+                    size++;
+                }
+            }
+            return trimmed(sortedNames, sortedValues, size);
+        }
+
+        // Check the prefix before the first invalid name so an earlier
+        // duplicate retains precedence.
+        int bad = 0;
+        while (bad < n && names[bad] != null && !names[bad].isEmpty()) {
+            bad++;
+        }
+        // A stable sort keeps the fields of a name in the order they are added.
+        int[] order = new int[bad];
+        for (int i = 0; i < bad; i++) {
+            order[i] = i;
+        }
+        mergeSort(order.clone(), order, 0, bad, names);
+        String[] sortedNames = new String[bad];
+        Object[] sortedValues = new Object[bad];
+        int size = 0;
+        int duplicate = bad;
+        for (int k = 0; k < bad; size++) {
+            int first = order[k++];
+            Object value = values[first];
+            while (k < bad && compare(names, order[k], first) == 0) {
+                int i = order[k++];
+                if (fromMap || value != null) {
+                    duplicate = Math.min(duplicate, i);
+                } else {
+                    value = values[i];
+                }
+            }
+            sortedNames[size] = names[first];
+            sortedValues[size] = value;
+        }
+        if (duplicate < bad)
+            throw duplicateName(names[duplicate], fromMap);
+        if (bad < n)
+            throw new IllegalArgumentException("Empty or null field name");
+        return trimmed(sortedNames, sortedValues, size);
+    }
+
+    // Stably sorts dest[low, high) by name, using src as scratch space.
+    // Both arrays must initially contain the same positions.
+    private static void mergeSort(int[] src, int[] dest, int low, int high,
+                                  String[] names) {
+        if (high - low <= INSERTION_SORT_RUN) {
+            for (int i = low + 1; i < high; i++) {
+                int pos = dest[i];
+                int left = low;
+                int right = i;
+                while (left < right) {
+                    int mid = (left + right) >>> 1;
+                    if (compare(names, pos, dest[mid]) < 0) {
+                        right = mid;
+                    } else {
+                        left = mid + 1;
+                    }
+                }
+                System.arraycopy(dest, left, dest, left + 1, i - left);
+                dest[left] = pos;
+            }
+            return;
+        }
+        int mid = (low + high) >>> 1;
+        mergeSort(dest, src, low, mid, names);
+        mergeSort(dest, src, mid, high, names);
+        if (compare(names, src[mid - 1], src[mid]) <= 0) {
+            System.arraycopy(src, low, dest, low, high - low);
+        } else if (compare(names, src[high - 1], src[low]) < 0) {
+            System.arraycopy(src, mid, dest, low, high - mid);
+            System.arraycopy(src, low, dest, low + high - mid, mid - low);
+        } else {
+            for (int i = low, p = low, q = mid; i < high; i++) {
+                if (q >= high || p < mid && compare(names, src[p], src[q]) <= 0) {
+                    dest[i] = src[p++];
+                } else {
+                    dest[i] = src[q++];
+                }
+            }
+        }
+    }
+
+    private static int compare(String[] names, int i, int j) {
+        return String.CASE_INSENSITIVE_ORDER.compare(names[i], names[j]);
+    }
+
+    private static IllegalArgumentException duplicateName(String name, boolean fromMap) {
+        return new IllegalArgumentException(
+                (fromMap ? "Duplicate name: " : "Duplicate field name: ") + name);
+    }
+
+    private static Fields trimmed(String[] names, Object[] values, int size) {
+        return size == names.length
+                ? new Fields(names, values)
+                : new Fields(Arrays.copyOf(names, size), Arrays.copyOf(values, size));
     }
 
     /**
@@ -158,28 +302,7 @@ public class ImmutableDescriptor implements Descriptor {
         return this;
     }
 
-    private static SortedMap<String, ?> makeMap(String[] fieldNames,
-                                                Object[] fieldValues) {
-        if (fieldNames == null || fieldValues == null)
-            throw new IllegalArgumentException("Null array parameter");
-        if (fieldNames.length != fieldValues.length)
-            throw new IllegalArgumentException("Different size arrays");
-        SortedMap<String, Object> map =
-                new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (int i = 0; i < fieldNames.length; i++) {
-            String name = fieldNames[i];
-            if (name == null || name.isEmpty())
-                throw new IllegalArgumentException("Empty or null field name");
-            Object old = map.put(name, fieldValues[i]);
-            if (old != null) {
-                throw new IllegalArgumentException("Duplicate field name: " +
-                                                   name);
-            }
-        }
-        return map;
-    }
-
-    private static SortedMap<String, ?> makeMap(String[] fields) {
+    private static String[][] splitFields(String[] fields) {
         if (fields == null)
             throw new IllegalArgumentException("Null fields parameter");
         String[] fieldNames = new String[fields.length];
@@ -192,10 +315,10 @@ public class ImmutableDescriptor implements Descriptor {
                                                    field);
             }
             fieldNames[i] = field.substring(0, eq);
-            // makeMap will catch the case where the name is empty
+            // The array constructor rejects empty names.
             fieldValues[i] = field.substring(eq + 1);
         }
-        return makeMap(fieldNames, fieldValues);
+        return new String[][] {fieldNames, fieldValues};
     }
 
     /**

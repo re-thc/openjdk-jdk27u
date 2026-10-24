@@ -33,12 +33,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class RemoveKeyAlgDefault {
 
-    private static final String COMMON = "-keystore ks -storetype jceks "
+    private static final String COMMON = "-keystore ks -storetype pkcs12 "
             + "-storepass changeit -keypass changeit";
 
     public static void main(String[] args) throws Throwable {
 
-        kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
+        kt("-genkeypair -keyalg EC -alias a -dname CN=A")
                 .shouldHaveExitValue(0)
                 .shouldContain("Generating")
                 .shouldNotContain("-keyalg option must be specified");

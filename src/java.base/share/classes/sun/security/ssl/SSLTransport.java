@@ -109,21 +109,11 @@ interface SSLTransport {
         try {
             plaintexts =
                     context.inputRecord.decode(srcs, srcsOffset, srcsLength);
-        } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
-            // Code to deliver SSLv2 error message for SSL/TLS connections.
-            if (!context.sslContext.isDTLS()) {
-                context.outputRecord.encodeV2NoCipher();
-                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-                    SSLLogger.finest("may be talking to SSLv2");
-                }
-            }
-
-            throw context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
         } catch (AEADBadTagException bte) {
             throw context.fatal(Alert.BAD_RECORD_MAC, bte);
         } catch (BadPaddingException bpe) {
             /*
-             * The basic SSLv3 record protection involves (optional)
+             * The basic TLS record protection involves (optional)
              * encryption for privacy, and an integrity check ensuring
              * data origin authentication.  We do them both here, and
              * throw a fatal alert if the integrity check fails.

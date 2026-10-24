@@ -89,6 +89,9 @@
 #endif
 
 #include <windows.h>
+#ifdef HEADLESS
+#include "headless_message_box.hpp"
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
@@ -4462,9 +4465,13 @@ void os::wait_for_keypress_at_exit(void) {
 
 
 bool os::message_box(const char* title, const char* message) {
+#ifdef HEADLESS
+  return headless_message_box(title, message);
+#else
   int result = MessageBox(nullptr, message, title,
                           MB_YESNO | MB_ICONERROR | MB_SYSTEMMODAL | MB_DEFAULT_DESKTOP_ONLY);
   return result == IDYES;
+#endif
 }
 
 // This is called _before_ the global arguments have been parsed

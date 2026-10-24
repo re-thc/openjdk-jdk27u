@@ -72,8 +72,7 @@ public class OneKDC extends KDC {
 
         String extraConfig = "";
         if (etype != null) {
-            extraConfig += "permitted_enctypes=" + etype
-                    + "\nallow_weak_crypto = true";
+            extraConfig += "permitted_enctypes=" + etype;
         }
         KDC.saveConfig(KRB5_CONF, this,
                 "forwardable = true",

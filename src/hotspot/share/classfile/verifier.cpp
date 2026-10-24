@@ -591,8 +591,8 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
 // Methods in ClassVerifier
 
 ClassVerifier::ClassVerifier(JavaThread* current, InstanceKlass* klass)
-    : _thread(current), _previous_symbol(nullptr), _symbols(nullptr), _exception_type(nullptr),
-      _message(nullptr), _klass(klass) {
+    : _thread(current), _name_cache(nullptr), _symbols(nullptr), _exception_type(nullptr),
+      _message(nullptr), _klass(klass), _handler_states(nullptr) {
   _this_type = VerificationType::reference_type(klass->name());
 }
 
@@ -680,6 +680,26 @@ void ClassVerifier::translate_signature(Symbol* const method_sig,
   }
 }
 
+GrowableArray<VerificationType>* ClassVerifier::field_sig_verif_types(int sig_index) {
+  sig_as_verification_types** cached = method_signatures_table()->get(sig_index);
+  if (cached != nullptr) {
+    return (*cached)->sig_verif_types();
+  }
+  // Field signature was checked in ClassFileParser.
+  Symbol* field_sig = _klass->constants()->symbol_at(sig_index);
+  assert(SignatureVerifier::is_valid_type_signature(field_sig),
+         "Invalid field signature");
+  VerificationType field_type[2];
+  SignatureStream sig_stream(field_sig, false);
+  int n = change_sig_to_verificationType(&sig_stream, field_type);
+  GrowableArray<VerificationType>* verif_types = new GrowableArray<VerificationType>(n);
+  for (int i = 0; i < n; i++) {
+    verif_types->push(field_type[i]);
+  }
+  method_signatures_table()->put(sig_index, new sig_as_verification_types(verif_types));
+  return verif_types;
+}
+
 void ClassVerifier::create_method_sig_entry(sig_as_verification_types* sig_verif_types,
                                             int sig_index) {
   // Translate the signature into verification types.
@@ -695,6 +715,7 @@ void ClassVerifier::create_method_sig_entry(sig_as_verification_types* sig_verif
 void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   HandleMark hm(THREAD);
   _method = m;   // initialize _method
+  _handler_states = nullptr;
   log_info(verification)("Verifying method %s", m->name_and_sig_as_C_string());
 
 // For clang, the only good constant format string is a literal constant format string.
@@ -1972,9 +1993,12 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, int bci,
 void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
                                                      StackMapFrame* current_frame,
                                                      StackMapTable* stackmap_table, TRAPS) {
-  constantPoolHandle cp (THREAD, _method->constants());
   ExceptionTable exhandlers(_method());
   int exlength = exhandlers.length();
+  if (_handler_states == nullptr && exlength > 0) {
+    _handler_states = NEW_RESOURCE_ARRAY(uint64_t, exlength);
+    memset(_handler_states, 0, exlength * sizeof(uint64_t));
+  }
   for(int i = 0; i < exlength; i++) {
     u2 start_pc = exhandlers.start_pc(i);
     u2 end_pc = exhandlers.end_pc(i);
@@ -1983,10 +2007,16 @@ void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
     if(bci >= start_pc && bci < end_pc) {
       u1 flags = current_frame->flags();
       if (this_uninit) {  flags |= FLAG_THIS_UNINIT; }
+      // Reuse this handler's successful match until the locals or flags change.
+      uint64_t state = ((uint64_t)current_frame->locals_version() << 8) | flags;
+      if (_handler_states[i] == state) {
+        continue;
+      }
       StackMapFrame* new_frame = current_frame->frame_in_exception_handler(flags);
       if (catch_type_index != 0) {
         if (was_recursively_verified()) return;
         // We know that this index refers to a subclass of Throwable
+        constantPoolHandle cp (THREAD, _method->constants());
         VerificationType catch_type = cp_index_to_type(
           catch_type_index, cp, CHECK_VERIFY(this));
         new_frame->push_stack(catch_type, CHECK_VERIFY(this));
@@ -2003,6 +2033,7 @@ void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
             "exception handler %d", handler_pc);
         return;
       }
+      _handler_states[i] = state;
     }
   }
 }
@@ -2305,8 +2336,10 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
       1 << JVM_CONSTANT_Fieldref, CHECK_VERIFY(this));
 
   // Get field name and signature
-  Symbol* field_name = cp->uncached_name_ref_at(index);
-  Symbol* field_sig = cp->uncached_signature_ref_at(index);
+  int name_and_type_index = cp->uncached_name_and_type_ref_index_at(index);
+  Symbol* field_name = cp->symbol_at(cp->name_ref_index_at(name_and_type_index));
+  int sig_index = cp->signature_ref_index_at(name_and_type_index);
+  Symbol* field_sig = cp->symbol_at(sig_index);
   bool is_getfield = false;
 
   // Field signature was checked in ClassFileParser.
@@ -2326,30 +2359,21 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   }
   VerificationType target_class_type = ref_class_type;
 
-  assert(sizeof(VerificationType) == sizeof(uintptr_t),
-        "buffer type must match VerificationType size");
-  uintptr_t field_type_buffer[2];
-  VerificationType* field_type = (VerificationType*)field_type_buffer;
-  // If we make a VerificationType[2] array directly, the compiler calls
-  // to the c-runtime library to do the allocation instead of just
-  // stack allocating it.  Plus it would run constructors.  This shows up
-  // in performance profiles.
-
-  SignatureStream sig_stream(field_sig, false);
+  GrowableArray<VerificationType>* field_type = field_sig_verif_types(sig_index);
   VerificationType stack_object_type;
-  int n = change_sig_to_verificationType(&sig_stream, field_type);
+  int n = field_type->length();
   int bci = bcs->bci();
   bool is_assignable;
   switch (bcs->raw_code()) {
     case Bytecodes::_getstatic: {
       for (int i = 0; i < n; i++) {
-        current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
+        current_frame->push_stack(field_type->at(i), CHECK_VERIFY(this));
       }
       break;
     }
     case Bytecodes::_putstatic: {
       for (int i = n - 1; i >= 0; i--) {
-        current_frame->pop_stack(field_type[i], CHECK_VERIFY(this));
+        current_frame->pop_stack(field_type->at(i), CHECK_VERIFY(this));
       }
       break;
     }
@@ -2361,7 +2385,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
     }
     case Bytecodes::_putfield: {
       for (int i = n - 1; i >= 0; i--) {
-        current_frame->pop_stack(field_type[i], CHECK_VERIFY(this));
+        current_frame->pop_stack(field_type->at(i), CHECK_VERIFY(this));
       }
       stack_object_type = current_frame->pop_stack(CHECK_VERIFY(this));
 
@@ -2390,7 +2414,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         if (is_getfield) {
           // Push field type for getfield.
           for (int i = 0; i < n; i++) {
-            current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
+            current_frame->push_stack(field_type->at(i), CHECK_VERIFY(this));
           }
         }
         return;
@@ -2427,7 +2451,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   if (is_getfield) {
     // Push field type for getfield after doing protection check.
     for (int i = 0; i < n; i++) {
-      current_frame->push_stack(field_type[i], CHECK_VERIFY(this));
+      current_frame->push_stack(field_type->at(i), CHECK_VERIFY(this));
     }
   }
 }
@@ -2579,8 +2603,10 @@ void ClassVerifier::verify_invoke_instructions(
   verify_cp_type(bcs->bci(), index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
-  Symbol* method_name = cp->uncached_name_ref_at(index);
-  Symbol* method_sig = cp->uncached_signature_ref_at(index);
+  int name_and_type_index = cp->uncached_name_and_type_ref_index_at(index);
+  Symbol* method_name = cp->symbol_at(cp->name_ref_index_at(name_and_type_index));
+  int sig_index = cp->signature_ref_index_at(name_and_type_index);
+  Symbol* method_sig = cp->symbol_at(sig_index);
 
   // Method signature was checked in ClassFileParser.
   assert(SignatureVerifier::is_valid_method_signature(method_sig),
@@ -2601,9 +2627,6 @@ void ClassVerifier::verify_invoke_instructions(
 
   assert(sizeof(VerificationType) == sizeof(uintptr_t),
         "buffer type must match VerificationType size");
-
-  // Get the UTF8 index for this signature.
-  int sig_index = cp->signature_ref_index_at(cp->uncached_name_and_type_ref_index_at(index));
 
   // Get the signature's verification types.
   sig_as_verification_types* mth_sig_verif_types;
@@ -2937,21 +2960,56 @@ void ClassVerifier::verify_return_value(
   }
 }
 
+// The constant pool keeps these cached symbols alive.
+void ClassVerifier::init_name_cache() {
+  ConstantPool* cp = _klass->constants();
+  unsigned size = 64;
+  while (size < (unsigned)cp->length() / 2 && size < 2048) {
+    size *= 2;
+  }
+  _name_cache = NEW_RESOURCE_ARRAY_IN_THREAD(_thread, Symbol*, size);
+  memset(_name_cache, 0, size * sizeof(Symbol*));
+  _name_cache_mask = size - 1;
+  for (int i = 1; i < cp->length(); i++) {
+    constantTag tag = cp->tag_at(i);
+    if (tag.is_klass() || tag.is_unresolved_klass()) {
+      Symbol* name = cp->klass_name_at(i);
+      *name_cache_slot((const char*)name->base(), name->utf8_length()) = name;
+    }
+  }
+}
+
 // The verifier creates symbols which are substrings of Symbols.
 // These are stored in the verifier until the end of verification so that
 // they can be reference counted.
 Symbol* ClassVerifier::create_temporary_symbol(const char *name, int length) {
-  // Quick deduplication check
-  if (_previous_symbol != nullptr && _previous_symbol->equals(name, length)) {
-    return _previous_symbol;
+  Symbol** cached = name_cache_slot(name, length);
+  if (*cached != nullptr && (*cached)->equals(name, length)) {
+    return *cached;
   }
   Symbol* sym = SymbolTable::new_symbol(name, length);
   if (!sym->is_permanent()) {
-    if (_symbols == nullptr) {
-      _symbols = new GrowableArray<Symbol*>(50, 0, nullptr);
-    }
-    _symbols->push(sym);
+    keep_symbol(sym);
   }
-  _previous_symbol = sym;
+  *cached = sym;
+  return sym;
+}
+
+Symbol* ClassVerifier::create_temporary_symbol(SignatureStream* sig_stream) {
+  // The name is enclosed in 'L' and ';' unless it is an array.
+  int envelope = sig_stream->has_envelope() ? 1 : 0;
+  const char* name = (const char*)sig_stream->raw_bytes() + envelope;
+  int length = sig_stream->raw_length() - 2 * envelope;
+  Symbol** cached = name_cache_slot(name, length);
+  if (*cached != nullptr && (*cached)->equals(name, length)) {
+    return *cached;
+  }
+  // Keep a reference after the signature stream releases its own.
+  Symbol* sym = sig_stream->as_symbol();
+  if (!sym->is_permanent()) {
+    sym->increment_refcount();
+    keep_symbol(sym);
+  }
+  *cached = sym;
   return sym;
 }

@@ -31,9 +31,7 @@
  * @bug 7113275 8164846
  * @summary compatibility issue with MD2 trust anchor and old X509TrustManager
  * @library /javax/net/ssl/templates
- * @run main/othervm TrustTrustedCert PKIX TLSv1.1 true
- * @run main/othervm TrustTrustedCert PKIX TLSv1.1 false
- * @run main/othervm TrustTrustedCert SunX509 TLSv1.1 false
+ * @run main/othervm TrustTrustedCert PKIX TLSv1.2 true
  * @run main/othervm TrustTrustedCert PKIX TLSv1.2 false
  * @run main/othervm TrustTrustedCert SunX509 TLSv1.2 false
  */
@@ -56,57 +54,78 @@ public class TrustTrustedCert extends SSLSocketTemplate {
     // It's a trust anchor signed with MD2 hash function.
     static String trustedCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICkjCCAfugAwIBAgIBADANBgkqhkiG9w0BAQIFADA7MQswCQYDVQQGEwJVUzEN\n" +
-        "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n" +
-        "MTExMTE4MTExNDA0WhcNMzIxMDI4MTExNDA0WjA7MQswCQYDVQQGEwJVUzENMAsG\n" +
-        "A1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwgZ8wDQYJ\n" +
-        "KoZIhvcNAQEBBQADgY0AMIGJAoGBAPGyB9tugUGgxtdeqe0qJEwf9x1Gy4BOi1yR\n" +
-        "wzDZY4H5LquvIfQ2V3J9X1MQENVsFvkvp65ZcFcy+ObOucXUUPFcd/iw2DVb5QXA\n" +
-        "ffyeVqWD56GPi8Qe37wrJO3L6fBhN9oxp/BbdRLgjU81zx8qLEyPODhPMxV4OkcA\n" +
-        "SDwZTSxxAgMBAAGjgaUwgaIwHQYDVR0OBBYEFLOAtr/YrYj9H04EDLA0fd14jisF\n" +
-        "MGMGA1UdIwRcMFqAFLOAtr/YrYj9H04EDLA0fd14jisFoT+kPTA7MQswCQYDVQQG\n" +
+        "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
-        "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
+        "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\n" +
+        "+3BFqsZ4TChUC39QK+346A==\n" +
         "-----END CERTIFICATE-----";
 
-    // The certificate issued by above trust anchor, signed with MD5
+    // The certificate issued by above trust anchor, signed with SHA256
     static String targetCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICeDCCAeGgAwIBAgIBAjANBgkqhkiG9w0BAQQFADA7MQswCQYDVQQGEwJVUzEN\n" +
-        "MAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UwHhcN\n" +
-        "MTExMTE4MTExNDA2WhcNMzEwODA1MTExNDA2WjBPMQswCQYDVQQGEwJVUzENMAsG\n" +
-        "A1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2Y2UxEjAQBgNV\n" +
-        "BAMTCWxvY2FsaG9zdDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAwDnm96mw\n" +
-        "fXCH4bgXk1US0VcJsQVxUtGMyncAveMuzBzNzOmKZPeqyYX1Fuh4q+cuza03WTJd\n" +
-        "G9nOkNr364e3Rn1aaHjCMcBmFflObnGnhhufNmIGYogJ9dJPmhUVPEVAXrMG+Ces\n" +
-        "NKy2E8woGnLMrqu6yiuTClbLBPK8fWzTXrECAwEAAaN4MHYwCwYDVR0PBAQDAgPo\n" +
-        "MB0GA1UdDgQWBBSdRrpocLPJXyGfDmMWJrcEf29WGDAfBgNVHSMEGDAWgBSzgLa/\n" +
-        "2K2I/R9OBAywNH3deI4rBTAnBgNVHSUEIDAeBggrBgEFBQcDAQYIKwYBBQUHAwIG\n" +
-        "CCsGAQUFBwMDMA0GCSqGSIb3DQEBBAUAA4GBAKJ71ZiCUykkJrCLYUxlFlhvUcr9\n" +
-        "sTcOc67QdroW5f412NI15SXWDiley/JOasIiuIFPjaJBjOKoHOvTjG/snVu9wEgq\n" +
-        "YNR8dPsO+NM8r79C6jO+Jx5fYAC7os2XxS75h3NX0ElJcbwIXGBJ6xRrsFh/BGYH\n" +
-        "yvudOlX4BkVR0l1K\n" +
+        "MIIDhzCCAm+gAwIBAgIJAPka49B71SsXMA0GCSqGSIb3DQEBCwUAMDsxCzAJBgNV\n" +
+        "BAYTAlVTMQ0wCwYDVQQKEwRKYXZhMR0wGwYDVQQLExRTdW5KU1NFIFRlc3QgU2Vy\n" +
+        "aXZjZTAgFw0yNjAxMDEwMDAwMDBaGA8yMTI1MTIwODAwMDAwMFowTzELMAkGA1UE\n" +
+        "BhMCVVMxDTALBgNVBAoTBEphdmExHTAbBgNVBAsTFFN1bkpTU0UgVGVzdCBTZXJp\n" +
+        "dmNlMRIwEAYDVQQDEwlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw\n" +
+        "ggEKAoIBAQDRT9Q7TI98OJkOh243vHNuAe6+QC4VBaEjAjjeJchrGcKn3YTFUP0t\n" +
+        "9OO3PyGMPyTkFLWd21Nc7MDhhym2WchzGtr7AjD5z4qcOCXn0TKhHlk8CXgwN2Cb\n" +
+        "d83cSHE36JZbd8TeQG6mGiuQbRLHlsM240QjO7k34zJfy3c6Oz6YD4AbmK0Gt0Id\n" +
+        "HrC4Zob0T27FGCHZr+6Yy42GzAmzdyDTbQSF2LkNJtPGels+SVSj+Aw7pwt0HlC+\n" +
+        "nwyucd3T/u4OS/FU0P4kXyazpOd9bkqjyRFgMxzcMDpzsb+/b9q99ZyLfapnw29b\n" +
+        "7GBMEA1cC13a0KsioxdTrZIB++tLi6GJAgMBAAGjeDB2MB0GA1UdDgQWBBSvrz2L\n" +
+        "DKK2EzH1vBm3UL4gzZlw9DALBgNVHQ8EBAMCBPAwHwYDVR0jBBgwFoAUylJJLvi9\n" +
+        "IDaFa8AVcpTKy3wyEjkwJwYDVR0lBCAwHgYIKwYBBQUHAwEGCCsGAQUFBwMCBggr\n" +
+        "BgEFBQcDAzANBgkqhkiG9w0BAQsFAAOCAQEAsOj8HfCVcBpA5zx1MlLdohlG6bin\n" +
+        "vpE7sI8LbQpWvE65XAWaXqulvoJa1ZaZfThGX/3zbJiuVPSSsZ6S5bXg8pkRxnJq\n" +
+        "hGDPhUEg9JXP+5w5ZtKYrDX+h2Z9yFvXFGbdh7olhRS5ieXDW/khsNM7McGKIMG5\n" +
+        "hqadZhRLECrL+VmUO6PrNzpm3L9eqIRu2G7IDhLqmBFLBPxzFGJ6p2EaiW0zxVcs\n" +
+        "fDUAGwpk0pWZ8Mln7CQVjgEtAICrkf2scq7lHHIeaeYs2kZx2cffwxYMqQvWmlb1\n" +
+        "q6qY7+hvPxcRF9B5ODRIrA798NwStWP6bnv2P5bY70oZP6kBS2M8Gmq8ww==\n" +
         "-----END CERTIFICATE-----";
 
     // Private key in the format of PKCS#8.
     static String targetPrivateKey =
-        "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMA55vepsH1wh+G4\n" +
-        "F5NVEtFXCbEFcVLRjMp3AL3jLswczczpimT3qsmF9RboeKvnLs2tN1kyXRvZzpDa\n" +
-        "9+uHt0Z9Wmh4wjHAZhX5Tm5xp4YbnzZiBmKICfXST5oVFTxFQF6zBvgnrDSsthPM\n" +
-        "KBpyzK6rusorkwpWywTyvH1s016xAgMBAAECgYEAn9bF3oRkdDoBU0i/mcww5I+K\n" +
-        "SH9tFt+WQbiojjz9ac49trkvUfu7MO1Jui2+QbrvaSkyj+HYGFOJd1wMsPXeB7ck\n" +
-        "5mOIYV4uZK8jfNMSQ8v0tFEeIPp5lKdw1XnrQfSe+abo2eL5Lwso437Y4s3w37+H\n" +
-        "aY3d76hR5qly+Ys+Ww0CQQDjeOoX89d/xhRqGXKjCx8ImE/dPmsI8O27cwtKrDYJ\n" +
-        "6t0v/xryVIdvOYcRBvKnqEogOH7T1kI+LnWKUTJ2ehJ7AkEA2FVloPVqCehXcc7e\n" +
-        "z3TDpU9w1B0JXklcV5HddYsRqp9RukN/VK4szKE7F1yoarIUtfE9Lr9082Jwyp3M\n" +
-        "L11xwwJBAKsZ+Hur3x0tUY29No2Nf/pnFyvEF57SGwA0uPmiL8Ol9lpz+UDudDEl\n" +
-        "hIM6Rqv12kwCMuQE9i7vo1o3WU3k5KECQEqhg1L49yD935TqiiFFpe0Ur9btQXse\n" +
-        "kdXAA4d2d5zGI7q/aGD9SYU6phkUJSHR16VA2RuUfzMrpb+wmm1IrmMCQFtLoKRT\n" +
-        "A5kokFb+E3Gplu29tJvCUpfwgBFRS+wmkvtiaU/tiyDcVgDO+An5DwedxxdVzqiE\n" +
-        "njWHoKY3axDQ8OU=\n";
+        "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDRT9Q7TI98OJkO\n" +
+        "h243vHNuAe6+QC4VBaEjAjjeJchrGcKn3YTFUP0t9OO3PyGMPyTkFLWd21Nc7MDh\n" +
+        "hym2WchzGtr7AjD5z4qcOCXn0TKhHlk8CXgwN2Cbd83cSHE36JZbd8TeQG6mGiuQ\n" +
+        "bRLHlsM240QjO7k34zJfy3c6Oz6YD4AbmK0Gt0IdHrC4Zob0T27FGCHZr+6Yy42G\n" +
+        "zAmzdyDTbQSF2LkNJtPGels+SVSj+Aw7pwt0HlC+nwyucd3T/u4OS/FU0P4kXyaz\n" +
+        "pOd9bkqjyRFgMxzcMDpzsb+/b9q99ZyLfapnw29b7GBMEA1cC13a0KsioxdTrZIB\n" +
+        "++tLi6GJAgMBAAECggEAC1buUgobSekNDbbzlyxr+n07UG5MsNHdwXZI22wjl/3M\n" +
+        "yGhdXY0+MiOuxIo0iJMRLhQbJMKxmPqwlmdKsLjbfbTqQSgEvDvsr/rwvsbcHdN1\n" +
+        "lSWUL9SINNQAQJtiGtvMbYcnEL1f4TrQumHWXx7BU7NrSRdeuPLjk0IEIxD7mqQ/\n" +
+        "MMFuJ2/yLxbred3BeVqQ/ET5XA0OY8Pf/gtR3tS+9e/PA365M7haDx2gIDfZJZ6a\n" +
+        "fShaUOWOxYd4uLY5frhTdIZo/2hWXFyUkX/mRFZ9CputbLRu5qltoX370X/Rt/jl\n" +
+        "t/duxzTPhLbgHmC+/cR4d+N24N+RB5RaGct/WWwF4wKBgQDXjGXcjJ8t8evHDlpP\n" +
+        "MxJlV3aU3PX5JIWkr8npidK4CJx2vRM6+aoj3kn1OoRaD6v1IEfGRZF4dtNsCtVR\n" +
+        "dAoDmzgHPMC4BbQtDOg1kpNfHad5KaVTfw/fn9REjSGPV6CxvwsTzT7VhM0raNS3\n" +
+        "TjfWwUUYKkKsxlnxyI+PABiYPwKBgQD4l85YlHny/7/njXp5XDhKJu/9LUskOb4o\n" +
+        "cKwdDSdBH2hVTlw+oUXVQijh5eu+YEHYCNExsjfulwTAK7V7HDqyzA/gA0YdecYO\n" +
+        "A7cyK7FlzYhyS7CtM21pSjaT21ccgxedxFM9+sS4TUUAFx6KZkNFByn2ztBBFSPq\n" +
+        "xIm7XiIUNwKBgFlT/gLg5DcOQ0BDWnnoGH+XN7WJvQZ7dEdD8tGuJH3QU8eBpC6U\n" +
+        "uUYUIWJX1fHc/M6hih1JR3g9BnGIK8+N33iPIzEcpGGfO4RQDQvmqtyIVZeJAtMP\n" +
+        "nWx3uGiQdJALKLWBDv4t2RRz7PNIhp9Q8yM1BYV2PhuMOEpTa+s/hvHRAoGBAOU/\n" +
+        "cW4ktnVOPpX11Y0Xa12OnOB4pYPpsCAxD7fWym123ktU8SJcrT6mPXddBdLRh8cH\n" +
+        "Eovm00e2gw4JANpgRQ1fvAAUZNOH2gpQiN++hWDhcsQcYvjGpU5kvwIJU0Ma7Wtz\n" +
+        "gmR03ncr4sbbizGMbtq4aY2OWWS7bxzwVCey/nBvAoGBAKBINUyBUEnGP70M1l6N\n" +
+        "mT5+Sqr3uvcThiDr4TNwyGtvumTK56VHibpIvErD9K6Ix+U3SNpwEwBbeifBqIkq\n" +
+        "1W+hnlSvu+I6KvUXO7A3lvaKvDOSINjZs631b60np6sBttJCBo/NTpyyyi5uLwVc\n" +
+        "hcDWR6Z4jx59gZdIr6eAY71k\n";
 
     static char passphrase[] = "passphrase".toCharArray();
 
@@ -157,9 +176,9 @@ public class TrustTrustedCert extends SSLSocketTemplate {
             if (expectFail) {
             // focus on the CertPathValidatorException
                 Throwable t = e.getCause().getCause();
-                if (t == null || !t.toString().contains("MD5")) {
+                if (t == null || !t.toString().contains("SHA256withRSA")) {
                     throw new RuntimeException(
-                        "Expected to see MD5 in exception output", t);
+                        "Expected to see SHA256withRSA in exception output", t);
                 }
             } else {
                 throw e;
@@ -188,7 +207,7 @@ public class TrustTrustedCert extends SSLSocketTemplate {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // import the trused cert
@@ -307,12 +326,15 @@ public class TrustTrustedCert extends SSLSocketTemplate {
         parseArguments(args);
 
         /*
-         * MD5 is used in this test case, don't disable MD5 algorithm.
+         * The MD2 trust anchor is used in this test case.
          * if expectFail is set, we're testing exception message
          */
         if (!expectFail) {
             Security.setProperty("jdk.certpath.disabledAlgorithms",
                 "MD2, RSA keySize < 1024");
+        } else {
+            Security.setProperty("jdk.certpath.disabledAlgorithms",
+                "MD2, SHA256withRSA, RSA keySize < 1024");
         }
         Security.setProperty("jdk.tls.disabledAlgorithms",
                 "SSLv3, RC4, DH keySize < 768");

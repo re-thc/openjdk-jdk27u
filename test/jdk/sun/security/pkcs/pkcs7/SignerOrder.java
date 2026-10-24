@@ -29,8 +29,8 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
- * @run main SignerOrder default 1024
- * @run main SignerOrder Sha256 2048
+ * @run main SignerOrder default 256
+ * @run main SignerOrder Sha256 384
  */
 import java.io.IOException;
 import java.math.BigInteger;
@@ -166,13 +166,13 @@ class SimpleSigner {
             agent = new X500Name("cn=test");
         }
         if (encryptionAlg == null) {
-            encryptionAlg = "DSA";
+            encryptionAlg = "EC";
         }
         if (digestAlg == null) {
             digestAlg = "SHA";
-            signAlgoDigest = encryptionAlg;
+            signAlgoDigest = "SHA1withECDSA";
         } else {
-            signAlgoDigest = digestAlg + "with" + encryptionAlg;
+            signAlgoDigest = digestAlg + "withECDSA";
         }
         if (keyPair == null) {
             KeyPairGenerator keyGen =
@@ -183,7 +183,7 @@ class SimpleSigner {
         publicKey = (X509Key) keyPair.getPublic();
         privateKey = keyPair.getPrivate();
 
-        if ("DSA".equals(encryptionAlg)) {
+        if ("EC".equals(encryptionAlg)) {
             this.sig = Signature.getInstance(signAlgoDigest);
         } else { // RSA
             this.sig = Signature.getInstance(digestAlg + "/" + encryptionAlg);

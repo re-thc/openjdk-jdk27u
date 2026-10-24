@@ -58,12 +58,6 @@ public class WeakSecretKeyTest {
                 .shouldHaveExitValue(0);
 
         SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
-                "-genseckey -keyalg RC2 -alias rc2key -keysize 128")
-                .shouldContain("Warning")
-                .shouldMatch("The generated secret key uses the RC2 algorithm.*considered a security risk")
-                .shouldHaveExitValue(0);
-
-        SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
                 "-genseckey -keyalg RC4 -alias rc4key -keysize 1024")
                 .shouldContain("Warning")
                 .shouldMatch("The generated secret key uses the ARCFOUR algorithm.*considered a security risk")
@@ -75,7 +69,6 @@ public class WeakSecretKeyTest {
                 .shouldMatch("<des3key> uses the DESede algorithm.*considered a security risk")
                 .shouldMatch("<deskey> uses the DES algorithm.*considered a security risk")
                 .shouldNotMatch("<aeskey> uses the AES algorithm.*considered a security risk")
-                .shouldMatch("<rc2key> uses the RC2 algorithm.*considered a security risk")
                 .shouldMatch("<rc4key> uses the ARCFOUR algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
 
@@ -85,7 +78,6 @@ public class WeakSecretKeyTest {
                 .shouldContain("Warning")
                 .shouldMatch("<des3key> uses the DESede algorithm.*considered a security risk")
                 .shouldMatch("<deskey> uses the DES algorithm.*considered a security risk")
-                .shouldMatch("<rc2key> uses the RC2 algorithm.*considered a security risk")
                 .shouldMatch("<rc4key> uses the ARCFOUR algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
 
@@ -94,7 +86,6 @@ public class WeakSecretKeyTest {
                 .shouldContain("Warning")
                 .shouldMatch("<des3key> uses the DESede algorithm.*considered a security risk")
                 .shouldMatch("<deskey> uses the DES algorithm.*considered a security risk")
-                .shouldMatch("<rc2key> uses the RC2 algorithm.*considered a security risk")
                 .shouldMatch("<rc4key> uses the ARCFOUR algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
 
@@ -110,12 +101,6 @@ public class WeakSecretKeyTest {
                 .shouldHaveExitValue(0);
 
         SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
-                "-genseckey -keyalg PBEWithMD5AndDES -alias pbekey1")
-                .shouldContain("Warning")
-                .shouldMatch("The generated secret key uses the PBEWithMD5AndDES algorithm.*considered a security risk")
-                .shouldHaveExitValue(0);
-
-        SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
                 "-genseckey -keyalg PBEWithSHA1AndDESede -alias pbekey2")
                 .shouldContain("Warning")
                 .shouldMatch("The generated secret key uses the PBEWithSHA1AndDESede algorithm.*considered a security risk")
@@ -123,9 +108,9 @@ public class WeakSecretKeyTest {
 
         SecurityTools.setResponse("changeit", "changeit");
         SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
-                "-importpass -keyalg PBEWithMD5AndDES -alias newentry")
+                "-importpass -keyalg PBEWithSHA1AndDESede -alias newentry")
                 .shouldContain("Warning")
-                .shouldMatch("The generated secret key uses the PBEWithMD5AndDES algorithm.*considered a security risk")
+                .shouldMatch("The generated secret key uses the PBEWithSHA1AndDESede algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
     }
 }

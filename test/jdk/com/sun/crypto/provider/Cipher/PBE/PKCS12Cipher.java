@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 4893959 6383200
- * @summary basic test for PBEWithSHA1AndDESede, PBEWithSHA1AndRC2_40/128
- *          and PBEWithSHA1AndRC4_40/128
+ * @summary basic test for PBEWithSHA1AndDESede
  * @author Valerie Peng
  * @key randomness
  */
@@ -88,10 +87,6 @@ public class PKCS12Cipher {
                             System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
         runTest("PBEWithSHA1AndDESede", input, PASSWD, p);
-        runTest("PBEWithSHA1AndRC2_40", input, PASSWD, p);
-        runTest("PBEWithSHA1AndRC2_128", input, PASSWD, p);
-        runTest("PBEWithSHA1AndRC4_40", input, PASSWD, p);
-        runTest("PBEWithSHA1AndRC4_128", input, PASSWD, p);
         System.out.println("All tests passed");
         long stop = System.currentTimeMillis();
         System.out.println("Done (" + (stop - start) + " ms).");

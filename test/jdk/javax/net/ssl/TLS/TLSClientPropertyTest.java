@@ -36,9 +36,6 @@
  *          java.security.jgss/sun.security.krb5.internal.ktab
  *          java.base/sun.security.util
  * @run main/othervm TLSClientPropertyTest NoProperty
- * @run main/othervm TLSClientPropertyTest SSLv3
- * @run main/othervm TLSClientPropertyTest TLSv1
- * @run main/othervm TLSClientPropertyTest TLSv11
  * @run main/othervm TLSClientPropertyTest TLSv12
  * @run main/othervm TLSClientPropertyTest TLSv13
  * @run main/othervm TLSClientPropertyTest TLS
@@ -53,13 +50,13 @@ import javax.net.ssl.SSLContext;
 
 /**
  * Sets the property jdk.tls.client.protocols to one of this protocols:
- * SSLv3,TLSv1,TLSv1.1,TLSv1.2 and TLSV(invalid) or removes this
+ * TLSv1.2,TLSv1.3 and TLSV(invalid) or removes this
  * property (if any),then validates the default, supported and current
  * protocols in the SSLContext.
  */
 public class TLSClientPropertyTest {
     private final String[] expectedSupportedProtos = new String[] {
-            "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
+            "TLSv1.2", "TLSv1.3"
     };
 
     public static void main(String[] args) throws Exception {
@@ -80,21 +77,6 @@ public class TLSClientPropertyTest {
             contextProtocol = null;
             expectedDefaultProtos = new String[] {
                     "TLSv1.2", "TLSv1.3"
-            };
-            break;
-        case "SSLv3":
-            contextProtocol = "SSLv3";
-            expectedDefaultProtos = new String[] {
-            };
-            break;
-        case "TLSv1":
-            contextProtocol = "TLSv1";
-            expectedDefaultProtos = new String[] {
-            };
-            break;
-        case "TLSv11":
-            contextProtocol = "TLSv1.1";
-            expectedDefaultProtos = new String[] {
             };
             break;
         case "TLSv12":

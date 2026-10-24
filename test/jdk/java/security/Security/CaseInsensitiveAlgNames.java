@@ -50,23 +50,23 @@ public class CaseInsensitiveAlgNames {
             md = MessageDigest.getInstance("shA1",
                     System.getProperty("test.provider.name", "SUN"));
 
-            // KeyPairGenerator without provider
-            KeyPairGenerator kGen = KeyPairGenerator.getInstance("DSA");
-            kGen = KeyPairGenerator.getInstance("dsa");
-            kGen = KeyPairGenerator.getInstance("dSA");
-            kGen = KeyPairGenerator.getInstance("OId.1.2.840.10040.4.1");
-            kGen = KeyPairGenerator.getInstance("1.2.840.10040.4.1");
+            // KeyFactory without provider
+            KeyFactory kf = KeyFactory.getInstance("DSA");
+            kf = KeyFactory.getInstance("dsa");
+            kf = KeyFactory.getInstance("dSA");
+            kf = KeyFactory.getInstance("OId.1.2.840.10040.4.1");
+            kf = KeyFactory.getInstance("1.2.840.10040.4.1");
 
-            // KeyPairGenerator with provider
-            kGen = KeyPairGenerator.getInstance("DSA",
+            // KeyFactory with provider
+            kf = KeyFactory.getInstance("DSA",
                     System.getProperty("test.provider.name", "SUN"));
-            kGen = KeyPairGenerator.getInstance("dsa",
+            kf = KeyFactory.getInstance("dsa",
                     System.getProperty("test.provider.name", "SUN"));
-            kGen = KeyPairGenerator.getInstance("dSA",
+            kf = KeyFactory.getInstance("dSA",
                     System.getProperty("test.provider.name", "SUN"));
-            kGen = KeyPairGenerator.getInstance("OId.1.2.840.10040.4.1",
+            kf = KeyFactory.getInstance("OId.1.2.840.10040.4.1",
                     System.getProperty("test.provider.name", "SUN"));
-            kGen = KeyPairGenerator.getInstance("1.2.840.10040.4.1",
+            kf = KeyFactory.getInstance("1.2.840.10040.4.1",
                     System.getProperty("test.provider.name", "SUN"));
     }
 }

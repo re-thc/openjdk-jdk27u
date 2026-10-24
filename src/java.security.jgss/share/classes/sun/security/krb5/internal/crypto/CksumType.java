@@ -44,35 +44,6 @@ public abstract class CksumType {
         CksumType cksumType = null;
         String cksumTypeName = null;
         switch (cksumTypeConst) {
-        case Checksum.CKSUMTYPE_CRC32:
-            cksumType = new Crc32CksumType();
-            cksumTypeName = "sun.security.krb5.internal.crypto.Crc32CksumType";
-            break;
-        case Checksum.CKSUMTYPE_DES_MAC:
-            cksumType = new DesMacCksumType();
-            cksumTypeName = "sun.security.krb5.internal.crypto.DesMacCksumType";
-            break;
-        case Checksum.CKSUMTYPE_DES_MAC_K:
-            cksumType = new DesMacKCksumType();
-            cksumTypeName =
-                "sun.security.krb5.internal.crypto.DesMacKCksumType";
-            break;
-        case Checksum.CKSUMTYPE_RSA_MD5:
-            cksumType = new RsaMd5CksumType();
-            cksumTypeName = "sun.security.krb5.internal.crypto.RsaMd5CksumType";
-            break;
-        case Checksum.CKSUMTYPE_RSA_MD5_DES:
-            cksumType = new RsaMd5DesCksumType();
-            cksumTypeName =
-                "sun.security.krb5.internal.crypto.RsaMd5DesCksumType";
-            break;
-
-        case Checksum.CKSUMTYPE_HMAC_SHA1_DES3_KD:
-            cksumType = new HmacSha1Des3KdCksumType();
-            cksumTypeName =
-                "sun.security.krb5.internal.crypto.HmacSha1Des3KdCksumType";
-            break;
-
         case Checksum.CKSUMTYPE_HMAC_SHA1_96_AES128:
             cksumType = new HmacSha1Aes128CksumType();
             cksumTypeName =

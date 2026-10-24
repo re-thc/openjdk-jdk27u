@@ -48,7 +48,7 @@ public class TestCloneable {
     @DataProvider
     public Object[][] testData() {
         return new Object[][] {
-            { "MD2", providerName }, { "MD5", providerName }, { "SHA-1", providerName },
+            { "MD5", providerName }, { "SHA-1", providerName },
             { "SHA-224", providerName }, { "SHA-256", providerName },
             { "SHA-384", providerName }, { "SHA-512", providerName },
             { "SHA3-224", providerName }, { "SHA3-256", providerName },

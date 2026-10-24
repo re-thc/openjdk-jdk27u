@@ -1168,8 +1168,15 @@ public abstract class Provider extends Properties {
     // re-use will occur e.g. as the framework traverses the provider
     // list and queries each provider with the same values until it finds
     // a matching service
+    // (not ThreadLocal.withInitial, so that no lambda is linked when the
+    // first provider is used)
     private static final ThreadLocal<ServiceKey> previousKey =
-        ThreadLocal.withInitial(() -> new ServiceKey("","", false));
+        new ThreadLocal<>() {
+            @Override
+            protected ServiceKey initialValue() {
+                return new ServiceKey("","", false);
+            }
+        };
 
     /**
      * Get an unmodifiable Set of all services supported by

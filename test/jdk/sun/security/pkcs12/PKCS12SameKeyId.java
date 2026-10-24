@@ -52,19 +52,19 @@ import sun.security.x509.X500Name;
 
 public class PKCS12SameKeyId {
 
-    private static final String JKSFILE = "PKCS12SameKeyId.jks";
+    private static final String SOURCE_STORE = "PKCS12SameKeyId-source.p12";
     private static final String P12FILE = "PKCS12SameKeyId.p12";
     private static final char[] PASSWORD = "changeit".toCharArray();
     private static final int SIZE = 10;
 
     public static void main(String[] args) throws Exception {
 
-        // Prepare a JKS keystore with many entries
-        new File(JKSFILE).delete();
+        // Prepare a PKCS12 keystore with many entries
+        new File(SOURCE_STORE).delete();
         for (int i=0; i<SIZE; i++) {
             System.err.print(".");
-            String cmd = "-keystore " + JKSFILE
-                    + " -storepass changeit -keypass changeit -keyalg rsa "
+            String cmd = "-keystore " + SOURCE_STORE
+                    + " -storetype PKCS12 -storepass changeit -keypass changeit -keyalg rsa "
                     + "-genkeypair -alias p" + i + " -dname CN=" + i;
             sun.security.tools.keytool.Main.main(cmd.split(" "));
         }
@@ -89,9 +89,9 @@ public class PKCS12SameKeyId {
         Certificate[][] certChains = new Certificate[SIZE][];
         String[] aliases = new String[SIZE];
 
-        // Reads from JKS keystore and pre-calculate
-        KeyStore ks = KeyStore.getInstance("jks");
-        try (FileInputStream fis = new FileInputStream(JKSFILE)) {
+        // Read the source PKCS12 keystore and pre-calculate
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        try (FileInputStream fis = new FileInputStream(SOURCE_STORE)) {
             ks.load(fis, PASSWORD);
         }
         for (int i=0; i<SIZE; i++) {

@@ -54,11 +54,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.jimage.ImageReader;
-import jdk.internal.jimage.SystemImageReader;
+import jdk.internal.jimage.PreviewMode;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleHashes.HashSupplier;
+import sun.nio.fs.DefaultFileSystemProvider;
 
 /**
  * The factory for SystemModules objects and for creating ModuleFinder objects
@@ -389,10 +391,30 @@ public final class SystemModuleFinders {
     }
 
     /**
+     * Returns the ImageReader of the run-time image, which is shared and must
+     * not be closed.
+     */
+    public static ImageReader systemImageReader() {
+        return SystemImage.reader();
+    }
+
+    /**
      * Holder class for the ImageReader.
      */
     private static class SystemImage {
-        static final ImageReader READER = SystemImageReader.get();
+        // Avoid SystemImageReader's reflection path, retained for the JDK 8 jrt-fs.jar.
+        static final ImageReader READER = open();
+        private static ImageReader open() {
+            Path image = DefaultFileSystemProvider.theFileSystem()
+                    .getPath(StaticProperty.javaHome(), "lib", "modules");
+            PreviewMode mode = PreviewFeatures.isEnabled()
+                    ? PreviewMode.ENABLED : PreviewMode.DISABLED;
+            try {
+                return ImageReader.open(image, mode);
+            } catch (IOException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
         static ImageReader reader() {
             return READER;
         }
@@ -406,8 +428,24 @@ public final class SystemModuleFinders {
         private final String module;
         private volatile boolean closed;
 
+        // 0 if not known yet, 1 if the module has no META-INF directory, 2 if it has
+        private volatile int metaInf;
+
         SystemModuleReader(String module) {
             this.module = module;
+        }
+
+        /**
+         * Cache META-INF presence: service lookups visit every module,
+         * but few contain provider-configuration files.
+         */
+        private boolean hasMetaInf(ImageReader imageReader) throws IOException {
+            int v = metaInf;
+            if (v == 0) {
+                v = imageReader.containsDirectory(module, "META-INF") ? 2 : 1;
+                metaInf = v;
+            }
+            return v == 2;
         }
 
         /**
@@ -419,7 +457,13 @@ public final class SystemModuleFinders {
             if (closed)
                 throw new IOException("ModuleReader is closed");
             ImageReader imageReader = SystemImage.reader();
-            return imageReader != null && imageReader.containsResource(module, name);
+            if (imageReader == null) {
+                return false;
+            }
+            if (name.startsWith("META-INF/") && !hasMetaInf(imageReader)) {
+                return false;
+            }
+            return imageReader.containsResource(module, name);
         }
 
         @Override
@@ -434,7 +478,8 @@ public final class SystemModuleFinders {
 
         @Override
         public Optional<InputStream> open(String name) throws IOException {
-            return read(name).map(this::toInputStream);
+            Optional<ByteBuffer> bb = read(name);
+            return bb.isPresent() ? Optional.of(toInputStream(bb.get())) : Optional.empty();
         }
 
         private InputStream toInputStream(ByteBuffer bb) { // ## -> ByteBuffer?
@@ -463,8 +508,9 @@ public final class SystemModuleFinders {
         @Override
         public Optional<ByteBuffer> read(String name) throws IOException {
             ImageReader reader = SystemImage.reader();
-            return Optional.ofNullable(findResource(reader, name))
-                    .map(reader::getResourceBuffer);
+            ImageReader.Node node = findResource(reader, name);
+            return node != null ? Optional.ofNullable(reader.getResourceBuffer(node))
+                                : Optional.empty();
         }
 
         @Override

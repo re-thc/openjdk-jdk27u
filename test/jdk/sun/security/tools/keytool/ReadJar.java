@@ -86,7 +86,7 @@ public class ReadJar {
         printCert("test_rsa.jar");
 
         out = SecurityTools.jarsigner("-keystore keystore -storepass password "
-                + "-sigalg MD5withRSA -digestalg MD5 test_md5.jar rsa_alias");
+                + "-sigalg SHA1withRSA -digestalg MD5 test_md5.jar rsa_alias");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 

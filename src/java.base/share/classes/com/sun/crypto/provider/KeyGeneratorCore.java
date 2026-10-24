@@ -186,35 +186,6 @@ final class KeyGeneratorCore {
         }
     }
 
-    // nested static class for the RC2 key generator
-    public static final class RC2KeyGenerator extends KeyGeneratorSpi {
-        private final KeyGeneratorCore core;
-        public RC2KeyGenerator() {
-            core = new KeyGeneratorCore("RC2", 128);
-        }
-        @Override
-        protected void engineInit(SecureRandom random) {
-            core.implInit(random);
-        }
-        @Override
-        protected void engineInit(AlgorithmParameterSpec params,
-                SecureRandom random) throws InvalidAlgorithmParameterException {
-            core.implInit(params, random);
-        }
-        @Override
-        protected void engineInit(int keySize, SecureRandom random) {
-            if ((keySize < 40) || (keySize > 1024)) {
-                throw new InvalidParameterException("Key length for RC2"
-                    + " must be between 40 and 1024 bits");
-            }
-            core.implInit(keySize, random);
-        }
-        @Override
-        protected SecretKey engineGenerateKey() {
-            return core.implGenerateKey();
-        }
-    }
-
     // nested static class for the ARCFOUR (RC4) key generator
     public static final class ARCFOURKeyGenerator extends KeyGeneratorSpi {
         private final KeyGeneratorCore core;

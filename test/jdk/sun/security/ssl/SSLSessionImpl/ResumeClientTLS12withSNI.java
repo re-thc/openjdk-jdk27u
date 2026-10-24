@@ -141,7 +141,7 @@ public class ResumeClientTLS12withSNI {
     private static TrustManagerFactory makeTrustManagerFactory(String tsPath,
                                                                char[] pass) throws GeneralSecurityException, IOException {
         TrustManagerFactory tmf;
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         try (FileInputStream fsIn = new FileInputStream(tsPath)) {
             ts.load(fsIn, pass);

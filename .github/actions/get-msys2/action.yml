@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,17 @@ runs:
         release: true
         location: ${{ runner.tool_cache }}/msys2
       if: ${{ inputs.architecture == 'ARM64' }}
+
+      # The prebuilt test memory probe needs powershell even with a minimal PATH.
+    - name: 'Set Windows PowerShell path'
+      run: |
+        $powershell = (Get-Command powershell.exe -CommandType Application -ErrorAction Stop).Source
+        if (-not [System.IO.Path]::IsPathRooted($powershell) -or -not (Test-Path -LiteralPath $powershell -PathType Leaf)) {
+          throw "Could not resolve Windows PowerShell: $powershell"
+        }
+        Write-Output "Windows PowerShell: $powershell"
+        Split-Path -Parent $powershell >> $env:GITHUB_PATH
+      shell: pwsh
 
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path for x64'

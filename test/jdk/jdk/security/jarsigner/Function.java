@@ -67,14 +67,14 @@ public class Function {
         }
 
         sun.security.tools.keytool.Main.main(
-                ("-storetype jks -keystore ks -storepass changeit" +
+                ("-storetype pkcs12 -keystore ks -storepass changeit" +
                         " -keypass changeit -dname" +
                         " CN=RSA -alias r -genkeypair -keyalg rsa").split(" "));
 
         JarSigner.Builder jsb;
 
         try (FileInputStream fis = new FileInputStream("ks")) {
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(fis, "changeit".toCharArray());
             PrivateKey key = (PrivateKey)ks.getKey("r", "changeit".toCharArray());
             Certificate cert = ks.getCertificate("r");

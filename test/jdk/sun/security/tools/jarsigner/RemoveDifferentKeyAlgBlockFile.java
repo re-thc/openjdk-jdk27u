@@ -38,8 +38,8 @@ import org.testng.annotations.BeforeClass;
  * @summary Checks that if a signed jar file is signed again with the same
  * signer name and a different algorithm that the signature block file for
  * the previous signature is removed. Example: the jar had META-INF/A.SF and
- * META-INF/A.RSA files and is now signed with DSA. So it should contain
- * an updated META-INF/A.SF and META-INF/A.DSA and the META-INF/A.RSA should
+ * META-INF/A.RSA files and is now signed with EC. So it should contain
+ * an updated META-INF/A.SF and META-INF/A.EC and the META-INF/A.RSA should
  * be removed because not valid any longer.
  */
 public class RemoveDifferentKeyAlgBlockFile {
@@ -51,9 +51,9 @@ public class RemoveDifferentKeyAlgBlockFile {
         SecurityTools.keytool("-genkeypair -keyalg RSA -keystore "
                 + KEYSTORE_FILENAME + " -storepass changeit -keypass changeit"
                 + " -alias RSA -dname CN=RSA").shouldHaveExitValue(0);
-        SecurityTools.keytool("-genkeypair -keyalg DSA -keystore "
+        SecurityTools.keytool("-genkeypair -keyalg EC -keystore "
                 + KEYSTORE_FILENAME + " -storepass changeit -keypass changeit"
-                + " -alias DSA -dname CN=DSA").shouldHaveExitValue(0);
+                + " -alias EC -dname CN=EC").shouldHaveExitValue(0);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class RemoveDifferentKeyAlgBlockFile {
 
         SecurityTools.jarsigner("-keystore " + KEYSTORE_FILENAME +
                 " -storepass changeit -verbose -debug -sigfile A " +
-                jarFilenameModified + " DSA").shouldHaveExitValue(0);
+                jarFilenameModified + " EC").shouldHaveExitValue(0);
         SecurityTools.jarsigner("-verify -keystore " + KEYSTORE_FILENAME +
                 " -storepass changeit -debug -verbose " + jarFilenameModified)
                 .shouldHaveExitValue(0);

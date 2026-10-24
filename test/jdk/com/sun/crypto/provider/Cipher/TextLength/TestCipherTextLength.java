@@ -39,20 +39,13 @@ import javax.crypto.NoSuchPaddingException;
 public class TestCipherTextLength {
 
     /* Algorithms tested by DESCipherWrapper */
-    private static final String[] DES_ALGORITHMS = {"DES", "DESede",
-        "Blowfish"};
-    private static final String[] DES_MODES = {"ECB", "CBC", "PCBC"};
+    private static final String[] DES_ALGORITHMS = {"DES", "DESede"};
+    private static final String[] DES_MODES = {"ECB", "CBC"};
     private static final String[] DES_PADDING = {"PKCS5Padding"};
 
     /* Algorithms tested by PBECipherWrapper */
-    private static final String[] PBE_ALGORITHMS = {"PBEWithMD5AndDES",
-        "PBEWithMD5AndDES/CBC/PKCS5Padding", "PBEWithMD5ANDTripleDES",
-        "PBEWithMD5AndTripleDES/CBC/PKCS5Padding", "PBEwithSHA1AndDESede",
-        "PBEwithSHA1AndDESede/CBC/PKCS5Padding", "PBEwithSHA1AndRC2_40",
-        "PBEwithSHA1Andrc2_40/CBC/PKCS5Padding", "PBEWithSHA1AndRC2_128",
-        "PBEWithSHA1andRC2_128/CBC/PKCS5Padding", "PBEWithSHA1AndRC4_40",
-        "PBEWithsha1AndRC4_40/ECB/NoPadding", "PBEWithSHA1AndRC4_128",
-        "PBEWithSHA1AndRC4_128/ECB/NoPadding", "PBEWithHmacSHA1AndAES_128",
+    private static final String[] PBE_ALGORITHMS = {"PBEwithSHA1AndDESede",
+        "PBEwithSHA1AndDESede/CBC/PKCS5Padding", "PBEWithHmacSHA1AndAES_128",
         "PBEWithHmacSHA224AndAES_128", "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128", "PBEWithHmacSHA512AndAES_128",
         "PBEWithHmacSHA512/224AndAES_128", "PBEWithHmacSHA512/256AndAES_128",
@@ -83,7 +76,7 @@ public class TestCipherTextLength {
 
     public void runAll(byte[] plainText) throws Exception {
 
-        // Testing DES/Blowfish Cipher
+        // Testing DES Cipher
         for (String algorithm : DES_ALGORITHMS) {
             for (String desMode : DES_MODES) {
                 for (String padding : DES_PADDING) {

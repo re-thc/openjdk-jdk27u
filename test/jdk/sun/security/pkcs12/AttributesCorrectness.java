@@ -67,7 +67,7 @@ public class AttributesCorrectness {
 
         cag.generate(-1);
         ks.setKeyEntry("e", new EncryptedPrivateKeyInfo(
-                "PBEWithMD5AndDES", new byte[100]).getEncoded(), chain("e"));
+                "PBEWithSHA1AndDESede", new byte[100]).getEncoded(), chain("e"));
 
         var f = new KeyStore.SecretKeyEntry(new SecretKeySpec(new byte[16], "AES"),
                 Set.of(new PKCS12Attribute("1.2.3", "456")));

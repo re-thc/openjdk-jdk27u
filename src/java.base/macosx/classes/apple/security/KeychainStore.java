@@ -1210,7 +1210,8 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                 }
             }
             if (params != null) {
-                algParams = AlgorithmParameters.getInstance("PBE");
+                algParams = AlgorithmParameters.getInstance(
+                        "PBEWithSHA1AndDESede");
                 algParams.init(params.toByteArray());
             }
         } catch (Exception e) {
@@ -1232,7 +1233,8 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
 
         try {
             PBEKeySpec keySpec = new PBEKeySpec(password);
-            SecretKeyFactory skFac = SecretKeyFactory.getInstance("PBE");
+            SecretKeyFactory skFac =
+                    SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
             skey = skFac.generateSecret(keySpec);
         } catch (Exception e) {
             IOException ioe = new IOException("getSecretKey failed: " +

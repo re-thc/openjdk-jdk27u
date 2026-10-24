@@ -555,38 +555,32 @@ public class DecimalFormat extends NumberFormat {
     public final StringBuffer format(Object number,
                                      StringBuffer toAppendTo,
                                      FieldPosition pos) {
-        return switch (number) {
-            case Long l -> format(l.longValue(), toAppendTo, pos);
-            case Integer i -> format(i.longValue(), toAppendTo, pos);
-            case Short s -> format(s.longValue(), toAppendTo, pos);
-            case Byte b -> format(b.longValue(), toAppendTo, pos);
-            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, pos);
-            case AtomicLong al -> format(al.longValue(), toAppendTo, pos);
-            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, pos);
-            case BigDecimal bd -> format(bd, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
-            case BigInteger bi -> format(bi, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
-            case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
-        };
+        if (isLongValue(number)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof BigDecimal bd) {
+            return format(bd, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
+        } else if (number instanceof BigInteger bi) {
+            return format(bi, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
+        } else if (number instanceof Number n) {
+            return format(n.doubleValue(), toAppendTo, pos);
+        }
+        throw new IllegalArgumentException("Cannot format given Object as a Number");
     }
 
     @Override
     final StringBuf format(Object number,
                            StringBuf toAppendTo,
                            FieldPosition pos) {
-        return switch (number) {
-            case Long l -> format(l.longValue(), toAppendTo, pos);
-            case Integer i -> format(i.longValue(), toAppendTo, pos);
-            case Short s -> format(s.longValue(), toAppendTo, pos);
-            case Byte b -> format(b.longValue(), toAppendTo, pos);
-            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, pos);
-            case AtomicLong al -> format(al.longValue(), toAppendTo, pos);
-            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, pos);
-            case BigDecimal bd -> format(bd, toAppendTo, pos);
-            case BigInteger bi -> format(bi, toAppendTo, pos);
-            case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
-        };
+        if (isLongValue(number)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof BigDecimal bd) {
+            return format(bd, toAppendTo, pos);
+        } else if (number instanceof BigInteger bi) {
+            return format(bi, toAppendTo, pos);
+        } else if (number instanceof Number n) {
+            return format(n.doubleValue(), toAppendTo, pos);
+        }
+        throw new IllegalArgumentException("Cannot format given Object as a Number");
     }
 
     /**
@@ -1017,20 +1011,21 @@ public class DecimalFormat extends NumberFormat {
         CharacterIteratorFieldDelegate delegate =
                 new CharacterIteratorFieldDelegate();
         StringBuf sb = StringBufFactory.of();
-        switch (obj) {
-            case Double d -> format(d.doubleValue(), sb, delegate);
-            case Float f -> format(f.doubleValue(), sb, delegate);
-            case Long l -> format(l.longValue(), sb, delegate);
-            case Integer i -> format(i.longValue(), sb, delegate);
-            case Short s -> format(s.longValue(), sb, delegate);
-            case Byte b -> format(b.longValue(), sb, delegate);
-            case AtomicInteger ai -> format(ai.longValue(), sb, delegate);
-            case AtomicLong al -> format(al.longValue(), sb, delegate);
-            case BigDecimal bd -> format(bd, sb, delegate);
-            case BigInteger bi -> format(bi, sb, delegate, false);
-            case null -> throw new NullPointerException(
+        if (obj == null) {
+            throw new NullPointerException(
                     "formatToCharacterIterator must be passed non-null object");
-            default -> throw new IllegalArgumentException(
+        } else if (obj instanceof Double || obj instanceof Float) {
+            format(((Number) obj).doubleValue(), sb, delegate);
+        } else if (obj instanceof Long || obj instanceof Integer
+                || obj instanceof Short || obj instanceof Byte
+                || obj instanceof AtomicInteger || obj instanceof AtomicLong) {
+            format(((Number) obj).longValue(), sb, delegate);
+        } else if (obj instanceof BigDecimal bd) {
+            format(bd, sb, delegate);
+        } else if (obj instanceof BigInteger bi) {
+            format(bi, sb, delegate, false);
+        } else {
+            throw new IllegalArgumentException(
                     "Cannot format given Object as a Number");
         }
         return delegate.getIterator(sb.toString());

@@ -33,11 +33,8 @@
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import sun.security.krb5.EncryptedData;
-import sun.security.krb5.internal.crypto.Des;
 import sun.security.krb5.internal.crypto.EType;
-import sun.security.krb5.internal.crypto.crc32;
 import sun.security.krb5.internal.crypto.dk.AesDkCrypto;
-import sun.security.krb5.internal.crypto.dk.Des3DkCrypto;
 import sun.security.krb5.internal.crypto.dk.DkCrypto;
 import java.nio.*;
 import java.util.HexFormat;
@@ -50,8 +47,6 @@ public class RFC396xTest {
 
     /** Creates a new instance of NewClass */
     public static void main(String[] args) throws Exception {
-        System.setProperty("sun.security.krb5.msinterop.des.s2kcharset",
-                "utf-8");
         DkCrypto.ALLOW_WEAK_PBKDF2_ITERATION_COUNT = true;
         test();
     }
@@ -72,76 +67,6 @@ public class RFC396xTest {
         assertStringEquals(hex((byte[])nfold.invoke(null, "kerberos".getBytes("UTF-8"), 128)), "6b65726265726f737b9b5b2b93132b93");
         assertStringEquals(hex((byte[])nfold.invoke(null, "kerberos".getBytes("UTF-8"), 168)), "8372c236344e5f1550cd0747e15d62ca7a5a3bcea4");
         assertStringEquals(hex((byte[])nfold.invoke(null, "kerberos".getBytes("UTF-8"), 256)), "6b65726265726f737b9b5b2b93132b935c9bdcdad95c9899c4cae4dee6d6cae4");
-
-        // A.2
-        assertStringEquals(hex(Des.string_to_key_bytes("passwordATHENA.MIT.EDUraeburn".toCharArray())), "cbc22fae235298e3");
-        assertStringEquals(hex(Des.string_to_key_bytes("potatoeWHITEHOUSE.GOVdanny".toCharArray())), "df3d32a74fd92a01");
-        assertStringEquals(hex(Des.string_to_key_bytes((gclef+"EXAMPLE.COMpianist").toCharArray())), "4ffb26bab0cd9413");
-        assertStringEquals(hex(Des.string_to_key_bytes("\u00dfATHENA.MIT.EDUJuri\u0161i\u0107".toCharArray())), "62c81a5232b5e69d");
-        // Next 2 won't pass, since there's no real weak key here
-        //assertStringEquals(hex(Des.string_to_key_bytes("11119999AAAAAAAA".toCharArray())), "984054d0f1a73e31");
-        //assertStringEquals(hex(Des.string_to_key_bytes("NNNN6666FFFFAAAA".toCharArray())), "c4bf6b25adf7a4f8");
-
-        // A.3
-        Object o = Des3DkCrypto.class.getConstructor().newInstance();
-        Method dr = DkCrypto.class.getDeclaredMethod("dr", byte[].class, byte[].class);
-        Method randomToKey = DkCrypto.class.getDeclaredMethod("randomToKey", byte[].class);
-        dr.setAccessible(true);
-        randomToKey.setAccessible(true);
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("dce06b1f64c857a11c3db57c51899b2cc1791008ce973b92"),
-                xeh("0000000155")))),
-                "925179d04591a79b5d3192c4a7e9c289b049c71f6ee604cd");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("5e13d31c70ef765746578531cb51c15bf11ca82c97cee9f2"),
-                xeh("00000001aa")))),
-                "9e58e5a146d9942a101c469845d67a20e3c4259ed913f207");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("98e6fd8a04a4b6859b75a176540b9752bad3ecd610a252bc"),
-                xeh("0000000155")))),
-                "13fef80d763e94ec6d13fd2ca1d085070249dad39808eabf");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("622aec25a2fe2cad7094680b7c64940280084c1a7cec92b5"),
-                xeh("00000001aa")))),
-                "f8dfbf04b097e6d9dc0702686bcb3489d91fd9a4516b703e");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("d3f8298ccb166438dcb9b93ee5a7629286a491f838f802fb"),
-                xeh("6b65726265726f73")))),
-                "2370da575d2a3da864cebfdc5204d56df779a7df43d9da43");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("c1081649ada74362e6a1459d01dfd30d67c2234c940704da"),
-                xeh("0000000155")))),
-                "348057ec98fdc48016161c2a4c7a943e92ae492c989175f7");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("5d154af238f46713155719d55e2f1f790dd661f279a7917c"),
-                xeh("00000001aa")))),
-                "a8808ac267dada3dcbe9a7c84626fbc761c294b01315e5c1");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("798562e049852f57dc8c343ba17f2ca1d97394efc8adc443"),
-                xeh("0000000155")))),
-                "c813f88a3be3b334f75425ce9175fbe3c8493b89c8703b49");
-        assertStringEquals(hex((byte[])randomToKey.invoke(o, (byte[])dr.invoke(o,
-                xeh("26dce334b545292f2feab9a8701a89a4b99eb9942cecd016"),
-                xeh("00000001aa")))),
-                "f48ffd6e83f83e7354e694fd252cf83bfe58f7d5ba37ec5d");
-
-        // A.4
-        assertStringEquals(hex(new Des3DkCrypto().stringToKey("passwordATHENA.MIT.EDUraeburn".toCharArray())), "850bb51358548cd05e86768c313e3bfef7511937dcf72c3e");
-        assertStringEquals(hex(new Des3DkCrypto().stringToKey("potatoeWHITEHOUSE.GOVdanny".toCharArray())), "dfcd233dd0a43204ea6dc437fb15e061b02979c1f74f377a");
-        assertStringEquals(hex(new Des3DkCrypto().stringToKey("pennyEXAMPLE.COMbuckaroo".toCharArray())), "6d2fcdf2d6fbbc3ddcadb5da5710a23489b0d3b69d5d9d4a");
-        assertStringEquals(hex(new Des3DkCrypto().stringToKey("\u00DFATHENA.MIT.EDUJuri\u0161i\u0107".toCharArray())), "16d5a40e1ce3bacb61b9dce00470324c831973a7b952feb0");
-        assertStringEquals(hex(new Des3DkCrypto().stringToKey((gclef+"EXAMPLE.COMpianist").toCharArray())), "85763726585dbc1cce6ec43e1f751f07f1c4cbb098f40b19");
-
-        // A.5
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes("foo".getBytes("UTF-8"))), "33bc3273");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes("test0123456789".getBytes("UTF-8"))), "d6883eb8");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes("MASSACHVSETTS INSTITVTE OF TECHNOLOGY".getBytes("UTF-8"))), "f78041e3");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes(new byte[] {(byte)0x80, 0})), "4b98833b");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes(new byte[] {0, 8})), "3288db0e");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes(new byte[] {0, (byte)0x80})), "2083b8ed");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes(new byte[] {(byte)0x80})), "2083b8ed");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes(new byte[] {(byte)0x80, 0, 0, 0})), "3bb659ed");
-        assertStringEquals(hex(crc32.byte2crc32sum_bytes(new byte[] {0, 0, 0, 1})), "96300777");
 
         // RFC 3962
         AesDkCrypto a1 = new AesDkCrypto(128);

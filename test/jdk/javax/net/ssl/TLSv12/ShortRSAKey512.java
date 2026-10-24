@@ -75,7 +75,7 @@ public class ShortRSAKey512 extends SSLContextTemplate {
      */
     void doServerSide() throws Exception {
         SSLContext context = createSSLContext(null,
-                new Cert[]{Cert.EE_RSA_MD5_512}, getServerContextParameters());
+                new Cert[]{Cert.EE_RSA_SHA256_512}, getServerContextParameters());
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
         try (SSLServerSocket sslServerSocket =
                 (SSLServerSocket) sslssf.createServerSocket(serverPort)) {
@@ -114,7 +114,7 @@ public class ShortRSAKey512 extends SSLContextTemplate {
             Thread.sleep(50);
         }
 
-        SSLContext context = createSSLContext(new Cert[]{Cert.CA_RSA_MD5_512},
+        SSLContext context = createSSLContext(new Cert[]{Cert.CA_RSA_2048},
                 null, getClientContextParameters());
         SSLSocketFactory sslsf = context.getSocketFactory();
 

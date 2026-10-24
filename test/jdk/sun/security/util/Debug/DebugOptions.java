@@ -29,6 +29,9 @@
  * @run junit DebugOptions
  */
 
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.Security;
 import java.util.ArrayList;
@@ -257,5 +260,12 @@ public class DebugOptions {
         // trigger "keystore" debug output
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
+        char[] pass = "changeit".toCharArray();
+        Path ksFile = Files.createTempFile(Path.of("."), "ks", ".p12");
+        try (OutputStream os = Files.newOutputStream(ksFile)) {
+            ks.store(os, pass);
+        }
+        KeyStore.getInstance(ksFile.toFile(), pass);
+        Files.delete(ksFile);
     }
 }

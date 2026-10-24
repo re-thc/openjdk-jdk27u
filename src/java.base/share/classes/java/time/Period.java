@@ -146,8 +146,10 @@ public final class Period
     /**
      * The pattern for parsing.
      */
-    private static final Pattern PATTERN =
+    private static class Lazy {
+        static final Pattern PATTERN =
             Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?", Pattern.CASE_INSENSITIVE);
+    }
 
     /**
      * The set of supported units.
@@ -326,7 +328,7 @@ public final class Period
      */
     public static Period parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
-        Matcher matcher = PATTERN.matcher(text);
+        Matcher matcher = Lazy.PATTERN.matcher(text);
         if (matcher.matches()) {
             int negate = (charMatch(text, matcher.start(1), matcher.end(1), '-') ? -1 : 1);
             int yearStart = matcher.start(2), yearEnd = matcher.end(2);

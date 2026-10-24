@@ -54,7 +54,7 @@ public class SecureValidationSystemProperty {
         DIR + System.getProperty("file.separator") + "data";
 
     public static void main(String[] args) throws Exception{
-        // Re-enable sha1 algs. We just want to make sure DSA keys less than
+        // Re-enable sha1 algs. We just want to make sure RSA keys less than
         // 1024 bits are rejected correctly.
         SecurityUtils.removeAlgsFromDSigPolicy("sha1");
 
@@ -67,7 +67,7 @@ public class SecureValidationSystemProperty {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         Document doc = dbf.newDocumentBuilder()
-            .parse(new File(DATA_DIR, "signature-enveloped-dsa-512.xml"));
+            .parse(new File(DATA_DIR, "signature-enveloped-rsa-512.xml"));
         Validator validator = XMLUtils.validator();
 
         // try again and make sure system property supersedes
@@ -82,7 +82,7 @@ public class SecureValidationSystemProperty {
             validator.validate(doc);
             if (isSet) {
                 throw new Exception("signature expected to be rejected " +
-                    "because it was signed with a 512-bit DSA key which is " +
+                    "because it was signed with a 512-bit RSA key which is " +
                     "restricted");
             }
         } catch (XMLSignatureException e) {
@@ -92,7 +92,7 @@ public class SecureValidationSystemProperty {
             } else {
                 Throwable cause = e.getCause();
                 if (cause == null || !cause.getMessage().equals(
-                        "DSA keys less than 1024 bits are forbidden when " +
+                        "RSA keys less than 1024 bits are forbidden when " +
                         "secure validation is enabled")) {
                     throw new Exception("signature rejected for wrong reason", e);
                 }
