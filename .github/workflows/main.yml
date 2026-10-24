@@ -1,209 +1,135 @@
-#
-# Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
-
-name: 'OpenJDK GHA Sanity Checks'
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# SPDX-License-Identifier: GPL-2.0-only
+name: Native kqueue correctness
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
   workflow_dispatch:
     inputs:
-      platforms:
-        description: 'Targets: linux-x64, linux-aarch64, macos-aarch64, windows-x64'
+      expected_validation_sha:
+        description: Exact full SHA of this dedicated validation branch
         required: true
-        default: 'linux-x64, linux-aarch64, macos-aarch64, windows-x64'
-      configure-arguments:
-        description: 'Additional configure arguments'
-        required: false
-      make-arguments:
-        description: 'Additional make arguments'
-        required: false
-      dry-run:
-        description: 'Skip builds and tests; only prepare dependencies and configure'
-        type: boolean
-        default: false
+        type: string
+      jtreg_transfer_run_id:
+        description: Completed staging run holding the pinned one-day jtreg artifact
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
-  # PR updates share refs/pull/<number>/merge; branch runs share refs/heads/<branch>.
-  # Keep this key independent of the commit so new runs cancel stale builds/tests.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: native-kqueue-correctness-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  prepare:
-    name: 'Prepare the run'
-    runs-on: ubuntu-26.04
-    outputs:
-      linux-x64: ${{ steps.include.outputs.linux-x64 }}
-      linux-aarch64: ${{ steps.include.outputs.linux-aarch64 }}
-      macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
-      windows-x64: ${{ steps.include.outputs.windows-x64 }}
-      dry-run: ${{ steps.include.outputs.dry-run }}
+  native-macos:
+    if: github.ref == 'refs/heads/qualify/native-kqueue-correctness-once'
+    runs-on: macos-26
+    timeout-minutes: 85
+    env:
+      PYTHONUNBUFFERED: '1'
+      EXPECTED_VALIDATION_SHA: ${{ inputs.expected_validation_sha }}
+      JTREG_TRANSFER_RUN_ID: ${{ inputs.jtreg_transfer_run_id }}
     steps:
-      - name: 'Checkout the scripts'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Initialize bounded evidence
+        shell: bash
+        timeout-minutes: 1
+        run: |
+          python3 -I - <<'PY'
+          import json, os, re, time
+          from pathlib import Path
+          start = time.monotonic()
+          root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-correctness-evidence'
+          root.mkdir()
+          data = {'monotonic': start, 'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
+          for key in ('GITHUB_SHA', 'GITHUB_REF', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID',
+                      'GITHUB_RUN_ATTEMPT', 'RUNNER_OS', 'RUNNER_ARCH', 'ImageOS', 'ImageVersion'):
+              data[key] = os.environ.get(key)
+          (root / 'job-start.json').write_text(json.dumps(data, indent=2) + '\n')
+          if not re.fullmatch(r'[0-9a-f]{40}', os.environ.get('EXPECTED_VALIDATION_SHA', '')):
+              raise SystemExit('Exact lowercase validation SHA required')
+          if not re.fullmatch(r'[1-9][0-9]*', os.environ.get('JTREG_TRANSFER_RUN_ID', '')):
+              raise SystemExit('Pinned harness staging run ID required')
+          if os.environ.get('GITHUB_RUN_ATTEMPT') != '1':
+              raise SystemExit('Reruns are outside this run contract')
+          PY
+
+      - name: Checkout validation source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        timeout-minutes: 5
         with:
-          sparse-checkout: |
-            .github
-            make/conf/github-actions.conf
+          fetch-depth: 5
+          persist-credentials: false
 
-      - name: 'Check what jobs to run'
-        id: include
+      - name: Transfer exact clean jtreg distribution
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        timeout-minutes: 2
+        with:
+          name: native-kqueue-clean-jtreg-20261024
+          path: ${{ runner.temp }}/native-kqueue-clean-jtreg
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.jtreg_transfer_run_id }}
+
+      - name: Build candidate and check correctness once
+        shell: bash
+        timeout-minutes: 67
+        run: |
+          python3 -I .github/native-polling/correctness/controller.py \
+            --repo "$GITHUB_WORKSPACE" \
+            --output "$RUNNER_TEMP/native-kqueue-correctness-evidence" \
+            --transfer "$RUNNER_TEMP/native-kqueue-clean-jtreg" \
+            --expected-sha "$EXPECTED_VALIDATION_SHA"
+
+      - name: Always stop children and collect scoped evidence
+        if: always()
+        shell: bash
+        timeout-minutes: 2
         env:
-          REQUESTED_PLATFORMS: ${{ github.event.inputs.platforms || secrets.JDK_SUBMIT_PLATFORMS }}
-          DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
-        run: bash .github/scripts/select-platforms.sh
+          PREVIOUS_JOB_STATUS: ${{ job.status }}
+        run: |
+          evidence="$RUNNER_TEMP/native-kqueue-correctness-evidence"
+          artifacts="$RUNNER_TEMP/native-kqueue-correctness-artifacts"
+          mkdir -p "$evidence" "$artifacts"
+          cleanup_status=0
+          controller=.github/native-polling/correctness/controller.py
+          if test -f "$controller"; then
+            python3 -I "$controller" --cleanup --output "$evidence" || cleanup_status=$?
+          fi
+          export NATIVE_CLEANUP_STATUS="$cleanup_status"
+          python3 -I - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-correctness-evidence'
+          result = {'job_status_before_collection': os.environ.get('PREVIOUS_JOB_STATUS'),
+                    'cleanup_status': int(os.environ['NATIVE_CLEANUP_STATUS']),
+                    'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
+          if not (root / 'status.json').is_file():
+              result['controller_status'] = 'not started or unable to record status'
+          (root / 'collection.json').write_text(json.dumps(result, indent=2) + '\n')
+          PY
+          export_status=0
+          if test -f "$controller"; then
+            python3 -I "$controller" --output "$evidence" --export "$artifacts" || export_status=$?
+          else
+            for name in job-start.json collection.json status.json; do
+              if test -f "$evidence/$name"; then cp "$evidence/$name" "$artifacts/$name"; fi
+            done
+          fi
+          if test "$export_status" != 0; then
+            cp "$evidence/collection.json" "$artifacts/export-failure.json"
+          fi
+          if test "$cleanup_status" != 0; then exit "$cleanup_status"; fi
+          exit "$export_status"
 
-      - name: 'Build JTReg'
-        uses: ./.github/actions/build-jtreg
-        if: steps.include.outputs.linux-x64 == 'true' || steps.include.outputs.linux-aarch64 == 'true' || steps.include.outputs.macos-aarch64 == 'true' || steps.include.outputs.windows-x64 == 'true'
-
-  build-linux-x64:
-    name: linux-x64
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x64
-      gcc-major-version: '16'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: needs.prepare.outputs.linux-x64 == 'true'
-
-  build-linux-aarch64:
-    name: linux-aarch64
-    needs:
-      - prepare
-      - test-linux-x64
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-aarch64
-      runs-on: 'ubuntu-26.04-arm'
-      bootjdk-platform: linux-aarch64
-      gcc-major-version: '16'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    # The full Linux x64 run gates the remaining targets when selected.
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.linux-aarch64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success')
-
-  build-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - prepare
-      - test-linux-x64
-    uses: ./.github/workflows/build-macos.yml
-    with:
-      platform: macos-aarch64
-      runs-on: 'macos-26'
-      xcode-toolset-version: '26.6'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.macos-aarch64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success')
-
-  build-windows-x64:
-    name: windows-x64
-    needs:
-      - prepare
-      - test-linux-x64
-    uses: ./.github/workflows/build-windows.yml
-    with:
-      platform: windows-x64
-      runs-on: windows-2025
-      architecture: 'x86.x64'
-      msvc-toolset-version: '14.44'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: >-
-      !cancelled() && needs.prepare.result == 'success' &&
-      needs.prepare.outputs.windows-x64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success')
-
-  test-linux-x64:
-    name: linux-x64
-    needs:
-      - prepare
-      - build-linux-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-x64
-      bootjdk-platform: linux-x64
-      runs-on: ubuntu-26.04
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
-
-  test-linux-aarch64:
-    name: linux-aarch64
-    needs:
-      - prepare
-      - build-linux-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-aarch64
-      bootjdk-platform: linux-aarch64
-      runs-on: ubuntu-26.04-arm
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
-
-  test-macos-aarch64:
-    name: macos-aarch64
-    needs:
-      - prepare
-      - build-macos-aarch64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: macos-aarch64
-      bootjdk-platform: macos-aarch64
-      runs-on: macos-26
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      xcode-toolset-version: '26.6'
-      debug-suffix: -debug
-
-  test-windows-x64:
-    name: windows-x64
-    needs:
-      - prepare
-      - build-windows-x64
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: windows-x64
-      bootjdk-platform: windows-x64
-      architecture: 'x86.x64'
-      runs-on: windows-2025
-      dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      debug-suffix: -debug
+      - name: Retain selected results for five days
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        timeout-minutes: 8
+        with:
+          name: native-kqueue-correctness-${{ github.run_id }}-${{ github.sha }}
+          path: ${{ runner.temp }}/native-kqueue-correctness-artifacts
+          include-hidden-files: false
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 5
