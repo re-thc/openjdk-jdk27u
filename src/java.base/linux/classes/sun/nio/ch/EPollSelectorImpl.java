@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +80,6 @@ class EPollSelectorImpl extends SelectorImpl {
 
         try {
             this.eventfd = new EventFD();
-            IOUtil.configureBlocking(IOUtil.newFD(eventfd.efd()), false);
         } catch (IOException ioe) {
             EPoll.freePollArray(pollArrayAddress);
             FileDispatcherImpl.closeIntFD(epfd);
