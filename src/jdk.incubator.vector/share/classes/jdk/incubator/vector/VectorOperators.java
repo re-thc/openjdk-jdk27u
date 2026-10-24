@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1105,14 +1106,18 @@ public final class VectorOperators {
             CACHES = new ConversionImpl<?,?>[KIND_LIMIT][LINE_LIMIT][LINE_LIMIT];
 
         private static synchronized void initCaches() {
-            for (var f : VectorOperators.class.getFields()) {
-                if (f.getType() != Conversion.class)  continue;
-                ConversionImpl<?,?> conv;
-                try {
-                    conv = (ConversionImpl) f.get(null);
-                } catch (ReflectiveOperationException ex) {
-                    throw new AssertionError(ex);
-                }
+            // Keep this list in declaration order; ConversionRegistrationTest checks completeness.
+            for (Conversion<?,?> raw : new Conversion<?,?>[] {
+                B2D, B2F, B2I, B2L, B2S,
+                D2B, D2F, D2I, D2L, D2S,
+                F2B, F2D, F2I, F2L, F2S,
+                I2B, I2D, I2F, I2L, I2S,
+                L2B, L2D, L2F, L2I, L2S,
+                S2B, S2D, S2F, S2I, S2L,
+                REINTERPRET_D2L, REINTERPRET_F2I, REINTERPRET_I2F, REINTERPRET_L2D, ZERO_EXTEND_B2I,
+                ZERO_EXTEND_B2L, ZERO_EXTEND_B2S, ZERO_EXTEND_I2L, ZERO_EXTEND_S2I, ZERO_EXTEND_S2L,
+            }) {
+                ConversionImpl<?,?> conv = (ConversionImpl<?,?>) raw;
                 LaneType dom = conv.dom;
                 LaneType ran = conv.ran;
                 int opc = conv.opCodeRaw();
