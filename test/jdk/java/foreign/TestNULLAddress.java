@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +31,14 @@
 
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.*;
 
@@ -59,6 +62,61 @@ public class TestNULLAddress {
         MethodHandle mh = LINKER.downcallHandle(
                 FunctionDescriptor.ofVoid());
         mh.invokeExact(MemorySegment.NULL);
+    }
+
+    @Test
+    public void testNULLViews() throws Throwable {
+        MemorySegment zero = MemorySegment.ofAddress(0);
+        assertNullSymbol(zero);
+        assertNullSymbol(zero.reinterpret(16));
+        assertNullSymbol(zero.reinterpret(16).asReadOnly());
+        MemorySegment scoped;
+        try (Arena arena = Arena.ofConfined()) {
+            scoped = zero.reinterpret(16, arena, null);
+            assertNullSymbol(scoped);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Thread thread = new Thread(() -> {
+                try {
+                    assertNullSymbol(scoped);
+                } catch (Throwable ex) {
+                    failure.set(ex);
+                }
+            });
+            thread.start();
+            thread.join();
+            if (failure.get() != null) throw failure.get();
+        }
+        assertNullSymbol(scoped);
+    }
+
+    private static void assertNullSymbol(MemorySegment symbol) throws Throwable {
+        String message = "Symbol is NULL: " + symbol;
+        IllegalArgumentException bound = expectThrows(IllegalArgumentException.class,
+                () -> LINKER.downcallHandle(symbol, FunctionDescriptor.ofVoid()));
+        assertEquals(bound.getMessage(), message);
+        MethodHandle unbound = LINKER.downcallHandle(FunctionDescriptor.ofVoid());
+        IllegalArgumentException invocation = expectThrows(IllegalArgumentException.class,
+                () -> { unbound.invokeExact(symbol); });
+        assertEquals(invocation.getMessage(), message);
+    }
+
+    @Test
+    public void testNullJavaReference() {
+        MemorySegment symbol = null;
+        expectThrows(NullPointerException.class,
+                () -> LINKER.downcallHandle(symbol, FunctionDescriptor.ofVoid()));
+        MethodHandle unbound = LINKER.downcallHandle(FunctionDescriptor.ofVoid());
+        expectThrows(NullPointerException.class, () -> { unbound.invokeExact(symbol); });
+    }
+
+    @Test
+    public void testZeroAddressHeapSymbol() {
+        MemorySegment heap = MemorySegment.ofArray(new byte[0]);
+        assertEquals(heap.address(), 0L);
+        MethodHandle bound = LINKER.downcallHandle(heap, FunctionDescriptor.ofVoid());
+        IllegalArgumentException invocation = expectThrows(IllegalArgumentException.class,
+                () -> { bound.invokeExact(); });
+        assertEquals(invocation.getMessage(), "Heap segment not allowed: " + heap);
     }
 
     @Test

@@ -522,6 +522,10 @@ $(eval $(call SetupTarget, exploded-image-optimize, \
         buildtools-modules, \
 ))
 
+$(eval $(call SetupTarget, ffm-templates, \
+    MAKEFILE := GenerateFfmTemplates, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-image, \
       MAKEFILE := Coverage, \
@@ -1104,6 +1108,22 @@ else
   # All modules include the main license files from java.base.
   $(JMOD_TARGETS): java.base-copy
 
+  # Target classes are already produced by java.base-java. Generation executes
+  # on BUILD_JDK (the host JDK for cross builds), with those producer classes
+  # staged as a java.base patch. Never depend on runnable-buildjdk here: native
+  # exploded-image completion also depends on these assets.
+  ffm-templates: buildtools-jdk java.base-java
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      ffm-templates: create-buildjdk
+    else
+      ffm-templates: exploded-image-base release-file
+    endif
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    ffm-templates: exploded-image-base release-file
+  endif
+  java.base-jmod exploded-image-optimize: ffm-templates
+
   # jdk.javadoc uses an internal copy of the main license files from java.base.
   jdk.javadoc-copy: java.base-copy
 
@@ -1217,6 +1237,7 @@ demos: demos-jdk
 # The "exploded image" is a locally runnable JDK in $(OUTPUTDIR)/jdk.
 exploded-image-base: $(ALL_MODULES)
 exploded-image: exploded-image-base release-file
+exploded-image: ffm-templates
 # When cross compiling, no need to optimize the exploded image since it won't
 # be runnable on the host platform anyway.
 ifneq ($(COMPILE_TYPE), cross)
