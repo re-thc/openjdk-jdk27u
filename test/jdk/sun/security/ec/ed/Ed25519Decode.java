@@ -64,6 +64,7 @@ public class Ed25519Decode {
         check(ROOT.multiply(ROOT).mod(P).equals(P.subtract(BigInteger.ONE)),
             "square root of -1");
         concurrentFirstUse();
+        testDecodeComparison();
 
         for (int p : new int[] {13, 29, 37}) {
             BigInteger prime = BigInteger.valueOf(p);
@@ -191,20 +192,9 @@ public class Ed25519Decode {
                 var point = new EdECPoint(sign == 1, BigInteger.valueOf(y));
                 byte[] encoded = encode(point);
                 byte[] saved = encoded.clone();
-                try {
-                    AffinePoint actual = ops.decodeAffinePoint(
-                        InvalidKeyException::new, encoded);
-                    check(actual.equals(ops.decodeAffinePoint(
-                        InvalidKeyException::new, point)), "decoding mismatch");
-                } catch (InvalidKeyException e) {
-                    try {
-                        ops.decodeAffinePoint(InvalidKeyException::new, point);
-                        throw new RuntimeException("inconsistent rejection");
-                    } catch (InvalidKeyException expected) {
-                        check(e.getMessage().equals(expected.getMessage()),
-                            "different rejection");
-                    }
-                }
+                compareDecodings(
+                    () -> ops.decodeAffinePoint(InvalidKeyException::new, encoded),
+                    () -> ops.decodeAffinePoint(InvalidKeyException::new, point));
                 check(Arrays.equals(encoded, saved), "input modified");
             }
         }
@@ -223,6 +213,59 @@ public class Ed25519Decode {
         reject(ops, HexFormat.of().parseHex(
             "d85a980182b10ac7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"),
             "Invalid point");
+    }
+
+    @FunctionalInterface
+    private interface Decoder {
+        AffinePoint decode() throws InvalidKeyException;
+    }
+
+    private static void compareDecodings(Decoder bytes, Decoder point)
+            throws InvalidKeyException {
+        AffinePoint actual;
+        try {
+            actual = bytes.decode();
+        } catch (InvalidKeyException e) {
+            try {
+                point.decode();
+            } catch (InvalidKeyException expected) {
+                check(e.getMessage().equals(expected.getMessage()),
+                    "different rejection");
+                return;
+            }
+            throw new RuntimeException("inconsistent rejection");
+        }
+        // An exception here must not be classified as a byte-decode rejection.
+        check(actual.equals(point.decode()), "decoding mismatch");
+    }
+
+    private static void testDecodeComparison() throws InvalidKeyException {
+        IntegerFieldModuloP field = IntegerPolynomial25519.ONE;
+        AffinePoint accepted = new AffinePoint(field.get0(), field.get1());
+        Decoder accept = () -> accepted;
+        InvalidKeyException rejection = new InvalidKeyException("Invalid point");
+        Decoder reject = () -> { throw rejection; };
+        compareDecodings(accept, accept);
+        compareDecodings(reject, reject);
+
+        boolean detected = false;
+        try {
+            compareDecodings(accept, reject);
+        } catch (InvalidKeyException expected) {
+            check(expected == rejection, "wrong point-decode failure");
+            detected = true;
+        }
+        check(detected, "accepted bytes but rejected point was not detected");
+
+        detected = false;
+        try {
+            compareDecodings(reject, accept);
+        } catch (RuntimeException expected) {
+            check(expected.getMessage().equals("inconsistent rejection"),
+                "wrong byte-decode failure");
+            detected = true;
+        }
+        check(detected, "rejected bytes but accepted point was not detected");
     }
 
     private static byte[] encode(EdECPoint point) {
