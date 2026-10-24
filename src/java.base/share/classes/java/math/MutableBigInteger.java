@@ -685,8 +685,8 @@ class MutableBigInteger {
     }
 
     /**
-     * The method is the same as mulsun, except the fact that q array is not
-     * updated, the only result of the method is borrow flag.
+     * The method is the same as mulsub, except that the q array is not
+     * updated; only the borrow is returned.
      */
     private int mulsubBorrow(int[] q, int[] a, int x, int len, int offset) {
         long xLong = x & LONG_MASK;
