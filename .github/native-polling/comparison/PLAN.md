@@ -60,8 +60,10 @@ counts include its wakeup registration. Abort before timing if injection is
 ignored, counts disagree, errors/interruptions occur or workload reach fails.
 These probes are not performance samples or additional correctness qualification.
 Use normal launcher entitlements; do not change signing if interposition fails.
-Check required public SDK headers before building. The interposition contract is
-[Apple's public dyld header](https://github.com/apple-oss-distributions/dyld/blob/main/include/mach-o/dyld-interposing.h);
+Compile the reach helper before either JDK build using compiler-discovered SDK
+headers and verified BootJDK JNI headers. The local plain-arm64 Mach-O records use
+the same interposition ABI; the private dyld header is not an SDK prerequisite.
+The interposition contract is [Apple's dyld header](https://github.com/apple-oss-distributions/dyld/blob/main/include/mach-o/dyld-interposing.h);
 Darwin RSS units follow [Apple's getrusage manual](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/man/man2/getrusage.2).
 
 DYLD insertion is set only on the final direct Java child exec; protected shell
@@ -103,6 +105,8 @@ teardown leave90seconds of the2160-second phase for receipts/aggregation. Actual
 TCP phases each have a two-second drain bound; peer teardown has a global two-
 second join. Phase/global limits always override individual command limits.
 
+The one clang helper compilation moves into setup before either product build;
+there is no additional helper compilation or prerequisite acquisition.
 Additional direct Java commands:10 untimed reach JVMs, BootJDK and both image
 version queries (three), and one javac compilation. Thus134 explicit Java/javac
 launches plus build-internal Java tools, which are bounded by build phases rather

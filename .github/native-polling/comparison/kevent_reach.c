@@ -4,8 +4,11 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/event.h>
-#include <mach-o/dyld-interposing.h>
-#include "KeventReach.h"
+#include <jni.h>
+
+#if !defined(__arm64__) || defined(__arm64e__)
+#error "This reach helper requires the plain arm64 ABI"
+#endif
 
 /* Main-thread, selector-fd scoped. Counting is disabled before returning data. */
 static _Thread_local int enabled, target;
@@ -23,7 +26,6 @@ static int observed_kqueue(void) {
     errno = saved_errno;
     return result;
 }
-DYLD_INTERPOSE(observed_kqueue, kqueue);
 
 static int observed_kevent(int fd, const struct kevent *changes, int nchanges,
                            struct kevent *events, int capacity, const struct timespec *timeout) {
@@ -60,7 +62,18 @@ static int observed_kevent(int fd, const struct kevent *changes, int nchanges,
     errno = saved_errno;
     return result;
 }
-DYLD_INTERPOSE(observed_kevent, kevent);
+/* The arm64 Mach-O interposing section stores replacement/original pointer pairs.
+ * Declare the two records locally; dyld-interposing.h is a private SDK header.
+ */
+__attribute__((used, section("__DATA,__interpose,interposing")))
+static const struct {
+    const void *replacement;
+    const void *original;
+} interpose_targets[] = {
+    { (const void *)&observed_kqueue, (const void *)&kqueue },
+    { (const void *)&observed_kevent, (const void *)&kevent }
+};
+_Static_assert(sizeof(interpose_targets) == 4 * sizeof(void *), "Two pointer pairs required");
 
 JNIEXPORT jint JNICALL Java_KeventReach_abi(JNIEnv *env, jclass cls) {
     (void)env; (void)cls; return 1;

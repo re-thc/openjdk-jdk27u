@@ -29,7 +29,7 @@ Failure, write_json, sha256, git = common.Failure, common.write_json, common.sha
 BOOT_URL, BOOT_SHA, BREW_VERSIONS = common.BOOT_URL, common.BOOT_SHA, common.BREW_VERSIONS
 BASELINE = 'a1d7a297b6a22d72bde8a051d6aa3a910cdcf77c'
 CANDIDATE = 'cf218dc255de70fcd52903e5d85ef4aef11b564c'
-PREVIOUS = '1146404ae7f532458d7fe60daa74af5b8df04a42'
+PREVIOUS = '5fc19adbd7b6b95e5ebe2003c8162c581d05ae8b'
 BRANCH = 'refs/heads/qualify/native-kqueue-comparison-once'
 CASES = ('stable', 'single', 'bulk', 'backpressure', 'construct')
 CONF = 'native-kqueue-comparison-release'
@@ -62,7 +62,7 @@ def validate_sources(repo, expected):
     if not re.fullmatch(r'[0-9a-f]{40}', expected or '') or git(repo, 'rev-parse', 'HEAD') != expected:
         raise Failure('Exact validation source required')
     if git(repo, 'rev-parse', 'HEAD^') != PREVIOUS or git(repo, 'status', '--porcelain'):
-        raise Failure('Expected clean comparison child of qualified correctness controller')
+        raise Failure('Expected clean comparison child of reviewed validation commit')
     changed = git(repo, 'diff', '--name-only', PREVIOUS, expected).splitlines()
     if not changed or any(not (p == '.github/workflows/main.yml' or p.startswith('.github/native-polling/comparison/')) for p in changed):
         raise Failure('Comparison commit changes unrelated sources')
@@ -102,6 +102,13 @@ def schedule(workspace):
                     'cap': 12 if case == 'construct' else 18,
                     'argv': java_command(workspace, arm, case, False)})
     return rows
+
+
+def reach_compile_command(helper, boot):
+    helper, boot = Path(helper), Path(boot)
+    return list(map(str, ['xcrun', 'clang', '-arch', 'arm64', '-std=c11', '-Wall', '-Wextra', '-Werror', '-O2', '-dynamiclib',
+        '-I' + str(boot / 'include'), '-I' + str(boot / 'include/darwin'),
+        CODE / 'kevent_reach.c', '-o', helper / 'libKeventReach.dylib']))
 
 
 def java_command(workspace, arm, case, trace):
@@ -266,8 +273,6 @@ class Comparison:
             xcode = self.out('xcode-version', ['xcodebuild', '-version'])
             sdk = self.out('sdk-version', ['xcrun', '--sdk', 'macosx', '--show-sdk-version'])
             sdk_path = Path(self.out('sdk-path', ['xcrun', '--sdk', 'macosx', '--show-sdk-path']))
-            if any(not (sdk_path / 'usr/include' / name).is_file() for name in ('sys/event.h', 'mach-o/dyld-interposing.h')):
-                raise Failure('Required public kqueue/dyld SDK headers unavailable')
             if xcode.splitlines() != ['Xcode 26.6', 'Build version 17F113'] or sdk != '26.5':
                 raise Failure('Pinned Xcode26.6(17F113)/SDK26.5 required')
             for tool in ('clang', 'clang++', 'ar', 'nm', 'strip', 'dsymutil', 'mig', 'SetFile', 'otool',
@@ -301,7 +306,7 @@ class Comparison:
             write_json(self.output / 'toolchain.json', {'xcode': xcode, 'sdk': sdk, 'homebrew': BREW_VERSIONS,
                 'macos': self.out('macos-version', ['sw_vers', '-productVersion']),
                 'clang': self.out('clang-version', ['xcrun', 'clang', '--version']), 'jobs': self.jobs,
-                'sdk_headers': ['sys/event.h', 'mach-o/dyld-interposing.h'],
+                'sdk_path': str(sdk_path),
                 'open_files': {'before_soft': soft, 'hard': hard, 'soft': resource.getrlimit(resource.RLIMIT_NOFILE)[0]}})
             package = self.workspace / 'bootjdk.tar.gz'
             self.runner.run('download-bootjdk', ['curl', '--fail', '--location', '--connect-timeout', '15',
@@ -322,6 +327,13 @@ class Comparison:
                 'version': fields['JAVA_VERSION'], 'os': fields['OS_NAME'], 'arch': fields['OS_ARCH']})
             self.runner.env['JAVA_HOME'] = str(self.boot)
             self.out('bootjdk-version', [self.boot / 'bin/java', '-version'])
+            helper = self.workspace / 'helper'
+            helper.mkdir()
+            # Compiler discovery verifies public SDK/JNI headers before either product build.
+            self.runner.run('compile-reach', reach_compile_command(helper, self.boot), cap=30)
+            write_json(self.output / 'reach-prerequisite.json', {'compiled': True, 'arch': 'arm64',
+                'sdk': sdk, 'sdk_path': str(sdk_path), 'jni_headers': 'checksum-verified BootJDK26',
+                'helper_sha256': sha256(helper / 'libKeventReach.dylib')})
             self.runner.run('baseline-worktree', ['git', '-C', self.repo, 'worktree', 'add', '--detach', self.source, BASELINE], cap=60)
             for name in SOURCES:
                 target = self.output / 'validation-source' / name
@@ -379,13 +391,11 @@ class Comparison:
         with self.runner.phase('reach', PHASES['reach']):
             self.image_gates()
             helper = self.workspace / 'helper'
-            helper.mkdir()
+            if not (helper / 'libKeventReach.dylib').is_file():
+                raise Failure('Setup did not compile the required reach helper')
             candidate = self.workspace / 'images/candidate'
-            self.runner.run('compile-workload', [candidate / 'bin/javac', '-h', helper, '-d', helper,
+            self.runner.run('compile-workload', [candidate / 'bin/javac', '-d', helper,
                 CODE / 'NativePollingBench.java', CODE / 'KeventReach.java'], cap=30)
-            self.runner.run('compile-reach', ['xcrun', 'clang', '-std=c11', '-Wall', '-Wextra', '-Werror', '-O2', '-dynamiclib',
-                '-I' + str(helper), '-I' + str(candidate / 'include'), '-I' + str(candidate / 'include/darwin'),
-                CODE / 'kevent_reach.c', '-o', helper / 'libKeventReach.dylib'], cap=30)
             write_json(self.output / 'helper-identities.json', {p.name: sha256(p) for p in helper.iterdir() if p.is_file()})
             values = []
             self.runner.env['NATIVE_KQUEUE_TRACE_DYLIB'] = str(helper / 'libKeventReach.dylib')
