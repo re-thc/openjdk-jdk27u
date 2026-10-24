@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1460,6 +1461,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public boolean isExhaustive;
         public boolean patternSwitch;
         public boolean wasEnumSelector;
+        /** Set by TransPatterns for a nullable enum expression that Lower can
+         *  translate using a retryable name-based map instead of a bootstrap.
+         */
+        public boolean isolatedEnumMapping;
         protected JCSwitchExpression(JCExpression selector, List<JCCase> cases) {
             this.selector = selector;
             this.cases = cases;
