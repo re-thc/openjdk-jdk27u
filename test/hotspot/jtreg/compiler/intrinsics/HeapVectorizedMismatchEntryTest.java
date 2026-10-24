@@ -50,6 +50,7 @@ public class HeapVectorizedMismatchEntryTest {
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final int SIZE = 65536 + 32;
     private static final byte[] BA = new byte[SIZE], BB = new byte[SIZE];
+    private static final byte[] ALLOCATED_COMPARE = new byte[129];
     private static final boolean[] ZA = new boolean[SIZE], ZB = new boolean[SIZE];
     private static final char[] CA = new char[SIZE], CB = new char[SIZE];
     private static final short[] SA = new short[SIZE], SB = new short[SIZE];
@@ -125,6 +126,13 @@ public class HeapVectorizedMismatchEntryTest {
     }
 
     @Test
+    @IR(counts = {HEAP, "1"}, failOn = {GENERIC}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapAllocatedCompare(byte[] b) {
+        // The local allocation makes escape analysis process the heap leaf's arguments.
+        return Arrays.compareUnsigned(new byte[129], b);
+    }
+
+    @Test
     @IR(counts = {GENERIC, "1"}, failOn = {HEAP}, phase = CompilePhase.BEFORE_MATCHING)
     public static int nativeBytes(long a, long b, int length) {
         return ArraysSupport.vectorizedMismatch(null, a, null, b, length, 0);
@@ -139,6 +147,7 @@ public class HeapVectorizedMismatchEntryTest {
     private static int warmups;
 
     @Run(test = {"heapBytes", "heapChars", "heapBooleans", "heapShorts", "heapInts", "heapLongs", "heapFloats", "heapDoubles",
+                 "heapAllocatedCompare",
                  "nativeBytes", "nullableBytes"})
     @Warmup(10000)
     public static void run(RunInfo info) {
@@ -176,6 +185,11 @@ public class HeapVectorizedMismatchEntryTest {
             heapDoubles(DA, DB, from, length);
             FA[at] = FB[at] = 0.0f;
             DA[at] = DB[at] = 0.0;
+            int compareAt = 1 + (i & 127);
+            int value = (i & 1) == 0 ? 0 : 0x80;
+            ALLOCATED_COMPARE[compareAt] = (byte)value;
+            check(heapAllocatedCompare(ALLOCATED_COMPARE), -value);
+            ALLOCATED_COMPARE[compareAt] = 0;
             nativeBytes(NA.address(), NB.address(), length);
             byte[] a = (i & 1) == 0 ? BA : null;
             byte[] b = (i & 2) == 0 ? BB : null;
@@ -226,6 +240,14 @@ public class HeapVectorizedMismatchEntryTest {
     }
 
     private static void verify() {
+        check(heapAllocatedCompare(ALLOCATED_COMPARE), 0);
+        for (int at : new int[] {0, 1, 64, 128}) {
+            for (int value : new int[] {0x80, 0xff}) {
+                ALLOCATED_COMPARE[at] = (byte)value;
+                check(heapAllocatedCompare(ALLOCATED_COMPARE), -value);
+                ALLOCATED_COMPARE[at] = 0;
+            }
+        }
         for (int from : new int[] {0, 1, 7}) {
             for (int length : LENGTHS) {
                 checkHeap(from, length, -1);
@@ -307,6 +329,6 @@ public class HeapVectorizedMismatchEntryTest {
         TestFramework.runWithFlags("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "--add-exports=java.base/jdk.internal.util=ALL-UNNAMED",
                 "-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:ArrayOperationPartialInlineSize=0");
+                "-XX:+DoEscapeAnalysis", "-XX:ArrayOperationPartialInlineSize=0");
     }
 }
