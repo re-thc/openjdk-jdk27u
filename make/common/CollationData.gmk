@@ -1,0 +1,90 @@
+
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+COLLATION_BASE_SRC := $(TOPDIR)/src/java.base/share/classes
+COLLATION_LD_SRC := $(TOPDIR)/src/jdk.localedata/share/classes
+COLLATION_SUPPORT := $(SUPPORT_OUTPUTDIR)/collation
+COLLATION_IDENTITY := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/text/resources/CollationDataIdentity.java
+COLLATION_IDENTITY_DONE := $(COLLATION_SUPPORT)/identity/_the.identity
+COLLATION_METADATA := $(COLLATION_SUPPORT)/identity
+COLLATION_STAGE := $(COLLATION_SUPPORT)/data
+COLLATION_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/collation_classes
+COLLATION_DONE := $(COLLATION_STAGE)/_the.collation
+COLLATION_INPUT_DIRS := \
+    $(COLLATION_BASE_SRC)/java/text \
+    $(COLLATION_BASE_SRC)/jdk/internal/icu \
+    $(COLLATION_BASE_SRC)/sun/text \
+    $(COLLATION_LD_SRC)/sun/text/resources/ext \
+    $(TOPDIR)/src/java.base/share/data/unicodedata \
+    $(TOPDIR)/make/jdk/src/classes/build/tools/generatecharacter \
+    $(TOPDIR)/make/jdk/src/classes/build/tools/generatecollation
+# Conservative dependencies include all files in these small source trees.
+COLLATION_INPUTS := $(call FindFiles, $(COLLATION_INPUT_DIRS)) \
+    $(wildcard $(COLLATION_BASE_SRC)/java/lang/Character*) \
+    $(wildcard $(COLLATION_BASE_SRC)/jdk/internal/access/*.java) \
+    $(COLLATION_BASE_SRC)/sun/util/locale/provider/CollationRules.java \
+    $(COLLATION_BASE_SRC)/sun/util/locale/provider/CollatorProviderImpl.java \
+    $(TOPDIR)/make/common/CollationData.gmk \
+    $(TOPDIR)/make/Main.gmk $(TOPDIR)/make/ToolsJdk.gmk \
+    $(TOPDIR)/make/modules/java.base/Gensrc.gmk \
+    $(TOPDIR)/make/modules/java.base/Gendata.gmk \
+    $(TOPDIR)/make/modules/java.base/gensrc/GensrcCharacterData.gmk \
+    $(TOPDIR)/make/modules/java.base/gensrc/GensrcCollationData.gmk \
+    $(TOPDIR)/make/modules/java.base/gendata/GendataCollationData.gmk \
+    $(TOPDIR)/make/modules/jdk.localedata/Gendata.gmk
+
+# A stable list fingerprint also notices removed inputs, which ordinary file
+# prerequisites cannot detect. It contains relative names, never build paths.
+COLLATION_INPUT_NAMES := $(sort $(patsubst $(TOPDIR)/%, %, $(COLLATION_INPUTS)))
+COLLATION_INPUT_LIST_DEP := $(call DependOnVariable, COLLATION_INPUT_NAMES, \
+    $(COLLATION_SUPPORT)/identity/input-list.vardeps)
+
+COLLATION_TEXT_CLASSES := Collator RuleBasedCollator RBCollationTables RBTableBuilder \
+    MergeCollation PatternEntry EntryPair CollationElementIterator CollationKey \
+    RuleBasedCollationKey Normalizer CharacterIterator StringCharacterIterator
+COLLATION_BASE_FILES := $(addprefix java/text/, $(addsuffix .java, $(COLLATION_TEXT_CLASSES))) \
+    java/lang/Character.java java/lang/CharacterData.java \
+    java/lang/CharacterDataUndefined.java java/lang/CharacterDataPrivateUse.java \
+    $(patsubst $(COLLATION_BASE_SRC)/%, %, $(filter %.java, \
+        $(call FindFiles, $(COLLATION_BASE_SRC)/jdk/internal/icu))) \
+    jdk/internal/access/SharedSecrets.java jdk/internal/access/JavaTextAccess.java \
+    jdk/internal/access/JavaSecurityAlgorithmParametersAccess.java \
+    $(addprefix sun/text/, $(addsuffix .java, UCompactIntArray IntHashtable \
+        ComposedCharIter CollatorUtilities Normalizer)) \
+    sun/util/locale/provider/CollationRules.java \
+    sun/util/locale/provider/CollatorProviderImpl.java \
+    $(patsubst $(COLLATION_BASE_SRC)/%, %, $(wildcard \
+        $(COLLATION_BASE_SRC)/sun/text/resources/CollationData*.java))
+COLLATION_GENERATED_FILES := $(addprefix $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/, \
+    $(addsuffix .java, CharacterDataLatin1 CharacterData00 CharacterData01 \
+        CharacterData02 CharacterData03 CharacterData0E)) $(COLLATION_IDENTITY)
+COLLATION_LD_FILES := $(patsubst $(COLLATION_LD_SRC)/%, %, $(wildcard \
+    $(COLLATION_LD_SRC)/sun/text/resources/ext/CollationData*.java))
+
+endif
+include MakeIncludeEnd.gmk

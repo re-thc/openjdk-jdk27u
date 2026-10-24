@@ -1,0 +1,100 @@
+
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+include CollationData.gmk
+
+# Discard package trees when the target identity changes. Deleted/renamed
+# classes and normalization resources must never survive in the build patch.
+# Compiler bookkeeping stays at the root, outside these package directories.
+COLLATION_PREPARED := $(COLLATION_SUPPORT)/_the.prepared
+$(COLLATION_PREPARED): $(COLLATION_IDENTITY) $(COLLATION_INPUT_LIST_DEP)
+	$(call MakeDir, $(@D))
+	$(RM) -r $(addprefix $(COLLATION_CLASSES)/java.base/, java jdk sun) \
+	    $(COLLATION_CLASSES)/jdk.localedata/sun
+	$(TOUCH) $@
+
+# The boot VM supplies execution only: Character, normalization, builder,
+# codec and rule bundles all come from the target checkout and its gensrc.
+$(eval $(call SetupJavaCompilation, BUILD_COLLATION_BASE, \
+    COMPILER := bootjdk, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+    SRC := $(COLLATION_BASE_SRC) $(SUPPORT_OUTPUTDIR)/gensrc/java.base, \
+    INCLUDE_FILES := $(COLLATION_BASE_FILES), \
+    EXTRA_FILES := $(COLLATION_GENERATED_FILES), \
+    BIN := $(COLLATION_CLASSES)/java.base, \
+    JAVAC_FLAGS := --patch-module java.base=$(call PathList, \
+        $(COLLATION_BASE_SRC) $(SUPPORT_OUTPUTDIR)/gensrc/java.base), \
+    DISABLED_WARNINGS := options, \
+    EXTRA_DEPS := $(COLLATION_PREPARED), \
+))
+
+$(eval $(call SetupJavaCompilation, BUILD_COLLATION_LD, \
+    COMPILER := bootjdk, \
+    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+    SRC := $(COLLATION_LD_SRC), \
+    INCLUDE_FILES := $(COLLATION_LD_FILES), \
+    BIN := $(COLLATION_CLASSES)/jdk.localedata, \
+    JAVAC_FLAGS := --patch-module jdk.localedata=$(COLLATION_LD_SRC), \
+    DISABLED_WARNINGS := options, \
+    EXTRA_DEPS := $(COLLATION_PREPARED), \
+))
+
+COLLATION_ICU_DATA := $(COLLATION_BASE_SRC)/jdk/internal/icu/impl/data
+COLLATION_VM_ARGS := \
+    --patch-module java.base=$(COLLATION_CLASSES)/java.base \
+    --add-modules jdk.localedata \
+    --patch-module jdk.localedata=$(COLLATION_CLASSES)/jdk.localedata \
+    --add-opens java.base/java.text=ALL-UNNAMED \
+    --add-opens java.base/sun.util.locale.provider=ALL-UNNAMED \
+    --add-exports java.base/sun.text.resources=ALL-UNNAMED \
+    --add-exports jdk.localedata/sun.text.resources.ext=ALL-UNNAMED
+
+$(COLLATION_DONE): $(BUILD_COLLATION_BASE) $(BUILD_COLLATION_LD) \
+    $(BUILD_TOOLS_JDK) $(COLLATION_INPUTS) $(COLLATION_IDENTITY)
+	$(call MakeDir, $(COLLATION_CLASSES)/java.base/jdk/internal/icu/impl $(COLLATION_STAGE))
+	$(RM) -r $(COLLATION_CLASSES)/java.base/jdk/internal/icu/impl/data
+	$(CP) -R $(COLLATION_ICU_DATA) $(COLLATION_CLASSES)/java.base/jdk/internal/icu/impl/
+	$(call LogInfo, Generating target collation tables)
+	$(RM) -r $(COLLATION_STAGE)/java.base $(COLLATION_STAGE)/jdk.localedata
+	$(TOOL_GENERATECOLLATIONTABLES) $(COLLATION_VM_ARGS) \
+	    -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+	    build.tools.generatecollation.GenerateCollationTables \
+	    $(COLLATION_STAGE) $(COLLATION_METADATA)/bundles.txt \
+	    $(COLLATION_METADATA)/sources.sha256
+	$(TOUCH) $@
+
+COLLATION_BASE_DONE := $(JDK_OUTPUTDIR)/modules/java.base/sun/text/resources/_the.collation
+$(COLLATION_BASE_DONE): $(COLLATION_DONE)
+	$(call MakeDir, $(@D))
+	$(RM) $(@D)/collation-*.bin
+	$(CP) $(COLLATION_STAGE)/java.base/sun/text/resources/collation-*.bin $(@D)/
+	$(TOUCH) $@
+
+TARGETS += $(COLLATION_BASE_DONE)
+
+endif
+include MakeIncludeEnd.gmk

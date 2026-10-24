@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,22 @@
 
 package java.text;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Vector;
+import java.util.WeakHashMap;
+import jdk.internal.loader.BuiltinClassLoader;
 import sun.text.UCompactIntArray;
 import sun.text.IntHashtable;
+import sun.text.resources.CollationDataIdentity;
 
 /**
  * This class contains the static state of a RuleBasedCollator: The various
@@ -79,12 +92,277 @@ final class RBCollationTables {
     public RBCollationTables(String rules, int decmp) throws ParseException {
         this.rules = rules;
 
-        RBTableBuilder builder = new RBTableBuilder(new BuildAPI());
-        builder.build(rules, decmp); // this object is filled in through
-                                            // the BuildAPI object
+        BuildAPI data = new BuildAPI();
+        new RBTableBuilder(data).build(rules, decmp);
+        frenchSec = data.frenchSec;
+        seAsianSwapping = data.seAsianSwapping;
+        mapping = data.mapping;
+        contractTable = data.contractTable;
+        expandTable = data.expandTable;
+        contractFlags = data.contractFlags;
+        maxSecOrder = data.maxSecOrder;
+        maxTerOrder = data.maxTerOrder;
     }
 
-    final class BuildAPI {
+    // Load only provider-owned resources. Public
+    // RuleBasedCollator constructors always use RBTableBuilder.
+    private static final int MAGIC = 0x52424354;
+    private static final int SCHEMA = 2;
+    private static final String UNICODE_VERSION = "17.0.0";
+    private static final int MAX_RESOURCE_BYTES = 32 * 1024 * 1024;
+    private static final int MAX_ENTRIES = 1_000_000;
+    // Neither the rules nor their tables outlive the collators that own them.
+    // In particular, this cache must not defeat Collator's existing soft cache.
+    private static final WeakHashMap<String, WeakReference<RBCollationTables>> BUILT_IN =
+            new WeakHashMap<>();
+
+    static RBCollationTables forBuiltIn(String rules) throws ParseException {
+        RBCollationTables loaded;
+        synchronized (BUILT_IN) {
+            WeakReference<RBCollationTables> reference = BUILT_IN.get(rules);
+            loaded = reference == null ? null : reference.get();
+            if (loaded == null) {
+                BUILT_IN.remove(rules);
+                // Serialize first loads, including loads for different rules,
+                // so racing callers materialize each live table only once.
+                // Ordinary Collator locale-cache hits do not take this lock.
+                loaded = load(rules);
+                if (loaded != null) {
+                    // Use the table's own exact rules string as the weak key.
+                    // A live collator then keeps this key and table reachable.
+                    BUILT_IN.put(loaded.rules, new WeakReference<>(loaded));
+                }
+            }
+        }
+        // Missing resources retain neither the rules nor a cache entry, and
+        // legacy parsing runs outside the shared resource-loading monitor.
+        return loaded != null ? loaded :
+                new RBCollationTables(rules, Collator.CANONICAL_DECOMPOSITION);
+    }
+
+    static String resourceName(String rules) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (int i = 0; i < rules.length(); i++) {
+                char c = rules.charAt(i);
+                digest.update((byte)(c >>> 8));
+                digest.update((byte)c);
+            }
+            return "/sun/text/resources/collation-" +
+                    HexFormat.of().formatHex(digest.digest()) + ".bin";
+        } catch (NoSuchAlgorithmException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    private static RBCollationTables load(String rules) {
+        try (InputStream stream = openResource(resourceName(rules))) {
+            if (stream == null) return null;
+            byte[] bytes = stream.readNBytes(MAX_RESOURCE_BYTES + 1);
+            if (bytes.length > MAX_RESOURCE_BYTES) return null;
+            try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes))) {
+                return readFrom(in, rules);
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            // Missing, stale, or malformed resources retain the legacy builder.
+            return null;
+        }
+    }
+
+    private static InputStream openResource(String name) throws IOException {
+        InputStream stream = RBCollationTables.class.getResourceAsStream(name);
+        if (stream != null) return stream;
+        Module localedata = ModuleLayer.boot().findModule("jdk.localedata").orElse(null);
+        if (localedata != null && localedata.getClassLoader() instanceof BuiltinClassLoader loader) {
+            String filename = name.substring(name.lastIndexOf('/') + 1);
+            return loader.findResourceAsStream(localedata.getName(),
+                    "sun/text/resources/ext/" + filename);
+        }
+        return null;
+    }
+
+    // Package-private build-time codec; no Java object serialization is used.
+    void writeTo(DataOutputStream out) throws IOException {
+        out.writeInt(MAGIC);
+        out.writeInt(SCHEMA);
+        writeString(out, UNICODE_VERSION);
+        writeString(out, CollationDataIdentity.INPUTS_SHA256);
+        writeString(out, rules);
+        out.writeBoolean(frenchSec);
+        out.writeBoolean(seAsianSwapping);
+        out.writeShort(maxSecOrder);
+        out.writeShort(maxTerOrder);
+        mapping.writeTo(out);
+        contractFlags.writeTo(out);
+        out.writeInt(contractTable == null ? -1 : contractTable.size());
+        if (contractTable != null) {
+            for (Vector<EntryPair> list : contractTable) {
+                out.writeInt(list.size());
+                for (EntryPair pair : list) {
+                    writeString(out, pair.entryName);
+                    out.writeInt(pair.value);
+                    out.writeBoolean(pair.fwd);
+                }
+            }
+        }
+        out.writeInt(expandTable == null ? -1 : expandTable.size());
+        if (expandTable != null) {
+            for (int[] list : expandTable) {
+                out.writeInt(list.length);
+                for (int value : list) out.writeInt(value);
+            }
+        }
+    }
+
+    static RBCollationTables readFrom(DataInputStream in, String rules) throws IOException {
+        if (in.readInt() != MAGIC || in.readInt() != SCHEMA ||
+                !UNICODE_VERSION.equals(readString(in)) ||
+                !CollationDataIdentity.INPUTS_SHA256.equals(readString(in)) ||
+                !rules.equals(readString(in))) {
+            throw new IOException("Incompatible collation resource");
+        }
+        RBCollationTables tables = new RBCollationTables(in, rules);
+        if (in.read() != -1) throw new IOException("Trailing collation resource data");
+        return tables;
+    }
+
+    private RBCollationTables(DataInputStream in, String rules) throws IOException {
+        this.rules = rules;
+        frenchSec = in.readBoolean();
+        seAsianSwapping = in.readBoolean();
+        maxSecOrder = in.readShort();
+        maxTerOrder = in.readShort();
+        mapping = UCompactIntArray.readFrom(in);
+        contractFlags = IntHashtable.readFrom(in);
+        int count = readCount(in, true);
+        contractTable = count == -1 ? null : new Vector<>(count);
+        for (int i = 0; i < count; i++) {
+            int length = readCount(in, false);
+            if (length == 0) throw new IOException("Empty contraction list");
+            Vector<EntryPair> list = new Vector<>(length);
+            for (int j = 0; j < length; j++) {
+                list.add(new EntryPair(readString(in), in.readInt(), in.readBoolean()));
+            }
+            contractTable.add(list);
+        }
+        count = readCount(in, true);
+        expandTable = count == -1 ? null : new Vector<>(count);
+        for (int i = 0; i < count; i++) {
+            int length = readCount(in, false);
+            if (length == 0) throw new IOException("Empty expansion list");
+            int[] list = new int[length];
+            for (int j = 0; j < length; j++) list[j] = in.readInt();
+            expandTable.add(list);
+        }
+        // Validate every mapping reference before publishing shared tables.
+        for (int c = 0; c <= Character.MAX_CODE_POINT; c++) {
+            checkOrder(mapping.elementAt(c));
+        }
+        if (contractTable != null) {
+            for (int i = 0; i < contractTable.size(); i++) {
+                validateContractions(i, contractTable.elementAt(i));
+            }
+        }
+        // Expansion elements are emitted directly by the iterator, rather than
+        // interpreted as mapping references. Preserve every builder-produced
+        // int, including values in the reserved mapping-reference ranges.
+    }
+
+    private void validateContractions(int index, Vector<EntryPair> list) throws IOException {
+        EntryPair first = list.firstElement();
+        String base = first.entryName;
+        checkName(base);
+        if (!first.fwd || base.length() != Character.charCount(base.codePointAt(0)) ||
+                mapping.elementAt(base.codePointAt(0)) != CONTRACTCHARINDEX + index) {
+            throw new IOException("Invalid contraction base");
+        }
+        int longest = list.lastElement().entryName.length();
+        HashSet<String> forward = new HashSet<>();
+        HashSet<String> backward = new HashSet<>();
+        for (int i = 0; i < list.size(); i++) {
+            EntryPair pair = list.elementAt(i);
+            checkName(pair.entryName);
+            if (!pair.entryName.startsWith(base) || pair.entryName.length() > longest ||
+                    !(pair.fwd ? forward : backward).add(pair.entryName)) {
+                throw new IOException("Invalid contraction name or ordering");
+            }
+            // Iterators resolve contractions once, then possibly an expansion.
+            if (pair.value >= CONTRACTCHARINDEX) {
+                throw new IOException("Nested contraction reference");
+            }
+            checkOrder(pair.value);
+            if (i > 0) {
+                for (int offset = 0; offset < pair.entryName.length();) {
+                    int c = pair.entryName.codePointAt(offset);
+                    if (contractFlags.get(c) != 1) {
+                        throw new IOException("Missing contraction character flag");
+                    }
+                    offset += Character.charCount(c);
+                }
+            }
+        }
+    }
+
+    private static void checkName(String name) throws IOException {
+        if (name.isEmpty()) throw new IOException("Empty contraction name");
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (Character.isHighSurrogate(c)) {
+                if (++i == name.length() || !Character.isLowSurrogate(name.charAt(i))) {
+                    throw new IOException("Malformed contraction name");
+                }
+            } else if (Character.isLowSurrogate(c)) {
+                throw new IOException("Malformed contraction name");
+            }
+        }
+    }
+
+    private void checkOrder(int order) throws IOException {
+        if (order < 0 && order != UNMAPPED) {
+            throw new IOException("Invalid negative collation order");
+        }
+        if (order >= CONTRACTCHARINDEX) {
+            if (contractTable == null || order - CONTRACTCHARINDEX >= contractTable.size()) {
+                throw new IOException("Invalid contraction reference");
+            }
+        } else if (order >= EXPANDCHARINDEX) {
+            if (expandTable == null || order - EXPANDCHARINDEX >= expandTable.size()) {
+                throw new IOException("Invalid expansion reference");
+            }
+        }
+    }
+
+    private static int readCount(DataInputStream in, boolean nullable) throws IOException {
+        int count = in.readInt();
+        if (count < (nullable ? -1 : 0) || count > MAX_ENTRIES) {
+            throw new IOException("Invalid collation resource length");
+        }
+        return count;
+    }
+
+    private static String readString(DataInputStream in) throws IOException {
+        int length = readCount(in, false);
+        char[] chars = new char[length];
+        for (int i = 0; i < length; i++) chars[i] = in.readChar();
+        return new String(chars);
+    }
+
+    private static void writeString(DataOutputStream out, String value) throws IOException {
+        if (value.length() > MAX_ENTRIES) throw new IOException("Collation string too long");
+        out.writeInt(value.length());
+        for (int i = 0; i < value.length(); i++) out.writeChar(value.charAt(i));
+    }
+
+    static final class BuildAPI {
+        private boolean frenchSec;
+        private boolean seAsianSwapping;
+        private UCompactIntArray mapping;
+        private Vector<Vector<EntryPair>> contractTable;
+        private Vector<int[]> expandTable;
+        private IntHashtable contractFlags;
+        private short maxSecOrder;
+        private short maxTerOrder;
+
         /**
          * Private constructor.  Prevents anyone else besides RBTableBuilder
          * from gaining direct access to the internals of this class.
@@ -287,15 +565,15 @@ final class RBCollationTables {
     // ==============================================================
     // instance variables
     // ==============================================================
-    private String rules = null;
-    private boolean frenchSec = false;
-    private boolean seAsianSwapping = false;
+    private final String rules;
+    private final boolean frenchSec;
+    private final boolean seAsianSwapping;
 
-    private UCompactIntArray mapping = null;
-    private Vector<Vector<EntryPair>> contractTable = null;
-    private Vector<int[]> expandTable = null;
-    private IntHashtable contractFlags = null;
+    private final UCompactIntArray mapping;
+    private final Vector<Vector<EntryPair>> contractTable;
+    private final Vector<int[]> expandTable;
+    private final IntHashtable contractFlags;
 
-    private short maxSecOrder = 0;
-    private short maxTerOrder = 0;
+    private final short maxSecOrder;
+    private final short maxTerOrder;
 }

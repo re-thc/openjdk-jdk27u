@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,13 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.IllformedLocaleException;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.nio.charset.StandardCharsets;
 
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.ResourceBundle.Control;
@@ -89,6 +91,9 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
         "sun.util.resources.ext",
         "sun.util.resources.provider");
     private static final String METAINFONAME = "LocaleDataMetaInfo";
+    private static final String COLLATION_PREFIX =
+        "/jdk.localedata/sun/text/resources/ext/collation-";
+    private static final String COLLATION_INDEX = COLLATION_PREFIX + "index.txt";
     private static final List<String> META_FILES = List.of(
         ".+module-info.class",
         ".+LocaleDataProvider.class",
@@ -99,6 +104,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
         ".+sun/text/resources/cldr/ext/[^_]+_",
         ".+sun/util/resources/cldr/ext/[^_]+_");
     private Predicate<String> predicate;
+    private Set<String> collationResources = Set.of();
     private String userParam;
     private List<Locale.LanguageRange> priorityList;
 
@@ -156,7 +162,9 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
         in.transformAndCopy((resource) -> {
             if (resource.moduleName().equals(MODULENAME)) {
                 String path = resource.path();
-                resource = predicate.test(path) ? resource: null;
+                boolean included = path.startsWith(COLLATION_PREFIX) && path.endsWith(".bin")
+                        ? collationResources.contains(path) : predicate.test(path);
+                resource = included ? resource : null;
                 if (resource != null &&
                     resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE) &&
                     path.endsWith(".class")) {
@@ -242,6 +250,29 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
             .toList();
 
         predicate = ResourceFilter.includeFilter(value);
+        collationResources = includedCollationResources(resources);
+    }
+
+    private Set<String> includedCollationResources(ResourcePool resources) {
+        var selected = new HashSet<String>();
+        resources.findEntry(COLLATION_INDEX).ifPresent(index -> {
+            String text = new String(index.contentBytes(), StandardCharsets.UTF_8);
+            text.lines().forEach(line -> {
+                String[] fields = line.split("\t", -1);
+                if (fields.length != 2 ||
+                        !fields[0].matches("sun/text/resources/ext/CollationData_[A-Za-z0-9_]+\\.class")) {
+                    throw new PluginException("Invalid collation resource index");
+                }
+                boolean included = predicate.test("/jdk.localedata/" + fields[0]);
+                for (String digest : fields[1].split(",", -1)) {
+                    if (!digest.matches("[0-9a-f]{64}")) {
+                        throw new PluginException("Invalid collation resource digest");
+                    }
+                    if (included) selected.add(COLLATION_PREFIX + digest + ".bin");
+                }
+            });
+        });
+        return Set.copyOf(selected);
     }
 
     private List<String> includeLocaleFilePatterns(String tag) {

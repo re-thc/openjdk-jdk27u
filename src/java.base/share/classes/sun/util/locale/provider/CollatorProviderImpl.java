@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ package sun.util.locale.provider;
 
 import java.text.Collator;
 import java.text.ParseException;
-import java.text.RuleBasedCollator;
 import java.text.spi.CollatorProvider;
 import java.util.Locale;
 import java.util.Set;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Concrete implementation of the
@@ -103,14 +103,14 @@ public class CollatorProviderImpl extends CollatorProvider implements AvailableL
         String colString = LocaleProviderAdapter.forType(type).getLocaleResources(locale).getCollationData();
         try
         {
-            result = new RuleBasedCollator(CollationRules.DEFAULTRULES +
+            result = SharedSecrets.getJavaTextAccess().newRuleBasedCollator(CollationRules.DEFAULTRULES +
                                            colString);
         }
         catch(ParseException foo)
         {
             // predefined tables should contain correct grammar
             try {
-                result = new RuleBasedCollator(CollationRules.DEFAULTRULES);
+                result = SharedSecrets.getJavaTextAccess().newRuleBasedCollator(CollationRules.DEFAULTRULES);
             } catch (ParseException bar) {
                 // the default rules should always be parsable.
                 throw new InternalError(bar);

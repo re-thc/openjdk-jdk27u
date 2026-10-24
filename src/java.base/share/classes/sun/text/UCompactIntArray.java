@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 
 package sun.text;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 public final class UCompactIntArray implements Cloneable {
     /**
@@ -125,6 +129,56 @@ public final class UCompactIntArray implements Cloneable {
         isCompact = true;
     }
 
+
+    /** Writes the compact table state used by built-in collation resources. */
+    public void writeTo(DataOutput out) throws IOException {
+        if (!isCompact) {
+            throw new IOException("Collation mapping is not compact");
+        }
+        out.writeInt(defaultValue);
+        out.writeBoolean(isCompact);
+        for (int plane = 0; plane < PLANECOUNT; plane++) {
+            out.writeBoolean(planeTouched[plane]);
+            if (planeTouched[plane]) {
+                out.writeInt(values[plane].length);
+                for (int v : values[plane]) out.writeInt(v);
+                out.writeInt(indices[plane].length);
+                for (short v : indices[plane]) out.writeShort(v);
+            }
+        }
+    }
+
+    /** Reads a bounded, compact mapping; construction never exposes its arrays. */
+    public static UCompactIntArray readFrom(DataInput in) throws IOException {
+        UCompactIntArray result = new UCompactIntArray(in.readInt());
+        if (!in.readBoolean()) throw new IOException("Noncompact collation mapping");
+        for (int plane = 0; plane < PLANECOUNT; plane++) {
+            result.planeTouched[plane] = in.readBoolean();
+            if (!result.planeTouched[plane]) continue;
+            int length = in.readInt();
+            if (length < BLOCKCOUNT || length > UNICODECOUNT ||
+                    length % BLOCKCOUNT != 0) {
+                throw new IOException("Invalid collation mapping length");
+            }
+            int[] values = new int[length];
+            for (int i = 0; i < length; i++) values[i] = in.readInt();
+            if (in.readInt() != INDEXCOUNT) {
+                throw new IOException("Invalid collation mapping indices");
+            }
+            short[] indices = new short[INDEXCOUNT];
+            for (int i = 0; i < INDEXCOUNT; i++) {
+                indices[i] = in.readShort();
+                int index = indices[i] & 0xffff;
+                if (index % BLOCKCOUNT != 0 || index > length - BLOCKCOUNT) {
+                    throw new IOException("Invalid collation mapping index");
+                }
+            }
+            result.values[plane] = values;
+            result.indices[plane] = indices;
+        }
+        result.isCompact = true;
+        return result;
+    }
 
     // --------------------------------------------------------------
     // private

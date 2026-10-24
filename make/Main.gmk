@@ -989,6 +989,11 @@ else
   # virtual target.
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
 
+  # Collation tables use target CharacterData and the generated input identity.
+  # One writer stages both modules; localedata only copies after it completes.
+  java.base-gendata: java.base-gensrc
+  jdk.localedata-gendata: java.base-gendata
+
   # jdk.jfr-gendata uses TOOL_JFR_GEN from buildtools-hotspot
   jdk.jfr-gendata: buildtools-hotspot
 

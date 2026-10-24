@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ import javax.security.auth.x500.X500Principal;
  */
 @AOTSafeClassInitializer
 public class SharedSecrets {
+    @Stable private static JavaTextAccess javaTextAccess;
+
     // This field is not necessarily stable
     private static JavaAWTFontAccess javaAWTFontAccess;
     @Stable private static JavaBeansAccess javaBeansAccess;
@@ -495,6 +497,19 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(X500Principal.class);
             access = javaxSecurityAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaTextAccess(JavaTextAccess access) {
+        javaTextAccess = access;
+    }
+
+    public static JavaTextAccess getJavaTextAccess() {
+        var access = javaTextAccess;
+        if (access == null) {
+            ensureClassInitialized(java.text.RuleBasedCollator.class);
+            access = javaTextAccess;
         }
         return access;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,10 @@
  */
 
 package sun.text;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /** Simple internal class for doing hash mapping. Much, much faster than the
  * standard Hashtable for integer to integer mappings,
@@ -139,6 +143,66 @@ public final class IntHashtable {
         IntHashtable result = (IntHashtable) super.clone();
         values = values.clone();
         keyList = keyList.clone();
+        return result;
+    }
+
+    /** Writes the exact hash layout used by built-in collation resources. */
+    public void writeTo(DataOutput out) throws IOException {
+        out.writeInt(defaultValue);
+        out.writeInt(primeIndex);
+        out.writeInt(count);
+        out.writeInt(lowWaterMark);
+        out.writeInt(highWaterMark);
+        out.writeInt(keyList.length);
+        for (int key : keyList) out.writeInt(key);
+        for (int value : values) out.writeInt(value);
+    }
+
+    /** Restores a bounded hash layout and checks its lookup invariants. */
+    public static IntHashtable readFrom(DataInput in) throws IOException {
+        int defaultValue = in.readInt();
+        int prime = in.readInt();
+        int count = in.readInt();
+        int low = in.readInt();
+        int high = in.readInt();
+        int length = in.readInt();
+        if (prime < 0 || prime >= PRIMES.length || length != PRIMES[prime] ||
+                length > 262147 || count < 0 || count >= length ||
+                low != (int)(length * LOW_WATER_FACTOR) ||
+                high != (int)(length * HIGH_WATER_FACTOR)) {
+            throw new IOException("Invalid collation hash header");
+        }
+        IntHashtable result = new IntHashtable();
+        result.defaultValue = defaultValue;
+        result.primeIndex = prime;
+        result.count = count;
+        result.lowWaterMark = low;
+        result.highWaterMark = high;
+        result.keyList = new int[length];
+        result.values = new int[length];
+        int actualCount = 0;
+        boolean hasEmpty = false;
+        for (int i = 0; i < length; i++) {
+            int key = in.readInt();
+            result.keyList[i] = key;
+            if (key > MAX_UNUSED) actualCount++;
+            if (key == EMPTY) hasEmpty = true;
+        }
+        for (int i = 0; i < length; i++) {
+            result.values[i] = in.readInt();
+            if (result.keyList[i] <= MAX_UNUSED && result.values[i] != defaultValue) {
+                throw new IOException("Invalid empty collation hash slot");
+            }
+        }
+        if (actualCount != count || !hasEmpty) {
+            throw new IOException("Invalid collation hash count");
+        }
+        for (int i = 0; i < length; i++) {
+            int key = result.keyList[i];
+            if (key > MAX_UNUSED && result.find(key) != i) {
+                throw new IOException("Invalid collation hash placement");
+            }
+        }
         return result;
     }
 
