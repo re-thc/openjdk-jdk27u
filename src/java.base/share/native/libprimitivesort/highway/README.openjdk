@@ -1,0 +1,21 @@
+Google Highway sorting subset
+=============================
+Repository: https://github.com/google/highway
+Revision: 1693ca7926ed12c5520623564e465cff97d93374
+License: upstream dual Apache-2.0 / BSD-3-Clause; this integration uses BSD-3-Clause.
+
+UPSTREAM_FILES lists the unmodified source/header subset used for signed
+64-bit ascending VQSort with normal dynamic dispatch on Linux x64 GCC.
+The subset was obtained from compiler dependency output for abort.cc, targets.cc,
+os_rng.cc, vqsort_i64a.cc using -std=c++17 -march=x86-64-v3
+-DHWY_WANT_AVX3_ZEN4. Preserve upstream headers and the complete LICENSE.
+
+HWY_WANT_AVX3_ZEN4 enables the official AMD-specific dispatch target. Upstream
+runtime feature/vendor detection selects it only on appropriate AMD hardware;
+other CPUs retain their supported runtime target, including AVX2.
+
+HWY_OS_RNG_SECURE_SEED=0 selects the upstream-supported address/clock fallback
+for sort pivot seeds, avoiding a blocking getrandom call on each native thread.
+This does not switch to VQSortStatic or change normal dynamic ISA dispatch.
+Pivot seeds are not used for cryptography; the bounded-depth heapsort fallback
+remains in place independently of seed quality.

@@ -81,7 +81,7 @@ final class DualPivotQuicksort {
     /**
      * Min size of the first run to continue with scanning.
      */
-    private static final int MIN_FIRST_RUN_SIZE = 16;
+    static final int MIN_FIRST_RUN_SIZE = 16;
 
     /**
      * Min factor for the first runs to continue scanning.

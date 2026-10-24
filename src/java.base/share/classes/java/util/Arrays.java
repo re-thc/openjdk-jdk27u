@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,11 +130,17 @@ public final class Arrays {
      * @implNote The sorting algorithm is a Dual-Pivot Quicksort
      * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
      * offers O(n log(n)) performance on all data sets, and is typically
-     * faster than traditional (one-pivot) Quicksort implementations.
+     * faster than traditional (one-pivot) Quicksort implementations. On supported
+     * platforms, bounded long ranges may instead use a vectorized native
+     * Quicksort with bounded temporary native storage. If that storage cannot
+     * be allocated, the Java sorting algorithm is used.
      *
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
+        if (a.length >= PrimitiveSort.MIN_SIZE && PrimitiveSort.trySort(a, 0, a.length)) {
+            return;
+        }
         DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
@@ -146,7 +153,10 @@ public final class Arrays {
      * @implNote The sorting algorithm is a Dual-Pivot Quicksort
      * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
      * offers O(n log(n)) performance on all data sets, and is typically
-     * faster than traditional (one-pivot) Quicksort implementations.
+     * faster than traditional (one-pivot) Quicksort implementations. On supported
+     * platforms, bounded long ranges may instead use a vectorized native
+     * Quicksort with bounded temporary native storage. If that storage cannot
+     * be allocated, the Java sorting algorithm is used.
      *
      * @param a the array to be sorted
      * @param fromIndex the index of the first element, inclusive, to be sorted
@@ -158,6 +168,10 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
+        if (toIndex - fromIndex >= PrimitiveSort.MIN_SIZE
+                && PrimitiveSort.trySort(a, fromIndex, toIndex)) {
+            return;
+        }
         DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 

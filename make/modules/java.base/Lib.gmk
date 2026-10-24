@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -150,6 +151,25 @@ ifeq ($(call isTargetOsType, unix), true)
     # The subdir is the same as the variant
     $(foreach v, $(JVM_VARIANTS), $(eval $(call CreateSymlinks,$v)))
   endif
+endif
+
+################################################################################
+## Bounded, copying long sort backend. This library also serves interpreter
+## and C1 callers, independently of the existing C2 SIMD sorting intrinsics.
+################################################################################
+
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(filter $(TOOLCHAIN_TYPE), gcc), true+true+gcc)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBPRIMITIVE_SORT, \
+      NAME := primitivesort, \
+      LINK_TYPE := C++, \
+      OPTIMIZATION := HIGH, \
+      CXXFLAGS := -std=c++17 -fno-rtti -DHWY_WANT_AVX3_ZEN4 -DHWY_OS_RNG_SECURE_SEED=0 \
+          -isystem $(TOPDIR)/src/java.base/share/native/libprimitivesort/highway, \
+      DISABLED_WARNINGS_gcc := unused-variable, \
+      LIBS_linux := $(LIBM), \
+  ))
+
+  TARGETS += $(BUILD_LIBPRIMITIVE_SORT)
 endif
 
 ################################################################################
