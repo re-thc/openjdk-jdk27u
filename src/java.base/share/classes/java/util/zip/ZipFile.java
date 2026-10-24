@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -733,6 +734,9 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     private static class CleanableResource implements Runnable {
+        // Bound idle native decompression state retained after a concurrency spike.
+        private static final int MAX_CACHED_INFLATERS = 128;
+
         // The outstanding inputstreams that need to be closed
         final Set<InputStream> istreams;
 
@@ -777,14 +781,15 @@ public class ZipFile implements ZipConstants, Closeable {
             if (inflaters != null) {
                 synchronized (inflaters) {
                     // double checked!
-                    if (inflaters == this.inflaterCache) {
+                    if (inflaters == this.inflaterCache &&
+                            inflaters.size() < MAX_CACHED_INFLATERS) {
                         inf.reset();
                         inflaters.add(inf);
                         return;
                     }
                 }
             }
-            // inflaters cache already closed - just end it.
+            // The cache is full or closed. Release native state outside its lock.
             inf.end();
         }
 
