@@ -49,6 +49,7 @@ public class RustRegexArrayLayout {
                     List<String> command = new ArrayList<>(List.of("-Xbatch",
                             "-XX:CompileThreshold=1000", "-XX:+Use" + gc + "GC",
                             "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                            "--add-opens=java.base/jdk.internal.util.regex=ALL-UNNAMED",
                             "--add-opens=java.base/java.util.regex=ALL-UNNAMED"));
                     command.addAll(List.of(layout));
                     command.addAll(List.of(tier));
@@ -64,8 +65,20 @@ public class RustRegexArrayLayout {
     public static class Search {
         public static void main(String[] args) throws Exception {
             String input = "x ".repeat(2048) + "error123";
-            Pattern p = Pattern.compile("error([0-9]+)");
+            // A general expression keeps both legs in Rust when short plans expand.
+            Pattern p = Pattern.compile("err[oa]r([0-9]+)");
             Matcher m = p.matcher(input);
+            Field backend = Pattern.class.getDeclaredField("rustRegex");
+            backend.setAccessible(true);
+            Object engine = backend.get(p);
+            boolean enabled = Class.forName("jdk.internal.util.regex.RustRegex")
+                    .getField("ENABLED").getBoolean(null);
+            if (enabled && engine == null) throw new AssertionError("native layout fixture fell back");
+            if (engine != null) {
+                Field plan = engine.getClass().getDeclaredField("fastPlan");
+                plan.setAccessible(true);
+                if (plan.get(engine) != null) throw new AssertionError("layout fixture has a Java short plan");
+            }
             Field value = String.class.getDeclaredField("value");
             Field groups = Matcher.class.getDeclaredField("groups");
             value.setAccessible(true);
@@ -88,7 +101,8 @@ public class RustRegexArrayLayout {
             }
             if (!m.reset().find() || m.end(1) != 4104)
                 throw new AssertionError("capture state after collection");
-            System.out.println("Relocated regex arrays OK");
+            if (enabled && backend.get(p) != engine) throw new AssertionError("native layout fixture promoted");
+            System.out.println("Relocated regex arrays OK; native=" + enabled);
         }
     }
 }

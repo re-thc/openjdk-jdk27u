@@ -33,6 +33,7 @@
 import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.FutureTask;
 import java.util.regex.Pattern;
 import jdk.internal.util.regex.RustRegex;
 
@@ -85,11 +86,34 @@ public class RustRegexMemoryBudget {
             Thread.sleep(20);
             engine = RustRegex.compile("error[0-9]+(?:x)?", 0);
             if (engine != null) {
+                sharedLiveEngine(engine);
                 System.out.println("Native budget capacity restored after cleanup");
                 Reference.reachabilityFence(first);
                 return;
             }
         } while (System.nanoTime() < deadline);
         throw new AssertionError("native budget not released by Cleaner");
+    }
+
+    private static void sharedLiveEngine(RustRegex engine) throws Exception {
+        String expression = "error[0-9]+(?:x)?";
+        var backend = Pattern.class.getDeclaredField("rustRegex");
+        backend.setAccessible(true);
+        Pattern retained = Pattern.compile(expression);
+        if (backend.get(retained) != engine)
+            throw new AssertionError("recovered engine was not shared with a new Pattern");
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Pattern shared = Pattern.compile(expression);
+            if (backend.get(shared) != engine)
+                throw new AssertionError("worker replaced the live native engine");
+            var matcher = shared.matcher("!error123x!");
+            if (!matcher.find() || matcher.start() != 1 || matcher.end() != 10
+                    || !matcher.group().equals("error123x") || backend.get(shared) != engine)
+                throw new AssertionError("shared engine did not match after budget recovery");
+            return null;
+        });
+        Thread.ofPlatform().start(task).join();
+        task.get();
+        Reference.reachabilityFence(retained);
     }
 }

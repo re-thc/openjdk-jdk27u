@@ -560,6 +560,15 @@ unsafe fn match_impl(
                 _ => Anchored::No,
             });
         let mut pooled = handle.pool.get();
+        // A failed admission remains an empty pooled slot. Retry it after
+        // transient budget pressure instead of retaining a permanent fallback.
+        if pooled.is_none() {
+            *pooled = new_cache(
+                &handle.regex,
+                handle.full.as_ref(),
+                handle._reservation.budget,
+            );
+        }
         let Some(cache) = pooled.as_mut() else {
             return FALLBACK;
         };
@@ -1009,6 +1018,37 @@ mod tests {
         assert!(held > 0);
         assert!(compile_handle("error[0-9]+", 0, 1, &budget).is_none());
         drop(occupied);
+        drop(handle);
+        assert_eq!(budget.used.load(Ordering::Relaxed), 0);
+    }
+
+    #[test]
+    fn failed_nonowner_cache_recovers_on_same_thread() {
+        let budget = Budget::new(MAX_BUILD_BYTES);
+        let handle = compile_handle("(a+)", 0, 2, &budget).unwrap();
+        let owner_bytes = budget.used.load(Ordering::Relaxed);
+        let occupied = budget.reserve(budget.limit - owner_bytes).unwrap();
+        std::thread::scope(|scope| {
+            let (failed, failure) = std::sync::mpsc::channel();
+            let (resume, released) = std::sync::mpsc::channel();
+            let handle = &handle;
+            let worker = scope.spawn(move || {
+                assert_eq!(run(handle, b"!aa!", 0).0, FALLBACK);
+                failed.send(()).unwrap();
+                released.recv().unwrap();
+                // The same non-owner must retry the empty slot it returned,
+                // without replacing the live engine or using its owner's cache.
+                let (matched, captures) = run(handle, b"!aa!", 0);
+                assert_eq!(matched, 1);
+                assert_eq!(&captures[..4], &[1, 3, 1, 3]);
+            });
+            failure.recv().unwrap();
+            assert_eq!(budget.used.load(Ordering::Relaxed), budget.limit);
+            drop(occupied);
+            resume.send(()).unwrap();
+            worker.join().unwrap();
+        });
+        assert!(budget.used.load(Ordering::Relaxed) > owner_bytes);
         drop(handle);
         assert_eq!(budget.used.load(Ordering::Relaxed), 0);
     }

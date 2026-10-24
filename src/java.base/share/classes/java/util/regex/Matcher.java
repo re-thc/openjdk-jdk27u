@@ -28,6 +28,7 @@ package java.util.regex;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
@@ -310,7 +311,7 @@ public final class Matcher implements MatchResult {
             capturedText = null;
         }
         return new ImmutableMatchResult(first, last, groupCount(),
-                groups.clone(), capturedText,
+                Arrays.copyOf(groups, parentPattern.capturingGroupCount * 2), capturedText,
                 namedGroups(), minStart);
     }
 
