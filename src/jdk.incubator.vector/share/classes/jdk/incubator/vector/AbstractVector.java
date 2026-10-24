@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,53 +178,24 @@ abstract sealed class AbstractVector<E> extends Vector<E>
 
     /*package-private*/
     @ForceInline
+    @SuppressWarnings({"unchecked", "rawtypes"})
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType)).swapIfNeeded(vspecies());
-    }
-
-    @ForceInline
-    static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
-        final int lanes = targetSpecies.laneCount();
-
-        if ((lanes % subLanesPerSrc) != 0) {
-            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
+        AbstractSpecies<E> srcSpecies = vspecies();
+        // An unchanged lane type also preserves the shape and every raw bit.
+        if (srcSpecies.laneType == laneType) {
+            return this;
         }
-
-        // Each group corresponds to one source lane.
-        // For each group, reverse the lanes inside that group.
-        final int groups = lanes / subLanesPerSrc;
-        int[] map = new int[lanes];
-        for (int g = 0; g < groups; ++g) {
-            int base = g * subLanesPerSrc;
-            for (int j = 0; j < subLanesPerSrc; ++j) {
-                 map[base + j] = base + (subLanesPerSrc - 1 - j);
-            }
-        }
-        return VectorShuffle.fromArray(targetSpecies, map, 0);
-    }
-
-    @ForceInline
-    final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
-        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
-            return -1;
-        }
-        int sBytes = srcSpecies.elementSize();
-        int tBytes = vspecies().elementSize();
-
-        // No lane reordering needed for same size or widening reinterprets
-        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
-            return -1;
-        }
-        int subLanesPerSrc = sBytes / tBytes;
-        return subLanesPerSrc;
+        AbstractSpecies dstSpecies = srcSpecies.withLanes(laneType);
+        return dstSpecies.swapIfNeeded(srcSpecies, convert0('X', dstSpecies));
     }
 
     /*package-private*/
     @ForceInline
     ByteVector asByteVectorRawTemplate() {
-        return (ByteVector) asVectorRawTemplate(LaneType.BYTE);
+        // NOTE: asByteVectorRaw respects REGISTER_ENDIAN order.
+        return (ByteVector) convert0('X', vspecies().byteSpecies());
     }
 
 
@@ -276,9 +248,6 @@ abstract sealed class AbstractVector<E> extends Vector<E>
 
     /*package-private*/
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
-
-    /*package-private*/
-    abstract AbstractVector<?> swapIfNeeded(AbstractSpecies<?> srcSpecies);
 
     /*package-private*/
     @ForceInline
@@ -388,6 +357,9 @@ abstract sealed class AbstractVector<E> extends Vector<E>
         AbstractSpecies<F> rsp = (AbstractSpecies<F>) toSpecies;
         AbstractSpecies<E> vsp = vspecies();
         if (part == 0) {
+            if (vsp == rsp) {
+                return check0(rsp);
+            }
             // Works the same for in-place, selection (truncation) and insertion (padding)
             return convert0('X', rsp);
         } else {
@@ -444,6 +416,9 @@ abstract sealed class AbstractVector<E> extends Vector<E>
         vsp.check(c.domain());  // apply dynamic check to conv
         rsp.check(c.range());   // apply dynamic check to conv
         if (part == 0) {
+            if (kind == 'X' && vsp == rsp) {
+                return check0(rsp);
+            }
             // Works the same for in-place, selection (truncation) and insertion (padding)
             return convert0(kind, rsp);
         } else {
