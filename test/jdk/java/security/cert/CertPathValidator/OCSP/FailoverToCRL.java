@@ -148,50 +148,50 @@ public class FailoverToCRL {
 
     static String trusedCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICrDCCAhWgAwIBAgIBADANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET\n" +
+        "MIICrDCCAhWgAwIBAgIBADANBgkqhkiG9w0BAQsFADBJMQswCQYDVQQGEwJVUzET\n" +
         "MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK\n" +
         "EwhTb21lLU9yZzAeFw0wODEyMDgwMjQzMzZaFw0yODA4MjUwMjQzMzZaMEkxCzAJ\n" +
         "BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp\n" +
         "dHkxETAPBgNVBAoTCFNvbWUtT3JnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB\n" +
-        "gQDLxDggB76Ip5OwoUNRLdeOha9U3a2ieyNbz5kTU5lFfe5tui2/461uPZ8a+QOX\n" +
-        "4BdVrhEmV94BKY4FPyH35zboLjfXSKxT1mAOx1Bt9sWF94umxZE1cjyU7vEX8HHj\n" +
-        "7BvOyk5AQrBt7moO1uWtPA/JuoJPePiJl4kqlRJM2Akq6QIDAQABo4GjMIGgMB0G\n" +
-        "A1UdDgQWBBT6uVG/TOfZhpgz+efLHvEzSfeoFDBxBgNVHSMEajBogBT6uVG/TOfZ\n" +
-        "hpgz+efLHvEzSfeoFKFNpEswSTELMAkGA1UEBhMCVVMxEzARBgNVBAgTClNvbWUt\n" +
+        "gQCPB8yQwuTJhKvCb4xVCOG712TiWBxRLJ2iJmP2uuz8eLe4sV7LICv7EYkU2ODC\n" +
+        "li1hlrxA6HqbItm/0W/VT0M3SCaWbSjutuIZNyjmaCk3og/FVYZM8xh6GyzmGR5p\n" +
+        "jVpRYhl4mk4R0IW647HAiF2MMVvtqo72z1bykE3Boqy5SwIDAQABo4GjMIGgMB0G\n" +
+        "A1UdDgQWBBSUgySo03byPePzUVSisLY4v7EsezBxBgNVHSMEajBogBSUgySo03by\n" +
+        "PePzUVSisLY4v7Ese6FNpEswSTELMAkGA1UEBhMCVVMxEzARBgNVBAgTClNvbWUt\n" +
         "U3RhdGUxEjAQBgNVBAcTCVNvbWUtQ2l0eTERMA8GA1UEChMIU29tZS1PcmeCAQAw\n" +
-        "DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQQFAAOBgQBcIm534U123Hz+rtyYO5uA\n" +
-        "ofd81G6FnTfEAV8Kw9fGyyEbQZclBv34A9JsFKeMvU4OFIaixD7nLZ/NZ+IWbhmZ\n" +
-        "LovmJXyCkOufea73pNiZ+f/4/ScZaIlM/PRycQSqbFNd4j9Wott+08qxHPLpsf3P\n" +
-        "6Mvf0r1PNTY2hwTJLJmKtg==\n" +
+        "DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOBgQAquRAsSeSG7IbEfn56le89\n" +
+        "spUIZ4Ukzybcvi13wHXG2LE8AB97Ba9U8er9tbJmL2i3HUcApDl3yT3Z/mNjoi1E\n" +
+        "/FKXb1tFanLztRB5dJeK9rXUU8gdeD6Mphxi3svS6qBDbfBoD2Kv2fqWdNGojBiQ\n" +
+        "VDmfIoGDfpnQnCvloB0+ZA==\n" +
         "-----END CERTIFICATE-----";
 
     static String targetCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICizCCAfSgAwIBAgIBGTANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzET\n" +
+        "MIICizCCAfSgAwIBAgIBGTANBgkqhkiG9w0BAQsFADBJMQswCQYDVQQGEwJVUzET\n" +
         "MBEGA1UECBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQK\n" +
         "EwhTb21lLU9yZzAeFw0wOTAzMTYxNDU1MzVaFw0yODEyMDExNDU1MzVaMHIxCzAJ\n" +
         "BgNVBAYTAlVTMRMwEQYDVQQIEwpTb21lLVN0YXRlMRIwEAYDVQQHEwlTb21lLUNp\n" +
         "dHkxETAPBgNVBAoTCFNvbWUtT3JnMRMwEQYDVQQLEwpTU0wtQ2xpZW50MRIwEAYD\n" +
-        "VQQDEwlsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALvwQDas\n" +
-        "JlRO9KNaAC9pIW+5ejqT7KL24Y7HY9gvEjCZLrDyj/gnLSR4KIT3Ab+NRHndO9JV\n" +
-        "8848slshfe/9M0qxo//GyJu5D3xBNZf52zoFYAUVr1kXkqMQrRYc5AdTr6h2olYq\n" +
-        "ktP5KOB4z14fSKtcGd3hZ0O6dY31gqxDkkQbAgMBAAGjWjBYMAkGA1UdEwQCMAAw\n" +
-        "CwYDVR0PBAQDAgXgMB0GA1UdDgQWBBTNu8iFqpG9/R2+zWd8/7PpTKgi5jAfBgNV\n" +
-        "HSMEGDAWgBT6uVG/TOfZhpgz+efLHvEzSfeoFDANBgkqhkiG9w0BAQQFAAOBgQBv\n" +
-        "p7JjCDOrMBNun46xs4Gz7Y4ygM5VHaFP0oO7369twvRSu0pCuIdZd5OIMPFeRqQw\n" +
-        "PA68ZdhYVR0pG5W7isV+jB+Dfge/IOgOA85sZ/6FlP3PBRW+YMQKKdRr5So3ook9\n" +
-        "PimQ7rbxRAofPECv20IUKFBbOUkU+gFcn+WbTKYxBw==\n" +
+        "VQQDEwlsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAJiCgLkw\n" +
+        "45AL+6LOdPezjHTeMXW61d3ml3zJtSJewlEv1ADTG+Jn2+51YUi5c0Tyb/O2CU2/\n" +
+        "jsRhjBFI/n6YGm4OJg99t3RhDtU3Qz+uvqiMRgmCllZD0iDg0kiWgycO3irWx2ML\n" +
+        "Vf863frVlhwVhN+iYOhcZr5u2z0hsow7L3w7AgMBAAGjWjBYMAkGA1UdEwQCMAAw\n" +
+        "CwYDVR0PBAQDAgXgMB0GA1UdDgQWBBQwV4EHU+5ntWOhyGVQT7cdEduetDAfBgNV\n" +
+        "HSMEGDAWgBSUgySo03byPePzUVSisLY4v7EsezANBgkqhkiG9w0BAQsFAAOBgQAe\n" +
+        "qRQuSAFX505vbL4blploe+8D0t8rTer3rp5P6nJ+vUxp6rFhYm3aP2tiO3ZYIiub\n" +
+        "fHi2PZ87Vb88OFbsbQxFQgKQElQ6fUxs7GUD+N0YJD852+TIzg94P1v3wpV2YKiX\n" +
+        "5pSY96k+Ge1D/BOoDecUDdvbpF5i2xtLdTVIfOr14g==\n" +
         "-----END CERTIFICATE-----";
 
     static String crlStr =
         "-----BEGIN X509 CRL-----\n" +
-        "MIIBRTCBrwIBATANBgkqhkiG9w0BAQQFADBJMQswCQYDVQQGEwJVUzETMBEGA1UE\n" +
+        "MIIBRTCBrwIBATANBgkqhkiG9w0BAQsFADBJMQswCQYDVQQGEwJVUzETMBEGA1UE\n" +
         "CBMKU29tZS1TdGF0ZTESMBAGA1UEBxMJU29tZS1DaXR5MREwDwYDVQQKEwhTb21l\n" +
         "LU9yZxcNMDkwMzE2MTYyNzE0WhcNMjgwNTE1MTYyNzE0WjAiMCACARkXDTA5MDMx\n" +
         "NjE2MjIwOFowDDAKBgNVHRUEAwoBBKAOMAwwCgYDVR0UBAMCAQIwDQYJKoZIhvcN\n" +
-        "AQEEBQADgYEAMixJI9vBwYpOGosn46+T/MTEtlm2S5pIVT/xPDrHkCPfw8l4Zrgp\n" +
-        "dGPuUkglWdrGdxY9MNRUj2YFNfdZi6zZ7JF6XbkDHYOAKYgPDJRjS/0VcBntn5RJ\n" +
-        "sQfZsBqc9fFSP8gknRRn3LT41kr9xNRxTT1t3YYjv7J3zkMYyInqeUA=\n" +
+        "AQELBQADgYEAFONdGE+ArYO6cAKZKmb6+mvppbB/Mvg7gODu9o4p6/+6COEQS/Hh\n" +
+        "+58sF/a3Fb8dDSBUWIbqZoW7Jj011b4EFtymNs6nckpqTryixM1R8E8xkLlqUdUN\n" +
+        "NwKjYSFBFPRsgLv+y20DYwu7rRIWdOUuYKHb54vDreL0s5LavcVBgRc=\n" +
         "-----END X509 CRL-----";
 
 
@@ -239,7 +239,6 @@ public class FailoverToCRL {
     }
 
     public static void main(String args[]) throws Exception {
-        // MD5 is used in this test case, don't disable MD5 algorithm.
         Security.setProperty(
                 "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
 

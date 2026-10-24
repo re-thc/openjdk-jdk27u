@@ -92,8 +92,6 @@ import static sun.security.tools.keytool.Main.Option.*;
  *
  *
  * @see java.security.KeyStore
- * @see sun.security.provider.KeyProtector
- * @see sun.security.provider.JavaKeyStore
  *
  * @since 1.2
  */
@@ -957,7 +955,7 @@ public final class Main {
                 try {
                     isPasswordlessKeyStore = PKCS12KeyStore.isPasswordless(ksfile);
                 } catch (IOException ioe) {
-                    // This must be a JKS keystore that's opened as a PKCS12
+                    // Not readable as PKCS12, so it is not passwordless
                 }
             }
         } else {
@@ -1382,59 +1380,33 @@ public final class Main {
             }
         }
 
-        if (isKeyStoreRelated(command)
-                && !token && !nullStream && ksfname != null) {
-
-            // JKS storetype warning on the final result keystore
+        if (inplaceImport && !token && !nullStream && ksfname != null) {
             File f = new File(ksfname);
             char[] pass = (storePassNew!=null) ? storePassNew : storePass;
             if (f.exists()) {
-                // Probe for real type. A JKS can be loaded as PKCS12 because
-                // DualFormat support, vice versa.
                 String realType = storetype;
                 try {
-                    keyStore = KeyStore.getInstance(f, pass);
-                    realType = keyStore.getType();
-                    if (realType.equalsIgnoreCase("JKS")
-                            || realType.equalsIgnoreCase("JCEKS")) {
-                        boolean allCerts = true;
-                        for (String a : Collections.list(keyStore.aliases())) {
-                            if (!keyStore.entryInstanceOf(
-                                    a, TrustedCertificateEntry.class)) {
-                                allCerts = false;
-                                break;
-                            }
-                        }
-                        // Don't warn for "cacerts" style keystore.
-                        if (!allCerts) {
-                            weakWarnings.add(String.format(
-                                    rb.getString("jks.storetype.warning"),
-                                    realType, ksfname));
-                        }
-                    }
+                    realType = KeyStore.getInstance(f, pass).getType();
                 } catch (KeyStoreException e) {
-                    // Probing not supported, therefore cannot be JKS or JCEKS.
-                    // Skip the legacy type warning at all.
+                    // Probing not supported. Assuming storetype.
                 }
-                if (inplaceImport) {
-                    String realSourceStoreType = srcstoretype;
-                    try {
-                        realSourceStoreType = KeyStore.getInstance(
-                                new File(inplaceBackupName), srcstorePass).getType();
-                    } catch (KeyStoreException e) {
-                        // Probing not supported. Assuming srcstoretype.
-                    }
-                    String format =
-                            realType.equalsIgnoreCase(realSourceStoreType) ?
-                            rb.getString("backup.keystore.warning") :
-                            rb.getString("migrate.keystore.warning");
-                    weakWarnings.add(
-                            String.format(format,
-                                    srcksfname,
-                                    realSourceStoreType,
-                                    inplaceBackupName,
-                                    realType));
+                String realSourceStoreType = srcstoretype;
+                try {
+                    realSourceStoreType = KeyStore.getInstance(
+                            new File(inplaceBackupName), srcstorePass).getType();
+                } catch (KeyStoreException e) {
+                    // Probing not supported. Assuming srcstoretype.
                 }
+                String format =
+                        realType.equalsIgnoreCase(realSourceStoreType) ?
+                        rb.getString("backup.keystore.warning") :
+                        rb.getString("migrate.keystore.warning");
+                weakWarnings.add(
+                        String.format(format,
+                                srcksfname,
+                                realSourceStoreType,
+                                inplaceBackupName,
+                                realType));
             }
         }
     }
@@ -2236,9 +2208,9 @@ public final class Main {
                  * entries that are protected by a different password than
                  * storePass, and we will not be able to check the constraints
                  * because we do not have the keyPass for this operation.
-                 * This may occur for keystores such as JCEKS. Note that this
-                 * is not really a new issue as details about secret key entries
-                 * other than the fact they exist as entries are not listed.
+                 * Note that this is not really a new issue as details about
+                 * secret key entries other than the fact they exist as
+                 * entries are not listed.
                  */
             }
         } else if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {

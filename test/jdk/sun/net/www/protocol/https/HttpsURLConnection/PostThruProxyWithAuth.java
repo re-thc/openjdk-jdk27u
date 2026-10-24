@@ -143,7 +143,7 @@ public class PostThruProxyWithAuth {
             // set up key manager to do server authentication
             SSLContext ctx = SSLContext.getInstance("TLS");
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             char[] passphrase = passwd.toCharArray();
 
             ks.load(new FileInputStream(System.getProperty(

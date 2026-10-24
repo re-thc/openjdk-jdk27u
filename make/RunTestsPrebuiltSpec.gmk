@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,6 +84,16 @@ SHELL := $(BASH) $(BASH_ARGS)
 DEBUG_LEVEL := release
 HOTSPOT_DEBUG_LEVEL := release
 BUILD_FAILURE_HANDLER := true
+
+# Prebuilt tests enter the same makefiles as a configured build. Describe this
+# fork's product policy here too, including its immutable collector allowlist.
+# Only collector features are needed by make's policy check; jtreg discovers
+# the image's other VM capabilities itself.
+ENABLE_DESKTOP := false
+ENABLE_HEADLESS_ONLY := true
+override SERVER_JVM_COLLECTORS := g1gc serialgc zgc
+JVM_VARIANTS := server
+JVM_FEATURES_server := $(SERVER_JVM_COLLECTORS)
 
 ################################################################################
 # Alias some paths (that should not really be used) to our JDK image under test.

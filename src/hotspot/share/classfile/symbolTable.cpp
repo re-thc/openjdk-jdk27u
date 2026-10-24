@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/compactHashtable.hpp"
+#include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
@@ -161,7 +162,7 @@ public:
       // so log it.
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
       size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
-      if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
+      if (!SymbolTable::arena()->Afree(memory, ARENA_ALIGN(alloc_size))) {
         // Can't access the symbol after Afree, but we just printed it above.
         NOT_PRODUCT(log_trace(symboltable)(" - Leaked permanent symbol");)
       }
@@ -307,6 +308,29 @@ Symbol* SymbolTable::lookup_shared(const char* name,
     }
   }
   return sym;
+}
+
+void SymbolTable::lookup_shared(int count, const char** names, const int* lens,
+                                const unsigned int* hashes, Symbol** syms) {
+  if (_shared_table.empty()) {
+    return;
+  }
+  if (_alt_hash) {
+    // The shared tables always use the original hash code.
+    unsigned int* shared_hashes = NEW_RESOURCE_ARRAY(unsigned int, count);
+    for (int i = 0; i < count; i++) {
+      shared_hashes[i] = hash_shared_symbol(names[i], lens[i]);
+    }
+    hashes = shared_hashes;
+  }
+  _shared_table.lookup_batch(names, hashes, lens, count, syms);
+  if (DynamicArchive::is_mapped()) {
+    for (int i = 0; i < count; i++) {
+      if (syms[i] == nullptr) {
+        syms[i] = _dynamic_shared_table.lookup(names[i], hashes[i], lens[i]);
+      }
+    }
+  }
 }
 #endif
 
@@ -479,19 +503,108 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
   }
 }
 
+class SymbolTableBatchFound : public StackObj {
+  Symbol** _syms;
+public:
+  SymbolTableBatchFound(Symbol** syms) : _syms(syms) {}
+  void operator()(size_t i, Symbol* value) {
+    _syms[i] = value;
+  }
+};
+
+class SymbolTableBatchLookup : public StackObj {
+  const char** _names;
+  const int* _lengths;
+  const unsigned int* _hashes;
+public:
+  SymbolTableBatchLookup(const char** names, const int* lengths, const unsigned int* hashes)
+    : _names(names), _lengths(lengths), _hashes(hashes) {}
+  SymbolTableLookup operator[](size_t i) {
+    return SymbolTableLookup(_names[i], _lengths[i], _hashes[i]);
+  }
+};
+
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
-                              int* cp_indices, unsigned int* hashValues) {
+                              int* cp_indices, const unsigned int* precomputed_hashes) {
+  if (names_count == 0) {
+    return;
+  }
   // Note that is_permanent will be false for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
   bool is_permanent = loader_data->is_the_null_class_loader_data();
+  if (precomputed_hashes != nullptr) {
+    // These names already missed the scalar lookup used for oversized pools.
+    const bool recheck = is_permanent || CDSConfig::is_dumping_static_archive();
+    for (int i = 0; i < names_count; i++) {
+      Symbol* sym = recheck ? do_lookup(names[i], lengths[i], precomputed_hashes[i]) : nullptr;
+      if (sym == nullptr) {
+        sym = do_add_if_needed(names[i], lengths[i], precomputed_hashes[i], is_permanent);
+      }
+      cp->symbol_at_put(cp_indices[i], sym);
+    }
+    return;
+  }
+  Thread* current = Thread::current();
+  ResourceMark rm(current);
+  unsigned int* hashes = NEW_RESOURCE_ARRAY_IN_THREAD(current, unsigned int, names_count);
+  Symbol** syms = NEW_RESOURCE_ARRAY_IN_THREAD(current, Symbol*, names_count);
+  bool shared_first = _lookup_shared_first;
   for (int i = 0; i < names_count; i++) {
-    const char *name = names[i];
-    int len = lengths[i];
-    assert(len <= Symbol::max_length(), "must be - these come from the constant pool");
-    unsigned int hash = hashValues[i];
-    assert(lookup_shared(name, len, hash) == nullptr, "must have checked already");
-    Symbol* sym = do_add_if_needed(name, len, hash, is_permanent);
+    assert(lengths[i] <= Symbol::max_length(), "must be - these come from the constant pool");
+    hashes[i] = hash_symbol(names[i], lengths[i], _alt_hash);
+    syms[i] = nullptr;
+  }
+  auto lookup_dynamic_batch = [&](int count) {
+    SymbolTableBatchLookup lookups(names, lengths, hashes);
+    SymbolTableBatchFound found(syms);
+    bool rehash_warning = false;
+    _local_table->get_batch(current, lookups, count, found, &rehash_warning);
+    update_needs_rehash(rehash_warning);
+  };
+  if (shared_first) {
+    lookup_shared(names_count, names, lengths, hashes, syms);
+  } else {
+    lookup_dynamic_batch(names_count);
+  }
+
+  int count = 0;
+  for (int i = 0; i < names_count; i++) {
+    Symbol* sym = syms[i];
+    if (sym != nullptr) {
+      cp->symbol_at_put(cp_indices[i], sym);
+    } else {
+      names[count] = names[i];
+      lengths[count] = lengths[i];
+      cp_indices[count] = cp_indices[i];
+      hashes[count] = hashes[i];
+      syms[count] = nullptr;
+      count++;
+    }
+  }
+  if (count == 0) {
+    return;
+  }
+
+  if (shared_first) {
+    _lookup_shared_first = false;
+    lookup_dynamic_batch(count);
+  } else {
+    lookup_shared(count, names, lengths, hashes, syms);
+  }
+  for (int i = 0; i < count; i++) {
+    Symbol* sym = syms[i];
+    if (sym == nullptr) {
+      assert(lookup_shared(names[i], lengths[i], hashes[i]) == nullptr, "must have checked already");
+      // The name may have been inserted since the batch lookup, by this batch
+      // or another thread. Avoid allocating a candidate that is already obsolete.
+      sym = do_lookup(names[i], lengths[i], hashes[i]);
+      if (sym == nullptr) {
+        sym = do_add_if_needed(names[i], lengths[i], hashes[i], is_permanent);
+      }
+    } else if (!shared_first) {
+      _lookup_shared_first = true;
+    }
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
   }
@@ -503,9 +616,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   SymbolTableGet stg;
   bool clean_hint = false;
   bool rehash_warning = false;
-  bool inserted = false;
   Thread* current = Thread::current();
-  Symbol* sym;
 
   ResourceMark rm(current);
   const int alloc_size = Symbol::byte_size(len);
@@ -513,28 +624,10 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   Symbol* tmp = ::new ((void*)u1_buf) Symbol((const u1*)name, len,
                                              (is_permanent || CDSConfig::is_dumping_static_archive()) ? PERM_REFCOUNT : 1);
 
-  do {
-    if (_local_table->insert(current, lookup, *tmp, &rehash_warning, &clean_hint)) {
-      inserted = true;
-      if (_local_table->get(current, lookup, stg, &rehash_warning)) {
-        sym = stg.get_res_sym();
-        // The get adds one to ref count, but we inserted with our ref already included.
-        // Therefore decrement with one.
-        if (sym->refcount() != PERM_REFCOUNT) {
-          sym->decrement_refcount();
-        }
-        break;
-      }
-    }
-
-    // In case another thread did a concurrent add, return value already in the table.
-    // This could fail if the symbol got deleted concurrently, so loop back until success.
-    if (_local_table->get(current, lookup, stg, &rehash_warning)) {
-      // The lookup added a refcount, which is ours.
-      sym = stg.get_res_sym();
-      break;
-    }
-  } while(true);
+  // Either our new symbol, with our reference included, or an existing
+  // symbol, which the lookup referenced for us.
+  bool inserted = _local_table->insert_get(current, lookup, *tmp, stg, &rehash_warning, &clean_hint);
+  Symbol* sym = stg.get_res_sym();
 
   update_needs_rehash(rehash_warning);
 
@@ -831,10 +924,19 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   AtomicAccess::release_store(&_has_work, false);
 }
 
+bool SymbolTable::try_rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  if (!_local_table->is_safepoint_safe()) {
+    return false;
+  }
+  rehash_table();
+  return true;
+}
+
 // Called at VM_Operation safepoint
 void SymbolTable::rehash_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
-  // The ServiceThread initiates the rehashing so it is not resizing.
+  // No paused table operation may resume after the table is replaced.
   assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
 
   _alt_hash_seed = AltHashing::compute_seed();

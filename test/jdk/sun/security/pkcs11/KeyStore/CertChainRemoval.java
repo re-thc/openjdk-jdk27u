@@ -56,7 +56,7 @@ public class CertChainRemoval extends PKCS11Test {
 
     private static final KeyStoreInfo TEMP = new KeyStoreInfo(
             new File(DIR, "temp.ks"),
-            "JKS",
+            "PKCS12",
             new char[] { 'c', 'h', 'a', 'n', 'g', 'e', 'i', 't' });
 
     private static final KeyStoreInfo PKCS11KS = new KeyStoreInfo(

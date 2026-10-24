@@ -185,7 +185,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     // Checks if algorithm is disabled for the given TLS scopes.
     public boolean permits(String algorithm, Set<SSLScope> scopes) {
         List<Constraint> list = algorithmConstraints.getConstraints(algorithm);
-        return list == null || list.stream().allMatch(c -> c.permits(scopes));
+        if (list != null) {
+            for (Constraint c : list) {
+                if (!c.permits(scopes)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /*
@@ -1040,8 +1047,14 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     private boolean checkDisabledPatterns(final String algorithm) {
-        return disabledPatterns == null || disabledPatterns.stream().noneMatch(
-                p -> p.matcher(algorithm).matches());
+        if (disabledPatterns != null) {
+            for (Pattern p : disabledPatterns) {
+                if (p.matcher(algorithm).matches()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private List<Pattern> getDisabledPatterns() {

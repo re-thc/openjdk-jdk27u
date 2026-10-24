@@ -30,9 +30,6 @@
  * @test
  * @bug 4495742 8190492
  * @summary Demonstrate SSLEngine switch from no client auth to client auth.
- * @run main/othervm NoAuthClientAuth SSLv3
- * @run main/othervm NoAuthClientAuth TLSv1
- * @run main/othervm NoAuthClientAuth TLSv1.1
  * @run main/othervm NoAuthClientAuth TLSv1.2
  * @author Brad R. Wetmore
  */
@@ -159,8 +156,8 @@ public class NoAuthClientAuth {
      */
     public NoAuthClientAuth() throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         char[] passphrase = "passphrase".toCharArray();
 
@@ -303,11 +300,6 @@ public class NoAuthClientAuth {
         serverEngine = sslc.createSSLEngine();
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(false);
-
-        // Enable all supported protocols on server side to test SSLv3
-        if ("SSLv3".equals(tlsProtocol)) {
-            serverEngine.setEnabledProtocols(serverEngine.getSupportedProtocols());
-        }
 
         /*
          * Similar to above, but using client mode instead.

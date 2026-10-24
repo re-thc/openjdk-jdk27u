@@ -35,13 +35,7 @@ import javax.crypto.spec.*;
 public class PBEKeysAlgorithmNames {
 
     static String [] algs = {
-        "PBEWithMD5AndDES",
         "PBEWithSHA1AndDESede",
-        "PBEWithSHA1AndRC2_40",
-        "PBEWithSHA1AndRC2_128",
-        "PBEWithMD5AndTripleDES",
-        "PBEWithSHA1AndRC4_40",
-        "PBEWithSHA1AndRC4_128",
         "PBKDF2WithHmacSHA1",
         "PBKDF2WithHmacSHA224",
         "PBKDF2WithHmacSHA256",

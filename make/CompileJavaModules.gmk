@@ -61,10 +61,10 @@ else
 endif
 
 # Get the complete module source path.
-MODULESOURCEPATH := $(call GetModuleSrcPath)
+MODULE_SOURCE_PATH_FLAGS := $(call GetModuleSourcePathFlags)
 
 # Add imported modules to the modulepath
-MODULEPATH := $(call PathList, $(IMPORT_MODULES_CLASSES))
+MODULEPATH := $(call PathList, $(addprefix $(IMPORT_MODULES_CLASSES)/, $(call FindImportedModules)))
 
 ################################################################################
 # Copy zh_HK properties files from zh_TW (needed by some modules)
@@ -119,7 +119,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     JAVAC_FLAGS := \
         $(DOCLINT) \
         $(JAVAC_FLAGS) \
-        --module-source-path $(MODULESOURCEPATH) \
+        $(MODULE_SOURCE_PATH_FLAGS) \
         --module-path $(MODULEPATH) \
         --system none, \
 ))

@@ -374,7 +374,7 @@ public class B8209178 {
 
             char[] passphrase = "passphrase".toCharArray();
 
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, passphrase); // must be "initialized" ...
 
             ks.setKeyEntry("server", keyGen.getPrivateKey(), passphrase, chain);

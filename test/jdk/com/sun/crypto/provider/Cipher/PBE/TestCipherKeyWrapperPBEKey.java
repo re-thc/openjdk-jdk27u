@@ -50,20 +50,8 @@ import javax.crypto.spec.PBEParameterSpec;
 public class TestCipherKeyWrapperPBEKey {
 
     private static final String[] PBEAlgorithms = {
-        "pbeWithMD5ANDdes",
-        "PBEWithMD5AndDES/CBC/PKCS5Padding",
-        "PBEWithMD5AndTripleDES",
-        "PBEWithMD5AndTripleDES/CBC/PKCS5Padding",
         "PBEwithSHA1AndDESede",
         "PBEwithSHA1AndDESede/CBC/PKCS5Padding",
-        "PBEwithSHA1AndRC2_40",
-        "PBEwithSHA1Andrc2_40/CBC/PKCS5Padding",
-        "PBEWithSHA1AndRC2_128",
-        "PBEWithSHA1andRC2_128/CBC/PKCS5Padding",
-        "PBEWithSHA1AndRC4_40",
-        "PBEWithsha1AndRC4_40/ECB/NoPadding",
-        "PBEWithSHA1AndRC4_128",
-        "pbeWithSHA1AndRC4_128/ECB/NoPadding",
         "PBEWithHmacSHA1AndAES_128",
         "PBEWithHmacSHA224AndAES_128",
         "PBEWithHmacSHA256AndAES_128",

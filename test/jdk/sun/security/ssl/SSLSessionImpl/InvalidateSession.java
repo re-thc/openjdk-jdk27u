@@ -35,8 +35,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class InvalidateSession extends SSLContextTemplate {
 
     static ServerSocketFactory serverSsf = null;
@@ -44,14 +42,9 @@ public class InvalidateSession extends SSLContextTemplate {
 
     static Server server;
     static SSLSession cacheSession;
-    static final String[] CLIENT_VERSIONS = {"TLSv1", "TLSv1.1", "TLSv1.2"};
+    static final String[] CLIENT_VERSIONS = {"TLSv1.2", "TLSv1.3"};
 
     public static void main(String args[]) throws Exception {
-        // drop the supported_versions extension to force test to use the legacy
-        // TLS protocol version field during handshakes
-        System.setProperty("jdk.tls.client.disableExtensions", "supported_versions");
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
-
         InvalidateSession test = new InvalidateSession();
         test.sessionTest();
         server.go = false;
@@ -59,7 +52,7 @@ public class InvalidateSession extends SSLContextTemplate {
 
     /**
      * 3 test iterations
-     * 1) Server configured with TLSv1, client with TLSv1, v1.1, v1.2
+     * 1) Server configured with TLSv1.3, client with TLSv1.2, v1.3
      * - Handshake should succeed
      * - Session "A" established
      * 2) 2nd iteration, server configured with TLSv1.2 only
@@ -131,7 +124,7 @@ public class InvalidateSession extends SSLContextTemplate {
                 SSLServerSocket ssock = (SSLServerSocket)
                         serverSsf.createServerSocket(0);
                 this.port = ssock.getLocalPort();
-                ssock.setEnabledProtocols(new String[]{"TLSv1"});
+                ssock.setEnabledProtocols(new String[]{"TLSv1.3"});
                 started = true;
                 while (go) {
                     try {

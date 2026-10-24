@@ -64,7 +64,7 @@ public class LineBrokenMultiByteCharacter {
             "LineBrokenMultiByteCharacterA1234567890B1234567890C123456789D1234567890.class";
 
     static final String alias = "a";
-    static final String keystoreFileName = "test.jks";
+    static final String keystoreFileName = "test.p12";
     static final String manifestFileName = "MANIFEST.MF";
 
     public static void main(String[] args) throws Exception {
@@ -77,9 +77,9 @@ public class LineBrokenMultiByteCharacter {
 
     static void prepare() throws Exception {
         SecurityTools.keytool("-keystore", keystoreFileName, "-genkeypair",
-                "-keyalg", "dsa",
+                "-keyalg", "ec",
                 "-storepass", "changeit", "-keypass", "changeit", "-storetype",
-                "JKS", "-alias", alias, "-dname", "CN=X", "-validity", "366")
+                "PKCS12", "-alias", alias, "-dname", "CN=X", "-validity", "366")
             .shouldHaveExitValue(0);
 
         Files.write(Paths.get(manifestFileName), (Name.
@@ -100,7 +100,7 @@ public class LineBrokenMultiByteCharacter {
             String initialFileName, String updatedFileName) throws Exception {
         JarUtils.createJar(initialFileName, manifestFileName, anotherName);
         SecurityTools.jarsigner("-keystore", keystoreFileName, "-storetype",
-                "JKS", "-storepass", "changeit", "-debug", initialFileName,
+                "PKCS12", "-storepass", "changeit", "-debug", initialFileName,
                 alias).shouldHaveExitValue(0);
         JarUtils.updateJar(initialFileName, updatedFileName, testClassName);
         verifyJarSignature(updatedFileName);
@@ -109,7 +109,7 @@ public class LineBrokenMultiByteCharacter {
     static void verifyJarSignature(String jarFileName) throws Exception {
         // actually sign the jar
         SecurityTools.jarsigner("-keystore", keystoreFileName, "-storetype",
-                "JKS", "-storepass", "changeit", "-debug", jarFileName, alias)
+                "PKCS12", "-storepass", "changeit", "-debug", jarFileName, alias)
             .shouldHaveExitValue(0);
 
         try (

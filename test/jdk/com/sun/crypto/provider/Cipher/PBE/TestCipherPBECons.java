@@ -31,7 +31,7 @@ import javax.crypto.NoSuchPaddingException;
 /**
  * @test
  * @bug 8041787
- * @summary Verify that for PBEWithMD5AndDES cipher, only CBC mode and
+ * @summary Verify that for PBEWithSHA1AndDESede cipher, only CBC mode and
  * PKCS#5Padding is allowed
  * @author Yun Ke
  * @author Bill Situ
@@ -39,8 +39,8 @@ import javax.crypto.NoSuchPaddingException;
  */
 public class TestCipherPBECons {
 
-    private static final String[] PBEAlgorithms = {"pbeWithMD5ANDdes",
-        "PBEWithMD5AndTripleDES", "PBEWithSHA1AndDESede"};
+    private static final String[] PBEAlgorithms = {"pbeWithSHA1ANDdesEDE",
+        "PBEWithSHA1AndDESede"};
     private static final String[] cipherModes = {"ECb", "cbC", "cFB", "Cfb32",
         "OfB", "oFb64", "pCbC"};
     private static final String[] cipherPaddings = {"Pkcs5Padding", "NoPaDDing"};

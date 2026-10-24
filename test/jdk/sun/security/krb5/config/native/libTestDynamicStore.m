@@ -21,7 +21,7 @@
  * questions.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 #import <jni.h>
 

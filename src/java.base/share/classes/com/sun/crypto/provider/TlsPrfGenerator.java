@@ -65,17 +65,6 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     static final byte[] LABEL_KEY_EXPANSION = // "key expansion"
         { 107, 101, 121, 32, 101, 120, 112, 97, 110, 115, 105, 111, 110 };
 
-    static final byte[] LABEL_CLIENT_WRITE_KEY = // "client write key"
-        { 99, 108, 105, 101, 110, 116, 32, 119, 114, 105, 116, 101, 32,
-          107, 101, 121 };
-
-    static final byte[] LABEL_SERVER_WRITE_KEY = // "server write key"
-        { 115, 101, 114, 118, 101, 114, 32, 119, 114, 105, 116, 101, 32,
-          107, 101, 121 };
-
-    static final byte[] LABEL_IV_BLOCK = // "IV block"
-        { 73, 86, 32, 98, 108, 111, 99, 107 };
-
     /*
      * TLS HMAC "inner" and "outer" padding.  This isn't a function
      * of the digest algorithm.
@@ -84,9 +73,6 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     private static final byte[] HMAC_ipad128 = genPad((byte)0x36, 128);
     private static final byte[] HMAC_opad64  = genPad((byte)0x5c, 64);
     private static final byte[] HMAC_opad128 = genPad((byte)0x5c, 128);
-
-    // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    static final byte[][] SSL3_CONST = genConst();
 
     static byte[] genPad(byte b, int count) {
         byte[] padding = new byte[count];
@@ -103,16 +89,6 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         return b;
     }
 
-    private static byte[][] genConst() {
-        int n = 10;
-        byte[][] arr = new byte[n][];
-        for (int i = 0; i < n; i++) {
-            byte[] b = new byte[i + 1];
-            Arrays.fill(b, (byte)('A' + i));
-            arr[i] = b;
-        }
-        return arr;
-    }
 
     // PRF implementation
 
@@ -147,7 +123,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         throw new InvalidParameterException(MSG);
     }
 
-    protected SecretKey engineGenerateKey0(boolean tls12) {
+    protected SecretKey engineGenerateKey0() {
         if (spec == null) {
             throw new IllegalStateException(
                 "TlsPrfGenerator must be initialized");
@@ -157,11 +133,9 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         try {
             byte[] labelBytes = spec.getLabel().getBytes(UTF_8);
             int n = spec.getOutputLength();
-            byte[] prfBytes = (tls12 ?
-                doTLS12PRF(secret, labelBytes, spec.getSeed(), n,
+            byte[] prfBytes = doTLS12PRF(secret, labelBytes, spec.getSeed(), n,
                     spec.getPRFHashAlg(), spec.getPRFHashLength(),
-                    spec.getPRFBlockSize()) :
-                doTLS10PRF(secret, labelBytes, spec.getSeed(), n));
+                    spec.getPRFBlockSize());
             try {
                 return new SecretKeySpec(prfBytes, spec.getKeyAlg());
             } finally {
@@ -226,65 +200,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         return output;
     }
 
-    static byte[] doTLS10PRF(byte[] secret, byte[] labelBytes,
-            byte[] seed, int outputLength) throws NoSuchAlgorithmException,
-            DigestException {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        MessageDigest sha = MessageDigest.getInstance("SHA1");
-        return doTLS10PRF(secret, labelBytes, seed, outputLength, md5, sha);
-    }
 
-    static byte[] doTLS10PRF(byte[] secret, byte[] labelBytes,
-            byte[] seed, int outputLength, MessageDigest md5,
-            MessageDigest sha) throws DigestException {
-        /*
-         * Split the secret into two halves S1 and S2 of same length.
-         * S1 is taken from the first half of the secret, S2 from the
-         * second half.
-         * Their length is created by rounding up the length of the
-         * overall secret divided by two; thus, if the original secret
-         * is an odd number of bytes long, the last byte of S1 will be
-         * the same as the first byte of S2.
-         *
-         * Note: Instead of creating S1 and S2, we determine the offset into
-         * the overall secret where S2 starts.
-         */
-
-        if (secret == null) {
-            secret = B0;
-        }
-        int off = secret.length >> 1;
-        int seclen = off + (secret.length & 1);
-
-        byte[] secKey = secret;
-        int keyLen = seclen;
-        byte[] output = new byte[outputLength];
-
-        // P_MD5(S1, label + seed)
-        // If we have a long secret, digest it first.
-        if (seclen > 64) {              // 64: block size of HMAC-MD5
-            md5.update(secret, 0, seclen);
-            secKey = md5.digest();
-            md5.reset();
-            keyLen = secKey.length;
-        }
-        expand(md5, 16, secKey, 0, keyLen, labelBytes, seed, output,
-            HMAC_ipad64.clone(), HMAC_opad64.clone());
-
-        // P_SHA-1(S2, label + seed)
-        // If we have a long secret, digest it first.
-        if (seclen > 64) {              // 64: block size of HMAC-SHA1
-            sha.update(secret, off, seclen);
-            secKey = sha.digest();
-            sha.reset();
-            keyLen = secKey.length;
-            off = 0;
-        }
-        expand(sha, 20, secKey, off, keyLen, labelBytes, seed, output,
-            HMAC_ipad64.clone(), HMAC_opad64.clone());
-
-        return output;
-    }
 
     /*
      * @param digest the MessageDigest to produce the HMAC
@@ -374,30 +290,10 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
 
     /**
      * A KeyGenerator implementation that supports TLS 1.2.
-     * <p>
-     * TLS 1.2 uses a different hash algorithm than 1.0/1.1 for the PRF
-     * calculations.  As of 2010, there is no PKCS11-level support for TLS
-     * 1.2 PRF calculations, and no known OS's have an internal variant
-     * we could use.  Therefore, for TLS 1.2, we are updating JSSE to request
-     * a different provider algorithm:  "SunTls12Prf".  If we reused the
-     * name "SunTlsPrf", the PKCS11 provider would need be updated to
-     * fail correctly when presented with the wrong version number
-     * (via Provider.Service.supportsParameters()), and add the
-     * appropriate supportsParamters() checks into KeyGenerators (not
-     * currently there).
      */
     public static class V12 extends TlsPrfGenerator {
         protected SecretKey engineGenerateKey() {
-            return engineGenerateKey0(true);
-        }
-    }
-
-    /**
-     * A KeyGenerator implementation that supports TLS 1.0/1.1.
-     */
-    public static class V10 extends TlsPrfGenerator {
-        protected SecretKey engineGenerateKey() {
-            return engineGenerateKey0(false);
+            return engineGenerateKey0();
         }
     }
 }

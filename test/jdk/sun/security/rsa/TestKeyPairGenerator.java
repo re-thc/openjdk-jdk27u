@@ -154,11 +154,11 @@ public class TestKeyPairGenerator {
             }
             test(privateKey, publicKey);
         }
-        String md5Algo = "MD5withRSA";
+        String sha1Algo = "SHA1withRSA";
         String sha256Algo = "Sha256withRSA";
-        testInvalidSignature(keyPairs[0], keyPairs[1], md5Algo);
-        testInvalidSignature(keyPairs[0], keyPairs[2], md5Algo);
-        testInvalidSignature(keyPairs[2], keyPairs[0], md5Algo);
+        testInvalidSignature(keyPairs[0], keyPairs[1], sha1Algo);
+        testInvalidSignature(keyPairs[0], keyPairs[2], sha1Algo);
+        testInvalidSignature(keyPairs[2], keyPairs[0], sha1Algo);
         testInvalidSignature(keyPairs[0], keyPairs[1], sha256Algo);
         testInvalidSignature(keyPairs[0], keyPairs[2], sha256Algo);
         testInvalidSignature(keyPairs[2], keyPairs[0], sha256Algo);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,10 +104,17 @@ public final class Xoroshiro128PlusPlus implements LeapableGenerator {
      */
     private static final String GROUP = "Xoroshiro";
 
+    static {
+        // Preserve the secureRandomSeed property snapshot at class initialization.
+        RandomSupport.ensureInitialized();
+    }
+
     /**
      * The seed generator for default constructors.
      */
-    private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
+    private static class DefaultGenHolder {
+        static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
+    }
 
     /* ---------------- instance fields ---------------- */
 
@@ -163,7 +171,7 @@ public final class Xoroshiro128PlusPlus implements LeapableGenerator {
      */
     public Xoroshiro128PlusPlus() {
         // Using GOLDEN_RATIO_64 here gives us a good Weyl sequence of values.
-        this(defaultGen.getAndAdd(RandomSupport.GOLDEN_RATIO_64));
+        this(DefaultGenHolder.defaultGen.getAndAdd(RandomSupport.GOLDEN_RATIO_64));
     }
 
     /**

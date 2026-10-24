@@ -37,14 +37,7 @@ public class PBEParametersTest {
 
     private static final char[] PASSWORD = { 'p', 'a', 's', 's' };
     private static final String[] PBE_ALGOS = {
-        "PBEWithMD5AndDES",
         "PBEWithSHA1AndDESede",
-        "PBEWithSHA1AndRC2_40",
-        "PBEWithSHA1AndRC2_128",
-        "PBEWithSHA1AndRC4_40",
-        "PBEWithSHA1AndRC4_128",
-        // skip "PBEWithMD5AndTripleDES" since it requires Unlimited
-        // version of JCE jurisdiction policy files.
         "PBEWithHmacSHA1AndAES_128",
         "PBEWithHmacSHA224AndAES_128",
         "PBEWithHmacSHA256AndAES_128",

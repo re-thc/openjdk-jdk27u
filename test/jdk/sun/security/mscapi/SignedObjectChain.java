@@ -41,8 +41,6 @@ public class SignedObjectChain {
     }
 
     private static final Test[] tests = {
-        new Test(Chain.SigAlg.MD2withRSA),
-        new Test(Chain.SigAlg.MD5withRSA),
         new Test(Chain.SigAlg.SHA1withRSA),
         new Test(Chain.SigAlg.SHA256withRSA),
         new Test(Chain.SigAlg.SHA384withRSA),
