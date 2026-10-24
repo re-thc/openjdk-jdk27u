@@ -358,7 +358,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Check that the compiler actually supports precomp headers.
     echo "int alfa();" > conftest.h
-    $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
+    $CXX -c -x c++-header conftest.h -o conftest.hpp.gch 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
     if test ! -f conftest.hpp.gch; then
       PRECOMPILED_HEADERS_AVAILABLE=false
       AC_MSG_RESULT([no, gcc fails to compile properly with -x c++-header])
