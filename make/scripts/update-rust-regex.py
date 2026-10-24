@@ -24,7 +24,7 @@
 # questions.
 #
 
-"""Refresh the bundled regex crates, lockfile, checksums and MIT notices."""
+"""Refresh the bundled regex crates, lockfile, checksums and license notices."""
 import argparse
 import datetime
 import json
@@ -38,6 +38,20 @@ import urllib.request
 INDEX = "https://index.crates.io/re/ge/regex"
 ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / "src/hotspot/share/runtime/rustregex"
+
+
+def legal_notices(vendor, crates, rust_std):
+    legal = "# Rust regex and dependencies\n\nThe bundled crates are used under their MIT license option.\n"
+    legal += "Additional notices for bundled Unicode data are included below.\n\n"
+    for name, version in sorted(crates):
+        crate = vendor / name
+        legal += f"## {name} {version}\n\nUpstream: https://crates.io/crates/{name}/{version}\n\n```\n"
+        legal += (crate / "LICENSE-MIT").read_text().rstrip() + "\n```\n\n"
+        for notice in sorted(crate.rglob("LICENSE-UNICODE")):
+            relative = notice.relative_to(crate).as_posix()
+            legal += f"### Unicode data: {relative}\n\n```\n"
+            legal += notice.read_text(encoding="utf-8").rstrip() + "\n```\n\n"
+    return legal + "## Rust standard library" + rust_std
 
 
 def main():
@@ -76,21 +90,17 @@ def main():
                 crates.append((name, version))
         legal_path = ROOT / "src/java.base/share/legal/rust_regex.md"
         rust_std = legal_path.read_text().split("## Rust standard library", 1)[1]
-        legal = "# Rust regex and dependencies\n\nThe bundled crates are used under their MIT license option.\n\n"
-        for name, version in sorted(crates):
-            license_file = stage / "vendor" / name / "LICENSE-MIT"
-            legal += f"## {name} {version}\n\nUpstream: https://crates.io/crates/{name}/{version}\n\n```\n"
-            legal += license_file.read_text().rstrip() + "\n```\n\n"
+        legal = legal_notices(stage / "vendor", crates, rust_std)
         (BASE / "Cargo.toml").write_text(manifest)
         shutil.copyfile(stage / "Cargo.lock", BASE / "Cargo.lock")
         shutil.rmtree(BASE / "vendor")
         shutil.copytree(stage / "vendor", BASE / "vendor")
-        legal_path.write_text(legal + "## Rust standard library" + rust_std)
+        legal_path.write_text(legal, encoding="utf-8")
     evidence = {"index": INDEX, "verified_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "latest_stable": latest["vers"], "selected": selected["vers"],
                 "published_at": selected.get("pubtime"), "crate_sha256": selected["cksum"]}
     (BASE / "UPSTREAM.json").write_text(json.dumps(evidence, indent=2) + "\n")
-    print("Updated vendor sources, Cargo.lock, MIT notices, and release evidence. Run the tests in src/hotspot/share/runtime/rustregex/UPDATING.txt.")
+    print("Updated vendor sources, Cargo.lock, license notices, and release evidence. Run the tests in src/hotspot/share/runtime/rustregex/UPDATING.txt.")
 
 
 if __name__ == "__main__":
