@@ -3738,21 +3738,24 @@ address StubGenerator::generate_multiplyToLen() {
 *  Input:
 *    c_rarg0   - obja     address
 *    c_rarg1   - objb     address
-*    c_rarg3   - length   length
-*    c_rarg4   - scale    log2_array_indxscale
+*    c_rarg2   - length   length
+*    c_rarg3   - scale    log2_array_indxscale
 *
 *  Output:
 *        rax   - int >= mismatched index, < 0 bitwise complement of tail
 */
-address StubGenerator::generate_vectorizedMismatch() {
-  StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+address StubGenerator::generate_vectorizedMismatch(bool unsafe_access) {
+  StubId stub_id = unsafe_access ? StubId::stubgen_vectorizedMismatch_id
+                                : StubId::stubgen_vectorizedMismatchHeap_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
   GrowableArray<address> extras;
-  address start = load_archive_data(stub_id, nullptr, &extras);
+  address start = load_archive_data(stub_id, nullptr, unsafe_access ? &extras : nullptr);
   if (start != nullptr) {
-    assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
-    register_unsafe_access_handlers(extras, 0, 1);
+    if (unsafe_access) {
+      assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+      register_unsafe_access_handlers(extras, 0, 1);
+    }
     return start;
   }
   __ align(CodeEntryAlignment);
@@ -3789,28 +3792,37 @@ address StubGenerator::generate_vectorizedMismatch() {
   // protected PC range raises an asynchronous InternalError. As around C2's
   // Unsafe.copyMemory calls, the thread flag tells the signal handler that
   // this is an unsafe access; other stubs in the table keep crashing the VM.
+  // C2's proven heap-only entry shares the kernel without this native setup.
   const Address doing_unsafe_access(r15_thread, JavaThread::doing_unsafe_access_offset());
-  __ movb(doing_unsafe_access, 1);
+  if (unsafe_access) {
+    __ movb(doing_unsafe_access, 1);
+  }
   {
-    UnsafeMemoryAccessMark umam(this, true, true);
+    UnsafeMemoryAccessMark umam(this, unsafe_access, true);
     __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
-    __ movb(doing_unsafe_access, 0);
+    if (unsafe_access) {
+      __ movb(doing_unsafe_access, 0);
+    }
     __ vzeroupper();
     __ leave();
     __ ret(0);
   }
-  // A fault skips the kernel, including its element-index scaling. Return a
-  // valid index while the pending asynchronous InternalError is delivered.
-  __ movb(doing_unsafe_access, 0);
-  __ xorl(result, result);
-  __ vzeroupper();
-  __ leave();
-  __ ret(0);
+  if (unsafe_access) {
+    // A fault skips the kernel, including its element-index scaling. Return a
+    // valid index while the pending asynchronous InternalError is delivered.
+    __ movb(doing_unsafe_access, 0);
+    __ xorl(result, result);
+    __ vzeroupper();
+    __ leave();
+    __ ret(0);
+  }
 
   address end = __ pc();
-  retrieve_unsafe_access_handlers(start, end, extras);
-  assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
-  store_archive_data(stub_id, start, end, nullptr, &extras);
+  if (unsafe_access) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+    assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+  }
+  store_archive_data(stub_id, start, end, nullptr, unsafe_access ? &extras : nullptr);
 
   return start;
 }
@@ -4843,7 +4855,10 @@ void StubGenerator::generate_final_stubs() {
 #endif // COMPILER2
 
   if (UseVectorizedMismatchIntrinsic) {
-    StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch(true);
+#ifdef COMPILER2
+    StubRoutines::x86::_vectorizedMismatchHeap = generate_vectorizedMismatch(false);
+#endif
   }
 
   StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();

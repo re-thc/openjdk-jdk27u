@@ -44,6 +44,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -76,6 +77,7 @@ public class AOTMappedMemoryAccessTest {
                 if (mode == RunMode.PRODUCTION) {
                     out.shouldContain("Read blob 'final_blob (stub gen)'");
                     out.shouldNotContain("Failed to Read blob 'final_blob (stub gen)'");
+                    out.shouldContain("Heap mismatch after AOT restoration passed");
                     out.shouldContain("Recovered mapped faults: forward, backward, String, mismatch source/destination");
                 }
             }
@@ -98,6 +100,10 @@ class AOTMappedMemoryAccessApp {
         return reverse ? other.mismatch(slice) : slice.mismatch(other);
     }
 
+    private static int heapMismatch(float[] a, float[] b) {
+        return Arrays.mismatch(a, 1, a.length, b, 1, b.length);
+    }
+
     private static void expectFault(Runnable operation) {
         try {
             operation.run();
@@ -113,6 +119,18 @@ class AOTMappedMemoryAccessApp {
     public static void main(String[] args) throws Exception {
         Path path = Files.createTempFile("aot-mapped-access", ".bin");
         String text = "\u03b1".repeat(COPY_BYTES / Character.BYTES);
+        float[] heapA = new float[4098];
+        float[] heapB = new float[4098];
+        for (int i = 0; i < 1000; i++) {
+            heapB[2] = (i & 1) == 0 ? 0.0f : 1.0f;
+            int expected = (i & 1) == 0 ? -1 : 1;
+            if (heapMismatch(heapA, heapB) != expected) {
+                throw new AssertionError("Incorrect heap mismatch after AOT restoration");
+            }
+        }
+        if (args[0].equals("fault")) {
+            System.out.println("Heap mismatch after AOT restoration passed");
+        }
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE);
                 Arena arena = Arena.ofConfined()) {
             MemorySegment mapped = channel.map(FileChannel.MapMode.READ_WRITE, 0, 1 << 20, arena);

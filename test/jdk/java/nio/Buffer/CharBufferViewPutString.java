@@ -56,6 +56,8 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -65,6 +67,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.CountDownLatch;
 
 public class CharBufferViewPutString {
     private static final int CAPACITY = 5000;
@@ -137,6 +140,8 @@ public class CharBufferViewPutString {
             }
         }
         testSession();
+        testAttachment();
+        testSharedClose();
     }
 
     private static void testMappedFault() throws Exception {
@@ -184,11 +189,15 @@ public class CharBufferViewPutString {
             cb = arena.allocate(4096).asByteBuffer().order(ByteOrder.nativeOrder()).asCharBuffer();
             cb.position(3).put(src, 1, 1024);
             check(cb.get(3) == src.charAt(1), "scoped copy");
+            cb.clear().position(3).append(src, 1, 1024);
+            check(cb.get(3) == src.charAt(1), "scoped append");
             cb.clear();
             Throwable[] failure = new Throwable[1];
             Thread thread = new Thread(() -> {
                 expect(WrongThreadException.class, () -> cb.put(src), "wrong-thread copy");
                 check(cb.position() == 0, "wrong-thread position");
+                expect(WrongThreadException.class, () -> cb.append(src, 0, src.length()), "wrong-thread append");
+                check(cb.position() == 0, "wrong-thread append position");
             });
             thread.setUncaughtExceptionHandler((t, ex) -> failure[0] = ex);
             thread.start();
@@ -202,6 +211,71 @@ public class CharBufferViewPutString {
         }
         expect(IllegalStateException.class, () -> cb.put(src), "closed copy");
         check(cb.position() == 0, "closed position");
+        expect(IllegalStateException.class, () -> cb.append(src, 0, src.length()), "closed append");
+        check(cb.position() == 0, "closed append position");
+    }
+
+    private static void testAttachment() {
+        String src = text(4097, false);
+        ByteBuffer owner = ByteBuffer.allocateDirect(2 * CAPACITY + 1);
+        WeakReference<ByteBuffer> ownerReference = new WeakReference<>(owner);
+        CharBuffer view = owner.position(1).order(ByteOrder.nativeOrder()).asCharBuffer();
+        view.position(5);
+        view = view.slice().duplicate();
+        owner = null;
+        while (view.hasRemaining()) {
+            view.put('#');
+        }
+        for (int i = 0; i < 4; i++) {
+            System.gc();
+            view.position(3).put(src);
+            verify(view, 3, src, 0, src.length(), "attached view/put");
+            view.position(3).append(src, 0, src.length());
+            verify(view, 3, src, 0, src.length(), "attached view/append");
+            check(ownerReference.get() != null, "direct allocation owner retained by view");
+        }
+        Reference.reachabilityFence(view);
+    }
+
+    private static void testSharedClose() throws Exception {
+        String src = "\u03b1".repeat(1 << 18);
+        for (int i = 0; i < 12; i++) {
+            boolean append = (i & 1) != 0;
+            Arena arena = Arena.ofShared();
+            CharBuffer cb = arena.allocate(2L * (src.length() + 8))
+                    .asByteBuffer().order(ByteOrder.nativeOrder()).asCharBuffer();
+            cb.position(3);
+            CountDownLatch started = new CountDownLatch(1);
+            Throwable[] failure = new Throwable[1];
+            Thread thread = new Thread(() -> {
+                started.countDown();
+                try {
+                    if (append) {
+                        cb.append(src, 0, src.length());
+                    } else {
+                        cb.put(src);
+                    }
+                } catch (Throwable t) {
+                    failure[0] = t;
+                }
+            });
+            thread.setDaemon(true);
+            try {
+                thread.start();
+                started.await();
+            } finally {
+                arena.close();
+            }
+            thread.join(10_000);
+            check(!thread.isAlive(), "shared close/copy completed");
+            if (failure[0] == null) {
+                check(cb.position() == 3 + src.length(), "completed shared copy position");
+            } else {
+                check(failure[0] instanceof IllegalStateException,
+                        "shared copy after close: " + failure[0]);
+                check(cb.position() == 3, "failed shared copy position");
+            }
+        }
     }
 
     private static void test(boolean direct, ByteOrder order, int byteOffset) {

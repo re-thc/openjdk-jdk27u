@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +60,7 @@ import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.javac.Restricted;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
@@ -2340,6 +2342,12 @@ public final class System {
             @Override
             public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
                 string.copyToSegmentRaw(segment, offset, srcIndex, srcLength);
+            }
+
+            @Override
+            public void copyUTF16ToNative(String string, int srcIndex, int srcLength,
+                                          MemorySessionImpl dstSession, long dstAddress) {
+                string.copyUTF16ToNative(srcIndex, srcLength, dstSession, dstAddress);
             }
 
             @Override

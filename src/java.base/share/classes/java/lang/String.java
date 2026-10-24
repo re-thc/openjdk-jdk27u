@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +54,9 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -2149,6 +2153,18 @@ public final class String
         checkBoundsOffCount(srcIndex, srcLength, length());
         MemorySegment.copy(value, srcIndex << 1, segment, ValueLayout.JAVA_BYTE,
                 offset, srcLength << 1);
+    }
+
+    void copyUTF16ToNative(int srcIndex, int srcLength,
+                           MemorySessionImpl dstSession, long dstAddress) {
+        checkBoundsOffCount(srcIndex, srcLength, length());
+        if (isLatin1()) {
+            throw new IllegalArgumentException("String does not use UTF-16 storage");
+        }
+        ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(
+                null, dstSession, value,
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long)srcIndex << 1),
+                null, dstAddress, (long)srcLength << 1);
     }
 
     /**

@@ -7038,9 +7038,25 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
     // The heap guard admits at most 2 KiB. Retain the explicit cap as well.
     Node* stub_length = heap_access
         ? _gvn.transform(new MinINode(length, intcon((2 * K) >> scale_t->get_con()))) : length;
+    address mismatch_stub = StubRoutines::vectorizedMismatch();
+    const char* mismatch_name = "vectorizedMismatch";
+#ifdef AMD64
+    // Only proven primitive heap accesses may omit the native fault setup.
+    // Use the original base types: a speculative unsafe-address cast alone
+    // must not route nullable or uncertain inputs through the heap-only entry.
+    if (obja_t != nullptr && objb_t != nullptr &&
+        !TypePtr::NULL_PTR->higher_equal(obja_t) && !TypePtr::NULL_PTR->higher_equal(objb_t) &&
+        is_java_primitive(obja_t->elem()->array_element_basic_type()) &&
+        is_java_primitive(objb_t->elem()->array_element_basic_type()) &&
+        !has_wide_mem(_gvn, obja_adr, obja) && !has_wide_mem(_gvn, objb_adr, objb)) {
+      mismatch_stub = StubRoutines::x86::vectorizedMismatchHeap();
+      mismatch_name = "vectorizedMismatchHeap";
+      assert(mismatch_stub != nullptr, "heap mismatch stub must be generated with the generic entry");
+    }
+#endif
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
-                                   StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
+                                   mismatch_stub, mismatch_name, TypePtr::BOTTOM,
                                    obja_adr, objb_adr, stub_length, scale);
     Node* stub_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
     exit_block->init_req(stub_path, control());

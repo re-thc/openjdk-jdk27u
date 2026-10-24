@@ -471,14 +471,20 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
 #if[boU]
-    private void putStringUTF16(String src, int start, int length) {
-        MemorySegment dst = MemorySegment.ofBuffer(this);
-        // Keep the original staging loop's copy bound and polling opportunities.
-        for (int copied = 0; copied < length;) {
-            int count = Math.min(APPEND_BUF_SIZE, length - copied);
-            SharedSecrets.getJavaLangAccess().copyToSegmentRaw(
-                    src, dst, (long)copied << 1, start + copied, count);
-            copied += count;
+    private void putStringUTF16(int index, String src, int start, int length) {
+        MemorySessionImpl dstSession = session();
+        long dstAddress = ix(index);
+        try {
+            // Keep the staging loop's copy bound and polling opportunities.
+            for (int copied = 0; copied < length;) {
+                int count = Math.min(APPEND_BUF_SIZE, length - copied);
+                SharedSecrets.getJavaLangAccess().copyUTF16ToNative(
+                        src, start + copied, count, dstSession,
+                        dstAddress + ((long)copied << 1));
+                copied += count;
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 #end[boU]
@@ -502,7 +508,7 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[boU]
         if (SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
-            putStringUTF16(src, start, length);
+            putStringUTF16(pos, src, start, length);
         } else
 #end[boU]
         {
@@ -534,11 +540,23 @@ class Direct$Type$Buffer$RW$$BO$
 #if[boU]
         if (length >= PUT_STRING_UTF16_BULK_MINIMUM && csq instanceof String src &&
                 SharedSecrets.getJavaLangAccess().stringCoder(src) == UTF16_CODER) {
-            putStringUTF16(src, start, length);
+            putStringUTF16(pos, src, start, length);
         } else
 #end[boU]
         {
-            putChars(pos, csq, start, end);
+            char[] buf = new char[Math.min(APPEND_BUF_SIZE, length)];
+            int index = pos;
+            while (start < end) {
+                int count = end - start;
+                if (count > buf.length)
+                    count = buf.length;
+
+                csq.getChars(start, start + count, buf, 0);
+                putArray(index, buf, 0, count);
+
+                start += count;
+                index += count;
+            }
         }
 
         position(pos + length);
