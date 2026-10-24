@@ -51,10 +51,9 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
         return jlong_zero;
     } else {
         const char *msg;
-        int ret = deflateInit2_(strm, level, Z_DEFLATED,
+        int ret = deflateInit2(strm, level, Z_DEFLATED,
                                 nowrap ? -MAX_WBITS : MAX_WBITS,
-                                DEF_MEM_LEVEL, strategy, ZLIB_VERSION,
-                                sizeof(z_stream));
+                                DEF_MEM_LEVEL, strategy);
         switch (ret) {
           case Z_OK:
             return ptr_to_jlong(strm);

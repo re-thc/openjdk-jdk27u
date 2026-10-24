@@ -83,11 +83,13 @@ TARGETS += $(BUILD_LIBJAVA)
 BUILD_LIBZIP_EXCLUDES :=
 LIBZIP_EXCLUDES += zlib-ng
 ifeq ($(USE_ZLIBNG), true)
-  LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
+  LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1 $(ZLIBNG_HEADER_CFLAGS)
   LIBZIP_EXCLUDES += zlib
   $(MODULE)_INCLUDED_LIBS += zlibng
 
   ifeq ($(STATIC_LIBS), true)
+    # Package the engine once. libzip and libjli retain unresolved native API
+    # references instead of adding another archive to their link flags.
     ZLIBNG_STATIC_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libzlibng/static/$(LIBRARY_PREFIX)zlibng$(STATIC_LIBRARY_SUFFIX)
 
     $(ZLIBNG_STATIC_LIB): $(ZLIBNG_LIB)
@@ -175,7 +177,7 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ifeq ($(USE_ZLIBNG), true)
-  LIBJLI_CFLAGS += $(ZLIBNG_HEADER_CFLAGS)
+  LIBJLI_CFLAGS += -DINCLUDE_ZLIBNG=1 $(ZLIBNG_HEADER_CFLAGS)
 else
   LIBJLI_EXTRA_FILE_LIST := inflate.c inftrees.c inffast.c zadler32.c \
       zcrc32.c zutil.c

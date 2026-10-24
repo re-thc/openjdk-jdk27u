@@ -16,11 +16,13 @@ SHA-256: ba09b6d7d45f0aaf6f58976fe943b3de2fd3b6e4ee9d7ebad93876ef12fbcc63
    Keep this file outside zlib-ng/: the importer replaces that directory.
 
 3) Build through make/common/Zlib.gmk with the configured target compiler/sysroot.
-   Linux/macOS/Windows x86-64/AArch64 use compat mode and jdk_ng_ API names.
+   Linux/macOS/Windows x86-64/AArch64 use native mode and jdk_ng_native_ names.
    Preserve stock fallback and build-host selection. Windows requires CMake/NMake
    with configured MSVC. --with-zlib selections are rejected.
 
-4) Keep zip_zlib_backend.h, JNI and ZipIntrinsics.c consistent; preserve level-1
+4) Keep the libzip/libjli adapters and generated native headers consistent.
+   Static packaging includes one libzlibng archive; consumers retain references.
+   Preserve JNI, ZIP_* interfaces, checksums, allocator hooks and the level-1
    mapping to ng level 2 and Java stream/GC/error accounting. Test ZIP/checksums
    and stock fallback using test/hotspot/jtreg/compiler/intrinsics/zip/ and
    test/jdk/java/util/zip/.
