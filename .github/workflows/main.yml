@@ -1,6 +1,6 @@
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # SPDX-License-Identifier: GPL-2.0-only
-name: Native kqueue correctness
+name: Native kqueue release comparison
 'on':
   workflow_dispatch:
     inputs:
@@ -10,173 +10,17 @@ name: Native kqueue correctness
         type: string
 permissions:
   contents: read
-  actions: read
 concurrency:
-  group: native-kqueue-correctness-${{ github.ref }}
+  group: native-kqueue-comparison-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  staging:
-    if: github.ref == 'refs/heads/qualify/native-kqueue-correctness-once'
-    runs-on: ubuntu-26.04
-    timeout-minutes: 15
-    outputs:
-      archive_sha256: ${{ steps.build.outputs.archive_sha256 }}
-      manifest_sha256: ${{ steps.build.outputs.manifest_sha256 }}
-      receipt_sha256: ${{ steps.build.outputs.receipt_sha256 }}
-      artifact_id: ${{ steps.transfer.outputs.artifact-id }}
-      artifact_digest: ${{ steps.transfer.outputs.artifact-digest }}
-    env:
-      PYTHONUNBUFFERED: '1'
-      EXPECTED_VALIDATION_SHA: ${{ inputs.expected_validation_sha }}
-    steps:
-    - name: Initialize bounded evidence
-      shell: bash
-      timeout-minutes: 1
-      run: |
-        python3 -I - <<'PY'
-        import json, os, re, time
-        from pathlib import Path
-        start = time.monotonic()
-        root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-correctness-evidence'
-        root.mkdir()
-        data = {'monotonic': start, 'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
-        for key in ('GITHUB_SHA', 'GITHUB_REF', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID',
-                    'GITHUB_RUN_ATTEMPT', 'RUNNER_OS', 'RUNNER_ARCH', 'ImageOS', 'ImageVersion'):
-            data[key] = os.environ.get(key)
-        (root / 'job-start.json').write_text(json.dumps(data, indent=2) + '\n')
-        if not re.fullmatch(r'[0-9a-f]{40}', os.environ.get('EXPECTED_VALIDATION_SHA', '')):
-            raise SystemExit('Exact lowercase validation SHA required')
-        if os.environ.get('EXPECTED_VALIDATION_SHA') != os.environ.get('GITHUB_SHA'):
-            raise SystemExit('Input SHA must match dispatched source')
-        if os.environ.get('GITHUB_RUN_ATTEMPT') != '1':
-            raise SystemExit('Reruns are outside this run contract')
-        PY
-    - name: Checkout validation source
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      timeout-minutes: 2
-      with:
-        fetch-depth: '6'
-        persist-credentials: 'false'
-        path: validation
-    - name: Checkout pinned OpenJDK jtreg
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      timeout-minutes: 1
-      with:
-        repository: openjdk/jtreg
-        ref: 551e17adac0579859012c4c46318b8fa3cf2ff37
-        fetch-depth: '1'
-        persist-credentials: 'false'
-        path: harness-inputs/jtreg
-    - name: Checkout pinned OpenJDK jtharness
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      timeout-minutes: 1
-      with:
-        repository: openjdk/jtharness
-        ref: 9149bb776f4df5435a6f97d6bbf9b30af1086d5a
-        fetch-depth: '1'
-        persist-credentials: 'false'
-        path: harness-inputs/jtharness
-    - name: Checkout pinned OpenJDK asmtools
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      timeout-minutes: 1
-      with:
-        repository: openjdk/asmtools
-        ref: 30f96d5c7f24097c756b8360eccd137933f529fa
-        fetch-depth: '1'
-        persist-credentials: 'false'
-        path: harness-inputs/asmtools
-    - name: Build and verify clean harness once
-      id: build
-      shell: bash
-      timeout-minutes: 9
-      run: |
-        python3 -I validation/.github/native-polling/correctness/staging.py \
-          --repo "$GITHUB_WORKSPACE/validation" \
-          --inputs "$GITHUB_WORKSPACE/harness-inputs" \
-          --output "$RUNNER_TEMP/native-kqueue-correctness-evidence" \
-          --transfer "$RUNNER_TEMP/native-kqueue-clean-jtreg" \
-          --expected-sha "$EXPECTED_VALIDATION_SHA"
-    - name: Upload verified one-day harness transfer
-      id: transfer
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-      timeout-minutes: 1
-      with:
-        name: native-kqueue-clean-jtreg-20261024
-        path: ${{ runner.temp }}/native-kqueue-clean-jtreg
-        include-hidden-files: 'false'
-        if-no-files-found: error
-        compression-level: '0'
-        retention-days: '1'
-    - name: Always stop children and collect scoped evidence
-      if: always()
-      shell: bash
-      timeout-minutes: 2
-      env:
-        PREVIOUS_JOB_STATUS: ${{ job.status }}
-        STAGING_UPLOAD_ID: ${{ steps.transfer.outputs.artifact-id }}
-        STAGING_UPLOAD_DIGEST: ${{ steps.transfer.outputs.artifact-digest }}
-      run: |
-        evidence="$RUNNER_TEMP/native-kqueue-correctness-evidence"
-        artifacts="$RUNNER_TEMP/native-kqueue-correctness-artifacts"
-        mkdir -p "$evidence" "$artifacts"
-        cleanup_status=0
-        controller=validation/.github/native-polling/correctness/controller.py
-        if test -f "$controller"; then
-          python3 -I "$controller" --cleanup --output "$evidence" || cleanup_status=$?
-        fi
-        export NATIVE_CLEANUP_STATUS="$cleanup_status"
-        python3 -I - <<'PY'
-        import json, os, time
-        from pathlib import Path
-        root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-correctness-evidence'
-        result = {'job_status_before_collection': os.environ.get('PREVIOUS_JOB_STATUS'),
-                  'cleanup_status': int(os.environ['NATIVE_CLEANUP_STATUS']),
-                  'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
-        if not (root / 'status.json').is_file():
-            result['controller_status'] = 'not started or unable to record status'
-        (root / 'collection.json').write_text(json.dumps(result, indent=2) + '\n')
-        if os.environ.get('STAGING_UPLOAD_ID'):
-            (root / 'artifact-upload.json').write_text(json.dumps({
-                'artifact_id': os.environ['STAGING_UPLOAD_ID'],
-                'artifact_digest': os.environ.get('STAGING_UPLOAD_DIGEST'),
-                'run_id': os.environ.get('GITHUB_RUN_ID'), 'retention_days': 1}, indent=2) + '\n')
-        PY
-        export_status=0
-        if test -f "$controller"; then
-          python3 -I "$controller" --output "$evidence" --export "$artifacts" || export_status=$?
-        else
-          for name in job-start.json collection.json status.json; do
-            if test -f "$evidence/$name"; then cp "$evidence/$name" "$artifacts/$name"; fi
-          done
-        fi
-        if test "$export_status" != 0; then
-          cp "$evidence/collection.json" "$artifacts/export-failure.json"
-        fi
-        if test "$cleanup_status" != 0; then exit "$cleanup_status"; fi
-        exit "$export_status"
-    - name: Retain selected results for five days
-      if: always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-      timeout-minutes: 2
-      with:
-        name: native-kqueue-staging-${{ github.run_id }}-${{ github.sha }}
-        path: ${{ runner.temp }}/native-kqueue-correctness-artifacts
-        include-hidden-files: 'false'
-        if-no-files-found: error
-        compression-level: '0'
-        retention-days: '5'
   native-macos:
-    if: success() && github.ref == 'refs/heads/qualify/native-kqueue-correctness-once'
+    if: github.ref == 'refs/heads/qualify/native-kqueue-comparison-once'
     runs-on: macos-26
-    timeout-minutes: 85
+    timeout-minutes: 110
     env:
       PYTHONUNBUFFERED: '1'
       EXPECTED_VALIDATION_SHA: ${{ inputs.expected_validation_sha }}
-      JTREG_ARCHIVE_SHA: ${{ needs.staging.outputs.archive_sha256 }}
-      JTREG_MANIFEST_SHA: ${{ needs.staging.outputs.manifest_sha256 }}
-      JTREG_RECEIPT_SHA: ${{ needs.staging.outputs.receipt_sha256 }}
-      JTREG_ARTIFACT_ID: ${{ needs.staging.outputs.artifact_id }}
-      JTREG_ARTIFACT_DIGEST: ${{ needs.staging.outputs.artifact_digest }}
     steps:
     - name: Initialize bounded evidence
       shell: bash
@@ -186,7 +30,7 @@ jobs:
         import json, os, re, time
         from pathlib import Path
         start = time.monotonic()
-        root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-correctness-evidence'
+        root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-comparison-evidence'
         root.mkdir()
         data = {'monotonic': start, 'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
         for key in ('GITHUB_SHA', 'GITHUB_REF', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID',
@@ -206,21 +50,13 @@ jobs:
       with:
         fetch-depth: '6'
         persist-credentials: 'false'
-    - name: Transfer exact clean jtreg distribution
-      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-      timeout-minutes: 2
-      with:
-        digest-mismatch: error
-        name: native-kqueue-clean-jtreg-20261024
-        path: ${{ runner.temp }}/native-kqueue-clean-jtreg
-    - name: Build candidate and check correctness once
+    - name: Build matched release images and compare once
       shell: bash
-      timeout-minutes: 67
+      timeout-minutes: 94
       run: |
-        python3 -I .github/native-polling/correctness/controller.py \
+        python3 -I .github/native-polling/comparison/controller.py \
           --repo "$GITHUB_WORKSPACE" \
-          --output "$RUNNER_TEMP/native-kqueue-correctness-evidence" \
-          --transfer "$RUNNER_TEMP/native-kqueue-clean-jtreg" \
+          --output "$RUNNER_TEMP/native-kqueue-comparison-evidence" \
           --expected-sha "$EXPECTED_VALIDATION_SHA"
     - name: Always stop children and collect scoped evidence
       if: always()
@@ -229,11 +65,11 @@ jobs:
       env:
         PREVIOUS_JOB_STATUS: ${{ job.status }}
       run: |
-        evidence="$RUNNER_TEMP/native-kqueue-correctness-evidence"
-        artifacts="$RUNNER_TEMP/native-kqueue-correctness-artifacts"
+        evidence="$RUNNER_TEMP/native-kqueue-comparison-evidence"
+        artifacts="$RUNNER_TEMP/native-kqueue-comparison-artifacts"
         mkdir -p "$evidence" "$artifacts"
         cleanup_status=0
-        controller=.github/native-polling/correctness/controller.py
+        controller=.github/native-polling/comparison/controller.py
         if test -f "$controller"; then
           python3 -I "$controller" --cleanup --output "$evidence" || cleanup_status=$?
         fi
@@ -241,7 +77,7 @@ jobs:
         python3 -I - <<'PY'
         import json, os, time
         from pathlib import Path
-        root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-correctness-evidence'
+        root = Path(os.environ['RUNNER_TEMP']) / 'native-kqueue-comparison-evidence'
         result = {'job_status_before_collection': os.environ.get('PREVIOUS_JOB_STATUS'),
                   'cleanup_status': int(os.environ['NATIVE_CLEANUP_STATUS']),
                   'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
@@ -267,10 +103,9 @@ jobs:
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
       timeout-minutes: 8
       with:
-        name: native-kqueue-correctness-${{ github.run_id }}-${{ github.sha }}
-        path: ${{ runner.temp }}/native-kqueue-correctness-artifacts
+        name: native-kqueue-comparison-${{ github.run_id }}-${{ github.sha }}
+        path: ${{ runner.temp }}/native-kqueue-comparison-artifacts
         include-hidden-files: 'false'
         if-no-files-found: error
         compression-level: '0'
         retention-days: '5'
-    needs: staging
