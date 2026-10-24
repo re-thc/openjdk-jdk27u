@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +47,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.regex.Grapheme;
+import jdk.internal.util.regex.RustRegex;
 
 /**
  * A compiled representation of a regular expression.
@@ -1007,6 +1009,47 @@ public final class Pattern
      */
     transient Node root;
 
+    transient volatile RustRegex rustRegex;
+    private transient volatile boolean javaCompiled;
+
+    Pattern javaPattern() {
+        if (javaCompiled) return this;
+        RustRegex engine = rustRegex;
+        if (engine == null) return this;
+        synchronized (engine) {
+            Pattern fallback = engine.javaPattern();
+            if (fallback == null) {
+                String prefix = engine.literalDigitsPrefix();
+                fallback = prefix == null ? new Pattern(pattern, flags, false)
+                        : new Pattern(pattern, flags, engine);
+                assert fallback.capturingGroupCount == capturingGroupCount;
+                engine.cacheJavaPattern(fallback);
+            }
+            return fallback;
+        }
+    }
+
+    // Promote permanently on an unsupported input/operation. A measured Java
+    // choice may already have compiled a sibling; active native calls retain
+    // their own wrapper.
+    void ensureJava() {
+        if (javaCompiled) return;
+        synchronized (this) {
+            if (!javaCompiled) {
+                Pattern fallback = javaPattern();
+                assert fallback.capturingGroupCount == capturingGroupCount;
+                root = fallback.root;
+                matchRoot = fallback.matchRoot;
+                flags0 = fallback.flags0;
+                localCount = fallback.localCount;
+                localTCNCount = fallback.localTCNCount;
+                namedGroups = fallback.namedGroups;
+                javaCompiled = true;
+                rustRegex = null;
+            }
+        }
+    }
+
     /**
      * The root of object tree for a match operation.  The pattern is matched
      * at the beginning.  This may include a find that uses BnM or a First
@@ -1543,6 +1586,7 @@ public final class Pattern
         if (pattern.isEmpty()) {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
+            javaCompiled = true;
             compiled = true;
         }
     }
@@ -1554,6 +1598,105 @@ public final class Pattern
      * only a Start node and a LastNode node.
      */
     private Pattern(String p, int f) {
+        this(p, f, true);
+    }
+
+    // Reuse validated preparation instead of parsing the same simple grammar again.
+    private Pattern(String p, int f, RustRegex engine) {
+        pattern = p;
+        flags = flags0 = f;
+        capturingGroupCount = engine.groupCount;
+        namedGroups = engine.namedGroups;
+        String prefix = engine.literalDigitsPrefix();
+        int[] literal = new int[prefix.length()];
+        for (int i = 0; i < literal.length; i++) literal[i] = prefix.charAt(i);
+        if (engine.shortLiteralPrefix() != null) {
+            byte[] shifts = new byte[128];
+            Arrays.fill(shifts, (byte) literal.length);
+            for (int i = 0; i < literal.length - 1; i++)
+                shifts[literal[i] & 127] = (byte) (literal.length - 1 - i);
+            root = new LiteralDigits(literal, shifts, true);
+            matchRoot = new LiteralDigits(literal, shifts, false);
+        } else {
+            Node digits = new BmpCharPropertyGreedy(new BmpCharProperty(PreparedAsciiDigit.INSTANCE), 1);
+            digits.next = lastAccept;
+            Node node = preparedCapture(digits, engine.literalDigitsGroup());
+            if (literal.length != 0) {
+                Node slice = new Slice(literal);
+                slice.next = node;
+                node = preparedCapture(slice, engine.literalPrefixGroup());
+            }
+            matchRoot = node;
+            root = BnM.optimize(node);
+            if (root == node) root = new Start(node);
+        }
+        javaCompiled = compiled = true;
+    }
+
+    private Node preparedCapture(Node body, int group) {
+        if (group == 0) return body;
+        int local = localCount++;
+        GroupHead head = new GroupHead(local);
+        GroupTail tail = new GroupTail(local, group);
+        tail.next = body.next;
+        body.next = tail;
+        head.next = body;
+        head.tail = tail;
+        return head;
+    }
+
+    private enum PreparedAsciiDigit implements BmpCharPredicate {
+        INSTANCE;
+        public boolean is(int c) { return c >= '0' && c <= '9'; }
+    }
+
+    private static final class LiteralDigits extends Node {
+        private final int[] literal;
+        private final byte[] shifts;
+        private final boolean search;
+        LiteralDigits(int[] literal, byte[] shifts, boolean search) {
+            this.literal = literal;
+            this.shifts = shifts;
+            this.search = search;
+        }
+        @Override
+        boolean match(Matcher matcher, int at, CharSequence input) {
+            int to = matcher.to, width = literal.length;
+            if (!search) {
+                for (int i = 0; i < width; i++) {
+                    if (at + i == to) { matcher.hitEnd = true; return false; }
+                    if (input.charAt(at + i) != literal[i]) return false;
+                }
+                return digits(matcher, at, input);
+            }
+            while (at < to - width) {
+                int last = input.charAt(at + width - 1);
+                if (last == literal[width - 1]) {
+                    int i = 0;
+                    while (i < width - 1 && input.charAt(at + i) == literal[i]) i++;
+                    if (i == width - 1 && digits(matcher, at, input)) return true;
+                }
+                at += shifts[last & 127];
+            }
+            matcher.hitEnd = true;
+            return false;
+        }
+        private boolean digits(Matcher matcher, int at, CharSequence input) {
+            int end = at + literal.length, begin = end;
+            while (end < matcher.to) {
+                char c = input.charAt(end);
+                if (c < '0' || c > '9') break;
+                end++;
+            }
+            matcher.hitEnd = end == matcher.to;
+            if (end == begin || matcher.acceptMode == Matcher.ENDANCHOR && end != matcher.to) return false;
+            matcher.first = matcher.groups[0] = at;
+            matcher.last = matcher.groups[1] = end;
+            return true;
+        }
+    }
+
+    private Pattern(String p, int f, boolean preferNative) {
         if ((f & ~ALL_FLAGS) != 0) {
             throw new IllegalArgumentException("Unknown flag 0x"
                                                + Integer.toHexString(f));
@@ -1575,13 +1718,16 @@ public final class Pattern
 
         if (!pattern.isEmpty()) {
             try {
-                compile();
+                if (preferNative) compile();
+                else { compileJava(); javaCompiled = true; }
             } catch (StackOverflowError soe) {
                 throw error("Stack overflow during pattern compilation");
             }
         } else {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
+            javaCompiled = true;
+            compiled = true;
         }
     }
 
@@ -1904,6 +2050,50 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * of the expression which will create the object tree.
      */
     private void compile() {
+        // These flags and leading groups cannot use the native grammar. Avoid
+        // initializing its preparation/cache machinery for Java-only patterns.
+        RustRegex nativePattern = (flags & ~RustRegex.SUPPORTED_FLAGS) == 0
+                && pattern.length() <= RustRegex.MAX_PATTERN_LENGTH && !javaOnlySyntax()
+                ? RustRegex.compile(pattern, flags) : null;
+        if (nativePattern != null) {
+            rustRegex = nativePattern;
+            capturingGroupCount = nativePattern.groupCount;
+            namedGroups = nativePattern.namedGroups;
+            compiled = true;
+            return;
+        }
+        compileJava();
+        javaCompiled = true;
+    }
+
+    private boolean javaOnlySyntax() {
+        if (pattern.startsWith("(?")) {
+            if (pattern.length() < 3) return true;
+            char kind = pattern.charAt(2);
+            if (kind == ':') return false;
+            if (kind != '<' || pattern.length() < 4) return true;
+            char next = pattern.charAt(3);
+            return next == '=' || next == '!';
+        }
+        if (pattern.startsWith("\\Q")) {
+            int endQuote = pattern.indexOf("\\E", 2);
+            if (endQuote < 0 || endQuote == pattern.length() - 2) return true;
+        }
+        // A plain literal has no complex native plan. Check leading classes or
+        // groups first, then scan backwards for common trailing quantifiers.
+        // The native parser validates the rest after any operator or escape.
+        int length = pattern.length();
+        for (int visited = 0; visited < length; visited++) {
+            int index = visited == 0 ? 0 : length - visited;
+            switch (pattern.charAt(index)) {
+                case '(', ')', '[', ']', '{', '}', '.', '^', '$', '|', '*', '+', '?', '\\':
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    private void compileJava() {
         // Handle canonical equivalences
         if (has(CANON_EQ) && !has(LITERAL)) {
             normalizedPattern = normalize(pattern);

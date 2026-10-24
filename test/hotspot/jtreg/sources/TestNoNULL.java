@@ -78,7 +78,8 @@ public class TestNoNULL {
         initializeExcludedPaths(dir);
 
         if (Files.exists(srcPath)) {
-            processFiles(srcPath, excludedSourceFiles, Set.of());
+            // The C++ nullptr convention does not apply to Rust sources.
+            processFiles(srcPath, excludedSourceFiles, Set.of(".rs"));
         }
         processFiles(testPath, excludedTestFiles, excludedTestExtensions);
 

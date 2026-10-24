@@ -72,6 +72,7 @@ id="toc-native-compiler-toolchain-requirements">Native Compiler
 id="toc-microsoft-visual-studio">Microsoft Visual Studio</a></li>
 <li><a href="#ibm-open-xl-cc" id="toc-ibm-open-xl-cc">IBM Open XL
 C/C++</a></li>
+<li><a href="#rust" id="toc-rust">Rust</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements" id="toc-boot-jdk-requirements">Boot
 JDK Requirements</a>
@@ -765,6 +766,16 @@ product ID accordingly.</p>
 <p>The minimum accepted version of Open XL is 17.1.1.4. This is in
 essence clang 15, and will be treated as such by the OpenJDK build
 system.</p>
+<h3 id="rust">Rust</h3>
+<p>This fork enables the bundled regex backend by default on GNU/Linux
+and macOS for x86_64 and AArch64. Enabled builds require Cargo, Rust
+1.99.1 or newer and the matching Rust standard library copyright notices
+(the rustup <code>rust-docs</code> component). Set <code>RUSTC</code> to
+select the compiler, or use <code>--disable-rust-regex</code> to build
+without the backend. If the notices are outside the compiler sysroot,
+provide <code>--with-rust-regex-license=PATH</code>. Dependency
+maintenance instructions are in <a
+href="../src/hotspot/share/runtime/rustregex/UPDATING.txt">rustregex/UPDATING.txt</a>.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is
 called the "boot JDK". The boot JDK does not, however, have to be a JDK
