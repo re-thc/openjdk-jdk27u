@@ -3867,7 +3867,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // Reuse cached text before materializing a compact significand.
             String s = stringCache;
             if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
-                return FloatingDecimal.parseFloat(s);
+                return FloatingDecimal.parseFloatFromBigDecimal(s);
             }
         }
         return fullFloatValue(w, qb);
@@ -4082,7 +4082,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // Reuse cached text before materializing a compact significand.
             String s = stringCache;
             if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
-                return FloatingDecimal.parseDouble(s);
+                return FloatingDecimal.parseDoubleFromBigDecimal(s);
             }
         }
         return fullDoubleValue(w, qb);

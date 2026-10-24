@@ -108,6 +108,21 @@ public final class FloatingDecimal {
         return readJavaFormatString(s, BINARY_64_IX);
     }
 
+    /** Parses canonical decimal text produced by {@link java.math.BigDecimal}. */
+    @ForceInline
+    public static double parseDoubleFromBigDecimal(String s) {
+        if (USE_FAST_FLOAT && s != null) {
+            int length = s.length();
+            if (length > 0 && length <= 1024) {
+                double v = parseFastFloat(s, BINARY_64_IX);
+                if (!Double.isNaN(v)) {
+                    return v;
+                }
+            }
+        }
+        return readJavaFormatString(s, BINARY_64_IX);
+    }
+
     /**
      * Converts a {@link String} to a single precision floating point value.
      *
@@ -122,6 +137,21 @@ public final class FloatingDecimal {
             double v = parseFastFloat(s, BINARY_32_IX);
             if (!Double.isNaN(v)) {
                 return (float) v;
+            }
+        }
+        return (float) readJavaFormatString(s, BINARY_32_IX);
+    }
+
+    /** Parses canonical decimal text produced by {@link java.math.BigDecimal}. */
+    @ForceInline
+    public static float parseFloatFromBigDecimal(String s) {
+        if (USE_FAST_FLOAT && s != null) {
+            int length = s.length();
+            if (length > 0 && length <= 1024) {
+                double v = parseFastFloat(s, BINARY_32_IX);
+                if (!Double.isNaN(v)) {
+                    return (float) v;
+                }
             }
         }
         return (float) readJavaFormatString(s, BINARY_32_IX);
