@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +59,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zipLibrary.hpp"
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
@@ -979,6 +981,45 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   return entry;
 
 }
+
+address TemplateInterpreterGenerator::generate_Adler32_entry(AbstractInterpreter::MethodKind kind) {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
+
+  const Register adler = c_rarg0;
+  const Register buf = c_rarg1;
+  const Register len = c_rarg2;
+  address target;
+  if (kind == Interpreter::java_util_zip_Adler32_update) {
+    __ ldrw(buf, Address(esp));
+    __ ldrw(adler, Address(esp, wordSize));
+    target = ZipLibrary::adler32_byte_address();
+  } else {
+    __ ldr(buf, Address(esp, 2 * wordSize));
+    __ ldrw(len, Address(esp, wordSize));
+    if (kind == Interpreter::java_util_zip_Adler32_updateBytes) {
+      __ add(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+      __ ldrw(adler, Address(esp, 3 * wordSize));
+    } else {
+      __ ldrw(adler, Address(esp, 4 * wordSize));
+    }
+    __ add(buf, buf, len);
+    __ ldrw(len, Address(esp));
+    target = ZipLibrary::adler32_address();
+  }
+
+  // A leaf call can return directly to the interpreter's caller.
+  __ andr(sp, r19_sender_sp, -16);
+  // BR through IP0 is compatible with a native BTI call landing pad.
+  __ lea(r16, RuntimeAddress(target));
+  __ br(r16);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
+
 
 /**
  * Method entry for static native methods:

@@ -27,6 +27,8 @@
 include MakeIncludeStart.gmk
 ifeq ($(INCLUDE), true)
 
+include Zlib.gmk
+
 ################################################################################
 
 ################################################################################
@@ -79,8 +81,24 @@ TARGETS += $(BUILD_LIBJAVA)
 ################################################################################
 
 BUILD_LIBZIP_EXCLUDES :=
-ifeq ($(USE_EXTERNAL_LIBZ), true)
+LIBZIP_EXCLUDES += zlib-ng
+ifeq ($(USE_ZLIBNG), true)
+  LIBZIP_ZLIBNG_CFLAGS := -DINCLUDE_ZLIBNG=1
   LIBZIP_EXCLUDES += zlib
+  $(MODULE)_INCLUDED_LIBS += zlibng
+
+  ifeq ($(STATIC_LIBS), true)
+    ZLIBNG_STATIC_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libzlibng/static/$(LIBRARY_PREFIX)zlibng$(STATIC_LIBRARY_SUFFIX)
+
+    $(ZLIBNG_STATIC_LIB): $(ZLIBNG_LIB)
+	$(call MakeDir, $(@D))
+	$(CP) $< $@
+	$(ECHO) > $@.lib-flags.txt
+
+    TARGETS += $(ZLIBNG_STATIC_LIB)
+  else
+    LIBZIP_ZLIBNG_LIBS := $(ZLIBNG_LIB)
+  endif
 endif
 
 ifeq ($(LIBZIP_CAN_USE_MMAP), true)
@@ -91,14 +109,15 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     NAME := zip, \
     OPTIMIZATION := LOW, \
     EXCLUDES := $(LIBZIP_EXCLUDES), \
-    CFLAGS := $(LIBZ_CFLAGS), \
+    CFLAGS := $(LIBZ_CFLAGS) $(LIBZIP_ZLIBNG_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_zip_util.c := unused-function, \
     JDK_LIBS := libjava libjvm, \
-    LIBS_unix := $(LIBZ_LIBS), \
+    LIBS := $(LIBZIP_ZLIBNG_LIBS), \
+    EXTRA_DEPS := $(ZLIBNG_LIB) $(ZLIBNG_STATIC_LIB), \
 ))
 
 TARGETS += $(BUILD_LIBZIP)
@@ -155,20 +174,15 @@ ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
-ifneq ($(USE_EXTERNAL_LIBZ), true)
-  # Extra files from the zlib.
+ifeq ($(USE_ZLIBNG), true)
+  LIBJLI_CFLAGS += $(ZLIBNG_HEADER_CFLAGS)
+else
   LIBJLI_EXTRA_FILE_LIST := inflate.c inftrees.c inffast.c zadler32.c \
       zcrc32.c zutil.c
-
   LIBJLI_EXTRA_FILES += \
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           $(LIBJLI_EXTRA_FILE_LIST))
-
-  # Do not include these libz objects in the static libjli library.
-  # When statically linking the java launcher with all JDK and VM
-  # static libraries, we use the --whole-archive linker option.
-  # The duplicate objects in different static libraries cause linking
-  # errors due to duplicate symbols.
+  # With the stock fallback, libzip supplies these symbols to static launchers.
   LIBJLI_STATIC_EXCLUDE_OBJS := \
       $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
 endif
@@ -199,7 +213,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype format-nonliteral \
         unused-function, \
     DISABLED_WARNINGS_clang_java_md_macosx.m := unused-variable, \
-    LIBS_unix := $(LIBZ_LIBS), \
+    LIBS := $(ZLIBNG_LINK_LIBS), \
+    EXTRA_DEPS := $(ZLIBNG_LIB), \
     LIBS_linux := $(LIBDL) $(LIBPTHREAD), \
     LIBS_macosx := $(LIBJLI_LIBS_macosx), \
     LIBS_windows := advapi32.lib user32.lib $(LIBJLI_LIBS_windows), \

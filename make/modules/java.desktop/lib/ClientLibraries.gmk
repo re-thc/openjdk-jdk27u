@@ -26,6 +26,8 @@
 include MakeIncludeStart.gmk
 ifeq ($(INCLUDE), true)
 
+include Zlib.gmk
+
 ################################################################################
 # This file will build all AWT/2D native libraries that does not have "awt" in
 # the name. Note that this does not imply anything about the logical ownership
@@ -186,7 +188,9 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     LIBSPLASHSCREEN_EXCLUDES += libpng
   endif
 
-  ifeq ($(USE_EXTERNAL_LIBZ), false)
+  ifeq ($(USE_ZLIBNG), true)
+    LIBSPLASHSCREEN_CFLAGS += $(ZLIBNG_HEADER_CFLAGS)
+  else
     LIBSPLASHSCREEN_EXTRA_SRC += java.base:libzip/zlib
     LIBZIP_SRC_PATH := $(TOPDIR)/src/java.base/share/native/libzip
     LIBZIP_OBJS := $(sort $(patsubst %.c,%.o, $(notdir \
@@ -263,7 +267,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       LDFLAGS_windows := -delayload:user32.dll, \
       JDK_LIBS_windows := java.base:libjava, \
       JDK_LIBS_macosx := libosxapp, \
-      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
+      LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(ZLIBNG_LINK_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
       LIBS_unix := $(LIBM) $(LIBPTHREAD), \
       LIBS_linux := $(X_LIBS) -lX11 -lXext, \
       LIBS_macosx := \
@@ -275,6 +279,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       LIBS_aix := $(LIBDL) $(X_LIBS) -lX11 -lXext, \
       LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
       STATIC_LIB_EXCLUDE_OBJS := $(LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS), \
+      EXTRA_DEPS := $(ZLIBNG_LIB), \
   ))
 
   TARGETS += $(BUILD_LIBSPLASHSCREEN)

@@ -267,6 +267,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_PreconditionsCheckIndex(Intrinsic* x, BasicType type);
   void do_FPIntrinsics(Intrinsic* x);
   void do_Reference_get0(Intrinsic* x);
+  void do_zip_process(Intrinsic* x);
+  void do_update_Adler32(Intrinsic* x);
   void do_update_CRC32(Intrinsic* x);
   void do_update_CRC32C(Intrinsic* x);
   void do_vectorizedMismatch(Intrinsic* x);

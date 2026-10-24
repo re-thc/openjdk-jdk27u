@@ -129,6 +129,8 @@
   do_blob(throw_index_exception)          /* throws IndexOutOfBoundsException */ \
   do_blob(throw_div0_exception)                                        \
   do_blob(throw_null_pointer_exception)                                \
+  AMD64_ONLY(do_blob(zip_process))                                    \
+  AARCH64_ONLY(do_blob(zip_process))                                   \
   do_blob(register_finalizer)                                          \
   do_blob(new_instance)                                                \
   do_blob(fast_new_instance)                                           \
@@ -225,6 +227,7 @@
   do_stub(multianewarrayN, 0, true, false)                             \
   do_stub(complete_monitor_locking, 0, false, false)                   \
   do_stub(monitor_notify, 0, false, false)                             \
+  do_stub(zip_process, 0, false, false)                                \
   do_stub(monitor_notifyAll, 0, false, false)                          \
   do_stub(rethrow, 2, true, true)                                      \
   do_stub(slow_arraycopy, 0, false, false)                             \

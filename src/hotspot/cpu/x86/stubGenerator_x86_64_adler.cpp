@@ -1,5 +1,6 @@
 /*
 * Copyright (c) 2021, 2025, Intel Corporation. All rights reserved.
+* Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -28,6 +29,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
+#include "utilities/zipLibrary.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
 
@@ -65,6 +68,8 @@ ATTRIBUTE_ALIGNED(32) static const juint ADLER32_SHUF1_TABLE[] = {
 address StubGenerator::generate_updateBytesAdler32() {
   assert(UseAdler32Intrinsics, "");
 
+  address bulk_adler = ZipLibrary::adler32_address();
+
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
   int entry_count = StubInfo::entry_count(stub_id);
@@ -75,6 +80,17 @@ address StubGenerator::generate_updateBytesAdler32() {
   }
   StubCodeMark mark(this, stub_id);
   start = __ pc();
+
+  if (!VM_Version::supports_avx2()) {
+    __ jump(RuntimeAddress(bulk_adler), r10);
+    store_archive_data(stub_id, start, __ pc());
+    return start;
+  }
+  Label use_simd;
+  __ cmpl(c_rarg2, 1024);
+  __ jcc(Assembler::less, use_simd);
+  __ jump(RuntimeAddress(bulk_adler), r10);
+  __ bind(use_simd);
 
   // Choose an appropriate LIMIT for inner loop based on the granularity
   // of intermediate results. For int, LIMIT of 5552 will ensure intermediate

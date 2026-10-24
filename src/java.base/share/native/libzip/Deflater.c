@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +30,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "jlong.h"
 #include "jni.h"
 #include "jni_util.h"
-#include <zlib.h>
+#include "zip_zlib_backend.h"
 
 #include "java_util_zip_Deflater.h"
 
@@ -49,9 +51,10 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
         return jlong_zero;
     } else {
         const char *msg;
-        int ret = deflateInit2(strm, level, Z_DEFLATED,
-                               nowrap ? -MAX_WBITS : MAX_WBITS,
-                               DEF_MEM_LEVEL, strategy);
+        int ret = deflateInit2_(strm, level, Z_DEFLATED,
+                                nowrap ? -MAX_WBITS : MAX_WBITS,
+                                DEF_MEM_LEVEL, strategy, ZLIB_VERSION,
+                                sizeof(z_stream));
         switch (ret) {
           case Z_OK:
             return ptr_to_jlong(strm);
@@ -90,6 +93,9 @@ static void checkSetDictionaryResult(JNIEnv *env, jlong addr, jint res)
         break;
     case Z_STREAM_ERROR:
         JNU_ThrowIllegalArgumentException(env, 0);
+        break;
+    case Z_MEM_ERROR:
+        JNU_ThrowOutOfMemoryError(env, 0);
         break;
     default:
         throwInternalErrorHelper(env, strm, "unknown error in checkSetDictionaryResult");
@@ -154,6 +160,10 @@ static jlong checkDeflateStatus(JNIEnv *env, jlong addr,
     int finished = 0;
     int setParams = params & 1;
 
+    if (res == Z_MEM_ERROR) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return 0;
+    }
     if (setParams) {
         switch (res) {
         case Z_OK:
@@ -182,7 +192,20 @@ static jlong checkDeflateStatus(JNIEnv *env, jlong addr,
             return 0;
         }
     }
-    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | (((jlong)setParams) << 63);
+    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | ((jlong)((uint64_t)setParams << 63));
+}
+
+JNIEXPORT jint JNICALL
+ZIP_Deflate(jlong addr, jlong input, jint inputLen, jlong output, jint outputLen,
+            jint flush, jint params) {
+    return doDeflate(NULL, addr, jlong_to_ptr(input), inputLen,
+                     jlong_to_ptr(output), outputLen, flush, params);
+}
+
+JNIEXPORT jlong JNICALL
+ZIP_FinishDeflate(JNIEnv* env, jobject receiver, jlong addr,
+                  jint inputLen, jint outputLen, jint params, jint status) {
+    return checkDeflateStatus(env, addr, inputLen, outputLen, params, status);
 }
 
 JNIEXPORT jlong JNICALL

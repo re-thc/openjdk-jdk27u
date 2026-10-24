@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
-#include <zlib.h>
+#include "zip_zlib_backend.h"
 
 #include "java_util_zip_Adler32.h"
 
@@ -65,4 +66,18 @@ Java_java_util_zip_Adler32_updateByteBuffer(JNIEnv *env, jclass cls, jint adler,
         adler = adler32(adler, buf + off, len);
     }
     return adler;
+}
+
+/* Leaf entries used by checksum intrinsics. */
+JNIEXPORT jint JNICALL
+ZIP_Adler32Byte(jint adler, jint value)
+{
+    const Bytef b = (Bytef)value;
+    return (jint)adler32((uLong)(uInt)adler, &b, 1);
+}
+
+JNIEXPORT jint JNICALL
+ZIP_Adler32(jint adler, const jbyte* buf, jint len)
+{
+    return (jint)adler32((uLong)(uInt)adler, (const Bytef*)buf, (uInt)len);
 }
