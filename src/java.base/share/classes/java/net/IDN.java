@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +168,9 @@ public final class IDN {
      *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toASCII(String input) {
+        if (isSimpleASCIIName(input)) {
+            return input;
+        }
         return toASCII(input, 0);
     }
 
@@ -271,6 +275,33 @@ public final class IDN {
     // to suppress the default zero-argument constructor
     //
     private IDN() {}
+
+    // A sufficient test for names that are unchanged for every flag value.
+    // Restrict labels to LDH ASCII, without edge hyphens, and permit a trailing
+    // dot. ASCII ACE labels also remain unchanged. Leave all other inputs to
+    // the original conversion, including its validation and exception order.
+    private static boolean isSimpleASCIIName(String input) {
+        if (input == null) {
+            return false;
+        }
+        int length = input.length();
+        int labelStart = 0;
+        for (int i = 0; i < length; i++) {
+            char c = input.charAt(i);
+            if (c == '.') {
+                if (i == labelStart || input.charAt(i - 1) == '-') {
+                    return false;
+                }
+                labelStart = i + 1;
+            } else if (c > 0x7F || isNonLDHAsciiCodePoint(c)
+                    || (c == '-' && i == labelStart)
+                    || i - labelStart >= MAX_LABEL_LENGTH) {
+                return false;
+            }
+        }
+        return length > 0
+                && (labelStart == length || input.charAt(length - 1) != '-');
+    }
 
     //
     // toASCII operation; should only apply to a single label
