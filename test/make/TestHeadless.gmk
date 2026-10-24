@@ -1,4 +1,3 @@
-
 # Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -48,8 +47,8 @@ ifeq ($(ENABLE_DESKTOP), false)
     INCLUDE_GUARD_common/modules/LauncherCommon.gmk := true
     SetupBuildLauncher = $(eval TEST_LAUNCHERS += $(strip $1))
     SetupJdkExecutable =
-    # Capture the actual library inputs, including required non-GUI OS APIs.
-    SetupJdkLibrary = $(eval TEST_LIBRARY_ARGS_$(strip $1) := $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9) $(10) $(11) $(12) $(13) $(14) $(15))
+    # Use the production named-parameter range so later inputs are captured too.
+    SetupJdkLibrary = $(eval TEST_LIBRARY_ARGS_$(strip $1) := $(foreach i, $(PARAM_SEQUENCE), $($i)))
     include $(TOPDIR)/make/modules/java.base/Launcher.gmk
     include $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
     $(call AssertEquals, $(filter javaw, $(TEST_LAUNCHERS)), , GUI Windows launcher)
