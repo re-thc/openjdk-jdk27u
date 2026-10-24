@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -674,11 +675,11 @@ class MutableBigInteger {
 
         for (int j=len-1; j >= 0; j--) {
             long product = (a[j] & LONG_MASK) * xLong + carry;
-            long difference = q[offset] - product;
+            long difference = (q[offset] & LONG_MASK) - (product & LONG_MASK);
             q[offset--] = (int)difference;
-            carry = (product >>> 32)
-                     + (((difference & LONG_MASK) >
-                         (((~(int)product) & LONG_MASK))) ? 1:0);
+            // The low-word difference is in [-(2^32-1), 2^32-1], so
+            // difference >> 32 is -1 for a borrow and 0 otherwise.
+            carry = (product >>> 32) - (difference >> 32);
         }
         return (int)carry;
     }
@@ -693,10 +694,8 @@ class MutableBigInteger {
         offset += len;
         for (int j=len-1; j >= 0; j--) {
             long product = (a[j] & LONG_MASK) * xLong + carry;
-            long difference = q[offset--] - product;
-            carry = (product >>> 32)
-                     + (((difference & LONG_MASK) >
-                         (((~(int)product) & LONG_MASK))) ? 1:0);
+            long difference = (q[offset--] & LONG_MASK) - (product & LONG_MASK);
+            carry = (product >>> 32) - (difference >> 32);
         }
         return (int)carry;
     }
