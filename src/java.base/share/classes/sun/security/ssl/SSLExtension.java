@@ -540,6 +540,65 @@ enum SSLExtension implements SSLStringizer {
                                 null, null,
                                 PreSharedKeyExtension.shStringizer);
 
+    // These private arrays are shared read-only within sun.security.ssl.
+    // Keep each group in enum declaration order, including unsupported entries.
+    private static final SSLExtension[] NO_EXTENSIONS = new SSLExtension[0];
+    private static final Map<SSLHandshake, SSLExtension[]> HANDSHAKE_EXTENSIONS =
+            handshakeExtensions();
+
+    private static Map<SSLHandshake, SSLExtension[]> handshakeExtensions() {
+        EnumMap<SSLHandshake, SSLExtension[]> groups =
+                new EnumMap<>(SSLHandshake.class);
+        groups.put(SSLHandshake.CLIENT_HELLO, new SSLExtension[] {
+            CH_SERVER_NAME, CH_MAX_FRAGMENT_LENGTH, CH_STATUS_REQUEST,
+            CH_SUPPORTED_GROUPS, CH_EC_POINT_FORMATS, CH_ALPN,
+            CH_STATUS_REQUEST_V2, CH_EXTENDED_MASTER_SECRET, CH_COMPRESS_CERTIFICATE,
+            CH_SESSION_TICKET, CH_SIGNATURE_ALGORITHMS, CH_SUPPORTED_VERSIONS,
+            CH_COOKIE, PSK_KEY_EXCHANGE_MODES, CH_CERTIFICATE_AUTHORITIES,
+            CH_SIGNATURE_ALGORITHMS_CERT, CH_KEY_SHARE, CH_QUIC_TRANSPORT_PARAMETERS,
+            CH_RENEGOTIATION_INFO, CH_PRE_SHARED_KEY
+        });
+        groups.put(SSLHandshake.SERVER_HELLO, new SSLExtension[] {
+            SH_SERVER_NAME, SH_MAX_FRAGMENT_LENGTH, SH_STATUS_REQUEST,
+            SH_EC_POINT_FORMATS, SH_ALPN, SH_STATUS_REQUEST_V2,
+            SH_EXTENDED_MASTER_SECRET, SH_SESSION_TICKET, SH_SUPPORTED_VERSIONS,
+            SH_KEY_SHARE, SH_RENEGOTIATION_INFO, SH_PRE_SHARED_KEY
+        });
+        groups.put(SSLHandshake.ENCRYPTED_EXTENSIONS, new SSLExtension[] {
+            EE_SERVER_NAME, EE_MAX_FRAGMENT_LENGTH, EE_SUPPORTED_GROUPS,
+            EE_ALPN, EE_QUIC_TRANSPORT_PARAMETERS
+        });
+        groups.put(SSLHandshake.NOT_APPLICABLE, new SSLExtension[] {
+            CLIENT_CERTIFICATE_URL, TRUSTED_CA_KEYS, TRUNCATED_HMAC,
+            CR_STATUS_REQUEST, USER_MAPPING, CLIENT_AUTHZ,
+            SERVER_AUTHZ, CERT_TYPE, SRP,
+            USE_SRTP, HEARTBEAT, SIGNED_CERT_TIMESTAMP,
+            CLIENT_CERT_TYPE, SERVER_CERT_TYPE, PADDING,
+            ENCRYPT_THEN_MAC, TOKEN_BINDING, CACHED_INFO,
+            CH_EARLY_DATA, EE_EARLY_DATA, NST_EARLY_DATA,
+            OID_FILTERS, POST_HANDSHAKE_AUTH
+        });
+        groups.put(SSLHandshake.CERTIFICATE, new SSLExtension[] {
+            CT_STATUS_REQUEST
+        });
+        groups.put(SSLHandshake.CERTIFICATE_REQUEST, new SSLExtension[] {
+            CR_COMPRESS_CERTIFICATE, CR_SIGNATURE_ALGORITHMS, CR_CERTIFICATE_AUTHORITIES,
+            CR_SIGNATURE_ALGORITHMS_CERT
+        });
+        groups.put(SSLHandshake.HELLO_RETRY_REQUEST, new SSLExtension[] {
+            HRR_SUPPORTED_VERSIONS, HRR_COOKIE, HRR_KEY_SHARE
+        });
+        groups.put(SSLHandshake.MESSAGE_HASH, new SSLExtension[] {
+            MH_SUPPORTED_VERSIONS, MH_COOKIE, MH_KEY_SHARE
+        });
+        return Collections.unmodifiableMap(groups);
+    }
+
+    // Callers must not modify the returned shared group.
+    static SSLExtension[] forHandshake(SSLHandshake handshakeType) {
+        return HANDSHAKE_EXTENSIONS.getOrDefault(handshakeType, NO_EXTENSIONS);
+    }
+
     final int id;
     final SSLHandshake handshakeType;
     final String name;
@@ -604,9 +663,8 @@ enum SSLExtension implements SSLStringizer {
     }
 
     static SSLExtension valueOf(SSLHandshake handshakeType, int extensionType) {
-        for (SSLExtension ext : SSLExtension.values()) {
-            if (ext.id == extensionType &&
-                    ext.handshakeType == handshakeType) {
+        for (SSLExtension ext : forHandshake(handshakeType)) {
+            if (ext.id == extensionType) {
                 return ext;
             }
         }

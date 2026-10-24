@@ -430,7 +430,7 @@ final class SSLConfiguration implements Cloneable {
      */
     SSLExtension[] getEnabledExtensions(SSLHandshake handshakeType) {
         List<SSLExtension> extensions = new ArrayList<>();
-        for (SSLExtension extension : SSLExtension.values()) {
+        for (SSLExtension extension : SSLExtension.forHandshake(handshakeType)) {
             if (extension.handshakeType == handshakeType) {
                 if (isAvailable(extension)) {
                     extensions.add(extension);
@@ -450,7 +450,7 @@ final class SSLConfiguration implements Cloneable {
     SSLExtension[] getExclusiveExtensions(SSLHandshake handshakeType,
             List<SSLExtension> excluded) {
         List<SSLExtension> extensions = new ArrayList<>();
-        for (SSLExtension extension : SSLExtension.values()) {
+        for (SSLExtension extension : SSLExtension.forHandshake(handshakeType)) {
             if (extension.handshakeType == handshakeType) {
                 if (isAvailable(extension) && !excluded.contains(extension)) {
                     extensions.add(extension);
@@ -483,7 +483,7 @@ final class SSLConfiguration implements Cloneable {
     SSLExtension[] getEnabledExtensions(
             SSLHandshake handshakeType, List<ProtocolVersion> activeProtocols) {
         List<SSLExtension> extensions = new ArrayList<>();
-        for (SSLExtension extension : SSLExtension.values()) {
+        for (SSLExtension extension : SSLExtension.forHandshake(handshakeType)) {
             if (extension.handshakeType == handshakeType) {
                 if (!isAvailable(extension)) {
                     continue;
