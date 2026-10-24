@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +38,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @library providers/bootstrapUsage
  * @build bootstrap.usage.provider/impl.WithBootstrapResolverUsageProvider
  * @run junit/othervm BootstrapResolverUsageTest
+ * @run junit/othervm -Dtest.numericFirst=true BootstrapResolverUsageTest
+ * @run junit/othervm -Dtest.canonicalFirst=true BootstrapResolverUsageTest
  */
 
 public class BootstrapResolverUsageTest {
 
     @Test
     public void testSuccessfulProviderInstantiationTest() throws Exception {
+        if (Boolean.getBoolean("test.numericFirst")) {
+            InetAddress.getByAddress(new byte[] {127, 0, 0, 1});
+            InetAddress.getByName("127.0.0.1");
+            InetAddress.getByName("::1");
+            InetAddress.getLoopbackAddress();
+            assertEquals(0, numberOfGetCalls,
+                    "Numeric and loopback addresses must not discover the provider");
+        }
+        if (Boolean.getBoolean("test.canonicalFirst")) {
+            InetAddress.getByName("127.0.0.1").getCanonicalHostName();
+            assertEquals(1, numberOfGetCalls,
+                    "Reverse lookup must install the recursive provider exactly once");
+        }
         System.err.println(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName()));
         assertEquals(1, numberOfGetCalls, "InetAddressResolverProvider.get was called more than once");
     }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +47,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.text.DateFormat;
 
 import static java.util.stream.Collectors.*;
@@ -166,6 +168,10 @@ public class HelloClasslist {
         o.equals(new B(5));
         o.hashCode();
         LOGGER.log(Level.FINE, "Value: " + value);
+
+        // Include skip-list collections in the default CDS archive independently
+        // of InetAddress's lazily initialized DNS cache.
+        new ConcurrentSkipListSet<>();
 
         // The Striped64$Cell is loaded rarely only when there's a contention among
         // multiple threads performing LongAdder.increment(). This results in
