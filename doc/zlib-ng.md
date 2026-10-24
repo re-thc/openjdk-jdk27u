@@ -2,7 +2,8 @@
 
 Linux, macOS and Windows x86-64 and AArch64 builds use bundled zlib-ng
 for ZIP compression, decompression and native Adler32/CRC32 calls. The pre-VM
-launcher and bundled splash-screen PNG decoder use that same private backend.
+launcher uses that same private backend. This fork requires a headless build;
+the desktop module and splash-screen PNG decoder are excluded.
 
 Compression level 1 maps to zlib-ng level 2, retaining a compression ratio
 comparable to stock zlib's fastest level. The mapping applies to initialization
@@ -12,8 +13,6 @@ The `--with-zlib` option has been removed. Explicit uses, including `system`
 and `bundled`, are rejected. Backend selection is determined by the target:
 this integration uses bundled stock zlib on other OS/CPU combinations, with
 unchanged compression levels. Configure reports that fallback explicitly.
-Independent external dependencies, such as system libpng or FreeType, may
-retain their own transitive compression dependencies.
 
 `-XX:+UseZipIntrinsics` is the default. C1 and C2 use a shared GC-safe runtime
 call for supported Deflater/Inflater buffer shapes. `-XX:-UseZipIntrinsics`
@@ -61,8 +60,13 @@ python3 make/scripts/update-zlib-ng.py --archive /path/to/zlib-ng-COMMIT.tar.gz 
 
 The importer preserves upstream source bytes and file modes, removes obsolete
 files and updates the license notice. Update this provenance record with it.
-No source patches are carried. The native build uses compatibility mode,
-private `jdk_ng_` symbols and the configured target toolchain and sysroot.
+No source patches are carried. The native build uses the native zlib-ng API,
+private `jdk_ng_native_` API symbols and the configured target toolchain and sysroot.
+Both libzip and libjli compile against the same generated native headers and
+archive. Their adapters use the actual native stream type; they do not convert
+stream layouts on each call. Java and the exported `ZIP_*` interfaces are unchanged.
+The optional static-library image packages the engine once as `libzlibng.a`
+(`zlibng.lib` on Windows); the consumer archives retain references to that engine.
 Bundled zlib-ng builds on Windows require CMake and the configured MSVC
 toolchain's NMake.
 

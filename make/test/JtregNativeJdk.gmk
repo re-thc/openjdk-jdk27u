@@ -135,7 +135,7 @@ endif
 # explicitly called.
 ifneq ($(filter build-test-jdk-jtreg-native, $(MAKECMDGOALS)), )
   # Exercise the production manifest parser with test-only allocation hooks.
-  # It uses the same generated compat header/archive as the product launcher.
+  # It uses the same backend header/archive as the product launcher.
   include Zlib.gmk
   MANIFEST_CLEANUP_CFLAGS := -I$(TOPDIR)/src/java.base/share/native/libjli
   ifeq ($(USE_ZLIBNG), true)
