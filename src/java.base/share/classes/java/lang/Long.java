@@ -512,6 +512,7 @@ public final class Long extends Number
      * @throws     NumberFormatException  if the string does not contain a
      *             parsable {@code long}.
      */
+    @IntrinsicCandidate
     public static long parseLong(String s, int radix)
                 throws NumberFormatException {
         if (s == null) {
@@ -703,6 +704,7 @@ public final class Long extends Number
      *             does not contain a parsable {@code long}.
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long parseUnsignedLong(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {

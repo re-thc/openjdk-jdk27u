@@ -1,0 +1,11 @@
+--- a/zmij-int.cc
++++ b/zmij-int.cc
+@@ -1515,7 +1515,7 @@
+ template auto itoa(char* out, uint64_t value) noexcept -> char*;
+ template auto itoa_signed(char* out, int32_t value) noexcept -> char*;
+ template auto itoa_signed(char* out, int64_t value) noexcept -> char*;
+-#if ZMIJ_USE_INT128
++#if ZMIJ_USE_INT128 && !defined(ZMIJ_HOTSPOT_INTEGER_ONLY)
+ template auto itoa(char* out, uint128_t value) noexcept -> char*;
+ template auto itoa_signed(char* out, __int128 value) noexcept -> char*;
+ #endif

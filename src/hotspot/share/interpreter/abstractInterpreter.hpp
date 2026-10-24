@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +86,18 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
+    java_lang_Integer_parseInt,
+    java_lang_Long_parseLong,
+    java_lang_Integer_parseUnsignedInt,
+    java_lang_Long_parseUnsignedLong,
+    jdk_internal_util_formatIntLatin1,
+    jdk_internal_util_formatIntUTF16,
+    jdk_internal_util_formatLongLatin1,
+    jdk_internal_util_formatLongUTF16,
+    jdk_internal_math_decimalZmij,
+    jdk_internal_math_formatZmij,
+    jdk_internal_math_parseFastFloatDigits,
+    jdk_internal_math_parseFastFloat,                           // FloatingDecimal.parseFastFloat(String, int)
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()

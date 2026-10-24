@@ -25,6 +25,7 @@
 
 /*
  * Portions Copyright IBM Corporation, 2001. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  */
 
 package java.math;
@@ -40,8 +41,10 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -1385,6 +1388,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws NumberFormatException if {@code val} is infinite or NaN.
      * @since  1.5
      */
+    @ForceInline
     public static BigDecimal valueOf(double val) {
         if (!Double.isFinite(val)) {
             throw new NumberFormatException("Infinite or NaN");
@@ -3848,13 +3852,30 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (intCompact == 0) {
             return 0.0f;
         }
-        BigInteger w = unscaledValue().abs();
-        long qb = w.bitLength() - (long) Math.ceil(scale * L);
+        BigInteger w = intCompact == INFLATED ? intVal.abs() : null;
+        int bitLength = w == null
+                ? Long.SIZE - Long.numberOfLeadingZeros(Math.abs(intCompact))
+                : w.bitLength();
+        long qb = bitLength - (long) Math.ceil(scale * L);
         if (qb < Q_MIN_F - 2) {  // qb < -151
             return signum() * 0.0f;
         }
         if (qb > Q_MAX_F + P_F + 1) {  // qb > 129
             return signum() * Float.POSITIVE_INFINITY;
+        }
+        if (scale > 0) {
+            // Reuse cached text before materializing a compact significand.
+            String s = stringCache;
+            if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
+                return FloatingDecimal.parseFloatFromBigDecimal(s);
+            }
+        }
+        return fullFloatValue(w, qb);
+    }
+
+    private float fullFloatValue(BigInteger w, long qb) {
+        if (w == null) {
+            w = unscaledValue().abs();
         }
         if (scale < 0) {
             return signum() * w.multiply(bigTenToThe(-scale)).floatValue();
@@ -4039,8 +4060,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          *      (long) ceil(s * L) = ceil(s * L)
          * since all integers <= 2^P are exact doubles.
          */
-        BigInteger w = unscaledValue().abs();
-        long qb = w.bitLength() - (long) Math.ceil(scale * L);
+        BigInteger w = intCompact == INFLATED ? intVal.abs() : null;
+        int bitLength = w == null
+                ? Long.SIZE - Long.numberOfLeadingZeros(Math.abs(intCompact))
+                : w.bitLength();
+        long qb = bitLength - (long) Math.ceil(scale * L);
         if (qb < Q_MIN_D - 2) {  // qb < -1_076
             return signum() * 0.0;
         }
@@ -4054,6 +4078,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          * But rather than chasing for specific cases, do the full computations.
          * Here, Q_MIN - 2 <= qb <= Q_MAX + P + 1
          */
+        if (scale > 0) {
+            // Reuse cached text before materializing a compact significand.
+            String s = stringCache;
+            if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
+                return FloatingDecimal.parseDoubleFromBigDecimal(s);
+            }
+        }
+        return fullDoubleValue(w, qb);
+    }
+
+    private double fullDoubleValue(BigInteger w, long qb) {
+        if (w == null) {
+            w = unscaledValue().abs();
+        }
         if (scale < 0) {
             /*
              * Here -309 < s < 0, so w 10^{-s} is an integer: delegate to

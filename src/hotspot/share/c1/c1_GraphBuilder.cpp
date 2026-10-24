@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/zmij.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -3851,6 +3853,21 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 }
 
 
+static bool is_decimal_precision_factory(ciMethod* callee) {
+  if (!callee->is_static() || !callee->holder()->uses_default_loader()) {
+    return false;
+  }
+  ciSymbol* holder = callee->holder()->name();
+  ciSymbol* name = callee->name();
+  ciSymbol* signature = callee->signature()->as_symbol();
+  return (holder == ciSymbols::java_math_BigDecimal() &&
+          name == ciSymbols::valueOf_name() &&
+          signature == ciSymbols::double_BigDecimal_signature()) ||
+         (holder == ciSymbols::jdk_internal_math_FormattedFPDecimal() &&
+          name == ciSymbols::valueForDoubleToString_name() &&
+          signature == ciSymbols::double_FormattedFPDecimal_signature());
+}
+
 bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::should_not_inline(compilation()->env(), callee)) {
@@ -3891,13 +3908,18 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   }
 
   // now perform tests that are based on flag settings
+  // Java-only decimal factories use C1's ordinary inlining budgets.
+  // Their ForceInline annotations remain active in C2.
+  const bool suppress_force_inline = callee->force_inline() && !Zmij::is_enabled() &&
+                                     is_decimal_precision_factory(callee);
+  const bool inlinee_by_annotation = callee->force_inline() && !suppress_force_inline;
   bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
-  if (callee->force_inline() || inlinee_by_directive) {
+  if (inlinee_by_annotation || inlinee_by_directive) {
     if (inline_level() > MaxForceInlineLevel                      ) INLINE_BAILOUT("MaxForceInlineLevel");
     if (recursive_inline_level(callee) > C1MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
 
     const char* msg = "";
-    if (callee->force_inline())  msg = "force inline by annotation";
+    if (inlinee_by_annotation)   msg = "force inline by annotation";
     if (inlinee_by_directive)    msg = "force inline by CompileCommand";
     print_inlining(callee, msg);
   } else {
@@ -3905,7 +3927,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     if (inline_level() > C1MaxInlineLevel                       ) INLINE_BAILOUT("inlining too deep");
     int callee_recursive_level = recursive_inline_level(callee);
     if (callee_recursive_level > C1MaxRecursiveInlineLevel      ) INLINE_BAILOUT("recursive inlining too deep");
-    if (callee->code_size_for_inlining() > max_inline_size()    ) INLINE_BAILOUT("callee is too large");
+    int callee_size = suppress_force_inline ? callee->code_size() : callee->code_size_for_inlining();
+    if (callee_size > max_inline_size()                       ) INLINE_BAILOUT("callee is too large");
     // Additional condition to limit stack usage for non-recursive calls.
     if ((callee_recursive_level == 0) &&
         (callee->max_stack() + callee->max_locals() - callee->size_of_parameters() > C1InlineStackLimit)) {

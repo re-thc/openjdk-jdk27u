@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +117,14 @@ const size_t minimumSymbolTableSize = 1024;
 const bool defaultUseFourByteObjectHeaders = true;
 #else
 const bool defaultUseFourByteObjectHeaders = false;
+#endif
+
+#if (defined(LINUX) && (defined(AMD64) || defined(AARCH64))) || \
+    (defined(_WINDOWS) && defined(AMD64)) || \
+    (defined(__APPLE__) && defined(AARCH64))
+const bool defaultUseDecimalIntegerIntrinsics = true;
+#else
+const bool defaultUseDecimalIntegerIntrinsics = false;
 #endif
 
 #ifdef _LP64
@@ -365,6 +374,20 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseAdler32Intrinsics, false, DIAGNOSTIC,                    \
           "use intrinsics for java.util.zip.Adler32")                       \
+                                                                            \
+  product(bool, UseZmijIntrinsics, true,                                    \
+          "Use Zmij for binary floating-point formatting")                    \
+                                                                            \
+  product(bool, UseFastFloatIntrinsics, true,                               \
+          "Use fast_float for decimal float and double parsing")            \
+                                                                            \
+  product(bool, UseFastIntegerIntrinsics,                                   \
+          defaultUseDecimalIntegerIntrinsics,                              \
+          "Use fast_float for interpreted decimal Integer and Long parsing")             \
+                                                                            \
+  product(bool, UseZmijIntegerIntrinsics,                                   \
+          defaultUseDecimalIntegerIntrinsics,                              \
+          "Use Zmij for interpreted decimal Integer and Long formatting")                \
                                                                             \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \

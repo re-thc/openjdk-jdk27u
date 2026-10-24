@@ -29,6 +29,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
@@ -154,6 +155,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, Latin1-encoded
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsLatin1(int i, int index, byte[] buf) {
         int q;
         int charPos = index;
@@ -205,6 +207,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, Latin1-encoded
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsLatin1(long i, int index, byte[] buf) {
         long q;
         int charPos = index;
@@ -258,6 +261,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, UTF16-coded.
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsUTF16(int i, int index, byte[] buf) {
         int q;
         int charPos = index;
@@ -301,6 +305,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, UTF16-coded.
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsUTF16(long i, int index, byte[] buf) {
         long q;
         int charPos = index;
