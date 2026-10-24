@@ -44,6 +44,7 @@
 #include "opto/idealKit.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
@@ -55,10 +56,12 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -574,6 +577,22 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_PhantomReference_refersTo0: return inline_reference_refersTo0(true);
   case vmIntrinsics::_Reference_clear0:         return inline_reference_clear0(false);
   case vmIntrinsics::_PhantomReference_clear0:  return inline_reference_clear0(true);
+
+  case vmIntrinsics::_simdutf_decodeLatin1:
+    // Remove the chunking path before it can inhibit the original Java loop.
+    set_result(intcon(-1));
+    return true;
+  case vmIntrinsics::_simdutf_utf8PrefixThreshold:
+    set_result(intcon(0));
+    return true;
+  case vmIntrinsics::_simdutf_useUTF32WordReads:
+    set_result(intcon(1));
+    return true;
+  case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+    // Preserve the faster scalar AArch64 loop for four-byte UTF-8 Strings.
+    set_result(intcon(max_jint));
+    return true;
+  case vmIntrinsics::_simdutf_process:          return inline_simdutf_process();
 
   case vmIntrinsics::_Class_cast:               return inline_Class_cast();
 
@@ -9427,5 +9446,98 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   }
   result = _gvn.transform(new ReinterpretHF2SNode(result));
   set_result(box_fp16_value(float16_box_type, field, result));
+  return true;
+}
+
+// Keep oop arguments live throughout a leaf call. The shared entry derives raw
+// array addresses only after validating their types and ranges. TypePtr::BOTTOM
+// models both the source reads and all destination writes (including failure).
+bool LibraryCallKit::inline_simdutf_process() {
+  const TypeInt* operation = _gvn.type(argument(6))->isa_int();
+  if (operation != nullptr &&
+      ((operation->_lo == SimdUTF::COUNT_ASCII && operation->_hi == SimdUTF::COUNT_ASCII) ||
+       (operation->_lo >= SimdUTF::ENCODE_ASCII && operation->_hi <= SimdUTF::ENCODE_LATIN1_FROM_UTF16) ||
+       (operation->_lo >= SimdUTF::ENCODE_BASE64 && operation->_hi <= SimdUTF::ENCODE_BASE64_URL &&
+        UseBASE64Intrinsics && StubRoutines::base64_encodeBlock() != nullptr) ||
+       (operation->_lo >= SimdUTF::DECODE_BASE64 && operation->_hi <= SimdUTF::DECODE_BASE64_URL &&
+        UseBASE64Intrinsics && StubRoutines::base64_decodeBlock() != nullptr) ||
+       (operation->_lo == SimdUTF::INFLATE_LATIN1 && operation->_hi == SimdUTF::INFLATE_LATIN1) ||
+       (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation->_lo == SimdUTF::DECODE_LATIN1 &&
+        operation->_hi == SimdUTF::DECODE_LATIN1) ||
+       (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation->_lo == SimdUTF::VALIDATE_UTF8_LATIN1 &&
+        operation->_hi == SimdUTF::VALIDATE_UTF8_LATIN1) ||
+       (operation->_lo >= SimdUTF::INDEX_OF_LATIN1 && operation->_hi <= SimdUTF::INDEX_OF_UTF16))) {
+    // Prefer existing C2 intrinsics where they avoid a C ABI call. Base64
+    // stubs are not available on every CPU supported by simdutf. Latin-1
+    // decoding retains Java to avoid the in-place staging and validation passes.
+    set_result(intcon(-1));
+    return true;
+  }
+  Node* small_control = nullptr;
+  Node* small_memory = nullptr;
+  int minimum_length = 0;
+  if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation != nullptr && operation->_lo == operation->_hi) {
+    if (operation->_lo == SimdUTF::COUNT_CODE_POINTS) {
+      minimum_length = 1024;
+    }
+#ifdef AARCH64
+    if (operation->_lo == SimdUTF::DECODE_UTF8) {
+      minimum_length = 512;
+    }
+#endif
+  }
+  // Retain lower gates in tiers where their Java loops are more expensive.
+  if (minimum_length != 0) {
+    Node* limit = intcon(minimum_length);
+#ifdef AARCH64
+    if (operation->_lo == SimdUTF::DECODE_UTF8) {
+      Node* room_cmp = _gvn.transform(new CmpINode(argument(5), argument(2)));
+      Node* room = _gvn.transform(new BoolNode(room_cmp, BoolTest::ge));
+      limit = _gvn.transform(new CMoveINode(room, intcon(0), limit, TypeInt::INT));
+    }
+#endif
+    Node* cmp = _gvn.transform(new CmpINode(argument(2), limit));
+    Node* test = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+    small_control = generate_guard(test, nullptr, PROB_FAIR);
+    if (small_control != nullptr) {
+      if (stopped()) {
+        set_control(small_control);
+        set_result(intcon(-1));
+        return true;
+      }
+      small_memory = reset_memory();
+      set_all_memory(small_memory);
+    }
+  }
+  const Type** fields = TypeTuple::fields(7);
+  for (int i = 0; i < 7; i++) {
+    fields[TypeFunc::Parms + i] = i == 0 || i == 3 ? static_cast<const Type*>(TypeOopPtr::BOTTOM) : TypeInt::INT;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 7, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", TypePtr::BOTTOM,
+      argument(0), argument(1), argument(2), argument(3),
+      argument(4), argument(5), argument(6));
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  if (small_control != nullptr) {
+    RegionNode* region = new RegionNode(3);
+    region->init_req(1, control());
+    region->init_req(2, small_control);
+    PhiNode* value = new PhiNode(region, TypeInt::INT);
+    value->init_req(1, result);
+    value->init_req(2, intcon(-1));
+    PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+    memory->init_req(1, reset_memory());
+    memory->init_req(2, small_memory);
+    record_for_igvn(region);
+    set_control(_gvn.transform(region));
+    set_all_memory(_gvn.transform(memory));
+    result = _gvn.transform(value);
+  }
+  set_result(result);
   return true;
 }

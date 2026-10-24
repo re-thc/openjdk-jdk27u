@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,8 @@ package sun.nio.cs;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -96,12 +99,14 @@ public final class UTF_8 extends Unicode {
 
         //  [E0]     [A0..BF] [80..BF]
         //  [E1..EF] [80..BF] [80..BF]
+        @ForceInline
         private static boolean isMalformed3(int b1, int b2, int b3) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
         }
 
-        // only used when there is only one byte left in src buffer
+        // Checks the first two bytes of a three-byte sequence.
+        @ForceInline
         private static boolean isMalformed3_2(int b1, int b2) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80;
@@ -112,13 +117,15 @@ public final class UTF_8 extends Unicode {
         //  [F4]     [80..8F] [80..BF] [80..BF]
         //  only check 80-be range here, the [0xf0,0x80...] and [0xf4,0x90-...]
         //  will be checked by Character.isSupplementaryCodePoint(uc)
+        @ForceInline
         private static boolean isMalformed4(int b2, int b3, int b4) {
             return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                    (b4 & 0xc0) != 0x80;
         }
 
-        // only used when there is less than 4 bytes left in src buffer.
-        // both b1 and b2 should be "& 0xff" before passed in.
+        // Checks the first two bytes of a four-byte sequence.
+        // Both b1 and b2 must be unsigned.
+        @ForceInline
         private static boolean isMalformed4_2(int b1, int b2) {
             return (b1 == 0xf0 && (b2  < 0x90 || b2 > 0xbf)) ||
                    (b1 == 0xf4 && (b2 & 0xf0) != 0x80) ||
@@ -131,6 +138,37 @@ public final class UTF_8 extends Unicode {
         // after isMalformed4_2 has been invoked.
         private static boolean isMalformed4_3(int b3) {
             return (b3 & 0xc0) != 0x80;
+        }
+
+        // Positive for a malformed leading sequence, zero if valid, or -1 if incomplete.
+        @ForceInline
+        private static int malformedLeadingSequenceLength(byte[] input, int offset, int limit) {
+            int b1 = input[offset];
+            int remaining = limit - offset;
+            if (b1 >= 0) {
+                return 0;
+            }
+            if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+                return remaining < 2 ? -1 : isNotContinuation(input[offset + 1]) ? 1 : 0;
+            }
+            if ((b1 >> 4) == -2) {
+                if (remaining < 2) return -1;
+                int b2 = input[offset + 1];
+                if (isMalformed3_2(b1, b2)) return 1;
+                if (remaining < 3) return -1;
+                if (isNotContinuation(input[offset + 2])) return 2;
+                return b1 == (byte)0xed && (b2 & 0xe0) == 0xa0 ? 3 : 0;
+            }
+            if ((b1 >> 3) == -2) {
+                if ((b1 & 0xff) > 0xf4) return 1;
+                if (remaining < 2) return -1;
+                if (isMalformed4_2(b1 & 0xff, input[offset + 1] & 0xff)) return 1;
+                if (remaining < 3) return -1;
+                if (isNotContinuation(input[offset + 2])) return 2;
+                if (remaining < 4) return -1;
+                return isNotContinuation(input[offset + 3]) ? 3 : 0;
+            }
+            return 1;
         }
 
         private static CoderResult malformedN(ByteBuffer src, int nb) {
@@ -227,10 +265,48 @@ public final class UTF_8 extends Unicode {
             int dp = doff + dst.position();
             int dl = doff + dst.limit();
 
-            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
-            sp += n;
-            dp += n;
+            int prefixThreshold = SimdUTF.utf8DecoderPrefixThreshold();
+            int n = Math.min(sl - sp, dl - dp);
+            if (prefixThreshold <= 0 || (n > 0 && sl - sp >= prefixThreshold && sa[sp] >= 0)) {
+                n = JLA.decodeASCII(sa, sp, da, dp, n);
+                sp += n;
+                dp += n;
+            }
 
+            if (sp >= sl) {
+                return xflow(src, sp, sl, dst, dp, 0);
+            }
+
+            if (prefixThreshold > 0) {
+                int first = sa[sp];
+                if (first < (byte)0xc2 || (first < 0 && first > (byte)0xf4)) {
+                    return malformedForLength(src, sp, dst, dp, 1);
+                }
+            }
+
+            // A UTF-16 code unit consumes at most three UTF-8 bytes.
+            if (dp < dl && SimdUTF.isEligibleUTF8Decoding(sl - sp)
+                    && (long) (dl - dp) * 3 >= sl - sp) {
+                int malformedLength = malformedLeadingSequenceLength(sa, sp, sl);
+                if (malformedLength > 0) {
+                    return malformedForLength(src, sp, dst, dp, malformedLength);
+                }
+                if (malformedLength == 0) {
+                    n = SimdUTF.decodeUTF8(sa, sp, sl - sp, da, dp, dl - dp);
+                    if (n >= 0) {
+                        updatePositions(src, sl, dst, dp + n);
+                        return CoderResult.UNDERFLOW;
+                    }
+                    if (n < -1) {
+                        int prefix = -(n + 1);
+                        n = SimdUTF.decodeUTF8(sa, sp, prefix, da, dp, dl - dp);
+                        if (n >= 0) {
+                            sp += prefix;
+                            dp += n;
+                        }
+                    }
+                }
+            }
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -269,7 +345,7 @@ public final class UTF_8 extends Unicode {
                     int b2 = sa[sp + 1];
                     int b3 = sa[sp + 2];
                     if (isMalformed3(b1, b2, b3))
-                        return malformed(src, sp, dst, dp, 3);
+                        return malformedForLength(src, sp, dst, dp, isMalformed3_2(b1, b2) ? 1 : 2);
                     char c = (char)
                         ((b1 << 12) ^
                          (b2 <<  6) ^
@@ -307,13 +383,15 @@ public final class UTF_8 extends Unicode {
                     if (isMalformed4(b2, b3, b4) ||
                         // shortest form check
                         !Character.isSupplementaryCodePoint(uc)) {
-                        return malformed(src, sp, dst, dp, 4);
+                        return malformedForLength(src, sp, dst, dp,
+                                (b1 & 0xff) > 0xf4 || isMalformed4_2(b1 & 0xff, b2 & 0xff) ? 1 :
+                                isNotContinuation(b3) ? 2 : 3);
                     }
                     da[dp++] = Character.highSurrogate(uc);
                     da[dp++] = Character.lowSurrogate(uc);
                     sp += 4;
                 } else
-                    return malformed(src, sp, dst, dp, 1);
+                    return malformedForLength(src, sp, dst, dp, 1);
             }
             return xflow(src, sp, sl, dst, dp, 0);
         }
@@ -470,6 +548,11 @@ public final class UTF_8 extends Unicode {
 
         private CoderResult encodeArrayLoopSlow(CharBuffer src, char[] sa, int sp, int sl,
                                                 ByteBuffer dst, byte[] da, int dp, int dl) {
+            if (sp < sl && Character.isLowSurrogate(sa[sp])) {
+                updatePositions(src, sp, dst, dp);
+                return CoderResult.malformedForLength(1);
+            }
+            boolean tryBulk = true;
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {
@@ -508,6 +591,15 @@ public final class UTF_8 extends Unicode {
                     da[dp++] = (byte)(0x80 | (c & 0x3f));
                 }
                 sp++;
+                if (tryBulk) {
+                    tryBulk = false;
+                    int converted = SimdUTF.isEligibleUTF16Encoding(sl - sp)
+                            ? SimdUTF.encodeUTF16(sa, sp, sl - sp, da, dp, dl - dp) : -1;
+                    if (converted >= 0) {
+                        updatePositions(src, sl, dst, dp + converted);
+                        return CoderResult.UNDERFLOW;
+                    }
+                }
             }
             updatePositions(src, sp, dst, dp);
             return CoderResult.UNDERFLOW;

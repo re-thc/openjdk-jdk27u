@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +236,26 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   }
 
   switch (id) {
+  case vmIntrinsics::_simdutf_useUTF32WordReads:
+#ifdef AMD64
+    return UseSIMDUTFIntrinsics;
+#else
+    return false;
+#endif
+  case vmIntrinsics::_simdutf_decodeLatin1:
+    return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+  case vmIntrinsics::_simdutf_utf8PrefixThreshold:
+#if defined(AMD64) || defined(AARCH64)
+    return true;
+#else
+    return false;
+#endif
+  case vmIntrinsics::_simdutf_utf8StringSupplementaryThreshold:
+#ifdef AARCH64
+    return FLAG_IS_DEFAULT(SIMDUTFMinLength);
+#else
+    return false;
+#endif
   case vmIntrinsics::_getObjectSize:
     // Four-byte objects may grow when GC preserves their identity hash.
     // Use JVMTI's mark-aware size calculation instead of a fixed layout.
@@ -818,6 +839,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dilithiumNttMult:
   case vmIntrinsics::_dilithiumMontMulByConstant:
   case vmIntrinsics::_dilithiumDecomposePoly:
+  case vmIntrinsics::_simdutf_process:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:

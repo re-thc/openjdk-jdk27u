@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,8 @@
 package java.lang;
 
 import jdk.internal.util.Preconditions;
+import jdk.internal.util.SimdUTF;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.util.function.BiFunction;
@@ -77,6 +80,18 @@ class StringCoding {
         return strlen;
     }
 
+    static int validateStringEncoding(String s, int kind) {
+        if (s.isLatin1()) {
+            if (kind == 0 || kind == 2) {
+                return 1;
+            }
+            // Preserve the existing C2 counter intrinsic; its Java body also
+            // reaches simdutf in the interpreter and C1.
+            return countPositives(s.value(), 0, s.length()) == s.length() ? 1 : 0;
+        }
+        return SimdUTF.validateUTF16(s.value(), 0, s.length(), kind);
+    }
+
     static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;
     }
@@ -96,16 +111,25 @@ class StringCoding {
      * @throws ArrayIndexOutOfBoundsException if the provided sub-range is
      *         {@linkplain Preconditions#checkFromIndexSize(int, int, int, BiFunction) out of bounds}
      */
+    @ForceInline
     static int countPositives(byte[] ba, int off, int len) {
         Preconditions.checkFromIndexSize(
                 off, len,
                 ba.length,      // Implicit null check on `ba`
                 Preconditions.AIOOBE_FORMATTER);
+        // C2 already uses its vector counter; other tiers retain the scalar lead check.
+        if (SimdUTF.utf8DecoderPrefixThreshold() != 0 && len > 0 && ba[off] < 0) {
+            return 0;
+        }
         return countPositives0(ba, off, len);
     }
 
     @IntrinsicCandidate
     private static int countPositives0(byte[] ba, int off, int len) {
+        int count = SimdUTF.isEligible(len) ? SimdUTF.countAscii(ba, off, len) : -1;
+        if (count >= 0) {
+            return count;
+        }
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] < 0) {
@@ -146,6 +170,13 @@ class StringCoding {
     @IntrinsicCandidate
     private static int encodeISOArray0(byte[] sa, int sp,
                                        byte[] da, int dp, int len) {
+        if (len > 0 && StringUTF16.getChar(sa, sp) > '\u00ff') {
+            return 0;
+        }
+        int count = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(sa, sp, len, da, dp) : -1;
+        if (count >= 0) {
+            return count;
+        }
         int i = 0;
         for (; i < len; i++) {
             char c = StringUTF16.getChar(sa, sp++);
@@ -185,6 +216,13 @@ class StringCoding {
     @IntrinsicCandidate
     static int encodeAsciiArray0(char[] sa, int sp,
                                  byte[] da, int dp, int len) {
+        if (len > 0 && sa[sp] >= '\u0080') {
+            return 0;
+        }
+        int count = SimdUTF.isEligible(len) ? SimdUTF.encodeAscii(sa, sp, len, da, dp) : -1;
+        if (count >= 0) {
+            return count;
+        }
         int i = 0;
         for (; i < len; i++) {
             char c = sa[sp++];

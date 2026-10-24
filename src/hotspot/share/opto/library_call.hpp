@@ -338,6 +338,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_dilithiumNttMult();
   bool inline_dilithiumMontMulByConstant();
   bool inline_dilithiumDecomposePoly();
+  bool inline_simdutf_process();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
