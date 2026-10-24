@@ -92,7 +92,7 @@ public class HereFunction {
 
         sign(expected);
 
-        // Validating an old signature signed by JDK < 21
+        // Validating a pre-generated signature
         validate(expected);
     }
 
@@ -117,7 +117,7 @@ public class HereFunction {
         DigestMethod sha1 = fac.newDigestMethod(DigestMethod.SHA1, null);
         CanonicalizationMethod withoutComments = fac.newCanonicalizationMethod
                 (CanonicalizationMethod.INCLUSIVE, (C14NMethodParameterSpec)null);
-        SignatureMethod dsaSha1 = fac.newSignatureMethod(SignatureMethod.DSA_SHA1, null);
+        SignatureMethod rsaSha1 = fac.newSignatureMethod(SignatureMethod.RSA_SHA1, null);
         KeyInfoFactory kifac = fac.getKeyInfoFactory();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
@@ -154,7 +154,7 @@ public class HereFunction {
                 XMLObject.TYPE, null));
 
         // create SignedInfo
-        SignedInfo si = fac.newSignedInfo(withoutComments, dsaSha1, refs);
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha1, refs);
 
         // create keyinfo
         KeyInfo ki = kifac.newKeyInfo(List.of(

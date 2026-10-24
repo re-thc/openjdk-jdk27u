@@ -43,12 +43,12 @@ public class KeytoolWriteP12Test {
     private static final String WORKING_DIRECTORY = System.
             getProperty("test.classes", "." + File.separator);
     private enum Algorithm {
-        DSA, RSA, ECC
+        EC, RSA, ECC
     };
     private void run() {
-        out.println("Running DSA Test");
-        keytoolListTest("kt_DSA.p12", Algorithm.DSA);
-        out.println("DSA Test passed");
+        out.println("Running EC Test");
+        keytoolListTest("kt_EC.p12", Algorithm.EC);
+        out.println("EC Test passed");
 
         out.println("Running RSA Test");
         final String rsaKeyStoreName = "kt_RSA_MD5.p12";
@@ -60,10 +60,10 @@ public class KeytoolWriteP12Test {
                 "-sigalg", "SHA1withRSA");
         out.println("RSA and Signing Algorithm SHA1withRSA Test Passed");
 
-        out.println("Running Keysize 256 Test");
-        keytoolListNegativeTest("kt_DSA_256.p12", Algorithm.DSA, "-keysize",
-                "256");
-        out.println("Keysize 256 Test Passed");
+        out.println("Running Keysize 255 Test");
+        keytoolListNegativeTest("kt_EC_255.p12", Algorithm.EC, "-keysize",
+                "255");
+        out.println("Keysize 255 Test Passed");
 
         out.println("Running Keysize 1023 Test");
         keytoolListTest("kt_RSA_MD5_1023.p12", Algorithm.RSA, "-keysize",

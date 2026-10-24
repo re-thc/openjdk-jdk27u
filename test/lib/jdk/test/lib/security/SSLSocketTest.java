@@ -48,8 +48,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Template to help speed up your client/server tests.
  *
- * Two examples that use this template:
- *    test/sun/security/ssl/ServerHandshaker/AnonCipherWithWantClientAuth.java
+ * An example that uses this template:
  *    test/sun/net/www/protocol/https/HttpsClient/ServerIdentityTest.java
  */
 public abstract class SSLSocketTest {
@@ -656,7 +655,7 @@ public abstract class SSLSocketTest {
         // Import the trused certs.
         ByteArrayInputStream is;
         if (trustedMaterials != null && trustedMaterials.length != 0) {
-            ts = KeyStore.getInstance("JKS");
+            ts = KeyStore.getInstance("PKCS12");
             ts.load(null, null);
 
             Certificate[] trustedCert =
@@ -685,7 +684,7 @@ public abstract class SSLSocketTest {
             (keyMaterialCerts.length == keyMaterialKeys.length) &&
             (keyMaterialCerts.length == keyMaterialKeyAlgs.length);
         if (hasKeyMaterials) {
-            ks = KeyStore.getInstance("JKS");
+            ks = KeyStore.getInstance("PKCS12");
             ks.load(null, null);
 
             for (int i = 0; i < keyMaterialCerts.length; i++) {

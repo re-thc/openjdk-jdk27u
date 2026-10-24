@@ -25,12 +25,13 @@
 
 package sun.management.spi;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * The PlatformMBeanProvider class defines the abstract service interface
@@ -192,10 +193,13 @@ public abstract class PlatformMBeanProvider {
             if (!mbeanInterfaceNames().contains(mbeanIntf.getName())) {
                 list = Collections.emptyList();
             } else {
-                list = nameToMBeanMap().values().stream()
-                        .filter(mbeanIntf::isInstance)
-                        .map(mbeanIntf::cast)
-                        .collect(Collectors.toList());
+                Collection<?> mbeans = nameToMBeanMap().values();
+                list = new ArrayList<>(mbeans.size());
+                for (Object mbean : mbeans) {
+                    if (mbeanIntf.isInstance(mbean)) {
+                        list.add(mbeanIntf.cast(mbean));
+                    }
+                }
             }
             return list;
         }

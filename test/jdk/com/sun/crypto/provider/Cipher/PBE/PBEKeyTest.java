@@ -35,7 +35,7 @@ public class PBEKeyTest {
 
     public static void main(String[] args) throws Exception {
 
-        SecretKeyFactory fac = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+        SecretKeyFactory fac = SecretKeyFactory.getInstance("PBEWithSHA1AndDESede");
 
         // Valid password
         char[] pass = new char[] { 'p', 'a', 's', 's', 'w', 'o', 'r', 'd' };

@@ -49,28 +49,28 @@ import jdk.test.lib.security.CertUtils;
 public class VerifyDefault {
     private static final String TEST_CRL =
         "-----BEGIN X509 CRL-----\n" +
-        "MIIBGzCBhQIBATANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQMA4GA1UE\n" +
+        "MIIBGzCBhQIBATANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQMA4GA1UE\n" +
         "ChMHRXhhbXBsZRcNMDkwNDI3MDIzODA0WhcNMjgwNjI2MDIzODA0WjAiMCACAQUX\n" +
         "DTA5MDQyNzAyMzgwMFowDDAKBgNVHRUEAwoBBKAOMAwwCgYDVR0UBAMCAQIwDQYJ\n" +
-        "KoZIhvcNAQEEBQADgYEAoarfzXEtw3ZDi4f9U8eSvRIipHSyxOrJC7HR/hM5VhmY\n" +
-        "CErChny6x9lBVg9s57tfD/P9PSzBLusCcHwHMAbMOEcTltVVKUWZnnbumpywlYyg\n" +
-        "oKLrE9+yCOkYUOpiRlz43/3vkEL5hjIKMcDSZnPKBZi1h16Yj2hPe9GMibNip54=\n" +
+        "KoZIhvcNAQELBQADgYEADHJapV3SCvy8dVf1tIHwIFK4ZR+e4p6ovD/LSHC3+anC\n" +
+        "evGH//Xy6T/y5cTtAmyNZyGvcLORflc1KoEP9Ihma2KukRLyZrYpjXQhBfPYMW69\n" +
+        "gZeDB6a00u/aERDjAgIvJgoP2Kn9gZ6w/Jq704SQXknWAhx8ZeuGMyNiOWVk04s=\n" +
         "-----END X509 CRL-----";
 
     private static final String TEST_CERT =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICKzCCAZSgAwIBAgIBAjANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICKzCCAZSgAwIBAgIBAjANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA0MjcwMjI0MzNaFw0yOTAxMTIwMjI0MzNa\n" +
         "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIGfMA0GCSqGSIb3DQEB\n" +
-        "AQUAA4GNADCBiQKBgQDMJeBMBybHykI/YpwUJ4O9euqDSLb1kpWpceBS8TVqvgBC\n" +
-        "SgUJWtFZL0i6bdvF6mMdlbuBkGzhXqHiVAi96/zRLbUC9F8SMEJ6MuD+YhQ0ZFTQ\n" +
-        "atKy8zf8O9XzztelLJ26Gqb7QPV133WY3haAqHtCXOhEKkCN16NOYNC37DTaJwID\n" +
-        "AQABo3cwdTAdBgNVHQ4EFgQULXSWzXzUOIpOJpzbSCpW42IJUugwRwYDVR0jBEAw\n" +
-        "PoAUgiXdIaZeT3QA/SGUvh854OJVyxuhI6QhMB8xCzAJBgNVBAYTAlVTMRAwDgYD\n" +
-        "VQQKEwdFeGFtcGxlggEAMAsGA1UdDwQEAwIBAjANBgkqhkiG9w0BAQQFAAOBgQAY\n" +
-        "eMnf5AHSNlyUlzXk8o2S0h4gCuvKX6C3kFfKuZcWvFAbx4yQOWLS2s15/nzR4+AP\n" +
-        "FGX3lgJjROyAh7fGedTQK+NFWwkM2ag1g3hXktnlnT1qHohi0w31nVBJxXEDO/Ck\n" +
-        "uJTpJGt8XxxbFaw5v7cHy7XuTAeU/sekvjEiNHW00Q==\n" +
+        "AQUAA4GNADCBiQKBgQDYhkfcUGN84m1xVmqK5s/Lmb5fQk6fbZ4++GRxbhW0r9Rk\n" +
+        "4Hep+ufYxz9oJStBUq8OEs/4q4eZflqn42GiYMSV7W2iI2Gjl90OQhmK3c7iVL84\n" +
+        "q9e274Yh/geyNcPvtJY5LfFKDdZQXVvGm3GX9KxokPdqtpM7mqrSmRTvFS/zwQID\n" +
+        "AQABo3cwdTAdBgNVHQ4EFgQUJJt2oH/EIhzGBehksSVvTybNaSIwRwYDVR0jBEAw\n" +
+        "PoAUDcBdzmGnq/sVv1uneWWC9SJdvYyhI6QhMB8xCzAJBgNVBAYTAlVTMRAwDgYD\n" +
+        "VQQKEwdFeGFtcGxlggEAMAsGA1UdDwQEAwIBAjANBgkqhkiG9w0BAQsFAAOBgQAh\n" +
+        "aUPwargGgLC9ZD4QYVUzCbXA+AjDa1XPF2T4hpjdCrkStS+grCAu5OzdUCjwlx7U\n" +
+        "/8JMwFILFoVViFEWZ8xUzAGArs+qBkjjhCNnmB14IEHnTDKl2zAz2f/snzPWk8DE\n" +
+        "zKtqmy8nCDs1vwqwpYAiiu2Ee0PuS+yjgePXpDLLmw==\n" +
         "-----END CERTIFICATE-----";
 
     private static class TestX509CRL extends X509CRL {

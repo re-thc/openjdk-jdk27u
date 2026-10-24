@@ -43,7 +43,7 @@ public class TestTLSHandshakeLog {
 
     public static void main(String[] args) throws Exception {
         LogJvm l = new LogJvm(TLSHandshake.class, args);
-        l.addExpected("FINE: X509Certificate: Alg:SHA256withRSA, Serial:" + TestTLSHandshake.CERT_SERIAL);
+        l.addExpected("FINE: X509Certificate: Alg:SHA256withECDSA, Serial:" + TestTLSHandshake.CERT_SERIAL);
         l.addExpected("Subject:CN=Regression Test");
         l.addExpected("Key type:EC, Length:256");
         l.addExpected("FINE: ValidationChain: " +

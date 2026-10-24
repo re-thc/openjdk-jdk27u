@@ -254,7 +254,7 @@ public class ComodoHacker {
     private static X509TrustManager getTrustManager() throws Exception {
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // generate certificate from cert string

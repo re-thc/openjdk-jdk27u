@@ -118,7 +118,7 @@ import sun.security.util.CryptoAlgorithmConstraints;
  *
  * <li>To provide a specific keystore type:
  * <pre>
- *      KeyStore ks = KeyStore.getInstance("JKS");
+ *      KeyStore ks = KeyStore.getInstance("PKCS12");
  * </pre>
  * The system will return the most preferred implementation of the
  * specified keystore type available in the environment.

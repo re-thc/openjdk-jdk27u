@@ -27,7 +27,7 @@
  * @summary test that the new getInstance() implementation works correctly
  * @author Andreas Sterbenz
  * @library /test/lib
- * @run main TestGetInstance DES PBEWithMD5AndTripleDES
+ * @run main TestGetInstance DES PBEWithSHA1AndDESede
  * @run main TestGetInstance AES PBEWithHmacSHA1AndAES_128
  */
 

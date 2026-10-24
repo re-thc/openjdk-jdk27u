@@ -47,8 +47,7 @@ import javax.crypto.*;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public sealed class ARCFOURCipher extends CipherSpi
-        permits PKCS12PBECipherCore.PBEWithSHA1AndRC4 {
+public final class ARCFOURCipher extends CipherSpi {
 
     // state array S, 256 entries. The entries are 8-bit, but we use an int[]
     // because int arithmetic is much faster than in Java than bytes.

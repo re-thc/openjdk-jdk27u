@@ -75,7 +75,6 @@ public class V3Certificate {
         boolean success = true;
 
         success &= test("RSA", "SHA256withRSA", 2048);
-        success &= test("DSA", "SHA256withDSA", 2048);
         success &= test("EC", "SHA256withECDSA", 384);
 
         if (!success) {

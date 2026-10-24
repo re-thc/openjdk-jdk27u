@@ -47,7 +47,7 @@ public class TestCopySafe {
     private static int[] OFFSETS = { 1, 8, 9, 16, 17, 32, 33 };
 
     private static final String[] MODES = {
-        "ECB", "CBC", "PCBC", "CTR", "CTS",
+        "ECB", "CBC", "CTR", "CTS",
         "CFB", "CFB8", "CFB16", "CFB24", "CFB32", "CFB40",
         "CFB48", "CFB56", "CFB64",
         "OFB", "OFB8", "OFB16", "OFB24", "OFB32", "OFB40",

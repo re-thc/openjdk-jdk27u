@@ -36,7 +36,6 @@ import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Provider;
-import java.security.ProviderException;
 import java.util.Arrays;
 
 import javax.crypto.KeyGenerator;
@@ -59,7 +58,7 @@ public class TestKeyMaterial extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
-        if (provider.getService("KeyGenerator", "SunTlsKeyMaterial") == null) {
+        if (provider.getService("KeyGenerator", "SunTls12KeyMaterial") == null) {
             throw new SkippedException("Provider does not support algorithm, skipping");
         }
 
@@ -77,7 +76,6 @@ public class TestKeyMaterial extends PKCS11Test {
             String cipherAlgorithm = null;
             String hashAlgorithm = null; // TLS1.2+ only
             int keyLength = 0;
-            int expandedKeyLength = 0;
             int ivLength = 0;
             int macLength = 0;
             byte[] clientCipherBytes = null;
@@ -113,8 +111,6 @@ public class TestKeyMaterial extends PKCS11Test {
                     hashAlgorithm = data;
                 } else if (line.startsWith("km-keylen:")) {
                     keyLength = Integer.parseInt(data);
-                } else if (line.startsWith("km-explen:")) {
-                    expandedKeyLength = Integer.parseInt(data);
                 } else if (line.startsWith("km-ivlen:")) {
                     ivLength = Integer.parseInt(data);
                 } else if (line.startsWith("km-maclen:")) {
@@ -136,44 +132,27 @@ public class TestKeyMaterial extends PKCS11Test {
                     n++;
 
                     KeyGenerator kg =
-                        KeyGenerator.getInstance(minor == 3 ?
-                                "SunTls12KeyMaterial" :
-                                "SunTlsKeyMaterial", provider);
+                        KeyGenerator.getInstance("SunTls12KeyMaterial", provider);
                     SecretKey masterKey =
                         new SecretKeySpec(master, "TlsMasterSecret");
                     // prfHashLength and prfBlockSize are ignored by PKCS11 provider
                     TlsKeyMaterialParameterSpec spec =
                         new TlsKeyMaterialParameterSpec(masterKey, major, minor,
                         clientRandom, serverRandom, cipherAlgorithm,
-                        keyLength, expandedKeyLength, ivLength, macLength,
+                        keyLength, ivLength, macLength,
                         hashAlgorithm, -1 /*ignored*/, -1 /*ignored*/);
 
-                    try {
-                        kg.init(spec);
-                        TlsKeyMaterialSpec result =
-                            (TlsKeyMaterialSpec)kg.generateKey();
-                        match(lineNumber, clientCipherBytes,
-                            result.getClientCipherKey(), cipherAlgorithm);
-                        match(lineNumber, serverCipherBytes,
-                            result.getServerCipherKey(), cipherAlgorithm);
-                        match(lineNumber, clientIv, result.getClientIv(), "");
-                        match(lineNumber, serverIv, result.getServerIv(), "");
-                        match(lineNumber, clientMacBytes, result.getClientMacKey(), "");
-                        match(lineNumber, serverMacBytes, result.getServerMacKey(), "");
-                    } catch (ProviderException pe) {
-                        if (provider.getName().indexOf("NSS") != -1) {
-                            Throwable t = pe.getCause();
-                            if (expandedKeyLength != 0
-                                    && t.getMessage().indexOf(
-                                            "CKR_MECHANISM_PARAM_INVALID") != -1) {
-                                // NSS removed support for export-grade cipher suites in 3.28,
-                                // see https://bugzilla.mozilla.org/show_bug.cgi?id=1252849
-                                System.out.println("Ignore known NSS failure on CKR_MECHANISM_PARAM_INVALID");
-                                continue;
-                            }
-                        }
-                        throw pe;
-                    }
+                    kg.init(spec);
+                    TlsKeyMaterialSpec result =
+                        (TlsKeyMaterialSpec)kg.generateKey();
+                    match(lineNumber, clientCipherBytes,
+                        result.getClientCipherKey(), cipherAlgorithm);
+                    match(lineNumber, serverCipherBytes,
+                        result.getServerCipherKey(), cipherAlgorithm);
+                    match(lineNumber, clientIv, result.getClientIv(), "");
+                    match(lineNumber, serverIv, result.getServerIv(), "");
+                    match(lineNumber, clientMacBytes, result.getClientMacKey(), "");
+                    match(lineNumber, serverMacBytes, result.getServerMacKey(), "");
                } else {
                     throw new Exception("Unknown line: " + line);
                }

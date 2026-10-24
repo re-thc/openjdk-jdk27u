@@ -628,7 +628,7 @@ public class ClientHelloProcessing {
      */
     private static TrustManagerFactory makeTrustManagerFactory(String tsPath,
             String pass) throws GeneralSecurityException, IOException {
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
         char[] passphrase = pass.toCharArray();
 
         ts.load(new FileInputStream(tsPath), passphrase);
@@ -651,7 +651,7 @@ public class ClientHelloProcessing {
      */
     private static KeyManagerFactory makeKeyManagerFactory(String ksPath,
             String pass) throws GeneralSecurityException, IOException {
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         char[] passphrase = pass.toCharArray();
 
         ks.load(new FileInputStream(ksPath), passphrase);

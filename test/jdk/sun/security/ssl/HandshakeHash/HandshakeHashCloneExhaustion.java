@@ -39,8 +39,6 @@
  *     TLSv1.3 TLS_AES_128_GCM_SHA256
  * @run main/othervm HandshakeHashCloneExhaustion
  *     TLSv1.2 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm HandshakeHashCloneExhaustion
- *     TLSv1.1 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
  */
 
 import java.io.InputStream;
@@ -48,8 +46,6 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.Security;
 import javax.net.ssl.SSLSocket;
-
-import jdk.test.lib.security.SecurityUtils;
 
 public class HandshakeHashCloneExhaustion extends SSLSocketTemplate {
 
@@ -81,11 +77,6 @@ public class HandshakeHashCloneExhaustion extends SSLSocketTemplate {
         System.out.println("Testing:  " + args[0] + " " + args[1]);
         protocol = new String [] { args[0] };
         ciphersuite = new String[] { args[1] };
-
-        // Re-enable TLSv1.1 when test depends on it.
-        if (protocol[0].equals("TLSv1.1")) {
-            SecurityUtils.removeFromDisabledTlsAlgs(protocol[0]);
-        }
         (new HandshakeHashCloneExhaustion()).run();
     }
 

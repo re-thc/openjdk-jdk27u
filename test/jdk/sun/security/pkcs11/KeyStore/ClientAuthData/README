@@ -21,7 +21,11 @@ and was set up using the following commands:
   7. certutil -S -n user2 -s cn=user2 -t u -k rsa -g 512 -x -d . -v 240
 
 server.keystore contains the server's private key entry.
-the server certificate is self-signed.
+the server certificate is self-signed and was generated using:
+
+  keytool -genkeypair -storetype PKCS12 -keystore server.keystore \
+      -alias server -keyalg RSA -keysize 2048 -sigalg SHA256withRSA \
+      -dname CN=server -validity 36500
 server.keystore's password is:  "passphrase"
 
 truststore is shared by both the client and the server,

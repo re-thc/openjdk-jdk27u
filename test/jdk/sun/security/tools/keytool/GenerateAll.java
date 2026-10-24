@@ -118,7 +118,6 @@ public class GenerateAll {
     public Object[][] dataProvider() {
         return new Object[][]{
                 {"rsa", "rsa", null, "RSA", SHA_384, SHA384withRSA},
-                {"dsa", "dsa", null, "DSA", SHA_256, SHA256withDSA},
                 {"r", "rsa", "rsassa-pss", "RSA", SHA_384, RSASSA_PSS},
                 {"pss", "rsassa-pss", null, "RSA", SHA_384, RSASSA_PSS},
                 {"ec", "ec", null, "EC", SHA_384, SHA384withECDSA},

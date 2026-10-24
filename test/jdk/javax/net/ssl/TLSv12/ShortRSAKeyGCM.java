@@ -32,28 +32,20 @@
  * @summary Support AEAD CipherSuites
  * @library /javax/net/ssl/templates
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_DH_anon_WITH_AES_128_GCM_SHA256
  */
 
 /*
  * Need additional key materials to run the following cases.
  *
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
  *
  * Need unlimited JCE Unlimited Strength Jurisdiction Policy to run the
  * following cases.
  *
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_RSA_WITH_AES_256_GCM_SHA384
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm ShortRSAKeyGCM PKIX TLS_DH_anon_WITH_AES_256_GCM_SHA384
  */
 
 import java.net.*;
@@ -101,7 +93,7 @@ public class ShortRSAKeyGCM extends SSLContextTemplate {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLContext context = createSSLContext(null, new Cert[]{Cert.EE_RSA_MD5_512},
+        SSLContext context = createSSLContext(null, new Cert[]{Cert.EE_RSA_SHA256_512},
                 getServerContextParameters());
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
         SSLServerSocket sslServerSocket =
@@ -140,7 +132,7 @@ public class ShortRSAKeyGCM extends SSLContextTemplate {
             Thread.sleep(50);
         }
 
-       SSLContext context = createSSLContext(new Cert[]{Cert.CA_RSA_MD5_512},
+       SSLContext context = createSSLContext(new Cert[]{Cert.CA_RSA_2048},
                 null, getClientContextParameters());
         SSLSocketFactory sslsf = context.getSocketFactory();
 

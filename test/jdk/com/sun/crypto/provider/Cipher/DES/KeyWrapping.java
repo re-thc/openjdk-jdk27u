@@ -73,7 +73,7 @@ public class KeyWrapping {
         if (!msg.equals(new String(clearText)))
             throw new Exception("The unwrapped session key is corrupted.");
 
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         KeyPairGenerator kpairGen = KeyPairGenerator.getInstance(kpgAlgorithm);
         kpairGen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 
@@ -89,9 +89,9 @@ public class KeyWrapping {
 
         c1.init(Cipher.UNWRAP_MODE, sKey);
 
-        Key unwrappedPub = c1.unwrap(wrappedPub, "DSA",
+        Key unwrappedPub = c1.unwrap(wrappedPub, "EC",
                                            Cipher.PUBLIC_KEY);
-        Key unwrappedPri = c1.unwrap(wrappedPri, "DSA",
+        Key unwrappedPri = c1.unwrap(wrappedPri, "EC",
                                             Cipher.PRIVATE_KEY);
     }
 }

@@ -76,7 +76,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 List.of("trigger seeding of SecureRandom",
                         // Available list should finish with this style
                         "TLS_EMPTY_RENEGOTIATION_INFO_SCSV]",
-                        "Ignore disabled cipher suites for protocols: " +
+                        "Available cipher suites for protocols: " +
                                 "\\[TLSv1.3, TLSv1.2\\]"));
         debugMessages.put("trustmanager",
                 List.of("adding as trusted certificates"));

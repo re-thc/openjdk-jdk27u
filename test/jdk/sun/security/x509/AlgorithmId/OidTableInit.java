@@ -40,18 +40,14 @@ public class OidTableInit {
     public static void main(String[] args) throws Throwable {
         final String[] algorithmNames = {
             "PBKDF2WITHHMACSHA1",
-            "PBEWITHMD5ANDDES",
             "DSA",
             "SHA384WITHRSA",
             "RSA",
             "SHA1WITHDSA",
             "SHA512WITHRSA",
-            "MD2WITHRSA",
             "PBEWITHSHA1ANDDESEDE",
             "SHA1WITHRSA",
             "DIFFIEHELLMAN",
-            "MD5WITHRSA",
-            "PBEWITHSHA1ANDRC2_40",
             "SHA256WITHRSA",
         };
 

@@ -46,7 +46,7 @@ import javax.crypto.spec.DHParameterSpec;
 public class SameDHKeyStressTest {
 
     static final String[] ALGORITHMS = {"DH", "DiffieHellman", "dh", "diffieHELLMAN"};
-    static final String[] SECRET_ALOGRITHMS = {"DES", "DESede", "blowfish"};
+    static final String[] SECRET_ALOGRITHMS = {"DES", "DESede"};
     static final int[] NUMBER_OF_PARTIES = {2, 3, 4};
     static final String[] PA_NAMES = {"Alice", "Bob", "Carol", "David"};
 

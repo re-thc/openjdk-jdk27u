@@ -102,7 +102,7 @@ ifeq ($(call isTargetOs, macosx), true)
       -framework Cocoa
   BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJniInvocationTest := java.base:libjli
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestDynamicStore := \
-      -framework Cocoa -framework SystemConfiguration
+      -framework Foundation -framework SystemConfiguration
 else
   BUILD_JDK_JTREG_EXCLUDE += libTestMainKeyWindow.m
   BUILD_JDK_JTREG_EXCLUDE += libTestDynamicStore.m

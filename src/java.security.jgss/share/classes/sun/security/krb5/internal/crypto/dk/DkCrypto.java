@@ -36,15 +36,10 @@ import java.security.InvalidAlgorithmParameterException;
 import java.util.Arrays;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.CharBuffer;
-import java.nio.ByteBuffer;
 import sun.security.util.HexDumpEncoder;
 import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.KrbCryptoException;
-
-import static java.nio.charset.StandardCharsets.UTF_16LE;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implements Derive Key cryptography functionality as defined in RFC 3961.
@@ -671,26 +666,6 @@ public abstract class DkCrypto {
             System.err.println(traceTag + ":\n" + out.toString());
         } catch (Exception e) {
         }
-    }
-
-// String.getBytes(UTF_8);
-// Do this instead of using String to avoid making password immutable
-    static byte[] charToUtf8(char[] chars) {
-        CharBuffer cb = CharBuffer.wrap(chars);
-        ByteBuffer bb = UTF_8.encode(cb);
-        int len = bb.limit();
-        byte[] answer = new byte[len];
-        bb.get(answer, 0, len);
-        return answer;
-    }
-
-    static byte[] charToUtf16(char[] chars) {
-        CharBuffer cb = CharBuffer.wrap(chars);
-        ByteBuffer bb = UTF_16LE.encode(cb);
-        int len = bb.limit();
-        byte[] answer = new byte[len];
-        bb.get(answer, 0, len);
-        return answer;
     }
 
     static int iterationCount(byte[] params, int defaultValue)

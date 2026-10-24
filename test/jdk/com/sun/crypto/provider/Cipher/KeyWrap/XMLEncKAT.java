@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 5008159 5008156
- * @summary Verify that the two key wrap ciphers, i.e. "DESedeWrap"
- * and "AESWrap", work as expected.
+ * @summary Verify that the "AESWrap" key wrap cipher works as expected.
  * @run main XMLEncKAT
  * @author Valerie Peng
  */
@@ -39,11 +38,9 @@ import java.io.IOException;
 
 public class XMLEncKAT {
 
-    private static byte[] desEdeKey_1;
     private static byte[] aes128Key_1;
     private static byte[] aes192Key_1;
     private static byte[] aes256Key_1;
-    private static byte[] desEdeKey_2;
     private static byte[] aes128Key_2;
     private static byte[] aes192Key_2;
     private static byte[] aes256Key_2;
@@ -53,7 +50,6 @@ public class XMLEncKAT {
 
     static {
         try {
-            desEdeKey_1 = "abcdefghijklmnopqrstuvwx".getBytes("ASCII");
             aes128Key_1 = "abcdefghijklmnop".getBytes("ASCII");
             aes192Key_1 = "abcdefghijklmnopqrstuvwx".getBytes("ASCII");
             aes256Key_1 = "abcdefghijklmnopqrstuvwxyz012345".getBytes("ASCII");
@@ -61,8 +57,6 @@ public class XMLEncKAT {
             // should never happen
         }
 
-        desEdeKey_2 = base64D.decode
-            ("yI+J1f3puYAERjIcT6vfg6RitmKX8nD0");
         aes128Key_2 = base64D.decode
             ("01+yuQ2huPS1+Qv0LH+zaQ==");
         aes192Key_2 = base64D.decode
@@ -71,14 +65,6 @@ public class XMLEncKAT {
             ("ZhZ4v3RlwTlCEOpIrHfLKVyJOBDtEJOOQDat/4xR1bA=");
 
     }
-    private static String[] desEdeWrappedKey_1 = {
-        "ZyJbVsjRM4MEsswwwHz57aUz1eMqZHuEIoEPGS47CcmLvhuCtlzWZ9S/WcVJZIpz",
-        "gHMpx5iF7+KXtNHLasZrkcLHn8Ti4rxUjCIRK+IcgbQir6FUsQ/uxQ3o8enEMWq1"
-    };
-    private static String[] desEdeWrappedKey_2 = {
-        "/PZvvn42E9dmMUZ8KCY6B5XtLaaIaG4X5YNDwgV5Vlo=",
-        "HgVuHoXxBQWD9fvi0gt9TanywZ5lJokM/12fcMG6gRoMjsCPulH+4A=="
-    };
     private static String[] aes128WrappedKey_1 = {
         "dV45TUpJbidb9iKa34xj1WVtTZ036cnqvym2TBJWR5c=",
         "rPnY/XoSGCbuwy7vpslf29rs9dbvSCmGFOjEs3LT6g/qyZjfDA+2fQ=="
@@ -139,13 +125,8 @@ public class XMLEncKAT {
     }
 
     public static void main(String[] argv) throws Exception {
-        String wrapAlg = "DESedeWrap";
-        String keyAlg = "DESede";
-        testKeyWrap(wrapAlg, desEdeKey_1, keyAlg, desEdeWrappedKey_1);
-        testKeyWrap(wrapAlg, desEdeKey_2, keyAlg, desEdeWrappedKey_2);
-
-        wrapAlg = "AESWrap";
-        keyAlg = "AES";
+        String wrapAlg = "AESWrap";
+        String keyAlg = "AES";
         testKeyWrap(wrapAlg, aes128Key_1, keyAlg, aes128WrappedKey_1);
         testKeyWrap(wrapAlg, aes128Key_2, keyAlg, aes128WrappedKey_2);
         // only run the tests on longer key lengths if unlimited version

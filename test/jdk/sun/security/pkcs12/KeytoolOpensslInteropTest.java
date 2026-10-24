@@ -107,8 +107,6 @@ public class KeytoolOpensslInteropTest {
 
     private static void generateInitialKeystores(String opensslPath)
             throws Throwable {
-        Path providerPath = OpensslArtifactFetcher.getProviderPath(opensslPath);
-
         keytool("-keystore ks -keyalg ec -genkeypair -storepass"
                 + " changeit -alias a -dname CN=A").shouldHaveExitValue(0);
 
@@ -128,9 +126,8 @@ public class KeytoolOpensslInteropTest {
 
         ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
                 "kandc", "-out", "os4", "-name", "a", "-passout",
-                "pass:changeit", "-certpbe", "PBE-SHA1-RC4-128", "-keypbe",
-                "PBE-SHA1-RC4-128", "-macalg", "SHA224",
-                "-legacy", "-provider-path", providerPath.toString())
+                "pass:changeit", "-certpbe", "PBE-SHA1-3DES", "-keypbe",
+                "PBE-SHA1-3DES", "-macalg", "SHA224")
                 .shouldHaveExitValue(0);
 
         ProcessTools.executeCommand(opensslPath, "pkcs12", "-export", "-in",
@@ -155,10 +152,10 @@ public class KeytoolOpensslInteropTest {
         // You can even load it with a wrong storepass, controversial
         check("os2", "a", "wrongpass", "changeit", true, true, true);
 
-        // os3. no cert pbe, has mac. just like JKS
+        // os3. no certificate encryption, with integrity protection
         check("os3", "a", null, "changeit", true, true, true);
         check("os3", "a", "changeit", "changeit", true, true, true);
-        // Cannot load with a wrong storepass, same as JKS
+        // The integrity check rejects a wrong store password
         check("os3", "a", "wrongpass", "-", IOException.class, "-", "-");
 
         // os4. non default algs
@@ -192,20 +189,8 @@ public class KeytoolOpensslInteropTest {
         check("ksnormal", "a", null, "changeit", true, false, true);
         check("ksnormal", "a", "wrongpass", "-", IOException.class, "-", "-");
 
-        // Import it into a new keystore with legacy algorithms
-        keytool("-importkeystore -srckeystore ksnormal -srcstorepass changeit "
-                + "-destkeystore kslegacyimp -deststorepass changeit "
-                + "-J-Dkeystore.pkcs12.legacy");
-        data = Files.readAllBytes(Path.of("kslegacyimp"));
-        checkInt(data, "22", 100000); // Mac ic
-        checkAlg(data, "2000", SHA_1); // Mac alg
-        checkAlg(data, "110c010c01000", PBEWithSHA1AndDESede); // key alg
-        checkInt(data, "110c010c010011", 50000); // key ic
-        checkAlg(data, "110c110110", PBEWithSHA1AndRC2_40); // cert alg
-        checkInt(data, "110c1101111", 50000); // cert ic
-
         // Add a new entry with password-less settings, still has a storepass
-        keytool("-keystore ksnormal -genkeypair -keyalg DSA "
+        keytool("-keystore ksnormal -genkeypair -keyalg EC "
                 + "-storepass changeit -alias b -dname CN=b "
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
@@ -224,12 +209,12 @@ public class KeytoolOpensslInteropTest {
         // Different keypbe alg, no cert pbe and no mac
         keytool("-importkeystore -srckeystore ks -srcstorepass changeit "
                 + "-destkeystore ksnopass -deststorepass changeit "
-                + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndRC4_128 "
+                + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede "
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE");
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
-        checkAlg(data, "110c010c01000", PBEWithSHA1AndRC4_128);
+        checkAlg(data, "110c010c01000", PBEWithSHA1AndDESede);
         checkInt(data, "110c010c010011", 10000);
         checkAlg(data, "110c10", DATA_OID);
         check("ksnopass", "a", null, "changeit", true, true, true);
@@ -237,11 +222,11 @@ public class KeytoolOpensslInteropTest {
         check("ksnopass", "a", "wrongpass", "changeit", true, true, true);
 
         // Add a new entry with normal settings, still password-less
-        keytool("-keystore ksnopass -genkeypair -keyalg DSA "
+        keytool("-keystore ksnopass -genkeypair -keyalg EC "
                 + "-storepass changeit -alias b -dname CN=B");
         data = Files.readAllBytes(Path.of("ksnopass"));
         shouldNotExist(data, "2"); // no Mac
-        checkAlg(data, "110c010c01000", PBEWithSHA1AndRC4_128);
+        checkAlg(data, "110c010c01000", PBEWithSHA1AndDESede);
         checkInt(data, "110c010c010011", 10000);
         checkAlg(data, "110c010c11000", PBES2);
         checkInt(data, "110c010c11001011", 10000);
@@ -263,22 +248,22 @@ public class KeytoolOpensslInteropTest {
         checkInt(data, "110c110111011", 6666); // cert ic
 
         // keypbe alg cannot be NONE
-        keytool("-keystore ksnewic -genkeypair -keyalg DSA "
+        keytool("-keystore ksnewic -genkeypair -keyalg EC "
                 + "-storepass changeit -alias b -dname CN=B "
                 + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=NONE")
                 .shouldContain("NONE AlgorithmParameters not available")
                 .shouldHaveExitValue(1);
 
         // new entry new keypbe alg (and default ic), else unchanged
-        keytool("-keystore ksnewic -genkeypair -keyalg DSA "
+        keytool("-keystore ksnewic -genkeypair -keyalg EC "
                 + "-storepass changeit -alias b -dname CN=B "
-                + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndRC4_128");
+                + "-J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede");
         data = Files.readAllBytes(Path.of("ksnewic"));
         checkInt(data, "22", 5555); // Mac ic
         checkAlg(data, "2000", SHA_256); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
-        checkAlg(data, "110c010c11000", PBEWithSHA1AndRC4_128); // new key alg
+        checkAlg(data, "110c010c11000", PBEWithSHA1AndDESede); // new key alg
         checkInt(data, "110c010c110011", 10000); // new key ic
         checkAlg(data, "110c110110", PBES2); // cert alg
         checkInt(data, "110c110111011", 6666); // cert ic
@@ -308,7 +293,7 @@ public class KeytoolOpensslInteropTest {
         }
         data = Files.readAllBytes(Path.of("ksnopassdup"));
         shouldNotExist(data, "2"); // no Mac
-        checkAlg(data, "110c010c01000", PBEWithSHA1AndRC4_128);
+        checkAlg(data, "110c010c01000", PBEWithSHA1AndDESede);
         checkInt(data, "110c010c010011", 10000);
         checkAlg(data, "110c010c11000", PBES2);
         checkInt(data, "110c010c11001011", 10000);
@@ -324,7 +309,7 @@ public class KeytoolOpensslInteropTest {
         checkAlg(data, "2000", SHA_256); // Mac alg
         checkAlg(data, "110c010c01000", PBES2); // key alg
         checkInt(data, "110c010c01001011", 7777); // key ic
-        checkAlg(data, "110c010c11000", PBEWithSHA1AndRC4_128); // new key alg
+        checkAlg(data, "110c010c11000", PBEWithSHA1AndDESede); // new key alg
         checkInt(data, "110c010c110011", 10000); // new key ic
         checkAlg(data, "110c110110", PBES2); // cert alg
         checkInt(data, "110c110111011", 6666); // cert ic
@@ -430,7 +415,7 @@ public class KeytoolOpensslInteropTest {
 
         // still prompt for keypass for genkeypair and certreq
         SecurityTools.setResponse("changeit", "changeit");
-        keytool("-keystore ksnopassnew -genkeypair -keyalg DSA "
+        keytool("-keystore ksnopassnew -genkeypair -keyalg EC "
                 + "-alias a -dname CN=A "
                 + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
                 + "-J-Dkeystore.pkcs12.macAlgorithm=NONE")
@@ -446,7 +431,7 @@ public class KeytoolOpensslInteropTest {
         // params only read on demand
 
         // keyPbeIterationCount is used by -genkeypair
-        keytool("-keystore ksgenbadkeyic -genkeypair -keyalg DSA "
+        keytool("-keystore ksgenbadkeyic -genkeypair -keyalg EC "
                 + "-alias a -dname CN=A "
                 + "-storepass changeit "
                 + "-J-Dkeystore.pkcs12.keyPbeIterationCount=abc")
@@ -505,7 +490,7 @@ public class KeytoolOpensslInteropTest {
             .shouldNotContain("PKCS7 Encrypted data:")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 10000, PRF hmacWithSHA256")
-            .shouldContain("Shrouded Keybag: pbeWithSHA1And128BitRC4,"
+            .shouldContain("Shrouded Keybag: pbeWithSHA1And3-KeyTripleDES-CBC,"
                     + " Iteration 10000");
 
         output2 = ProcessTools.executeCommand(opensslPath, "pkcs12", "-in",
@@ -524,7 +509,7 @@ public class KeytoolOpensslInteropTest {
             .shouldMatch("MAC:.*sha256.*Iteration 5555")
             .shouldContain("Shrouded Keybag: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 7777, PRF hmacWithSHA256")
-            .shouldContain("Shrouded Keybag: pbeWithSHA1And128BitRC4,"
+            .shouldContain("Shrouded Keybag: pbeWithSHA1And3-KeyTripleDES-CBC,"
                     + " Iteration 10000")
             .shouldContain("PKCS7 Encrypted data: PBES2, PBKDF2, AES-256-CBC,"
                     + " Iteration 6666, PRF hmacWithSHA256");
