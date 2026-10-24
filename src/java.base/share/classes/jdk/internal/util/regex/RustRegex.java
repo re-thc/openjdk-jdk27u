@@ -245,10 +245,13 @@ public final class RustRegex {
     public String literalDigitsPrefix() { return fastPlan instanceof FastDigits digits ? digits.prefix : null; }
     // Interpreted String searches cannot use the compiled vector intrinsic.
     public boolean hasLiteralSearch() {
-        return JAVA_TIER != 0 && handle == 0 && literalDigitsFirstChar() >= 0;
+        return JAVA_TIER != 0 && literalDigitsFirstChar() >= 0;
     }
+    @ForceInline
     public boolean shouldCheckLiteral(int length) {
-        if (handle != 0) return false;
+        // Short rejection still avoids native dispatch and Java sibling
+        // compilation after a previous long search prepared the engine.
+        if (handle != 0) return JAVA_TIER != 0 && length <= 256;
         // C1 substring searches are scalar. Bound their total work before
         // admitting the native engine, rather than rescanning indefinitely.
         // This is a per-backend hint; collection retains no admission history.
@@ -351,7 +354,10 @@ public final class RustRegex {
         if (state.length != base + 4 || from < 0 || to < from || to > input.length()
                 || start < from || start > to) return -1;
         if (fastPlan != null) {
-            int result = fastPlan.match(input, state, to, start, mode, to - from);
+            // Apply the existing compiled String scan budgets to the work left
+            // in this search. Interpreted large-region searches keep native admission.
+            int length = JAVA_TIER == 0 ? to - from : to - start;
+            int result = fastPlan.match(input, state, to, start, mode, length);
             if (result != -2) return result;
             if (fastPlan instanceof FastAlternationDigits) start = state[state.length - 2];
         }

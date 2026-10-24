@@ -474,6 +474,7 @@ public class RustRegexTest {
         mandatoryLiteralReject();
         literalSearchAdmission();
         remainingSearchSpan();
+        remainingPreparedPlans();
         encodedRegions();
         resetCapturePublication();
         preparedPlans();
@@ -514,6 +515,57 @@ public class RustRegexTest {
                     Pattern flags = Pattern.compile(regex);
                     a = flags.matcher(input); b = ref.matcher(input);
                     equal(a, b, a.find(start), b.find(start), true);
+                }
+            }
+        }
+    }
+
+    private static void remainingPreparedPlans() throws Exception {
+        String[][] cases = {
+                {"(?<routeWord>error)(?<routeNumber>[0-9]+)", "error123", "errorX", "256"},
+                {"(?<routeNumber>[0-9]+)", "123", "!", "256"},
+                {"(?<routeUser>[a-z0-9_]+)@(?<routeDomain>[a-z0-9_]+)\\.[a-z]{2,4}",
+                        "a@b.co", "a@b.", "32"},
+                {"(?<routeLevel>error|warning|fatal)(?<routeNumber>[0-9]+)",
+                        "warning12", "warningX", "16"},
+                {"[0-9]{3}-[0-9]{2}-[0-9]{4}", "123-45-6789", "123-xx-6789", "0"}};
+        int sequence = 0;
+        for (String[] c : cases) {
+            for (int length : new int[]{4096, 65536, 131072}) {
+                for (int remaining : new int[]{16, 32, 256}) {
+                    for (boolean hit : new boolean[]{false, true}) {
+                        for (String fill : new String[]{"!", "\u0100"}) {
+                            // Unique names keep preparation checks independent of other tests.
+                            String regex = c[0].replace("route", "route" + sequence++);
+                            String tail = c[hit ? 1 : 2];
+                            String input = fill.repeat(length - tail.length()) + tail;
+                            int start = length - remaining;
+                            Pattern p = Pattern.compile(regex), ref = reference(regex, 0);
+                            Object owner = NATIVE.get(p);
+                            boolean prepared = RustRegex.ENABLED && TIER.getInt(null) != 0
+                                    && remaining <= Integer.parseInt(c[3]);
+                            Matcher a = p.matcher(input), b = ref.matcher(input);
+                            for (int use = 0; use < 2; use++) {
+                                a.reset(); b.reset();
+                                boolean found = a.find(start);
+                                equal(a, b, found, b.find(start), false);
+                                if (prepared) {
+                                    nativeOnly(p);
+                                    if (HANDLE.getLong(owner) != 0)
+                                        throw new AssertionError("bounded suffix initialized native storage: " + regex);
+                                }
+                                if (found) {
+                                    equal(a, b, a.find(), b.find(), false);
+                                    if (prepared) nativeOnly(p);
+                                }
+                            }
+                            // Observe end flags separately so replay cannot hide a transition.
+                            Matcher flags = Pattern.compile(regex).matcher(input);
+                            b.reset();
+                            equal(flags, b, flags.find(start), b.find(start), true);
+                            if (prepared) nativeOnly(p);
+                        }
+                    }
                 }
             }
         }

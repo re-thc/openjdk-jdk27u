@@ -1799,13 +1799,12 @@ public final class Matcher implements MatchResult {
     private boolean searchLiteral(int from) {
         RustRegex engine = parentPattern.rustRegex;
         if (engine != null && to - this.from <= RustRegex.MAX_LENGTH && text instanceof String input) {
-            if (engine.shouldCheckLiteral(to - this.from)) {
-                String prefix = engine.literalDigitsPrefix();
-                int start = Math.max(0, from);
-                if (input.startsWith(prefix, start)) return searchMixed(from);
+            int start = Math.max(0, from);
+            int length = to - start;
+            if (engine.shouldCheckLiteral(length)) {
                 int literalStart = input.indexOf(engine.literalDigitsFirstChar(), start, to);
-                if (literalStart < 0 || to - this.from > 256 &&
-                        input.indexOf(prefix, literalStart, to) < 0) {
+                if (literalStart < 0 || length > 256 &&
+                        input.indexOf(engine.literalDigitsPrefix(), literalStart, to) < 0) {
                     clearNativeEnd();
                     nativePendingLast = false;
                     hitEnd = true;
