@@ -79,7 +79,7 @@ public class AOTMappedMemoryAccessTest {
                     out.shouldContain("Recovered mapped faults: forward, backward, String, mismatch source/destination");
                 }
             }
-        }.runAOTWorkflow("--two-step-training");
+        }.runAOTWorkflow("AOT", "--two-step-training");
     }
 }
 
