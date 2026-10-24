@@ -42,7 +42,7 @@ public class RustRegexNative {
     public String scenario;
     @Param({"find", "matches", "lookingAt"})
     public String operation;
-    // Select additional shapes explicitly with -p shape=....
+    // Select additional shapes explicitly with -p regexType=....
     @Param({"prefix"})
     public String regexType;
     private Matcher matcher;
