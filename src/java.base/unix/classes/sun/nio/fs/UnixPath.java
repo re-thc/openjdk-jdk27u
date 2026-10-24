@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,10 +565,41 @@ class UnixPath implements Path {
 
     @Override
     public UnixPath normalize() {
-        final int count = getNameCount();
-        if (count == 0 || isEmpty())
-            return this;
+        // Skip scratch arrays when there are no exact "." or ".." names.
+        // Reuse cached name boundaries to avoid rescanning long names.
+        final int[] cachedOffsets = offsets;
+        if (cachedOffsets != null) {
+            int i = 0;
+            for (; i < cachedOffsets.length; i++) {
+                int begin = cachedOffsets[i];
+                int len = (i == cachedOffsets.length - 1)
+                        ? path.length - begin : cachedOffsets[i + 1] - begin - 1;
+                if ((len == 1 || len == 2) && path[begin] == '.'
+                        && (len == 1 || path[begin + 1] == '.'))
+                    break;
+            }
+            if (i == cachedOffsets.length)
+                return this;
+        } else {
+            // Preserve the no-allocation path without initializing offsets.
+            int index = 0;
+            while (index < path.length) {
+                if (path[index] == '.') {
+                    int next = index + 1;
+                    if (next < path.length && path[next] == '.')
+                        next++;
+                    if (next == path.length || path[next] == '/')
+                        break;
+                }
+                while (index < path.length && path[index] != '/')
+                    index++;
+                index++;
+            }
+            if (index >= path.length)
+                return this;
+        }
 
+        final int count = getNameCount();
         boolean[] ignore = new boolean[count];      // true => ignore name
         int[] size = new int[count];                // length of name
         int remaining = count;                      // number of names remaining
@@ -588,15 +620,11 @@ class UnixPath implements Path {
             }
             size[i] = len;
 
-            if (path[begin] == '.') {
-                if (len == 1) {
-                    ignore[i] = true;  // ignore  "."
-                    remaining--;
-                }
-                else {
-                    if (path[begin+1] == '.')   // ".." found
-                        hasDotDot = true;
-                }
+            if (len == 1 && path[begin] == '.') {
+                ignore[i] = true;  // ignore "."
+                remaining--;
+            } else if (len == 2 && path[begin] == '.' && path[begin + 1] == '.') {
+                hasDotDot = true;
             }
         }
 
