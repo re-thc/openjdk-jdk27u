@@ -115,12 +115,28 @@ public class HeapVectorizedMismatchEntryTest {
 
     @Test
     @IR(counts = {HEAP, "1"}, failOn = {GENERIC}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapFloatBits(float[] a, float[] b, int from, int length) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        long offset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long)from << 2);
+        return ArraysSupport.vectorizedMismatch(a, offset, b, offset, length, 2);
+    }
+
+    @Test
+    @IR(counts = {HEAP, "1"}, failOn = {GENERIC}, phase = CompilePhase.BEFORE_MATCHING)
+    public static int heapDoubleBits(double[] a, double[] b, int from, int length) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        long offset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long)from << 3);
+        return ArraysSupport.vectorizedMismatch(a, offset, b, offset, length, 3);
+    }
+
+    @Test
     public static int heapFloats(float[] a, float[] b, int from, int length) {
         return Arrays.mismatch(a, from, from + length, b, from, from + length);
     }
 
     @Test
-    @IR(counts = {HEAP, "1"}, failOn = {GENERIC}, phase = CompilePhase.BEFORE_MATCHING)
     public static int heapDoubles(double[] a, double[] b, int from, int length) {
         return Arrays.mismatch(a, from, from + length, b, from, from + length);
     }
@@ -146,7 +162,8 @@ public class HeapVectorizedMismatchEntryTest {
 
     private static int warmups;
 
-    @Run(test = {"heapBytes", "heapChars", "heapBooleans", "heapShorts", "heapInts", "heapLongs", "heapFloats", "heapDoubles",
+    @Run(test = {"heapBytes", "heapChars", "heapBooleans", "heapShorts", "heapInts", "heapLongs",
+                 "heapFloatBits", "heapDoubleBits", "heapFloats", "heapDoubles",
                  "heapAllocatedCompare",
                  "nativeBytes", "nullableBytes"})
     @Warmup(10000)
@@ -181,6 +198,8 @@ public class HeapVectorizedMismatchEntryTest {
                     case 3 -> { FB[at] = -0.0f; DB[at] = -0.0; }
                 }
             }
+            heapFloatBits(FA, FB, from, length);
+            heapDoubleBits(DA, DB, from, length);
             heapFloats(FA, FB, from, length);
             heapDoubles(DA, DB, from, length);
             FA[at] = FB[at] = 0.0f;
@@ -239,6 +258,13 @@ public class HeapVectorizedMismatchEntryTest {
         checkRaw(heapLongs(LA, LB, from, length), LA, offset, LB, offset, length, 3, expected);
     }
 
+    private static void checkFloatBits(int from, int length, int expected) {
+        long offset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long)from << 2);
+        checkRaw(heapFloatBits(FA, FB, from, length), FA, offset, FB, offset, length, 2, expected);
+        offset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long)from << 3);
+        checkRaw(heapDoubleBits(DA, DB, from, length), DA, offset, DB, offset, length, 3, expected);
+    }
+
     private static void verify() {
         check(heapAllocatedCompare(ALLOCATED_COMPARE), 0);
         for (int at : new int[] {0, 1, 64, 128}) {
@@ -271,11 +297,13 @@ public class HeapVectorizedMismatchEntryTest {
                     ZB[from + at] = false;
                     SB[from + at] = 0;
                 }
+                checkFloatBits(from, length, -1);
                 check(heapFloats(FA, FB, from, length), -1);
                 check(heapDoubles(DA, DB, from, length), -1);
                 if (length > 1) {
                     FB[from + 1] = 1.0f;
                     DB[from + 1] = 1.0;
+                    checkFloatBits(from, length, 1);
                     check(heapFloats(FA, FB, from, length), 1);
                     check(heapDoubles(DA, DB, from, length), 1);
                     FB[from + 1] = 0.0f;
@@ -287,6 +315,7 @@ public class HeapVectorizedMismatchEntryTest {
                     FB[at] = Float.intBitsToFloat(0xff800002);
                     DA[at] = Double.longBitsToDouble(0x7ff8000000000001L);
                     DB[at] = Double.longBitsToDouble(0xfff0000000000002L);
+                    checkFloatBits(from, length, length / 2);
                     check(heapFloats(FA, FB, from, length), -1);
                     check(heapDoubles(DA, DB, from, length), -1);
                     if (length / 2 < length - 1) {
@@ -301,6 +330,7 @@ public class HeapVectorizedMismatchEntryTest {
                     FB[at] = -0.0f;
                     DA[at] = 0.0;
                     DB[at] = -0.0;
+                    checkFloatBits(from, length, length / 2);
                     check(heapFloats(FA, FB, from, length), length / 2);
                     check(heapDoubles(DA, DB, from, length), length / 2);
                     FB[at] = 0.0f;
