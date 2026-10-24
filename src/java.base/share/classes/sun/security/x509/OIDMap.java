@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,7 @@ package sun.security.x509;
 
 import java.util.*;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 import java.security.cert.CertificateException;
 
@@ -182,12 +184,14 @@ public class OIDMap {
         final ObjectIdentifier oid;
         final String name;
         final String className;
+        private final boolean internal;
         private volatile Class<?> clazz;
 
         OIDInfo(String name, ObjectIdentifier oid, String className) {
             this.name = name;
             this.oid = oid;
             this.className = className;
+            this.internal = true;
         }
 
         OIDInfo(String name, ObjectIdentifier oid, Class<?> clazz) {
@@ -195,6 +199,73 @@ public class OIDMap {
             this.oid = oid;
             this.className = clazz.getName();
             this.clazz = clazz;
+            this.internal = false;
+        }
+
+        /**
+         * Create an extension with the constructor of the class that takes
+         * the criticality and the value.  The extensions of the JDK are
+         * created directly, because reflection takes a long time the first
+         * time it creates an object of a class.  Return null for any other
+         * class.
+         */
+        Extension newExtension(Boolean critical, Object value)
+                throws IOException, CertificateException {
+            // Explicit registrations can name a class from another loader.
+            if (!internal) {
+                return null;
+            }
+            return switch (className) {
+                case "sun.security.x509.SubjectKeyIdentifierExtension" ->
+                        new SubjectKeyIdentifierExtension(critical, value);
+                case "sun.security.x509.KeyUsageExtension" ->
+                        new KeyUsageExtension(critical, value);
+                case "sun.security.x509.PrivateKeyUsageExtension" ->
+                        new PrivateKeyUsageExtension(critical, value);
+                case "sun.security.x509.SubjectAlternativeNameExtension" ->
+                        new SubjectAlternativeNameExtension(critical, value);
+                case "sun.security.x509.IssuerAlternativeNameExtension" ->
+                        new IssuerAlternativeNameExtension(critical, value);
+                case "sun.security.x509.BasicConstraintsExtension" ->
+                        new BasicConstraintsExtension(critical, value);
+                case "sun.security.x509.CRLNumberExtension" ->
+                        new CRLNumberExtension(critical, value);
+                case "sun.security.x509.CRLReasonCodeExtension" ->
+                        new CRLReasonCodeExtension(critical, value);
+                case "sun.security.x509.NameConstraintsExtension" ->
+                        new NameConstraintsExtension(critical, value);
+                case "sun.security.x509.PolicyMappingsExtension" ->
+                        new PolicyMappingsExtension(critical, value);
+                case "sun.security.x509.AuthorityKeyIdentifierExtension" ->
+                        new AuthorityKeyIdentifierExtension(critical, value);
+                case "sun.security.x509.PolicyConstraintsExtension" ->
+                        new PolicyConstraintsExtension(critical, value);
+                case "sun.security.x509.NetscapeCertTypeExtension" ->
+                        new NetscapeCertTypeExtension(critical, value);
+                case "sun.security.x509.CertificatePoliciesExtension" ->
+                        new CertificatePoliciesExtension(critical, value);
+                case "sun.security.x509.ExtendedKeyUsageExtension" ->
+                        new ExtendedKeyUsageExtension(critical, value);
+                case "sun.security.x509.InhibitAnyPolicyExtension" ->
+                        new InhibitAnyPolicyExtension(critical, value);
+                case "sun.security.x509.CRLDistributionPointsExtension" ->
+                        new CRLDistributionPointsExtension(critical, value);
+                case "sun.security.x509.CertificateIssuerExtension" ->
+                        new CertificateIssuerExtension(critical, value);
+                case "sun.security.x509.SubjectInfoAccessExtension" ->
+                        new SubjectInfoAccessExtension(critical, value);
+                case "sun.security.x509.AuthorityInfoAccessExtension" ->
+                        new AuthorityInfoAccessExtension(critical, value);
+                case "sun.security.x509.IssuingDistributionPointExtension" ->
+                        new IssuingDistributionPointExtension(critical, value);
+                case "sun.security.x509.DeltaCRLIndicatorExtension" ->
+                        new DeltaCRLIndicatorExtension(critical, value);
+                case "sun.security.x509.FreshestCRLExtension" ->
+                        new FreshestCRLExtension(critical, value);
+                case "sun.security.x509.OCSPNoCheckExtension" ->
+                        new OCSPNoCheckExtension(critical, value);
+                default -> null;
+            };
         }
 
         /**
@@ -239,6 +310,27 @@ public class OIDMap {
         }
         if (nameMap.put(name, info) != null) {
             throw new CertificateException("Name already exists: " + name);
+        }
+    }
+
+    /**
+     * Create the extension that is registered for the OID of the given
+     * extension, if it is one that the JDK creates directly, or return null.
+     * An exception that the constructor throws is the cause of the
+     * InvocationTargetException, as it is for a constructor called by
+     * reflection.
+     */
+    static Extension newExtension(Extension ext)
+            throws InvocationTargetException {
+        OIDInfo info = oidMap.get(ext.getExtensionId());
+        if (info == null) {
+            return null;
+        }
+        try {
+            return info.newExtension(Boolean.valueOf(ext.isCritical()),
+                    ext.getExtensionValue());
+        } catch (Throwable t) {
+            throw new InvocationTargetException(t);
         }
     }
 

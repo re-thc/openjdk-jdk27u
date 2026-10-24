@@ -99,7 +99,9 @@ jobs:
 
   build-linux-aarch64:
     name: linux-aarch64
-    needs: prepare
+    needs:
+      - prepare
+      - test-linux-x64
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-aarch64
@@ -109,14 +111,17 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    if: needs.prepare.outputs.linux-aarch64 == 'true'
+    # The full Linux x64 run gates the remaining targets when selected.
+    if: >-
+      !cancelled() && needs.prepare.result == 'success' &&
+      needs.prepare.outputs.linux-aarch64 == 'true' &&
+      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success')
 
   build-macos-aarch64:
     name: macos-aarch64
     needs:
       - prepare
       - test-linux-x64
-      - test-linux-aarch64
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
@@ -125,19 +130,16 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-    # Selected Linux targets must finish successfully; manual non-Linux runs still work.
     if: >-
       !cancelled() && needs.prepare.result == 'success' &&
       needs.prepare.outputs.macos-aarch64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success') &&
-      (needs.prepare.outputs.linux-aarch64 != 'true' || needs.test-linux-aarch64.result == 'success')
+      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success')
 
   build-windows-x64:
     name: windows-x64
     needs:
       - prepare
       - test-linux-x64
-      - test-linux-aarch64
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
@@ -150,8 +152,7 @@ jobs:
     if: >-
       !cancelled() && needs.prepare.result == 'success' &&
       needs.prepare.outputs.windows-x64 == 'true' &&
-      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success') &&
-      (needs.prepare.outputs.linux-aarch64 != 'true' || needs.test-linux-aarch64.result == 'success')
+      (needs.prepare.outputs.linux-x64 != 'true' || needs.test-linux-x64.result == 'success')
 
   test-linux-x64:
     name: linux-x64

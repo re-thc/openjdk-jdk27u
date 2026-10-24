@@ -41,7 +41,6 @@ import sun.security.rsa.RSAUtil.KeyType;
 import sun.security.rsa.RSAPublicKeyImpl;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
 
-import sun.security.internal.interfaces.TlsMasterSecret;
 
 import sun.security.pkcs11.wrapper.*;
 
@@ -370,18 +369,6 @@ abstract class P11Key implements Key, Length {
                 attrs, password, salt, iterationCount);
     }
 
-    static SecretKey masterSecretKey(Session session, long keyID,
-            String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
-            int major, int minor) {
-        attrs = getAttributes(session, keyID, attrs, new CK_ATTRIBUTE[] {
-                    new CK_ATTRIBUTE(CKA_TOKEN),
-                    new CK_ATTRIBUTE(CKA_SENSITIVE),
-                    new CK_ATTRIBUTE(CKA_EXTRACTABLE),
-        });
-        return new P11TlsMasterSecretKey(session, keyID, algorithm, keyLength,
-                attrs, major, minor);
-    }
-
     // we assume that all components of public keys are always accessible
     static PublicKey publicKey(Session session, long keyID, String algorithm,
             int keyLength, CK_ATTRIBUTE[] attrs) {
@@ -540,28 +527,6 @@ abstract class P11Key implements Key, Length {
         void clearPassword() {
             Arrays.fill(password, '\0');
             password = null;
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private static class P11TlsMasterSecretKey extends P11SecretKey
-            implements TlsMasterSecret {
-        @Serial
-        private static final long serialVersionUID = -1318560923770573441L;
-
-        private final int majorVersion, minorVersion;
-        P11TlsMasterSecretKey(Session session, long keyID, String algorithm,
-                int keyLength, CK_ATTRIBUTE[] attrs, int major, int minor) {
-            super(session, keyID, algorithm, keyLength, attrs);
-            this.majorVersion = major;
-            this.minorVersion = minor;
-        }
-        public int getMajorVersion() {
-            return majorVersion;
-        }
-
-        public int getMinorVersion() {
-            return minorVersion;
         }
     }
 

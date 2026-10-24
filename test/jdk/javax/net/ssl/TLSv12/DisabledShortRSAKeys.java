@@ -32,12 +32,6 @@
  * @library /javax/net/ssl/templates
  * @run main/othervm DisabledShortRSAKeys PKIX TLSv1.2
  * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1.2
- * @run main/othervm DisabledShortRSAKeys PKIX TLSv1.1
- * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1.1
- * @run main/othervm DisabledShortRSAKeys PKIX TLSv1
- * @run main/othervm DisabledShortRSAKeys SunX509 TLSv1
- * @run main/othervm DisabledShortRSAKeys PKIX SSLv3
- * @run main/othervm DisabledShortRSAKeys SunX509 SSLv3
  */
 
 import java.io.*;
@@ -61,13 +55,13 @@ public class DisabledShortRSAKeys extends SSLSocketTemplate {
 
     @Override
     public SSLContext createClientSSLContext() throws Exception {
-        return createSSLContext(new Cert[]{Cert.CA_RSA_512}, null,
+        return createSSLContext(new Cert[]{Cert.CA_RSA_2048}, null,
                 new ContextParameters(enabledProtocol, tmAlgorithm, "NewSunX509"));
     }
 
     @Override
     public SSLContext createServerSSLContext() throws Exception {
-        return createSSLContext(null, new Cert[]{Cert.EE_RSA_512},
+        return createSSLContext(null, new Cert[]{Cert.EE_RSA_SHA256_512},
                 new ContextParameters(enabledProtocol, tmAlgorithm, "NewSunX509"));
     }
 

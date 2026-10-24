@@ -41,14 +41,13 @@ public class ImportToPwordlessPK12 {
     public static void main(String[] args) throws Exception {
 
         kt("-genkeypair -keyalg EC -alias testcert -dname CN=EE " +
-                "-storetype jks -keypass pass123 ", "ks.jks");
+                "-storetype pkcs12 ", "src.p12");
 
         /*
-         * Test by setting the responses for source keystore password and
-         * key password for alias
+         * Test by setting the response for source keystore password
          */
-        SecurityTools.setResponse("changeit", "pass123");
-        SecurityTools.keytool("-importkeystore -srckeystore ks.jks " +
+        SecurityTools.setResponse("changeit");
+        SecurityTools.keytool("-importkeystore -srckeystore src.p12 " +
                 "-destkeystore ks.p12 " +
                 "-J-Dkeystore.pkcs12.macAlgorithm=NONE " +
                 "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE")
@@ -61,14 +60,13 @@ public class ImportToPwordlessPK12 {
                 .shouldHaveExitValue(0);
 
         kt("-genkeypair -keyalg EC -alias testcert -dname CN=EE " +
-                "-storetype jks -keypass pass123 ", "ks1.jks");
+                "-storetype pkcs12 ", "src1.p12");
 
         // Test with all of options specified on command line
-        SecurityTools.keytool("-importkeystore -srckeystore ks1.jks " +
+        SecurityTools.keytool("-importkeystore -srckeystore src1.p12 " +
                 "-destkeystore ks1.p12 " +
                 "-srcstorepass changeit " +
                 "-srcalias testcert " +
-                "-srckeypass pass123 " +
                 "-J-Dkeystore.pkcs12.macAlgorithm=NONE " +
                 "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE")
                 .shouldHaveExitValue(0);

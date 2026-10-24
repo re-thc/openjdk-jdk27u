@@ -48,10 +48,10 @@ public class CICODESFuncTest {
     /**
      * Algorithms name.
      */
-    private static final String[] ALGORITHMS = { "DES", "DESede", "Blowfish" };
+    private static final String[] ALGORITHMS = { "DES", "DESede" };
     private static final String[] MODES = { "ECB", "CBC", "CFB", "CFB24",
             "CFB32", "CFB40", "CFB72", "OFB", "OFB20", "OFB48", "OFB56",
-            "OFB64", "PCBC" };
+            "OFB64" };
     /**
      * Padding mode.
      */
@@ -74,16 +74,15 @@ public class CICODESFuncTest {
         for (String algorithm : ALGORITHMS) {
             for (String mode : MODES) {
                 // We only test noPadding and pkcs5padding for CFB72, OFB20, ECB
-                // PCBC and CBC. Otherwise test noPadding only.
+                // and CBC. Otherwise test noPadding only.
                 int padKinds = 1;
                 if (mode.equalsIgnoreCase("CFB72")
                         || mode.equalsIgnoreCase("OFB20")
                         || mode.equalsIgnoreCase("ECB")
-                        || mode.equalsIgnoreCase("PCBC")
                         || mode.equalsIgnoreCase("CBC")) {
                     padKinds = PADDINGS.length;
                 }
-                // PKCS5padding is meaningful only for ECB, CBC, PCBC
+                // PKCS5padding is meaningful only for ECB, CBC
                 for (int k = 0; k < padKinds; k++) {
                     for (ReadModel readMode : ReadModel.values()) {
                         runTest(provider, algorithm, mode, PADDINGS[k], readMode);

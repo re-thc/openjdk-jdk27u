@@ -51,7 +51,9 @@ public class VeryLongAlias {
         // Using the old algorithms to make sure the file is recognized
         // by the certutil command on old versions of Windows.
         SecurityTools.keytool(
-                "-J-Dkeystore.pkcs12.legacy"
+                "-J-Dkeystore.pkcs12.certProtectionAlgorithm=PBEWithSHA1AndDESede"
+                + " -J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede"
+                + " -J-Dkeystore.pkcs12.macAlgorithm=HmacPBESHA1"
                 + " -genkeypair -storetype pkcs12 -keystore ks"
                 + " -storepass changeit -keyalg RSA -dname CN=A -alias "
                 + alias);

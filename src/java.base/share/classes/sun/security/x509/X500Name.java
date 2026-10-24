@@ -1182,6 +1182,12 @@ public class X500Name implements GeneralNameInterface, Principal {
     public static final ObjectIdentifier userid_oid =
             ObjectIdentifier.of(KnownOIDs.UCL_UserID);
 
+    // OID for "EMAILADDRESS=", the same as PKCS9Attribute.EMAIL_ADDRESS_OID.
+    // Initializing PKCS9Attribute links a lot of lambdas, which converting a
+    // name to a string should not do.
+    static final ObjectIdentifier EMAIL_ADDRESS_OID =
+            ObjectIdentifier.of(KnownOIDs.EmailAddress);
+
     /**
      * Return constraint type:<ul>
      *   <li>NAME_DIFF_TYPE = -1: input name is different type from this name

@@ -33,8 +33,6 @@
  *          behaviors of close_notify.
  * @summary When a layered SSL socket is closed, it should wait for close_notify
  * @library /test/lib /javax/net/ssl/templates
- * @run main/othervm NonAutoClose TLSv1
- * @run main/othervm NonAutoClose TLSv1.1
  * @run main/othervm NonAutoClose TLSv1.2
  * @author Brad Wetmore
  */
@@ -45,8 +43,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.*;
-
-import jdk.test.lib.security.SecurityUtils;
 
 import static jdk.test.lib.Asserts.assertEquals;
 
@@ -180,10 +176,6 @@ public class NonAutoClose extends SSLContextTemplate {
 
     public static void main(String[] args) throws Exception {
         String protocol = args[0];
-        if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
-            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
-        }
-
         if (DEBUG)
             System.setProperty("javax.net.debug", "all");
 

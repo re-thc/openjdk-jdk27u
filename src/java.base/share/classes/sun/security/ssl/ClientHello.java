@@ -201,7 +201,7 @@ final class ClientHello {
             this.cookie = cookie;
         }
 
-        // DTLS 1.0/1.2, for cookie generation.
+        // DTLS 1.2, for cookie generation.
         byte[] getHelloCookieBytes() {
             HandshakeOutStream hos = new HandshakeOutStream(null);
             try {
@@ -493,13 +493,8 @@ final class ClientHello {
                                 session = null;
                             }   // Otherwise, use extended master secret.
                         } else {
-                            // The extended master secret extension does not
-                            // apply to SSL 3.0.  Perform a full handshake
-                            // instead.
-                            //
-                            // Note that the useExtendedMasterSecret is
-                            // extended to protect SSL 3.0 connections,
-                            // by discarding abbreviate handshake.
+                            // The extended master secret extension is not
+                            // available.  Perform a full handshake instead.
                             session = null;
                         }
                     }
@@ -671,9 +666,9 @@ final class ClientHello {
         }
 
         // Response to one of the following handshake message:
-        //     HelloRequest                     (SSL 3.0/TLS 1.0/1.1/1.2)
+        //     HelloRequest                     (TLS 1.2)
         //     ServerHello(HelloRetryRequest)   (TLS 1.3)
-        //     HelloVerifyRequest               (DTLS 1.0/1.2)
+        //     HelloVerifyRequest               (DTLS 1.2)
         @Override
         public byte[] produce(ConnectionContext context,
                 HandshakeMessage message) throws IOException {
@@ -687,7 +682,7 @@ final class ClientHello {
 
             switch (ht) {
                 case HELLO_REQUEST:
-                    // SSL 3.0/TLS 1.0/1.1/1.2
+                    // TLS 1.2
                     try {
                         chc.kickstart();
                     } catch (IOException ioe) {
@@ -698,7 +693,7 @@ final class ClientHello {
                     // The handshake message has been delivered.
                     return null;
                 case HELLO_VERIFY_REQUEST:
-                    // DTLS 1.0/1.2
+                    // DTLS 1.2
                     //
                     // The HelloVerifyRequest consumer should have updated the
                     // ClientHello handshake message with cookie.
@@ -871,8 +866,7 @@ final class ClientHello {
             // Select a protocol version from the activated protocols.
             ProtocolVersion pv = ProtocolVersion.selectedFrom(
                     context.activeProtocols, chv);
-            if (pv == null || pv == ProtocolVersion.NONE ||
-                    pv == ProtocolVersion.SSL20Hello) {
+            if (pv == null || pv == ProtocolVersion.NONE) {
                 throw context.conContext.fatal(Alert.PROTOCOL_VERSION,
                     "Client requested protocol " +
                     ProtocolVersion.nameOf(clientHelloVersion) +
@@ -892,13 +886,7 @@ final class ClientHello {
             // preference order.  This implementation chooses to use the server
             // preference of protocol versions instead.
             for (ProtocolVersion spv : context.activeProtocols) {
-                if (spv == ProtocolVersion.SSL20Hello) {
-                    continue;
-                }
                 for (int cpv : clientSupportedVersions) {
-                    if (cpv == ProtocolVersion.SSL20Hello.id) {
-                        continue;
-                    }
                     if (spv.id == cpv) {
                         return spv;
                     }
@@ -1390,7 +1378,7 @@ final class ClientHello {
             // The property only affects the cookie exchange for resumption.
             if (!shc.isResumption || SSLConfiguration.enableDtlsResumeCookie) {
                 HelloCookieManager hcm =
-                        shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
+                        shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS12);
                 if (!hcm.isCookieValid(shc, clientHello, clientHello.cookie)) {
                     //
                     // Perform cookie exchange for DTLS handshaking if no cookie

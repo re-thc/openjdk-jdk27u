@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1197,17 +1198,25 @@ public final class ServiceLoader<S>
             return new LayerLookupIterator<>();
         } else {
             Iterator<Provider<S>> first = new ModuleServicesLookupIterator<>();
-            Iterator<Provider<S>> second = new LazyClassPathLookupIterator<>();
             return new Iterator<Provider<S>>() {
+                private Iterator<Provider<S>> second;
+
+                private Iterator<Provider<S>> classPathIterator() {
+                    if (second == null) {
+                        second = new LazyClassPathLookupIterator<>();
+                    }
+                    return second;
+                }
+
                 @Override
                 public boolean hasNext() {
-                    return (first.hasNext() || second.hasNext());
+                    return (first.hasNext() || classPathIterator().hasNext());
                 }
                 @Override
                 public Provider<S> next() {
                     if (first.hasNext()) {
                         return first.next();
-                    } else if (second.hasNext()) {
+                    } else if (classPathIterator().hasNext()) {
                         return second.next();
                     } else {
                         throw new NoSuchElementException();

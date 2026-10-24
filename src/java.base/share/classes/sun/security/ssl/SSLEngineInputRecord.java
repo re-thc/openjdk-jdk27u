@@ -91,8 +91,8 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
              */
             byte majorVersion = packet.get(pos + 1);
             byte minorVersion = packet.get(pos + 2);
-            if (!ProtocolVersion.isNegotiable(
-                    majorVersion, minorVersion, false, false)) {
+            if (!ProtocolVersion.isRecordVersion(
+                    majorVersion, minorVersion, false)) {
                 throw new SSLException("Unrecognized record version " +
                         ProtocolVersion.nameOf(majorVersion, minorVersion) +
                         " , plaintext connection?");
@@ -126,8 +126,8 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
 
                 byte majorVersion = packet.get(pos + 3);
                 byte minorVersion = packet.get(pos + 4);
-                if (!ProtocolVersion.isNegotiable(
-                        majorVersion, minorVersion, false, false)) {
+                if (!ProtocolVersion.isRecordVersion(
+                        majorVersion, minorVersion, false)) {
                     throw new SSLException("Unrecognized record version " +
                             ProtocolVersion.nameOf(majorVersion, minorVersion) +
                             " , plaintext connection?");
@@ -369,57 +369,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
 
         // Does it look like a Version 2 client hello (V2ClientHello)?
         if (((firstByte & 0x80) != 0) && (thirdByte == 1)) {
-            /*
-             * If SSLv2Hello is not enabled, throw an exception.
-             */
-            if (helloVersion != ProtocolVersion.SSL20Hello) {
-                throw new SSLHandshakeException("SSLv2Hello is not enabled");
-            }
-
-            byte majorVersion = packet.get(srcPos + 3);
-            byte minorVersion = packet.get(srcPos + 4);
-
-            if ((majorVersion == ProtocolVersion.SSL20Hello.major) &&
-                (minorVersion == ProtocolVersion.SSL20Hello.minor)) {
-
-                /*
-                 * Looks like a V2 client hello, but not one saying
-                 * "let's talk SSLv3".  So we need to send an SSLv2
-                 * error message, one that's treated as fatal by
-                 * clients (Otherwise we'll hang.)
-                 */
-                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
-                   SSLLogger.fine(
-                            "Requested to negotiate unsupported SSLv2!");
-                }
-
-                // Note that the exception is caught in SSLEngineImpl
-                // so that SSLv2 error message can be delivered properly.
-                throw new UnsupportedOperationException(        // SSLv2Hello
-                        "Unsupported SSL v2.0 ClientHello");
-            }
-
-            /*
-             * If we can map this into a V3 ClientHello, read and
-             * hash the rest of the V2 handshake, turn it into a
-             * V3 ClientHello message, and pass it up.
-             */
-            packet.position(srcPos + 2);        // exclude the header
-            handshakeHash.receive(packet);
-            packet.position(srcPos);
-
-            ByteBuffer converted = convertToClientHello(packet);
-
-            if (SSLLogger.isOn() &&
-                    SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                SSLLogger.fine(
-                        "[Converted] ClientHello", converted);
-            }
-
-            return new Plaintext[] {
-                    new Plaintext(ContentType.HANDSHAKE.id,
-                    majorVersion, minorVersion, -1, -1L, converted)
-                };
+            throw new SSLHandshakeException("SSLv2Hello is not supported");
         } else {
             if (((firstByte & 0x80) != 0) && (thirdByte == 4)) {
                 throw new SSLException("SSL V2.0 servers are not supported.");

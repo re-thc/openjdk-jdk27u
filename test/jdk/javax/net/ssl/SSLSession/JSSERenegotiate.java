@@ -42,8 +42,8 @@ import javax.net.ssl.*;
 
 public class JSSERenegotiate {
 
-    static final String suite1 = "SSL_RSA_WITH_NULL_MD5";
-    static final String suite2 = "SSL_RSA_WITH_NULL_SHA";
+    static final String suite1 = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
+    static final String suite2 = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
 
     static final String dataString = "This is a test";
 

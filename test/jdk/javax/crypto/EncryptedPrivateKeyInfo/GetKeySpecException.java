@@ -28,7 +28,6 @@
  * @summary Test the error conditions of
  * EncryptedPrivateKeyInfo.getKeySpec(...) methods.
  * @author Valerie Peng
- * @run main/othervm -DcipherAlg=PBEWithMD5AndDES GetKeySpecException
  * @run main/othervm -DcipherAlg=PBEWithSHA1AndDESede GetKeySpecException
  */
 

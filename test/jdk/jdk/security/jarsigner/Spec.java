@@ -68,7 +68,7 @@ public class Spec {
                         " CN=RSA -alias r -genkeypair -keyalg rsa").split(" "));
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit -dname" +
-                        " CN=DSA -alias d -genkeypair -keyalg dsa").split(" "));
+                        " CN=EC -alias d -genkeypair -keyalg ec").split(" "));
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit -dname" +
                         " CN=Ed25519 -alias e -genkeypair -keyalg Ed25519").split(" "));
@@ -109,7 +109,8 @@ public class Spec {
         npe(()->b1.signatureAlgorithm(null, sun));
         npe(()->b1.signatureAlgorithm("SHA256withRSA", null));
         nsae(()->b1.signatureAlgorithm("HAHAwithHEHE", sun));
-        iae(()->b1.signatureAlgorithm("SHA256withDSA", sun));
+        iae(()->b1.signatureAlgorithm("SHA256withECDSA",
+                Security.getProvider("SunEC")));
 
         npe(()->b1.tsa(null));
 
@@ -175,20 +176,13 @@ public class Spec {
         assertTrue(JarSigner.Builder.getDefaultDigestAlgorithm()
                 .equals("SHA-384"));
 
-        // Calculating large DSA and RSA keys are too slow.
+        // Calculating large RSA keys is too slow.
         String kpgRSA = "RSA";
-        String kpgDSA = "DSA";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgRSA);
         kpg.initialize(SecurityUtils.getTestKeySize(kpgRSA));
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
                     .equals("SHA384withRSA"));
-
-        kpg = KeyPairGenerator.getInstance(kpgDSA);
-        kpg.initialize(SecurityUtils.getTestKeySize(kpgDSA));
-        assertTrue(JarSigner.Builder
-                .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
-                .equals("SHA256withDSA"));
 
         kpg = KeyPairGenerator.getInstance("EC");
         kpg.initialize(256);

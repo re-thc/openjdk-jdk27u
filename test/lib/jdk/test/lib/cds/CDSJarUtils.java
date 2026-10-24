@@ -306,8 +306,8 @@ public class CDSJarUtils {
         String keyName = "key_with_disabled_alg";
         executeProcess(keyTool,
             "-genkey", "-keystore", "./keystore", "-alias", keyName,
-            "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "dsa",
-            "-sigalg", "SHA1withDSA", "-keysize", "512", "-dname", "CN=jvmtest2")
+            "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "rsa",
+            "-keysize", "512", "-dname", "CN=jvmtest2")
             .shouldHaveExitValue(0);
 
         doSigning(jarName, keyName);
@@ -317,7 +317,7 @@ public class CDSJarUtils {
         String keyName = "mykey";
         executeProcess(keyTool,
             "-genkey", "-keystore", "./keystore", "-alias", keyName,
-            "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "dsa",
+            "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "rsa",
             "-dname", "CN=jvmtest")
             .shouldHaveExitValue(0);
 

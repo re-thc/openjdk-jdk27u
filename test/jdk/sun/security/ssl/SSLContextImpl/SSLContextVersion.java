@@ -27,23 +27,18 @@
 /*
  * @test
  * @bug 6976117 8234725
- * @summary SSLContext.getInstance("TLSv1.1") returns SSLEngines/SSLSockets
- *          without TLSv1.1 enabled
+ * @summary SSLContext aliases expose the expected default and supported
+ *          protocols through SSLEngines and SSLSockets
  * @library /test/lib
  * @run main/othervm SSLContextVersion
  */
 
 import javax.net.ssl.*;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class SSLContextVersion {
     static enum ContextVersion {
         TLS_CV_01("SSL", "TLSv1.2", "TLSv1.2"),
         TLS_CV_02("TLS", "TLSv1.2", "TLSv1.2"),
-        TLS_CV_03("SSLv3", "TLSv1", "TLSv1.2"),
-        TLS_CV_04("TLSv1", "TLSv1", "TLSv1.2"),
-        TLS_CV_05("TLSv1.1", "TLSv1.1", "TLSv1.2"),
         TLS_CV_06("TLSv1.2", "TLSv1.2", "TLSv1.2"),
         TLS_CV_07("Default", "TLSv1.2", "TLSv1.2"),
         TLS_CV_08("Default", "TLSv1.3", "TLSv1.3"),
@@ -63,9 +58,6 @@ public class SSLContextVersion {
     }
 
     public static void main(String[] args) throws Exception {
-        // Re-enable TLSv1 and TLSv1.1 since test depends on them.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
-
         for (ContextVersion cv : ContextVersion.values()) {
             System.out.println("Checking SSLContext of " + cv.contextVersion);
             SSLContext context = SSLContext.getInstance(cv.contextVersion);

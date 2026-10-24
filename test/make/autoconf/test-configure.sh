@@ -26,6 +26,8 @@
 AUTOCONF="$1"
 TOPDIR="$2"
 TEST_SUPPORT_DIR="$3"
+. "$TOPDIR/test/make/autoconf/autoconf-common.sh"
+find_autoconf "$AUTOCONF" || exit 1
 
 mkdir -p $TEST_SUPPORT_DIR/test-conf
 cd $TEST_SUPPORT_DIR/test-conf

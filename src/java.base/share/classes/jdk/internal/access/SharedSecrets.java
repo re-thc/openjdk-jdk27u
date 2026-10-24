@@ -28,7 +28,6 @@ package jdk.internal.access;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
-import javax.crypto.SealedObject;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
@@ -40,7 +39,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
-import java.io.FilePermission;
 import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.security.Signature;
@@ -101,9 +99,9 @@ public class SharedSecrets {
     @Stable private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     @Stable private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     @Stable private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
+    @Stable private static JavaSecurityAlgorithmParametersAccess javaSecurityAlgorithmParametersAccess;
     @Stable private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     @Stable private static JavaSecuritySpecAccess javaSecuritySpecAccess;
-    @Stable private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     @Stable private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
     @Stable private static JavaxSecurityAccess javaxSecurityAccess;
 
@@ -323,6 +321,21 @@ public class SharedSecrets {
         return access;
     }
 
+    public static void setJavaSecurityAlgorithmParametersAccess(
+            JavaSecurityAlgorithmParametersAccess access) {
+        javaSecurityAlgorithmParametersAccess = access;
+    }
+
+    public static JavaSecurityAlgorithmParametersAccess
+            getJavaSecurityAlgorithmParametersAccess() {
+        var access = javaSecurityAlgorithmParametersAccess;
+        if (access == null) {
+            ensureClassInitialized(Security.class);
+            access = javaSecurityAlgorithmParametersAccess;
+        }
+        return access;
+    }
+
     public static JavaUtilZipFileAccess getJavaUtilZipFileAccess() {
         var access = javaUtilZipFileAccess;
         if (access == null) {
@@ -469,19 +482,6 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SecretKeySpec.class);
             access = javaxCryptoSpecAccess;
-        }
-        return access;
-    }
-
-    public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
-        javaxCryptoSealedObjectAccess = jcsoa;
-    }
-
-    public static JavaxCryptoSealedObjectAccess getJavaxCryptoSealedObjectAccess() {
-        var access = javaxCryptoSealedObjectAccess;
-        if (access == null) {
-            ensureClassInitialized(SealedObject.class);
-            access = javaxCryptoSealedObjectAccess;
         }
         return access;
     }

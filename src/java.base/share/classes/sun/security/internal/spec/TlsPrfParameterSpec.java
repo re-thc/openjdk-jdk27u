@@ -61,11 +61,8 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
      * @param seed the random seed to use in the calculation
      * @param outputLength the length in bytes of the output key to be produced
      * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
-     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
      * @param prfHashLength the output length of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      *
      * @throws NullPointerException if label or seed is null
      * @throws IllegalArgumentException if outputLength is negative
@@ -86,11 +83,8 @@ public class TlsPrfParameterSpec implements AlgorithmParameterSpec {
      * @param seed the random seed to use in the calculation
      * @param outputLength the length in bytes of the output key to be produced
      * @param prfHashAlg the name of the TLS PRF hash algorithm to use.
-     *        Used only for TLS 1.2+.  TLS1.1 and earlier use a fixed PRF.
      * @param prfHashLength the output length of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      * @param prfBlockSize the input block size of the TLS PRF hash algorithm.
-     *        Used only for TLS 1.2+.
      *
      * @throws NullPointerException if keyAlg, label or seed is null
      * @throws IllegalArgumentException if outputLength is negative or

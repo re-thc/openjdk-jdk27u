@@ -87,7 +87,7 @@ public class TrustedCRL {
         // import root CA to mycacerts keystore
         KeyStoreUtils.createCacerts("mycacerts", "ca.pem");
 
-        kt("-gencrl -alias myca -id 0 -file ca.crl -sigalg MD5withRSA");
+        kt("-gencrl -alias myca -id 0 -file ca.crl -sigalg SHA1withRSA");
 
         patchcmd("printcrl", "-file ca.crl -trustcacerts")
                 .shouldMatch("Verified by.*in cacerts");

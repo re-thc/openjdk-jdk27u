@@ -79,15 +79,4 @@ interface SSLRecord extends Record {
     int    maxLargeRecordSize =
                 maxRecordSize   // Max size with a conforming implementation
               + maxDataSize;    // extra 2^14 bytes for large data packets.
-
-    /*
-     * We may need to send this SSL v2 "No Cipher" message back, if we
-     * are faced with an SSLv2 "hello" that's not saying "I talk v3".
-     * It's the only one documented in the V2 spec as a fatal error.
-     */
-    byte[] v2NoCipher = {
-        (byte)0x80, (byte)0x03, // unpadded 3 byte record
-        (byte)0x00,             // ... error message
-        (byte)0x00, (byte)0x01  // ... NO_CIPHER error
-    };
 }
