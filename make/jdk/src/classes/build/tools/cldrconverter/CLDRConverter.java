@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +311,11 @@ public class CLDRConverter {
         convertBundles(bundles);
 
         if (isBaseModule) {
+            // All target CLDR rules, including locales outside java.base. No
+            // dependency on the boot JDK's locale data or on jdk.localedata.
+            CompactPluralRulesGenerator.generate(
+                    Paths.get(DESTINATION_DIR), pluralRules.values());
+
             // Generate java.time.format.ZoneName.java
             generateZoneName();
 

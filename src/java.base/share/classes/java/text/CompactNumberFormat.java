@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2583,6 +2584,11 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     private static boolean matchPluralRule(String condition, double input) {
+        Boolean precomputed = CompactPluralRules.match(condition, input);
+        if (precomputed != null) {
+            return precomputed;
+        }
+
         return Arrays.stream(condition.split("or"))
             .anyMatch(and_condition -> Arrays.stream(and_condition.split("and"))
                 .allMatch(r -> relationCheck(r, input)));
