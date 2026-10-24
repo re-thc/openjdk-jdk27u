@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jli_util.h"
-#include <zlib.h>
+#include "jli_zlib_backend.h"
 static int real_init(z_streamp s, int w) { return inflateInit2(s, w); }
 static int real_end(z_streamp s) { return inflateEnd(s); }
 static int allocations, frees, live, inits, ends, end_errors;

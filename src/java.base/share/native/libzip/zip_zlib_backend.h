@@ -25,48 +25,43 @@
 
 #ifndef ZIP_ZLIB_BACKEND_H
 #define ZIP_ZLIB_BACKEND_H
-#include <zlib.h>
 
 #ifdef INCLUDE_ZLIBNG
-/* zlib-ng is built in compatibility mode with a private symbol prefix. */
-extern int jdk_ng_deflate(z_streamp, int);
-extern int jdk_ng_deflateEnd(z_streamp);
-extern int jdk_ng_deflateReset(z_streamp);
-extern int jdk_ng_deflateParams(z_streamp, int, int);
-extern int jdk_ng_deflateSetDictionary(z_streamp, const Bytef *, uInt);
-extern int jdk_ng_deflateSetHeader(z_streamp, gz_headerp);
-extern int jdk_ng_deflateInit2_(z_streamp, int, int, int, int, int, const char *, int);
-extern int jdk_ng_inflate(z_streamp, int);
-extern int jdk_ng_inflateEnd(z_streamp);
-extern int jdk_ng_inflateReset(z_streamp);
-extern int jdk_ng_inflateSetDictionary(z_streamp, const Bytef *, uInt);
-extern int jdk_ng_inflateInit2_(z_streamp, int, const char *, int);
-extern uLong jdk_ng_crc32(uLong, const Bytef *, uInt);
-extern uLong jdk_ng_adler32(uLong, const Bytef *, uInt);
-extern uLong jdk_ng_deflateBound(z_streamp, uLong);
+#include <zlib-ng.h>
+
+/* These aliases stay inside libzip. JNI and ZIP_* pass opaque addresses;
+ * no compatibility stream is cast to a native stream. */
+typedef zng_stream z_stream;
+typedef zng_stream *z_streamp;
+typedef zng_gz_header gz_header;
+typedef zng_gz_header *gz_headerp;
 
 /* Use the fast encoder for level 1 to preserve zlib's speed/size balance. */
 static inline int zip_deflate_level(int level) {
     return level == 1 ? 2 : level;
 }
 
-#define deflate jdk_ng_deflate
-#define deflateEnd jdk_ng_deflateEnd
-#define deflateReset jdk_ng_deflateReset
+#define deflate zng_deflate
+#define deflateEnd zng_deflateEnd
+#define deflateReset zng_deflateReset
 #define deflateParams(strm, level, strategy) \
-    jdk_ng_deflateParams((strm), zip_deflate_level(level), (strategy))
-#define deflateSetDictionary jdk_ng_deflateSetDictionary
-#define deflateSetHeader jdk_ng_deflateSetHeader
-#define deflateInit2_(strm, level, method, windowBits, memLevel, strategy, version, size) \
-    jdk_ng_deflateInit2_((strm), zip_deflate_level(level), (method), \
-                       (windowBits), (memLevel), (strategy), (version), (size))
-#define inflate jdk_ng_inflate
-#define inflateEnd jdk_ng_inflateEnd
-#define inflateReset jdk_ng_inflateReset
-#define inflateSetDictionary jdk_ng_inflateSetDictionary
-#define inflateInit2_ jdk_ng_inflateInit2_
-#define crc32 jdk_ng_crc32
-#define adler32 jdk_ng_adler32
-#define deflateBound jdk_ng_deflateBound
+    zng_deflateParams((strm), zip_deflate_level(level), (strategy))
+#define deflateSetDictionary zng_deflateSetDictionary
+#define deflateSetHeader zng_deflateSetHeader
+#define deflateInit2(strm, level, method, windowBits, memLevel, strategy) \
+    zng_deflateInit2((strm), zip_deflate_level(level), (method), \
+                    (windowBits), (memLevel), (strategy))
+#define inflate zng_inflate
+#define inflateEnd zng_inflateEnd
+#define inflateReset zng_inflateReset
+#define inflateSetDictionary zng_inflateSetDictionary
+#define inflateInit2 zng_inflateInit2
+#define crc32 zng_crc32_z
+#define adler32 zng_adler32_z
+/* Preserve the unsigned-long bound API used by the heap-dump helper. */
+#define deflateBound zng_deflateBound
+#else
+#include <zlib.h>
 #endif
-#endif
+
+#endif /* ZIP_ZLIB_BACKEND_H */

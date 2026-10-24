@@ -32,7 +32,7 @@
 #include "jni.h"
 #include "jli_util.h"
 
-#include <zlib.h>
+#include "jli_zlib_backend.h"
 #include "manifest_info.h"
 
 static char     *manifest;
