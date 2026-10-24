@@ -513,6 +513,16 @@ accordingly. If you have not installed the `BuildTools`, but e.g.
 The minimum accepted version of Open XL is 17.1.1.4. This is in essence clang
 15, and will be treated as such by the OpenJDK build system.
 
+### Rust
+
+This fork enables the bundled regex backend by default on GNU/Linux and macOS
+for x86_64 and AArch64. Enabled builds require Cargo, Rust 1.99.1 or newer and the
+matching Rust standard library copyright notices (the rustup `rust-docs`
+component). Set `RUSTC` to select the compiler, or use `--disable-rust-regex`
+to build without the backend. If the notices are outside the compiler sysroot,
+provide `--with-rust-regex-license=PATH`. Dependency maintenance instructions are
+in [rustregex/UPDATING.txt](../src/hotspot/share/runtime/rustregex/UPDATING.txt).
+
 ## Boot JDK Requirements
 
 Paradoxically, building the JDK requires a pre-existing JDK. This is called the

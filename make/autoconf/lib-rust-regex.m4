@@ -54,12 +54,12 @@ AC_DEFUN_ONCE([LIB_SETUP_RUST_REGEX], [
     esac
     UTIL_LOOKUP_PROGS(CARGO, cargo)
     if test "x$CARGO" = x; then
-      AC_MSG_ERROR([Rust regex requires Cargo and Rust 1.85 or newer; use --disable-rust-regex to omit it])
+      AC_MSG_ERROR([Rust regex requires Cargo and Rust 1.99.1 or newer; use --disable-rust-regex to omit it])
     fi
     UTIL_REQUIRE_PROGS(RUSTC, rustc)
     RUSTC_VERSION=`$RUSTC --version | $CUT -d " " -f 2`
-    AS_VERSION_COMPARE([$RUSTC_VERSION], [1.85.0],
-        [AC_MSG_ERROR([Rust regex requires Rust 1.85 or newer])], [], [])
+    AS_VERSION_COMPARE([$RUSTC_VERSION], [1.99.1],
+        [AC_MSG_ERROR([Rust regex requires Rust 1.99.1 or newer])], [], [])
     RUST_REGEX_LICENSE="$with_rust_regex_license"
     if test "x$RUST_REGEX_LICENSE" = x; then
       RUST_SYSROOT=`$RUSTC --print sysroot`

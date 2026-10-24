@@ -90,7 +90,7 @@ def main():
                 "latest_stable": latest["vers"], "selected": selected["vers"],
                 "published_at": selected.get("pubtime"), "crate_sha256": selected["cksum"]}
     (BASE / "UPSTREAM.json").write_text(json.dumps(evidence, indent=2) + "\n")
-    print("Updated vendor sources, Cargo.lock, MIT notices, and release evidence. Run the tests in doc/rust-regex.md.")
+    print("Updated vendor sources, Cargo.lock, MIT notices, and release evidence. Run the tests in src/hotspot/share/runtime/rustregex/UPDATING.txt.")
 
 
 if __name__ == "__main__":
