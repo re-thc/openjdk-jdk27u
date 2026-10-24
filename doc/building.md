@@ -904,9 +904,9 @@ and lcms may be replaced by an external version by selecting `system` as the
 * `--with-lcms=<source>` - Use the specified source for lcms
 
 Compression uses bundled zlib-ng on Linux, macOS and Windows x86-64/AArch64,
-including the launcher and bundled splash-screen PNG decoder. Other targets
-retain bundled stock zlib. The obsolete `--with-zlib` option is rejected;
-there is no system-zlib selection. See [ZIP backend integration](zlib-ng.md).
+including the launcher. Other targets retain bundled stock zlib. The obsolete
+`--with-zlib` option is rejected; there is no system-zlib selection. See the
+[bundled backend update instructions](../src/java.base/share/native/libzip/UPDATING.txt).
 
 On Linux, it is possible to select either static or dynamic linking of the C++
 runtime. The default is static linking, with dynamic linking as fallback if the
