@@ -31,6 +31,7 @@
  */
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Array;
 import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -69,19 +70,30 @@ public class IOVecCapacity {
         return ((Object[]) cache.get())[0];
     }
 
-    private static void checkCache(int expectedSize) throws ReflectiveOperationException {
-        ThreadLocal<?> cache = (ThreadLocal<?>) field(WRAPPER, "IOV_CACHE").get(null);
-        Object wrapper = ((Object[]) cache.get())[0];
-        int size = field(WRAPPER, "size").getInt(wrapper);
-        if (size != expectedSize) {
-            throw new AssertionError("capacity=" + size + ", expected=" + expectedSize);
-        }
+    private static void checkRefs() throws ReflectiveOperationException {
+        Object wrapper = cachedWrapper();
         for (String name : new String[] {"buf", "shadow"}) {
             Object[] refs = (Object[]) field(WRAPPER, name).get(wrapper);
-            if (refs.length != Math.min(expectedSize, IOV_MAX) || Arrays.stream(refs).anyMatch(x -> x != null)) {
+            if (Arrays.stream(refs).anyMatch(x -> x != null)) {
                 throw new AssertionError("Retained references in " + name);
             }
         }
+    }
+
+    private static void checkCache(int requested) throws ReflectiveOperationException {
+        Object wrapper = cachedWrapper();
+        int capacity = Math.min(requested, IOV_MAX);
+        int expectedKey = capacity == IOV_MAX ? Integer.MAX_VALUE : capacity;
+        int key = field(WRAPPER, "size").getInt(wrapper);
+        if (key != expectedKey) {
+            throw new AssertionError("cache key=" + key + ", expected=" + expectedKey);
+        }
+        for (String name : new String[] {"buf", "position", "remaining", "shadow"}) {
+            if (Array.getLength(field(WRAPPER, name).get(wrapper)) != capacity) {
+                throw new AssertionError("Wrong physical capacity in " + name);
+            }
+        }
+        checkRefs();
     }
 
     private static void test(boolean read) throws Exception {
@@ -90,8 +102,21 @@ public class IOVecCapacity {
             int length = Math.max(100_000, 2 * IOV_MAX + 1);
             ByteBuffer[] buffers = new ByteBuffer[length + 2];
             Arrays.fill(buffers, 1, length + 1, ByteBuffer.allocate(0));
-            long n = read ? channel.read(buffers, 1, length)
-                          : channel.write(buffers, 1, length);
+            long n = read ? channel.read(buffers, 1, 1) : channel.write(buffers, 1, 1);
+            if (n != 0) throw new AssertionError("Empty small vector performed I/O");
+            checkCache(1);
+            Object small = cachedWrapper();
+            int underCap = Math.min(2, IOV_MAX);
+            n = read ? channel.read(buffers, 1, underCap) : channel.write(buffers, 1, underCap);
+            if (n != 0 || (underCap > 1 && cachedWrapper() == small)) {
+                throw new AssertionError("Growing small request did not replace wrapper");
+            }
+            checkCache(underCap);
+            small = cachedWrapper();
+            n = read ? channel.read(buffers, 1, length) : channel.write(buffers, 1, length);
+            if (underCap < IOV_MAX && cachedWrapper() == small) {
+                throw new AssertionError("Crossing cap did not replace small wrapper");
+            }
             if (n != 0 || channel.position() != 0) {
                 throw new AssertionError("Empty vector performed I/O");
             }
@@ -121,8 +146,8 @@ public class IOVecCapacity {
             ByteBuffer[] grown = new ByteBuffer[length + 1];
             Arrays.fill(grown, ByteBuffer.allocate(0));
             n = read ? channel.read(grown) : channel.write(grown);
-            if (n != 0 || cachedWrapper() == large) {
-                throw new AssertionError("Growing request did not replace wrapper");
+            if (n != 0 || cachedWrapper() != large) {
+                throw new AssertionError("Growing oversized request did not reuse wrapper");
             }
             checkCache(grown.length);
             Object replacement = cachedWrapper();
@@ -175,7 +200,7 @@ public class IOVecCapacity {
                         allocate.await();
                         long n = reading ? channel.read(empty) : channel.write(empty);
                         if (n != 0) throw new AssertionError("Empty vector transferred bytes");
-                        checkCache(length);
+                        checkRefs();
                         retained.countDown();
                         release.await();
                     } catch (Throwable e) {

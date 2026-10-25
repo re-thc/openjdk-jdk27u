@@ -53,7 +53,7 @@ class IOVecWrapper {
     // The iovec array
     private final AllocatedNativeObject vecArray;
 
-    // Caller length used as the cache sizing key
+    // Caller-length cache key, saturated when compact storage reaches IOV_MAX
     private final int size;
 
     // Buffers and position/remaining corresponding to elements in iovec array
@@ -87,8 +87,8 @@ class IOVecWrapper {
     };
 
     private IOVecWrapper(int size) {
-        this.size      = size;
         int capacity = Math.min(size, IOUtil.IOV_MAX);
+        this.size      = (capacity == IOUtil.IOV_MAX) ? Integer.MAX_VALUE : capacity;
         this.buf       = new ByteBuffer[capacity];
         this.position  = new int[capacity];
         this.remaining = new int[capacity];
