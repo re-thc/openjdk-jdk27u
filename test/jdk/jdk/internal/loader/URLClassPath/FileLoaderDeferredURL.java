@@ -38,6 +38,7 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,16 +59,21 @@ public class FileLoaderDeferredURL {
     private static final boolean EXPECT_DEFERRED =
             Boolean.parseBoolean(System.getProperty("fileloader.expectDeferred", "true"));
     private static final byte[] DATA = "file resource data".getBytes(StandardCharsets.UTF_8);
+    private static final Charset FILE_NAME_CHARSET =
+            Charset.forName(System.getProperty("sun.jnu.encoding"));
     private static int comparisons;
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Filesystem charset: " + FILE_NAME_CHARSET.name());
         Path root = Files.createTempDirectory(Path.of("."), "fileloader-").toRealPath();
         try {
             Path dir = Files.createDirectories(root.resolve("base"));
             Files.createDirectories(dir.resolve("sub"));
             for (String name : List.of("plain.bin", "sp ace", "non-\u00e9", "literal%20",
                     "100%", "a..b", ".hidden", "under_$-score", "sub/nested.bin")) {
-                Files.write(dir.resolve(name), DATA);
+                if (FILE_NAME_CHARSET.newEncoder().canEncode(name)) {
+                    Files.write(dir.resolve(name), DATA);
+                }
             }
             // These are legal Unix filenames but some cannot exist on Windows.
             if (File.separatorChar == '/') {
@@ -79,13 +85,16 @@ public class FileLoaderDeferredURL {
             URL base = dir.toUri().toURL();
             List<URL> bases = new ArrayList<>(List.of(base,
                     new URL(base + "./"), new URL(base + "sub/../"),
-                    new URL(base + "/"), new URL(base + "#anchor"),
+                    new URL(base + "/"), new URL(base + "#non-\u00e9"),
                     new URL(base + "?query/"),
                     new URL("file", "localhost", base.getPath()),
                     new URL("file", "", 81, base.getPath()),
                     new URL("file://user@localhost" + base.getPath()),
                     new URL(base.toString().replace("/base/", "/%62ase/"))));
             for (String special : List.of("space base", "\u00e9-base", "percent%base")) {
+                if (!FILE_NAME_CHARSET.newEncoder().canEncode(special)) {
+                    continue;
+                }
                 Path other = Files.createDirectory(root.resolve(special));
                 Files.write(other.resolve("plain.bin"), DATA);
                 bases.add(other.toUri().toURL());
@@ -277,9 +286,12 @@ public class FileLoaderDeferredURL {
 
     private static class RejectingSubclass extends sun.net.www.protocol.file.Handler {
         int calls;
+        String lastSpec;
         protected void parseURL(URL u, String spec, int start, int limit) {
             calls++;
-            if (spec.equals("plain.bin") || spec.equals("missing.bin")) {
+            lastSpec = spec;
+            if (spec.equals("plain.bin") || spec.equals("missing.bin")
+                    || spec.equals("non-%c3%a9")) {
                 throw new IllegalArgumentException("reject resource");
             }
             super.parseURL(u, spec, start, limit);
@@ -295,6 +307,10 @@ public class FileLoaderDeferredURL {
             int before = handler.calls;
             check(path.getResource("missing.bin") == null, "subclass rejects miss eagerly");
             check(handler.calls == before + 1, "parse still called on miss");
+            before = handler.calls;
+            check(path.getResource("non-\u00e9") == null, "non-ASCII name rejected eagerly");
+            check(handler.calls == before + 1 && handler.lastSpec.equals("non-%c3%a9"),
+                    "UTF-8 URL parsing is independent of the filesystem charset");
         } finally {
             path.closeLoaders();
         }

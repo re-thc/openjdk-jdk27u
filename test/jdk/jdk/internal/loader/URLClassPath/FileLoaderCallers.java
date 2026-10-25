@@ -37,6 +37,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,6 +63,9 @@ public class FileLoaderCallers {
     private static final String EXPLODED = "fileloader.sealed.Exploded";
     private static final String AFTER_CLOSE = "fileloader.after.Close";
     private static final byte[] DATA = "public file resource".getBytes(StandardCharsets.UTF_8);
+    // The default charset can be UTF-8 while Unix filenames use ASCII.
+    private static final Charset FILE_NAME_CHARSET =
+            Charset.forName(System.getProperty("sun.jnu.encoding"));
 
     private static List<String> classes() {
         List<String> names = new ArrayList<>(List.of(NORMAL, "fileloader.fixture.Other",
@@ -71,6 +75,7 @@ public class FileLoaderCallers {
             names.addAll(List.of("fileloader.names.colon:name", "fileloader.names.question?name",
                     "fileloader.names.hash#name", "fileloader.names.back\\slash"));
         }
+        names.removeIf(name -> !FILE_NAME_CHARSET.newEncoder().canEncode(name));
         return names;
     }
 
@@ -81,10 +86,12 @@ public class FileLoaderCallers {
             names.addAll(List.of("fileloader/colon:name.txt", "fileloader/question?name.txt",
                     "fileloader/hash#name.txt", "fileloader/back\\slash.txt"));
         }
+        names.removeIf(name -> !FILE_NAME_CHARSET.newEncoder().canEncode(name));
         return names;
     }
 
     public static void main(String[] args) throws Exception {
+        System.out.println("Filesystem charset: " + FILE_NAME_CHARSET.name());
         if (args.length > 0) {
             verify(ClassLoader.getSystemClassLoader(), Path.of(args[0]).toUri().toURL(),
                     Path.of(args[1]).toUri().toURL());
@@ -136,7 +143,11 @@ public class FileLoaderCallers {
             try (var loader = new URLClassLoader(new URL[] {custom}, ClassLoader.getPlatformClassLoader())) {
                 expectMissing(loader, NORMAL);
                 check(loader.getResource("fileloader/plain.txt") == null, "custom handler resource");
-                check(rejecting.rejections >= 2, "custom parse rejection before class/byte access");
+                // These still exercise UTF-8 URL parsing when the filesystem
+                // cannot represent the non-ASCII class/resource filenames.
+                expectMissing(loader, "fileloader.names.non\u00e9");
+                check(loader.getResource("fileloader/non\u00e9.txt") == null, "non-ASCII rejection");
+                check(rejecting.rejections >= 4, "custom parse rejection before class/byte access");
             }
 
             String cp = String.join(File.pathSeparator, missing.toString(), empty.toString(),
@@ -172,6 +183,7 @@ public class FileLoaderCallers {
                     && pkg.getSpecificationTitle() == null, "directory package metadata " + cn);
         }
         expectMissing(loader, "fileloader.fixture.Absent");
+        expectMissing(loader, "fileloader.names.missing\u00e9");
         expectSealing(loader, SEALED);
         Class<?> sealed = Class.forName(JAR_CLASS, false, loader);
         check(sealed.getPackage().isSealed(jar)
@@ -190,6 +202,7 @@ public class FileLoaderCallers {
                     .equals(expected.toExternalForm()) && !all.hasMoreElements(), "enumeration " + name);
         }
         check(loader.getResource("fileloader/missing.txt") == null, "resource miss");
+        check(loader.getResource("fileloader/missing\u00e9.txt") == null, "non-ASCII resource miss");
         check(loader.getResourceAsStream("fileloader/missing.txt") == null, "stream miss");
     }
 
@@ -231,7 +244,9 @@ public class FileLoaderCallers {
         int rejections;
         protected void parseURL(URL u, String spec, int start, int limit) {
             if (spec.equals(NORMAL.replace('.', '/') + ".class")
-                    || spec.equals("fileloader/plain.txt")) {
+                    || spec.equals("fileloader/plain.txt")
+                    || spec.equals("fileloader/names/non%c3%a9.class")
+                    || spec.equals("fileloader/non%c3%a9.txt")) {
                 rejections++;
                 throw new IllegalArgumentException("reject");
             }
