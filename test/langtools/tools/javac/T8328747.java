@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +29,15 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build toolbox.ToolBox toolbox.JavapTask
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @compile T8328747.java
  * @run main T8328747
  */
 
 import toolbox.*;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,6 +63,8 @@ public class T8328747 extends TestRunner  {
         Path current = base.resolve(".");
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
+        // Keep enough labels to exercise the bootstrap when small reference
+        // switches are compiled to private classifiers.
         tb.writeJavaFiles(src,
                 """
                 package test;
@@ -74,13 +78,19 @@ public class T8328747 extends TestRunner  {
                      switch (info) {
                        case P p -> System.err.println(p);
                        case O o -> System.err.println(o);
+                       case Q q -> System.err.println(q);
+                       case R r -> System.err.println(r);
+                       case S s -> System.err.println(s);
                      }
                    }
 
-                   static sealed interface I permits P, O {}
+                   static sealed interface I permits P, O, Q, R, S {}
                    private abstract static class A {}
                    static final class P extends A implements I {}
                    static final class O extends A implements I {}
+                   static final class Q extends A implements I {}
+                   static final class R extends A implements I {}
+                   static final class S extends A implements I {}
                 }
                 """);
 
@@ -94,15 +104,7 @@ public class T8328747 extends TestRunner  {
                     .run(Task.Expect.SUCCESS)
                     .writeAll();
 
-            String javapOut = new JavapTask(tb)
-                    .options("-v")
-                    .classpath(classes.toString())
-                    .classes("test.Test")
-                    .run()
-                    .getOutput(Task.OutputKind.DIRECT);
-
-            if (!javapOut.contains("#25 = InvokeDynamic      #0:#26         // #0:typeSwitch:(Ljava/lang/Object;I)I"))
-                throw new AssertionError("typeSwitch for a version less than 23 should accept a static type of java.lang.Object");
+            checkTypeSwitch(classes, "(Ljava/lang/Object;I)I");
         }
 
         {//without:
@@ -112,15 +114,27 @@ public class T8328747 extends TestRunner  {
                     .run(Task.Expect.SUCCESS)
                     .writeAll();
 
-            String javapOut = new JavapTask(tb)
-                    .options("-v")
-                    .classpath(classes.toString())
-                    .classes("test.Test")
-                    .run()
-                    .getOutput(Task.OutputKind.DIRECT);
+            checkTypeSwitch(classes, "(Ltest/Test$I;I)I");
+        }
+    }
 
-            if (!javapOut.contains("#25 = InvokeDynamic      #0:#26         // #0:typeSwitch:(Ltest/Test$I;I)I"))
-                throw new AssertionError("typeSwitch from version 23 and beyond should accept a precise selector type");
+    private void checkTypeSwitch(Path classes, String expectedType) throws Exception {
+        var method = ClassFile.of().parse(classes.resolve("test/Test.class")).methods().stream()
+                .filter(m -> m.methodName().equalsString("f"))
+                .findFirst().orElseThrow();
+        var switches = method.code().orElseThrow().elementStream()
+                .filter(InvokeDynamicInstruction.class::isInstance)
+                .map(InvokeDynamicInstruction.class::cast)
+                .toList();
+        if (switches.size() != 1) {
+            throw new AssertionError("Expected one typeSwitch instruction, found " + switches.size());
+        }
+        var indy = switches.getFirst();
+        if (!indy.name().equalsString("typeSwitch") ||
+                !indy.bootstrapMethod().owner().descriptorString().equals("Ljava/lang/runtime/SwitchBootstraps;") ||
+                !indy.bootstrapMethod().methodName().equals("typeSwitch") ||
+                !indy.type().equalsString(expectedType)) {
+            throw new AssertionError("Expected typeSwitch" + expectedType + ", found " + indy);
         }
     }
 }
