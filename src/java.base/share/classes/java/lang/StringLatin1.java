@@ -532,6 +532,9 @@ final class StringLatin1 {
             return -1;
         }
         byte first = str[0];
+        if (strToIndex == 1) {
+            return indexOfChar0(value, first & 0xff, valueFromIndex, valueToIndex);
+        }
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.

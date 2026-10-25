@@ -71,6 +71,19 @@
  * @run main/othervm -Xint -XX:+CheckUnhandledOops -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=64 SimdUTFTest
  */
 
+/*
+ * @test id=search
+ * @summary Single-code-unit String needles and native search when C2 string intrinsics are disabled
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @modules java.base/jdk.internal.util:+open
+ *          jdk.management
+ * @run main/othervm -Xint -Dsimdutf.searchOnly=true SimdUTFTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -Dsimdutf.searchOnly=true SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -Dsimdutf.searchOnly=true SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings -Dsimdutf.searchOnly=true SimdUTFTest
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_indexOfL_char,_indexOfU_char -Dsimdutf.searchOnly=true -Dsimdutf.requireSearch=true SimdUTFTest
+ */
+
 import com.sun.management.HotSpotDiagnosticMXBean;
 import jdk.internal.util.SimdUTF;
 import java.io.ByteArrayOutputStream;
@@ -102,6 +115,20 @@ public class SimdUTFTest {
         threshold.setAccessible(true);
         accelerationAvailable = threshold.getInt(null) > 0;
         check(!flag.equals("false") || !accelerationAvailable, "opt-out left simdutf active");
+        if (Boolean.getBoolean("simdutf.searchOnly")) {
+            indexOf();
+            if (accelerationAvailable && Boolean.getBoolean("simdutf.requireSearch")) {
+                byte[] latin1 = new byte[4096];
+                char[] utf16 = new char[4096];
+                latin1[4095] = (byte)0xe9;
+                utf16[4095] = '\u6f22';
+                for (int i = 0; i < 20000; i++) {
+                    check(nativeSearchLatin1(latin1) == 4095, "native Latin1 search activation");
+                    check(nativeSearchUTF16(utf16) == 4095, "native UTF16 search activation");
+                }
+            }
+            return;
+        }
         for (int iteration = 0; iteration < 20; iteration++) {
             for (int length : LENGTHS) {
                 for (String alphabet : new String[]{"aAZ09\0", "a\u00e9\u00ff", "\u6f22\u6587a", "a\ud83d\ude03"}) {
@@ -252,6 +279,14 @@ public class SimdUTFTest {
         }
     }
 
+    private static int nativeSearchLatin1(byte[] input) {
+        return SimdUTF.indexOfLatin1(input, 0, input.length, 0xe9);
+    }
+
+    private static int nativeSearchUTF16(char[] input) {
+        return SimdUTF.indexOfUTF16(input, 0, input.length, 0x6f22);
+    }
+
     private static void indexOf() {
         for (int length : LENGTHS) {
             for (String pattern : new String[]{"abcé\0", "漢x\ud800y\udc00😃"}) {
@@ -272,6 +307,16 @@ public class SimdUTFTest {
                                 }
                             }
                             check(text.indexOf(ch, begin, end) == expected, "String indexOf bounded range");
+                            if (ch >= 0 && ch <= 0xffff) {
+                                String needle = String.valueOf((char)ch);
+                                check(text.indexOf(needle, begin, end) == expected, "single-unit needle bounded range");
+                                if (end == length) {
+                                    check(text.indexOf(needle, from) == expected, "single-unit needle from index");
+                                    if (from == 0) {
+                                        check(text.indexOf(needle) == expected, "single-unit needle");
+                                    }
+                                }
+                            }
                             int relative = expected < 0 ? end - begin : expected - begin;
                             int index = SimdUTF.indexOfUTF16(chars, begin, end - begin, ch);
                             if (index >= 0) {

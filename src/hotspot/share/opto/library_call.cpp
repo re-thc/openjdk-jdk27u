@@ -9454,6 +9454,14 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 // models both the source reads and all destination writes (including failure).
 bool LibraryCallKit::inline_simdutf_process() {
   const TypeInt* operation = _gvn.type(argument(6))->isa_int();
+  bool prefer_jdk_search = false;
+  if (operation != nullptr && operation->is_con() &&
+      (operation->get_con() == SimdUTF::INDEX_OF_LATIN1 || operation->get_con() == SimdUTF::INDEX_OF_UTF16)) {
+    vmIntrinsics::ID search = operation->get_con() == SimdUTF::INDEX_OF_LATIN1
+        ? vmIntrinsics::_indexOfL_char : vmIntrinsics::_indexOfU_char;
+    prefer_jdk_search = Matcher::match_rule_supported(Op_StrIndexOfChar) &&
+        vmIntrinsics::is_intrinsic_available(search) && !C->directive()->is_intrinsic_disabled(search);
+  }
   if (operation != nullptr &&
       ((operation->_lo == SimdUTF::COUNT_ASCII && operation->_hi == SimdUTF::COUNT_ASCII) ||
        (operation->_lo >= SimdUTF::ENCODE_ASCII && operation->_hi <= SimdUTF::ENCODE_LATIN1_FROM_UTF16) ||
@@ -9466,7 +9474,7 @@ bool LibraryCallKit::inline_simdutf_process() {
         operation->_hi == SimdUTF::DECODE_LATIN1) ||
        (FLAG_IS_DEFAULT(SIMDUTFMinLength) && operation->_lo == SimdUTF::VALIDATE_UTF8_LATIN1 &&
         operation->_hi == SimdUTF::VALIDATE_UTF8_LATIN1) ||
-       (operation->_lo >= SimdUTF::INDEX_OF_LATIN1 && operation->_hi <= SimdUTF::INDEX_OF_UTF16))) {
+       prefer_jdk_search)) {
     // Prefer existing C2 intrinsics where they avoid a C ABI call. Base64
     // stubs are not available on every CPU supported by simdutf. Latin-1
     // decoding retains Java to avoid the in-place staging and validation passes.
