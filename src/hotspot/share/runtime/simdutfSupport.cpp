@@ -209,9 +209,10 @@ static bool simdutf_utf8_is_latin1(const char* input, jint len) {
   return true;
 }
 
-static jint simdutf_decode_latin1(const char* input, jint len, char* output, jint capacity) {
-  // Reject other code points before writing, including for in-place callers.
-  if (capacity < len || !simdutf_utf8_is_latin1(input, len)) {
+static jint simdutf_decode_latin1(const char* input, jint len, char* output, jint capacity, bool in_place) {
+  // In-place failure must preserve input for Java fallback. Distinct output
+  // can receive a partial conversion without destroying the original input.
+  if (capacity < len || (in_place && !simdutf_utf8_is_latin1(input, len))) {
     return -1;
   }
   char utf8[4096];
@@ -226,13 +227,15 @@ static jint simdutf_decode_latin1(const char* input, jint len, char* output, jin
     if (size == 0) {
       return -1;
     }
-    size_t count = simdutf::convert_utf8_to_latin1(utf8, size, latin1);
-    if (count == 0 || count > size_t(capacity - written)) {
+    char* target = in_place ? latin1 : output + written;
+    simdutf::result r = simdutf::convert_utf8_to_latin1_with_errors(utf8, size, target);
+    size_t count = r.count;
+    if (r.error != simdutf::SUCCESS || count > size_t(capacity - written)) {
       return -1;
     }
     // Copy only the produced bytes. Input is staged before writing, so the
     // shrinking conversion is safe when output starts at/before input.
-    memcpy(output + written, latin1, count);
+    if (in_place) memcpy(output + written, latin1, count);
     written += checked_cast<jint>(count);
     off += checked_cast<jint>(size);
   }
@@ -413,10 +416,10 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       memcpy(output, input, size_t(len) * 2);
       return len;
     case DECODE_LATIN1:
-      return simdutf_decode_latin1(input, len, output, capacity);
+      return simdutf_decode_latin1(input, len, output, capacity, src == dst);
     case ENCODE_UTF32_BE:
     case ENCODE_UTF32_LE: {
-      if ((dp & 3) != 0 || simdutf::validate_utf16_with_errors(input16, len).error != simdutf::SUCCESS) {
+      if ((dp & 3) != 0) {
         return -1;
       }
 #ifdef VM_LITTLE_ENDIAN
@@ -425,9 +428,6 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       bool swap = operation == ENCODE_UTF32_LE;
 #endif
       if (size_t(capacity) < size_t(len) * 4) {
-        if (simdutf::utf32_length_from_utf16(input16, len) > size_t(capacity) / 4) {
-          return -1;
-        }
         return simdutf_encode_utf32_tight(input16, len, output, capacity, swap);
       }
       char32_t* output32 = reinterpret_cast<char32_t*>(output);
@@ -458,48 +458,31 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       bool swap = operation == DECODE_UTF32_LE;
 #endif
       if (!swap && capacity >= len / 2) {
-        // Java also accepts UTF-32 surrogate code points. simdutf rejects them,
-        // so let the existing decoder handle that dialect without any writes.
-        if (simdutf::validate_utf32_with_errors(input32, count).error != simdutf::SUCCESS) {
-          return -1;
-        }
+        // Java's surrogate-valued UTF-32 dialect falls back on converter error.
         simdutf::result r = simdutf::convert_utf32_to_utf16_with_errors(input32, count, output16);
         if (r.error != simdutf::SUCCESS) {
           return -1;
         }
         written = r.count;
       } else {
-        // Bounded stack storage avoids allocation and accommodates either byte
-        // order. Validate every chunk before changing the Java output array.
+        // Snapshot once for byte swapping and capacity-bounded conversion.
         char32_t chunk[256];
-        size_t required = 0;
+        char16_t converted[512];
         for (size_t off = 0; off < count; off += 256) {
           size_t size = MIN2(size_t(256), count - off);
           for (size_t i = 0; i < size; i++) {
             chunk[i] = swap ? simdutf_swap32(input32[off + i]) : input32[off + i];
           }
-          if (!simdutf::validate_utf32(chunk, size)) {
+          char16_t* target = size * 2 <= size_t(capacity) - written
+              ? output16 + written : converted;
+          simdutf::result r = simdutf::convert_utf32_to_utf16_with_errors(chunk, size, target);
+          if (r.error != simdutf::SUCCESS || r.count > size_t(capacity) - written) {
             return -1;
           }
-          required += simdutf::utf16_length_from_utf32(chunk, size);
-          if (required > size_t(capacity)) {
-            return -1;
+          if (target == converted) {
+            memcpy(output16 + written, converted, r.count * sizeof(char16_t));
           }
-        }
-        for (size_t off = 0; off < count; off += 256) {
-          size_t size = MIN2(size_t(256), count - off);
-          for (size_t i = 0; i < size; i++) {
-            chunk[i] = swap ? simdutf_swap32(input32[off + i]) : input32[off + i];
-          }
-          if (!simdutf::validate_utf32(chunk, size) ||
-              simdutf::utf16_length_from_utf32(chunk, size) > size_t(capacity) - written) {
-            return -1;
-          }
-          size_t n = simdutf::convert_utf32_to_utf16(chunk, size, output16 + written);
-          if (n == 0) {
-            return -1;
-          }
-          written += n;
+          written += r.count;
         }
       }
       break;
@@ -560,9 +543,6 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       written = simdutf::convert_latin1_to_utf8(input, len, output);
       break;
     case ENCODE_UTF16: {
-      if (simdutf::validate_utf16_with_errors(input16, len).error != simdutf::SUCCESS) {
-        return -1;
-      }
       if (size_t(capacity) >= size_t(len) * 3) {
         // A worst-case-sized output needs no capacity-bounded scalar tail.
         simdutf::result r = simdutf::convert_utf16_to_utf8_with_errors(input16, len, output);
@@ -571,13 +551,10 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
         }
         written = r.count;
       } else {
-        if (simdutf::utf8_length_from_utf16(input16, len) > size_t(capacity)) {
-          return -1;
-        }
         simdutf::full_result r = simdutf::convert_utf16_to_utf8_safe_with_details(
             input16, len, output, capacity);
-        // A mutable input can grow after the length check. Never report a
-        // truncated prefix as if the entire charset input had been consumed.
+        // The bounded converter checks capacity while converting. Never report
+        // a truncated prefix as if the entire input had been consumed.
         if (r.error != simdutf::SUCCESS || r.input_count != size_t(len)) {
           return -1;
         }
@@ -628,16 +605,6 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
     case DECODE_BASE64:
     case DECODE_BASE64_URL: {
       if (len % 4 != 0 || size_t(capacity) < size_t(len) / 4 * 3) {
-        return -1;
-      }
-      unsigned invalid = 0;
-      bool url = operation == DECODE_BASE64_URL;
-      for (jint i = 0; i < len; i++) {
-        unsigned c = static_cast<unsigned char>(input[i]);
-        invalid |= !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-                     (c >= '0' && c <= '9') || c == (url ? '-' : '+') || c == (url ? '_' : '/'));
-      }
-      if (invalid != 0) {
         return -1;
       }
       size_t outlen = capacity;

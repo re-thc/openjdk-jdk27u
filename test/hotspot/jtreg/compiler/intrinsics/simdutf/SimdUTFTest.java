@@ -760,11 +760,12 @@ public class SimdUTFTest {
         for (String invalid : new String[]{"\ud800", "\udc00", "\ud800x", "\udc00\ud800"}) {
             String text = prefix + invalid + suffix;
             equal(utf8(text), text.getBytes(StandardCharsets.UTF_8));
-            byte[] output = new byte[text.length() * 3];
-            Arrays.fill(output, SENTINEL);
-            check(SimdUTF.encodeUTF16(text.toCharArray(), 0, text.length(), output, 0, output.length) < 0,
+            int capacity = text.length() * 3;
+            byte[] output = guardedBytes(capacity, 7);
+            check(SimdUTF.encodeUTF16(text.toCharArray(), 0, text.length(), output, 7, capacity) < 0,
                     "malformed UTF16 fallback");
-            guards(output, 0, 0);
+            // Failed conversion may write within its declared output range.
+            guards(output, 7, capacity);
         }
         for (byte[] invalid : new byte[][]{{(byte)0xc0,(byte)0x80}, {(byte)0xe0,(byte)0x80,(byte)0x80},
                 {(byte)0xed,(byte)0xa0,(byte)0x80}, {(byte)0xf4,(byte)0x90,(byte)0x80,(byte)0x80}, {(byte)0xe2}}) {
@@ -804,6 +805,19 @@ public class SimdUTFTest {
         CharBuffer target = CharBuffer.allocate(17);
         check(StandardCharsets.UTF_8.newDecoder().decode(source, target, true).isOverflow(), "short output");
         check(source.position() == 17 && target.position() == 17, "overflow positions");
+        for (boolean url : new boolean[]{false, true}) {
+            for (byte invalid : new byte[]{' ', '!', '=', '\t', (byte)0xff}) {
+                for (int at : new int[]{0, 513, 1023}) {
+                    byte[] encoded = new byte[1024];
+                    Arrays.fill(encoded, (byte)'A');
+                    encoded[at] = invalid;
+                    byte[] decoded = guardedBytes(768, 7);
+                    check(SimdUTF.decodeBase64(encoded, 0, encoded.length, decoded, 7, url) < 0,
+                            "Base64 full block rejects nonalphabet input");
+                    guards(decoded, 7, 768);
+                }
+            }
+        }
         for (String invalid : new String[]{" ", "!", "=", "\t", "\n", "\u00ff"}) {
             String encoded = "YWFh".repeat(200) + invalid + "YWFh".repeat(200);
             try {
@@ -824,7 +838,8 @@ public class SimdUTFTest {
                 int written = SimdUTF.encodeUTF16(input, 5, text.length(), output, 7, capacity);
                 if (capacity < expected.length || !accelerationAvailable) {
                     check(written == -1, "UTF16 encoder accepted insufficient capacity");
-                    guards(output, 0, 0);
+                    // The capacity-bounded converter may commit complete chars.
+                    guards(output, 7, accelerationAvailable ? capacity : 0);
                 } else {
                     check(written == expected.length, "UTF16 encoder full conversion length");
                     equal(expected, Arrays.copyOfRange(output, 7, 7 + written));
@@ -890,7 +905,11 @@ public class SimdUTFTest {
                 String label = "native Latin1 length=" + input.length + " mode=" + mode
                         + " short=" + shortCapacity + " valid=" + (decoded != null);
                 check(result == (success ? decoded.length : -1), label + " result");
-                check(Arrays.equals(output, expected), label + " output and guards");
+                if (!success && mode == 0 && !shortCapacity && accelerationAvailable) {
+                    guards(output, dp, capacity);
+                } else {
+                    check(Arrays.equals(output, expected), label + " output and guards");
+                }
                 if (mode == 0) check(Arrays.equals(source, sourceBefore), label + " unchanged input");
             }
         }

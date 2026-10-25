@@ -35,6 +35,8 @@ import jdk.internal.vm.annotation.Stable;
 /**
  * Bulk UTF and Base64 operations. A negative result requests the Java
  * implementation, including its malformed-input and buffer-position semantics.
+ * Failed conversions may modify the supplied output range; callers must
+ * retry through Java or discard private output before exposing a result.
  * The VM validates array types, ranges and output capacity on every entry.
  * Object operands containing UTF-16 use char[] or native-order byte[] storage;
  * their offsets and capacities count UTF-16 code units.
@@ -490,6 +492,8 @@ public final class SimdUTF {
         return process(src, sp, len, dst, dp, capacity, ENCODE_LATIN1);
     }
 
+    // Failed conversions may write a prefix within the supplied capacity.
+    // Callers retry through their scalar path or discard private output.
     // Keep native call setup out of compilation of scalar encoder fallbacks.
     @DontInline
     public static int encodeUTF16(Object src, int sp, int len,
