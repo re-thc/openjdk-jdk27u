@@ -241,7 +241,8 @@ static jint simdutf_decode_latin1(const char* input, jint len, char* output, jin
 
 // Snapshot mutable input before conversion. Use stack output when the
 // destination lacks worst-case room, then copy only a result that fits.
-static jint simdutf_decode_utf8_bounded(const char* input, jint len, char16_t* output, jint capacity) {
+static jint simdutf_decode_utf8_bounded(const char* input, jint len, char16_t* output, jint capacity,
+                                         bool scratch_output = false) {
 #ifdef AARCH64
   const size_t block_size = 4096;
 #else
@@ -258,6 +259,18 @@ static jint simdutf_decode_utf8_bounded(const char* input, jint len, char16_t* o
     }
     if (size == 0) {
       return -off - 1;
+    }
+    if (scratch_output && size <= size_t(capacity - written)) {
+      // String discards failed speculative output. Validate and convert the
+      // stable snapshot once, directly into its worst-case-sized destination.
+      simdutf::result r = simdutf::convert_utf8_to_utf16_with_errors(
+          utf8, size, output + written);
+      if (r.error != simdutf::SUCCESS) {
+        return -checked_cast<jint>(size_t(off) + r.count) - 1;
+      }
+      written += checked_cast<jint>(r.count);
+      off += checked_cast<jint>(size);
+      continue;
     }
     char16_t* target = utf16;
 #ifdef AARCH64
@@ -556,12 +569,13 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       break;
     }
     case DECODE_UTF8: {
-      bool bounded = capacity < len;
+      bool scratch_output = TypeArrayKlass::cast(dst->klass())->element_type() == T_BYTE;
+      bool bounded = scratch_output || capacity < len;
 #ifdef AARCH64
       bounded |= static_cast<unsigned char>(input[0]) >= 0x80;
 #endif
       if (bounded) {
-        return simdutf_decode_utf8_bounded(input, len, reinterpret_cast<char16_t*>(output), capacity);
+        return simdutf_decode_utf8_bounded(input, len, reinterpret_cast<char16_t*>(output), capacity, scratch_output);
       }
       simdutf::result validation = simdutf::validate_utf8_with_errors(input, len);
       if (validation.error != simdutf::SUCCESS) {

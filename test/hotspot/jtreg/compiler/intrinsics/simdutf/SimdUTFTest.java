@@ -28,6 +28,7 @@
  * @modules java.base/jdk.internal.util:+open
  *          jdk.management
  * @run main/othervm -Xint SimdUTFTest
+ * @run main/othervm -XX:-CompactStrings SimdUTFTest
  * @run main/othervm -Xint -XX:SIMDUTFMinLength=1 SimdUTFTest
  * @run main/othervm -Xint -XX:ReservedCodeCacheSize=48M SimdUTFTest
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_simdutf_process -XX:SIMDUTFMinLength=64 SimdUTFTest
@@ -213,6 +214,16 @@ public class SimdUTFTest {
                     if (i < 7 || i >= 7 + n) check(output[i] == '\u5555', "tight UTF8 canary");
                 }
             }
+            byte[] scratch = guardedBytes(input.length * 2, 14);
+            int units = SimdUTF.decodeUTF8(input, 0, input.length, scratch, 7, input.length);
+            if (SimdUTF.isEligible(input.length)) {
+                check(units == text.length(), "String scratch UTF8 length");
+                ByteBuffer view = ByteBuffer.wrap(scratch).order(java.nio.ByteOrder.nativeOrder());
+                for (int i = 0; i < units; i++) {
+                    check(view.getChar(14 + i * 2) == text.charAt(i), "String scratch UTF8 content");
+                }
+            }
+            guards(scratch, 14, input.length * 2);
             for (boolean big : new boolean[]{false, true}) {
                 byte[] expected = utf32Bytes(text, big, false);
                 byte[] bytes = new byte[expected.length + 16];
@@ -757,17 +768,29 @@ public class SimdUTFTest {
         }
         for (byte[] invalid : new byte[][]{{(byte)0xc0,(byte)0x80}, {(byte)0xe0,(byte)0x80,(byte)0x80},
                 {(byte)0xed,(byte)0xa0,(byte)0x80}, {(byte)0xf4,(byte)0x90,(byte)0x80,(byte)0x80}, {(byte)0xe2}}) {
-            byte[] input = new byte[513 + invalid.length];
-            Arrays.fill(input, 0, 513, (byte)'a');
-            System.arraycopy(invalid, 0, input, 513, invalid.length);
-            char[] output = new char[input.length];
-            check(SimdUTF.decodeUTF8(input, 0, input.length, output, 0, output.length) < 0, "invalid UTF8 fallback");
-            var decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT);
-            ByteBuffer source = ByteBuffer.wrap(input);
-            CharBuffer target = CharBuffer.allocate(input.length);
-            var result = decoder.decode(source, target, true);
-            check(result.isMalformed() && source.position() == 513 && target.position() == 513,
-                    "malformed result positions");
+            for (int prefixLength : new int[]{0, 513, 1023, 1024, 4095}) {
+                byte[] input = new byte[prefixLength + invalid.length];
+                Arrays.fill(input, 0, prefixLength, (byte)'a');
+                System.arraycopy(invalid, 0, input, prefixLength, invalid.length);
+                char[] output = new char[input.length];
+                check(SimdUTF.decodeUTF8(input, 0, input.length, output, 0, output.length) < 0, "invalid UTF8 fallback");
+                // String scratch permits partial output, but never writes outside
+                // the declared UTF-16 destination range on malformed input.
+                byte[] scratch = new byte[(input.length + 14) * 2];
+                Arrays.fill(scratch, SENTINEL);
+                int scratchResult = SimdUTF.decodeUTF8(input, 0, input.length,
+                        scratch, 7, input.length);
+                check(scratchResult < 0, "invalid UTF8 String scratch fallback");
+                guards(scratch, 14, input.length * 2);
+                check(("a".repeat(prefixLength) + new String(invalid, StandardCharsets.UTF_8))
+                        .equals(new String(input, StandardCharsets.UTF_8)), "String malformed fallback");
+                var decoder = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT);
+                ByteBuffer source = ByteBuffer.wrap(input);
+                CharBuffer target = CharBuffer.allocate(input.length);
+                var result = decoder.decode(source, target, true);
+                check(result.isMalformed() && source.position() == prefixLength && target.position() == prefixLength,
+                        "malformed result positions");
+            }
         }
         byte[] ascii = new byte[1024];
         Arrays.fill(ascii, (byte)'a');
@@ -873,13 +896,14 @@ public class SimdUTFTest {
         }
     }
 
-    private static void mutableLatin1(Method process) throws Exception {
+    private static void mutableUTF8Conversions(Method process) throws Exception {
         // Exercise compressed prefixes followed by overlapping ASCII tails.
         // Validate only bounds during mutation: no consistent text is promised.
         for (int prefix : new int[]{0, 4096}) {
             byte[] input = new byte[prefix + 81];
             Arrays.fill(input, (byte)'a');
             byte[] output = guardedBytes(input.length, 7);
+            byte[] utf16 = guardedBytes(input.length * 2, 14);
             AtomicBoolean stop = new AtomicBoolean();
             Thread mutator = new Thread(() -> {
                 while (!stop.get()) {
@@ -900,6 +924,11 @@ public class SimdUTFTest {
                             output, 7, input.length, 24);
                     check(count >= -1 && count <= input.length, "mutable Latin1 conversion bounds");
                     guards(output, 7, input.length);
+                    int units = (int)process.invoke(null, input, 0, input.length,
+                            utf16, 7, input.length, 1);
+                    check(units >= -input.length - 1 && units <= input.length,
+                            "mutable UTF8 String conversion bounds");
+                    guards(utf16, 14, input.length * 2);
                 }
             } finally {
                 stop.set(true);
@@ -947,7 +976,7 @@ public class SimdUTFTest {
             guards(dst, 7, written);
         }
         nativeLatin1(process);
-        mutableLatin1(process);
+        mutableUTF8Conversions(process);
         nativeWideConversions(process);
     }
 

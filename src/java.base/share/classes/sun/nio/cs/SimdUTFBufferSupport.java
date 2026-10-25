@@ -135,10 +135,10 @@ final class SimdUTFBufferSupport {
     static void encode(CharBuffer src, ByteBuffer dst, boolean big, boolean utf32) {
         // Speculative reads must not move a mapped-memory fault ahead of a
         // scalar malformed-input or output-capacity result.
-        if (dst.isReadOnly() || mapped(src) || mapped(dst) || overlaps(src, 2, dst, 1)) return;
         int width = utf32 ? 4 : 2;
         int length = Math.min(Math.min(src.remaining(), BYTE_CHUNK / width), dst.remaining() / width);
         if (!SimdUTF.isEligible(length)) return;
+        if (dst.isReadOnly() || mapped(src) || mapped(dst) || overlaps(src, 2, dst, 1)) return;
         char first = src.get(src.position());
         if (Character.isSurrogate(first) && (!Character.isHighSurrogate(first)
                 || length < 2 || !Character.isLowSurrogate(src.get(src.position() + 1)))) return;

@@ -464,6 +464,8 @@ public final class SimdUTF {
      * Returns the UTF-16 units written, or a negative result on failure.
      * A negative result encodes the input bytes preceding failure as
      * {@code -(result + 1)}. The caller may retry that prefix before falling back.
+     * A byte[] destination is private String scratch and may be modified on
+     * failure; its caller must overwrite or discard it before exposing output.
      */
     @ForceInline
     public static int decodeUTF8(byte[] src, int sp, int len,
