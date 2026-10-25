@@ -602,6 +602,10 @@ final class StringLatin1 {
                 if (--fromIndex < 0) return -1;
             } else if (tgtCount == 1) {
                 return fromIndex;
+            } else if (tgtCount <= 32) {
+                // Keep a short first candidate in the JDK comparison.
+                if (ArraysSupport.mismatch(src, fromIndex, tgt, 0, tgtCount) < 0) return fromIndex;
+                if (--fromIndex < 0) return -1;
             }
             int end = fromIndex + tgtCount;
             int result = StringZilla.rfindLatin1(src, 0, end, tgt, tgtCount);
@@ -1000,36 +1004,49 @@ final class StringLatin1 {
     @ForceInline
     static int indexOfNonWhitespace(byte[] value) {
         int length = value.length;
-        if (length == 0) return 0;
+        if (length < StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE || !StringZilla.ENABLED) {
+            return indexOfNonWhitespaceJava(value);
+        }
         char first = getChar(value, 0);
         if (first != ' ' && first != '\t' && !CharacterDataLatin1.instance.isWhitespace(first)) return 0;
-        if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE && StringZilla.ENABLED) {
-            int result = StringZilla.scan(value, 1, length, StringZilla.NON_WHITESPACE);
-            if (result != StringZilla.FALLBACK) return result;
+        int result = StringZilla.scan(value, 1, length, StringZilla.NON_WHITESPACE);
+        return result != StringZilla.FALLBACK ? result : indexOfNonWhitespaceJava(value);
+    }
+
+    @ForceInline
+    static int lastIndexOfNonWhitespace(byte[] value) {
+        int right = value.length;
+        if (right < StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE || !StringZilla.ENABLED) {
+            return lastIndexOfNonWhitespaceJava(value);
         }
-        int left = 1;
+        char last = getChar(value, right - 1);
+        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) return right;
+        int result = StringZilla.scan(value, 0, right - 1, StringZilla.NON_WHITESPACE_REVERSE);
+        return result != StringZilla.FALLBACK ? result : lastIndexOfNonWhitespaceJava(value);
+    }
+
+    @ForceInline
+    private static int indexOfNonWhitespaceJava(byte[] value) {
+        int length = value.length;
+        int left = 0;
         while (left < length) {
             char ch = getChar(value, left);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) return left;
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                break;
+            }
             left++;
         }
         return left;
     }
 
     @ForceInline
-    static int lastIndexOfNonWhitespace(byte[] value) {
+    private static int lastIndexOfNonWhitespaceJava(byte[] value) {
         int right = value.length;
-        if (right == 0) return 0;
-        char last = getChar(value, right - 1);
-        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) return right;
-        right--;
-        if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE && StringZilla.ENABLED) {
-            int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
-            if (result != StringZilla.FALLBACK) return result;
-        }
-        while (right > 0) {
+        while (0 < right) {
             char ch = getChar(value, right - 1);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) return right;
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
+                break;
+            }
             right--;
         }
         return right;

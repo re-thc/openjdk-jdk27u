@@ -1176,6 +1176,10 @@ final class StringUTF16 {
                 if (--fromIndex < 0) return -1;
             } else if (tgtCount == 1) {
                 return fromIndex;
+            } else if (tgtCount <= 16) {
+                // At most 32 bytes, so the first comparison stays cheap.
+                if (ArraysSupport.mismatch(src, fromIndex << 1, tgt, 0, tgtCount << 1) < 0) return fromIndex;
+                if (--fromIndex < 0) return -1;
             }
             int end = (fromIndex + tgtCount) << 1;
             int result = StringZilla.rfindUTF16(src, 0, end, tgt, tgtCount << 1);
@@ -2074,6 +2078,11 @@ final class StringUTF16 {
                 if (--fromIndex < 0) return -1;
             } else if (tgtCount == 1) {
                 return fromIndex;
+            } else if (tgtCount <= 16) {
+                int i = last - 1;
+                while (i >= 0 && getChar(src, fromIndex + i) == (tgt[i] & 0xff)) i--;
+                if (i < 0) return fromIndex;
+                if (--fromIndex < 0) return -1;
             }
             int end = (fromIndex + tgtCount) << 1;
             int result = StringZilla.rfindUTF16Latin1(src, 0, end, tgt, tgtCount);
