@@ -39,7 +39,6 @@ namespace {
 // Bound time spent without a safepoint. The general limit also admits GCM's
 // 1 MiB SPLIT_LEN chunks; quadratic arithmetic uses smaller limb budgets.
 constexpr jint max_leaf_elements = 1 << 20;
-constexpr jint max_quadratic_limbs = 2048;
 constexpr jint max_montgomery_limbs = 512;
 constexpr jint max_hash_elements = 65536;
 
@@ -198,28 +197,14 @@ JRT_LEAF(jlong, common_multiplyToLen(const intptr_t* args))
   jint ylen = a.integer();
   oop z = a.object();
   address stub = StubRoutines::multiplyToLen();
-  if (stub == nullptr || xlen <= 0 || ylen <= 0 || xlen > max_quadratic_limbs || ylen > max_quadratic_limbs || z == x ||
+  if (stub == nullptr || xlen <= 0 || ylen <= 0 || xlen > CommonIntrinsics::max_quadratic_limbs ||
+      ylen > CommonIntrinsics::max_quadratic_limbs || z == x ||
       z == y ||
       !array_range(x, T_INT, 0, xlen) || !array_range(y, T_INT, 0, ylen) ||
       !array_range(z, T_INT, 0, static_cast<jlong>(xlen) + ylen)) {
     return CommonIntrinsics::fallback;
   }
   invoke_stub<void>(stub, elements<jint>(x), xlen, elements<jint>(y), ylen, elements<jint>(z));
-  return cast_from_oop<jlong>(z);
-JRT_END
-
-JRT_LEAF(jlong, common_squareToLen(const intptr_t* args))
-  Arguments a(args, 4);
-  oop x = a.object();
-  jint len = a.integer();
-  oop z = a.object();
-  jint zlen = a.integer();
-  address stub = StubRoutines::squareToLen();
-  if (stub == nullptr || len <= 0 || len > max_quadratic_limbs || z == x || static_cast<jlong>(len) * 2 > zlen ||
-      !array_range(x, T_INT, 0, len) || !array_range(z, T_INT, 0, zlen)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jint>(x), len, elements<jint>(z), zlen);
   return cast_from_oop<jlong>(z);
 JRT_END
 
@@ -925,7 +910,8 @@ bool CommonIntrinsics::enabled() {
 bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
 #ifdef COMPILER2
   return enabled() && !is_scalar(id) && id != vmIntrinsics::_vectorizedHashCode &&
-         id != vmIntrinsics::_vectorizedHashCodeLeaf && entry_for(id) != nullptr;
+         id != vmIntrinsics::_vectorizedHashCodeLeaf &&
+         (id == vmIntrinsics::_squareToLen || entry_for(id) != nullptr);
 #else
   return false;
 #endif
@@ -1015,7 +1001,7 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
     return true;
   }
 #ifdef COMPILER2
-  return entry_for(id) != nullptr;
+  return id == vmIntrinsics::_squareToLen || entry_for(id) != nullptr;
 #else
   return false;
 #endif

@@ -1019,14 +1019,36 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
     __ ldarb(rscratch2, rscratch1);
     __ cbz(rscratch2, slow_path);
   }
-  // Arguments stay on the expression stack so the Java fallback can reuse them.
-  __ mov(c_rarg0, esp);
-  __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
-  __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
-  __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
-  __ mov(rscratch1, CommonIntrinsics::fallback);
-  __ cmp(r0, rscratch1);
-  __ br(Assembler::EQ, slow_path);
+  if (id == vmIntrinsics::_squareToLen) {
+    __ ldr(c_rarg0, Address(esp, 3 * wordSize));
+    __ ldrw(c_rarg1, Address(esp, 2 * wordSize));
+    __ ldr(c_rarg2, Address(esp, wordSize));
+    __ ldrw(c_rarg3, Address(esp, 0));
+    __ cmpw(c_rarg1, 0);
+    __ br(Assembler::LE, slow_path);
+    __ cmpw(c_rarg1, CommonIntrinsics::max_quadratic_limbs);
+    __ br(Assembler::GT, slow_path);
+    __ cmp(c_rarg0, c_rarg2);
+    __ br(Assembler::EQ, slow_path);
+    __ lea(rscratch2, ExternalAddress(StubRoutines::squareToLen_entry_address()));
+    __ ldr(rscratch2, Address(rscratch2, 0));
+    __ cbz(rscratch2, slow_path);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_INT));
+    __ add(c_rarg2, c_rarg2, arrayOopDesc::base_offset_in_bytes(T_INT));
+    __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
+    __ blr(rscratch2);
+    __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
+    __ ldr(r0, Address(esp, wordSize));
+  } else {
+    // Arguments stay on the expression stack so the Java fallback can reuse them.
+    __ mov(c_rarg0, esp);
+    __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
+    __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
+    __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
+    __ mov(rscratch1, CommonIntrinsics::fallback);
+    __ cmp(r0, rscratch1);
+    __ br(Assembler::EQ, slow_path);
+  }
   __ andr(sp, r19_sender_sp, -16);
   __ ret(lr);
   __ bind(slow_path);

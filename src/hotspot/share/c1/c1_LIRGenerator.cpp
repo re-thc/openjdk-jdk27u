@@ -2874,6 +2874,45 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
                                   rlock_result(x), tmp1, tmp2, vtmp, info, fallback));
 }
 
+void LIRGenerator::do_SquareToLen(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info, true);
+  LIRItem input(x->argument_at(0), this);
+  LIRItem len(x->argument_at(1), this);
+  LIRItem output(x->argument_at(2), this);
+  LIRItem zlen(x->argument_at(3), this);
+  input.load_item();
+  len.load_item();
+  output.load_item();
+  zlen.load_item();
+
+  // The Java wrapper checks the arrays; retain the leaf's work and alias limits.
+  __ cmp(lir_cond_lessEqual, len.result(), LIR_OprFact::intConst(0));
+  __ branch(lir_cond_lessEqual, fallback);
+  __ cmp(lir_cond_greater, len.result(), LIR_OprFact::intConst(CommonIntrinsics::max_quadratic_limbs));
+  __ branch(lir_cond_greater, fallback);
+  __ cmp(lir_cond_equal, input.result(), output.result());
+  __ branch(lir_cond_equal, fallback);
+
+  LIR_Opr src = new_pointer_register();
+  LIR_Opr dst = new_pointer_register();
+  __ leal(LIR_OprFact::address(generate_address(input.result(), arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), src);
+  __ leal(LIR_OprFact::address(generate_address(output.result(), arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), dst);
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  LIR_OprList args(4);
+  args.append(src);
+  args.append(len.result());
+  args.append(dst);
+  args.append(zlen.result());
+  call_runtime(&signature, &args, StubRoutines::squareToLen(), voidType, nullptr);
+  __ move(output.result(), rlock_result(x));
+}
+
 void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
   assert(CommonIntrinsics::is_available_for_c1(x->id()), "available common backend");
   // Preserve Java evaluation order and finish any pending code before writing
@@ -2924,7 +2963,9 @@ void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   if (CommonIntrinsics::is_available_for_c1(x->id())) {
-    if (CommonIntrinsics::is_scalar(x->id())) {
+    if (x->id() == vmIntrinsics::_squareToLen) {
+      do_SquareToLen(x);
+    } else if (CommonIntrinsics::is_scalar(x->id())) {
       do_CommonScalarIntrinsic(x);
     } else {
       do_CommonIntrinsic(x);

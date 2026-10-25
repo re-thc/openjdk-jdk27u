@@ -542,11 +542,38 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
     __ cmpb(Address(rscratch1, 0), 0);
     __ jcc(Assembler::equal, slow_path);
   }
-  __ lea(c_rarg0, Address(rsp, wordSize));
-  __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
-  __ mov64(rscratch1, CommonIntrinsics::fallback);
-  __ cmpq(rax, rscratch1);
-  __ jcc(Assembler::equal, slow_path);
+  if (id == vmIntrinsics::_squareToLen) {
+    __ movptr(c_rarg0, Address(rsp, 4 * wordSize));
+    __ movl(c_rarg1, Address(rsp, 3 * wordSize));
+    __ movptr(c_rarg2, Address(rsp, 2 * wordSize));
+    __ movl(c_rarg3, Address(rsp, wordSize));
+    __ testl(c_rarg1, c_rarg1);
+    __ jcc(Assembler::lessEqual, slow_path);
+    __ cmpl(c_rarg1, CommonIntrinsics::max_quadratic_limbs);
+    __ jcc(Assembler::greater, slow_path);
+    __ cmpptr(c_rarg0, c_rarg2);
+    __ jcc(Assembler::equal, slow_path);
+    __ lea(rscratch2, ExternalAddress(StubRoutines::squareToLen_entry_address()));
+    __ movptr(rscratch2, Address(rscratch2, 0));
+    __ testptr(rscratch2, rscratch2);
+    __ jcc(Assembler::zero, slow_path);
+    __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_INT));
+    __ addptr(c_rarg2, arrayOopDesc::base_offset_in_bytes(T_INT));
+    __ enter();
+    __ andptr(rsp, -16);
+#ifdef _WIN64
+    __ subptr(rsp, frame::arg_reg_save_area_bytes);
+#endif
+    __ call(rscratch2);
+    __ leave();
+    __ movptr(rax, Address(rsp, 2 * wordSize));
+  } else {
+    __ lea(c_rarg0, Address(rsp, wordSize));
+    __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
+    __ mov64(rscratch1, CommonIntrinsics::fallback);
+    __ cmpq(rax, rscratch1);
+    __ jcc(Assembler::equal, slow_path);
+  }
   __ pop(rcx);
   __ mov(rsp, r13);
   __ jmp(rcx);

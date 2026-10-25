@@ -33,7 +33,6 @@
 // interpreter/C1 intrinsics deliberately do not appear here.
 #define COMMON_INTRINSICS_DO(f)                                \
   f(_multiplyToLen,                        5, T_OBJECT)        \
-  f(_squareToLen,                          4, T_OBJECT)        \
   f(_mulAdd,                               5, T_INT)           \
   f(_montgomeryMultiply,                   7, T_OBJECT)        \
   f(_montgomerySquare,                     6, T_OBJECT)        \
@@ -120,6 +119,7 @@
 
 class CommonIntrinsics : AllStatic {
  public:
+  static constexpr jint max_quadratic_limbs = 2048;
   // A leaf reads arguments in interpreter expression-stack order. Longs
   // occupy two slots, with the value in the lower-addressed slot. No handle
   // allocation, safepoint, or exception is permitted while these raw oops

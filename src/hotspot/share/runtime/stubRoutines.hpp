@@ -238,6 +238,10 @@ public:
     return reinterpret_cast<address>(&_compiler_stubs_initialized);
   }
 
+  static address squareToLen_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(squareToLen));
+  }
+
   // Calls to Java
   typedef void (*CallStub)(
     address   link,
