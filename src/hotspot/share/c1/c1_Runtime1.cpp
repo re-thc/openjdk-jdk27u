@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +62,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -345,6 +347,14 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SharedRuntime::lrem);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_entry);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_exit);
+  FUNCTION_CASE(entry, SimdUTF::encode_latin1_utf8);
+  FUNCTION_CASE(entry, SimdUTF::encode_utf16_utf8);
+  FUNCTION_CASE(entry, SimdUTF::decode_utf8_utf16);
+  FUNCTION_CASE(entry, SimdUTF::index_of_latin1);
+  FUNCTION_CASE(entry, SimdUTF::index_of_utf16);
+  FUNCTION_CASE(entry, SimdUTF::encode_base64);
+  FUNCTION_CASE(entry, SimdUTF::decode_base64);
+  FUNCTION_CASE(entry, SimdUTF::decode_base64_mime);
   FUNCTION_CASE(entry, is_instance_of);
   FUNCTION_CASE(entry, trace_block_entry);
 #ifdef JFR_HAVE_INTRINSICS
