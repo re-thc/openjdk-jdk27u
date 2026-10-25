@@ -72,13 +72,13 @@ public class StringZillaSearch {
             ch = 0x0104;
             java.util.Arrays.fill(target, (char)ch);
             needle = new String(target);
-        } else if (position.equals("REPEATED")) {
+        } else if (position.equals("REPEATED") || position.equals("FALSE_PREFIX")) {
             int repeatedBase = mixed ? 'a' : base;
             java.util.Arrays.fill(chars, (char)repeatedBase);
             // Keep the mixed haystack UTF-16 while its needle stays Latin-1.
             if (mixed) chars[length / 2] = (char)base;
             java.util.Arrays.fill(target, (char)repeatedBase);
-            target[target.length - 1] = (char)ch;
+            target[position.equals("FALSE_PREFIX") ? 0 : target.length - 1] = (char)ch;
             needle = new String(target);
         } else if (position.equals("FALSE_ENDING") && needle.length() <= length) {
             needle.getChars(0, needle.length(), chars, 0);
