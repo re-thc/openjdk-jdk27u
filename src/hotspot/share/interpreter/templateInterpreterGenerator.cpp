@@ -233,6 +233,7 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_ref_reference_get0)
 
 #if defined(AMD64) || defined(AARCH64)
+  native_method_entry(java_util_zip_ZipUtils_process)
   native_method_entry(java_util_zip_Adler32_update)
   native_method_entry(java_util_zip_Adler32_updateBytes)
   native_method_entry(java_util_zip_Adler32_updateByteBuffer)
@@ -478,6 +479,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
 #if defined(AMD64) || defined(AARCH64)
+  case Interpreter::java_util_zip_ZipUtils_process:
+    if (UseZipIntrinsics) entry_point = generate_zip_entry();
+    break;
   case Interpreter::java_util_zip_Adler32_update:
   case Interpreter::java_util_zip_Adler32_updateBytes:
   case Interpreter::java_util_zip_Adler32_updateByteBuffer:

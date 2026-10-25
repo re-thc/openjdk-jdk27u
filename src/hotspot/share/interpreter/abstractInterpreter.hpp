@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +87,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
 #if defined(AMD64) || defined(AARCH64)
+    java_util_zip_ZipUtils_process,
     java_util_zip_Adler32_update,
     java_util_zip_Adler32_updateBytes,
     java_util_zip_Adler32_updateByteBuffer,
@@ -173,6 +175,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_floatToFloat16       : // fall thru
       case vmIntrinsics::_float16ToFloat       : // fall thru
       case vmIntrinsics::_Continuation_doYield : // fall thru
+      case vmIntrinsics::_zipProcess          : // keep the non-leaf interpreter entry
         return false;
 
       default:

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +53,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -694,8 +696,17 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
-  // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls;
+  return generate_native_entry(synchronized, false);
+}
+
+address TemplateInterpreterGenerator::generate_zip_entry() {
+  return generate_native_entry(false, true);
+}
+
+address TemplateInterpreterGenerator::generate_native_entry(bool synchronized, bool zip_process) {
+  // The ZIP method itself must retain this entry; compiled callers still inline
+  // its C1/C2 intrinsic rather than compiling a JNI wrapper for the native method.
+  bool inc_counter = !zip_process && (UseCompiler || CountCompiledCalls);
 
   // rbx: Method*
   // rbcp: sender sp
@@ -821,218 +832,227 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register thread = r15_thread;
   const Register t      = r11;
 
-  // allocate space for parameters
-  __ get_method(method);
-  __ movptr(t, Address(method, Method::const_offset()));
-  __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
-
-  __ shll(t, Interpreter::logStackElementSize);
-
-  __ subptr(rsp, t);
-  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
-
-  // get signature handler
-  {
-    Label L;
-    __ movptr(t, Address(method, Method::signature_handler_offset()));
-    __ testptr(t, t);
-    __ jcc(Assembler::notZero, L);
-    __ call_VM(noreg,
-               CAST_FROM_FN_PTR(address,
-                                InterpreterRuntime::prepare_native_call),
-               method);
+  if (zip_process) {
+    __ lea(t, ExternalAddress(AbstractInterpreter::result_handler(T_LONG)));
+    __ movptr(Address(rbp, frame::interpreter_frame_result_handler_offset * wordSize), t);
+    // Keep the native frame walkable and use its normal exception/return path.
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, ZipRuntime::process_interpreter),
+               rlocals, false /* check_exceptions */);
+    __ push(dtos);
+    __ push(ltos);
+  } else {
+    // allocate space for parameters
     __ get_method(method);
-    __ movptr(t, Address(method, Method::signature_handler_offset()));
-    __ bind(L);
-  }
+    __ movptr(t, Address(method, Method::const_offset()));
+    __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
 
-  // call signature handler
-  assert(InterpreterRuntime::SignatureHandlerGenerator::from() == rlocals,
-         "adjust this code");
-  assert(InterpreterRuntime::SignatureHandlerGenerator::to() == rsp,
-         "adjust this code");
-  assert(InterpreterRuntime::SignatureHandlerGenerator::temp() == rscratch1,
-         "adjust this code");
+    __ shll(t, Interpreter::logStackElementSize);
 
-  // The generated handlers do not touch RBX (the method).
-  // However, large signatures cannot be cached and are generated
-  // each time here.  The slow-path generator can do a GC on return,
-  // so we must reload it after the call.
-  __ call(t);
-  __ get_method(method);        // slow path can do a GC, reload RBX
+    __ subptr(rsp, t);
+    __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+    __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
+
+    // get signature handler
+    {
+      Label L;
+      __ movptr(t, Address(method, Method::signature_handler_offset()));
+      __ testptr(t, t);
+      __ jcc(Assembler::notZero, L);
+      __ call_VM(noreg,
+                 CAST_FROM_FN_PTR(address,
+                                  InterpreterRuntime::prepare_native_call),
+                 method);
+      __ get_method(method);
+      __ movptr(t, Address(method, Method::signature_handler_offset()));
+      __ bind(L);
+    }
+
+    // call signature handler
+    assert(InterpreterRuntime::SignatureHandlerGenerator::from() == rlocals,
+           "adjust this code");
+    assert(InterpreterRuntime::SignatureHandlerGenerator::to() == rsp,
+           "adjust this code");
+    assert(InterpreterRuntime::SignatureHandlerGenerator::temp() == rscratch1,
+           "adjust this code");
+
+    // The generated handlers do not touch RBX (the method).
+    // However, large signatures cannot be cached and are generated
+    // each time here.  The slow-path generator can do a GC on return,
+    // so we must reload it after the call.
+    __ call(t);
+    __ get_method(method);        // slow path can do a GC, reload RBX
 
 
-  // result handler is in rax
-  // set result handler
-  __ movptr(Address(rbp,
-                    (frame::interpreter_frame_result_handler_offset) * wordSize),
-            rax);
+    // result handler is in rax
+    // set result handler
+    __ movptr(Address(rbp,
+                      (frame::interpreter_frame_result_handler_offset) * wordSize),
+              rax);
 
-  // pass mirror handle if static call
-  {
-    Label L;
-    __ load_unsigned_short(t, Address(method, Method::access_flags_offset()));
-    __ testl(t, JVM_ACC_STATIC);
-    __ jcc(Assembler::zero, L);
-    // get mirror
-    __ load_mirror(t, method, rax);
-    // copy mirror into activation frame
-    __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize),
-            t);
-    // pass handle to mirror
-    __ lea(c_rarg1,
-           Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize));
-    __ bind(L);
-  }
+    // pass mirror handle if static call
+    {
+      Label L;
+      __ load_unsigned_short(t, Address(method, Method::access_flags_offset()));
+      __ testl(t, JVM_ACC_STATIC);
+      __ jcc(Assembler::zero, L);
+      // get mirror
+      __ load_mirror(t, method, rax);
+      // copy mirror into activation frame
+      __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize),
+              t);
+      // pass handle to mirror
+      __ lea(c_rarg1,
+             Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize));
+      __ bind(L);
+    }
 
-  // get native function entry point
-  {
-    Label L;
-    __ movptr(rax, Address(method, Method::native_function_offset()));
-    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ cmpptr(rax, unsatisfied.addr(), rscratch1);
-    __ jcc(Assembler::notEqual, L);
-    __ call_VM(noreg,
-               CAST_FROM_FN_PTR(address,
-                                InterpreterRuntime::prepare_native_call),
-               method);
-    __ get_method(method);
-    __ movptr(rax, Address(method, Method::native_function_offset()));
-    __ bind(L);
-  }
+    // get native function entry point
+    {
+      Label L;
+      __ movptr(rax, Address(method, Method::native_function_offset()));
+      ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+      __ cmpptr(rax, unsatisfied.addr(), rscratch1);
+      __ jcc(Assembler::notEqual, L);
+      __ call_VM(noreg,
+                 CAST_FROM_FN_PTR(address,
+                                  InterpreterRuntime::prepare_native_call),
+                 method);
+      __ get_method(method);
+      __ movptr(rax, Address(method, Method::native_function_offset()));
+      __ bind(L);
+    }
 
-  // pass JNIEnv
-   __ lea(c_rarg0, Address(r15_thread, JavaThread::jni_environment_offset()));
+    // pass JNIEnv
+     __ lea(c_rarg0, Address(r15_thread, JavaThread::jni_environment_offset()));
 
-   // It is enough that the pc() points into the right code
-   // segment. It does not have to be the correct return pc.
-   // For convenience we use the pc we want to resume to in
-   // case of preemption on Object.wait.
-   Label native_return;
-   __ set_last_Java_frame(rsp, rbp, native_return, rscratch1);
+     // It is enough that the pc() points into the right code
+     // segment. It does not have to be the correct return pc.
+     // For convenience we use the pc we want to resume to in
+     // case of preemption on Object.wait.
+     Label native_return;
+     __ set_last_Java_frame(rsp, rbp, native_return, rscratch1);
 
-  // change thread state
+    // change thread state
 #ifdef ASSERT
-  {
-    Label L;
-    __ movl(t, Address(thread, JavaThread::thread_state_offset()));
-    __ cmpl(t, _thread_in_Java);
-    __ jcc(Assembler::equal, L);
-    __ stop("Wrong thread state in native stub");
-    __ bind(L);
-  }
+    {
+      Label L;
+      __ movl(t, Address(thread, JavaThread::thread_state_offset()));
+      __ cmpl(t, _thread_in_Java);
+      __ jcc(Assembler::equal, L);
+      __ stop("Wrong thread state in native stub");
+      __ bind(L);
+    }
 #endif
 
-  // Change state to native
+    // Change state to native
 
-  __ movl(Address(thread, JavaThread::thread_state_offset()),
-          _thread_in_native);
+    __ movl(Address(thread, JavaThread::thread_state_offset()),
+            _thread_in_native);
 
-  __ push_cont_fastpath();
+    __ push_cont_fastpath();
 
-  // Call the native method.
-  __ call(rax);
-  // 32: result potentially in rdx:rax or ST0
-  // 64: result potentially in rax or xmm0
+    // Call the native method.
+    __ call(rax);
+    // 32: result potentially in rdx:rax or ST0
+    // 64: result potentially in rax or xmm0
 
-  __ pop_cont_fastpath();
+    __ pop_cont_fastpath();
 
-  // Verify or restore cpu control state after JNI call
-  __ restore_cpu_control_state_after_jni(rscratch1);
+    // Verify or restore cpu control state after JNI call
+    __ restore_cpu_control_state_after_jni(rscratch1);
 
-  // NOTE: The order of these pushes is known to frame::interpreter_frame_result
-  // in order to extract the result of a method call. If the order of these
-  // pushes change or anything else is added to the stack then the code in
-  // interpreter_frame_result must also change.
+    // NOTE: The order of these pushes is known to frame::interpreter_frame_result
+    // in order to extract the result of a method call. If the order of these
+    // pushes change or anything else is added to the stack then the code in
+    // interpreter_frame_result must also change.
 
-  __ push(dtos);
-  __ push(ltos);
-
-  // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()),
-          _thread_in_native_trans);
-
-  // Force this write out before the read below
-  if (!UseSystemMemoryBarrier) {
-    __ membar(Assembler::Membar_mask_bits(
-                Assembler::LoadLoad | Assembler::LoadStore |
-                Assembler::StoreLoad | Assembler::StoreStore));
-  }
-
-  // check for safepoint operation in progress and/or pending suspend requests
-  {
-    Label Continue;
-    Label slow_path;
-
-    __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
-
-    __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
-    __ jcc(Assembler::equal, Continue);
-    __ bind(slow_path);
-
-    // Don't use call_VM as it will see a possible pending exception
-    // and forward it and never return here preventing us from
-    // clearing _last_native_pc down below.  Also can't use
-    // call_VM_leaf either as it will check to see if r13 & r14 are
-    // preserved and correspond to the bcp/locals pointers. So we do a
-    // runtime call by hand.
-    //
-    __ mov(c_rarg0, r15_thread);
-    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
-    __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-    __ andptr(rsp, -16); // align stack as required by ABI
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
-    __ mov(rsp, r12); // restore sp
-    __ reinit_heapbase();
-    __ bind(Continue);
-  }
-
-  // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
-
-  // Check preemption for Object.wait()
-  Label not_preempted;
-  __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
-  __ cmpptr(rscratch1, NULL_WORD);
-  __ jccb(Assembler::equal, not_preempted);
-  __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
-  __ jmp(rscratch1);
-  __ bind(native_return);
-  __ restore_after_resume(true /* is_native */);
-  __ bind(not_preempted);
-
-  // reset_last_Java_frame
-  __ reset_last_Java_frame(true);
-
-  if (CheckJNICalls) {
-    // clear_pending_jni_exception_check
-    __ movptr(Address(thread, JavaThread::pending_jni_exception_check_fn_offset()), NULL_WORD);
-  }
-
-  // reset handle block
-  __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movl(Address(t, JNIHandleBlock::top_offset()), NULL_WORD);
-
-  // If result is an oop unbox and store it in frame where gc will see it
-  // and result handler will pick it up
-
-  {
-    Label no_oop;
-    __ lea(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
-    __ cmpptr(t, Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize));
-    __ jcc(Assembler::notEqual, no_oop);
-    // retrieve result
-    __ pop(ltos);
-    // Unbox oop result, e.g. JNIHandles::resolve value.
-    __ resolve_jobject(rax /* value */,
-                       t /* tmp */);
-    __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize), rax);
-    // keep stack depth as expected by pushing oop which will eventually be discarded
+    __ push(dtos);
     __ push(ltos);
-    __ bind(no_oop);
-  }
 
+    // change thread state
+    __ movl(Address(thread, JavaThread::thread_state_offset()),
+            _thread_in_native_trans);
+
+    // Force this write out before the read below
+    if (!UseSystemMemoryBarrier) {
+      __ membar(Assembler::Membar_mask_bits(
+                  Assembler::LoadLoad | Assembler::LoadStore |
+                  Assembler::StoreLoad | Assembler::StoreStore));
+    }
+
+    // check for safepoint operation in progress and/or pending suspend requests
+    {
+      Label Continue;
+      Label slow_path;
+
+      __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
+
+      __ cmpl(Address(thread, JavaThread::suspend_flags_offset()), 0);
+      __ jcc(Assembler::equal, Continue);
+      __ bind(slow_path);
+
+      // Don't use call_VM as it will see a possible pending exception
+      // and forward it and never return here preventing us from
+      // clearing _last_native_pc down below.  Also can't use
+      // call_VM_leaf either as it will check to see if r13 & r14 are
+      // preserved and correspond to the bcp/locals pointers. So we do a
+      // runtime call by hand.
+      //
+      __ mov(c_rarg0, r15_thread);
+      __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
+      __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+      __ andptr(rsp, -16); // align stack as required by ABI
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+      __ mov(rsp, r12); // restore sp
+      __ reinit_heapbase();
+      __ bind(Continue);
+    }
+
+    // change thread state
+    __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
+
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, not_preempted);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    __ bind(not_preempted);
+
+    // reset_last_Java_frame
+    __ reset_last_Java_frame(true);
+
+    if (CheckJNICalls) {
+      // clear_pending_jni_exception_check
+      __ movptr(Address(thread, JavaThread::pending_jni_exception_check_fn_offset()), NULL_WORD);
+    }
+
+    // reset handle block
+    __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
+    __ movl(Address(t, JNIHandleBlock::top_offset()), NULL_WORD);
+
+    // If result is an oop unbox and store it in frame where gc will see it
+    // and result handler will pick it up
+
+    {
+      Label no_oop;
+      __ lea(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
+      __ cmpptr(t, Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize));
+      __ jcc(Assembler::notEqual, no_oop);
+      // retrieve result
+      __ pop(ltos);
+      // Unbox oop result, e.g. JNIHandles::resolve value.
+      __ resolve_jobject(rax /* value */,
+                         t /* tmp */);
+      __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize), rax);
+      // keep stack depth as expected by pushing oop which will eventually be discarded
+      __ push(ltos);
+      __ bind(no_oop);
+    }
+  }
 
   {
     Label no_reguard;

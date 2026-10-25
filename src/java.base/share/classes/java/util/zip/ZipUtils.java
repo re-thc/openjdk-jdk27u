@@ -55,17 +55,10 @@ class ZipUtils {
     // static final ByteBuffer defaultBuf = ByteBuffer.allocateDirect(0);
     static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
 
-    // Keep JNI where its transition cost is lower in the tiered benchmarks.
-    static final int DEFLATE_INTRINSIC_MIN_INPUT = 1024;
-
-    // Metadata helpers also use ZipUtils. Query native capabilities only when
-    // Deflater or Inflater first needs a routing decision.
+    // Metadata helpers also use ZipUtils. Query native support only when
+    // Deflater or Inflater first needs to select its intrinsic or JNI route.
     static class IntrinsicLimits {
-        private static final long LIMITS = initZipIntrinsics();
-        // The high word is the input upper bound; the low word enables mixed-buffer inflate.
-        static final int DEFLATE_INTRINSIC_MAX_INPUT = (int) (LIMITS >>> 32);
-        static final boolean USE_INFLATE_MIXED_INTRINSICS = (int) LIMITS != 0;
-        static final boolean USE_ZIP_INTRINSICS = DEFLATE_INTRINSIC_MAX_INPUT != 0;
+        static final boolean USE_ZIP_INTRINSICS = initZipIntrinsics() != 0;
     }
 
     private static long initZipIntrinsics() {

@@ -23,6 +23,7 @@
  */
 
 #include "gc/shared/collectedHeap.hpp"
+#include "interpreter/abstractInterpreter.hpp"
 #include "memory/universe.hpp"
 #include "oops/arrayOop.hpp"
 #include "runtime/handles.inline.hpp"
@@ -73,4 +74,22 @@ JRT_ENTRY(jlong, ZipRuntime::process_c1(JavaThread* current, const jlong* args))
       cast_to_oop(args[3]), args[4], static_cast<jint>(args[5]),
       cast_to_oop(args[6]), args[7], static_cast<jint>(args[8]),
       static_cast<jint>(args[9]), static_cast<jint>(args[10]), current);
+JRT_END
+
+// Native interpreter frames keep arguments in Java local-slot order. Longs
+// occupy two slots, with the value in the second slot, as for lload/lstore.
+// The walkable native frame keeps the three oop slots visible across entry;
+// process() creates handles before pinning or transitioning to native code.
+JRT_ENTRY(jlong, ZipRuntime::process_interpreter(JavaThread* current, intptr_t* locals))
+  return process(*AbstractInterpreter::int_addr_in_slot(locals),
+      *AbstractInterpreter::oop_addr_in_slot(locals - 1),
+      AbstractInterpreter::long_in_slot(locals - 3),
+      *AbstractInterpreter::oop_addr_in_slot(locals - 4),
+      AbstractInterpreter::long_in_slot(locals - 6),
+      *AbstractInterpreter::int_addr_in_slot(locals - 7),
+      *AbstractInterpreter::oop_addr_in_slot(locals - 8),
+      AbstractInterpreter::long_in_slot(locals - 10),
+      *AbstractInterpreter::int_addr_in_slot(locals - 11),
+      *AbstractInterpreter::int_addr_in_slot(locals - 12),
+      *AbstractInterpreter::int_addr_in_slot(locals - 13), current);
 JRT_END

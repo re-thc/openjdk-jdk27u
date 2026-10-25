@@ -371,7 +371,7 @@ public class Inflater implements AutoCloseable {
                             NIO_ACCESS.acquireSession(input);
                             try {
                                 long inputAddress = NIO_ACCESS.getBufferAddress(input);
-                                result = ZipUtils.IntrinsicLimits.USE_INFLATE_MIXED_INTRINSICS
+                                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
                                     ? ZipUtils.process(true, this, zsRef.address(),
                                         null, inputAddress + inputPos, inputRem,
                                         output, off, len, 0, 0)
@@ -516,7 +516,7 @@ public class Inflater implements AutoCloseable {
                             NIO_ACCESS.acquireSession(output);
                             try {
                                 long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                result = ZipUtils.IntrinsicLimits.USE_INFLATE_MIXED_INTRINSICS
+                                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
                                     ? ZipUtils.process(true, this, zsRef.address(),
                                         inputArray, inputPos, inputLim - inputPos,
                                         null, outputAddress + outputPos, outputRem, 0, 0)
@@ -553,18 +553,20 @@ public class Inflater implements AutoCloseable {
                                     NIO_ACCESS.acquireSession(output);
                                     try {
                                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                        // With no heap arrays to pin, the JNI entry
-                                        // has less transition overhead.
-                                        result = inflateBufferBuffer(zsRef.address(),
-                                            inputAddress + inputPos, inputRem,
-                                            outputAddress + outputPos, outputRem);
+                                        result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
+                                            ? ZipUtils.process(true, this, zsRef.address(),
+                                                null, inputAddress + inputPos, inputRem,
+                                                null, outputAddress + outputPos, outputRem, 0, 0)
+                                            : inflateBufferBuffer(zsRef.address(),
+                                                inputAddress + inputPos, inputRem,
+                                                outputAddress + outputPos, outputRem);
                                     } finally {
                                         NIO_ACCESS.releaseSession(output);
                                     }
                                 } else {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
                                     int outputOffset = ZipUtils.getBufferOffset(output);
-                                    result = ZipUtils.IntrinsicLimits.USE_INFLATE_MIXED_INTRINSICS
+                                    result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
                                         ? ZipUtils.process(true, this, zsRef.address(),
                                             null, inputAddress + inputPos, inputRem,
                                             outputArray, outputOffset + outputPos, outputRem, 0, 0)
@@ -582,7 +584,7 @@ public class Inflater implements AutoCloseable {
                                 NIO_ACCESS.acquireSession(output);
                                 try {
                                     long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                    result = ZipUtils.IntrinsicLimits.USE_INFLATE_MIXED_INTRINSICS
+                                    result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
                                         ? ZipUtils.process(true, this, zsRef.address(),
                                             inputArray, inputOffset + inputPos, inputRem,
                                             null, outputAddress + outputPos, outputRem, 0, 0)

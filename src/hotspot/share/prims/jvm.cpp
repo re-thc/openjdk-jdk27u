@@ -242,7 +242,7 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
 #if defined(AMD64) || defined(AARCH64)
-  return UseZipIntrinsics && UseCompiler;
+  return UseZipIntrinsics;
 #else
   return false;
 #endif

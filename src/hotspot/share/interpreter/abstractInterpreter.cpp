@@ -124,6 +124,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     switch (iid) {
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64)
+      case vmIntrinsics::_zipProcess: return java_util_zip_ZipUtils_process;
       case vmIntrinsics::_updateAdler32: return java_util_zip_Adler32_update;
       case vmIntrinsics::_updateBytesAdler32: return java_util_zip_Adler32_updateBytes;
       case vmIntrinsics::_updateByteBufferAdler32: return java_util_zip_Adler32_updateByteBuffer;
@@ -219,6 +220,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
 #if defined(AMD64) || defined(AARCH64)
+  case java_util_zip_ZipUtils_process: return vmIntrinsics::_zipProcess;
   case java_util_zip_Adler32_update: return vmIntrinsics::_updateAdler32;
   case java_util_zip_Adler32_updateBytes: return vmIntrinsics::_updateBytesAdler32;
   case java_util_zip_Adler32_updateByteBuffer: return vmIntrinsics::_updateByteBufferAdler32;
@@ -330,6 +332,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
 #if defined(AMD64) || defined(AARCH64)
+    case java_util_zip_ZipUtils_process: tty->print("java_util_zip_ZipUtils_process"); break;
     case java_util_zip_Adler32_update: tty->print("java_util_zip_Adler32_update"); break;
     case java_util_zip_Adler32_updateBytes: tty->print("java_util_zip_Adler32_updateBytes"); break;
     case java_util_zip_Adler32_updateByteBuffer: tty->print("java_util_zip_Adler32_updateByteBuffer"); break;

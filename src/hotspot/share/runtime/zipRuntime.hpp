@@ -35,6 +35,7 @@ class ZipRuntime : AllStatic {
   // Called in VM state with a walkable Java frame. Array offsets are byte
   // indices; a null array selects a native address instead.
   static jlong process_c1(JavaThread* current, const jlong* args);
+  static jlong process_interpreter(JavaThread* current, intptr_t* locals);
   static jlong process(jint inflate, oop receiver, jlong stream,
       oop input, jlong input_offset, jint input_len,
       oop output, jlong output_offset, jint output_len, jint flush, jint params,
