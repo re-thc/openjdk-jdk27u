@@ -2287,6 +2287,9 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
     __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
   }
   __ ldp(lr, zr, Address(post(sp, 2 * wordSize)));
+  if (decode) {
+    __ tbnz(r0, 31, slow);
+  }
   if (search) {
     __ tbnz(r0, 31, done);
     __ ldrw(rscratch1, Address(esp, start_slot * wordSize));

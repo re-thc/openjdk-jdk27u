@@ -2867,6 +2867,9 @@ void GraphBuilder::append_bulk_entry() {
   intrinsic->pin();
   Value result = append_split(intrinsic);
   if (compilation()->log() != nullptr) compilation()->log()->elem("intrinsic id='%s'", vmIntrinsics::name_at(id));
+  // A native decode error must resume this block's Java loop, which returns
+  // its completed prefix. Returning zero would make decode0 rescan the suffix.
+  if (decode && !admit(result, If::geq, append(new Constant(intZero)))) return;
   if (encode) result = nullptr;
   method_return(result, scope_data()->ignore_return());
   BlockEnd* end = last()->as_BlockEnd();

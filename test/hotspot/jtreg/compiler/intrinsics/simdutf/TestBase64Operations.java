@@ -91,11 +91,26 @@ public class TestBase64Operations {
             check(input, Base64.getMimeEncoder(), Base64.getMimeDecoder());
             check(input, Base64.getMimeEncoder(6000, new byte[]{'\r','\n'}), Base64.getMimeDecoder());
         }
+        // A late native error must return through this block's Java fallback,
+        // rather than return zero and retry the same long suffix per quartet.
+        for (Base64.Decoder decoder : new Base64.Decoder[]{Base64.getDecoder(), Base64.getUrlDecoder()}) {
+            for (byte bad : new byte[]{'!', ' '}) {
+                for (int at : new int[]{1024,65528,65529,65530,65531}) {
+                    byte[] invalid = new byte[65536]; Arrays.fill(invalid, (byte)'A');
+                    invalid[at] = bad;
+                    try { decoder.decode(invalid); throw new AssertionError("late invalid input"); }
+                    catch (IllegalArgumentException expectedException) {
+                        String message = "Illegal base64 character " + Integer.toString(bad, 16);
+                        if (!message.equals(expectedException.getMessage())) throw new AssertionError(expectedException);
+                    }
+                }
+            }
+        }
         byte[] spaces = new byte[8192]; Arrays.fill(spaces, (byte)' ');
         if (Base64.getMimeDecoder().decode(spaces).length != 0) throw new AssertionError("MIME spaces");
         byte[] input = new byte[8192]; random.nextBytes(input);
         byte[] encoded = Base64.getEncoder().encode(input);
-        for (int at : new int[]{0,1024,encoded.length-4}) {
+        for (int at : new int[]{0,1024,encoded.length-8,encoded.length-7,encoded.length-4}) {
             byte[] invalid = encoded.clone(); invalid[at] = '!';
             try { Base64.getDecoder().decode(invalid); throw new AssertionError("invalid alphabet"); }
             catch (IllegalArgumentException expectedException) { }

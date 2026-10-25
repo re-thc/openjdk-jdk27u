@@ -126,7 +126,7 @@ JRT_END
 
 // Keep the final quartet in Java so its padding and tail rules remain intact.
 // The caller declines MIME and aliased arrays. MIME needs Java's consumed-input
-// accounting; a zero result on standard/URL input restarts the Java decoder.
+// accounting. On failure, the intrinsic falls back within this block entry.
 JRT_LEAF(jint, SimdUTF::decode_base64(const jbyte* src, jint length, jbyte* dst, jint capacity, jboolean url))
   assert(length > 4 && length <= 1024 * 1024 && capacity >= 0, "bounded decode");
   size_t count = capacity;
@@ -137,5 +137,5 @@ JRT_LEAF(jint, SimdUTF::decode_base64(const jbyte* src, jint length, jbyte* dst,
   // Upstream ignores whitespace, while Java derives consumed input from the
   // output count. Accept only complete groups with that exact relationship.
   return result.error == simdutf::SUCCESS && count % 3 == 0 &&
-      result.count == (count / 3) * 4 ? static_cast<jint>(count) : 0;
+      result.count == (count / 3) * 4 ? static_cast<jint>(count) : -1;
 JRT_END

@@ -8557,6 +8557,15 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
       Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
       ideal.sync_kit(this);
       ideal.set(decoded, result);
+      ideal.if_then(result, BoolTest::lt, intcon(0)); {
+        sync_kit(ideal);
+        Node* fallback = make_runtime_call(RC_LEAF, OptoRuntime::base64_decodeBlock_Type(),
+            stubAddr, stubName, TypePtr::BOTTOM,
+            src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
+        Node* prefix = _gvn.transform(new ProjNode(fallback, TypeFunc::Parms));
+        ideal.sync_kit(this);
+        ideal.set(decoded, prefix);
+      } ideal.end_if();
     } ideal.else_(); {
       sync_kit(ideal);
       Node* call = make_runtime_call(RC_LEAF, OptoRuntime::base64_decodeBlock_Type(),

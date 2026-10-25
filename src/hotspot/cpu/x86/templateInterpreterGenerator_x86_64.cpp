@@ -655,6 +655,10 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
   } else {
     __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
   }
+  if (decode) {
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, slow);
+  }
   if (search) {
     __ testl(rax, rax);
     __ jcc(Assembler::negative, done);
