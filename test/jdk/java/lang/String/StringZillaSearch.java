@@ -342,7 +342,7 @@ public class StringZillaSearch {
             equal(builder.lastIndexOf(longMixedTarget), -1);
         }
         // Reject later near-matches without losing an earlier full match.
-        for (int count : new int[]{65, 66, 127, 128, 129}) {
+        for (int count : new int[]{65, 66, 127, 128, 129, 257}) {
             String target = "b" + "a".repeat(count - 1);
             for (int mismatch : new int[]{0, 63, 64, count - 2}) {
                 char[] nearMatch = target.toCharArray();

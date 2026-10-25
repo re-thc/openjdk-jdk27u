@@ -2134,7 +2134,12 @@ final class StringUTF16 {
             int j = i - 1;
             int start = j - strLastIndex;
             int k = strLastIndex - 1;
-            while (j > start) {
+            // Reject a different first character before walking a repeated suffix.
+            if (k >= 0 && getChar(src, start + 1) != (tgt[0] & 0xff)) {
+                i--;
+                continue startSearchForLastChar;
+            }
+            while (k > 0) {
                 if (getChar(src, j--) != (tgt[k--] & 0xff)) {
                     i--;
                     continue startSearchForLastChar;
