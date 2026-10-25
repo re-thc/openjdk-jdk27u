@@ -101,7 +101,9 @@ public class TestZlibNGAOT {
 
 class ZlibNGAOTApp {
     public static void main(String[] args) throws Exception {
-        var field = Class.forName("java.util.zip.ZipUtils")
+        // Initialize the lazy routing-capability holder in this VM before
+        // checking its value against the current UseZipIntrinsics setting.
+        var field = Class.forName("java.util.zip.ZipUtils$IntrinsicLimits")
                          .getDeclaredField("USE_ZIP_INTRINSICS");
         field.setAccessible(true);
         if (field.getBoolean(null) != Boolean.parseBoolean(args[0])) {
