@@ -54,7 +54,7 @@ public class TestStringZillaAvailability {
         for (String name : substrings) {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, byte[].class, int.class), expected);
         }
-        check(wb, klass.getDeclaredMethod("equalsRange", byte[].class, int.class, int.class, byte[].class, int.class), expected);
+        check(wb, Class.forName("java.lang.StringLatin1").getDeclaredMethod("equalsRange", byte[].class, int.class, int.class, byte[].class, int.class), expected);
         for (String name : characters) {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, int.class), expected);
         }

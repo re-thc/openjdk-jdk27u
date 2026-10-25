@@ -123,11 +123,14 @@ final class StringLatin1 {
         if (value[0] != other[0]) return false;
         if (length > 8 && StringZilla.ENABLED) {
             if (length > StringZilla.MAX_BYTES) return equalsLarge(value, other);
-            int result = StringZilla.equalsRange(value, 0, length, other, 0);
+            int result = equalsRange(value, 0, length, other, 0);
             if (result != StringZilla.FALLBACK) return result != 0;
         }
         return equalsJava(value, other);
     }
+
+    @IntrinsicCandidate
+    private static native int equalsRange(byte[] src, int offset, int length, byte[] tgt, int tgtOffset);
 
     @DontInline
     private static boolean equalsLarge(byte[] src, byte[] tgt) {
@@ -135,7 +138,7 @@ final class StringLatin1 {
         int offset = 0;
         while (offset < src.length) {
             int size = Math.min(StringZilla.MAX_BYTES, src.length - offset);
-            int result = StringZilla.equalsRange(src, offset, size, tgt, offset);
+            int result = equalsRange(src, offset, size, tgt, offset);
             if (result == StringZilla.FALLBACK) {
                 return equalsJava(src, tgt);
             }
@@ -593,10 +596,13 @@ final class StringLatin1 {
 
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
-        if (StringZilla.ENABLED && fromIndex + tgtCount >= StringZilla.MIN_BYTES
-                && tgtCount <= StringZilla.MAX_BYTES) {
-            if (ArraysSupport.mismatch(src, fromIndex, tgt, 0, tgtCount) < 0) return fromIndex;
-            if (--fromIndex < 0) return -1;
+        if (StringZilla.ENABLED && fromIndex + tgtCount >= StringZilla.MIN_BYTES) {
+            int last = tgtCount - 1;
+            if (src[fromIndex + last] != tgt[last]) {
+                if (--fromIndex < 0) return -1;
+            } else if (tgtCount == 1) {
+                return fromIndex;
+            }
             int end = fromIndex + tgtCount;
             int result = StringZilla.rfindLatin1(src, 0, end, tgt, tgtCount);
             if (result == StringZilla.FALLBACK) {

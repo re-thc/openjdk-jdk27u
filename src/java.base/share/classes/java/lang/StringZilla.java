@@ -164,10 +164,6 @@ final class StringZilla {
         return -1;
     }
 
-    // The intrinsic passes (src + offset, tgt + tgtOffset, length) to the kernel.
-    @IntrinsicCandidate
-    static native int equalsRange(byte[] src, int offset, int length, byte[] tgt, int tgtOffset);
-
     // Callers validate nulls and ranges. Search results are relative byte offsets;
     // mixed-coder needle lengths count Latin-1 code units.
     @IntrinsicCandidate

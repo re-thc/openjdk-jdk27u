@@ -56,9 +56,8 @@ public class TestStringZillaWork {
                     .findStatic(latin, "equals0", MethodType.methodType(boolean.class, byte[].class, byte[].class));
             checkedEquals = MethodHandles.privateLookupIn(latin, MethodHandles.lookup())
                     .findStatic(latin, "equals", MethodType.methodType(boolean.class, byte[].class, byte[].class));
-            Class<?> bridge = Class.forName("java.lang.StringZilla");
-            rangeEquals = MethodHandles.privateLookupIn(bridge, MethodHandles.lookup())
-                    .findStatic(bridge, "equalsRange", MethodType.methodType(int.class,
+            rangeEquals = MethodHandles.privateLookupIn(latin, MethodHandles.lookup())
+                    .findStatic(latin, "equalsRange", MethodType.methodType(int.class,
                             byte[].class, int.class, int.class, byte[].class, int.class));
         } catch (ReflectiveOperationException failure) {
             throw new ExceptionInInitializerError(failure);
@@ -147,7 +146,7 @@ public class TestStringZillaWork {
         character = bridge.getDeclaredMethod("searchCharLarge", byte[].class, int.class, int.class,
                                              int.class, boolean.class, boolean.class);
         equality = Class.forName("java.lang.StringLatin1").getDeclaredMethod("equalsLarge", byte[].class, byte[].class);
-        range = bridge.getDeclaredMethod("equalsRange", byte[].class, int.class, int.class,
+        range = Class.forName("java.lang.StringLatin1").getDeclaredMethod("equalsRange", byte[].class, int.class, int.class,
                                          byte[].class, int.class);
         range.setAccessible(true);
         Method probe = TestStringZillaWork.class.getMethod("probeRange",

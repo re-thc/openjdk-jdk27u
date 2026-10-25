@@ -26,6 +26,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "java_lang_StringZilla.h"
+#include "java_lang_StringLatin1.h"
 #include "StringZillaKernels.h"
 
 JNIEXPORT jint JNICALL
@@ -44,7 +45,7 @@ Java_java_lang_StringZilla_scanLatin1(JNIEnv* env, jclass ignored, jbyteArray sr
 }
 
 JNIEXPORT jint JNICALL
-Java_java_lang_StringZilla_equalsRange(JNIEnv* env, jclass ignored, jbyteArray src,
+Java_java_lang_StringLatin1_equalsRange(JNIEnv* env, jclass ignored, jbyteArray src,
         jint offset, jint length, jbyteArray tgt, jint tgt_offset) {
     return JVM_StringZillaEqualsRange(env, ignored, src, offset, length, tgt, tgt_offset);
 }
