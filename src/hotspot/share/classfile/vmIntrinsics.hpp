@@ -1234,6 +1234,8 @@ class methodHandle;
                                      "Ljdk/internal/vm/vector/VectorSupport$VecExtractOp;)"                                                    \
                                      "J")                                                                                                      \
    do_name(vector_extract_name, "extract")                                                                                                     \
+  do_intrinsic(_VectorExtractBSupported, jdk_internal_vm_vector_VectorSupport, vector_extract_byte_supported_name, int_bool_signature, F_S)    \
+   do_name(vector_extract_byte_supported_name, "isVariableByteLaneSupported")                                                                  \
                                                                                                                                                \
  do_intrinsic(_VectorInsert, jdk_internal_vm_vector_VectorSupport, vector_insert_name, vector_insert_sig, F_S)                                 \
    do_signature(vector_insert_sig, "(Ljava/lang/Class;"                                                                                        \
