@@ -37,7 +37,8 @@ import jdk.internal.vm.annotation.Stable;
  * implementation, including its malformed-input and buffer-position semantics.
  * Failed conversions may modify the supplied output range; callers must
  * retry through Java or discard private output before exposing a result.
- * The VM validates array types, ranges and output capacity on every entry.
+ * Java validates array types and ranges once before native dispatch; native
+ * converters enforce the capacity required by each operation.
  * Object operands containing UTF-16 use char[] or native-order byte[] storage;
  * their offsets and capacities count UTF-16 code units.
  */
@@ -193,6 +194,9 @@ public final class SimdUTF {
         if (!isEligible(len) || (automatic && len < operationMinimumLength(operation))) {
             return -1;
         }
+        if (!validRanges(src, sp, len, dst, dp, capacity, operation)) {
+            return -1;
+        }
         if ((operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE
                 || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE)
                 && !validUTF16Start(src, sp, len)) {
@@ -205,22 +209,9 @@ public final class SimdUTF {
     // Return between bounded leaves so compiled loops can poll for safepoints.
     private static int processChunks(Object src, int sp, int len,
                                      Object dst, int dp, int capacity, int operation) {
-        boolean src16 = operation >= ENCODE_UTF16 && operation <= ENCODE_LATIN1_FROM_UTF16
-                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_UTF16
-                || operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE
-                || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE
-                || operation == COUNT_CODE_POINTS || operation == COPY_UTF16 || operation == INDEX_OF_UTF16;
-        boolean dst16 = operation == DECODE_UTF8 || operation == DECODE_UTF16_BE || operation == DECODE_UTF16_LE
-                || operation == INFLATE_LATIN1 || operation == DECODE_UTF32_BE || operation == DECODE_UTF32_LE
-                || operation == COPY_UTF16;
         boolean readOnly = operation == COUNT_ASCII
                 || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_LATIN1
                 || operation == COUNT_CODE_POINTS || operation >= INDEX_OF_LATIN1;
-        if (!range(src, src16, sp, len)
-                || (!readOnly && (!range(dst, dst16, dp, capacity)
-                    || (src == dst && (operation != DECODE_LATIN1 || dp > sp))))) {
-            return -1;
-        }
         if (src == dst && operation == DECODE_LATIN1
                 && (capacity < len || processChunks(src, sp, len, src, 0, 0, VALIDATE_UTF8_LATIN1) != 1)) {
             // A failed in-place conversion must not change input before Java retries it.
@@ -264,6 +255,25 @@ public final class SimdUTF {
             case INDEX_OF_LATIN1, INDEX_OF_UTF16 -> len;
             default -> written;
         };
+    }
+
+    @ForceInline
+    private static boolean validRanges(Object src, int sp, int len,
+                                       Object dst, int dp, int capacity, int operation) {
+        boolean src16 = operation >= ENCODE_UTF16 && operation <= ENCODE_LATIN1_FROM_UTF16
+                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_UTF16
+                || operation == ENCODE_UTF16_BE || operation == ENCODE_UTF16_LE
+                || operation == ENCODE_UTF32_BE || operation == ENCODE_UTF32_LE
+                || operation == COUNT_CODE_POINTS || operation == COPY_UTF16 || operation == INDEX_OF_UTF16;
+        boolean dst16 = operation == DECODE_UTF8 || operation == DECODE_UTF16_BE || operation == DECODE_UTF16_LE
+                || operation == INFLATE_LATIN1 || operation == DECODE_UTF32_BE || operation == DECODE_UTF32_LE
+                || operation == COPY_UTF16;
+        boolean readOnly = operation == COUNT_ASCII
+                || operation >= VALIDATE_UTF16 && operation <= ENCODED_LENGTH_LATIN1
+                || operation == COUNT_CODE_POINTS || operation >= INDEX_OF_LATIN1;
+        return range(src, src16, sp, len)
+                && (readOnly || (range(dst, dst16, dp, capacity)
+                    && (src != dst || operation == DECODE_LATIN1 && dp <= sp)));
     }
 
     private static boolean range(Object array, boolean utf16, int off, int len) {
@@ -323,9 +333,6 @@ public final class SimdUTF {
     }
 
     private static boolean validUTF16Start(Object src, int sp, int len) {
-        if (!range(src, true, sp, len) || len == 0) {
-            return false;
-        }
         char first = src instanceof char[] chars ? chars[sp] : byteChar((byte[])src, sp << 1, BIG_ENDIAN);
         if (!Character.isSurrogate(first)) {
             return true;
@@ -389,6 +396,9 @@ public final class SimdUTF {
     @DontInline
     public static int copyUTF16(Object src, int sp, int len, Object dst, int dp) {
         if (minLength <= 0 || len < utf16CopyThreshold()) {
+            return -1;
+        }
+        if (!validRanges(src, sp, len, dst, dp, len, COPY_UTF16)) {
             return -1;
         }
         return len <= MAX_CHUNK ? process0(src, sp, len, dst, dp, len, COPY_UTF16)
@@ -518,6 +528,9 @@ public final class SimdUTF {
                                    byte[] dst, int dp, boolean url) {
         int capacity = dst.length - dp;
         if (minLength <= 0 || len < base64EncoderThreshold()) {
+            return -1;
+        }
+        if (!validRanges(src, sp, len, dst, dp, capacity, ENCODE_BASE64)) {
             return -1;
         }
         if (len > MAX_CHUNK) {

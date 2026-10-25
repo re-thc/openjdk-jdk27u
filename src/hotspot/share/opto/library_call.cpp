@@ -9504,7 +9504,7 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 }
 
 // Keep oop arguments live throughout a leaf call. The shared entry derives raw
-// array addresses only after validating their types and ranges. TypePtr::BOTTOM
+// array addresses after Java checks or the C2 search range proof. TypePtr::BOTTOM
 // models both the source reads and all destination writes (including failure).
 Node* LibraryCallKit::make_simdutf_call(Node* src, Node* sp, Node* len, Node* dst,
                                       Node* dp, Node* capacity, Node* operation) {

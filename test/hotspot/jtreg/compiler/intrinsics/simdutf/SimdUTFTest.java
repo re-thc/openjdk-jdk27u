@@ -954,7 +954,9 @@ public class SimdUTFTest {
                 byte[] expected = output.clone();
                 boolean success = accelerationAvailable && decoded != null && !shortCapacity && mode != 3;
                 if (success) System.arraycopy(decoded, 0, expected, dp, decoded.length);
-                int result = (int)process.invoke(null, source, 7, input.length, output, dp, capacity, 24);
+                int result = mode == 3
+                        ? SimdUTF.decodeLatin1(source, 7, input.length, output, dp, capacity)
+                        : (int)process.invoke(null, source, 7, input.length, output, dp, capacity, 24);
                 String label = "native Latin1 length=" + input.length + " mode=" + mode
                         + " short=" + shortCapacity + " valid=" + (decoded != null);
                 check(result == (success ? decoded.length : -1), label + " result");
@@ -1037,9 +1039,16 @@ public class SimdUTFTest {
             {src, 0, 1024, src, 0, src.length, 2},
             {src, 0, 1024, dst, 0, dst.length, 99}
         };
+        Method checked = SimdUTF.class.getDeclaredMethod("process", Object.class, int.class,
+                int.class, Object.class, int.class, int.class, int.class);
+        checked.setAccessible(true);
         for (Object[] arguments : invalid) {
-            check((int)process.invoke(null, arguments) == -1, "unsafe raw entry accepted arguments");
+            check((int)checked.invoke(null, arguments) == -1, "Java boundary accepted invalid arguments");
         }
+        check(SimdUTF.copyUTF16(src, 1, src.length, dst, 0) == -1, "copy source bounds");
+        check(SimdUTF.copyUTF16(src, 0, src.length / 2, dst, dst.length / 2) == -1, "copy destination bounds");
+        check(SimdUTF.encodeBase64(src, 1, src.length, dst, 0, false) == -1, "Base64 source bounds");
+        check(SimdUTF.encodeBase64(src, 0, src.length, src, 0, false) == -1, "Base64 overlap");
         Arrays.fill(src, (byte)0x80);
         for (int capacity : new int[]{0, src.length, 2 * src.length - 1}) {
             Arrays.fill(dst, SENTINEL);

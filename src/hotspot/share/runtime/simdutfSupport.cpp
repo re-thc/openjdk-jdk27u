@@ -105,8 +105,8 @@ jint SimdUTF::initialize() {
   return FLAG_IS_DEFAULT(SIMDUTFMinLength) && UseCompiler ? -minimum - 1 : minimum;
 }
 
-// Check in the shared entry, rather than relying on Java-only preconditions:
-// this also covers reflection, compiler transformations and the JNI fallback.
+#ifdef ASSERT
+// Java dispatch validates ranges once; direct C2 search proves them in its graph.
 static bool simdutf_range(oop obj, bool utf16, jint off, jint len) {
   if (obj == nullptr || !obj->is_typeArray() || (off | len) < 0) {
     return false;
@@ -122,6 +122,8 @@ static bool simdutf_range(oop obj, bool utf16, jint off, jint len) {
   }
   return off <= length && len <= length - off;
 }
+
+#endif
 
 static void* simdutf_base(oop obj, bool utf16, jint off) {
   typeArrayOop array = typeArrayOop(obj);
@@ -322,13 +324,9 @@ static jint simdutf_count_ascii(const char* input, jint len) {
 
 JRT_LEAF(jint, SimdUTF::count_positives(oopDesc* src_raw, jint sp, jint len))
   oop src = src_raw;
-  if (len < 0 || len > 1024 * 1024 || !simdutf_range(src, false, sp, len)) {
-    return -1;
-  }
-  const jbyte* input = reinterpret_cast<const jbyte*>(simdutf_base(src, false, sp));
-  if (len > 0 && input[0] < 0) {
-    return 0;
-  }
+  // Both interpreter entries check the byte-array range before this leaf.
+  assert(len >= 0 && len <= 1024 * 1024 && simdutf_range(src, false, sp, len), "checked interpreter range");
+  const jbyte* input = typeArrayOop(src)->byte_at_addr(sp);
   if (UseSIMDUTFIntrinsics && simdutf_implementation != nullptr && len >= SIMDUTFMinLength) {
     return simdutf_count_ascii(reinterpret_cast<const char*>(input), len);
   }
@@ -359,9 +357,7 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
                operation == INFLATE_LATIN1 ||
                operation == DECODE_UTF32_BE || operation == DECODE_UTF32_LE ||
                operation == COPY_UTF16;
-  if (!simdutf_range(src, src16, sp, len)) {
-    return -1;
-  }
+  assert(simdutf_range(src, src16, sp, len), "checked source range");
   const char* input = reinterpret_cast<const char*>(simdutf_base(src, src16, sp));
   if (operation == COUNT_ASCII) {
     return simdutf_count_ascii(input, len);
@@ -401,9 +397,8 @@ JRT_LEAF(jint, SimdUTF::process(oopDesc* src_raw, jint sp, jint len,
       return bytes > size_t(max_jint) ? -1 : checked_cast<jint>(bytes);
     }
   }
-  if ((src == dst && (operation != DECODE_LATIN1 || dp > sp)) || !simdutf_range(dst, dst16, dp, capacity)) {
-    return -1;
-  }
+  assert(src != dst || (operation == DECODE_LATIN1 && dp <= sp), "checked overlap");
+  assert(simdutf_range(dst, dst16, dp, capacity), "checked destination range");
   char* output = reinterpret_cast<char*>(simdutf_base(dst, dst16, dp));
   size_t written = 0;
   switch (operation) {
