@@ -9448,7 +9448,7 @@ bool LibraryCallKit::inline_encodeUTF8Latin1() {
   Node* comparison = _gvn.transform(new CmpUNode(
       _gvn.transform(new SubINode(length, intcon((int)SIMDUTFMinLength))),
       intcon(maximum - (int)SIMDUTFMinLength)));
-  Node* slow = generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_UNLIKELY);
+  Node* slow = generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
   Node* initial_memory = reset_memory();
   set_all_memory(initial_memory);
   Node* initial_io = i_o();
