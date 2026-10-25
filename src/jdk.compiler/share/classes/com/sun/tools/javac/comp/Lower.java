@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2492,6 +2492,11 @@ public class Lower extends TreeTranslator {
                 isEquals ? List.of(syms.objectType) : List.nil());
         // compiler generated methods have the record flag set, user defined ones dont
         if ((msym.flags() & RECORD) != 0) {
+            // Bound the extra bytecode and constant pool entries. Larger records
+            // retain the compact ObjectMethods representation.
+            if (useSmallRecordMethods(tree, vars)) {
+                return generateSmallRecordMethod(tree, msym, vars);
+            }
             /* class java.lang.runtime.ObjectMethods provides a common bootstrap that provides a customized implementation
              * for methods: toString, hashCode and equals. Here we just need to generate and indy call to:
              * java.lang.runtime.ObjectMethods::bootstrap and provide: the record class, the record component names and
@@ -2535,6 +2540,104 @@ public class Lower extends TreeTranslator {
         } else {
             return make.Block(SYNTHETIC, List.nil());
         }
+    }
+
+    private boolean useSmallRecordMethods(JCClassDecl tree, List<VarSymbol> vars) {
+        // Older runtimes can implement reference equality differently (for
+        // example, with a component identity shortcut). Preserve their bootstrap
+        // implementation when emitting class files for older targets.
+        if (target.compareTo(Target.JDK1_27) < 0 || vars.size() > 4) {
+            return false;
+        }
+        // Bound the concat recipe as well as the number of components. A small
+        // record can still have very long names. Each UTF-16 code unit takes at
+        // most three modified UTF-8 bytes in a CONSTANT_Utf8 entry.
+        int recipeLength = tree.sym.name.toString().length() + 2;
+        for (VarSymbol var : vars) {
+            recipeLength += var.name.toString().length() + 4; // separator, '=', value marker
+        }
+        return recipeLength <= 16_384;
+    }
+
+    /** Generate ordinary method bodies for small records, using component fields. */
+    private JCMethodDecl generateSmallRecordMethod(JCClassDecl tree, MethodSymbol method,
+                                                  List<VarSymbol> vars) {
+        ListBuffer<JCStatement> stats = new ListBuffer<>();
+        if (method.name == names.equals) {
+            VarSymbol arg = method.params.head;
+            arg.adr = 0;
+            stats.append(make.If(makeBinary(EQ, make.This(tree.sym.type), make.Ident(arg)),
+                    make.Return(makeLit(syms.booleanType, 1)), null));
+            JCExpression isRecord = make.TypeTest(make.Ident(arg), make.Type(tree.sym.type))
+                    .setType(syms.booleanType);
+            stats.append(make.If(makeUnary(NOT, isRecord),
+                    make.Return(makeLit(syms.booleanType, 0)), null));
+            VarSymbol other = new VarSymbol(SYNTHETIC, names.fromString("$other"), tree.sym.type, method);
+            stats.append(make.VarDef(other, make.TypeCast(tree.sym.type, make.Ident(arg))));
+            JCExpression equal = makeLit(syms.booleanType, 1);
+            // ObjectMethods tests the last component first. Keep a separate
+            // invocation for each reference component, without an identity test.
+            for (VarSymbol var : vars.reverse()) {
+                JCExpression left = make.Select(make.This(tree.sym.type), var);
+                JCExpression right = make.Select(make.Ident(other), var);
+                JCExpression componentEqual;
+                if (var.type.hasTag(FLOAT) || var.type.hasTag(DOUBLE)) {
+                    JCExpression compare = makeCall(make.QualIdent(types.boxedClass(var.type)),
+                            names.fromString("compare"), List.of(left, right));
+                    componentEqual = makeBinary(EQ, compare, makeLit(syms.intType, 0));
+                } else if (var.type.isPrimitive()) {
+                    componentEqual = makeBinary(EQ, left, right);
+                } else {
+                    // Resolve Object.equals explicitly, avoiding component overloads.
+                    Symbol equals = lookupMethod(tree.pos(), names.equals, syms.objectType,
+                            List.of(syms.objectType));
+                    componentEqual = make.Conditional(makeBinary(EQ, left, makeNull()),
+                            makeBinary(EQ, right, makeNull()),
+                            make.App(make.Select(make.Select(make.This(tree.sym.type), var), equals),
+                                    List.of(make.Select(make.Ident(other), var))))
+                            .setType(syms.booleanType);
+                }
+                equal = makeBinary(AND, equal, componentEqual);
+            }
+            stats.append(make.Return(equal));
+        } else if (method.name == names.hashCode) {
+            JCExpression hash = makeLit(syms.intType, 0);
+            boolean first = true;
+            for (VarSymbol var : vars) {
+                JCExpression value = make.Select(make.This(tree.sym.type), var);
+                JCExpression componentHash;
+                if (var.type.isPrimitive()) {
+                    componentHash = makeCall(make.QualIdent(types.boxedClass(var.type)),
+                            names.hashCode, List.of(value));
+                } else {
+                    Symbol hashCode = lookupMethod(tree.pos(), names.hashCode, syms.objectType, List.nil());
+                    componentHash = make.Conditional(makeBinary(EQ, value, makeNull()),
+                            makeLit(syms.intType, 0),
+                            make.App(make.Select(make.Select(make.This(tree.sym.type), var), hashCode)))
+                            .setType(syms.intType);
+                }
+                hash = first ? componentHash
+                        : makeBinary(PLUS, makeBinary(MUL, hash, makeLit(syms.intType, 31)), componentHash);
+                first = false;
+            }
+            stats.append(make.Return(hash));
+        } else {
+            Assert.check(method.name == names.toString);
+            JCExpression text = makeLit(syms.stringType, tree.sym.name + "[");
+            boolean first = true;
+            for (VarSymbol var : vars) {
+                text = makeBinary(PLUS, text,
+                        makeLit(syms.stringType, (first ? "" : ", ") + var.name + "="));
+                text = makeBinary(PLUS, text, make.Select(make.This(tree.sym.type), var));
+                first = false;
+            }
+            // The empty case is a constant; nonempty cases use normal string
+            // concatenation lowering, including its remaining concat linkage.
+            text = vars.isEmpty() ? makeLit(syms.stringType, tree.sym.name + "[]")
+                    : makeBinary(PLUS, text, makeLit(syms.stringType, "]"));
+            stats.append(make.Return(text));
+        }
+        return make.MethodDef(method, make.Block(0, stats.toList()));
     }
 
     private String argsTypeSig(List<Type> typeList) {
