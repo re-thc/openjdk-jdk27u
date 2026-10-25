@@ -65,7 +65,7 @@ with tempfile.TemporaryDirectory() as tmp:
     staged = Path(tmp)
     for name in ('zmij.cc', 'zmij-int.cc', 'zmij.h'):
         (staged / name).write_text((upstream / name).read_text())
-    for patch in ('java-format.patch', 'clang-compat.patch', 'shortest-only.patch', 'integer-only.patch'):
+    for patch in ('java-format.patch', 'shortest-only.patch', 'integer-only.patch'):
         subprocess.run(['patch', '--batch', '--forward', '--fuzz=0', '-p1', '-i',
                         str(root / 'make/data/zmij' / patch)], cwd=staged, check=True)
     # Validate the production bridge before changing any installed vendor file.

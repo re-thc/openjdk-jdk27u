@@ -3,7 +3,6 @@ From the JDK repository root, run:
 
     python3 make/scripts/update-zmij.py /path/to/zmij --commit "$(sed -n '2p' make/data/zmij/version.txt)"
 
-The updater applies java-format, clang-compat, shortest-only and integer-only
-patches from make/data/zmij in that order with zero fuzz, then verifies the
-production bridges before installing headers and the MIT license. Keep local
+The updater applies java-format, shortest-only and integer-only patches from
+make/data/zmij in that order with zero fuzz, then verifies the production bridges before installing headers and the MIT license. Keep local
 changes in those patches rather than editing generated files.
