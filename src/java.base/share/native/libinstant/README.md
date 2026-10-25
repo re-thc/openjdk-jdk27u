@@ -24,9 +24,11 @@ The Java formatter's immutable parser reuse applies in either configuration.
 
 `make/modules/java.base/lib/CoreLibraries.gmk` builds the archive and JNI library
 with locked Cargo dependencies. Cargo downloads missing locked crates during
-the normal build and honors caller registry, proxy and offline settings. Static-library recipes omit both. Rust targets
-baseline `x86-64` on x64, `generic` on Linux AArch64 and `apple-m1` on macOS arm64;
-the surrounding JDK's CPU flags are configured separately. Startup
+the normal build and honors caller registry, proxy and offline settings. Static-library recipes omit both. Rust follows
+the fork's native baseline: `x86-64-v3` on Linux x64, `x86-64` with AVX2/FMA on
+Windows x64, `generic` with CRC/LSE/RDM/DPB on Linux AArch64, and `apple-m1` on
+macOS arm64. The Linux AArch64 features cover the userspace Armv8.2-A additions
+without optional crypto, FP16, dot-product or SVE extensions. Startup
 `-Djdk.time.instantSpeedate=false` selects Java parsing. Missing native libraries
 also fall back to Java.
 

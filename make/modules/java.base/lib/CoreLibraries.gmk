@@ -89,7 +89,7 @@ ifeq ($(ENABLE_INSTANT_SPEEDATE):$(filter true,$(STATIC_LIBS)), true:)
     SPEEDATE_ARCHIVE := $(SPEEDATE_OUT)/$(SPEEDATE_RUST_TARGET)/release/libjdk_instant_speedate.a
   endif
   SPEEDATE_BUILD_CONFIG := $(CARGO_EXECUTABLE) $(RUSTC_EXECUTABLE) $(SPEEDATE_RUST_TARGET) \
-      $(SPEEDATE_RUST_CPU) $(FIXPATH)
+      $(SPEEDATE_RUST_CPU) $(SPEEDATE_RUST_FEATURES) $(FIXPATH)
   SPEEDATE_CONFIG_FILE := $(call DependOnVariable, SPEEDATE_BUILD_CONFIG, \
       $(SPEEDATE_OUT)/build-config.vardeps)
 
@@ -99,7 +99,7 @@ ifeq ($(ENABLE_INSTANT_SPEEDATE):$(filter true,$(STATIC_LIBS)), true:)
 	$(call MakeDir, $(@D))
 	$(call ExecuteWithLog, $(SPEEDATE_OUT)/cargo, \
 	    env -u CARGO_ENCODED_RUSTFLAGS RUSTUP_AUTO_INSTALL=0 $(FIXPATH) RUSTC="$(RUSTC_EXECUTABLE)" \
-	        RUSTFLAGS="-C target-cpu=$(SPEEDATE_RUST_CPU) -C panic=unwind" \
+	        RUSTFLAGS="-C target-cpu=$(SPEEDATE_RUST_CPU) $(if $(SPEEDATE_RUST_FEATURES),-C target-feature=$(SPEEDATE_RUST_FEATURES)) -C panic=unwind" \
 	        CARGO_BUILD_JOBS=2 "$(CARGO_EXECUTABLE)" build --locked --release \
 	        --manifest-path $(SPEEDATE_SRC)/rust/Cargo.toml \
 	        --target $(SPEEDATE_RUST_TARGET) --target-dir $(SPEEDATE_OUT))

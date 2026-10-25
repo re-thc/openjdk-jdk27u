@@ -26,11 +26,22 @@
 AC_DEFUN([LIB_CHECK_INSTANT_SPEEDATE_AVAILABLE],
 [
 speedate_unavailable=
+SPEEDATE_RUST_FEATURES=
+# Match the fork's native build baseline, not the build host's CPU. Keep the
+# Windows AVX2 profile distinct from Linux's complete x86-64-v3 requirement.
 case "$OPENJDK_TARGET_OS:$OPENJDK_TARGET_CPU:$OPENJDK_TARGET_LIBC" in
-  (linux:x86_64:gnu) SPEEDATE_RUST_TARGET=x86_64-unknown-linux-gnu; SPEEDATE_RUST_CPU=x86-64 ;;
-  (linux:aarch64:gnu) SPEEDATE_RUST_TARGET=aarch64-unknown-linux-gnu; SPEEDATE_RUST_CPU=generic ;;
+  (linux:x86_64:gnu) SPEEDATE_RUST_TARGET=x86_64-unknown-linux-gnu; SPEEDATE_RUST_CPU=x86-64-v3 ;;
+  (linux:aarch64:gnu)
+    SPEEDATE_RUST_TARGET=aarch64-unknown-linux-gnu
+    SPEEDATE_RUST_CPU=generic
+    # Stable Rust names for the userspace additions through Armv8.2-A. FP16,
+    # crypto, dot-product and SVE extensions are not part of this baseline.
+    SPEEDATE_RUST_FEATURES=+crc,+lse,+rdm,+dpb ;;
   (macosx:aarch64:*) SPEEDATE_RUST_TARGET=aarch64-apple-darwin; SPEEDATE_RUST_CPU=apple-m1 ;;
-  (windows:x86_64:*) SPEEDATE_RUST_TARGET=x86_64-pc-windows-msvc; SPEEDATE_RUST_CPU=x86-64 ;;
+  (windows:x86_64:*)
+    SPEEDATE_RUST_TARGET=x86_64-pc-windows-msvc
+    SPEEDATE_RUST_CPU=x86-64
+    SPEEDATE_RUST_FEATURES=+avx2,+fma ;;
   (*) speedate_unavailable="unsupported target" ;;
 esac
 if test "x$COMPILE_TYPE" = xcross; then
@@ -92,7 +103,7 @@ AC_DEFUN_ONCE([LIB_SETUP_INSTANT_SPEEDATE],
       CHECKING_MSG: [if the speedate Instant parser should be built],
       CHECK_AVAILABLE: [speedate_check_available],
       IF_ENABLED: [
-        AC_MSG_NOTICE([speedate uses installed Rust $rust_version for $SPEEDATE_RUST_TARGET ($SPEEDATE_RUST_CPU)])
+        AC_MSG_NOTICE([speedate uses installed Rust $rust_version for $SPEEDATE_RUST_TARGET ($SPEEDATE_RUST_CPU $SPEEDATE_RUST_FEATURES)])
       ],
       IF_DISABLED: [
         CARGO=
@@ -101,6 +112,7 @@ AC_DEFUN_ONCE([LIB_SETUP_INSTANT_SPEEDATE],
         RUSTC_EXECUTABLE=
         SPEEDATE_RUST_TARGET=
         SPEEDATE_RUST_CPU=
+        SPEEDATE_RUST_FEATURES=
         SPEEDATE_RUST_LICENSE=
       ])
   AC_SUBST(ENABLE_INSTANT_SPEEDATE)
@@ -110,5 +122,6 @@ AC_DEFUN_ONCE([LIB_SETUP_INSTANT_SPEEDATE],
   AC_SUBST(RUSTC_EXECUTABLE)
   AC_SUBST(SPEEDATE_RUST_TARGET)
   AC_SUBST(SPEEDATE_RUST_CPU)
+  AC_SUBST(SPEEDATE_RUST_FEATURES)
   AC_SUBST(SPEEDATE_RUST_LICENSE)
 ])

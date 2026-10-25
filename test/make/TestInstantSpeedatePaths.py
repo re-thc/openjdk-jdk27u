@@ -54,13 +54,14 @@ assert actual==os.environ['EXPECTED_RUSTC'], actual
 assert 'fixpath' not in actual and ' exec ' not in actual,actual
 assert 'CARGO_ENCODED_RUSTFLAGS' not in os.environ
 assert os.environ['CARGO_BUILD_JOBS']=='2'
-assert os.environ['RUSTFLAGS']=='-C target-cpu=x86-64 -C panic=unwind'
+assert os.environ['RUSTFLAGS'].split()==os.environ['EXPECTED_RUSTFLAGS'].split(),os.environ['RUSTFLAGS']
 assert os.environ['CARGO_HOME']==os.environ['EXPECTED_CARGO_HOME']
 assert os.environ['CARGO_NET_OFFLINE']==os.environ['EXPECTED_CARGO_NET_OFFLINE']
 assert sys.argv[1:4]==['build','--locked','--release'],sys.argv
 assert '--frozen' not in sys.argv and '--offline' not in sys.argv,sys.argv
 assert sys.argv[sys.argv.index('--manifest-path')+1]==os.environ['EXPECTED_MANIFEST'],sys.argv
 assert sys.argv[sys.argv.index('--target-dir')+1]==os.environ['EXPECTED_TARGET'],sys.argv
+assert sys.argv[sys.argv.index('--target')+1]==os.environ['EXPECTED_RUST_TARGET'],sys.argv
 subprocess.run([os.environ['FIXTURE_RUSTC'], '--version'],check=True,stdout=subprocess.PIPE)
 with open(os.environ['FIXTURE_RECORD'],'a') as f:
  f.write(json.dumps({'rustc':actual,'argv':sys.argv[1:]})+'\\n')
@@ -108,10 +109,6 @@ AC_OUTPUT
         output.mkdir(parents=True)
         cache = work / 'empty-cargo-home'
         cache.mkdir()
-        (work / 'Makefile').write_text('include paths.mk\n'
-            f'SPEEDATE_SRC := {source}\nSPEEDATE_OUT := {output}\n'
-            'SPEEDATE_RUST_TARGET := x86_64-pc-windows-msvc\n'
-            'SPEEDATE_RUST_CPU := x86-64\nall:\n\t' + recipe + '\n')
         def converted(path):
             return 'c:\\' + str(path.relative_to(work / 'c')).replace('/', '\\') if windows else str(path)
         env = dict(os.environ, EXPECTED_RUSTC=converted(rust),
@@ -122,12 +119,27 @@ AC_OUTPUT
                    EXPECTED_CARGO_NET_OFFLINE='true' if windows else 'false',
                    FIXTURE_RECORD=str(work / 'record.jsonl'),
                    CARGO_ENCODED_RUSTFLAGS='must-be-removed', DEBUG_FIXPATH='1')
-        result = subprocess.run(['make', '--no-print-directory', '-f', 'Makefile'], cwd=work,
-                                env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if result.returncode:
-            raise AssertionError(result.stdout)
-        assert len((work / 'record.jsonl').read_text().splitlines()) == 1
-        assert not list(cache.iterdir())
-        assert result.stdout.count('fixpath: debug: input:') == (1 if windows else 0),result.stdout
-        print(('Windows-path' if windows else 'Unix') + ' extraction/production-recipe fixture PASS')
+        targets = (
+            ('x86_64-unknown-linux-gnu', 'x86-64-v3', ''),
+            ('aarch64-unknown-linux-gnu', 'generic', '+crc,+lse,+rdm,+dpb'),
+            ('aarch64-apple-darwin', 'apple-m1', ''),
+            ('x86_64-pc-windows-msvc', 'x86-64', '+avx2,+fma'),
+        )
+        for count, (target, cpu, features) in enumerate(targets, 1):
+            (work / 'Makefile').write_text('include paths.mk\n'
+                f'SPEEDATE_SRC := {source}\nSPEEDATE_OUT := {output}\n'
+                f'SPEEDATE_RUST_TARGET := {target}\nSPEEDATE_RUST_CPU := {cpu}\n'
+                f'SPEEDATE_RUST_FEATURES := {features}\nall:\n\t' + recipe + '\n')
+            flags = f'-C target-cpu={cpu} '
+            if features:
+                flags += f'-C target-feature={features} '
+            env.update(EXPECTED_RUSTFLAGS=flags + '-C panic=unwind', EXPECTED_RUST_TARGET=target)
+            result = subprocess.run(['make', '--no-print-directory', '-f', 'Makefile'], cwd=work,
+                                    env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if result.returncode:
+                raise AssertionError(result.stdout)
+            assert len((work / 'record.jsonl').read_text().splitlines()) == count
+            assert not list(cache.iterdir())
+            assert result.stdout.count('fixpath: debug: input:') == (1 if windows else 0),result.stdout
+            print(('Windows-path' if windows else 'Unix') + f' {target} extraction/production-recipe fixture PASS')
 print('Fixture limits: no native Windows compiler/link/runtime executed.')

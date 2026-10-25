@@ -67,7 +67,8 @@ def main():
     bash = shutil.which('bash')
     assert bash, 'An installed bash and Autoconf are required'
     variables = ('ENABLE_INSTANT_SPEEDATE', 'CARGO_EXECUTABLE', 'RUSTC_EXECUTABLE',
-                 'SPEEDATE_RUST_TARGET', 'SPEEDATE_RUST_CPU', 'SPEEDATE_RUST_LICENSE')
+                 'SPEEDATE_RUST_TARGET', 'SPEEDATE_RUST_CPU', 'SPEEDATE_RUST_FEATURES',
+                 'SPEEDATE_RUST_LICENSE')
     with tempfile.TemporaryDirectory(prefix='instant-configure-') as directory:
         work = Path(directory).resolve()
         # Use the repository option/tool/path macros, including named arguments.
@@ -104,7 +105,7 @@ AC_OUTPUT
 
         def check(label, *, broken='', option='', target=('linux', 'x86_64', 'gnu'),
                   compile_type='native', enabled=False, succeeds=True,
-                  rust_target='x86_64-unknown-linux-gnu', cpu='x86-64', no_probes=False,
+                  rust_target='x86_64-unknown-linux-gnu', cpu='x86-64-v3', features='', no_probes=False,
                   spaced_tools=False):
             nonlocal cases
             cases += 1
@@ -148,6 +149,7 @@ AC_OUTPUT
                 if enabled:
                     assert values['SPEEDATE_RUST_TARGET'] == rust_target, (label, values)
                     assert values['SPEEDATE_RUST_CPU'] == cpu, (label, values)
+                    assert values['SPEEDATE_RUST_FEATURES'] == features, (label, values)
                     assert values['CARGO_EXECUTABLE'] == str(tools / 'cargo'), (label, values)
                     assert values['RUSTC_EXECUTABLE'] == str(tools / 'rustc'), (label, values)
                     assert values['SPEEDATE_RUST_LICENSE'] == str(notices), (label, values)
@@ -180,26 +182,26 @@ AC_OUTPUT
             check(label + ' auto', target=target, compile_type=compile_type, no_probes=True)
             check(label + ' explicit', target=target, compile_type=compile_type,
                   option='--enable-instant-speedate', succeeds=False, no_probes=True)
-        for target, rust_target, cpu in (
-                (('linux', 'aarch64', 'gnu'), 'aarch64-unknown-linux-gnu', 'generic'),
-                (('macosx', 'aarch64', ''), 'aarch64-apple-darwin', 'apple-m1'),
-                (('windows', 'x86_64', ''), 'x86_64-pc-windows-msvc', 'x86-64')):
+        for target, rust_target, cpu, features in (
+                (('linux', 'aarch64', 'gnu'), 'aarch64-unknown-linux-gnu', 'generic', '+crc,+lse,+rdm,+dpb'),
+                (('macosx', 'aarch64', ''), 'aarch64-apple-darwin', 'apple-m1', ''),
+                (('windows', 'x86_64', ''), 'x86_64-pc-windows-msvc', 'x86-64', '+avx2,+fma')):
             check(target[0] + ' default empty-cache', target=target,
-                  enabled=True, rust_target=rust_target, cpu=cpu)
+                  enabled=True, rust_target=rust_target, cpu=cpu, features=features)
             check(target[0] + ' explicit auto empty-cache', target=target,
                   option='--enable-instant-speedate=auto',
-                  enabled=True, rust_target=rust_target, cpu=cpu)
+                  enabled=True, rust_target=rust_target, cpu=cpu, features=features)
             check(target[0] + ' other-target explicit', target=target, option='--enable-instant-speedate',
-                  enabled=True, rust_target=rust_target, cpu=cpu)
+                  enabled=True, rust_target=rust_target, cpu=cpu, features=features)
             check(target[0] + ' disabled never probes', target=target,
                   option='--disable-instant-speedate', no_probes=True)
             for broken in ('missing-cargo', 'missing-rustc', 'old-rust', 'missing-std',
                            'missing-notices'):
                 check(target[0] + ' ' + broken + ' auto', target=target, broken=broken,
-                      rust_target=rust_target, cpu=cpu)
+                      rust_target=rust_target, cpu=cpu, features=features)
                 check(target[0] + ' ' + broken + ' explicit', target=target, broken=broken,
                       option='--enable-instant-speedate', succeeds=False,
-                      rust_target=rust_target, cpu=cpu)
+                      rust_target=rust_target, cpu=cpu, features=features)
         print(f'{cases} production configure-policy cases PASS; no native code compiled')
 
 
