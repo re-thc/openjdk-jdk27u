@@ -6776,7 +6776,7 @@ bool LibraryCallKit::inline_formatZmij() {
   // Keep a wide memory input to order allocation and initialization, but
   // record writes only to byte-array bodies. This leaf cannot change object
   // headers, Java fields, or the thread's allocation cursor.
-  Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, Zmij::formatter()),
+  Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, Zmij::format),
                                 "formatZmij", TypeAryPtr::BYTES, data, argument(2), top(), argument(4));
   set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;

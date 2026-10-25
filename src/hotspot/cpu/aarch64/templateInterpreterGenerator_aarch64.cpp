@@ -1032,7 +1032,7 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     } else {
       __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
     }
-    target = CAST_FROM_FN_PTR(address, ZmijInteger::formatter());
+    target = CAST_FROM_FN_PTR(address, ZmijInteger::format);
   }
   __ mov(c_rarg3, mode);
   // Keep the original Java stack and link register for a rejected-input fallback.
@@ -1078,7 +1078,7 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
     __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
     __ ldr(c_rarg1, Address(esp, wordSize));
     __ ldrw(c_rarg2, Address(esp));
-    target = CAST_FROM_FN_PTR(address, Zmij::formatter());
+    target = CAST_FROM_FN_PTR(address, Zmij::format);
   }
   __ andr(sp, r19_sender_sp, -16);
   __ lea(rscratch1, RuntimeAddress(target));

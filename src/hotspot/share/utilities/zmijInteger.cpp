@@ -22,24 +22,11 @@
  *
  */
 
-#include "runtime/vm_version.hpp"
 #include "utilities/zmijInteger.hpp"
 
 #define ZMIJ_HOTSPOT_INTEGER_ONLY
-#define ZMIJ_USE_SSE4_1 0
-#define ZMIJ_USE_AVX2 0
-#define ZMIJ_USE_FMA 0
 #include "utilities/zmij/zmij-int-impl.hpp"
 #include "utilities/zmijInteger.inline.hpp"
-
-ZmijInteger::Formatter ZmijInteger::formatter() {
-#if defined(AMD64) && !defined(ZERO)
-  if (VM_Version::supports_sse4_1()) {
-    return format_sse41;
-  }
-#endif
-  return format;
-}
 
 int ZmijInteger::format(void* output, uint64_t bounds, uint64_t bits, int format) {
   return hotspot_zmij_integer(output, bounds, bits, format,

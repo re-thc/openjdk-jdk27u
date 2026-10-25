@@ -3224,7 +3224,7 @@ JVM_ENTRY(jint, JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong
       ? UINT64_C(0x7ff0000000000000) : UINT64_C(0x7f800000))) {
     return 0;
   }
-  return Zmij::formatter()(static_cast<char*>(value->base(T_BYTE)) + index, uint64_t(bits), format);
+  return Zmij::format(static_cast<char*>(value->base(T_BYTE)) + index, uint64_t(bits), format);
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsFastFloatEnabled(void))

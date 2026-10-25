@@ -2839,7 +2839,7 @@ void LIRGenerator::do_formatZmij(Intrinsic* x) {
   bits.load_item_force(cc->at(1));
   format.load_item_force(cc->at(2));
   LIR_Opr result = result_register_for(x->type());
-  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Zmij::formatter()), getThreadTemp(), result, cc->args());
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Zmij::format), getThreadTemp(), result, cc->args());
   __ move(result, rlock_result(x));
 }
 

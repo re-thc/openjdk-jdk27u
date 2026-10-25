@@ -26,11 +26,8 @@
 
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/zmij.hpp"
 
-// The SSE4.1 implementation is compiled in a separate translation unit.
-#define ZMIJ_USE_SSE4_1 0
 #define ZMIJ_HOTSPOT_SHORTEST_ONLY
 #define ZMIJ_MALLOC(size) os::malloc(size, mtInternal)
 #define ZMIJ_FREE(ptr) os::free(ptr)
@@ -43,15 +40,6 @@ bool Zmij::is_enabled() {
 #else
   return false;
 #endif
-}
-
-Zmij::Formatter Zmij::formatter() {
-#if defined(AMD64) && !defined(ZERO)
-  if (VM_Version::supports_sse4_1()) {
-    return format_sse41;
-  }
-#endif
-  return format;
 }
 
 int Zmij::format(void* output, uint64_t bits, int format) {

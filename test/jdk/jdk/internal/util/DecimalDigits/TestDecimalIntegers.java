@@ -45,8 +45,8 @@
  */
 
 /*
- * @test id=sse2
- * @summary Exercise the decimal integer SSE2 fallback with exact buffers
+ * @test id=restricted-simd
+ * @summary Exercise decimal integers with restricted VM SIMD settings
  * @requires os.arch == "amd64"
  * @modules java.base/jdk.internal.util
  * @run main/othervm -Xint -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -XX:UseSSE=2 TestDecimalIntegers

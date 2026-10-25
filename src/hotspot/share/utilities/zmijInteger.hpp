@@ -30,12 +30,7 @@
 
 class ZmijInteger : AllStatic {
  public:
-  typedef int (*Formatter)(void*, uint64_t, uint64_t, int);
-  static Formatter formatter();
   static int format(void* output, uint64_t bounds, uint64_t bits, int format);
-#if defined(AMD64) && !defined(ZERO)
-  static int format_sse41(void* output, uint64_t bounds, uint64_t bits, int format);
-#endif
 };
 
 #endif // SHARE_UTILITIES_ZMIJINTEGER_HPP

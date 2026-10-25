@@ -236,7 +236,7 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
       __ movl(c_rarg2, Address(rsp, 3 * wordSize));
     }
     __ movl(c_rarg3, mode);
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ZmijInteger::formatter()),
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ZmijInteger::format),
                           c_rarg0, c_rarg1, c_rarg2, c_rarg3);
     __ testl(rax, rax);
     __ jcc(Assembler::negative, slow_path);
@@ -269,7 +269,7 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
     __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
     __ movptr(c_rarg1, Address(rsp, 2 * wordSize));
     __ movl(c_rarg2, Address(rsp, wordSize));
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::formatter()), c_rarg0, c_rarg1, c_rarg2);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::format), c_rarg0, c_rarg1, c_rarg2);
   }
   __ pop(rdi);
   __ mov(rsp, r13);

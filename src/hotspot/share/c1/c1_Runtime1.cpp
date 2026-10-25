@@ -328,9 +328,6 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, FastFloat::parse_digits);
   FUNCTION_CASE(entry, Zmij::decimal);
   FUNCTION_CASE(entry, Zmij::format);
-#if defined(AMD64) && !defined(ZERO)
-  FUNCTION_CASE(entry, Zmij::format_sse41);
-#endif
   FUNCTION_CASE(entry, SharedRuntime::OSR_migration_end);
   FUNCTION_CASE(entry, SharedRuntime::d2f);
   FUNCTION_CASE(entry, SharedRuntime::d2i);
