@@ -631,6 +631,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_decimalZmij:
   case vmIntrinsics::_putDoubleDecimalLatin1:
   case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_putFloatDecimalUTF16:
   case vmIntrinsics::_floatToDecimalLatin1:
     return inline_formatZmij();
   case vmIntrinsics::_parseFastFloatDigits:
@@ -6753,8 +6754,10 @@ bool LibraryCallKit::inline_formatZmij() {
     set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
     return true;
   }
-  bool is_double = intrinsic_id() != vmIntrinsics::_floatToDecimalLatin1;
-  bool utf16 = intrinsic_id() == vmIntrinsics::_putDoubleDecimalUTF16;
+  bool is_double = intrinsic_id() == vmIntrinsics::_putDoubleDecimalLatin1 ||
+                   intrinsic_id() == vmIntrinsics::_putDoubleDecimalUTF16;
+  bool utf16 = intrinsic_id() == vmIntrinsics::_putFloatDecimalUTF16 ||
+               intrinsic_id() == vmIntrinsics::_putDoubleDecimalUTF16;
   Node* output = null_check(argument(0));
   if (stopped()) {
     return true;
@@ -6775,11 +6778,12 @@ bool LibraryCallKit::inline_formatZmij() {
   const TypeFunc* type = TypeFunc::make(domain, range);
   address target = is_double
       ? (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_double_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_double_latin1))
-      : CAST_FROM_FN_PTR(address, Zmij::format_float_latin1);
+      : (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_float_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_float_latin1));
   // Order allocation and initialization; the leaf writes only byte-array bodies.
   Node* call = make_runtime_call(RC_LEAF, type, target, "formatZmij", TypeAryPtr::BYTES, data, bits, top());
   Node* length = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(is_double ? _gvn.transform(new AddINode(index, length)) : length);
+  set_result(intrinsic_id() == vmIntrinsics::_floatToDecimalLatin1 ? length
+             : _gvn.transform(new AddINode(index, length)));
   return true;
 }
 

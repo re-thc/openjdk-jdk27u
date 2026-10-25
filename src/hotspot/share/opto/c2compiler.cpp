@@ -763,6 +763,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_decimalZmij:
   case vmIntrinsics::_putDoubleDecimalLatin1:
   case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_putFloatDecimalUTF16:
   case vmIntrinsics::_floatToDecimalLatin1:
   case vmIntrinsics::_parseFastFloatDigits:
   case vmIntrinsics::_parseFastFloat:
