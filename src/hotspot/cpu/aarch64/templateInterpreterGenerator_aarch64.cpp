@@ -981,8 +981,8 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
 }
 
-// Reuse fast_float's frameless leaf-call adapter. The original link register
-// returns directly to the interpreter caller, with jlong in c_rarg0.
+// Tail-call the bounded leaf with the original link register and aligned
+// sender stack. The C ABI returns jlong directly to the interpreter in c_rarg0.
 address TemplateInterpreterGenerator::generate_instant_parse_entry() {
   if (!UseInstantParseIntrinsic) {
     return nullptr;

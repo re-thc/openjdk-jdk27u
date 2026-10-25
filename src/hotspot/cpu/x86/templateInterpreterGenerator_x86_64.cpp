@@ -179,8 +179,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 }
 #endif  // __WIN64
 
-// The same frameless, no-safepoint leaf adapter used by fast_float. The
-// interpreter and C ABI both return jlong in rax; no JNI transition is made.
+// The interpreter and C ABI both return jlong in rax. The bounded leaf
+// borrows String storage without a frame, safepoint or JNI transition.
 address TemplateInterpreterGenerator::generate_instant_parse_entry() {
   if (!UseInstantParseIntrinsic) {
     return nullptr;

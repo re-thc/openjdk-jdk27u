@@ -49,8 +49,7 @@ shutdown. The leaf does no loading or symbol lookup.
 
 JNI is the fallback when intrinsification is disabled or unsupported. It borrows
 compact storage with `GetPrimitiveArrayCritical` and uses one bounded VM UTF-8
-conversion for UTF-16. `-XX:+UnlockDiagnosticVMOptions
--XX:-UseInstantParseIntrinsic` or `-XX:DisableIntrinsic=_parseInstant` selects this
+conversion for UTF-16. `-XX:+UnlockDiagnosticVMOptions -XX:-UseInstantParseIntrinsic` or `-XX:DisableIntrinsic=_parseInstant` selects this
 fallback. The startup property above selects Java without entering either native
 route. Speedate validates the bytes on both routes.
 Results use integer epoch seconds and microseconds packed into one native return
