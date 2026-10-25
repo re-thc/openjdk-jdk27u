@@ -110,6 +110,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_indexOfL_char:
+  case vmIntrinsics::_indexOfU_char:
+  case vmIntrinsics::_base64_encodeBlock:
+  case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_encodeUTF8UTF16:
   case vmIntrinsics::_decodeUTF8UTF16OrThrow:

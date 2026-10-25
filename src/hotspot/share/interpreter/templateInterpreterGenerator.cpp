@@ -212,6 +212,10 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_util_zip_CRC32C_updateBytes)
   method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
 
+  method_entry(java_lang_StringLatin1_indexOfChar)
+  method_entry(java_lang_StringUTF16_indexOfChar)
+  method_entry(java_util_Base64_encodeBlock)
+  method_entry(java_util_Base64_decodeBlock)
   method_entry(java_lang_String_encodeUTF8Latin1)
   method_entry(java_lang_String_encodeUTF8UTF16)
   method_entry(java_lang_String_decodeUTF8UTF16)
@@ -486,6 +490,14 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
+  case Interpreter::java_lang_StringLatin1_indexOfChar:
+  case Interpreter::java_lang_StringUTF16_indexOfChar:
+  case Interpreter::java_util_Base64_encodeBlock:
+  case Interpreter::java_util_Base64_decodeBlock:
+#if defined(AMD64) || defined(AARCH64)
+    entry_point = generate_bulk_entry(kind);
+#endif
+    break;
   case Interpreter::java_lang_String_encodeUTF8Latin1:
   case Interpreter::java_lang_String_encodeUTF8UTF16:
   case Interpreter::java_lang_String_decodeUTF8UTF16:

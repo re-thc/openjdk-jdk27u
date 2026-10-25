@@ -92,6 +92,10 @@ class AbstractInterpreter: AllStatic {
     java_util_zip_CRC32C_updateDirectByteBuffer,                // implementation of java.util.zip.CRC32C.updateDirectByteBuffer(crc, address, off, end)
     java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
     java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
+    java_lang_StringLatin1_indexOfChar,
+    java_lang_StringUTF16_indexOfChar,
+    java_util_Base64_encodeBlock,
+    java_util_Base64_decodeBlock,
     java_lang_String_encodeUTF8Latin1,
     java_lang_String_encodeUTF8UTF16,
     java_lang_String_decodeUTF8UTF16,

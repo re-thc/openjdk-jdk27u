@@ -35,6 +35,10 @@ class SimdUTF : AllStatic {
   static jint encode_latin1_utf8(const jbyte* src, jint length, jbyte* dst);
   static jint encode_utf16_utf8(const jbyte* src, jint length, jbyte* dst);
   static jint decode_utf8_utf16(const jbyte* src, jint length, jbyte* dst);
+  static jint index_of_latin1(const jbyte* src, jint length, jint ch);
+  static jint index_of_utf16(const jbyte* src, jint length, jint ch);
+  static void encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url);
+  static jint decode_base64(const jbyte* src, jint length, jbyte* dst, jint capacity, jboolean url);
 };
 
 #endif // SHARE_RUNTIME_SIMDUTFSUPPORT_HPP

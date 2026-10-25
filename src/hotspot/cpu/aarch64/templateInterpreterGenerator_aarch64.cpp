@@ -2224,3 +2224,78 @@ address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpr
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::MethodKind kind) {
+  const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
+                      kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool wide = kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool decode = kind == Interpreter::java_util_Base64_decodeBlock;
+  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024) return nullptr;
+  address entry = __ pc();
+  Label slow, done;
+  __ safepoint_poll(slow, false, false);
+  if (decode) {
+    __ ldrw(rscratch1, Address(esp)); // isMIME
+    __ cbnzw(rscratch1, slow);
+  }
+  const int src_slot = search ? 3 : decode ? 6 : 5;
+  const int start_slot = search ? 1 : src_slot - 1;
+  const int limit_slot = search ? 0 : src_slot - 2;
+  const int dst_slot = decode ? 3 : 2;
+  const int dp_slot = decode ? 2 : 1;
+  __ ldr(c_rarg0, Address(esp, src_slot * wordSize));
+  __ ldrw(c_rarg1, Address(esp, limit_slot * wordSize));
+  __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
+  __ subw(c_rarg1, c_rarg1, rscratch1);
+  __ movw(rscratch1, (int)SIMDUTFMinLength);
+  __ cmpw(c_rarg1, rscratch1);
+  __ br(Assembler::LO, slow);
+  __ movw(rscratch1, 1024 * 1024);
+  __ cmpw(c_rarg1, rscratch1);
+  __ br(Assembler::HI, slow);
+  if (search) {
+    __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
+    if (wide) { __ tbnz(c_rarg2, 31, slow); }
+  } else {
+    __ ldr(c_rarg2, Address(esp, dst_slot * wordSize));
+    if (decode) {
+      __ cmp(c_rarg0, c_rarg2);
+      __ br(Assembler::EQ, slow);
+      __ ldrw(c_rarg3, Address(c_rarg2, arrayOopDesc::length_offset_in_bytes()));
+      __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
+      __ subw(c_rarg3, c_rarg3, rscratch1);
+      __ ldrw(c_rarg4, Address(esp, wordSize));
+    } else {
+      __ ldrw(c_rarg3, Address(esp));
+    }
+    __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
+    __ add(c_rarg2, c_rarg2, rscratch1);
+    __ add(c_rarg2, c_rarg2, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  }
+  __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
+  __ add(c_rarg0, c_rarg0, rscratch1, Assembler::LSL, wide ? 1 : 0);
+  __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  address leaf = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
+                               : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                        : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
+                                 : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
+  __ stp(lr, zr, Address(pre(sp, -2 * wordSize)));
+  // Decode argument 5 remains in c_rarg4 across the four-register helper.
+  if (search) {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  } else {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  }
+  __ ldp(lr, zr, Address(post(sp, 2 * wordSize)));
+  if (search) {
+    __ tbnz(r0, 31, done);
+    __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
+    __ addw(r0, r0, rscratch1);
+  }
+  __ bind(done);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}

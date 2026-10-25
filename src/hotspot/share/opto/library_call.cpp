@@ -23,6 +23,7 @@
  *
  */
 
+#include "runtime/globals_extension.hpp"
 #include "runtime/simdutfSupport.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciSymbols.hpp"
@@ -1435,9 +1436,63 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
-  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, int_ch, ae);
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-  _gvn.transform(result);
+  Node* result;
+  const int maximum = 1024 * 1024;
+  const int prefix = 16;
+  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
+      ? MAX2(SIMDUTFMinLength, intx(2048)) : SIMDUTFMinLength;
+  if (SimdUTF::available() && minimum <= maximum) {
+    // Keep the existing JDK search for short ranges and early matches. Only a
+    // missed prefix enters the native leaf, on the disjoint remaining range.
+    Node* remaining = _gvn.transform(new SubINode(src_count, intcon(prefix)));
+    Node* eligible = _gvn.transform(new CmpU3Node(
+        _gvn.transform(new SubINode(remaining, intcon((int)minimum))),
+        intcon(maximum - (int)minimum)));
+    IdealKit ideal(this);
+    IdealVariable index(ideal);
+    ideal.declarations_done();
+    ideal.if_then(eligible, BoolTest::le, intcon(0)); {
+      sync_kit(ideal);
+      Node* first = _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+          src_start, intcon(prefix), int_ch, ae));
+      ideal.set(index, first);
+      ideal.if_then(first, BoolTest::lt, intcon(0)); {
+        sync_kit(ideal);
+        Node* rest_from = _gvn.transform(new AddINode(from_index, intcon(prefix)));
+        Node* rest_offset = ae == StrIntrinsicNode::L ? rest_from
+            : _gvn.transform(new LShiftINode(rest_from, intcon(1)));
+        const Type** fields = TypeTuple::fields(3);
+        fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+        fields[TypeFunc::Parms + 1] = TypeInt::INT;
+        fields[TypeFunc::Parms + 2] = TypeInt::INT;
+        const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+        fields = TypeTuple::fields(1);
+        fields[TypeFunc::Parms] = TypeInt::INT;
+        const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+        Node* call = make_runtime_call(RC_LEAF, type,
+            ae == StrIntrinsicNode::L ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1)
+                                     : CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16),
+            "simdutf_index_of", TypePtr::BOTTOM,
+            array_element_address(src, rest_offset, T_BYTE), remaining, int_ch);
+        Node* found = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+        ideal.sync_kit(this);
+        ideal.set(index, found);
+        ideal.if_then(found, BoolTest::ge, intcon(0));
+        ideal.set(index, _gvn.transform(new AddINode(found, intcon(prefix))));
+        ideal.end_if();
+      } ideal.end_if();
+    } ideal.else_(); {
+      sync_kit(ideal);
+      ideal.set(index, _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+          src_start, src_count, int_ch, ae)));
+    } ideal.end_if();
+    final_sync(ideal);
+    result = ideal.value(index);
+  } else {
+    result = _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+        src_start, src_count, int_ch, ae));
+  }
+  C->set_has_split_ifs(true);
 
   Node* cmp = _gvn.transform(new CmpINode(result, intcon(0)));
   Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
@@ -8400,10 +8455,42 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
   Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
   assert(dest_start, "destination array is null");
 
-  Node* base64 = make_runtime_call(RC_LEAF,
-                                   OptoRuntime::base64_encodeBlock_Type(),
-                                   stubAddr, stubName, TypePtr::BOTTOM,
-                                   src_start, offset, len, dest_start, dp, isURL);
+  const int maximum = 1024 * 1024;
+  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
+      ? MAX2(SIMDUTFMinLength, intx(1024)) : SIMDUTFMinLength;
+  if (SimdUTF::available() && minimum <= maximum) {
+    Node* length = _gvn.transform(new SubINode(len, offset));
+    Node* eligible = _gvn.transform(new CmpU3Node(
+        _gvn.transform(new SubINode(length, intcon((int)minimum))),
+        intcon(maximum - (int)minimum)));
+    IdealKit ideal(this);
+    ideal.declarations_done();
+    ideal.if_then(eligible, BoolTest::le, intcon(0)); {
+      sync_kit(ideal);
+      const Type** fields = TypeTuple::fields(4);
+      fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+      fields[TypeFunc::Parms + 1] = TypeInt::INT;
+      fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+      fields[TypeFunc::Parms + 3] = TypeInt::INT;
+      const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+      const TypeFunc* type = TypeFunc::make(domain,
+          TypeTuple::make(TypeFunc::Parms, TypeTuple::fields(0)));
+      make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, SimdUTF::encode_base64),
+          "simdutf_encode_base64", TypePtr::BOTTOM,
+          array_element_address(src, offset, T_BYTE), length,
+          array_element_address(dest, dp, T_BYTE), isURL);
+      ideal.sync_kit(this);
+    } ideal.else_(); {
+      sync_kit(ideal);
+      make_runtime_call(RC_LEAF, OptoRuntime::base64_encodeBlock_Type(),
+          stubAddr, stubName, TypePtr::BOTTOM, src_start, offset, len, dest_start, dp, isURL);
+      ideal.sync_kit(this);
+    } ideal.end_if();
+    final_sync(ideal);
+  } else {
+    make_runtime_call(RC_LEAF, OptoRuntime::base64_encodeBlock_Type(),
+        stubAddr, stubName, TypePtr::BOTTOM, src_start, offset, len, dest_start, dp, isURL);
+  }
   return true;
 }
 
@@ -8433,12 +8520,60 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   Node* dest_start = array_element_address(dest, intcon(0), T_BYTE);
   assert(dest_start, "destination array is null");
 
-  Node* call = make_runtime_call(RC_LEAF,
-                                 OptoRuntime::base64_decodeBlock_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  const int maximum = 1024 * 1024;
+  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
+      ? MAX2(SIMDUTFMinLength, intx(1024)) : SIMDUTFMinLength;
+  if (SimdUTF::available() && minimum <= maximum) {
+    Node* length = _gvn.transform(new SubINode(len, src_offset));
+    Node* size_order = _gvn.transform(new CmpU3Node(
+        _gvn.transform(new SubINode(length, intcon((int)minimum))),
+        intcon(maximum - (int)minimum)));
+    Node* distinct = _gvn.transform(new BoolNode(_gvn.transform(new CmpPNode(src, dest)), BoolTest::ne));
+    // Materialize the alias rejection as an integer ordering result. BoolNodes
+    // are branch conditions, not operands for integer arithmetic.
+    Node* eligible = _gvn.transform(new CMoveINode(distinct, intcon(1), size_order, TypeInt::INT));
+    Node* basic = _gvn.transform(new BoolNode(_gvn.transform(new CmpINode(isMIME, intcon(0))), BoolTest::eq));
+    eligible = _gvn.transform(new CMoveINode(basic, intcon(1), eligible, TypeInt::INT));
+    IdealKit ideal(this);
+    IdealVariable decoded(ideal);
+    ideal.declarations_done();
+    ideal.if_then(eligible, BoolTest::le, intcon(0)); {
+      sync_kit(ideal);
+      const Type** fields = TypeTuple::fields(5);
+      fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+      fields[TypeFunc::Parms + 1] = TypeInt::INT;
+      fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+      fields[TypeFunc::Parms + 3] = TypeInt::INT;
+      fields[TypeFunc::Parms + 4] = TypeInt::INT;
+      const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 5, fields);
+      fields = TypeTuple::fields(1);
+      fields[TypeFunc::Parms] = TypeInt::INT;
+      const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+      Node* capacity = _gvn.transform(new SubINode(load_array_length(dest), dest_offset));
+      Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, SimdUTF::decode_base64),
+          "simdutf_decode_base64", TypePtr::BOTTOM,
+          array_element_address(src, src_offset, T_BYTE), length,
+          array_element_address(dest, dest_offset, T_BYTE), capacity, isURL);
+      Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+      ideal.sync_kit(this);
+      ideal.set(decoded, result);
+    } ideal.else_(); {
+      sync_kit(ideal);
+      Node* call = make_runtime_call(RC_LEAF, OptoRuntime::base64_decodeBlock_Type(),
+          stubAddr, stubName, TypePtr::BOTTOM,
+          src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
+      Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+      ideal.sync_kit(this);
+      ideal.set(decoded, result);
+    } ideal.end_if();
+    final_sync(ideal);
+    set_result(ideal.value(decoded));
+  } else {
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::base64_decodeBlock_Type(),
+        stubAddr, stubName, TypePtr::BOTTOM,
+        src_start, src_offset, len, dest_start, dest_offset, isURL, isMIME);
+    set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  }
   return true;
 }
 

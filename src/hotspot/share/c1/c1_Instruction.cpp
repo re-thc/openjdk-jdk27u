@@ -745,7 +745,11 @@ bool BlockBegin::try_merge(ValueStack* new_state, bool has_irreducible_loops) {
       assert((int)liveness.size() == new_state->locals_size(), "error in use of liveness");
 
       for_each_local_value(new_state, index, new_value) {
-        if (!liveness.at(index) || new_value->type()->is_illegal()) {
+        // decodeBlock's Java loop does not read isMIME, but its intrinsic
+        // uses that argument to select the ordinary Java MIME path.
+        const bool intrinsic_argument = bci() == 0 && index == 7 &&
+            new_state->scope()->method()->intrinsic_id() == vmIntrinsics::_base64_decodeBlock;
+        if ((!liveness.at(index) && !intrinsic_argument) || new_value->type()->is_illegal()) {
           new_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating dead local %d", index));
         }

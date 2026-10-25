@@ -99,3 +99,44 @@ JRT_LEAF(jint, SimdUTF::decode_utf8_utf16(const jbyte* src, jint length, jbyte* 
       reinterpret_cast<const char*>(src), length, reinterpret_cast<char16_t*>(dst));
   return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
 JRT_END
+
+// The existing String character-search entries supply a single Latin1 byte or
+// UTF-16 code unit. Supplementary code points remain in String's Java pair search.
+JRT_LEAF(jint, SimdUTF::index_of_latin1(const jbyte* src, jint length, jint ch))
+  assert(length > 0 && length <= 1024 * 1024, "bounded search");
+  const char* begin = reinterpret_cast<const char*>(src);
+  const char* found = simdutf::find(begin, begin + length, static_cast<char>(ch));
+  return found == begin + length ? -1 : checked_cast<jint>(found - begin);
+JRT_END
+
+JRT_LEAF(jint, SimdUTF::index_of_utf16(const jbyte* src, jint length, jint ch))
+  assert(length > 0 && length <= 1024 * 1024, "bounded search");
+  const char16_t* begin = reinterpret_cast<const char16_t*>(src);
+  const char16_t* found = simdutf::find(begin, begin + length, static_cast<char16_t>(ch));
+  return found == begin + length ? -1 : checked_cast<jint>(found - begin);
+JRT_END
+
+// encodeBlock supplies complete three-byte groups. Java owns padding and MIME
+// line breaks; this conversion writes directly to the existing output array.
+JRT_LEAF(void, SimdUTF::encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url))
+  assert(length > 0 && length <= 1024 * 1024 && length % 3 == 0, "bounded complete groups");
+  size_t written = simdutf::binary_to_base64(reinterpret_cast<const char*>(src), length,
+      reinterpret_cast<char*>(dst), url ? simdutf::base64_url : simdutf::base64_default);
+  assert(written == size_t(length / 3) * 4, "complete Base64 groups");
+JRT_END
+
+// Keep the final quartet in Java so its padding and tail rules remain intact.
+// The caller declines MIME and aliased arrays. MIME needs Java's consumed-input
+// accounting; a zero result on standard/URL input restarts the Java decoder.
+JRT_LEAF(jint, SimdUTF::decode_base64(const jbyte* src, jint length, jbyte* dst, jint capacity, jboolean url))
+  assert(length > 4 && length <= 1024 * 1024 && capacity >= 0, "bounded decode");
+  size_t count = capacity;
+  const size_t input_length = (length - 1) & ~size_t(3);
+  simdutf::result result = simdutf::base64_to_binary_safe(
+      reinterpret_cast<const char*>(src), input_length, reinterpret_cast<char*>(dst), count,
+      url ? simdutf::base64_url : simdutf::base64_default, simdutf::only_full_chunks);
+  // Upstream ignores whitespace, while Java derives consumed input from the
+  // output count. Accept only complete groups with that exact relationship.
+  return result.error == simdutf::SUCCESS && count % 3 == 0 &&
+      result.count == (count / 3) * 4 ? checked_cast<jint>(count) : 0;
+JRT_END

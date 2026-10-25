@@ -2859,8 +2859,67 @@ void LIRGenerator::do_stringUTF8(Intrinsic* x) {
   __ move(result_reg, result);
 }
 
+void LIRGenerator::do_bulk(Intrinsic* x) {
+  const bool search = x->id() == vmIntrinsics::_indexOfL_char || x->id() == vmIntrinsics::_indexOfU_char;
+  const bool wide = x->id() == vmIntrinsics::_indexOfU_char;
+  const bool decode = x->id() == vmIntrinsics::_base64_decodeBlock;
+  LIRItem src(x->argument_at(0), this), start(x->argument_at(1), this), length(x->argument_at(2), this);
+  src.load_item(); start.load_item(); length.load_item();
+  LIR_Opr offset = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, start.result(), offset);
+  if (wide) { __ shift_left(offset, 1, offset); }
+  LIR_Opr source = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(src.result(), offset,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), source);
+  BasicTypeList signature(search ? 3 : decode ? 5 : 4);
+  signature.append(T_ADDRESS); signature.append(T_INT);
+  signature.append(search ? T_INT : T_ADDRESS);
+  if (!search) signature.append(T_INT);
+  if (decode) signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  LIR_Opr third, url = LIR_OprFact::illegalOpr, capacity = LIR_OprFact::illegalOpr;
+  if (search) {
+    LIRItem ch(x->argument_at(3), this); ch.load_item(); third = ch.result();
+  } else {
+    LIRItem dst(x->argument_at(3), this), dp(x->argument_at(4), this), option(x->argument_at(5), this);
+    dst.load_item(); dp.load_item(); option.load_item(); url = option.result();
+    LIR_Opr dst_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, dp.result(), dst_offset);
+    third = new_register(T_ADDRESS);
+    __ leal(LIR_OprFact::address(new LIR_Address(dst.result(), dst_offset,
+        arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), third);
+    if (decode) { LIRItem cap(x->argument_at(6), this); cap.load_item(); capacity = cap.result(); }
+  }
+  __ move(source, cc->at(0)); __ move(length.result(), cc->at(1)); __ move(third, cc->at(2));
+  if (!search) { __ move(decode ? capacity : url, cc->at(3)); }
+  if (decode) { __ move(url, cc->at(4)); }
+  address entry = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
+                                : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                         : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
+                                  : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
+  LIR_Opr result_reg = x->type() == voidType ? LIR_OprFact::illegalOpr : result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  if (search) {
+    LIR_Opr relative = new_register(T_INT);
+    LIR_Opr absolute = new_register(T_INT);
+    __ move(result_reg, relative);
+    __ move(start.result(), absolute);
+    __ add(absolute, relative, absolute);
+    __ cmp(lir_cond_less, relative, LIR_OprFact::intConst(0));
+    __ cmove(lir_cond_less, LIR_OprFact::intConst(-1), absolute, rlock_result(x), T_INT);
+  } else if (x->type() != voidType) {
+    __ move(result_reg, rlock_result(x));
+  }
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_indexOfL_char:
+  case vmIntrinsics::_indexOfU_char:
+  case vmIntrinsics::_base64_encodeBlock:
+  case vmIntrinsics::_base64_decodeBlock:
+    do_bulk(x);
+    break;
   case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_encodeUTF8UTF16:
   case vmIntrinsics::_decodeUTF8UTF16OrThrow:

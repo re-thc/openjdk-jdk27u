@@ -2786,6 +2786,92 @@ void GraphBuilder::append_string_utf8_entry() {
   method_return(result, scope_data()->ignore_return());
   BlockEnd* end = last()->as_BlockEnd();
   block()->set_end(end);
+  if (fallback->state() == nullptr) return; // No slow edge survived constant folding.
+  for (int i = 0; i < end->number_of_sux(); i++) {
+    BlockBegin* sux = end->sux_at(i);
+    sux->merge(end->state(), compilation()->has_irreducible_loops());
+    scope_data()->add_to_work_list(sux);
+  }
+  enter_block(fallback);
+}
+
+// Typed existing Java boundaries retain their original bytecode fallback.
+void GraphBuilder::append_bulk_entry() {
+  vmIntrinsics::ID id = method()->intrinsic_id();
+  const bool search = id == vmIntrinsics::_indexOfL_char || id == vmIntrinsics::_indexOfU_char;
+  const bool encode = id == vmIntrinsics::_base64_encodeBlock;
+  const bool decode = id == vmIntrinsics::_base64_decodeBlock;
+  if ((!search && !encode && !decode) || !SimdUTF::available() ||
+      SIMDUTFMinLength > 1024 * 1024 ||
+      (compilation()->is_osr_compile() && scope()->is_top_scope())) return;
+  {
+    VM_ENTRY_MARK;
+    methodHandle mh(THREAD, method()->get_Method());
+    if (!compilation()->compiler()->is_intrinsic_available(mh, compilation()->directive())) return;
+  }
+  Value src = state()->local_at(search ? 0 : 1);
+  Value start = state()->local_at(2);
+  Value limit = state()->local_at(3);
+  Value length = append(new ArithmeticOp(Bytecodes::_isub, limit, start, nullptr));
+  BlockBegin* fallback = new BlockBegin(0);
+
+  auto enter_block = [&](BlockBegin* next) {
+    kill_all();
+    next->set(BlockBegin::was_visited_flag);
+    _last = _block = next;
+    _state = next->state()->copy_for_parsing();
+  };
+  // Every admission edge is a HIR edge: register allocation must see the paths
+  // that bypass the call, including the values needed by the Java fallback.
+  auto admit = [&](Value left, If::Condition condition, Value right) {
+    BlockBegin* accepted = new BlockBegin(0);
+    BlockEnd* branch = append(new If(left, condition, false, right,
+        accepted, fallback, nullptr, false))->as_BlockEnd();
+    block()->set_end(branch);
+    bool reachable = false;
+    for (int i = 0; i < branch->number_of_sux(); i++) {
+      BlockBegin* sux = branch->sux_at(i);
+      sux->merge(branch->state(), compilation()->has_irreducible_loops());
+      reachable |= sux == accepted;
+    }
+    enter_block(reachable ? accepted : fallback);
+    return reachable;
+  };
+  if (!admit(length, If::geq, append(new Constant(new IntConstant((jint)SIMDUTFMinLength)))) ||
+      !admit(length, If::leq, append(new Constant(new IntConstant(1024 * 1024))))) {
+    return;
+  }
+
+  if (id == vmIntrinsics::_indexOfU_char &&
+      !admit(state()->local_at(1), If::geq, append(new Constant(intZero)))) return;
+  Value dst = search ? nullptr : state()->local_at(4);
+  if (decode && (!admit(state()->local_at(7), If::eql, append(new Constant(intZero))) ||
+                 !admit(src, If::neq, dst))) return;
+  Values* args = new Values(search ? 4 : 7);
+  args->push(src);
+  args->push(start);
+  args->push(length);
+  if (search) {
+    args->push(state()->local_at(1));
+  } else {
+    args->push(dst);
+    args->push(state()->local_at(5));
+    args->push(state()->local_at(6));
+    if (decode) {
+      args->push(append(new ArithmeticOp(Bytecodes::_isub,
+          append(new ArrayLength(dst, copy_state_for_exception())), state()->local_at(5), nullptr)));
+    }
+  }
+  Intrinsic* intrinsic = new Intrinsic(encode ? static_cast<ValueType*>(voidType) : intType, id, args, false,
+      copy_state_before(), false, false);
+  intrinsic->pin();
+  Value result = append_split(intrinsic);
+  if (compilation()->log() != nullptr) compilation()->log()->elem("intrinsic id='%s'", vmIntrinsics::name_at(id));
+  if (encode) result = nullptr;
+  method_return(result, scope_data()->ignore_return());
+  BlockEnd* end = last()->as_BlockEnd();
+  block()->set_end(end);
+  if (fallback->state() == nullptr) return; // No slow edge survived constant folding.
   for (int i = 0; i < end->number_of_sux(); i++) {
     BlockBegin* sux = end->sux_at(i);
     sux->merge(end->state(), compilation()->has_irreducible_loops());
@@ -2847,6 +2933,9 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
 
     if (s.cur_bci() == 0) {
       append_string_utf8_entry();
+      if (last()->as_BlockEnd() != nullptr) break;
+      append_bulk_entry();
+      if (last()->as_BlockEnd() != nullptr) break;
     }
 
     // handle bytecode
@@ -3777,7 +3866,11 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   // These helpers need their original bytecodes on a declined conversion.
   // Install the guarded intrinsic when parsing their method entry instead.
-  if (callee->intrinsic_id() == vmIntrinsics::_encodeUTF8Latin1 ||
+  if (callee->intrinsic_id() == vmIntrinsics::_indexOfL_char ||
+      callee->intrinsic_id() == vmIntrinsics::_indexOfU_char ||
+      callee->intrinsic_id() == vmIntrinsics::_base64_encodeBlock ||
+      callee->intrinsic_id() == vmIntrinsics::_base64_decodeBlock ||
+      callee->intrinsic_id() == vmIntrinsics::_encodeUTF8Latin1 ||
       callee->intrinsic_id() == vmIntrinsics::_encodeUTF8UTF16 ||
       callee->intrinsic_id() == vmIntrinsics::_decodeUTF8UTF16 ||
       callee->intrinsic_id() == vmIntrinsics::_decodeUTF8UTF16OrThrow) {

@@ -579,3 +579,92 @@ address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpr
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 }
+
+// Existing Java entry arguments remain intact for the short-input fallback.
+address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::MethodKind kind) {
+  const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
+                      kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool wide = kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool decode = kind == Interpreter::java_util_Base64_decodeBlock;
+  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024) return nullptr;
+  address entry = __ pc();
+  Label slow, done;
+  __ safepoint_poll(slow, false, false);
+  if (decode) {
+    __ cmpl(Address(rsp, wordSize), 0); // isMIME
+    __ jcc(Assembler::notEqual, slow);
+  }
+  // Offsets count from the return address; Base64 includes its receiver.
+  const int src_slot = search ? 4 : decode ? 7 : 6;
+  const int start_slot = search ? 2 : src_slot - 1;
+  const int limit_slot = search ? 1 : src_slot - 2;
+  const int dst_slot = decode ? 4 : 3;
+  const int dp_slot = decode ? 3 : 2;
+  __ movptr(c_rarg0, Address(rsp, src_slot * wordSize));
+  __ movl(c_rarg1, Address(rsp, limit_slot * wordSize));
+  __ subl(c_rarg1, Address(rsp, start_slot * wordSize));
+  __ cmpl(c_rarg1, (int)SIMDUTFMinLength);
+  __ jcc(Assembler::below, slow);
+  __ cmpl(c_rarg1, 1024 * 1024);
+  __ jcc(Assembler::above, slow);
+  if (search) {
+    __ movl(c_rarg2, Address(rsp, 3 * wordSize));
+    if (wide) {
+      __ testl(c_rarg2, c_rarg2);
+      __ jcc(Assembler::negative, slow);
+    }
+  } else {
+    __ movptr(c_rarg2, Address(rsp, dst_slot * wordSize));
+    if (decode) {
+      __ cmpptr(c_rarg0, c_rarg2);
+      __ jcc(Assembler::equal, slow);
+      __ movl(c_rarg3, Address(c_rarg2, arrayOopDesc::length_offset_in_bytes()));
+      __ subl(c_rarg3, Address(rsp, dp_slot * wordSize));
+    } else {
+      __ movl(c_rarg3, Address(rsp, wordSize));
+    }
+    __ movl2ptr(r10, Address(rsp, dp_slot * wordSize));
+    __ lea(c_rarg2, Address(c_rarg2, r10, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  }
+  __ movl2ptr(r10, Address(rsp, start_slot * wordSize));
+  __ lea(c_rarg0, Address(c_rarg0, r10, wide ? Address::times_2 : Address::times_1,
+                         arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  address leaf = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
+                               : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                        : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
+                                 : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
+  if (decode) {
+#ifdef _WIN64
+    // The fifth C argument follows the four-register shadow area. Preserve
+    // sender_sp while using its callee-saved register to restore alignment.
+    __ movl(r10, Address(rsp, 2 * wordSize));
+    __ push(r13);
+    __ movptr(r13, rsp);
+    __ andptr(rsp, -16);
+    __ subptr(rsp, 6 * wordSize);
+    __ movl(Address(rsp, 4 * wordSize), r10);
+    __ call(RuntimeAddress(leaf));
+    __ movptr(rsp, r13);
+    __ pop(r13);
+#else
+    __ movl(c_rarg4, Address(rsp, 2 * wordSize));
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+#endif
+  } else if (search) {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  } else {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  }
+  if (search) {
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, done);
+    __ addl(rax, Address(rsp, start_slot * wordSize));
+  }
+  __ bind(done);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
