@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +29,6 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -515,109 +513,4 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   __ jmp(rcx);
 
   return entry_point;
-}
-
-address TemplateInterpreterGenerator::generate_simdutf_int_entry(int value) {
-  address entry = __ pc();
-  // Static, non-allocating policy hints return their Java result when interpreted.
-  if (value == 0) {
-    __ xorl(rax, rax);
-  } else {
-    __ movl(rax, value);
-  }
-  __ pop(rcx);
-  __ mov(rsp, r13);
-  __ jmp(rcx);
-  return entry;
-}
-
-address TemplateInterpreterGenerator::generate_count_positives_entry() {
-  address entry = __ pc();
-  Label slow_path, done;
-  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
-  __ movptr(r10, Address(rsp, 3 * wordSize));
-  __ movl(r11, Address(rsp, 2 * wordSize));
-  __ movl(rcx, Address(rsp, wordSize));
-  __ movl(rax, r11);
-  __ orl(rax, rcx);
-  __ jcc(Assembler::negative, slow_path);
-  __ testptr(r10, r10);
-  __ jcc(Assembler::zero, slow_path);
-  __ movl(rax, Address(r10, arrayOopDesc::length_offset_in_bytes()));
-  __ cmpl(r11, rax);
-  __ jcc(Assembler::above, slow_path);
-  __ subl(rax, r11);
-  __ cmpl(rcx, rax);
-  __ jcc(Assembler::above, slow_path);
-  __ cmpl(rcx, 1024 * 1024);
-  __ jcc(Assembler::above, slow_path);
-
-  __ xorl(rax, rax);
-  __ testl(rcx, rcx);
-  __ jcc(Assembler::zero, done);
-  __ testb(Address(r10, r11, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)), 0x80);
-  __ jcc(Assembler::notZero, done);
-
-  // Preserve the Java arguments for fallback and align the native leaf frame.
-  __ movptr(r10, rsp);
-  __ enter();
-  __ andptr(rsp, -16);
-#ifdef _WIN64
-  __ subptr(rsp, 32);
-#endif
-  __ movptr(c_rarg0, Address(r10, 3 * wordSize));
-  __ movl(c_rarg1, Address(r10, 2 * wordSize));
-  __ movl(c_rarg2, Address(r10, wordSize));
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::count_positives)));
-  __ leave();
-  __ testl(rax, rax);
-  __ jcc(Assembler::negative, slow_path);
-  __ bind(done);
-  __ pop(rdi);
-  __ mov(rsp, r13);
-  __ jmp(rdi);
-
-  __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
-  return entry;
-}
-
-address TemplateInterpreterGenerator::generate_simdutf_entry() {
-  address entry = __ pc();
-  Label slow_path;
-  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
-
-  // Preserve the expression stack while constructing an aligned C ABI frame.
-  // No safepoints are possible while oop arguments are held in native registers.
-  __ movptr(r10, rsp);
-  __ enter();
-  __ andptr(rsp, -16);
-#ifdef _WIN64
-  __ subptr(rsp, 64); // 32-byte home space and three stack arguments
-  __ movl(rax, Address(r10, 3 * wordSize));
-  __ movl(Address(rsp, 32), rax);
-  __ movl(rax, Address(r10, 2 * wordSize));
-  __ movl(Address(rsp, 40), rax);
-  __ movl(rax, Address(r10, wordSize));
-  __ movl(Address(rsp, 48), rax);
-#else
-  __ subptr(rsp, 16);
-  __ movl(rax, Address(r10, wordSize));
-  __ movl(Address(rsp, 0), rax);
-  __ movl(c_rarg4, Address(r10, 3 * wordSize));
-  __ movl(c_rarg5, Address(r10, 2 * wordSize));
-#endif
-  __ movptr(c_rarg0, Address(r10, 7 * wordSize));
-  __ movl(c_rarg1, Address(r10, 6 * wordSize));
-  __ movl(c_rarg2, Address(r10, 5 * wordSize));
-  __ movptr(c_rarg3, Address(r10, 4 * wordSize));
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::process)));
-  __ leave();
-  __ pop(rdi);
-  __ mov(rsp, r13);
-  __ jmp(rdi);
-
-  __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
-  return entry;
 }

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +55,6 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
-import jdk.internal.util.SimdUTF;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -609,13 +606,6 @@ public final class String
             // Decode with a stable copy, to be the result if the decoded length is the same
             byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
             int sp = dp;            // first dp bytes are already in the copy
-            if (SimdUTF.useLatin1Decoding() && (latin1[sp] & 0xfe) == 0xc2
-                    && SimdUTF.isEligibleLatin1Decoding(length - sp)) {
-                String compact = decodeUTF8Latin1(latin1, sp, length - sp, latin1, dp);
-                if (compact != null) {
-                    return compact;
-                }
-            }
             while (sp < length) {
                 int b1 = latin1[sp++];
                 if (b1 >= 0) {
@@ -658,14 +648,6 @@ public final class String
         }
     }
 
-    // Keep the caller's Latin-1 loop profiled when a compiler declines native decoding.
-    @DontInline
-    private static String decodeUTF8Latin1(byte[] src, int sp, int len, byte[] dst, int dp) {
-        int converted = SimdUTF.decodeLatin1(src, sp, len, dst, dp, dst.length - dp);
-        return converted >= 0
-                ? new String(Arrays.copyOf(dst, dp + converted), LATIN1) : null;
-    }
-
     private static String iso88591(byte[] bytes, int offset, int length) {
         if (COMPACT_STRINGS) {
             return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
@@ -689,10 +671,6 @@ public final class String
     }
 
     private static String decode(Charset charset, byte[] bytes, int offset, int length) {
-        if (SimdUTF.isEligible(length) && StringCodingWide.supportsCharset(charset)) {
-            String wide = StringCodingWide.decode(charset, bytes, offset, length);
-            if (wide != null) return wide;
-        }
         // (1)We never cache the "external" cs, the only benefit of creating
         // an additional StringDe/Encoder object to wrap it is to share the
         // de/encode() method. These SD/E objects are short-lived, the young-gen
@@ -776,13 +754,6 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
-            if (SimdUTF.useLatin1Decoding() && (bytes[offset] & 0xfe) == 0xc2
-                    && SimdUTF.isEligibleLatin1Decoding(sl - offset)) {
-                String compact = decodeUTF8Latin1(bytes, offset, sl - offset, dst, dp);
-                if (compact != null) {
-                    return compact;
-                }
-            }
             while (offset < sl) {
                 int b1 = bytes[offset++];
                 if (b1 >= 0) {
@@ -879,10 +850,6 @@ public final class String
             }
         }
 
-        if (SimdUTF.isEligible(len) && StringCodingWide.supportsCharset(cs)) {
-            String wide = StringCodingWide.decode(cs, src, 0, len);
-            if (wide != null) return wide;
-        }
         CharsetDecoder cd = cs.newDecoder();
         // ascii fastpath
         if (cd instanceof ArrayDecoder ad &&
@@ -959,12 +926,8 @@ public final class String
     private static <E extends Exception> byte[] encodeWithEncoder(
             Charset cs, byte coder, byte[] val, Class<E> exClass)
             throws E {
-        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
-        if (wideEncodingCandidate(cs, len)) {
-            byte[] wide = StringCodingWide.encode(cs, coder, val);
-            if (wide != null) return wide;
-        }
         CharsetEncoder ce = cs.newEncoder();
+        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
         boolean doReplace = exClass == null;
         // fastpath with ArrayEncoder implies `doReplace`.
@@ -1015,12 +978,6 @@ public final class String
             }
         }
         return trimArray(ba, bb.position());
-    }
-
-    @ForceInline
-    private static boolean wideEncodingCandidate(Charset charset, int len) {
-        return (SimdUTF.isEligible(len) || len == 1 && SimdUTF.isEnabled())
-                && StringCodingWide.supportsCharset(charset);
     }
 
     /**
@@ -1214,7 +1171,6 @@ public final class String
      * @return the number of bytes successfully decoded, at most len
      */
     /* package-private */
-    @ForceInline
     static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
         int count = StringCoding.countPositives(sa, sp, len);
         while (count < len) {
@@ -1231,7 +1187,6 @@ public final class String
         return (b & 0xc0) != 0x80;
     }
 
-    @ForceInline
     private static boolean isMalformed3(int b1, int b2, int b3) {
         return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                 (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
@@ -1242,7 +1197,6 @@ public final class String
                 (b2 & 0xc0) != 0x80;
     }
 
-    @ForceInline
     private static boolean isMalformed4(int b2, int b3, int b4) {
         return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                 (b4 & 0xc0) != 0x80;
@@ -1304,14 +1258,6 @@ public final class String
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
-        int supplementaryThreshold = SimdUTF.utf8StringSupplementaryThreshold();
-        int converted = SimdUTF.isEligible(sl - sp)
-                && (supplementaryThreshold == 0 || sl - sp >= supplementaryThreshold
-                    || src[sp] < (byte)0xf0)
-                ? SimdUTF.decodeUTF8(src, sp, sl - sp, dst, dp, (dst.length >> 1) - dp) : -1;
-        if (converted >= 0) {
-            return dp + converted;
-        }
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -1533,14 +1479,17 @@ public final class String
         if (positives > 0) {
             System.arraycopy(val, 0, dst, 0, positives);
         }
-        int dp = positives;
-        int converted = SimdUTF.isEligible(val.length - positives)
-                ? SimdUTF.encodeLatin1(val, positives, val.length - positives, dst, dp, dst.length - dp) : -1;
-        if (converted >= 0) {
-            dp += converted;
-            return dp == dst.length ? dst : Arrays.copyOf(dst, dp);
+        int dp = encodeUTF8Latin1(val, positives, dst, positives);
+        if (dp == dst.length) {
+            return dst;
         }
-        for (int i = dp; i < val.length; i++) {
+        return Arrays.copyOf(dst, dp);
+    }
+
+    // The input is String storage; dst has room for two bytes per input byte.
+    @IntrinsicCandidate
+    private static int encodeUTF8Latin1(byte[] val, int start, byte[] dst, int dp) {
+        for (int i = start; i < val.length; i++) {
             byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
@@ -1549,20 +1498,13 @@ public final class String
                 dst[dp++] = c;
             }
         }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return dp;
     }
 
     // This follows the implementation of encodeUTF8
     private static int encodedLengthUTF8(byte coder, byte[] val) {
         if (coder == UTF16) {
             return encodedLengthUTF8_UTF16(val, null);
-        }
-        int converted = SimdUTF.isEligible(val.length) ? SimdUTF.encodedLengthLatin1(val, val.length) : -1;
-        if (converted >= 0) {
-            return converted;
         }
         int positives = StringCoding.countPositives(val, 0, val.length);
         if (positives == val.length) {
@@ -1599,10 +1541,6 @@ public final class String
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
         int allocLen = (sl * 3 < 0) ? encodedLengthUTF8_UTF16(val, exClass) : sl * 3;
         byte[] dst = new byte[allocLen];
-        int converted = SimdUTF.isEligibleUTF16Encoding(sl) ? SimdUTF.encodeUTF16(val, 0, sl, dst, 0, dst.length) : -1;
-        if (converted >= 0) {
-            return converted == dst.length ? dst : Arrays.copyOf(dst, converted);
-        }
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1662,10 +1600,6 @@ public final class String
      *           having to declare the exception
      */
     private static <E extends Exception> int encodedLengthUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
-        int converted = SimdUTF.isEligible(val.length >> 1) ? SimdUTF.encodedLengthUTF16(val, val.length >> 1) : -1;
-        if (converted >= 0) {
-            return converted;
-        }
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
@@ -2048,10 +1982,8 @@ public final class String
         checkBoundsOffCount(dstBegin, srcEnd - srcBegin, dst.length);
         if (isLatin1()) {
             StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
-        } else if (srcEnd - srcBegin == 1) {
-            dst[dstBegin] = StringUTF16.getChar(value, srcBegin);
         } else {
-            StringUTF16.getChars0(value, srcBegin, srcEnd, dst, dstBegin);
+            StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         }
     }
 

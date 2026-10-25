@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +51,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -2156,71 +2154,3 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
-
-address TemplateInterpreterGenerator::generate_simdutf_int_entry(int value) {
-  address entry = __ pc();
-  // Static, non-allocating policy hints return their Java result when interpreted.
-  __ movw(r0, static_cast<uint32_t>(value));
-  __ mov(sp, r19_sender_sp);
-  __ ret(lr);
-  return entry;
-}
-
-address TemplateInterpreterGenerator::generate_count_positives_entry() {
-  address entry = __ pc();
-  Label slow_path, return_zero;
-  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
-  __ ldr(c_rarg0, Address(esp, 2 * wordSize));
-  __ ldrw(c_rarg1, Address(esp, wordSize));
-  __ ldrw(c_rarg2, Address(esp, 0));
-  __ orrw(rscratch1, c_rarg1, c_rarg2);
-  __ tbnz(rscratch1, 31, slow_path);
-  __ cbz(c_rarg0, slow_path);
-  __ ldrw(rscratch1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
-  __ cmpw(c_rarg1, rscratch1);
-  __ br(Assembler::HI, slow_path);
-  __ subw(rscratch1, rscratch1, c_rarg1);
-  __ cmpw(c_rarg2, rscratch1);
-  __ br(Assembler::HI, slow_path);
-  __ cmpw(c_rarg2, 1024 * 1024);
-  __ br(Assembler::HI, slow_path);
-  __ cbz(c_rarg2, return_zero);
-  __ add(rscratch1, c_rarg0, c_rarg1, ext::uxtw);
-  __ ldrb(rscratch2, Address(rscratch1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
-  __ tbnz(rscratch2, 7, return_zero);
-  __ andr(sp, r19_sender_sp, -16);
-  // Checked ranges make the result nonnegative. Tail-call the bounded leaf.
-  __ lea(r16, RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::count_positives)));
-  __ br(r16);
-
-  __ bind(return_zero);
-  __ mov(r0, zr);
-  __ andr(sp, r19_sender_sp, -16);
-  __ ret(lr);
-
-  __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
-  return entry;
-}
-
-address TemplateInterpreterGenerator::generate_simdutf_entry() {
-  address entry = __ pc();
-  Label slow_path;
-  __ safepoint_poll(slow_path, false /* at_return */, false /* in_nmethod */);
-  __ ldr(c_rarg0, Address(esp, 6 * wordSize));
-  __ ldrw(c_rarg1, Address(esp, 5 * wordSize));
-  __ ldrw(c_rarg2, Address(esp, 4 * wordSize));
-  __ ldr(c_rarg3, Address(esp, 3 * wordSize));
-  __ ldrw(c_rarg4, Address(esp, 2 * wordSize));
-  __ ldrw(c_rarg5, Address(esp, wordSize));
-  __ ldrw(c_rarg6, Address(esp, 0));
-  __ andr(sp, r19_sender_sp, -16);
-  // The C++ leaf preserves the interpreter's callee-saved registers and LR.
-  // The target is in libjvm, outside the code cache's branch-range guarantee.
-  // IP0 permits a tail branch to a C entry protected by BTI.
-  __ lea(r16, RuntimeAddress(CAST_FROM_FN_PTR(address, SimdUTF::process)));
-  __ br(r16);
-  __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
-  return entry;
-}

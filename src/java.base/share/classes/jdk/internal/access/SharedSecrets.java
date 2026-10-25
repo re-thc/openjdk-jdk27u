@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +94,6 @@ public class SharedSecrets {
     @Stable private static JavaNetUriAccess javaNetUriAccess;
     @Stable private static JavaNetURLAccess javaNetURLAccess;
     @Stable private static JavaNioAccess javaNioAccess;
-    @Stable private static JavaNioCharsetAccess javaNioCharsetAccess;
     @Stable private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     @Stable private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     @Stable private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
@@ -273,19 +271,6 @@ public class SharedSecrets {
 
     public static void setJavaNioAccess(JavaNioAccess jna) {
         javaNioAccess = jna;
-    }
-
-    public static void setJavaNioCharsetAccess(JavaNioCharsetAccess access) {
-        javaNioCharsetAccess = access;
-    }
-
-    public static JavaNioCharsetAccess getJavaNioCharsetAccess() {
-        var access = javaNioCharsetAccess;
-        if (access == null) {
-            ensureClassInitialized(java.nio.charset.Charset.class);
-            access = javaNioCharsetAccess;
-        }
-        return access;
     }
 
     public static JavaNioAccess getJavaNioAccess() {

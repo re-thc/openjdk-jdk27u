@@ -22,6 +22,7 @@
  *
  */
 
+#include "runtime/simdutfSupport.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/aotCodeCache.hpp"
@@ -131,6 +132,7 @@ jint init_globals() {
   compilationPolicy_init();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
+  SimdUTF::initialize();          // CPU capabilities and VM ISA restrictions are established
   icache_init2();                 // depends on VM_Version for choosing the mechanism
   // ensure we know about all blobs, stubs and entries
   initialize_stub_info();

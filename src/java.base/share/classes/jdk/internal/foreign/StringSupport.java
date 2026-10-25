@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +31,6 @@ import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
-import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
@@ -74,17 +72,6 @@ public final class StringSupport {
             throw new IllegalArgumentException("Required length exceeds implementation limit");
         }
         final int lengthBytes = (int) length;
-        if (SimdUTF.isEligible(lengthBytes) && isWideCharset(charset)) {
-            segment.checkAccess(offset, lengthBytes, true);
-            var session = segment.sessionImpl();
-            session.acquire0();
-            try {
-                String decoded = JAVA_LANG_ACCESS.newStringFromSegment(segment, offset, lengthBytes, charset);
-                if (decoded != null) return decoded;
-            } finally {
-                session.release0();
-            }
-        }
         final byte[] bytes = new byte[lengthBytes];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, lengthBytes);
         try {
@@ -214,9 +201,10 @@ public final class StringSupport {
                 }
             }
         }
-        // Handle the tail. A terminator lies entirely within the region, also
-        // when fromOffset is not a multiple of its size.
-        for (; offset <= toOffset - Short.BYTES; offset += Short.BYTES) {
+        // Handle the tail
+        // Prevent over scanning as we step by 2
+        final long endScan = toOffset & ~1; // The last bit is zero
+        for (; offset < endScan; offset += Short.BYTES) {
             short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (val == 0) {
                 return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
@@ -252,9 +240,10 @@ public final class StringSupport {
                 }
             }
         }
-        // Handle the tail. A terminator lies entirely within the region, also
-        // when fromOffset is not a multiple of its size.
-        for (; offset <= toOffset - Integer.BYTES; offset += Integer.BYTES) {
+        // Handle the tail
+        // Prevent over scanning as we step by 4
+        final long endScan = toOffset & ~3; // The last two bit are zero
+        for (; offset < endScan; offset += Integer.BYTES) {
             int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (val == 0) {
                 return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
@@ -359,13 +348,6 @@ public final class StringSupport {
         }
     }
 
-    private static boolean isWideCharset(Charset charset) {
-        Class<?> type = charset.getClass();
-        return type == sun.nio.cs.UTF_16.class || type == sun.nio.cs.UTF_16BE.class
-                || type == sun.nio.cs.UTF_16LE.class || type == sun.nio.cs.UTF_32.class
-                || type == sun.nio.cs.UTF_32BE.class || type == sun.nio.cs.UTF_32LE.class;
-    }
-
     public static boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
         return JAVA_LANG_ACCESS.bytesCompatible(string, charset, srcIndex, numChars);
     }
@@ -379,10 +361,6 @@ public final class StringSupport {
             copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
             return numChars;
         } else {
-            if (SimdUTF.isEligible(numChars) && isWideCharset(charset)) {
-                int written = JAVA_LANG_ACCESS.encodeToSegment(string, segment, offset, charset, srcIndex, numChars);
-                if (written >= 0) return written;
-            }
             byte[] bytes = string.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
             return bytes.length;

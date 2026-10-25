@@ -338,9 +338,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_dilithiumNttMult();
   bool inline_dilithiumMontMulByConstant();
   bool inline_dilithiumDecomposePoly();
-  bool inline_simdutf_process();
-  Node* make_simdutf_call(Node* src, Node* sp, Node* len, Node* dst,
-                         Node* dp, Node* capacity, Node* operation);
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
@@ -366,6 +363,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
   bool inline_countPositives();
+  bool inline_encodeUTF8Latin1();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();

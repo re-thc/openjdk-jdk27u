@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1834,7 +1833,6 @@ public final class System {
         SharedSecrets.getJavaLangRefAccess().startThreads();
 
         // system properties, java.lang and other core classes are now initialized
-        jdk.internal.util.SimdUTF.initialize();
         VM.initLevel(1);
     }
 
@@ -2142,10 +2140,6 @@ public final class System {
                 return StringCoding.countPositives(bytes, offset, length);
             }
 
-            public int validateStringEncoding(String s, int kind) {
-                return StringCoding.validateStringEncoding(s, kind);
-            }
-
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
@@ -2351,17 +2345,6 @@ public final class System {
             @Override
             public boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
                 return string.bytesCompatible(charset, srcIndex, numChars);
-            }
-
-            @Override
-            public String newStringFromSegment(MemorySegment segment, long offset, int length, Charset charset) {
-                return StringCodingWide.decodeSegment(segment, offset, length, charset);
-            }
-
-            @Override
-            public int encodeToSegment(String string, MemorySegment segment, long offset,
-                                       Charset charset, int srcIndex, int numChars) {
-                return StringCodingWide.encodeSegment(string, segment, offset, charset, srcIndex, numChars);
             }
 
             @Override

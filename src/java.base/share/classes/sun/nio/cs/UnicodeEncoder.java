@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +25,6 @@
 
 package sun.nio.cs;
 
-import jdk.internal.util.SimdUTF;
 import java.nio.*;
 import java.nio.charset.*;
 
@@ -70,9 +68,6 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
-        if (SimdUTF.isEligible(src.remaining())) {
-            encodeLoopBulk(src, dst);
-        }
         int mark = src.position();
 
         if (needsMark && src.hasRemaining()) {
@@ -101,35 +96,6 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
                 put(Character.lowSurrogate(d), dst);
             }
             return CoderResult.UNDERFLOW;
-        } finally {
-            src.position(mark);
-        }
-    }
-
-    private void encodeLoopBulk(CharBuffer src, ByteBuffer dst) {
-        if (needsMark && src.hasRemaining()) {
-            if (dst.remaining() < 2) return;
-            put(BYTE_ORDER_MARK, dst);
-            needsMark = false;
-        }
-        int mark = src.position();
-        try {
-            if (src.hasArray() && dst.hasArray()) {
-                int converted = SimdUTF.encodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
-                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
-                        dst.remaining(), byteOrder == BIG);
-                if (converted >= 0) {
-                    mark = src.limit();
-                    dst.position(dst.position() + converted);
-                    return;
-                }
-            } else {
-                try {
-                    SimdUTFBufferSupport.encode(src, dst, byteOrder == BIG, false);
-                } finally {
-                    mark = src.position();
-                }
-            }
         } finally {
             src.position(mark);
         }

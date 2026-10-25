@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +36,6 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.SimdUTF;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
@@ -442,32 +439,9 @@ final class StringLatin1 {
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
         byte c = (byte)ch;
-        if (fromIndex >= max) {
-            return -1;
-        }
-        if (value[fromIndex] == c) {
-            return fromIndex;
-        }
-        int i = fromIndex + 1;
-        if (SimdUTF.isEligible(max - i)) {
-            // Protect compiled near-start searches; interpretation benefits from native search directly.
-            if (SimdUTF.useIndexOfPrefix()) {
-                int limit = i + Math.min(15, max - i);
-                for (; i < limit; i++) {
-                    if (value[i] == c) {
-                        return i;
-                    }
-                }
-            }
-            int len = max - i;
-            int index = SimdUTF.indexOfLatin1(value, i, len, ch);
-            if (index >= 0) {
-                return index == len ? -1 : i + index;
-            }
-        }
-        for (; i < max; i++) {
+        for (int i = fromIndex; i < max; i++) {
             if (value[i] == c) {
-                return i;
+               return i;
             }
         }
         return -1;
@@ -532,9 +506,6 @@ final class StringLatin1 {
             return -1;
         }
         byte first = str[0];
-        if (strToIndex == 1 && SimdUTF.isEligible(valueToIndex - valueFromIndex)) {
-            return indexOfChar0(value, first & 0xff, valueFromIndex, valueToIndex);
-        }
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
@@ -1066,7 +1037,6 @@ final class StringLatin1 {
      * @throws NullPointerException if {@code src} or {@code dst} is null
      * @throws StringIndexOutOfBoundsException if the sub-ranges are out of bounds
      */
-    @ForceInline
     static void inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
         String.checkBoundsOffCount(srcOff, len, src.length);    // Implicit null check on `src`
         String.checkBoundsOffCount(dstOff, len, dst.length);    // Implicit null check on `dst`
@@ -1074,15 +1044,8 @@ final class StringLatin1 {
     }
 
     // vmIntrinsics::_inflateStringC
-    @ForceInline
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
-        if (len == 0) {
-            return;
-        }
-        if (SimdUTF.isEligible(len) && SimdUTF.inflateLatin1(src, srcOff, len, dst, dstOff) >= 0) {
-            return;
-        }
         for (int i = 0; i < len; i++) {
             dst[dstOff++] = (char)(src[srcOff++] & 0xff);
         }
@@ -1114,12 +1077,6 @@ final class StringLatin1 {
     // vmIntrinsics::_inflateStringB
     @IntrinsicCandidate
     private static void inflate0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        if (len == 0) {
-            return;
-        }
-        if (SimdUTF.isEligible(len) && SimdUTF.inflateLatin1(src, srcOff, len, dst, dstOff) >= 0) {
-            return;
-        }
         for (int i = 0; i < len; i++) {
             StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
         }

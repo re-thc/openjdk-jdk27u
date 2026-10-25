@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +25,6 @@
 
 package sun.nio.cs;
 
-import jdk.internal.util.SimdUTF;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -67,14 +65,6 @@ abstract class UnicodeDecoder extends CharsetDecoder {
     }
 
     protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
-        int remaining = src.remaining();
-        // Whole-array conversion needs complete, aligned UTF-16 units.
-        // Preserve staging when either buffer lacks an accessible array.
-        if (SimdUTF.isEligible(remaining)
-                && (!src.hasArray() || !dst.hasArray()
-                    || (((src.arrayOffset() + src.position()) | remaining) & 1) == 0)) {
-            decodeLoopBulk(src, dst);
-        }
         int mark = src.position();
 
         try {
@@ -128,42 +118,6 @@ abstract class UnicodeDecoder extends CharsetDecoder {
             }
             return CoderResult.UNDERFLOW;
 
-        } finally {
-            src.position(mark);
-        }
-    }
-
-    private void decodeLoopBulk(ByteBuffer src, CharBuffer dst) {
-        int mark = src.position();
-        try {
-            // Resolve the initial BOM once, before attempting a bulk conversion.
-            if (currentByteOrder == NONE && src.remaining() > 1) {
-                char first = (char)(((src.get(mark) & 0xff) << 8) | (src.get(mark + 1) & 0xff));
-                if (first == BYTE_ORDER_MARK || first == REVERSED_MARK) {
-                    currentByteOrder = first == BYTE_ORDER_MARK ? BIG : LITTLE;
-                    mark += 2;
-                    src.position(mark);
-                } else {
-                    currentByteOrder = defaultByteOrder;
-                }
-            }
-            if (currentByteOrder != NONE && src.hasArray() && dst.hasArray()) {
-                int converted = SimdUTF.decodeUTF16Bytes(src.array(), src.arrayOffset() + mark,
-                        src.remaining(), dst.array(), dst.arrayOffset() + dst.position(),
-                        dst.remaining(), currentByteOrder == BIG);
-                if (converted >= 0) {
-                    mark = src.limit();
-                    dst.position(dst.position() + converted);
-                    return;
-                }
-            }
-            if (!src.hasArray() || !dst.hasArray()) {
-                try {
-                    SimdUTFBufferSupport.decode(src, dst, currentByteOrder == BIG, false);
-                } finally {
-                    mark = src.position();
-                }
-            }
         } finally {
             src.position(mark);
         }

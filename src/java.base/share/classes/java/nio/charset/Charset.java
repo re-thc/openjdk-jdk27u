@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +25,9 @@
 
 package java.nio.charset;
 
-import jdk.internal.access.JavaNioCharsetAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
-import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.cs.ThreadLocalCoders;
 
 import java.nio.ByteBuffer;
@@ -300,21 +296,6 @@ import java.util.function.Supplier;
 public abstract class Charset
     implements Comparable<Charset>
 {
-
-    static {
-        SharedSecrets.setJavaNioCharsetAccess(new JavaNioCharsetAccess() {
-            @ForceInline
-            public int getStringCodingWide(Charset charset) {
-                return charset.stringCodingWide;
-            }
-
-            @ForceInline
-            public void setStringCodingWide(Charset charset, int value) {
-                charset.cacheStringCodingWide(value);
-            }
-        });
-    }
-
 
     /* -- Static methods -- */
 
@@ -673,21 +654,10 @@ public abstract class Charset
     @Stable
     private final String name;
     @Stable
-    private byte stringCodingWide;
-
-    @ForceInline
-    private void cacheStringCodingWide(int value) {
-        assert value == 1 || value == 2;
-        assert stringCodingWide == 0 || stringCodingWide == value;
-        stringCodingWide = (byte)value;
-    }
-
-    @Stable
     private final String[] aliases;
     @Stable
     private final LazyConstant<Set<String>> aliasSet = LazyConstant.of(
             new Supplier<>() { public Set<String> get() { return Set.of(aliases); }});
-
 
     /**
      * Initializes a new charset with the given canonical name and alias

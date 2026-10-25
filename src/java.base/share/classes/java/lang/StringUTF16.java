@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +38,6 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -185,12 +183,6 @@ final class StringUTF16 {
         if (checked && i < endIndex) {
             checkBoundsBeginEnd(i, endIndex, value);
         }
-        if (SimdUTF.isEligible(count)) {
-            int result = SimdUTF.countCodePoints(value, beginIndex, count);
-            if (result >= 0) {
-                return result;
-            }
-        }
         for (; i < endIndex - 1; ) {
             if (Character.isHighSurrogate(getChar(value, i++)) &&
                 Character.isLowSurrogate(getChar(value, i))) {
@@ -205,17 +197,9 @@ final class StringUTF16 {
         return codePointCount(value, beginIndex, endIndex, false /* unchecked */);
     }
 
-    @ForceInline
     static char[] toChars(byte[] value) {
-        if (value.length == 2 && SimdUTF.isEnabled()) {
-            return new char[] { getChar(value, 0) };
-        }
         char[] dst = new char[value.length >> 1];
-        if (SimdUTF.isEnabled()) {
-            getChars0(value, 0, dst.length, dst, 0);
-        } else {
-            getChars(value, 0, dst.length, dst, 0);
-        }
+        getChars(value, 0, dst.length, dst, 0);
         return dst;
     }
 
@@ -239,13 +223,9 @@ final class StringUTF16 {
     }
 
     // vmIntrinsics::_toBytesStringU
-    @ForceInline
     @IntrinsicCandidate
     private static byte[] toBytes0(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
-        if (len >= SimdUTF.utf16CopyThreshold() && SimdUTF.copyUTF16(value, off, len, val, 0) >= 0) {
-            return val;
-        }
         for (int i = 0; i < len; i++) {
             putChar(val, i, value[off]);
             off++;
@@ -485,13 +465,6 @@ final class StringUTF16 {
     // vmIntrinsics::_compressStringC
     @IntrinsicCandidate
     private static int compress0(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        if (len > 0 && src[srcOff] > '\u00ff') {
-            return 0;
-        }
-        int converted = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(src, srcOff, len, dst, dstOff) : -1;
-        if (converted >= 0) {
-            return converted;
-        }
         for (int i = 0; i < len; i++) {
             char c = src[srcOff];
             if (c > 0xff) {
@@ -532,13 +505,6 @@ final class StringUTF16 {
     // vmIntrinsics::_compressStringB
     @IntrinsicCandidate
     private static int compress0(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
-        if (len > 0 && getChar(src, srcOff) > '\u00ff') {
-            return 0;
-        }
-        int converted = SimdUTF.isEligible(len) ? SimdUTF.encodeLatin1FromUTF16(src, srcOff, len, dst, dstOff) : -1;
-        if (converted >= 0) {
-            return converted;
-        }
         for (int i = 0; i < len; i++) {
             char c = getChar(src, srcOff);
             if (c > 0xff) {
@@ -592,14 +558,9 @@ final class StringUTF16 {
         getChars0(value, srcBegin, srcEnd, dst, dstBegin);
     }
 
-    // vmIntrinsics::_getCharsStringU; callers validate both ranges.
-    @ForceInline
+    // vmIntrinsics::_getCharsStringU
     @IntrinsicCandidate
-    static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        int len = srcEnd - srcBegin;
-        if (len >= SimdUTF.utf16CopyThreshold() && SimdUTF.copyUTF16(value, srcBegin, len, dst, dstBegin) >= 0) {
-            return;
-        }
+    private static void getChars0(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         for (int i = srcBegin; i < srcEnd; i++) {
             dst[dstBegin++] = getChar(value, i);
         }
@@ -1000,9 +961,6 @@ final class StringUTF16 {
         assert strToIndex <= length(str);
         assert (valueToIndex - valueFromIndex) >= strToIndex;
         char first = getChar(str, 0);
-        if (strToIndex == 1 && SimdUTF.isEligible(valueToIndex - valueFromIndex)) {
-            return indexOfChar0(value, first, valueFromIndex, valueToIndex);
-        }
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
             // Look for first character.
@@ -1104,9 +1062,6 @@ final class StringUTF16 {
         assert tgtCount <= tgt.length;
         assert (srcCount - fromIndex) >= tgtCount;
         char first = (char)(tgt[0] & 0xff);
-        if (tgtCount == 1 && SimdUTF.isEligible(srcCount - fromIndex)) {
-            return indexOfChar0(src, first, fromIndex, srcCount);
-        }
         int max = (srcCount - tgtCount);
         for (int i = fromIndex; i <= max; i++) {
             // Look for first character.
@@ -1132,30 +1087,7 @@ final class StringUTF16 {
     // vmIntrinsics::_indexOfU_char
     @IntrinsicCandidate
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
-        if (fromIndex >= max) {
-            return -1;
-        }
-        if (getChar(value, fromIndex) == ch) {
-            return fromIndex;
-        }
-        int i = fromIndex + 1;
-        if (SimdUTF.isEligible(max - i)) {
-            // Protect compiled near-start searches; interpretation benefits from native search directly.
-            if (SimdUTF.useIndexOfPrefix()) {
-                int limit = i + Math.min(15, max - i);
-                for (; i < limit; i++) {
-                    if (getChar(value, i) == ch) {
-                        return i;
-                    }
-                }
-            }
-            int len = max - i;
-            int index = SimdUTF.indexOfUTF16(value, i, len, ch);
-            if (index >= 0) {
-                return index == len ? -1 : i + index;
-            }
-        }
-        for (; i < max; i++) {
+        for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
             }

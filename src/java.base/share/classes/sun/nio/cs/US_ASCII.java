@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +27,6 @@ package sun.nio.cs;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.SimdUTF;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -143,14 +141,7 @@ public class US_ASCII
 
         public boolean canEncode(CharSequence cs) {
             int length = cs.length();
-            if (length > 0 && !canEncode(cs.charAt(0))) {
-                return false;
-            }
-            int valid = SimdUTF.isEligible(length) ? Unicode.validateEncoding(cs, 1) : -1;
-            if (valid >= 0) {
-                return valid != 0;
-            }
-            for (int i = 1; i < length; i++) {
+            for (int i = 0; i < length; i++) {
                 if (!canEncode(cs.charAt(i))) {
                     return false;
                 }

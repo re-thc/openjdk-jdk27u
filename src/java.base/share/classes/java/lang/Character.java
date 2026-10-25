@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +26,6 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.util.SimdUTF;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -10123,12 +10121,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static int codePointCount(CharSequence seq, int beginIndex, int endIndex) {
         Objects.checkFromToIndex(beginIndex, endIndex, seq.length());
-        if (seq instanceof String string) {
-            return string.codePointCount(beginIndex, endIndex);
-        }
-        if (seq instanceof AbstractStringBuilder builder) {
-            return builder.codePointCount(beginIndex, endIndex);
-        }
         int n = endIndex - beginIndex;
         for (int i = beginIndex; i < endIndex; ) {
             if (isHighSurrogate(seq.charAt(i++)) && i < endIndex &&
@@ -10165,17 +10157,11 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     }
 
     static int codePointCountImpl(char[] a, int offset, int count) {
-        if (SimdUTF.isEligible(count)) {
-            int result = SimdUTF.countCodePoints(a, offset, count);
-            if (result >= 0) {
-                return result;
-            }
-        }
         int endIndex = offset + count;
         int n = count;
         for (int i = offset; i < endIndex; ) {
-            if (((a[i++] & 0xfc00) == 0xd800) && i < endIndex &&
-                ((a[i] & 0xfc00) == 0xdc00)) {
+            if (isHighSurrogate(a[i++]) && i < endIndex &&
+                isLowSurrogate(a[i])) {
                 n--;
                 i++;
             }
