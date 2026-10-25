@@ -419,6 +419,9 @@ class methodHandle;
   do_intrinsic(_encodeUTF8Latin1, java_lang_String, encodeUTF8Latin1_name, encodeUTF8Latin1_signature, F_S)              \
    do_name(encodeUTF8Latin1_name, "encodeUTF8Latin1")                                                                    \
    do_signature(encodeUTF8Latin1_signature, "([BI[BI)I")                                                                 \
+  do_intrinsic(_encodeUTF8UTF16, java_lang_String, encodeUTF8UTF16_name, encodeUTF8UTF16_signature, F_S)                \
+   do_name(encodeUTF8UTF16_name, "encodeUTF8UTF16")                                                                      \
+   do_signature(encodeUTF8UTF16_signature, "([BI[BILjava/lang/Class;)I")                                                 \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \
    do_signature(countPositives_signature,                  "([BII)I")                                                   \

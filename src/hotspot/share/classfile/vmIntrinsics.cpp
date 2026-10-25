@@ -196,6 +196,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch (id) {
   case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
@@ -518,6 +519,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UseDilithiumIntrinsics) return true;
     break;
   case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
     if (!UseSIMDUTFIntrinsics) return true;
     break;
   case vmIntrinsics::_base64_encodeBlock:

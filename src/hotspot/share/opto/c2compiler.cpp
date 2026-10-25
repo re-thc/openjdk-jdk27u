@@ -819,6 +819,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dilithiumMontMulByConstant:
   case vmIntrinsics::_dilithiumDecomposePoly:
   case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:

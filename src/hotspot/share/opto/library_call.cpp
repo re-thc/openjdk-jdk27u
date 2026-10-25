@@ -697,6 +697,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_isCompileConstant();
 
   case vmIntrinsics::_encodeUTF8Latin1: return inline_encodeUTF8Latin1();
+  case vmIntrinsics::_encodeUTF8UTF16: return inline_encodeUTF8UTF16();
   case vmIntrinsics::_countPositives:
     return inline_countPositives();
 
@@ -811,7 +812,9 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
 
   switch (intrinsic_id()) {
   case vmIntrinsics::_encodeUTF8Latin1:
-    return inline_encodeUTF8Latin1_predicate();
+    return inline_encodeUTF8_predicate(false);
+  case vmIntrinsics::_encodeUTF8UTF16:
+    return inline_encodeUTF8_predicate(true);
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -9438,7 +9441,7 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 // oversized inputs call it unchanged; only bounded bulk inputs enter the leaf.
 // Use the normal Java call generator for the short/oversized arm, so the
 // original conversion loop remains eligible for inlining and loop optimization.
-Node* LibraryCallKit::inline_encodeUTF8Latin1_predicate() {
+Node* LibraryCallKit::inline_encodeUTF8_predicate(bool utf16) {
   const int maximum = 1024 * 1024;
   if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
     Node* slow = control();
@@ -9446,11 +9449,30 @@ Node* LibraryCallKit::inline_encodeUTF8Latin1_predicate() {
     return slow;
   }
   Node* src = must_be_not_null(argument(0), true);
-  Node* length = _gvn.transform(new SubINode(load_array_length(src), argument(1)));
+  Node* limit = load_array_length(src);
+  if (utf16) {
+    limit = _gvn.transform(new RShiftINode(limit, intcon(1)));
+  }
+  Node* length = _gvn.transform(new SubINode(limit, argument(1)));
   Node* comparison = _gvn.transform(new CmpUNode(
       _gvn.transform(new SubINode(length, intcon((int)SIMDUTFMinLength))),
       intcon(maximum - (int)SIMDUTFMinLength)));
-  return generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
+  Node* slow = generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
+  if (!utf16 || stopped()) {
+    return slow;
+  }
+  // Huge Strings can have an exact-sized destination rather than 3 * length.
+  // Only the bounded native arm needs worst-case room; Java handles the rest.
+  Node* dst = must_be_not_null(argument(2), true);
+  Node* capacity = _gvn.transform(new SubINode(load_array_length(dst), argument(3)));
+  Node* required = _gvn.transform(new MulINode(length, intcon(3)));
+  Node* tight = _gvn.transform(new BoolNode(
+      _gvn.transform(new CmpINode(capacity, required)), BoolTest::lt));
+  RegionNode* slow_region = new RegionNode(3);
+  slow_region->init_req(1, slow == nullptr ? top() : slow);
+  Node* tight_slow = generate_guard(tight, nullptr, PROB_MIN);
+  slow_region->init_req(2, tight_slow == nullptr ? top() : tight_slow);
+  return _gvn.transform(slow_region);
 }
 
 bool LibraryCallKit::inline_encodeUTF8Latin1() {
@@ -9472,5 +9494,56 @@ bool LibraryCallKit::inline_encodeUTF8Latin1() {
       array_element_address(src, start, T_BYTE), length, array_element_address(dst, dp, T_BYTE));
   Node* written = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(_gvn.transform(new AddINode(dp, written)));
+  return true;
+}
+
+
+bool LibraryCallKit::inline_encodeUTF8UTF16() {
+  Node* src = must_be_not_null(argument(0), true);
+  Node* start = argument(1);
+  Node* dst = must_be_not_null(argument(2), true);
+  Node* dp = argument(3);
+  Node* limit = _gvn.transform(new RShiftINode(load_array_length(src), intcon(1)));
+  Node* length = _gvn.transform(new SubINode(limit, start));
+  Node* byte_start = _gvn.transform(new LShiftINode(start, intcon(1)));
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8), "encode_utf16_utf8", TypePtr::BOTTOM,
+      array_element_address(src, byte_start, T_BYTE), length, array_element_address(dst, dp, T_BYTE));
+  Node* written = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  Node* malformed = generate_guard(_gvn.transform(new BoolNode(
+      _gvn.transform(new CmpINode(written, intcon(0))), BoolTest::lt)), nullptr, PROB_MIN);
+  Node* converted_memory = reset_memory();
+  set_all_memory(converted_memory);
+  Node* initial_io = i_o();
+  RegionNode* region = new RegionNode(3);
+  PhiNode* result = new PhiNode(region, TypeInt::INT);
+  PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+  PhiNode* io = new PhiNode(region, Type::ABIO);
+  region->init_req(1, control());
+  result->init_req(1, _gvn.transform(new AddINode(dp, written)));
+  memory->init_req(1, converted_memory);
+  io->init_req(1, initial_io);
+  if (malformed != nullptr) {
+    set_control(malformed);
+    // The output is private. Reuse the original Java loop for replacement or
+    // the original exception, overwriting any prefix written by the converter.
+    CallJavaNode* fallback = generate_method_call(vmIntrinsics::_encodeUTF8UTF16, false, true, false);
+    Node* fallback_result = set_results_for_java_call(fallback);
+    region->init_req(2, control());
+    result->init_req(2, fallback_result);
+    memory->init_req(2, reset_memory());
+    io->init_req(2, i_o());
+  }
+  set_all_memory(_gvn.transform(memory));
+  set_i_o(_gvn.transform(io));
+  set_result(region, result);
   return true;
 }

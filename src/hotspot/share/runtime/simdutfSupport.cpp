@@ -81,3 +81,12 @@ JRT_LEAF(jint, SimdUTF::encode_latin1_utf8(const jbyte* src, jint length, jbyte*
   return checked_cast<jint>(simdutf::convert_latin1_to_utf8(
       reinterpret_cast<const char*>(src), length, reinterpret_cast<char*>(dst)));
 JRT_END
+
+// One validating conversion from immutable String storage into private output.
+// Malformed UTF-16 is handled by the original Java loop, not a replacement API.
+JRT_LEAF(jint, SimdUTF::encode_utf16_utf8(const jbyte* src, jint length, jbyte* dst))
+  assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
+  simdutf::result result = simdutf::convert_utf16_to_utf8_with_errors(
+      reinterpret_cast<const char16_t*>(src), length, reinterpret_cast<char*>(dst));
+  return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
+JRT_END

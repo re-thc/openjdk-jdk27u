@@ -1550,6 +1550,19 @@ public final class String
             dst[dp++] = (byte)c;
             sp++;
         }
+        dp = encodeUTF8UTF16(val, sp, dst, dp, exClass);
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    // String storage is immutable; the caller owns dst and handles its final size.
+    @IntrinsicCandidate
+    private static <E extends Exception> int encodeUTF8UTF16(byte[] val, int sp,
+                                                            byte[] dst, int dp,
+                                                            Class<E> exClass) throws E {
+        int sl = val.length >> 1;
         while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
@@ -1584,10 +1597,7 @@ public final class String
                 dst[dp++] = (byte)(0x80 | (c & 0x3f));
             }
         }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return dp;
     }
 
     /**
