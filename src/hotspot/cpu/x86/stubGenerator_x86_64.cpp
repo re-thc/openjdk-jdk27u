@@ -5011,6 +5011,19 @@ void StubGenerator::generate_compiler_stubs() {
     }
   }
 
+  if (VM_Version::supports_avx512_simd_sort() && VM_Version::supports_avx512vl()
+      && VM_Version::supports_avx2() && VM_Version::supports_popcnt()) {
+    char dll_name[JVM_MAXPATHLEN];
+    char error[1024];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "rangesort")) {
+      void* library = os::dll_load(dll_name, error, sizeof(error));
+      if (library != nullptr) {
+        StubRoutines::_bounded_long_xss_sort =
+            (address)os::dll_lookup(library, "bounded_long_xss_sort");
+      }
+    }
+  }
+
 #endif // COMPILER2
 }
 

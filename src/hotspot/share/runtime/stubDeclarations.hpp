@@ -715,6 +715,9 @@
   do_blob(compiler)                                                     \
   do_stub(compiler, array_sort)                                         \
   do_entry(compiler, array_sort, array_sort, select_arraysort_function) \
+  do_stub(compiler, bounded_long_xss_sort)                              \
+  do_entry(compiler, bounded_long_xss_sort, bounded_long_xss_sort,       \
+           select_bounded_long_xss_sort_function)                       \
   do_stub(compiler, array_partition)                                    \
   do_entry(compiler, array_partition, array_partition,                  \
            select_array_partition_function)                             \

@@ -198,6 +198,7 @@ const TypeFunc* OptoRuntime::_slow_arraycopy_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_unsafe_setmemory_Type               = nullptr;
 const TypeFunc* OptoRuntime::_array_fill_Type                     = nullptr;
 const TypeFunc* OptoRuntime::_array_sort_Type                     = nullptr;
+const TypeFunc* OptoRuntime::_bounded_long_xss_sort_Type           = nullptr;
 const TypeFunc* OptoRuntime::_array_partition_Type                = nullptr;
 const TypeFunc* OptoRuntime::_aescrypt_block_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_cipherBlockChaining_aescrypt_Type   = nullptr;
@@ -974,6 +975,18 @@ static const TypeFunc* make_array_partition_Type() {
   fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_bounded_long_xss_sort_Type() {
+  const Type** fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  fields[TypeFunc::Parms + 3] = TypeRawPtr::BOTTOM;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::BOOL;
+  return TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
 }
 
 static const TypeFunc* make_array_sort_Type() {
@@ -2313,6 +2326,7 @@ void OptoRuntime::initialize_types() {
   _unsafe_setmemory_Type              = make_setmemory_Type();
   _array_fill_Type                    = make_array_fill_Type();
   _array_sort_Type                    = make_array_sort_Type();
+  _bounded_long_xss_sort_Type          = make_bounded_long_xss_sort_Type();
   _array_partition_Type               = make_array_partition_Type();
   _aescrypt_block_Type                = make_aescrypt_block_Type();
   _cipherBlockChaining_aescrypt_Type  = make_cipherBlockChaining_aescrypt_Type();

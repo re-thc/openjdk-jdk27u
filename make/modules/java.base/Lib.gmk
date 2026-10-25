@@ -204,4 +204,34 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
   TARGETS += $(BUILD_LIBSIMD_SORT)
 endif
 
+ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)+$(filter $(TOOLCHAIN_TYPE), gcc), true+true+true+gcc)
+  ##############################################################################
+  ## Private experiment: bounded AVX-512 long-range sort
+  ## RANGE_SORT_BACKEND chooses the linked kernel at build time only.
+  ##############################################################################
+
+  RANGE_SORT_BACKEND ?= embedded
+  ifeq ($(RANGE_SORT_BACKEND),embedded)
+    RANGE_SORT_BACKEND_DEFINE := -DRANGE_SORT_BACKEND_EMBEDDED
+  else ifeq ($(RANGE_SORT_BACKEND),upstream)
+    RANGE_SORT_BACKEND_DEFINE := -DRANGE_SORT_BACKEND_UPSTREAM
+  else
+    $(error RANGE_SORT_BACKEND must be embedded or upstream)
+  endif
+
+  $(eval $(call SetupJdkLibrary, BUILD_LIBRANGE_SORT, \
+      NAME := rangesort, \
+      LINK_TYPE := C++, \
+      OPTIMIZATION := HIGH, \
+      CXXFLAGS := -std=c++17 $(RANGE_SORT_BACKEND_DEFINE) \
+          -fno-exceptions -fno-rtti -fno-omit-frame-pointer \
+          -fstack-usage -fstack-clash-protection, \
+      DISABLED_WARNINGS_gcc := unused-variable, \
+      LIBS_linux := $(LIBM), \
+      LDFLAGS_linux := -Wl$(COMMA)-z$(COMMA)now -Wl$(COMMA)-z$(COMMA)defs, \
+  ))
+
+  TARGETS += $(BUILD_LIBRANGE_SORT)
+endif
+
 ################################################################################

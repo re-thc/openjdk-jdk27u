@@ -346,6 +346,10 @@ class methodHandle;
    do_name(     arrayPartition_name,                             "partition")                                           \
    do_signature(arrayPartition_signature, "(Ljava/lang/Class;Ljava/lang/Object;JIIIILjava/util/DualPivotQuicksort$PartitionOperation;)[I") \
                                                                                                                         \
+  do_intrinsic(_trySortRange,             java_util_DualPivotQuicksort, trySortRange_name, trySortRange_signature, F_S)     \
+   do_name(     trySortRange_name,                               "trySortRange")                                        \
+   do_signature(trySortRange_signature,                          "([JII)Z")                                             \
+                                                                                                                        \
   do_intrinsic(_copyOfRange,              java_util_Arrays,       copyOfRange_name, copyOfRange_signature,       F_S)   \
    do_name(     copyOfRange_name,                                "copyOfRange")                                         \
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \

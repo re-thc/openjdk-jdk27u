@@ -151,6 +151,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _unsafe_setmemory_Type;
   static const TypeFunc* _array_fill_Type;
   static const TypeFunc* _array_sort_Type;
+  static const TypeFunc* _bounded_long_xss_sort_Type;
   static const TypeFunc* _array_partition_Type;
   static const TypeFunc* _aescrypt_block_Type;
   static const TypeFunc* _cipherBlockChaining_aescrypt_Type;
@@ -478,6 +479,11 @@ private:
   static inline const TypeFunc* array_sort_Type() {
     assert(_array_sort_Type != nullptr, "should be initialized");
     return _array_sort_Type;
+  }
+
+  static inline const TypeFunc* bounded_long_xss_sort_Type() {
+    assert(_bounded_long_xss_sort_Type != nullptr, "should be initialized");
+    return _bounded_long_xss_sort_Type;
   }
 
   static inline const TypeFunc* array_partition_Type() {

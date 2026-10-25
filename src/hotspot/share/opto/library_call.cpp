@@ -291,6 +291,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraySort:                return inline_array_sort();
   case vmIntrinsics::_arrayPartition:           return inline_array_partition();
+  case vmIntrinsics::_trySortRange:             return inline_try_sort_range();
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -6029,6 +6030,64 @@ bool LibraryCallKit::inline_array_sort() {
   return true;
 }
 
+
+bool LibraryCallKit::inline_try_sort_range() {
+  address stub = StubRoutines::select_bounded_long_xss_sort_function();
+  if (stub == nullptr || !Matcher::supports_simd_sort(T_LONG)
+      || too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+  Node* array = argument(0);
+  Node* low = argument(1);
+  Node* high = argument(2);
+  if (array == nullptr || array->is_top()) {
+    return false;
+  }
+  const TypeAryPtr* array_type = _gvn.type(array)->isa_aryptr();
+  if (array_type == nullptr || array_type->elem()->basic_type() != T_LONG) {
+    return false;
+  }
+
+  RegionNode* slow = new RegionNode(1);
+  Node* is_null = _gvn.transform(new BoolNode(
+      _gvn.transform(new CmpPNode(array, null())), BoolTest::eq));
+  generate_guard(is_null, slow, PROB_MIN);
+  if (!stopped()) {
+    // Keep the deoptimization map on the original input, not the fast-path cast.
+    array = cast_not_null(array, false);
+    Node* length = load_array_length(array);
+    Node* low_after_high = _gvn.transform(new BoolNode(
+        _gvn.transform(new CmpUNode(low, high)), BoolTest::gt));
+    generate_guard(low_after_high, slow, PROB_MIN);
+    Node* high_after_length = _gvn.transform(new BoolNode(
+        _gvn.transform(new CmpUNode(high, length)), BoolTest::gt));
+    generate_guard(high_after_length, slow, PROB_MIN);
+    Node* size = _gvn.transform(new SubINode(high, low));
+    Node* shifted = _gvn.transform(new SubINode(size, intcon(512)));
+    Node* outside_bound = _gvn.transform(new BoolNode(
+        _gvn.transform(new CmpUNode(shifted, intcon(8192 - 512))), BoolTest::gt));
+    generate_guard(outside_bound, slow, PROB_MIN);
+  }
+  if (slow->req() > 1) {
+    PreserveJVMState state(this);
+    set_control(_gvn.transform(slow));
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_maybe_recompile);
+  }
+  if (!stopped()) {
+    Node* thread = _gvn.transform(new ThreadLocalNode());
+    Node* limit_address = off_heap_plus_addr(
+        thread, in_bytes(JavaThread::stack_overflow_limit_offset()));
+    Node* stack_limit = make_load(control(), limit_address,
+        limit_address->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
+    Node* address = array_element_address(array, intcon(0), T_LONG);
+    Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+        OptoRuntime::bounded_long_xss_sort_Type(), stub,
+        "bounded_long_xss_sort_stub", TypePtr::BOTTOM, address, low, high, stack_limit);
+    set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  }
+  return true;
+}
 
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,

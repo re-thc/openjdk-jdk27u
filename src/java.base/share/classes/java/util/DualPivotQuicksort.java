@@ -1014,6 +1014,11 @@ final class DualPivotQuicksort {
 
 // [long]
 
+    @IntrinsicCandidate
+    private static boolean trySortRange(long[] a, int low, int high) {
+        return false;
+    }
+
     /**
      * Sorts the specified range of the array using parallel merge
      * sort and/or Dual-Pivot Quicksort.
@@ -1078,6 +1083,10 @@ final class DualPivotQuicksort {
              */
             if ((bits == 0 || size > MIN_TRY_MERGE_SIZE && (bits & 1) > 0)
                     && tryMergeRuns(sorter, a, low, size)) {
+                return;
+            }
+
+            if (size >= 512 && size <= 8192 && trySortRange(a, low, high)) {
                 return;
             }
 

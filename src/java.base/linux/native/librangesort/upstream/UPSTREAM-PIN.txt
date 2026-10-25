@@ -1,0 +1,6 @@
+Source: Intel x86-simd-sort
+Commit: 6e059b14975df2e3c74260ec905167a1be5a34ca
+License: BSD-3-Clause; see LICENSE.md.
+Local changes in xss-common-qsort.h cap recursion, guard child index ranges,
+and use an index-bounded in-place heapsort for progress fallback.
+The fixed AVX-512 long entry is in ../range-sort.cpp.
