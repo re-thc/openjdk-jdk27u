@@ -181,19 +181,16 @@ public final class FloatToDecimal extends ToDecimal {
         return isLatin1() ? putDecimalLatin1(str, index, v) : putDecimalUTF16(str, index, v);
     }
 
-    @ForceInline
     @IntrinsicCandidate
     public static int putDecimalLatin1(byte[] str, int index, float v) {
         return LATIN1.putDecimalJava(str, index, v);
     }
 
-    @ForceInline
     @IntrinsicCandidate
     public static int putDecimalUTF16(byte[] str, int index, float v) {
         return UTF16.putDecimalJava(str, index, v);
     }
 
-    @ForceInline
     private int putDecimalJava(byte[] str, int index, float v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
@@ -234,7 +231,6 @@ public final class FloatToDecimal extends ToDecimal {
         return LATIN1.toDecimalJava(str, index, v);
     }
 
-    @ForceInline
     private int toDecimalJava(byte[] str, int index, float v) {
         /*
          * For full details see references [2] and [1].
