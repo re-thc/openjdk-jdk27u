@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,6 +50,9 @@ compile-commands:
 headless:
 	+$(MAKE) -f TestHeadless.gmk $(TEST_SUBTARGET)
 
+compact-pattern-plans:
+	+$(MAKE) -f TestCompactPatternPlans.gmk
+
 prebuilt-spec:
 	+$(MAKE) -f TestPrebuiltSpec.gmk
 
@@ -57,7 +61,7 @@ configure:
 	    "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)"
 
 TARGETS += make-base java-compilation copy-files execute fix-deps-file idea \
-    compile-commands configure headless prebuilt-spec
+    compile-commands configure headless prebuilt-spec compact-pattern-plans
 
 # Prints targets to TARGETS_FILE which must be set when calling this target.
 print-targets:

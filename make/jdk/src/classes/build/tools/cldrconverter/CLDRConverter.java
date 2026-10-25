@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +311,11 @@ public class CLDRConverter {
         convertBundles(bundles);
 
         if (isBaseModule) {
+            // Keep the catalogue bounded to the selected target pattern arrays.
+            CompactPatternPlansGenerator.generate(Paths.get(DESTINATION_DIR), compactPatternPlans.stream()
+                    .filter(i -> i.locale().equals("en") && i.width().equals("short.CompactNumberPatterns")
+                            || i.locale().equals("ru") && i.width().equals("long.CompactNumberPatterns"))
+                    .toList());
             // Generate java.time.format.ZoneName.java
             generateZoneName();
 
@@ -578,6 +584,8 @@ public class CLDRConverter {
         return candList;
     }
 
+    private static final List<CompactPatternPlansGenerator.Input> compactPatternPlans = new ArrayList<>();
+
     private static void convertBundles(List<Bundle> bundles) throws Exception {
         var availableLangTags = metaInfo.get("AvailableLocales");
 
@@ -593,6 +601,13 @@ public class CLDRConverter {
             // visible for the bundle's locale
 
             Map<String, Object> targetMap = bundle.getTargetMap();
+            if (isBaseModule) {
+                for (String key : List.of("short.CompactNumberPatterns", "long.CompactNumberPatterns")) {
+                    if (targetMap.get(key) instanceof String[] patterns) {
+                        compactPatternPlans.add(new CompactPatternPlansGenerator.Input(bundle.getID(), key, patterns.clone()));
+                    }
+                }
+            }
             EnumSet<Bundle.Type> bundleTypes = bundle.getBundleTypes();
             var id = bundle.getID();
 

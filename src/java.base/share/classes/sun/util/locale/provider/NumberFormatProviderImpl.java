@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +42,7 @@
 package sun.util.locale.provider;
 
 import java.text.CompactNumberFormat;
+import jdk.internal.access.SharedSecrets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -274,8 +276,11 @@ public class NumberFormatProviderImpl extends NumberFormatProvider implements Av
         // plural rules
         String[] rules = resource.getRules();
 
-        return new CompactNumberFormat(numberPatterns[0],
-                symbols, cnPatterns, rules[0]);
+        if (type == LocaleProviderAdapter.Type.CLDR) {
+            return SharedSecrets.getJavaTextAccess().createCompactNumberFormat(
+                    numberPatterns[0], symbols, cnPatterns, rules[0]);
+        }
+        return new CompactNumberFormat(numberPatterns[0], symbols, cnPatterns, rules[0]);
     }
 
     @Override
