@@ -43,7 +43,35 @@ bool Zmij::is_enabled() {
 }
 
 int Zmij::format(void* output, uint64_t bits, int format) {
-  return format_impl(output, bits, format, zmij::detail::write<double>, zmij::detail::write<float>);
+  bool is_double = (format & 1) != 0;
+  // Wide upstream stores stay in this initialized stack buffer.
+  char buffer[40] = {};
+  char* end;
+  if (is_double) {
+    double value;
+    memcpy(&value, &bits, sizeof(value));
+    end = zmij::detail::write<double>(buffer, value);
+  } else {
+    uint32_t raw = uint32_t(bits);
+    float value;
+    memcpy(&value, &raw, sizeof(value));
+    end = zmij::detail::write<float>(buffer, value);
+  }
+  int length = int(end - buffer);
+  if ((format & 2) != 0) {
+    uint16_t* utf16 = static_cast<uint16_t*>(output);
+    for (int i = 0; i < length; ++i) {
+      utf16[i] = uint8_t(buffer[i]);
+    }
+  } else {
+    // Constant-sized copies avoid libc. Padding remains within MAX_CHARS.
+    if (is_double) {
+      memcpy(output, buffer, 24);
+    } else {
+      memcpy(output, buffer, 15);
+    }
+  }
+  return length;
 }
 
 uint64_t Zmij::decimal(uint64_t bits) {

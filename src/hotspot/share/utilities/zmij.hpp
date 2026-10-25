@@ -36,41 +36,6 @@ class Zmij : AllStatic {
   // The caller supplies a finite, nonzero value and reserves MAX_CHARS characters.
   static uint64_t decimal(uint64_t bits);
   static int format(void* output, uint64_t bits, int format);
- private:
-  typedef char* (*DoubleWriter)(char* buffer, double value);
-  typedef char* (*FloatWriter)(char* buffer, float value);
-  static inline int format_impl(void* output, uint64_t bits, int format,
-                                DoubleWriter double_writer, FloatWriter float_writer) {
-    bool is_double = (format & 1) != 0;
-    // Wide upstream stores stay in this initialized stack buffer.
-    char buffer[40] = {};
-    char* end;
-    if (is_double) {
-      double value;
-      memcpy(&value, &bits, sizeof(value));
-      end = double_writer(buffer, value);
-    } else {
-      uint32_t raw = uint32_t(bits);
-      float value;
-      memcpy(&value, &raw, sizeof(value));
-      end = float_writer(buffer, value);
-    }
-    int length = int(end - buffer);
-    if ((format & 2) != 0) {
-      uint16_t* utf16 = static_cast<uint16_t*>(output);
-      for (int i = 0; i < length; ++i) {
-        utf16[i] = uint8_t(buffer[i]);
-      }
-    } else {
-      // Constant-sized copies avoid libc. Padding remains within MAX_CHARS.
-      if (is_double) {
-        memcpy(output, buffer, 24);
-      } else {
-        memcpy(output, buffer, 15);
-      }
-    }
-    return length;
-  }
 };
 
 #endif // SHARE_UTILITIES_ZMIJ_HPP
