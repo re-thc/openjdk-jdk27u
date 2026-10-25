@@ -48,7 +48,7 @@ inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, i
 template <typename T>
 inline void* Array<T>::operator new(size_t size, int length, MemTag flags) throw() {
   size = Array::size(length) * BytesPerWord;
-  void* p = AllocateHeap(size * BytesPerWord, flags);
+  void* p = AllocateHeap(size, flags);
   memset(p, 0, size);
   return p;
 }
