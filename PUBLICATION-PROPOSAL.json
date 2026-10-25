@@ -1,0 +1,27 @@
+{
+  "CI": "Sourcecheckpointworkflow main pushes onlymaster; otherrepositoryworkflows are reusableworkflow_call. Handofforphan contains no workflowfiles. No CI settings/workflowchanges/manualdispatch proposed. Reverify before an authorizedpush.",
+  "binary_evidence_policy": "Keep all oldrawCSV/JFR/compilerlogs/images/toolchains/buildobjects at existingworkspace locations. Manifestlinks are identities only.",
+  "fresh_task": "Fetch exactapprovedcheckpointheads with Git, verify source tree69c803e3 and manifestationhashes, keep handoffbranch separate from product. No Library, archive, images or rawresult transfer.",
+  "handoff_branch": "checkpoint/pr57-handoff-20261025",
+  "performed": {
+    "CI_dispatches": 0,
+    "JVMs": 0,
+    "Library_calls": 0,
+    "builds": 0,
+    "cleanup": 0,
+    "merges": 0,
+    "remote_pushes": 0,
+    "sorting_benchmarks": 0
+  },
+  "publish_scope": "Only two newcheckpointrefs, no --all/--mirror/force, no edits to master or PR57. Re-read remote refs before any authorizedpush and stop on unexpectedexistingname.",
+  "remote_choice": "Existingauthorizedhttps://github.com/re-thc/openjdk-jdk27u.git if unpublishedsource+handoffmetadata publication is explicitlyapproved; otherwise an approvedprivateGitremote with the publicbase available. Do not assume a privatebranch exists inside a publicrepository.",
+  "reviewed_handoff_parent": "d15de8791836e02963972365d8ecb13e1bacd097",
+  "schema": "pr57-minimal-git-handoff-proposal-v1",
+  "source_authors": "Harry Chan author andcommitter for both newcheckpointincrements.",
+  "source_branch": "checkpoint/pr57-initial-source-20261025",
+  "source_head": "a144cd459f144f3b5626ba3344945c1e51cc5d69",
+  "source_limit": "Initial32-file sourcecheckpoint, not fullc6. Preserve exactc6identity/metadata record and unavailabletree58222e0 gap. Reconstruct/review missing modernlegal/nulltests and96/10controller source before later build/qualification work.",
+  "source_trigger_excerpt": "on:\n  push:\n    branches: [master]\n  pull_request:\n    branches: [master]\n  workflow_dispatch:\n    inputs:\n      platforms:\n        description: 'Targets: linux-x64, linux-aarch64, macos-aarch64, windows-x64'\n        required: true\n        default: 'linux-x64, linux-aarch64, macos-aarch64, windows-x64'\n      configure-arguments:\n        description: 'Additional configure arguments'\n        required: false\n      make-arguments:\n        description: 'Additional make arguments'\n        required: false\n      dry-run:\n        description: 'Skip builds and tests; only prepare dependencies and configure'\n        type: boolean\n        default: false\n\npermissions:\n  contents: read\n\nconcurrency:\n  # PR updates share refs/pull/<number>/merge; branch runs share refs/heads/<branch>.\n  # Keep this key independent of the commit so new runs cancel stale builds/tests.\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true",
+  "state": "PROPOSAL_ONLY_NO_REMOTE_WRITE",
+  "storage": "Local checkpointrepo under/tmp is temporary because originalpersistentGitwrite failedENOSPC. Commit refs are not a confirmed durable remote handoff. Do not drop currentenvironment before approvedGitpublication is confirmed."
+}
