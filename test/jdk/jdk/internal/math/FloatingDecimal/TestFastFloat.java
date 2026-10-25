@@ -157,12 +157,24 @@ public class TestFastFloat {
                     check("\t" + sign + digits + "D\r");
                     check(sign + digits + "f");
                 }
-                for (String ending : new String[] {"x", " f", "ff", "df", "e", "e+", ".1e-20"}) {
-                    check(digits + ending);
+                for (String ending : new String[] {"x", " f", "ff", "df", "e", "e+",
+                        ".", ".e", ".e+", ".e-20", ".1e-20"}) {
+                    for (String sign : new String[] {"", "+", "-"}) {
+                        check(sign + digits + ending);
+                    }
                 }
                 for (String sign : new String[] {"++", "+-", "--", "-+"}) {
                     check(sign + digits);
                 }
+            }
+        }
+        // Raw length dispatch must preserve normalization and malformed-input fallback.
+        for (int length : new int[] {24, 25, 26, 1023, 1024, 1025}) {
+            for (String token : new String[] {"", "+", "-", "f", "D", "1", "-0", "+1",
+                    "1 f", "1d ", "123.5e2", "0x1.8p3", "NaN", "Infinity", "+NaN", "+-1"}) {
+                String padding = " ".repeat(length - token.length());
+                check(padding + token);
+                check(token + padding);
             }
         }
         // Integer halfway values and their neighbors must round once to the target type.

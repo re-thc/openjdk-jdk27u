@@ -26,53 +26,9 @@
 #include "utilities/fast_float/fast_float.h"
 #include "utilities/fastFloat.hpp"
 
-#include <cmath>
 #include <limits>
 
 namespace {
-
-// Tokenize long integers once, retaining the full span for exact rounding.
-// Keep its token and validation work out of the ordinary decimal parser.
-template <typename T, typename C>
-NOINLINE double parse_long_java_integer(const C* first, const C* last) {
-  bool negative = *first == C('-');
-  if (*first == C('-') || *first == C('+')) {
-    ++first;
-  }
-  const C* significant = first;
-  fast_float::skip_zeros(significant, last);
-  const C* prefix_end = significant + MIN2(int(last - significant), 19);
-  const C* cursor = significant;
-  uint64_t mantissa = 0;
-  fast_float::loop_parse_if_eight_digits(cursor, prefix_end, mantissa);
-  while (cursor != prefix_end && fast_float::is_integer(*cursor)) {
-    mantissa = mantissa * 10 + (*cursor++ - C('0'));
-  }
-  if (cursor != prefix_end) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
-  // The prefix fits uint64_t. Validate the rest without accumulating its value.
-  uint64_t unused = 0;
-  fast_float::loop_parse_if_eight_digits(cursor, last, unused);
-  while (cursor != last && fast_float::is_integer(*cursor)) {
-    ++cursor;
-  }
-  if (cursor != last) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
-  fast_float::parsed_number_string_t<C> parsed;
-  parsed.negative = negative;
-  parsed.mantissa = mantissa;
-  parsed.exponent = last - prefix_end;
-  parsed.too_many_digits = last - significant > 19;
-  parsed.integer = fast_float::span<const C>(first, last - first);
-  parsed.lastmatch = last;
-  parsed.valid = true;
-  T result;
-  auto converted = fast_float::from_chars_advanced(parsed, result);
-  return converted.ec == std::errc() || converted.ec == std::errc::result_out_of_range
-      ? result : std::numeric_limits<double>::quiet_NaN();
-}
 
 template <typename T, typename C>
 double parse_java_decimal(const C* first, const C* last) {
@@ -89,13 +45,6 @@ double parse_java_decimal(const C* first, const C* last) {
   const auto format = fast_float::chars_format::general |
                       fast_float::chars_format::allow_leading_plus |
                       fast_float::chars_format::no_infnan;
-  // Keep canonical Double.toString output (at most 24 characters) on the general path.
-  if (last - first > 24) {
-    double result = parse_long_java_integer<T>(first, last);
-    if (!std::isnan(result)) {
-      return result;
-    }
-  }
   T result;
   auto parsed = fast_float::from_chars(first, last, result, format);
   // Java specifies correctly rounded infinities and signed zeros on range errors.
@@ -106,11 +55,24 @@ double parse_java_decimal(const C* first, const C* last) {
   return std::numeric_limits<double>::quiet_NaN();
 }
 
+// Keep Latin1 conversion separate from the shared coder and type dispatch.
+template <typename T>
+NOINLINE double parse_java_decimal_latin1(const char* first, const char* last) {
+  return parse_java_decimal<T>(first, last);
+}
+
 template <typename C>
 double parse_java_decimal(const void* value, int length, int ix) {
   const C* first = static_cast<const C*>(value);
   return ix == 1 ? parse_java_decimal<float>(first, first + length)
                  : parse_java_decimal<double>(first, first + length);
+}
+
+template <>
+double parse_java_decimal<char>(const void* value, int length, int ix) {
+  const char* first = static_cast<const char*>(value);
+  return ix == 1 ? parse_java_decimal_latin1<float>(first, first + length)
+                 : parse_java_decimal_latin1<double>(first, first + length);
 }
 
 template <typename T, typename C>

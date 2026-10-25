@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+// Local modifications are available under the upstream MIT license.
+
 #ifndef FASTFLOAT_PARSE_NUMBER_H
 #define FASTFLOAT_PARSE_NUMBER_H
 
@@ -320,13 +323,35 @@ from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
   return answer;
 }
 
-// Slow path: re-parse materializing the integer/fraction spans the hot no-span
-// parse skipped, then run the full algorithm. The two callers reach it only
-// through a fastfloat_unlikely branch, so the optimizer keeps this re-parse off
-// the hot path on its own (no function-level noinline needed).
-// from_chars_advanced already handles both the too_many_digits disambiguation
-// and the am.power2<0 digit_comp recompute, so both slow branches collapse to
-// one helper call.
+template <typename T> struct long_number_result {
+  T value;
+  std::errc ec;
+};
+
+// Keep preparation and its parsed object behind the existing cold conversion.
+template <typename T, typename UC>
+fastfloat_never_inline FASTFLOAT_CONSTEXPR20 long_number_result<T>
+parse_number_long_path(long_mantissa_input<UC> const &input,
+                        UC decimal_point) noexcept {
+  parsed_number_string_t<UC> pns;
+  pns.lastmatch = input.lastmatch;
+  pns.negative = input.negative;
+  pns.valid = true;
+  pns.too_many_digits = true;
+  uint64_t mantissa = 0;
+  int64_t exponent = input.exponent;
+  finish_long_mantissa(pns, input.start_digits, input.raw_digit_count,
+                       decimal_point, false, mantissa, exponent,
+                       static_cast<long_mantissa_input<UC> *>(nullptr));
+  pns.mantissa = mantissa;
+  pns.exponent = exponent;
+  T value;
+  auto answer = from_chars_advanced(pns, value);
+  return {value, answer.ec};
+}
+
+// Re-parse only when a short mantissa needs digit_comp and its spans were
+// omitted by the first scan. Long mantissas already retain their spans.
 template <typename T, typename UC>
 FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
 parse_number_slow_path(UC const *first, UC const *last, T &value,
@@ -402,15 +427,11 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
   }
   bool const bjf = uint64_t(fmt & detail::basic_json_fmt) != 0;
 
-  // Fast path: parse WITHOUT materializing the integer/fraction spans (read
-  // only by the rare slow paths). Skipping their stores keeps the fat
-  // parsed_number_string_t off the hot path. store_spans is a runtime argument,
-  // so this reuses the single parse_number_string_impl instantiation.
-  parsed_number_string_t<UC> pns =
-      bjf ? parse_number_string_impl<true, false, UC>(first, last, options,
-                                                      false)
-          : parse_number_string_impl<false, false, UC>(first, last, options,
-                                                       false);
+  // Long results carry only resume state; the cold helper owns their spans.
+  long_mantissa_input<UC> resume;
+  scanned_number_string_t<UC> pns =
+      bjf ? parse_number_string_for_conversion<true>(first, last, options, resume)
+          : parse_number_string_for_conversion<false>(first, last, options, resume);
   if (!pns.valid) {
     if (uint64_t(fmt & chars_format::no_infnan)) {
       answer.ec = std::errc::invalid_argument;
@@ -421,9 +442,7 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
     }
   }
 
-  // Slow path A (rare): > 19 significant digits. The no-span parse left the
-  // mantissa un-truncated and skipped the span-based recompute; the cold helper
-  // re-parses with spans and runs the full algorithm.
+  // Slow path A (rare): prepare and convert the already classified long token.
   //
 // We have to disable -Wc++20-extensions for the [[unlikely]] attribute
 // See comment for @jwakely at
@@ -436,7 +455,9 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
 #endif
 #endif
   if fastfloat_unlikely (pns.too_many_digits) {
-    return parse_number_slow_path<T, UC>(first, last, value, options, bjf);
+    auto converted = parse_number_long_path<T>(resume, options.decimal_point);
+    value = converted.value;
+    return {resume.lastmatch, converted.ec};
   }
   answer.ec = std::errc(); // be optimistic
   answer.ptr = pns.lastmatch;

@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+// Local modifications are available under the upstream MIT license.
+
 #ifndef FASTFLOAT_ASCII_NUMBER_H
 #define FASTFLOAT_ASCII_NUMBER_H
 
@@ -329,34 +332,150 @@ template <typename UC> struct parsed_number_string_t {
 using byte_span = span<char const>;
 using parsed_number_string = parsed_number_string_t<char>;
 
-template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
+// Internal conversion scan: long mantissas are completed by the cold converter.
+// Only short results have a usable mantissa and exponent here.
+template <typename UC> struct scanned_number_string_t {
+  int64_t exponent{0};
+  uint64_t mantissa{0};
+  UC const *lastmatch{nullptr};
+  parse_error error{parse_error::no_error};
+  bool negative{false};
+  bool valid{false};
+  bool too_many_digits{false};
+};
+
+// Fully assigned only after a long significant mantissa has been classified.
+template <typename UC> struct long_mantissa_input {
+  UC const *start_digits;
+  int64_t raw_digit_count;
+  int64_t exponent;
+  UC const *lastmatch;
+  bool negative;
+};
+
+template <typename UC, typename Result = parsed_number_string_t<UC>>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 Result
 report_parse_error(UC const *p, parse_error error) {
-  parsed_number_string_t<UC> answer;
+  Result answer;
   answer.valid = false;
   answer.lastmatch = p;
   answer.error = error;
   return answer;
 }
 
-// Assuming that you use no more than 19 digits, this will
-// parse an ASCII string.
-//
-// store_spans is a *runtime* flag (not a template parameter, deliberately: a
-// template would create a second instantiation of this whole function and the
-// extra icache pressure wipes out the gain). When false, the integer/fraction
-// spans (read only by the rare digit_comp slow path) are not materialized,
-// which keeps the fat parsed_number_string_t off the hot path. The caller
-// re-parses with store_spans=true if the slow path is actually reached.
-template <bool basic_json_fmt, bool basic_javascript_fmt, typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
-parse_number_string_impl(UC const *p, UC const *pend,
-                         parse_options_t<UC> options,
-                         bool store_spans) noexcept {
+// Return the prefix by value without exposing the parsed result to a callee.
+struct long_mantissa_prefix {
+  uint64_t mantissa;
+  int64_t exponent_adjustment;
+};
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 long_mantissa_prefix
+parse_long_mantissa_prefix(UC const *integer, size_t integer_length,
+                           UC const *fraction, size_t fraction_length,
+                           int64_t raw_digit_count) noexcept {
+  uint64_t i = 0;
+  UC const *p = integer;
+  UC const *int_end = p + integer_length;
+  uint64_t const minimal_nineteen_digit_integer{1000000000000000000};
+  while ((i < minimal_nineteen_digit_integer) && (p != int_end)) {
+    i = i * 10 + uint64_t(*p - UC('0'));
+    ++p;
+  }
+  int64_t consumed_digits = p - integer;
+  if (i < minimal_nineteen_digit_integer) {
+    p = fraction;
+    UC const *frac_end = p + fraction_length;
+    while ((i < minimal_nineteen_digit_integer) && (p != frac_end)) {
+      i = i * 10 + uint64_t(*p - UC('0'));
+      ++p;
+    }
+    consumed_digits += p - fraction;
+  }
+  // Omitting a digit raises the truncated prefix's exponent by one.
+  return {i, raw_digit_count - consumed_digits};
+}
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+record_integer_span(parsed_number_string_t<UC> &answer, UC const *first,
+                    size_t length, bool store_spans) noexcept {
+  if (store_spans) {
+    answer.integer = span<UC const>(first, length);
+  }
+}
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+record_integer_span(scanned_number_string_t<UC> &, UC const *, size_t,
+                    bool) noexcept {}
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+record_fraction_span(parsed_number_string_t<UC> &answer, UC const *first,
+                     size_t length, bool store_spans) noexcept {
+  if (store_spans) {
+    answer.fraction = span<UC const>(first, length);
+  }
+}
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+record_fraction_span(scanned_number_string_t<UC> &, UC const *, size_t,
+                     bool) noexcept {}
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+finish_long_mantissa(parsed_number_string_t<UC> &answer,
+                     UC const *start_digits, int64_t raw_digit_count,
+                     UC decimal_point, bool store_spans, uint64_t &i,
+                     int64_t &exponent, long_mantissa_input<UC> *) noexcept {
+  if (!store_spans) {
+    // Recover the split only here, without retaining the explicit exponent.
+    UC const *const digit_end = start_digits + raw_digit_count;
+    UC const *integer_end = digit_end;
+    if (digit_end < answer.lastmatch &&
+        (is_integer(*digit_end) || *digit_end == decimal_point)) {
+      // A decimal point adds one character beyond the raw digit count.
+      integer_end = start_digits;
+      while (integer_end != digit_end && *integer_end != decimal_point) {
+        ++integer_end;
+      }
+      answer.fraction = span<UC const>(integer_end + 1,
+                                      size_t(digit_end - integer_end));
+    }
+    answer.integer = span<UC const>(start_digits,
+                                    size_t(integer_end - start_digits));
+  }
+  auto prefix = parse_long_mantissa_prefix(
+      answer.integer.ptr, answer.integer.len(), answer.fraction.ptr,
+      answer.fraction.len(), raw_digit_count);
+  i = prefix.mantissa;
+  exponent += prefix.exponent_adjustment;
+}
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+finish_long_mantissa(scanned_number_string_t<UC> &answer,
+                     UC const *start_digits, int64_t raw_digit_count, UC,
+                     bool, uint64_t &, int64_t &exponent,
+                     long_mantissa_input<UC> *resume) noexcept {
+  *resume = {start_digits, raw_digit_count, exponent, answer.lastmatch,
+             answer.negative};
+}
+
+// Prepared results honor the runtime store_spans flag. Internal conversion
+// results defer long preparation; both modes use the same grammar scanner.
+template <bool basic_json_fmt, bool basic_javascript_fmt, typename UC,
+          typename Result>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 Result
+scan_number_string_impl(UC const *p, UC const *pend,
+                        parse_options_t<UC> options, bool store_spans,
+                        long_mantissa_input<UC> *resume) noexcept {
   chars_format const fmt = detail::adjust_for_feature_macros(options.format);
   UC const decimal_point = options.decimal_point;
 
-  parsed_number_string_t<UC> answer;
+  Result answer;
   answer.valid = false;
   answer.too_many_digits = false;
   // assume p < pend, so dereference without checks;
@@ -366,12 +485,12 @@ parse_number_string_impl(UC const *p, UC const *pend,
                           !basic_json_fmt && *p == UC('+'))) {
     ++p;
     if (p == pend) {
-      return report_parse_error<UC>(
+      return report_parse_error<UC, Result>(
           p, parse_error::missing_integer_or_dot_after_sign);
     }
     FASTFLOAT_IF_CONSTEXPR17(basic_json_fmt) {
       if (!is_integer(*p)) { // a sign must be followed by an integer
-        return report_parse_error<UC>(p,
+        return report_parse_error<UC, Result>(p,
                                       parse_error::missing_integer_after_sign);
       }
     }
@@ -379,7 +498,7 @@ parse_number_string_impl(UC const *p, UC const *pend,
       if (!is_integer(*p) &&
           (*p !=
            decimal_point)) { // a sign must be followed by an integer or the dot
-        return report_parse_error<UC>(
+        return report_parse_error<UC, Result>(
             p, parse_error::missing_integer_or_dot_after_sign);
       }
     }
@@ -421,16 +540,15 @@ parse_number_string_impl(UC const *p, UC const *pend,
   }
   UC const *const end_of_integer_part = p;
   int64_t digit_count = int64_t(end_of_integer_part - start_digits);
-  if (store_spans) {
-    answer.integer = span<UC const>(start_digits, size_t(digit_count));
-  }
+  record_integer_span(answer, start_digits, size_t(digit_count), store_spans);
   FASTFLOAT_IF_CONSTEXPR17(basic_json_fmt) {
     // at least 1 digit in integer part, without leading zeros
     if (digit_count == 0) {
-      return report_parse_error<UC>(p, parse_error::no_digits_in_integer_part);
+      return report_parse_error<UC, Result>(
+          p, parse_error::no_digits_in_integer_part);
     }
     if ((start_digits[0] == UC('0') && digit_count > 1)) {
-      return report_parse_error<UC>(start_digits,
+      return report_parse_error<UC, Result>(start_digits,
                                     parse_error::leading_zeros_in_integer_part);
     }
   }
@@ -440,7 +558,7 @@ parse_number_string_impl(UC const *p, UC const *pend,
     // (".5"); the no_digits_in_mantissa check below still rejects ".".
     if ((digit_count > 1) && (start_digits[0] == UC('0'))) {
       if (!uint64_t(fmt & detail::basic_javascript_sloppy_fmt)) {
-        return report_parse_error<UC>(
+        return report_parse_error<UC, Result>(
             start_digits, parse_error::leading_zeros_in_integer_part);
       }
       // Sloppy mode (Annex B): a NonOctalDecimalIntegerLiteral has a leading
@@ -453,7 +571,7 @@ parse_number_string_impl(UC const *p, UC const *pend,
         has_non_octal_digit |= (*q >= UC('8'));
       }
       if (!has_non_octal_digit) {
-        return report_parse_error<UC>(start_digits,
+        return report_parse_error<UC, Result>(start_digits,
                                       parse_error::legacy_octal_integer_part);
       }
     }
@@ -474,20 +592,18 @@ parse_number_string_impl(UC const *p, UC const *pend,
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
     }
     exponent = before - p;
-    if (store_spans) {
-      answer.fraction = span<UC const>(before, size_t(p - before));
-    }
+    record_fraction_span(answer, before, size_t(p - before), store_spans);
     digit_count -= exponent;
   }
   FASTFLOAT_IF_CONSTEXPR17(basic_json_fmt) {
     // at least 1 digit in fractional part
     if (has_decimal_point && exponent == 0) {
-      return report_parse_error<UC>(p,
+      return report_parse_error<UC, Result>(p,
                                     parse_error::no_digits_in_fractional_part);
     }
   }
   else if (digit_count == 0) { // we must have encountered at least one integer!
-    return report_parse_error<UC>(p, parse_error::no_digits_in_mantissa);
+    return report_parse_error<UC, Result>(p, parse_error::no_digits_in_mantissa);
   }
   int64_t exp_number = 0; // explicit exponential part
   if ((uint64_t(fmt & chars_format::scientific) && (p != pend) &&
@@ -514,7 +630,8 @@ parse_number_string_impl(UC const *p, UC const *pend,
         // The exponential part is invalid for scientific notation, so it must
         // be a trailing token for fixed notation. However, fixed notation is
         // disabled, so report a scientific notation error.
-        return report_parse_error<UC>(p, parse_error::missing_exponential_part);
+        return report_parse_error<UC, Result>(
+            p, parse_error::missing_exponential_part);
       }
       // Otherwise, we will be ignoring the 'e'.
       p = location_of_e;
@@ -535,7 +652,7 @@ parse_number_string_impl(UC const *p, UC const *pend,
     // If it scientific and not fixed, we have to bail out.
     if (uint64_t(fmt & chars_format::scientific) &&
         !uint64_t(fmt & chars_format::fixed)) {
-      return report_parse_error<UC>(p, parse_error::missing_exponential_part);
+      return report_parse_error<UC, Result>(p, parse_error::missing_exponential_part);
     }
   }
   answer.lastmatch = p;
@@ -547,6 +664,7 @@ parse_number_string_impl(UC const *p, UC const *pend,
   //
   // We can deal with up to 19 digits.
   if (digit_count > 19) { // this is uncommon
+    int64_t const raw_digit_count = digit_count;
     // It is possible that the integer had an overflow.
     // We have to handle the case where we have 0.0000somenumber.
     // We need to be mindful of the case where we only have zeroes...
@@ -561,40 +679,33 @@ parse_number_string_impl(UC const *p, UC const *pend,
 
     if (digit_count > 19) {
       answer.too_many_digits = true;
-      // The truncation recompute below reads the integer/fraction spans. When
-      // store_spans is false we didn't materialize them, so just flag
-      // too_many_digits; the caller re-parses with store_spans=true to obtain
-      // the corrected mantissa/exponent before taking the slow path.
-      if (store_spans) {
-        // Let us start again, this time, avoiding overflows.
-        // We don't need to call if is_integer, since we use the
-        // pre-tokenized spans from above.
-        i = 0;
-        p = answer.integer.ptr;
-        UC const *int_end = p + answer.integer.len();
-        uint64_t const minimal_nineteen_digit_integer{1000000000000000000};
-        while ((i < minimal_nineteen_digit_integer) && (p != int_end)) {
-          i = i * 10 + uint64_t(*p - UC('0'));
-          ++p;
-        }
-        if (i >= minimal_nineteen_digit_integer) { // We have a big integer
-          exponent = end_of_integer_part - p + exp_number;
-        } else { // We have a value with a fractional component.
-          p = answer.fraction.ptr;
-          UC const *frac_end = p + answer.fraction.len();
-          while ((i < minimal_nineteen_digit_integer) && (p != frac_end)) {
-            i = i * 10 + uint64_t(*p - UC('0'));
-            ++p;
-          }
-          exponent = answer.fraction.ptr - p + exp_number;
-        }
-        // We have now corrected both exponent and i, to a truncated value
-      }
+      finish_long_mantissa(answer, start_digits, raw_digit_count, decimal_point,
+                           store_spans, i, exponent, resume);
     }
   }
   answer.exponent = exponent;
   answer.mantissa = i;
   return answer;
+}
+
+template <bool basic_json_fmt, bool basic_javascript_fmt, typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
+parse_number_string_impl(UC const *p, UC const *pend,
+                         parse_options_t<UC> options,
+                         bool store_spans) noexcept {
+  return scan_number_string_impl<basic_json_fmt, basic_javascript_fmt, UC,
+                                 parsed_number_string_t<UC>>(
+      p, pend, options, store_spans, nullptr);
+}
+
+template <bool basic_json_fmt, typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 scanned_number_string_t<UC>
+parse_number_string_for_conversion(UC const *p, UC const *pend,
+                                   parse_options_t<UC> options,
+                                   long_mantissa_input<UC> &resume) noexcept {
+  return scan_number_string_impl<basic_json_fmt, false, UC,
+                                 scanned_number_string_t<UC>>(
+      p, pend, options, false, &resume);
 }
 
 // Cold instantiation of the parser: the ECMAScript integer-part rule costs two
