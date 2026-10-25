@@ -146,7 +146,7 @@ public class TestStringZillaWork {
                                           byte[].class, int.class, int.class, boolean.class);
         character = bridge.getDeclaredMethod("searchCharLarge", byte[].class, int.class, int.class,
                                              int.class, boolean.class, boolean.class);
-        equality = bridge.getDeclaredMethod("equalsLarge", byte[].class, byte[].class);
+        equality = Class.forName("java.lang.StringLatin1").getDeclaredMethod("equalsLarge", byte[].class, byte[].class);
         range = bridge.getDeclaredMethod("equalsRange", byte[].class, int.class, int.class,
                                          byte[].class, int.class);
         range.setAccessible(true);

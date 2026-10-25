@@ -115,15 +115,36 @@ final class StringLatin1 {
 
     // vmIntrinsics::_equalsL
     @IntrinsicCandidate
+    @ForceInline
     private static boolean equals0(byte[] value, byte[] other) {
         int length = value.length;
         if (length != other.length) return false;
+        if (length == 0) return true;
+        if (value[0] != other[0]) return false;
         if (length > 8 && StringZilla.ENABLED) {
-            if (length > StringZilla.MAX_BYTES) return StringZilla.equalsLarge(value, other);
+            if (length > StringZilla.MAX_BYTES) return equalsLarge(value, other);
             int result = StringZilla.equalsRange(value, 0, length, other, 0);
             if (result != StringZilla.FALLBACK) return result != 0;
         }
         return equalsJava(value, other);
+    }
+
+    @DontInline
+    private static boolean equalsLarge(byte[] src, byte[] tgt) {
+        assert src.length == tgt.length;
+        int offset = 0;
+        while (offset < src.length) {
+            int size = Math.min(StringZilla.MAX_BYTES, src.length - offset);
+            int result = StringZilla.equalsRange(src, offset, size, tgt, offset);
+            if (result == StringZilla.FALLBACK) {
+                return equalsJava(src, tgt);
+            }
+            if (result == 0) {
+                return false;
+            }
+            offset += size;
+        }
+        return true;
     }
 
     static boolean equalsJava(byte[] value, byte[] other) {
@@ -460,9 +481,12 @@ final class StringLatin1 {
         }
         fromIndex++;
         if (max - fromIndex >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
-            int result = StringZilla.indexOfCharLatin1(value, max, ch, fromIndex);
+            int result = StringZilla.findCharLatin1(value, fromIndex, max - fromIndex, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, fromIndex, max - fromIndex, ch, false, false);
+            }
             if (result != StringZilla.FALLBACK) {
-                return result;
+                return result < 0 ? -1 : fromIndex + result;
             }
         }
         for (int i = fromIndex; i < max; i++) {
@@ -528,8 +552,12 @@ final class StringLatin1 {
     private static int indexOf0(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         if (strToIndex > 0 && valueToIndex - valueFromIndex >= StringZilla.MIN_BYTES
                 && StringZilla.ENABLED) {
-            int result = StringZilla.indexOfLatin1(value, valueToIndex, str, strToIndex, valueFromIndex);
-            if (result != StringZilla.FALLBACK) return result;
+            int result = StringZilla.findLatin1(value, valueFromIndex, valueToIndex - valueFromIndex, str, strToIndex);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(value, valueFromIndex, valueToIndex - valueFromIndex,
+                        str, strToIndex, 0, false);
+            }
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : valueFromIndex + result;
         }
         return indexOfJava(value, valueToIndex, str, strToIndex, valueFromIndex);
     }
@@ -565,8 +593,15 @@ final class StringLatin1 {
 
     static int lastIndexOf(byte[] src, int srcCount,
                            byte[] tgt, int tgtCount, int fromIndex) {
-        if (StringZilla.ENABLED && fromIndex + tgtCount >= StringZilla.MIN_BYTES) {
-            int result = StringZilla.lastIndexOfLatin1(src, fromIndex + tgtCount, tgt, tgtCount);
+        if (StringZilla.ENABLED && fromIndex + tgtCount >= StringZilla.MIN_BYTES
+                && tgtCount <= StringZilla.MAX_BYTES) {
+            if (ArraysSupport.mismatch(src, fromIndex, tgt, 0, tgtCount) < 0) return fromIndex;
+            if (--fromIndex < 0) return -1;
+            int end = fromIndex + tgtCount;
+            int result = StringZilla.rfindLatin1(src, 0, end, tgt, tgtCount);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(src, 0, end, tgt, tgtCount, 0, true);
+            }
             if (result != StringZilla.FALLBACK) return result;
         }
         return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
@@ -606,7 +641,10 @@ final class StringLatin1 {
         }
         int off  = Math.min(fromIndex, value.length - 1);
         if (off + 1 >= StringZilla.MIN_BYTES && StringZilla.ENABLED) {
-            int result = StringZilla.lastIndexOfCharLatin1(value, off + 1, ch);
+            int result = StringZilla.rfindCharLatin1(value, 0, off + 1, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, 0, off + 1, ch, false, true);
+            }
             if (result != StringZilla.FALLBACK) return result;
         }
         for (; off >= 0; off--) {
@@ -953,121 +991,39 @@ final class StringLatin1 {
         return right;
     }
 
+    @ForceInline
     static int indexOfNonWhitespace(byte[] value) {
         int length = value.length;
-        if (length == 0) {
-            return 0;
-        }
+        if (length == 0) return 0;
         char first = getChar(value, 0);
-        if (first != ' ' && first != '\t' && !CharacterDataLatin1.instance.isWhitespace(first)) {
-            return 0;
+        if (first != ' ' && first != '\t' && !CharacterDataLatin1.instance.isWhitespace(first)) return 0;
+        if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE && StringZilla.ENABLED) {
+            int result = StringZilla.scan(value, 1, length, StringZilla.NON_WHITESPACE);
+            if (result != StringZilla.FALLBACK) return result;
         }
         int left = 1;
-        int limit = length;
-        if (length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            if (!StringZilla.ENABLED) {
-                return indexOfNonWhitespaceJava(value);
-            }
-            // Scan the scalar prefix before entering the bounded native operation.
-            limit = StringZilla.SCAN_PROBE;
-        }
-        while (left < limit) {
+        while (left < length) {
             char ch = getChar(value, left);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                return left;
-            }
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) return left;
             left++;
         }
-        return left == length ? left : indexOfNonWhitespaceLong(value, left);
+        return left;
     }
 
-    // Keep the Java-only loop bound directly tied to the physical array length.
     @ForceInline
-    private static int indexOfNonWhitespaceJava(byte[] value) {
-        int left = 0;
-        int length = value.length;
-        while (left < length) {
-            char ch = getChar(value, left);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                return left;
-            }
-            left++;
-        }
-        return left;
-    }
-
-    @DontInline
-    private static int indexOfNonWhitespaceLong(byte[] value, int left) {
-        int length = value.length;
-        if (StringZilla.ENABLED) {
-            int result = StringZilla.scan(value, left, length, StringZilla.NON_WHITESPACE);
-            if (result != StringZilla.FALLBACK) {
-                return result;
-            }
-        }
-        while (left < length) {
-            char ch = getChar(value, left);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                return left;
-            }
-            left++;
-        }
-        return left;
-    }
-
     static int lastIndexOfNonWhitespace(byte[] value) {
         int right = value.length;
-        if (right == 0) {
-            return 0;
-        }
+        if (right == 0) return 0;
         char last = getChar(value, right - 1);
-        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) {
-            return right;
-        }
+        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) return right;
         right--;
-        int stop = 0;
-        if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE) {
-            if (!StringZilla.ENABLED) {
-                return lastIndexOfNonWhitespaceJava(value);
-            }
-            stop = value.length - StringZilla.SCAN_PROBE;
+        if (value.length >= StringZilla.MIN_SCAN_BYTES + StringZilla.SCAN_PROBE && StringZilla.ENABLED) {
+            int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
+            if (result != StringZilla.FALLBACK) return result;
         }
-        while (right > stop) {
-            char ch = getChar(value, right - 1);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                return right;
-            }
-            right--;
-        }
-        return right == 0 ? 0 : lastIndexOfNonWhitespaceLong(value, right);
-    }
-
-    @ForceInline
-    private static int lastIndexOfNonWhitespaceJava(byte[] value) {
-        int right = value.length;
         while (right > 0) {
             char ch = getChar(value, right - 1);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                return right;
-            }
-            right--;
-        }
-        return right;
-    }
-
-    @DontInline
-    private static int lastIndexOfNonWhitespaceLong(byte[] value, int right) {
-        if (StringZilla.ENABLED) {
-            int result = StringZilla.scan(value, 0, right, StringZilla.NON_WHITESPACE_REVERSE);
-            if (result != StringZilla.FALLBACK) {
-                return result;
-            }
-        }
-        while (0 < right) {
-            char ch = getChar(value, right - 1);
-            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
-                return right;
-            }
+            if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) return right;
             right--;
         }
         return right;

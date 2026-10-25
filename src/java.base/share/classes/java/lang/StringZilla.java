@@ -48,113 +48,6 @@ final class StringZilla {
     private StringZilla() {}
     private static native int initialize();
 
-    // Callers have normalized the logical search ranges.
-    @DontInline
-    static int indexOfLatin1(byte[] src, int end, byte[] tgt, int count, int from) {
-        int result = findLatin1(src, from, end - from, tgt, count);
-        if (result == FALLBACK) {
-            result = searchLarge(src, from, end - from, tgt, count, 0, false);
-        }
-        if (result == FALLBACK) {
-            return FALLBACK;
-        }
-        return result < 0 ? -1 : from + result;
-    }
-
-    @DontInline
-    static int indexOfUTF16(byte[] src, int end, byte[] tgt, int count, int from) {
-        int result = findUTF16(src, from << 1, (end - from) << 1, tgt, count << 1);
-        if (result == FALLBACK) {
-            result = searchLarge(src, from << 1, (end - from) << 1, tgt, count << 1, 1, false);
-        }
-        if (result == FALLBACK) {
-            return FALLBACK;
-        }
-        return result < 0 ? -1 : from + (result >> 1);
-    }
-
-    // Character results use the caller's code-unit coordinates.
-    @DontInline
-    static int indexOfCharLatin1(byte[] src, int end, int ch, int from) {
-        int result = findCharLatin1(src, from, end - from, ch);
-        if (result == FALLBACK) {
-            result = searchCharLarge(src, from, end - from, ch, false, false);
-        }
-        if (result == FALLBACK) {
-            return FALLBACK;
-        }
-        return result < 0 ? -1 : from + result;
-    }
-
-    @DontInline
-    static int indexOfCharUTF16(byte[] src, int end, int ch, int from) {
-        int result = findCharUTF16(src, from << 1, (end - from) << 1, ch);
-        if (result == FALLBACK) {
-            result = searchCharLarge(src, from << 1, (end - from) << 1, ch, true, false);
-        }
-        if (result == FALLBACK) {
-            return FALLBACK;
-        }
-        return result < 0 ? -1 : from + (result >> 1);
-    }
-
-    @DontInline
-    static int lastIndexOfCharLatin1(byte[] src, int end, int ch) {
-        int result = rfindCharLatin1(src, 0, end, ch);
-        if (result == FALLBACK) {
-            result = searchCharLarge(src, 0, end, ch, false, true);
-        }
-        return result;
-    }
-
-    @DontInline
-    static int lastIndexOfCharUTF16(byte[] src, int end, int ch) {
-        int result = rfindCharUTF16(src, 0, end << 1, ch);
-        if (result == FALLBACK) {
-            result = searchCharLarge(src, 0, end << 1, ch, true, true);
-        }
-        return result == FALLBACK ? FALLBACK : result < 0 ? -1 : result >> 1;
-    }
-
-    @DontInline
-    static int indexOfUTF16Latin1(byte[] src, int end, byte[] tgt, int count, int from) {
-        int result = findUTF16Latin1(src, from << 1, (end - from) << 1, tgt, count);
-        if (result == FALLBACK) {
-            result = searchLarge(src, from << 1, (end - from) << 1, tgt, count, 2, false);
-        }
-        if (result == FALLBACK) {
-            return FALLBACK;
-        }
-        return result < 0 ? -1 : from + (result >> 1);
-    }
-
-    @DontInline
-    static int lastIndexOfLatin1(byte[] src, int end, byte[] tgt, int count) {
-        int result = rfindLatin1(src, 0, end, tgt, count);
-        if (result == FALLBACK) {
-            result = searchLarge(src, 0, end, tgt, count, 0, true);
-        }
-        return result == FALLBACK ? FALLBACK : result;
-    }
-
-    @DontInline
-    static int lastIndexOfUTF16(byte[] src, int end, byte[] tgt, int count) {
-        int result = rfindUTF16(src, 0, end << 1, tgt, count << 1);
-        if (result == FALLBACK) {
-            result = searchLarge(src, 0, end << 1, tgt, count << 1, 1, true);
-        }
-        return result == FALLBACK ? FALLBACK : result < 0 ? -1 : result >> 1;
-    }
-
-    @DontInline
-    static int lastIndexOfUTF16Latin1(byte[] src, int end, byte[] tgt, int count) {
-        int result = rfindUTF16Latin1(src, 0, end << 1, tgt, count);
-        if (result == FALLBACK) {
-            result = searchLarge(src, 0, end << 1, tgt, count, 2, true);
-        }
-        return result == FALLBACK ? FALLBACK : result < 0 ? -1 : result >> 1;
-    }
-
     @ForceInline
     static int scan(byte[] src, int from, int to, int mode) {
         assert from >= 0 && from <= to && to <= src.length;
@@ -269,24 +162,6 @@ final class StringZilla {
             cursor += reverse ? -step : step;
         }
         return -1;
-    }
-
-    @DontInline
-    static boolean equalsLarge(byte[] src, byte[] tgt) {
-        assert src.length == tgt.length;
-        int offset = 0;
-        while (offset < src.length) {
-            int size = Math.min(MAX_BYTES, src.length - offset);
-            int result = equalsRange(src, offset, size, tgt, offset);
-            if (result == FALLBACK) {
-                return StringLatin1.equalsJava(src, tgt);
-            }
-            if (result == 0) {
-                return false;
-            }
-            offset += size;
-        }
-        return true;
     }
 
     // The intrinsic passes (src + offset, tgt + tgtOffset, length) to the kernel.
