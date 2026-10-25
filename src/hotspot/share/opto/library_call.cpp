@@ -1442,9 +1442,62 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
-  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, int_ch, ae);
+  Node* result;
+  const int max_chunk = 1024 * 1024; // SimdUTF::process leaf limit, in source elements.
+  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength) ? MAX2(SIMDUTFMinLength, intx(64)) : SIMDUTFMinLength;
+  if (UseSIMDUTFIntrinsics && minimum > 0 && minimum <= max_chunk &&
+      vmIntrinsics::is_intrinsic_available(vmIntrinsics::_simdutf_process) &&
+      !C->directive()->is_intrinsic_disabled(vmIntrinsics::_simdutf_process)) {
+    // Keep the JDK search for short ranges and near-start matches. The native
+    // leaf sees only the disjoint remainder, never an already searched prefix.
+    const int prefix = 16;
+    Node* remaining = _gvn.transform(new SubINode(src_count, intcon(prefix)));
+    Node* eligibility = _gvn.transform(new CmpU3Node(
+        _gvn.transform(new SubINode(remaining, intcon((int)minimum))),
+        intcon(max_chunk - (int)minimum)));
+    IdealKit ideal(this);
+    IdealVariable index(ideal);
+    ideal.declarations_done();
+    ideal.if_then(eligibility, BoolTest::le, intcon(0)); {
+      sync_kit(ideal);
+      Node* first = _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+                                                        src_start, intcon(prefix), int_ch, ae));
+      ideal.set(index, first);
+      ideal.if_then(first, BoolTest::lt, intcon(0)); {
+        sync_kit(ideal);
+        Node* rest_from = _gvn.transform(new AddINode(from_index, intcon(prefix)));
+        Node* found = make_simdutf_call(src, rest_from, remaining, src, int_ch, intcon(0),
+            intcon(ae == StrIntrinsicNode::L ? SimdUTF::INDEX_OF_LATIN1 : SimdUTF::INDEX_OF_UTF16));
+        ideal.sync_kit(this);
+        ideal.set(index, found);
+        ideal.if_then(found, BoolTest::lt, intcon(0)); {
+          sync_kit(ideal);
+          Node* rest_offset = ae == StrIntrinsicNode::L ? rest_from
+              : _gvn.transform(new LShiftINode(rest_from, intcon(1)));
+          Node* rest_start = array_element_address(src, rest_offset, T_BYTE);
+          ideal.set(index, _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+                                                               rest_start, remaining, int_ch, ae)));
+        } ideal.else_(); {
+          ideal.if_then(found, BoolTest::eq, remaining);
+          ideal.set(index, intcon(-1));
+          ideal.end_if();
+        } ideal.end_if();
+        ideal.if_then(ideal.value(index), BoolTest::ge, intcon(0));
+        ideal.set(index, _gvn.transform(new AddINode(ideal.value(index), intcon(prefix))));
+        ideal.end_if();
+      } ideal.end_if();
+    } ideal.else_(); {
+      sync_kit(ideal);
+      ideal.set(index, _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+                                                           src_start, src_count, int_ch, ae)));
+    } ideal.end_if();
+    final_sync(ideal);
+    result = ideal.value(index);
+  } else {
+    result = _gvn.transform(new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES),
+                                                 src_start, src_count, int_ch, ae));
+  }
   C->set_has_split_ifs(true); // Has chance for split-if optimization
-  _gvn.transform(result);
 
   Node* cmp = _gvn.transform(new CmpINode(result, intcon(0)));
   Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
@@ -9452,6 +9505,23 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 // Keep oop arguments live throughout a leaf call. The shared entry derives raw
 // array addresses only after validating their types and ranges. TypePtr::BOTTOM
 // models both the source reads and all destination writes (including failure).
+Node* LibraryCallKit::make_simdutf_call(Node* src, Node* sp, Node* len, Node* dst,
+                                      Node* dp, Node* capacity, Node* operation) {
+  const Type** fields = TypeTuple::fields(7);
+  for (int i = 0; i < 7; i++) {
+    fields[TypeFunc::Parms + i] = i == 0 || i == 3 ? static_cast<const Type*>(TypeOopPtr::BOTTOM) : TypeInt::INT;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 7, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", TypePtr::BOTTOM,
+      src, sp, len, dst, dp, capacity, operation);
+  return _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+}
+
 bool LibraryCallKit::inline_simdutf_process() {
   const TypeInt* operation = _gvn.type(argument(6))->isa_int();
   bool prefer_jdk_search = false;
@@ -9517,20 +9587,8 @@ bool LibraryCallKit::inline_simdutf_process() {
       set_all_memory(small_memory);
     }
   }
-  const Type** fields = TypeTuple::fields(7);
-  for (int i = 0; i < 7; i++) {
-    fields[TypeFunc::Parms + i] = i == 0 || i == 3 ? static_cast<const Type*>(TypeOopPtr::BOTTOM) : TypeInt::INT;
-  }
-  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 7, fields);
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms] = TypeInt::INT;
-  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
-  const TypeFunc* type = TypeFunc::make(domain, range);
-  Node* call = make_runtime_call(RC_LEAF, type,
-      CAST_FROM_FN_PTR(address, SimdUTF::process), "simdutf_process", TypePtr::BOTTOM,
-      argument(0), argument(1), argument(2), argument(3),
-      argument(4), argument(5), argument(6));
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  Node* result = make_simdutf_call(argument(0), argument(1), argument(2), argument(3),
+                                   argument(4), argument(5), argument(6));
   if (small_control != nullptr) {
     RegionNode* region = new RegionNode(3);
     region->init_req(1, control());

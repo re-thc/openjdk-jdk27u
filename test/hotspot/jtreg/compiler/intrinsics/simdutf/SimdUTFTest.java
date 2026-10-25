@@ -117,6 +117,13 @@ public class SimdUTFTest {
         check(!flag.equals("false") || !accelerationAvailable, "opt-out left simdutf active");
         if (Boolean.getBoolean("simdutf.searchOnly")) {
             indexOf();
+            for (int length : new int[]{(1 << 20) + 15, (1 << 20) + 16, (1 << 20) + 17}) {
+                for (String unit : new String[]{"a", "漢"}) {
+                    String text = unit.repeat(length - 1) + "z";
+                    check(text.indexOf('z') == length - 1, "search leaf-limit match");
+                    check(text.indexOf('q', 7, length) == -1, "search leaf-limit absent");
+                }
+            }
             if (accelerationAvailable && Boolean.getBoolean("simdutf.requireSearch")) {
                 byte[] latin1 = new byte[4096];
                 char[] utf16 = new char[4096];
@@ -288,13 +295,14 @@ public class SimdUTFTest {
     }
 
     private static void indexOf() {
-        for (int length : LENGTHS) {
+        for (int length : new int[]{0, 1, 2, 15, 16, 17, 31, 32, 63, 64, 65, 79, 80, 81,
+                                   127, 128, 255, 256, 257, 271, 272, 273, 1024, 4097}) {
             for (String pattern : new String[]{"abcé\0", "漢x\ud800y\udc00😃"}) {
                 String text = pattern.repeat(length / pattern.length() + 1).substring(0, length);
                 char[] chars = text.toCharArray();
                 byte[] latin1 = pattern.charAt(0) == 'a' ? text.getBytes(StandardCharsets.ISO_8859_1) : null;
                 for (int ch : new int[]{-1, 0, 'a', 'é', '漢', 'z', 0xd800, 0xdc00, 0x1f603, 0x110000}) {
-                    for (int from : new int[]{-1, 0, 1, 31, 127, length - 1, length, length + 1}) {
+                    for (int from : new int[]{-1, 0, 1, 15, 16, 17, 31, 127, length - 1, length, length + 1}) {
                         int begin = Math.min(length, Math.max(0, from));
                         for (int end : new int[]{length, Math.max(begin, length - 1)}) {
                             int expected = -1;
