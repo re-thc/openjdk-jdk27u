@@ -65,6 +65,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubInfo.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -360,6 +361,8 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());
   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
+  FUNCTION_CASE(entry, StubRoutines::montgomeryMultiply());
+  FUNCTION_CASE(entry, StubRoutines::montgomerySquare());
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
   FUNCTION_CASE(entry, StubRoutines::dlog10());
@@ -372,6 +375,10 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::dcbrt());
 
 #undef FUNCTION_CASE
+
+  if (StubCodeDesc* desc = StubCodeDesc::desc_for(entry); desc != nullptr) {
+    return desc->name();
+  }
 
   // Soft float adds more runtime names.
   return pd_name_for_address(entry);

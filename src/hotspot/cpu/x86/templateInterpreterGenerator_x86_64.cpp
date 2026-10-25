@@ -1243,7 +1243,8 @@ void TemplateInterpreterGenerator::generate_hash_entry(Label& slow_path) {
     __ cmpl(rscratch1, type);
     __ jcc(Assembler::notEqual, next);
     __ load_klass(rscratch1, rax, rscratch2);
-    __ mov_metadata(rscratch2, Universe::typeArrayKlass(arrays[i]));
+    // Primitive array klasses are permanent; interpreter codelets use external addresses.
+    __ lea(rscratch2, ExternalAddress(reinterpret_cast<address>(Universe::typeArrayKlass(arrays[i]))));
     __ cmpptr(rscratch1, rscratch2);
     __ jcc(Assembler::notEqual, next);
     __ movl(r8, Address(rax, arrayOopDesc::length_offset_in_bytes()));

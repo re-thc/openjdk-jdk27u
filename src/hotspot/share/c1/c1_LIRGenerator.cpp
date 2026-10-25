@@ -2885,7 +2885,6 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
 void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info, true);
   LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem item(x->argument_at(i), this);
@@ -2894,7 +2893,7 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
   }
   auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
     __ cmp(condition, left, right);
-    __ branch(condition, fallback);
+    __ branch(condition, new PredicateFailedStub(info, true));
   };
   auto bounded = [&](LIR_Opr length, int limit) {
     guard(lir_cond_lessEqual, length, LIR_OprFact::intConst(0));
@@ -2923,10 +2922,9 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_mulAdd: {
       bounded(values.at(3), CommonIntrinsics::max_leaf_elements);
-      LIR_Opr length = new_register(T_INT);
-      __ move(LIR_OprFact::address(generate_address(values.at(0), arrayOopDesc::length_offset_in_bytes(), T_INT)), length);
       LIR_Opr offset = new_register(T_INT);
-      __ sub(length, values.at(2), offset);
+      __ move(LIR_OprFact::address(generate_address(values.at(0), arrayOopDesc::length_offset_in_bytes(), T_INT)), offset);
+      __ sub(offset, values.at(2), offset);
       values.at_put(2, offset);
       entry = StubRoutines::mulAdd();
       break;
@@ -3002,7 +3000,6 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
 void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info, true);
   LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem item(x->argument_at(i), this);
@@ -3011,7 +3008,7 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
   }
   auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
     __ cmp(condition, left, right);
-    __ branch(condition, fallback);
+    __ branch(condition, new PredicateFailedStub(info, true));
   };
   auto field = [&](LIR_Opr object, int offset, BasicType type = T_OBJECT) {
     LIR_Opr result = new_register(type);
@@ -3175,7 +3172,6 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
 void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info, true);
   LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem item(x->argument_at(i), this);
@@ -3184,7 +3180,7 @@ void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
   }
   auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
     __ cmp(condition, left, right);
-    __ branch(condition, fallback);
+    __ branch(condition, new PredicateFailedStub(info, true));
   };
   auto bounded = [&](LIR_Opr count, int maximum) {
     guard(lir_cond_lessEqual, count, LIR_OprFact::intConst(0));
