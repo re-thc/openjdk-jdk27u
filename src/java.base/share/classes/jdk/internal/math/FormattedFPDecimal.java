@@ -27,7 +27,6 @@ package jdk.internal.math;
 
 import jdk.internal.vm.annotation.ForceInline;
 
-
 /*
  * This class provides support for the 'e', 'f' and 'g' conversions on double
  * values with sign bit 0.
