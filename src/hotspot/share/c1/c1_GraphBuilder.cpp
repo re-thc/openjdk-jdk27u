@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3852,7 +3851,6 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 }
 
 
-
 bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::should_not_inline(compilation()->env(), callee)) {
@@ -3893,14 +3891,13 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   }
 
   // now perform tests that are based on flag settings
-  const bool inlinee_by_annotation = callee->force_inline();
   bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
-  if (inlinee_by_annotation || inlinee_by_directive) {
+  if (callee->force_inline() || inlinee_by_directive) {
     if (inline_level() > MaxForceInlineLevel                      ) INLINE_BAILOUT("MaxForceInlineLevel");
     if (recursive_inline_level(callee) > C1MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");
 
     const char* msg = "";
-    if (inlinee_by_annotation)   msg = "force inline by annotation";
+    if (callee->force_inline())  msg = "force inline by annotation";
     if (inlinee_by_directive)    msg = "force inline by CompileCommand";
     print_inlining(callee, msg);
   } else {
@@ -3908,8 +3905,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     if (inline_level() > C1MaxInlineLevel                       ) INLINE_BAILOUT("inlining too deep");
     int callee_recursive_level = recursive_inline_level(callee);
     if (callee_recursive_level > C1MaxRecursiveInlineLevel      ) INLINE_BAILOUT("recursive inlining too deep");
-    int callee_size = callee->code_size_for_inlining();
-    if (callee_size > max_inline_size()                       ) INLINE_BAILOUT("callee is too large");
+    if (callee->code_size_for_inlining() > max_inline_size()    ) INLINE_BAILOUT("callee is too large");
     // Additional condition to limit stack usage for non-recursive calls.
     if ((callee_recursive_level == 0) &&
         (callee->max_stack() + callee->max_locals() - callee->size_of_parameters() > C1InlineStackLimit)) {
