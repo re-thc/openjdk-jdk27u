@@ -74,6 +74,7 @@ import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.ERA;
 
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -4543,6 +4544,57 @@ public final class DateTimeFormatterBuilder {
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
             cachedTreeCI = HashMap.newHashMap(1);
 
+        // Only built-in US names are shared, without modifying their table.
+        // Keep the trie and actual zone-ID snapshot soft, without retaining the
+        // resource table. No shared cache is initialized by formatting or
+        // zone-ID-only parsing.
+        private static volatile SoftReference<SharedTree> fullTree;
+        private static volatile SoftReference<SharedTree> fullTreeCI;
+        private static volatile SoftReference<SharedTree> shortTree;
+        private static volatile SoftReference<SharedTree> shortTreeCI;
+
+        private static final class SharedTree {
+            final Set<String> zoneIds;
+            final WeakReference<String[][]> zoneStrings;
+            final PrefixTree tree;
+
+            SharedTree(Set<String> zoneIds, String[][] zoneStrings, PrefixTree tree) {
+                this.zoneIds = zoneIds;
+                this.zoneStrings = new WeakReference<>(zoneStrings);
+                this.tree = tree;
+            }
+        }
+
+        private boolean canShareTree(Locale locale) {
+            if (preferredZones != null || !Locale.US.equals(locale) ||
+                    (textStyle != TextStyle.FULL && textStyle != TextStyle.SHORT)) {
+                return false;
+            }
+            // Do not probe providers: even a later SPI/HOST provider may be
+            // called while filling missing names for custom zone IDs.
+            var providers = LocaleProviderAdapter.getAdapterPreference();
+            return providers.size() == 2 &&
+                    providers.get(0) == LocaleProviderAdapter.Type.CLDR &&
+                    providers.get(1) == LocaleProviderAdapter.Type.FALLBACK;
+        }
+
+        private SoftReference<SharedTree> sharedTree(boolean caseSensitive) {
+            return textStyle == TextStyle.FULL
+                    ? (caseSensitive ? fullTree : fullTreeCI)
+                    : (caseSensitive ? shortTree : shortTreeCI);
+        }
+
+        private void shareTree(boolean caseSensitive, SharedTree tree) {
+            var ref = new SoftReference<>(tree);
+            if (textStyle == TextStyle.FULL) {
+                if (caseSensitive) fullTree = ref;
+                else fullTreeCI = ref;
+            } else {
+                if (caseSensitive) shortTree = ref;
+                else shortTreeCI = ref;
+            }
+        }
+
         @Override
         protected PrefixTree getTree(DateTimeParseContext context) {
             if (textStyle == TextStyle.NARROW) {
@@ -4564,6 +4616,18 @@ public final class DateTimeFormatterBuilder {
                 (tree = entry.getValue().get()) == null)) {
                 tree = PrefixTree.newTree(context);
                 zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
+                boolean share = canShareTree(locale);
+                if (share) {
+                    var ref = sharedTree(isCaseSensitive);
+                    SharedTree shared = ref == null ? null : ref.get();
+                    if (shared != null && shared.zoneStrings.get() == zoneStrings &&
+                            shared.zoneIds.equals(availableZoneIds)) {
+                        tree = shared.tree;
+                        cached.put(locale, new SimpleImmutableEntry<>(regionIdsSize,
+                                new SoftReference<>(tree)));
+                        return tree;
+                    }
+                }
                 Set<String> nonRegionIds = HashSet.newHashSet(64);
                 Set<String> regionIds = new HashSet<>(availableZoneIds);
                 for (String[] names : zoneStrings) {
@@ -4581,6 +4645,17 @@ public final class DateTimeFormatterBuilder {
                 }
 
                 // add names for provider's custom ids
+                // A shared snapshot is only published if this path does not
+                // retrieve custom names. Exact ID-set equality above then
+                // prevents its reuse after any custom-ID registration.
+                if (share) {
+                    for (String zid : regionIds) {
+                        if (!zid.startsWith("Etc") && !zid.startsWith("GMT")) {
+                            share = false;
+                            break;
+                        }
+                    }
+                }
                 final PrefixTree t = tree;
                 regionIds.stream()
                     .filter(zid -> !zid.startsWith("Etc") && !zid.startsWith("GMT"))
@@ -4609,6 +4684,9 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
                 cached.put(locale, new SimpleImmutableEntry<>(regionIdsSize, new SoftReference<>(tree)));
+                if (share) {
+                    shareTree(isCaseSensitive, new SharedTree(availableZoneIds, zoneStrings, tree));
+                }
             }
             return tree;
         }
