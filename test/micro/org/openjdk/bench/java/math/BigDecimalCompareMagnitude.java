@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -53,8 +54,12 @@ public class BigDecimalCompareMagnitude {
         right = new BigDecimal[SIZE];
         for (int i = 0; i < SIZE; i++) {
             String kind = distribution;
+            int caseIndex = i;
             if (kind.equals("mostlyRejected") || kind.equals("balanced")) {
-                boolean eligible = i % (kind.equals("balanced") ? 2 : 10) == 0;
+                int stride = kind.equals("balanced") ? 2 : 10;
+                // Vary sign and operand order within both subsets.
+                caseIndex = i / stride;
+                boolean eligible = i % stride == 0;
                 kind = eligible ? "inflatedShort" :
                         switch (i % 5) {
                             case 0 -> "large";
@@ -85,8 +90,8 @@ public class BigDecimalCompareMagnitude {
             int otherScale = scale + difference + (kind.equals("exponent") ? 3 : 0);
             BigDecimal a = new BigDecimal(x, scale);
             BigDecimal b = new BigDecimal(y, otherScale);
-            if ((i & 2) != 0) { a = a.negate(); b = b.negate(); }
-            if ((i & 1) != 0) { BigDecimal temp = a; a = b; b = temp; }
+            if ((caseIndex & 2) != 0) { a = a.negate(); b = b.negate(); }
+            if ((caseIndex & 1) != 0) { BigDecimal temp = a; a = b; b = temp; }
             // Measure repeated comparisons; first-precision costs are separate.
             a.precision();
             b.precision();
@@ -106,19 +111,15 @@ public class BigDecimalCompareMagnitude {
 
     @Benchmark
     @OperationsPerInvocation(SIZE)
-    public int min() {
-        int result = 0;
+    public void min(Blackhole bh) {
         for (int i = 0; i < SIZE; i++)
-            result += left[i].min(right[i]).scale();
-        return result;
+            bh.consume(left[i].min(right[i]));
     }
 
     @Benchmark
     @OperationsPerInvocation(SIZE)
-    public int max() {
-        int result = 0;
+    public void max(Blackhole bh) {
         for (int i = 0; i < SIZE; i++)
-            result += left[i].max(right[i]).scale();
-        return result;
+            bh.consume(left[i].max(right[i]));
     }
 }
