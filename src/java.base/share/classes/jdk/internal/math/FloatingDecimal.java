@@ -52,14 +52,9 @@ public final class FloatingDecimal {
     private static final int    MAX_DEC_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
     private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
-    private static final boolean USE_FAST_FLOAT = isFastFloatEnabled0();
+    public static final boolean USE_FAST_FLOAT = isFastFloatEnabled0();
 
     private static native boolean isFastFloatEnabled0();
-
-    /** Returns whether native decimal conversion is enabled. */
-    public static boolean isFastFloatEnabled() {
-        return USE_FAST_FLOAT;
-    }
 
     // NaN requests fallback to the full Java parser.
     @IntrinsicCandidate
@@ -67,27 +62,6 @@ public final class FloatingDecimal {
 
     @IntrinsicCandidate
     private static native double parseFastFloatDigits(byte[] digits, int length, int decExp);
-
-    // Avoid a native call for the usual symbolic and hexadecimal spellings.
-    // The adapter trims leading whitespace before parsing.
-    @ForceInline
-    private static boolean isFastFloatCandidate(String s) {
-        int length = s.length();
-        if (length == 0 || length > 1024) {
-            return false;
-        }
-        int first = 0;
-        int ch = s.charAt(first);
-        if (ch == '+' || ch == '-') {
-            if (++first == length) {
-                return false;
-            }
-            ch = s.charAt(first);
-        }
-        return ch != 'N' && ch != 'I'
-                && (ch != '0' || first + 1 == length
-                    || (s.charAt(first + 1) | 0x20) != 'x');
-    }
 
     /**
      * Converts a {@link String} to a double precision floating point value.
@@ -99,7 +73,7 @@ public final class FloatingDecimal {
      */
     @ForceInline
     public static double parseDouble(String s) throws NumberFormatException {
-        if (USE_FAST_FLOAT && s != null && isFastFloatCandidate(s)) {
+        if (USE_FAST_FLOAT && s != null && s.length() <= 1024) {
             double v = parseFastFloat(s, BINARY_64_IX);
             if (!Double.isNaN(v)) {
                 return v;
@@ -118,7 +92,7 @@ public final class FloatingDecimal {
      */
     @ForceInline
     public static float parseFloat(String s) throws NumberFormatException {
-        if (USE_FAST_FLOAT && s != null && isFastFloatCandidate(s)) {
+        if (USE_FAST_FLOAT && s != null && s.length() <= 1024) {
             double v = parseFastFloat(s, BINARY_32_IX);
             if (!Double.isNaN(v)) {
                 return (float) v;

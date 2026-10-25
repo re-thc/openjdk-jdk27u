@@ -379,7 +379,32 @@ public class DoubleFloatValueTests {
         checkFloat16(BigDecimal.valueOf(-1, -1000), Float16.NEGATIVE_INFINITY);
     }
 
+    private static void testCompactConversions() {
+        for (long unscaled : new long[] {0, 1, -1, 16_777_217, -16_777_217,
+                9_007_199_254_740_993L, -9_007_199_254_740_993L,
+                Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MAX_VALUE}) {
+            for (int scale : new int[] {Integer.MIN_VALUE, -400, -22, -1, 0, 1, 2,
+                    22, 23, 46, 325, Integer.MAX_VALUE}) {
+                String text = BigDecimal.valueOf(unscaled, scale).toString();
+                double expectedDouble = Double.parseDouble(text);
+                float expectedFloat = Float.parseFloat(text);
+                for (boolean cached : new boolean[] {false, true}) {
+                    BigDecimal value = BigDecimal.valueOf(unscaled, scale);
+                    if (cached) value.toString();
+                    double actualDouble = value.doubleValue();
+                    float actualFloat = value.floatValue();
+                    if (Double.doubleToRawLongBits(actualDouble) != Double.doubleToRawLongBits(expectedDouble)
+                            || Float.floatToRawIntBits(actualFloat) != Float.floatToRawIntBits(expectedFloat)) {
+                        throw new RuntimeException("Bad compact conversion: unscaled=" + unscaled
+                                + ", scale=" + scale + ", cached=" + cached);
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        testCompactConversions();
         testDoubleValueNearMinValue();
         testDoubleValueNearMinNormal();
         testDoubleValueNearMaxValue();
