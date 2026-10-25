@@ -25,7 +25,6 @@
 
 package jdk.internal.math;
 
-import jdk.internal.vm.annotation.ForceInline;
 
 /*
  * This class provides support for the 'e', 'f' and 'g' conversions on double
@@ -88,7 +87,6 @@ public final class FormattedFPDecimal {
      *
      * @see java.math.BigDecimal#valueOf(double)
      */
-    @ForceInline
     public static FormattedFPDecimal valueForDoubleToString(double v) {
         final FormattedFPDecimal fd = split(v);
         final int expR = fd.getExponentRounded();
