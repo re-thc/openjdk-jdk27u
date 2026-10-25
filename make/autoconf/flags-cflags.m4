@@ -790,6 +790,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     fi
   fi
 
+  # Native CPU minimums for the fork's supported targets. Use FLAGS_OS/CPU
+  # so target and build tools receive the appropriate profile when cross-building.
+  case "$FLAGS_OS:$FLAGS_CPU:$TOOLCHAIN_TYPE" in
+    linux:x86_64:gcc | linux:x86_64:clang)
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -march=x86-64-v3 -mtune=generic" ;;
+    linux:aarch64:gcc | linux:aarch64:clang)
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -march=armv8.2-a -mtune=generic" ;;
+    macosx:aarch64:clang)
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -mcpu=apple-m1" ;;
+    windows:x86_64:microsoft)
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -arch:AVX2" ;;
+  esac
+
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     # This flag is required since GCC 6 as undefined behavior in OpenJDK code
     # runs afoul of the more aggressive versions of this optimization.
