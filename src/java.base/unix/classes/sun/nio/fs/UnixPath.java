@@ -565,24 +565,26 @@ class UnixPath implements Path {
 
     @Override
     public UnixPath normalize() {
-        // Skip scratch arrays when there are no exact "." or ".." names.
-        // Reuse cached name boundaries to avoid rescanning long names.
-        final int[] cachedOffsets = offsets;
-        if (cachedOffsets != null) {
-            int i = 0;
-            for (; i < cachedOffsets.length; i++) {
-                int begin = cachedOffsets[i];
-                int len = (i == cachedOffsets.length - 1)
-                        ? path.length - begin : cachedOffsets[i + 1] - begin - 1;
+        if (path.length == 0 || (path.length == 1 && path[0] == '/'))
+            return this;
+
+        int[] nameOffsets = offsets;
+        int firstDot = 0;
+        if (nameOffsets != null) {
+            // Cached boundaries avoid rescanning long ordinary names.
+            for (; firstDot < nameOffsets.length; firstDot++) {
+                int begin = nameOffsets[firstDot];
+                int len = (firstDot == nameOffsets.length - 1)
+                        ? path.length - begin : nameOffsets[firstDot + 1] - begin - 1;
                 if ((len == 1 || len == 2) && path[begin] == '.'
                         && (len == 1 || path[begin + 1] == '.'))
                     break;
             }
-            if (i == cachedOffsets.length)
+            if (firstDot == nameOffsets.length)
                 return this;
         } else {
-            // Preserve the no-allocation path without initializing offsets.
-            int index = 0;
+            // A fresh ordinary path need not initialize its name offsets.
+            int index = isAbsolute() ? 1 : 0;
             while (index < path.length) {
                 if (path[index] == '.') {
                     int next = index + 1;
@@ -594,123 +596,73 @@ class UnixPath implements Path {
                 while (index < path.length && path[index] != '/')
                     index++;
                 index++;
+                firstDot++;
             }
             if (index >= path.length)
                 return this;
+            initOffsets();
+            nameOffsets = offsets;
         }
+        return normalizeFrom(nameOffsets, firstDot);
+    }
 
-        final int count = getNameCount();
-        boolean[] ignore = new boolean[count];      // true => ignore name
-        int[] size = new int[count];                // length of name
-        int remaining = count;                      // number of names remaining
-        boolean hasDotDot = false;                  // has at least one ..
-        boolean isAbsolute = isAbsolute();
+    // The names before firstDot are ordinary and can be retained without
+    // examining them again. The stack contains indices of retained names.
+    private UnixPath normalizeFrom(int[] nameOffsets, int firstDot) {
+        int count = nameOffsets.length;
+        boolean absolute = isAbsolute();
+        int[] retained = new int[count];
+        for (int i = 0; i < firstDot; i++)
+            retained[i] = i;
+        int remaining = firstDot;
+        int nameBytes = nameOffsets[firstDot] - firstDot - (absolute ? 1 : 0);
 
-        // first pass:
-        //   1. compute length of names
-        //   2. mark all occurrences of "." to ignore
-        //   3. and look for any occurrences of ".."
-        for (int i=0; i<count; i++) {
-            int begin = offsets[i];
-            int len;
-            if (i == (offsets.length-1)) {
-                len = path.length - begin;
-            } else {
-                len = offsets[i+1] - begin - 1;
-            }
-            size[i] = len;
-
-            if (len == 1 && path[begin] == '.') {
-                ignore[i] = true;  // ignore "."
-                remaining--;
-            } else if (len == 2 && path[begin] == '.' && path[begin + 1] == '.') {
-                hasDotDot = true;
-            }
-        }
-
-        // multiple passes to eliminate all occurrences of name/..
-        if (hasDotDot) {
-            int prevRemaining;
-            do {
-                prevRemaining = remaining;
-                int prevName = -1;
-                for (int i=0; i<count; i++) {
-                    if (ignore[i])
-                        continue;
-
-                    // not a ".."
-                    if (size[i] != 2) {
-                        prevName = i;
-                        continue;
-                    }
-
-                    int begin = offsets[i];
-                    if (path[begin] != '.' || path[begin+1] != '.') {
-                        prevName = i;
-                        continue;
-                    }
-
-                    // ".." found
-                    if (prevName >= 0) {
-                        // name/<ignored>/.. found so mark name and ".." to be
-                        // ignored
-                        ignore[prevName] = true;
-                        ignore[i] = true;
-                        remaining = remaining - 2;
-                        prevName = -1;
-                    } else {
-                        // Case: /<ignored>/.. so mark ".." as ignored
-                        if (isAbsolute) {
-                            boolean hasPrevious = false;
-                            for (int j=0; j<i; j++) {
-                                if (!ignore[j]) {
-                                    hasPrevious = true;
-                                    break;
-                                }
-                            }
-                            if (!hasPrevious) {
-                                // all proceeding names are ignored
-                                ignore[i] = true;
-                                remaining--;
-                            }
+        for (int i = firstDot; i < count; i++) {
+            int begin = nameOffsets[i];
+            int len = (i == count - 1)
+                    ? path.length - begin : nameOffsets[i + 1] - begin - 1;
+            if (path[begin] == '.') {
+                if (len == 1)
+                    continue;
+                if (len == 2 && path[begin + 1] == '.') {
+                    if (remaining > 0) {
+                        int previous = retained[remaining - 1];
+                        int previousBegin = nameOffsets[previous];
+                        int previousLength = nameOffsets[previous + 1] - previousBegin - 1;
+                        if (previousLength != 2 || path[previousBegin] != '.'
+                                || path[previousBegin + 1] != '.') {
+                            remaining--;
+                            nameBytes -= previousLength;
+                            continue;
                         }
                     }
-                }
-            } while (prevRemaining > remaining);
-        }
-
-        // no redundant names
-        if (remaining == count)
-            return this;
-
-        // corner case - all names removed
-        if (remaining == 0) {
-            return isAbsolute ? getFileSystem().rootDirectory() : emptyPath();
-        }
-
-        // compute length of result
-        int len = remaining - 1;
-        if (isAbsolute)
-            len++;
-
-        for (int i=0; i<count; i++) {
-            if (!ignore[i])
-                len += size[i];
-        }
-        byte[] result = new byte[len];
-
-        // copy names into result
-        int pos = 0;
-        if (isAbsolute)
-            result[pos++] = '/';
-        for (int i=0; i<count; i++) {
-            if (!ignore[i]) {
-                System.arraycopy(path, offsets[i], result, pos, size[i]);
-                pos += size[i];
-                if (--remaining > 0) {
-                    result[pos++] = '/';
+                    if (absolute)
+                        continue;
                 }
             }
+            retained[remaining++] = i;
+            nameBytes += len;
+        }
+
+        // Unresolved relative parents can leave the path unchanged.
+        if (remaining == count)
+            return this;
+        if (remaining == 0)
+            return absolute ? getFileSystem().rootDirectory() : emptyPath();
+
+        byte[] result = new byte[nameBytes + remaining - 1 + (absolute ? 1 : 0)];
+        int pos = 0;
+        if (absolute)
+            result[pos++] = '/';
+        for (int i = 0; i < remaining; i++) {
+            int name = retained[i];
+            int begin = nameOffsets[name];
+            int len = (name == count - 1)
+                    ? path.length - begin : nameOffsets[name + 1] - begin - 1;
+            System.arraycopy(path, begin, result, pos, len);
+            pos += len;
+            if (i < remaining - 1)
+                result[pos++] = '/';
         }
         return new UnixPath(getFileSystem(), result);
     }
