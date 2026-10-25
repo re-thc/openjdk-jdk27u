@@ -41,14 +41,6 @@ final class Zmij {
         return ENABLED;
     }
 
-    @ForceInline
-    @IntrinsicCandidate
-    static boolean useJavaFloatAppend() {
-        // C2 replaces this with true. Its Java builder path avoids the array
-        // materialization and copying overhead of a native write.
-        return false;
-    }
-
     @IntrinsicCandidate
     private static native int format0(byte[] output, int byteIndex, long bits, int format);
 

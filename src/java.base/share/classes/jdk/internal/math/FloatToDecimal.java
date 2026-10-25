@@ -186,17 +186,9 @@ public final class FloatToDecimal extends ToDecimal {
         return putSpecial(str, index, type);
     }
 
-    /** Selects the lower-cost builder path independently for each compiler. */
+    /** Uses Java stores so builder buffers remain eligible for scalar replacement. */
     @ForceInline
     public int putDecimalForAppend(byte[] str, int index, float v) {
-        if (!Zmij.useJavaFloatAppend()) {
-            return putDecimal(str, index, v);
-        }
-        int magnitude = floatToRawIntBits(v) & 0x7fffffff;
-        if (magnitude != 0 && magnitude <= 128) {
-            // Tiny subnormals are cheaper to format natively even in C2.
-            return putDecimal(str, index, v);
-        }
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
         int pair = toDecimalJava(str, index, v);
         int type = pair & 0xFF00;

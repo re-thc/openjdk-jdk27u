@@ -628,9 +628,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     return inline_bigIntegerShift(false);
 
-  case vmIntrinsics::_useJavaFloatAppend:
-    set_result(intcon(1));
-    return true;
   case vmIntrinsics::_decimalZmij:
   case vmIntrinsics::_formatZmij:
     return inline_formatZmij();
