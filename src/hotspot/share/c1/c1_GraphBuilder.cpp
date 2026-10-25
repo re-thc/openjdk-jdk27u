@@ -2702,7 +2702,8 @@ void GraphBuilder::append_string_utf8_entry() {
   vmIntrinsics::ID id = method()->intrinsic_id();
   if ((id != vmIntrinsics::_encodeUTF8Latin1 && id != vmIntrinsics::_encodeUTF8UTF16 &&
        id != vmIntrinsics::_decodeUTF8UTF16) ||
-      !SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 || compilation()->is_osr_compile()) {
+      !SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 ||
+      (compilation()->is_osr_compile() && scope()->is_top_scope())) {
     return;
   }
   {
