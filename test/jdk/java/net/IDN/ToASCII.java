@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Check unchanged ASCII names and conversion fallback semantics
+ * @summary Check ASCII labels and conversion fallback semantics
  * @run main ToASCII
  */
 
@@ -46,11 +46,8 @@ public class ToASCII {
                 (longest + ".").repeat(5) + longest
         }) {
             String input = new String(name);
-            if (IDN.toASCII(input) != input) {
-                throw new RuntimeException("Did not reuse ASCII input: " + name);
-            }
             for (int flag : FLAGS) {
-                check(name, name, flag);
+                check(input, name, flag);
             }
         }
 
@@ -64,11 +61,17 @@ public class ToASCII {
             check("B\u00dcCHER.Example", "xn--bcher-kva.Example", flag);
             check("\uff21.example", "a.example", flag);
             check("a\u00adb.example", "ab.example", flag);
+            checkUnicode("xn--bcher-kva.Example.", "b\u00fccher.Example.", flag);
+            checkUnicode("WWW.Example.COM.", "WWW.Example.COM.", flag);
+            // Punycode decodes this to ASCII, but the round-trip check must
+            // reject its noncanonical ACE spelling and return it unchanged.
+            checkUnicode("xn--abc-", "xn--abc-", flag);
 
             // Flag zero accepts ASCII that is not a DNS host name. Unknown
             // bits do not change this; only USE_STD3_ASCII_RULES matters.
             for (String name : new String[] {
-                    "-", "-a", "a-", "xn--", "XN--", "a-.example"
+                    "-", "-a", "a-", "xn--", "XN--", "a-.example",
+                    "-" + "a".repeat(62), "a".repeat(62) + "-"
             }) {
                 if ((flag & IDN.USE_STD3_ASCII_RULES) == 0) {
                     check(name, name, flag);
@@ -77,7 +80,8 @@ public class ToASCII {
                 }
             }
             for (String name : new String[] {
-                    "_service._tcp", "a:b", "a b", "a/b", "a@b", "\u0000", "a\u007f"
+                    "_service._tcp", "a:b", "a b", "a/b", "a@b", "\u0000", "a\u007f",
+                    "_".repeat(63), "\u0000".repeat(63)
             }) {
                 if ((flag & IDN.USE_STD3_ASCII_RULES) == 0) {
                     check(name, name, flag);
@@ -95,6 +99,16 @@ public class ToASCII {
                     longest + "a", "a." + longest + "a.", longest + "a.."
             }) {
                 fails(name, flag, "The label in the input is too long");
+            }
+            for (String name : new String[] {"_".repeat(64), "\u0000".repeat(64)}) {
+                fails(name, flag, (flag & IDN.USE_STD3_ASCII_RULES) == 0
+                        ? "The label in the input is too long"
+                        : "Contains non-LDH ASCII characters");
+            }
+            for (String name : new String[] {"-" + longest, longest + "-"}) {
+                fails(name, flag, (flag & IDN.USE_STD3_ASCII_RULES) == 0
+                        ? "The label in the input is too long"
+                        : "Has leading or trailing hyphen");
             }
             fails("a.." + longest + "a", flag, "Empty label is not a legal name");
             fails("xn--\u00e9", flag, "The input starts with the ACE Prefix");
@@ -157,6 +171,15 @@ public class ToASCII {
         }
         if (flag == 0 && !expected.equals(IDN.toASCII(input))) {
             throw new RuntimeException("Different one-argument result");
+        }
+    }
+
+    private static void checkUnicode(String input, String expected, int flag) {
+        String actual = IDN.toUnicode(input, flag);
+        if (!expected.equals(actual)
+                || (flag == 0 && !expected.equals(IDN.toUnicode(input)))) {
+            throw new RuntimeException("flag=" + flag + ": expected " + expected
+                    + ", got " + actual);
         }
     }
 
