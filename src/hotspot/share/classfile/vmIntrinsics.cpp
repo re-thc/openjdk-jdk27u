@@ -195,6 +195,7 @@ bool vmIntrinsics::does_virtual_dispatch(vmIntrinsics::ID id) {
 int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch (id) {
+  case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:

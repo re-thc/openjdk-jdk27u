@@ -364,6 +364,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_multiplyToLen();
   bool inline_countPositives();
   bool inline_encodeUTF8Latin1();
+  Node* inline_encodeUTF8Latin1_predicate();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();

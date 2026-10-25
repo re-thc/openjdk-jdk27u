@@ -810,6 +810,8 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
   assert(merged_memory(), "");
 
   switch (intrinsic_id()) {
+  case vmIntrinsics::_encodeUTF8Latin1:
+    return inline_encodeUTF8Latin1_predicate();
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -9434,59 +9436,41 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 
 // The Java helper is the original String Latin1 conversion loop. Short and
 // oversized inputs call it unchanged; only bounded bulk inputs enter the leaf.
-bool LibraryCallKit::inline_encodeUTF8Latin1() {
+// Use the normal Java call generator for the short/oversized arm, so the
+// original conversion loop remains eligible for inlining and loop optimization.
+Node* LibraryCallKit::inline_encodeUTF8Latin1_predicate() {
   const int maximum = 1024 * 1024;
-  if (!UseSIMDUTFIntrinsics || !SimdUTF::available() || SIMDUTFMinLength > maximum ||
-      callee() == C->method()) {
-    return false;
+  if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
+    Node* slow = control();
+    set_control(top());
+    return slow;
   }
+  Node* src = must_be_not_null(argument(0), true);
+  Node* length = _gvn.transform(new SubINode(load_array_length(src), argument(1)));
+  Node* comparison = _gvn.transform(new CmpUNode(
+      _gvn.transform(new SubINode(length, intcon((int)SIMDUTFMinLength))),
+      intcon(maximum - (int)SIMDUTFMinLength)));
+  return generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
+}
+
+bool LibraryCallKit::inline_encodeUTF8Latin1() {
   Node* src = must_be_not_null(argument(0), true);
   Node* start = argument(1);
   Node* dst = must_be_not_null(argument(2), true);
   Node* dp = argument(3);
   Node* length = _gvn.transform(new SubINode(load_array_length(src), start));
-  Node* comparison = _gvn.transform(new CmpUNode(
-      _gvn.transform(new SubINode(length, intcon((int)SIMDUTFMinLength))),
-      intcon(maximum - (int)SIMDUTFMinLength)));
-  Node* slow = generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
-  Node* initial_memory = reset_memory();
-  set_all_memory(initial_memory);
-  Node* initial_io = i_o();
-  RegionNode* region = new RegionNode(3);
-  PhiNode* result = new PhiNode(region, TypeInt::INT);
-  PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
-  PhiNode* io = new PhiNode(region, Type::ABIO);
-  if (!stopped()) {
-    const Type** fields = TypeTuple::fields(3);
-    fields[TypeFunc::Parms] = TypePtr::NOTNULL;
-    fields[TypeFunc::Parms + 1] = TypeInt::INT;
-    fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
-    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
-    fields = TypeTuple::fields(1);
-    fields[TypeFunc::Parms] = TypeInt::INT;
-    const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
-    Node* call = make_runtime_call(RC_LEAF, type,
-        CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8), "encode_latin1_utf8", TypePtr::BOTTOM,
-        array_element_address(src, start, T_BYTE), length, array_element_address(dst, dp, T_BYTE));
-    Node* written = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-    region->init_req(1, control());
-    result->init_req(1, _gvn.transform(new AddINode(dp, written)));
-    memory->init_req(1, reset_memory());
-    io->init_req(1, i_o());
-  }
-  if (slow != nullptr) {
-    set_control(slow);
-    set_all_memory(initial_memory);
-    set_i_o(initial_io);
-    CallJavaNode* call = generate_method_call(vmIntrinsics::_encodeUTF8Latin1, false, true, false);
-    Node* fallback = set_results_for_java_call(call);
-    region->init_req(2, control());
-    result->init_req(2, fallback);
-    memory->init_req(2, reset_memory());
-    io->init_req(2, i_o());
-  }
-  set_all_memory(_gvn.transform(memory));
-  set_i_o(_gvn.transform(io));
-  set_result(region, result);
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8), "encode_latin1_utf8", TypePtr::BOTTOM,
+      array_element_address(src, start, T_BYTE), length, array_element_address(dst, dp, T_BYTE));
+  Node* written = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(_gvn.transform(new AddINode(dp, written)));
   return true;
 }
