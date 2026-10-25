@@ -3545,8 +3545,12 @@ void LIRGenerator::do_zip_process(Intrinsic* x, bool inflate, bool input_array, 
   LIR_Opr output_len = load_arg(index++);
   LIR_Opr flush = inflate ? LIR_OprFact::intConst(0) : load_arg(index++);
   LIR_Opr params = inflate ? LIR_OprFact::intConst(0) : load_arg(index++);
+  // AArch64 constant-to-memory stores support only zero. Materialize the
+  // nonzero inflate selector in a register before storing the argument block.
+  LIR_Opr operation = LIR_OprFact::intConst(inflate);
+  if (inflate) operation = load_constant(operation->as_constant_ptr());
   LIR_Opr normalized[] = {
-    LIR_OprFact::intConst(inflate), load_arg(0), load_arg(1),
+    operation, load_arg(0), load_arg(1),
     input_array ? input : LIR_OprFact::oopConst(nullptr), input_offset, input_len,
     output_array ? output : LIR_OprFact::oopConst(nullptr), output_offset, output_len,
     flush, params
