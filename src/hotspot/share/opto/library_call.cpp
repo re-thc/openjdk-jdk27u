@@ -1444,7 +1444,8 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 
   Node* result;
   const int max_chunk = 1024 * 1024; // SimdUTF::process leaf limit, in source elements.
-  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength) ? MAX2(SIMDUTFMinLength, intx(64)) : SIMDUTFMinLength;
+  // Reserve native calls for large C2 ranges; lower tiers retain their own thresholds.
+  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength) ? MAX2(SIMDUTFMinLength, intx(2048)) : SIMDUTFMinLength;
   if (UseSIMDUTFIntrinsics && minimum > 0 && minimum <= max_chunk &&
       vmIntrinsics::is_intrinsic_available(vmIntrinsics::_simdutf_process) &&
       !C->directive()->is_intrinsic_disabled(vmIntrinsics::_simdutf_process)) {

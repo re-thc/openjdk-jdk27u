@@ -296,7 +296,7 @@ public class SimdUTFTest {
 
     private static void indexOf() {
         for (int length : new int[]{0, 1, 2, 15, 16, 17, 31, 32, 63, 64, 65, 79, 80, 81,
-                                   127, 128, 255, 256, 257, 271, 272, 273, 1024, 4097}) {
+                                   127, 128, 255, 256, 257, 271, 272, 273, 1024, 2063, 2064, 2065, 4097}) {
             for (String pattern : new String[]{"abcé\0", "漢x\ud800y\udc00😃"}) {
                 String text = pattern.repeat(length / pattern.length() + 1).substring(0, length);
                 char[] chars = text.toCharArray();
