@@ -147,6 +147,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_stringzillaFindUTF16: return stringzilla_findUTF16;
       case vmIntrinsics::_stringzillaRfindLatin1: return stringzilla_rfindLatin1;
       case vmIntrinsics::_stringzillaRfindUTF16: return stringzilla_rfindUTF16;
+      case vmIntrinsics::_stringzillaScanLatin1: return stringzilla_scanLatin1;
 #endif
       // Use optimized stub code for CRC32 native methods.
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
@@ -253,6 +254,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case stringzilla_findUTF16: return vmIntrinsics::_stringzillaFindUTF16;
   case stringzilla_rfindLatin1: return vmIntrinsics::_stringzillaRfindLatin1;
   case stringzilla_rfindUTF16: return vmIntrinsics::_stringzillaRfindUTF16;
+  case stringzilla_scanLatin1: return vmIntrinsics::_stringzillaScanLatin1;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
   case java_util_zip_CRC32_updateBytes
                                   : return vmIntrinsics::_updateBytesCRC32;
@@ -374,6 +376,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case stringzilla_findUTF16: tty->print("stringzilla_findUTF16"); break;
     case stringzilla_rfindLatin1: tty->print("stringzilla_rfindLatin1"); break;
     case stringzilla_rfindUTF16: tty->print("stringzilla_rfindUTF16"); break;
+    case stringzilla_scanLatin1: tty->print("stringzilla_scanLatin1"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;
     case java_util_zip_CRC32_updateBytes      : tty->print("java_util_zip_CRC32_updateBytes"); break;
     case java_util_zip_CRC32_updateByteBuffer : tty->print("java_util_zip_CRC32_updateByteBuffer"); break;

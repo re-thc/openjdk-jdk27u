@@ -32,6 +32,7 @@
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaScans
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaScanLatin1 StringZillaScans
  * @run main/othervm -Xmx32m -XX:+UseSerialGC StringZillaScans gc
+ * @run main/othervm -Xint -Xmx32m -XX:+UseSerialGC StringZillaScans gc
  */
 
 /*

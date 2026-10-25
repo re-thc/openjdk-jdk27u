@@ -101,6 +101,7 @@ class AbstractInterpreter: AllStatic {
     stringzilla_findUTF16,
     stringzilla_rfindLatin1,
     stringzilla_rfindUTF16,
+    stringzilla_scanLatin1,
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()

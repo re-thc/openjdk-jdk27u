@@ -251,6 +251,7 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(stringzilla_findUTF16)
   native_method_entry(stringzilla_rfindLatin1)
   native_method_entry(stringzilla_rfindUTF16)
+  native_method_entry(stringzilla_scanLatin1)
 #endif
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
@@ -498,6 +499,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::stringzilla_findCharUTF16:
   case Interpreter::stringzilla_rfindCharLatin1:
   case Interpreter::stringzilla_rfindCharUTF16:
+  // Scans share the character entry's (array, offset, length, int) ABI.
+  case Interpreter::stringzilla_scanLatin1:
     entry_point = generate_stringzilla_char_entry(kind); break;
   case Interpreter::stringzilla_findUTF16Latin1:
   case Interpreter::stringzilla_indexOfLatin1:
