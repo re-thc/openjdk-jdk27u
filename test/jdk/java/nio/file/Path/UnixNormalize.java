@@ -73,6 +73,15 @@ public class UnixNormalize {
             check(raw(Path.of(input)));
         }
 
+        // Native symbolic-link targets reach UnixPath as raw bytes and can
+        // contain repeated or trailing separators, unlike Path.of(String).
+        for (String input : List.of("//", "///", "///a", "///a/.", "//./a",
+                "///.", "///..", "///a/../..", "a//./b", "a///..",
+                "a/./", "a/..//", "a////.", "//a//b///./c/../..")) {
+            check(bytes(input));
+        }
+        check(new byte[] {'/', '/', (byte) 0xff, '/', '/', '.', '/', (byte) 0x80});
+
         // Exhaustive short component sequences, with and without a root.
         for (int length = 0; length <= 5; length++) {
             enumerate(new ArrayList<>(), length);
@@ -212,17 +221,33 @@ public class UnixNormalize {
         return out.toByteArray();
     }
 
-    // Independent stack model: retain unresolved relative parents and clip
-    // absolute parents at the root. Never decode filename bytes.
-    private static byte[] reference(byte[] input) {
-        boolean absolute = input.length != 0 && input[0] == '/';
+    // Match UnixPath's name ranges, including native targets whose redundant
+    // separators are retained in the preceding name or at the end of the path.
+    private static List<byte[]> rawNames(byte[] input) {
         List<byte[]> names = new ArrayList<>();
-        int begin = absolute ? 1 : 0;
+        int begin = 0;
+        while (begin < input.length && input[begin] == '/')
+            begin++;
         while (begin < input.length) {
             int end = begin;
             while (end < input.length && input[end] != '/')
                 end++;
-            byte[] name = Arrays.copyOfRange(input, begin, end);
+            int next = end;
+            while (next < input.length && input[next] == '/')
+                next++;
+            names.add(Arrays.copyOfRange(input, begin, next == input.length ? next : next - 1));
+            begin = next;
+        }
+        return names;
+    }
+
+    // Independent byte-array model: retain unresolved relative parents and
+    // clip absolute parents at the root. Never decode filename bytes.
+    private static byte[] reference(byte[] input) {
+        boolean absolute = input.length != 0 && input[0] == '/';
+        List<byte[]> inputNames = rawNames(input);
+        List<byte[]> names = new ArrayList<>();
+        for (byte[] name : inputNames) {
             if (Arrays.equals(name, bytes(".."))) {
                 if (!names.isEmpty() && !Arrays.equals(names.getLast(), bytes(".."))) {
                     names.removeLast();
@@ -232,8 +257,9 @@ public class UnixNormalize {
             } else if (!Arrays.equals(name, bytes("."))) {
                 names.add(name);
             }
-            begin = end + 1;
         }
+        if (names.size() == inputNames.size())
+            return input;
         return compose(absolute, names);
     }
 
@@ -272,15 +298,10 @@ public class UnixNormalize {
             if (raw(result.getName(0)).length != 0)
                 throw new AssertionError("Incorrect empty name");
         } else {
-            int name = 0;
-            int begin = expected[0] == '/' ? 1 : 0;
-            while (begin < expected.length) {
-                int end = begin;
-                while (end < expected.length && expected[end] != '/')
-                    end++;
-                if (!Arrays.equals(raw(result.getName(name++)), Arrays.copyOfRange(expected, begin, end)))
+            List<byte[]> names = rawNames(expected);
+            for (int name = 0; name < names.size(); name++) {
+                if (!Arrays.equals(raw(result.getName(name)), names.get(name)))
                     throw new AssertionError("Incorrect normalized name bytes");
-                begin = end + 1;
             }
         }
         if (result.getNameCount() != expectedCount)

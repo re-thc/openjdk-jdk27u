@@ -596,12 +596,12 @@ class UnixPath implements Path {
                 while (index < path.length && path[index] != '/')
                     index++;
                 index++;
-                firstDot++;
             }
             if (index >= path.length)
                 return this;
             initOffsets();
             nameOffsets = offsets;
+            firstDot = Arrays.binarySearch(nameOffsets, index);
         }
         return normalizeFrom(nameOffsets, firstDot);
     }
@@ -615,7 +615,7 @@ class UnixPath implements Path {
         for (int i = 0; i < firstDot; i++)
             retained[i] = i;
         int remaining = firstDot;
-        int nameBytes = nameOffsets[firstDot] - firstDot - (absolute ? 1 : 0);
+        int nameBytes = nameOffsets[firstDot] - nameOffsets[0] - firstDot;
 
         for (int i = firstDot; i < count; i++) {
             int begin = nameOffsets[i];

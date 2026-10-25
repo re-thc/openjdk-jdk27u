@@ -44,7 +44,7 @@ public class UnixNormalizeLaziness {
         Field offsets = pathClass.getDeclaredField("offsets");
         offsets.setAccessible(true);
 
-        for (byte[] input : List.of(bytes(""), bytes("/"), bytes("a"),
+        for (byte[] input : List.of(bytes(""), bytes("/"), bytes("///"), bytes("///a"), bytes("a"),
                 bytes("/srv/app/config.yaml"), bytes("assets/css/main.css"),
                 bytes(".git/config"), bytes("foo/.../bar"), bytes("..foo/.x"),
                 bytes("x".repeat(255)), bytes("/" + "x".repeat(255)),
