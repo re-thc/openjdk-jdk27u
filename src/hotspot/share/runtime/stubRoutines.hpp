@@ -238,6 +238,30 @@ public:
     return reinterpret_cast<address>(&_compiler_stubs_initialized);
   }
 
+  static address multiplyToLen_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(multiplyToLen));
+  }
+
+  static address mulAdd_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(mulAdd));
+  }
+
+  static address montgomeryMultiply_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(montgomeryMultiply));
+  }
+
+  static address montgomerySquare_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(montgomerySquare));
+  }
+
+  static address bigIntegerLeftShift_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(bigIntegerLeftShiftWorker));
+  }
+
+  static address bigIntegerRightShift_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(bigIntegerRightShiftWorker));
+  }
+
   static address squareToLen_entry_address() {
     return reinterpret_cast<address>(&STUB_FIELD_NAME(squareToLen));
   }

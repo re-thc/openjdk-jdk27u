@@ -62,7 +62,7 @@ public class TestCommonIntrinsics {
     // Fixed transcript from the pristine Java implementations, checked in
     // separate jtreg VMs for every compilation mode and flag state.
     private static final String EXPECTED =
-            "f459f5ec15a357973e2e84ab16ca7cff567fe4cad8f169d6cf63bb1e3b57d6c4";
+            "9c83b1b852a4e6143374d8a78cbda102d3dd0b729b8874098e86a949f9fe8510";
 
     public static void main(String[] args) throws Exception {
         workload();
@@ -219,14 +219,14 @@ public class TestCommonIntrinsics {
                 if (!signature.verify(signed)) throw new AssertionError(algorithm + " signature");
             }
         }
-        guards();
+        checkedMultiplyInputs();
         String result = HexFormat.of().formatHex(transcript.digest());
         if (!result.equals(EXPECTED)) throw new AssertionError("unexpected transcript: " + result);
         System.out.println("RESULT " + result);
     }
 
-    private static void guards() throws Exception {
-        Method multiply = BigInteger.class.getDeclaredMethod("implMultiplyToLen",
+    private static void checkedMultiplyInputs() throws Exception {
+        Method multiply = BigInteger.class.getDeclaredMethod("multiplyToLen",
                 int[].class, int.class, int[].class, int.class, int[].class);
         multiply.setAccessible(true);
         for (int repeat = 0; repeat < 300; repeat++) {

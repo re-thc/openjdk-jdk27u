@@ -35,6 +35,8 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.intrinsics.bigInteger.MontgomeryMultiplyTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -Xbatch -XX:TieredStopAtLevel=1 compiler.intrinsics.bigInteger.MontgomeryMultiplyTest c1
  */
 
 package compiler.intrinsics.bigInteger;
@@ -316,8 +318,12 @@ public class MontgomeryMultiplyTest {
         if (!Platform.isServer()) {
             throw new Error("TESTBUG: Not server VM");
         }
-        if (wb.isIntrinsicAvailable(getExecutable(true), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) &&
-                wb.isIntrinsicAvailable(getExecutable(false), CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
+        int level = args.length > 0 && args[0].equals("c1")
+                ? CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE
+                : CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
+        if (wb.isIntrinsicAvailable(getExecutable(true), level) &&
+                wb.isIntrinsicAvailable(getExecutable(false), level)) {
+            System.out.println("Testing Montgomery intrinsics at compilation level " + level);
             try {
                 new MontgomeryMultiplyTest().testMontgomeryMultiplyChecks();
                 new MontgomeryMultiplyTest().testResultValues();

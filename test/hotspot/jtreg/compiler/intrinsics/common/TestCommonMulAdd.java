@@ -100,7 +100,7 @@ public class TestCommonMulAdd {
                 }
             }
         }
-        // Rejecting an alias must preserve Java's traversal and caller state.
+        // Aliased input must preserve Java's traversal and caller state.
         int[] alias = random.ints(20).toArray();
         check(alias, alias, 1, 16, -1);
     }

@@ -32,12 +32,6 @@
 // Keep the interpreter and C1 entry points in one catalogue. Existing
 // interpreter/C1 intrinsics deliberately do not appear here.
 #define COMMON_INTRINSICS_DO(f)                                \
-  f(_multiplyToLen,                        5, T_OBJECT)        \
-  f(_mulAdd,                               5, T_INT)           \
-  f(_montgomeryMultiply,                   7, T_OBJECT)        \
-  f(_montgomerySquare,                     6, T_OBJECT)        \
-  f(_bigIntegerRightShiftWorker,           5, T_VOID)          \
-  f(_bigIntegerLeftShiftWorker,            5, T_VOID)          \
   f(_ghash_processBlocks,                  5, T_VOID)          \
   f(_chacha20Block,                        2, T_INT)           \
   f(_poly1305_processBlocks,               6, T_VOID)          \
@@ -120,6 +114,8 @@
 class CommonIntrinsics : AllStatic {
  public:
   static constexpr jint max_quadratic_limbs = 2048;
+  static constexpr jint max_montgomery_limbs = 512;
+  static constexpr jint max_leaf_elements = 1 << 20;
   // A leaf reads arguments in interpreter expression-stack order. Longs
   // occupy two slots, with the value in the lower-addressed slot. No handle
   // allocation, safepoint, or exception is permitted while these raw oops
@@ -133,6 +129,7 @@ class CommonIntrinsics : AllStatic {
   static bool enabled();
   static bool needs_compiler_stubs(vmIntrinsics::ID id);
   static void prepare(vmIntrinsics::ID id);
+  static bool is_big_integer(vmIntrinsics::ID id);
   static bool is_scalar(vmIntrinsics::ID id);
   static bool is_binary_scalar(vmIntrinsics::ID id);
   static bool scalar_is_wide(vmIntrinsics::ID id);

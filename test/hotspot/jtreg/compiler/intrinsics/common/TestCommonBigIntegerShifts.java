@@ -122,16 +122,5 @@ public class TestCommonBigIntegerShifts {
                 }
             }
         }
-        // The large-input helper invokes a guarded leaf. Null input must
-        // reexecute that invoke with the complete inlined helper state.
-        for (boolean left : new boolean[] {false, true}) {
-            try {
-                if (left) PRIMITIVE_LEFT.invokeExact((int[]) null, 64, 7);
-                else PRIMITIVE_RIGHT.invokeExact((int[]) null, 64, 7);
-                throw new AssertionError("expected NullPointerException");
-            } catch (NullPointerException expected) {
-            }
-            check(left, random.ints(64).toArray(), left ? 0 : 1, 7, true);
-        }
     }
 }

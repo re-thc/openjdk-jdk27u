@@ -2874,43 +2874,121 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
                                   rlock_result(x), tmp1, tmp2, vtmp, info, fallback));
 }
 
-void LIRGenerator::do_SquareToLen(Intrinsic* x) {
+void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
   CodeStub* fallback = new PredicateFailedStub(info, true);
-  LIRItem input(x->argument_at(0), this);
-  LIRItem len(x->argument_at(1), this);
-  LIRItem output(x->argument_at(2), this);
-  LIRItem zlen(x->argument_at(3), this);
-  input.load_item();
-  len.load_item();
-  output.load_item();
-  zlen.load_item();
+  LIR_OprList values(x->number_of_arguments());
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    LIRItem item(x->argument_at(i), this);
+    item.load_item();
+    values.append(item.result());
+  }
+  auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    __ cmp(condition, left, right);
+    __ branch(condition, fallback);
+  };
+  auto bounded = [&](LIR_Opr length, int limit) {
+    guard(lir_cond_lessEqual, length, LIR_OprFact::intConst(0));
+    guard(lir_cond_greater, length, LIR_OprFact::intConst(limit));
+  };
 
-  // The Java wrapper checks the arrays; retain the leaf's work and alias limits.
-  __ cmp(lir_cond_lessEqual, len.result(), LIR_OprFact::intConst(0));
-  __ branch(lir_cond_lessEqual, fallback);
-  __ cmp(lir_cond_greater, len.result(), LIR_OprFact::intConst(CommonIntrinsics::max_quadratic_limbs));
-  __ branch(lir_cond_greater, fallback);
-  __ cmp(lir_cond_equal, input.result(), output.result());
-  __ branch(lir_cond_equal, fallback);
 
-  LIR_Opr src = new_pointer_register();
-  LIR_Opr dst = new_pointer_register();
-  __ leal(LIR_OprFact::address(generate_address(input.result(), arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), src);
-  __ leal(LIR_OprFact::address(generate_address(output.result(), arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), dst);
-  BasicTypeList signature(4);
-  signature.append(T_ADDRESS);
-  signature.append(T_INT);
-  signature.append(T_ADDRESS);
-  signature.append(T_INT);
-  LIR_OprList args(4);
-  args.append(src);
-  args.append(len.result());
-  args.append(dst);
-  args.append(zlen.result());
-  call_runtime(&signature, &args, StubRoutines::squareToLen(), voidType, nullptr);
-  __ move(output.result(), rlock_result(x));
+  vmIntrinsics::ID id = x->id();
+  address entry = nullptr;
+  int output = -1;
+  switch (id) {
+    case vmIntrinsics::_multiplyToLen: {
+      bounded(values.at(1), CommonIntrinsics::max_quadratic_limbs);
+      bounded(values.at(3), CommonIntrinsics::max_quadratic_limbs);
+      guard(lir_cond_equal, values.at(0), values.at(4));
+      guard(lir_cond_equal, values.at(2), values.at(4));
+      output = 4;
+      entry = StubRoutines::multiplyToLen();
+      break;
+    }
+    case vmIntrinsics::_squareToLen:
+      bounded(values.at(1), CommonIntrinsics::max_quadratic_limbs);
+      guard(lir_cond_equal, values.at(0), values.at(2));
+      output = 2;
+      entry = StubRoutines::squareToLen();
+      break;
+    case vmIntrinsics::_mulAdd: {
+      bounded(values.at(3), CommonIntrinsics::max_leaf_elements);
+      LIR_Opr length = new_register(T_INT);
+      __ move(LIR_OprFact::address(generate_address(values.at(0), arrayOopDesc::length_offset_in_bytes(), T_INT)), length);
+      LIR_Opr offset = new_register(T_INT);
+      __ sub(length, values.at(2), offset);
+      values.at_put(2, offset);
+      entry = StubRoutines::mulAdd();
+      break;
+    }
+    case vmIntrinsics::_montgomeryMultiply:
+    case vmIntrinsics::_montgomerySquare: {
+      bool multiply = id == vmIntrinsics::_montgomeryMultiply;
+      int length_index = multiply ? 3 : 2;
+      output = multiply ? 5 : 4;
+      bounded(values.at(length_index), CommonIntrinsics::max_montgomery_limbs);
+      for (int i = 0; i < length_index; i++) {
+        guard(lir_cond_equal, values.at(i), values.at(output));
+      }
+      entry = multiply ? StubRoutines::montgomeryMultiply() : StubRoutines::montgomerySquare();
+      break;
+    }
+    case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    case vmIntrinsics::_bigIntegerRightShiftWorker: {
+      bool left = id == vmIntrinsics::_bigIntegerLeftShiftWorker;
+      bounded(values.at(4), CommonIntrinsics::max_leaf_elements);
+      bounded(values.at(3), 31);
+      guard(lir_cond_less, values.at(2), LIR_OprFact::intConst(0));
+      if (!left) guard(lir_cond_greater, values.at(2), LIR_OprFact::intConst(1));
+      LabelObj* disjoint = new LabelObj();
+      __ cmp(lir_cond_notEqual, values.at(0), values.at(1));
+      __ branch(lir_cond_notEqual, disjoint->label());
+      guard(lir_cond_notEqual, values.at(2), LIR_OprFact::intConst(left ? 0 : 1));
+      __ branch_destination(disjoint->label());
+      entry = left ? StubRoutines::bigIntegerLeftShift() : StubRoutines::bigIntegerRightShift();
+      break;
+    }
+    default: ShouldNotReachHere();
+  }
+
+  BasicTypeList signature(values.length());
+  LIR_OprList args(values.length());
+  for (int i = 0; i < values.length(); i++) {
+    LIR_Opr value = values.at(i);
+    BasicType type = as_BasicType(x->argument_at(i)->type());
+    if (type == T_OBJECT) {
+      LIR_Opr base = new_pointer_register();
+      __ leal(LIR_OprFact::address(generate_address(value, arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), base);
+      value = base;
+      type = T_ADDRESS;
+    } else if (type == T_INT && id != vmIntrinsics::_montgomeryMultiply &&
+               id != vmIntrinsics::_montgomerySquare) {
+      LIR_Opr word = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, value, word);
+      if (id == vmIntrinsics::_mulAdd && i == 4) {
+        LIR_Opr mask = new_register(T_LONG);
+        __ move(LIR_OprFact::longConst(0xffffffffLL), mask);
+        __ logical_and(word, mask, word);
+      }
+      value = word;
+      type = T_LONG;
+    }
+    signature.append(type);
+    args.append(value);
+  }
+  // Generated stubs consume full words; SharedRuntime Montgomery entries take jint lengths.
+  ValueType* result_type = voidType;
+  if (id == vmIntrinsics::_mulAdd) result_type = intType;
+  LIR_Opr result = call_runtime(&signature, &args, entry, result_type, nullptr);
+  if (output >= 0) {
+    __ move(values.at(output), rlock_result(x));
+  } else if (id == vmIntrinsics::_mulAdd) {
+    __ move(result, rlock_result(x));
+  } else {
+    set_no_result(x);
+  }
 }
 
 void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
@@ -2963,8 +3041,8 @@ void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   if (CommonIntrinsics::is_available_for_c1(x->id())) {
-    if (x->id() == vmIntrinsics::_squareToLen) {
-      do_SquareToLen(x);
+    if (CommonIntrinsics::is_big_integer(x->id())) {
+      do_BigIntegerIntrinsic(x);
     } else if (CommonIntrinsics::is_scalar(x->id())) {
       do_CommonScalarIntrinsic(x);
     } else {

@@ -984,6 +984,135 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
 }
 
+void TemplateInterpreterGenerator::generate_big_integer_entry(vmIntrinsics::ID id, Label& slow_path) {
+  address entry_slot = nullptr;
+  int result_slot = -1;
+  auto bounded = [&](Register length, int limit) {
+    __ cmpw(length, 0);
+    __ br(Assembler::LE, slow_path);
+    __ cmpw(length, limit);
+    __ br(Assembler::GT, slow_path);
+  };
+  auto disjoint = [&](Register input, Register output) {
+    __ cmp(input, output);
+    __ br(Assembler::EQ, slow_path);
+  };
+  auto elements = [&](Register array) {
+    __ add(array, array, arrayOopDesc::base_offset_in_bytes(T_INT));
+  };
+  switch (id) {
+    case vmIntrinsics::_multiplyToLen:
+      __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+      __ ldrw(c_rarg1, Address(esp, 3 * wordSize));
+      __ ldr(c_rarg2, Address(esp, 2 * wordSize));
+      __ ldrw(c_rarg3, Address(esp, wordSize));
+      __ ldr(c_rarg4, Address(esp, 0));
+      bounded(c_rarg1, CommonIntrinsics::max_quadratic_limbs);
+      bounded(c_rarg3, CommonIntrinsics::max_quadratic_limbs);
+      disjoint(c_rarg0, c_rarg4);
+      disjoint(c_rarg2, c_rarg4);
+      elements(c_rarg0);
+      elements(c_rarg2);
+      elements(c_rarg4);
+      entry_slot = StubRoutines::multiplyToLen_entry_address();
+      result_slot = 0;
+      break;
+    case vmIntrinsics::_squareToLen:
+      __ ldr(c_rarg0, Address(esp, 3 * wordSize));
+      __ ldrw(c_rarg1, Address(esp, 2 * wordSize));
+      __ ldr(c_rarg2, Address(esp, wordSize));
+      __ ldrw(c_rarg3, Address(esp, 0));
+      bounded(c_rarg1, CommonIntrinsics::max_quadratic_limbs);
+      disjoint(c_rarg0, c_rarg2);
+      elements(c_rarg0);
+      elements(c_rarg2);
+      entry_slot = StubRoutines::squareToLen_entry_address();
+      result_slot = 1;
+      break;
+    case vmIntrinsics::_mulAdd:
+      __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+      __ ldr(c_rarg1, Address(esp, 3 * wordSize));
+      __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
+      __ ldrw(c_rarg3, Address(esp, wordSize));
+      bounded(c_rarg3, CommonIntrinsics::max_leaf_elements);
+      __ ldrw(rscratch1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+      __ subw(c_rarg2, rscratch1, c_rarg2);
+      __ ldrw(c_rarg4, Address(esp, 0));
+      elements(c_rarg0);
+      elements(c_rarg1);
+      entry_slot = StubRoutines::mulAdd_entry_address();
+      break;
+    case vmIntrinsics::_montgomeryMultiply:
+      __ ldr(c_rarg0, Address(esp, 6 * wordSize));
+      __ ldr(c_rarg1, Address(esp, 5 * wordSize));
+      __ ldr(c_rarg2, Address(esp, 4 * wordSize));
+      __ ldrw(c_rarg3, Address(esp, 3 * wordSize));
+      __ ldr(c_rarg4, Address(esp, wordSize));
+      __ ldr(c_rarg5, Address(esp, 0));
+      bounded(c_rarg3, CommonIntrinsics::max_montgomery_limbs);
+      disjoint(c_rarg0, c_rarg5);
+      disjoint(c_rarg1, c_rarg5);
+      disjoint(c_rarg2, c_rarg5);
+      elements(c_rarg0);
+      elements(c_rarg1);
+      elements(c_rarg2);
+      elements(c_rarg5);
+      entry_slot = StubRoutines::montgomeryMultiply_entry_address();
+      result_slot = 0;
+      break;
+    case vmIntrinsics::_montgomerySquare:
+      __ ldr(c_rarg0, Address(esp, 5 * wordSize));
+      __ ldr(c_rarg1, Address(esp, 4 * wordSize));
+      __ ldrw(c_rarg2, Address(esp, 3 * wordSize));
+      __ ldr(c_rarg3, Address(esp, wordSize));
+      __ ldr(c_rarg4, Address(esp, 0));
+      bounded(c_rarg2, CommonIntrinsics::max_montgomery_limbs);
+      disjoint(c_rarg0, c_rarg4);
+      disjoint(c_rarg1, c_rarg4);
+      elements(c_rarg0);
+      elements(c_rarg1);
+      elements(c_rarg4);
+      entry_slot = StubRoutines::montgomerySquare_entry_address();
+      result_slot = 0;
+      break;
+    case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    case vmIntrinsics::_bigIntegerRightShiftWorker: {
+      bool left = id == vmIntrinsics::_bigIntegerLeftShiftWorker;
+      __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+      __ ldr(c_rarg1, Address(esp, 3 * wordSize));
+      __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
+      __ ldrw(c_rarg3, Address(esp, wordSize));
+      __ ldrw(c_rarg4, Address(esp, 0));
+      bounded(c_rarg4, CommonIntrinsics::max_leaf_elements);
+      bounded(c_rarg3, 31);
+      __ tbnz(c_rarg2, 31, slow_path);
+      if (!left) {
+        __ cmpw(c_rarg2, 1);
+        __ br(Assembler::GT, slow_path);
+      }
+      Label disjoint_arrays;
+      __ cmp(c_rarg0, c_rarg1);
+      __ br(Assembler::NE, disjoint_arrays);
+      __ cmpw(c_rarg2, left ? 0 : 1);
+      __ br(Assembler::NE, slow_path);
+      __ bind(disjoint_arrays);
+      elements(c_rarg0);
+      elements(c_rarg1);
+      entry_slot = left ? StubRoutines::bigIntegerLeftShift_entry_address()
+                        : StubRoutines::bigIntegerRightShift_entry_address();
+      break;
+    }
+    default: ShouldNotReachHere();
+  }
+  __ lea(rscratch2, ExternalAddress(entry_slot));
+  __ ldr(rscratch2, Address(rscratch2, 0));
+  __ cbz(rscratch2, slow_path);
+  __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
+  __ blr(rscratch2);
+  __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
+  if (result_slot >= 0) __ ldr(r0, Address(esp, result_slot * wordSize));
+}
+
 address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
   address entry = __ pc();
   Label slow_path;
@@ -1019,26 +1148,8 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
     __ ldarb(rscratch2, rscratch1);
     __ cbz(rscratch2, slow_path);
   }
-  if (id == vmIntrinsics::_squareToLen) {
-    __ ldr(c_rarg0, Address(esp, 3 * wordSize));
-    __ ldrw(c_rarg1, Address(esp, 2 * wordSize));
-    __ ldr(c_rarg2, Address(esp, wordSize));
-    __ ldrw(c_rarg3, Address(esp, 0));
-    __ cmpw(c_rarg1, 0);
-    __ br(Assembler::LE, slow_path);
-    __ cmpw(c_rarg1, CommonIntrinsics::max_quadratic_limbs);
-    __ br(Assembler::GT, slow_path);
-    __ cmp(c_rarg0, c_rarg2);
-    __ br(Assembler::EQ, slow_path);
-    __ lea(rscratch2, ExternalAddress(StubRoutines::squareToLen_entry_address()));
-    __ ldr(rscratch2, Address(rscratch2, 0));
-    __ cbz(rscratch2, slow_path);
-    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_INT));
-    __ add(c_rarg2, c_rarg2, arrayOopDesc::base_offset_in_bytes(T_INT));
-    __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
-    __ blr(rscratch2);
-    __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
-    __ ldr(r0, Address(esp, wordSize));
+  if (CommonIntrinsics::is_big_integer(id)) {
+    generate_big_integer_entry(id, slow_path);
   } else {
     // Arguments stay on the expression stack so the Java fallback can reuse them.
     __ mov(c_rarg0, esp);
