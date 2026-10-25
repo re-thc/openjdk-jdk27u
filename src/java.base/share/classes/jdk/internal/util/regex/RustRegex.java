@@ -26,6 +26,9 @@ package jdk.internal.util.regex;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,6 +48,9 @@ public final class RustRegex {
     public final int groupCount;
     public final Map<String, Integer> namedGroups;
     private volatile long handle;
+    private volatile long utf8Handle;
+    private final String source;
+    private final int flags;
     private final Preparation deferred;
     private final boolean contextSensitive;
     private final boolean finalTerminatorSensitive;
@@ -63,6 +69,8 @@ public final class RustRegex {
 
     private RustRegex(long handle, Preparation preparation) {
         this.handle = handle;
+        source = preparation.source;
+        flags = preparation.flags;
         groupCount = preparation.groupCount;
         namedGroups = preparation.namedGroups;
         contextSensitive = preparation.contextSensitive;
@@ -78,13 +86,15 @@ public final class RustRegex {
     // Retain only immutable execution metadata after parsing. Reconstructing a
     // collected backend must not parse, encode, or derive routing metadata again.
     private static final class Preparation {
+        final String source;
         final byte[] expression;
         final int flags, groupCount, javaPlanWidth;
         final Map<String, Integer> namedGroups;
         final FastPlan fastPlan;
         final boolean contextSensitive, finalTerminatorSensitive, fixedWidth, shortAlternatives;
 
-        Preparation(Subset subset, FastPlan fastPlan) {
+        Preparation(Subset subset, FastPlan fastPlan, String source) {
+            this.source = source;
             // The subset rejects non-ASCII source and emits escaped bytes.
             // Copy directly, avoiding charset initialization on Java-only plans.
             expression = new byte[subset.output.length()];
@@ -119,6 +129,19 @@ public final class RustRegex {
         if (compiled != 0) {
             registerCleanup(compiled);
             handle = compiled;
+        }
+        return compiled;
+    }
+
+    private synchronized long utf8Handle() {
+        if (utf8Handle != 0) return utf8Handle;
+        Subset unicode = new Subset(source, flags, true);
+        unicode.expression(0);
+        byte[] expression = ("(?u)" + unicode.output).getBytes(StandardCharsets.UTF_8);
+        long compiled = compile0(expression, flags, groupCount);
+        if (compiled != 0) {
+            registerCleanup(compiled);
+            utf8Handle = compiled;
         }
         return compiled;
     }
@@ -161,7 +184,7 @@ public final class RustRegex {
                     (subset.source.equals("[0-9]{3}-[0-9]{2}-[0-9]{4}") ||
                      subset.source.equals("\\d{3}-\\d{2}-\\d{4}"))) fast = FastFixedDigits.INSTANCE;
             boolean defer = fast != null || JAVA_TIER == 2 && !subset.variableLength;
-            Preparation preparation = new Preparation(subset, fast);
+            Preparation preparation = new Preparation(subset, fast, pattern);
             long handle = defer ? 0 : compile0(preparation.expression, flags, subset.groups);
             if (handle == 0 && !defer) return null; // Budget failures remain retryable for new Patterns.
             RustRegex engine = new RustRegex(handle, preparation);
@@ -370,7 +393,7 @@ public final class RustRegex {
         if (to - from > MAX_LENGTH) return -1;
         if (finalTerminatorSensitive && to > from) {
             char last = input.charAt(to-1);
-            if (last == '\n' || last == '\r' || last == 0x85) return -1;
+            if (last == '\n' || last == '\r' || last == 0x85 || last == 0x2028 || last == 0x2029) return -1;
         }
         long nativeHandle = handle;
         if (nativeHandle == 0 && JAVA_TIER == 2 && mode == 0 &&
@@ -380,30 +403,81 @@ public final class RustRegex {
         byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
         try {
             if (bytes == null)
-                return matchEncodedRegion(input, state, from, to, start, mode, nativeHandle);
+                return matchUtf8(input, state, from, to, start, mode);
             return matchBytes(bytes, state, from, to, start, mode, nativeHandle);
         } finally {
             Reference.reachabilityFence(this);
         }
     }
 
-    private int matchEncodedRegion(String input, int[] state, int from, int to,
-                                   int start, int mode, long nativeHandle) {
-        // Context-sensitive searches with transparent or non-anchoring bounds
-        // have already returned to Java. Only the active region is needed here,
-        // including when compact Strings are disabled or wider text surrounds it.
+    private int matchUtf8(String input, int[] state, int from, int to, int start, int mode) {
+        // Java's default case folding is ASCII-only. Keep that separate from
+        // Rust's Unicode folding rather than broadening validation patterns.
+        if ((flags & Pattern.CASE_INSENSITIVE) != 0)
+            return matchLatin1Region(input, state, from, to, start, mode);
+        byte[] bytes;
+        try {
+            bytes = SharedSecrets.getJavaLangAccess().uncheckedGetBytesOrThrow(
+                    input.substring(from, to), StandardCharsets.UTF_8);
+        } catch (CharacterCodingException malformedUtf16) {
+            return -1;
+        }
+        int byteStart = start == from ? 0 : utf8Offset(bytes, start - from);
+        if (byteStart < 0) return -1;
+        long compiled = utf8Handle;
+        if (compiled == 0) compiled = utf8Handle();
+        if (compiled == 0) return -1;
+        int result = matchBytes(bytes, state, 0, bytes.length, byteStart, mode, compiled);
+        return result == 1 ? utf16Captures(bytes, state, from) : result;
+    }
+
+    private int matchLatin1Region(String input, int[] state, int from, int to, int start, int mode) {
         byte[] bytes = new byte[to - from];
         for (int i = 0; i < bytes.length; i++) {
             char c = input.charAt(from + i);
             if (c > 255) return -1;
-            bytes[i] = (byte)c;
+            bytes[i] = (byte) c;
         }
-        int result = matchBytes(bytes, state, 0, bytes.length, start - from, mode, nativeHandle);
+        int result = matchBytes(bytes, state, 0, bytes.length, start - from, mode, handle);
         if (result == 1 && from != 0) {
             for (int i = 0; i < groupCount * 2; i++)
                 if (state[i] >= 0) state[i] += from;
         }
         return result;
+    }
+
+    private static int utf8Offset(byte[] bytes, int utf16Offset) {
+        int at = 0, chars = 0;
+        while (chars < utf16Offset) {
+            int b = bytes[at] & 255;
+            at += b < 128 ? 1 : b < 224 ? 2 : b < 240 ? 3 : 4;
+            chars += b < 240 ? 1 : 2;
+        }
+        return chars == utf16Offset ? at : -1;
+    }
+
+    private int utf16Captures(byte[] bytes, int[] state, int from) {
+        // Sort just the capture endpoints, rather than allocating a map for
+        // every byte of the input. One pass restores Java's UTF-16 indices.
+        long[] endpoints = new long[groupCount * 2];
+        for (int i = 0; i < endpoints.length; i++)
+            endpoints[i] = ((long) state[i] << 32) | i;
+        Arrays.sort(endpoints);
+        int at = 0, chars = 0;
+        for (long endpoint : endpoints) {
+            int limit = (int) (endpoint >> 32);
+            if (limit < 0) continue;
+            while (at < limit) {
+                int b = bytes[at] & 255;
+                at += b < 128 ? 1 : b < 224 ? 2 : b < 240 ? 3 : 4;
+                chars += b < 240 ? 1 : 2;
+            }
+            // The byte engine can report an empty match inside a code point.
+            // Such an offset cannot be published as a Java capture index.
+            if (at != limit) return -1;
+            state[(int) endpoint] = chars + from;
+        }
+        return 1;
     }
 
     @ForceInline
@@ -785,11 +859,17 @@ public final class RustRegex {
         // Mutable while parsing; frozen before this preparation is published.
         Map<String, Integer> names = new HashMap<>();
         final int flags;
+        final boolean unicode;
         int cursor, groups = 1;
         boolean complex, contextSensitive, finalTerminatorSensitive, variableLength;
 
         Subset(String source, int flags) {
+            this(source, flags, false);
+        }
+
+        Subset(String source, int flags, boolean unicode) {
             this.flags = flags;
+            this.unicode = unicode;
             StringBuilder expanded = new StringBuilder();
             boolean quoted = false;
             for (int i = 0; i < source.length(); i++) {
@@ -887,8 +967,9 @@ public final class RustRegex {
             if (c == '[') { characterClass(); complex = true; return new Shape(false, 0, false); }
             if (c == '.') {
                 complex = true;
-                output.append((flags & Pattern.DOTALL) != 0 ? "[\\x00-\\xff]"
-                        : (flags & Pattern.UNIX_LINES) != 0 ? "[^\\n]" : "[^\\n\\r\\x85]");
+                output.append((flags & Pattern.DOTALL) != 0 ? (unicode ? "(?s:.)" : "[\\x00-\\xff]")
+                        : (flags & Pattern.UNIX_LINES) != 0 ? "[^\\n]"
+                        : unicode ? "[^\\n\\r\\x85\\x{2028}\\x{2029}]" : "[^\\n\\r\\x85]");
                 return new Shape(false, 0, false);
             }
             if (c == '^' || c == '$') {
@@ -902,7 +983,9 @@ public final class RustRegex {
                 if ("AzZbB".indexOf(escaped) >= 0) {
                     contextSensitive = true; complex = true;
                     finalTerminatorSensitive |= escaped == 'Z';
-                    output.append('\\').append(escaped == 'Z' ? 'z' : escaped);
+                    if (unicode && (escaped == 'b' || escaped == 'B'))
+                        output.append("(?-u:\\").append(escaped).append(')');
+                    else output.append('\\').append(escaped == 'Z' ? 'z' : escaped);
                     return new Shape(true, 0, false);
                 }
                 cursor--;
@@ -947,7 +1030,17 @@ public final class RustRegex {
         int character(StringBuilder target) {
             char c = take();
             if ("dDwWsS".indexOf(c) >= 0) {
-                target.append('\\').append(c); complex = true; return -1;
+                if (unicode) {
+                    target.append(switch (c) {
+                        case 'd' -> "[0-9]";
+                        case 'D' -> "[^0-9]";
+                        case 'w' -> "[a-zA-Z0-9_]";
+                        case 'W' -> "[^a-zA-Z0-9_]";
+                        case 's' -> "[ \\t\\n\\x0b\\f\\r]";
+                        default -> "[^ \\t\\n\\x0b\\f\\r]";
+                    });
+                } else target.append('\\').append(c);
+                complex = true; return -1;
             }
             int value;
             if (c == 't') value = '\t';

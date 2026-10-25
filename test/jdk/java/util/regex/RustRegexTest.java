@@ -45,7 +45,7 @@ import java.util.regex.*;
 import jdk.internal.util.regex.RustRegex;
 
 public class RustRegexTest {
-    private static final Field NATIVE, ROOT, MATCH_ROOT, HANDLE, TIER;
+    private static final Field NATIVE, ROOT, MATCH_ROOT, HANDLE, UTF8_HANDLE, TIER;
     private static final Constructor<Pattern> JAVA;
     private static int comparisons;
     static {
@@ -54,9 +54,10 @@ public class RustRegexTest {
             ROOT = Pattern.class.getDeclaredField("root");
             MATCH_ROOT = Pattern.class.getDeclaredField("matchRoot");
             HANDLE = RustRegex.class.getDeclaredField("handle");
+            UTF8_HANDLE = RustRegex.class.getDeclaredField("utf8Handle");
             TIER = RustRegex.class.getDeclaredField("JAVA_TIER");
             JAVA = Pattern.class.getDeclaredConstructor(String.class, int.class, boolean.class);
-            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT, HANDLE, TIER}) f.setAccessible(true);
+            for (Field f : new Field[]{NATIVE, ROOT, MATCH_ROOT, HANDLE, UTF8_HANDLE, TIER}) f.setAccessible(true);
             JAVA.setAccessible(true);
         } catch (ReflectiveOperationException e) { throw new ExceptionInInitializerError(e); }
     }
@@ -64,6 +65,11 @@ public class RustRegexTest {
     private static Pattern reference(String expression, int flags) throws Exception {
         // Always invoke the original Java parser, independently of prepared plans.
         return JAVA.newInstance(expression, flags, false);
+    }
+
+    private static long nativeHandle(Object owner) throws IllegalAccessException {
+        long latin1 = HANDLE.getLong(owner);
+        return latin1 != 0 ? latin1 : UTF8_HANDLE.getLong(owner);
     }
 
     private static void nativeOnly(Pattern p) throws Exception {
@@ -237,7 +243,7 @@ public class RustRegexTest {
             equal(full, expected, full.matches(), expected.reset().matches(), true);
             if (RustRegex.ENABLED) {
                 nativeOnly(large);
-                if (HANDLE.getLong(NATIVE.get(large)) != 0)
+                if (nativeHandle(NATIVE.get(large)) != 0)
                     throw new AssertionError("large early candidate allocated native storage");
             }
         }
@@ -250,7 +256,7 @@ public class RustRegexTest {
                     expected.reset().region(64, 128).find(), true);
             if (RustRegex.ENABLED) {
                 nativeOnly(region);
-                if (HANDLE.getLong(NATIVE.get(region)) != 0)
+                if (nativeHandle(NATIVE.get(region)) != 0)
                     throw new AssertionError("short region allocated native storage");
             }
         }
@@ -261,16 +267,16 @@ public class RustRegexTest {
             Pattern p=Pattern.compile("(?<prefix>ready)(?<digits>[0-9]+)");
             Object owner=NATIVE.get(p);
             nativeOnly(p);
-            if (HANDLE.getLong(owner)!=0) throw new AssertionError("short plan allocated native storage");
-            if (!p.matcher("ready123").matches() || HANDLE.getLong(owner)!=0)
+            if (nativeHandle(owner)!=0) throw new AssertionError("short plan allocated native storage");
+            if (!p.matcher("ready123").matches() || nativeHandle(owner)!=0)
                 throw new AssertionError("short first match compiled a Rust engine");
             if (p.matcher("x".repeat(4096)).find()) throw new AssertionError("definite long miss");
-            if (TIER.getInt(null) == 2 && HANDLE.getLong(owner) != 0)
+            if (TIER.getInt(null) == 2 && nativeHandle(owner) != 0)
                 throw new AssertionError("definite prefix miss compiled unused native storage");
             nativeOnly(p);
             // A complete literal keeps this long search unresolved by the
             // literal rejection and requires the native handoff.
-            if (p.matcher("x".repeat(4090) + "readyx").find() || HANDLE.getLong(owner)==0)
+            if (p.matcher("x".repeat(4090) + "readyx").find() || nativeHandle(owner)==0)
                 throw new AssertionError("unresolved long search did not select Rust");
             nativeOnly(p);
         }
@@ -353,12 +359,12 @@ public class RustRegexTest {
         if (RustRegex.ENABLED) {
             Pattern p = Pattern.compile("(?<user>[a-z0-9_]+)@(?<domain>[a-z0-9_]+)\\.[a-z]{2,4}");
             Object owner = NATIVE.get(p);
-            if (HANDLE.getLong(owner) != 0) throw new AssertionError("short email allocated native storage");
+            if (nativeHandle(owner) != 0) throw new AssertionError("short email allocated native storage");
             Matcher a = p.matcher("a@b.co!");
             if (!a.find() || !a.group("user").equals("a") || !a.group("domain").equals("b")
-                    || HANDLE.getLong(owner) != 0)
+                    || nativeHandle(owner) != 0)
                 throw new AssertionError("short email compiled a native engine");
-            if (p.matcher("! ".repeat(2048)).find() || HANDLE.getLong(owner) == 0)
+            if (p.matcher("! ".repeat(2048)).find() || nativeHandle(owner) == 0)
                 throw new AssertionError("long email search did not select Rust");
             nativeOnly(p);
         }
@@ -459,8 +465,8 @@ public class RustRegexTest {
         // Java locals lazily and continue correctly after another Matcher promotes.
         Pattern promoted=Pattern.compile("error([0-9]{1,})");
         Matcher existing=promoted.matcher("error123");
-        Matcher wide=promoted.matcher("\u0100 " + "x ".repeat(1024) + "error456");
-        if (!wide.find() || !wide.group(1).equals("456")) throw new AssertionError("wide input fallback");
+        Matcher malformed=promoted.matcher("\uD800 " + "x ".repeat(1024) + "error456");
+        if (!malformed.find() || !malformed.group(1).equals("456")) throw new AssertionError("malformed UTF-16 fallback");
         if (NATIVE.get(promoted)!=null || ROOT.get(promoted)==null) throw new AssertionError("permanent Java promotion");
         if (!existing.find() || !existing.group(1).equals("123")) throw new AssertionError("old Matcher promotion");
         for (int i=0;i<10;i++) { System.gc(); same.matcher("error789").find(); }
@@ -551,7 +557,7 @@ public class RustRegexTest {
                                 equal(a, b, found, b.find(start), false);
                                 if (prepared) {
                                     nativeOnly(p);
-                                    if (HANDLE.getLong(owner) != 0)
+                                    if (nativeHandle(owner) != 0)
                                         throw new AssertionError("bounded suffix initialized native storage: " + regex);
                                 }
                                 if (found) {
@@ -778,7 +784,7 @@ public class RustRegexTest {
                     equal(actual, expected, actual.find(), expected.find(), true);
                     if (TIER.getInt(null) == 2 || character.equals("x") || character.equals("l")
                             || TIER.getInt(null) == 1 && offset == 0) nativeOnly(p);
-                    if (RustRegex.ENABLED && TIER.getInt(null) != 0 && offset == 0 && HANDLE.getLong(engine) != 0)
+                    if (RustRegex.ENABLED && TIER.getInt(null) != 0 && offset == 0 && nativeHandle(engine) != 0)
                         throw new AssertionError("literal miss constructed unused native automata");
                 }
             }
@@ -795,7 +801,7 @@ public class RustRegexTest {
         actual.reset(input); expected.reset(input);
         equal(actual, expected, actual.find(), expected.find(), true);
         nativeOnly(p);
-        if (RustRegex.ENABLED && HANDLE.getLong(engine) == 0)
+        if (RustRegex.ENABLED && nativeHandle(engine) == 0)
             throw new AssertionError("later literal did not initialize the native backend");
         for (int start : new int[]{0, 4096, 4097, input.length()}) {
             actual.reset(input); expected.reset(input);
@@ -831,13 +837,13 @@ public class RustRegexTest {
         Matcher actual = p.matcher("x".repeat(4096)), expected = ref.matcher("x".repeat(4096));
         equal(actual, expected, actual.find(), expected.find(), true);
         nativeOnly(p);
-        if (HANDLE.getLong(owner) != 0) throw new AssertionError("cold literal miss compiled native storage");
-        for (int i = 0; i < 512 && HANDLE.getLong(owner) == 0; i++) {
+        if (nativeHandle(owner) != 0) throw new AssertionError("cold literal miss compiled native storage");
+        for (int i = 0; i < 512 && nativeHandle(owner) == 0; i++) {
             actual.reset(); expected.reset();
             equal(actual, expected, actual.find(), expected.find(), true);
             nativeOnly(p);
         }
-        if (HANDLE.getLong(owner) == 0) throw new AssertionError("reused long searches never admitted native storage");
+        if (nativeHandle(owner) == 0) throw new AssertionError("reused long searches never admitted native storage");
         for (int i = 0; i < 32; i++) {
             actual.reset(); expected.reset();
             equal(actual, expected, actual.find(), expected.find(), true);
@@ -851,7 +857,7 @@ public class RustRegexTest {
         String expression = "(?<parts>(?:ab|cd)+)[ef]";
         Pattern first = Pattern.compile(expression);
         Object engine = NATIVE.get(first);
-        if (engine == null || HANDLE.getLong(engine) == 0)
+        if (engine == null || nativeHandle(engine) == 0)
             throw new AssertionError("initial general preparation was not validated natively");
         checkPreparedNames((RustRegex) engine);
         Field entries = Class.forName("jdk.internal.util.regex.RustRegex$CompiledCache")
@@ -869,18 +875,18 @@ public class RustRegexTest {
         }
         Pattern replacement = Pattern.compile(expression);
         Object deferred = NATIVE.get(replacement);
-        if (deferred == null || deferred == engine || HANDLE.getLong(deferred) != 0)
+        if (deferred == null || deferred == engine || nativeHandle(deferred) != 0)
             throw new AssertionError("collected validated preparation was not reused lazily");
         checkPreparedNames((RustRegex) deferred);
         Pattern ref = reference(expression, 0);
         Matcher a = replacement.matcher("\u0100\uD800"), b = ref.matcher("\u0100\uD800");
         equal(a, b, a.find(), b.find(), true);
-        if (HANDLE.getLong(deferred) != 0)
+        if (nativeHandle(deferred) != 0)
             throw new AssertionError("Java-only input compiled unused native automata");
         Pattern nativeReplacement = Pattern.compile(expression);
         a = nativeReplacement.matcher("abcdabe!"); b = ref.matcher("abcdabe!");
         equal(a, b, a.find(), b.find(), false);
-        if (HANDLE.getLong(NATIVE.get(nativeReplacement)) == 0)
+        if (nativeHandle(NATIVE.get(nativeReplacement)) == 0)
             throw new AssertionError("native input did not compile prepared automata");
         for (String invalid : new String[]{"(?<x>a)(?<x>b)", "a{3,2}", "[z-a]", "(abc"}) {
             for (int i = 0; i < 2; i++) {
