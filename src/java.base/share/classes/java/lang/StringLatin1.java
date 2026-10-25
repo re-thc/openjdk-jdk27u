@@ -1025,10 +1025,12 @@ final class StringLatin1 {
         return result != StringZilla.FALLBACK ? result : lastIndexOfNonWhitespaceJava(value);
     }
 
-    @ForceInline
     private static int indexOfNonWhitespaceJava(byte[] value) {
         int length = value.length;
-        int left = 0;
+        if (length == 0) return 0;
+        char first = getChar(value, 0);
+        if (first != ' ' && first != '\t' && !CharacterDataLatin1.instance.isWhitespace(first)) return 0;
+        int left = 1;
         while (left < length) {
             char ch = getChar(value, left);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -1039,9 +1041,12 @@ final class StringLatin1 {
         return left;
     }
 
-    @ForceInline
     private static int lastIndexOfNonWhitespaceJava(byte[] value) {
         int right = value.length;
+        if (right == 0) return 0;
+        char last = getChar(value, right - 1);
+        if (last != ' ' && last != '\t' && !CharacterDataLatin1.instance.isWhitespace(last)) return right;
+        right--;
         while (0 < right) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
