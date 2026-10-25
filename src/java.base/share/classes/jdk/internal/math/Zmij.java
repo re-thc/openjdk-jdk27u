@@ -105,11 +105,6 @@ final class Zmij {
         if (!ENABLED) {
             return 0;
         }
-        long magnitude = bits & (type == 0 ? 0x7fffffffL : 0x7fffffffffffffffL);
-        if (magnitude == 0
-                || magnitude >= (type == 0 ? 0x7f800000L : 0x7ff0000000000000L)) {
-            return 0;
-        }
         int coder = latin1 ? 0 : 1;
         int maxChars = type == 0 ? FloatToDecimal.MAX_CHARS : DoubleToDecimal.MAX_CHARS;
         // putDecimal callers are trusted, but never pass an unchecked pointer

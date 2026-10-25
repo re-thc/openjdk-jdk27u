@@ -3845,13 +3845,17 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
             }
         }
+        if (intCompact == 0) {
+            return 0.0f;
+        }
+        String s = stringCache;
+        if (s != null && FloatingDecimal.USE_FAST_FLOAT && s.length() <= 1024) {
+            return FloatingDecimal.parseFloat(s);
+        }
         return fullFloatValue();
     }
 
     private float fullFloatValue() {
-        if (intCompact == 0) {
-            return 0.0f;
-        }
         BigInteger w = intCompact == INFLATED ? intVal.abs() : null;
         int bitLength = w == null
                 ? Long.SIZE - Long.numberOfLeadingZeros(Math.abs(intCompact))
@@ -3863,17 +3867,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (qb > Q_MAX_F + P_F + 1) {  // qb > 129
             return signum() * Float.POSITIVE_INFINITY;
         }
-        if (scale > 0) {
-            // Reuse cached text before materializing a compact significand.
-            String s = stringCache;
-            if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
-                return FloatingDecimal.parseFloatFromBigDecimal(s);
-            }
-        }
-        return fullFloatValue(w, qb);
-    }
-
-    private float fullFloatValue(BigInteger w, long qb) {
         if (w == null) {
             w = unscaledValue().abs();
         }
@@ -3960,12 +3953,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
             }
         }
+        if (intCompact == 0) {
+            return 0.0;
+        }
+        String s = stringCache;
+        if (s != null && FloatingDecimal.USE_FAST_FLOAT && s.length() <= 1024) {
+            return FloatingDecimal.parseDouble(s);
+        }
         return fullDoubleValue();
     }
 
     private double fullDoubleValue() {
         /*
-         * This method works on all instances but might throw or consume a lot
+         * This method handles nonzero instances but might throw or consume a lot
          * of memory and cpu on huge scales or huge significands.
          *
          * It is expected that this computations might exhaust memory or consume
@@ -3973,9 +3973,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          * are huge and conjure to meet MIN < |this| < MAX, where MIN and MAX
          * are approximately Double.MIN_VALUE and Double.MAX_VALUE, resp.
          */
-        if (intCompact == 0) {
-            return 0.0;
-        }
 
         /*
          * Let
@@ -4078,17 +4075,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          * But rather than chasing for specific cases, do the full computations.
          * Here, Q_MIN - 2 <= qb <= Q_MAX + P + 1
          */
-        if (scale > 0) {
-            // Reuse cached text before materializing a compact significand.
-            String s = stringCache;
-            if (FloatingDecimal.isFastFloatEnabled() && s != null && s.length() <= 1024) {
-                return FloatingDecimal.parseDoubleFromBigDecimal(s);
-            }
-        }
-        return fullDoubleValue(w, qb);
-    }
-
-    private double fullDoubleValue(BigInteger w, long qb) {
         if (w == null) {
             w = unscaledValue().abs();
         }
