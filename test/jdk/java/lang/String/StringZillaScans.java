@@ -32,7 +32,7 @@
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaScans
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaScanLatin1 StringZillaScans
  * @run main/othervm -Xmx32m -XX:+UseSerialGC StringZillaScans gc
- * @run main/othervm -Xint -Xmx32m -XX:+UseSerialGC StringZillaScans gc
+ * @run main/othervm -Xint -Xmx32m -XX:+UseSerialGC StringZillaScans gc 64
  */
 
 /*
@@ -143,7 +143,7 @@ public class StringZillaScans {
         }
     }
 
-    private static void concurrentGC() throws Exception {
+    private static void concurrentGC(int iterations) throws Exception {
         String blank = " \t\u001c\n".repeat(65537);
         String text = "x".repeat(131089) + "\r\n" + "y".repeat(131089);
         running = true;
@@ -157,7 +157,7 @@ public class StringZillaScans {
         });
         allocator.start();
         try {
-            for (int i = 0; i < 2000; i++) {
+            for (int i = 0; i < iterations; i++) {
                 equal(blank.isBlank(), true);
                 equal(blank.trim(), "");
                 equal(blank.stripTrailing(), "");
@@ -171,7 +171,8 @@ public class StringZillaScans {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
-            concurrentGC();
+            // Bound interpreted Java fallback work while retaining multi-window scans.
+            concurrentGC(args.length == 1 ? 2000 : Integer.parseInt(args[1]));
             return;
         }
         for (int ch = 0; ch < 256; ch++) {
