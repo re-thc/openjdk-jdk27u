@@ -1000,7 +1000,7 @@ final class StringUTF16 {
         assert strToIndex <= length(str);
         assert (valueToIndex - valueFromIndex) >= strToIndex;
         char first = getChar(str, 0);
-        if (strToIndex == 1) {
+        if (strToIndex == 1 && SimdUTF.isEligible(valueToIndex - valueFromIndex)) {
             return indexOfChar0(value, first, valueFromIndex, valueToIndex);
         }
         int max = (valueToIndex - strToIndex);
@@ -1104,7 +1104,7 @@ final class StringUTF16 {
         assert tgtCount <= tgt.length;
         assert (srcCount - fromIndex) >= tgtCount;
         char first = (char)(tgt[0] & 0xff);
-        if (tgtCount == 1) {
+        if (tgtCount == 1 && SimdUTF.isEligible(srcCount - fromIndex)) {
             return indexOfChar0(src, first, fromIndex, srcCount);
         }
         int max = (srcCount - tgtCount);

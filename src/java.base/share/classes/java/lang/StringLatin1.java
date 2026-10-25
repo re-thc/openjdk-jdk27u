@@ -532,7 +532,7 @@ final class StringLatin1 {
             return -1;
         }
         byte first = str[0];
-        if (strToIndex == 1) {
+        if (strToIndex == 1 && SimdUTF.isEligible(valueToIndex - valueFromIndex)) {
             return indexOfChar0(value, first & 0xff, valueFromIndex, valueToIndex);
         }
         int max = (valueToIndex - strToIndex);
