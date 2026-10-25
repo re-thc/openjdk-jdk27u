@@ -23,18 +23,24 @@
 
 /*
  * @test
- * @summary Scattering and gathering I/O retain at most IOV_MAX vector slots
+ * @summary Scattering and gathering I/O bound native vectors while preserving buffer bookkeeping
  * @modules java.base/sun.nio.ch:open
- * @run main/othervm IOVecCapacity
+ *          java.management
+ *          jdk.management
+ * @run main/othervm -XX:NativeMemoryTracking=summary IOVecCapacity
  */
 
 import java.lang.reflect.Field;
+import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CountDownLatch;
+import java.util.regex.Pattern;
+import javax.management.ObjectName;
 
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -58,16 +64,16 @@ public class IOVecCapacity {
         return field;
     }
 
-    private static void checkCache() throws ReflectiveOperationException {
+    private static void checkCache(int expectedSize) throws ReflectiveOperationException {
         ThreadLocal<?> cache = (ThreadLocal<?>) field(WRAPPER, "IOV_CACHE").get(null);
         Object wrapper = ((Object[]) cache.get())[0];
         int size = field(WRAPPER, "size").getInt(wrapper);
-        if (size != IOV_MAX) {
-            throw new AssertionError("capacity=" + size + ", IOV_MAX=" + IOV_MAX);
+        if (size != expectedSize) {
+            throw new AssertionError("capacity=" + size + ", expected=" + expectedSize);
         }
         for (String name : new String[] {"buf", "shadow"}) {
             Object[] refs = (Object[]) field(WRAPPER, name).get(wrapper);
-            if (refs.length != IOV_MAX || Arrays.stream(refs).anyMatch(x -> x != null)) {
+            if (refs.length != expectedSize || Arrays.stream(refs).anyMatch(x -> x != null)) {
                 throw new AssertionError("Retained references in " + name);
             }
         }
@@ -84,7 +90,7 @@ public class IOVecCapacity {
             if (n != 0 || channel.position() != 0) {
                 throw new AssertionError("Empty vector performed I/O");
             }
-            checkCache();
+            checkCache(length);
             // An entry past the allocation cap must still be discovered.
             buffers[length] = ByteBuffer.allocateDirect(1);
             if (read) {
@@ -99,13 +105,92 @@ public class IOVecCapacity {
                     || Files.readAllBytes(path)[0] != 42 || buffers[length].get(0) != 42) {
                 throw new AssertionError("Sparse vector content or position");
             }
-            checkCache();
+            checkCache(length);
         } finally {
             Files.delete(path);
         }
     }
 
+    private static long otherBytes() throws Exception {
+        String output = (String) ManagementFactory.getPlatformMBeanServer().invoke(
+                new ObjectName("com.sun.management:type=DiagnosticCommand"),
+                "vmNativeMemory", new Object[] {new String[] {"summary", "scale=1"}},
+                new String[] {String[].class.getName()});
+        var match = Pattern.compile("Other \\(reserved=(\\d+), committed=(\\d+)\\)").matcher(output);
+        if (match.find()) return Long.parseLong(match.group(2));
+        if (output.contains("Total:")) return 0;
+        throw new AssertionError("NMT summary unavailable: " + output);
+    }
+
+    private static void nativeCapacity() throws Exception {
+        int workers = 4;
+        int length = Math.max(100_000, 2 * IOV_MAX + 1);
+        int stride = field(WRAPPER, "SIZE_IOVEC").getInt(null);
+        ByteBuffer[] empty = new ByteBuffer[length];
+        Arrays.fill(empty, ByteBuffer.allocate(0));
+        CountDownLatch initialized = new CountDownLatch(workers);
+        CountDownLatch allocate = new CountDownLatch(1);
+        CountDownLatch retained = new CountDownLatch(workers);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        Thread[] threads = new Thread[workers];
+        Path path = Files.createTempFile("native-iovec-capacity", ".bin");
+        try (FileChannel channel = FileChannel.open(path, READ, WRITE)) {
+            // Initialize the native path and diagnostic command outside the baseline.
+            channel.write(empty, 0, 0);
+            otherBytes();
+            otherBytes();
+            for (int i = 0; i < workers; i++) {
+                boolean reading = i % 2 == 0;
+                threads[i] = Thread.ofPlatform().start(() -> {
+                    try {
+                        if (reading) channel.read(empty, 0, 0);
+                        else channel.write(empty, 0, 0);
+                        initialized.countDown();
+                        allocate.await();
+                        long n = reading ? channel.read(empty) : channel.write(empty);
+                        if (n != 0) throw new AssertionError("Empty vector transferred bytes");
+                        checkCache(length);
+                        retained.countDown();
+                        release.await();
+                    } catch (Throwable e) {
+                        failure.compareAndSet(null, e);
+                    } finally {
+                        initialized.countDown();
+                        retained.countDown();
+                    }
+                });
+            }
+            initialized.await();
+            if (failure.get() != null) throw new AssertionError(failure.get());
+            long before = otherBytes();
+            allocate.countDown();
+            retained.await();
+            if (failure.get() != null) throw new AssertionError(failure.get());
+            long held = otherBytes();
+            long expected = (long) workers * IOV_MAX * stride;
+            long tolerance = Math.max(65_536, expected);
+            System.out.println("native vector delta=" + (held - before) + ", expected=" + expected);
+            if (held - before > expected + tolerance) {
+                throw new AssertionError("Excess retained native vector memory: " + (held - before));
+            }
+            release.countDown();
+            for (Thread thread : threads) thread.join();
+            long after = otherBytes();
+            System.out.println("native vector delta after release=" + (after - before));
+            if (Math.abs(after - before) > tolerance) {
+                throw new AssertionError("Native vector memory not released: " + (after - before));
+            }
+        } finally {
+            allocate.countDown();
+            release.countDown();
+            for (Thread thread : threads) if (thread != null) thread.join();
+            Files.delete(path);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        nativeCapacity();
         // A fresh platform thread gives each operation an empty carrier cache.
         for (boolean read : new boolean[] {false, true}) {
             AtomicReference<Throwable> failure = new AtomicReference<>();
