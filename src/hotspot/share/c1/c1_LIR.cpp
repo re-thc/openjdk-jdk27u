@@ -782,6 +782,33 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 
 // LIR_OpArrayCopy
+    case lir_digest_mb: {
+      LIR_OpDigestMB* bulk = static_cast<LIR_OpDigestMB*>(op);
+      do_input(bulk->_receiver); do_temp(bulk->_receiver);
+      do_input(bulk->_source); do_temp(bulk->_source);
+      do_input(bulk->_offset); do_temp(bulk->_offset);
+      do_input(bulk->_limit); do_temp(bulk->_limit);
+      if (bulk->_tmp->is_valid()) do_temp(bulk->_tmp);
+      do_stub(bulk->_fallback);
+      do_output(bulk->_result);
+      do_call();
+      break;
+    }
+
+    case lir_hash_code: {
+      LIR_OpHashCode* bulk = static_cast<LIR_OpHashCode*>(op);
+      do_input(bulk->_array); do_temp(bulk->_array);
+      do_input(bulk->_offset); do_temp(bulk->_offset);
+      do_input(bulk->_length); do_temp(bulk->_length);
+      do_input(bulk->_initial); do_temp(bulk->_initial);
+      do_input(bulk->_type); do_temp(bulk->_type);
+      if (bulk->_tmp->is_valid()) do_temp(bulk->_tmp);
+      do_stub(bulk->_fallback);
+      do_output(bulk->_result);
+      do_call();
+      break;
+    }
+
     case lir_arraycopy: {
       assert(op->as_OpArrayCopy() != nullptr, "must be");
       LIR_OpArrayCopy* opArrayCopy = (LIR_OpArrayCopy*)op;
@@ -1017,6 +1044,16 @@ void LIR_OpRTCall::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpLabel::emit_code(LIR_Assembler* masm) {
   masm->emit_opLabel(this);
+}
+
+void LIR_OpDigestMB::emit_code(LIR_Assembler* masm) {
+  masm->emit_digest_mb(this);
+  masm->append_code_stub(fallback());
+}
+
+void LIR_OpHashCode::emit_code(LIR_Assembler* masm) {
+  masm->emit_hash_code(this);
+  masm->append_code_stub(fallback());
 }
 
 void LIR_OpArrayCopy::emit_code(LIR_Assembler* masm) {
@@ -1779,6 +1816,8 @@ const char * LIR_Op::name() const {
      case lir_icvirtual_call:        s = "icvirtual";     break;
      case lir_dynamic_call:          s = "dynamic";       break;
      // LIR_OpArrayCopy
+     case lir_digest_mb:             s = "digest_mb";     break;
+     case lir_hash_code:             s = "hash_code";     break;
      case lir_arraycopy:             s = "arraycopy";     break;
      // LIR_OpUpdateCRC32
      case lir_updatecrc32:           s = "updatecrc32";   break;
@@ -1825,6 +1864,23 @@ void LIR_OpLabel::print_instr(outputStream* out) const {
 }
 
 // LIR_OpArrayCopy
+void LIR_OpDigestMB::print_instr(outputStream* out) const {
+  receiver()->print(out); out->print(" ");
+  source()->print(out); out->print(" ");
+  offset()->print(out); out->print(" ");
+  limit()->print(out); out->print(" ");
+  result_opr()->print(out);
+}
+
+void LIR_OpHashCode::print_instr(outputStream* out) const {
+  array()->print(out); out->print(" ");
+  offset()->print(out); out->print(" ");
+  length()->print(out); out->print(" ");
+  initial()->print(out); out->print(" ");
+  type()->print(out); out->print(" ");
+  result_opr()->print(out);
+}
+
 void LIR_OpArrayCopy::print_instr(outputStream* out) const {
   src()->print(out);     out->print(" ");
   src_pos()->print(out); out->print(" ");

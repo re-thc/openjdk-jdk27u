@@ -573,9 +573,11 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_MonitorExit    (MonitorExit*     x);
   virtual void do_Intrinsic      (Intrinsic*       x);
   void do_CommonScalarIntrinsic(Intrinsic* x);
-  void do_CommonIntrinsic(Intrinsic* x);
+  void do_DigestIntrinsic(Intrinsic* x);
+  void do_HashIntrinsic(Intrinsic* x);
   void do_BigIntegerIntrinsic(Intrinsic* x);
   void do_CryptoIntrinsic(Intrinsic* x);
+  void do_ArrayIntrinsic(Intrinsic* x);
   virtual void do_BlockBegin     (BlockBegin*      x);
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);

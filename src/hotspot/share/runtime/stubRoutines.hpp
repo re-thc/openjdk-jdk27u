@@ -318,6 +318,102 @@ public:
     return reinterpret_cast<address>(&STUB_FIELD_NAME(sha3_implCompress));
   }
 
+  static address ghash_processBlocks_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(ghash_processBlocks));
+  }
+
+  static address chacha20Block_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(chacha20Block));
+  }
+
+  static address poly1305_processBlocks_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(poly1305_processBlocks));
+  }
+
+  static address intpoly_montgomeryMult_P256_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(intpoly_montgomeryMult_P256));
+  }
+
+  static address intpoly_assign_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(intpoly_assign));
+  }
+
+  static address double_keccak_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(double_keccak));
+  }
+
+  static address quad_keccak_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(quad_keccak));
+  }
+
+  static address kyberNtt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyberNtt));
+  }
+
+  static address kyberInverseNtt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyberInverseNtt));
+  }
+
+  static address kyberNttMult_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyberNttMult));
+  }
+
+  static address kyberAddPoly_2_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyberAddPoly_2));
+  }
+
+  static address kyberAddPoly_3_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyberAddPoly_3));
+  }
+
+  static address kyber12To16_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyber12To16));
+  }
+
+  static address kyberBarrettReduce_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(kyberBarrettReduce));
+  }
+
+  static address dilithiumAlmostNtt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(dilithiumAlmostNtt));
+  }
+
+  static address dilithiumAlmostInverseNtt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(dilithiumAlmostInverseNtt));
+  }
+
+  static address dilithiumNttMult_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(dilithiumNttMult));
+  }
+
+  static address dilithiumMontMulByConstant_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(dilithiumMontMulByConstant));
+  }
+
+  static address dilithiumDecomposePoly_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(dilithiumDecomposePoly));
+  }
+
+  static address md5_implCompressMB_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(md5_implCompressMB));
+  }
+
+  static address sha1_implCompressMB_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha1_implCompressMB));
+  }
+
+  static address sha256_implCompressMB_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha256_implCompressMB));
+  }
+
+  static address sha512_implCompressMB_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha512_implCompressMB));
+  }
+
+  static address sha3_implCompressMB_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha3_implCompressMB));
+  }
+
   // Calls to Java
   typedef void (*CallStub)(
     address   link,

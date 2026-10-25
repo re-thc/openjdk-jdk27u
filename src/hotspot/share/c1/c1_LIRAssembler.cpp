@@ -651,6 +651,9 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
 
 
 #if !defined(AMD64) && !defined(AARCH64)
+void LIR_Assembler::emit_digest_mb(LIR_OpDigestMB* op) { ShouldNotReachHere(); }
+void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) { ShouldNotReachHere(); }
+
 void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
   ShouldNotReachHere();
 }

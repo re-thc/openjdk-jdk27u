@@ -3172,64 +3172,218 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
   }
 }
 
-void LIRGenerator::do_CommonIntrinsic(Intrinsic* x) {
-  assert(CommonIntrinsics::is_available_for_c1(x->id()), "available common backend");
-  // Preserve Java evaluation order and finish any pending code before writing
-  // the outgoing argument vector or calling the shared leaf.
+void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
   CodeStub* fallback = new PredicateFailedStub(info, true);
-  int slots = CommonIntrinsics::parameter_slots(x->id());
-  // Keep the raw argument vector clear of the C ABI register-save area.
-  const int base = 4 * wordSize;
-  frame_map()->update_reserved_argument_area_size(base + slots * wordSize);
-  int remaining = slots;
+  LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
-    Value arg = x->argument_at(i);
-    BasicType type = as_BasicType(arg->type());
-    remaining -= type2size[type];
-    LIRItem item(arg, this);
+    LIRItem item(x->argument_at(i), this);
     item.load_item();
-    LIR_Address* dst = new LIR_Address(FrameMap::stack_pointer(), base + remaining * wordSize, type);
-    if (type == T_OBJECT) {
-      __ move_wide(item.result(), dst);
-    } else {
-      __ move(item.result(), dst);
-    }
+    values.append(item.result());
   }
-  assert(remaining == 0, "common intrinsic signature mismatch");
-
-  LIR_Opr argv = new_pointer_register();
-  __ leal(LIR_OprFact::address(new LIR_Address(FrameMap::stack_pointer(), base, T_ADDRESS)), argv);
-  BasicTypeList signature;
-  signature.append(T_ADDRESS);
-  LIR_OprList args(1);
-  args.append(argv);
-  LIR_Opr result = call_runtime(&signature, &args, CommonIntrinsics::entry_for(x->id()), longType, nullptr);
-
-  LIR_Opr sentinel = new_register(T_LONG);
-  __ move(LIR_OprFact::longConst(CommonIntrinsics::fallback), sentinel);
-  __ cmp(lir_cond_equal, result, sentinel);
-  __ branch(lir_cond_equal, fallback);
-  if (x->type() == voidType) {
-    set_no_result(x);
-  } else if (x->type()->is_object_kind()) {
+  auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    __ cmp(condition, left, right);
+    __ branch(condition, fallback);
+  };
+  auto bounded = [&](LIR_Opr count, int maximum) {
+    guard(lir_cond_lessEqual, count, LIR_OprFact::intConst(0));
+    guard(lir_cond_greater, count, LIR_OprFact::intConst(maximum));
+  };
+  auto length = [&](int index) {
+    LIR_Opr result = new_register(T_INT);
+    __ move(LIR_OprFact::address(generate_address(values.at(index), arrayOopDesc::length_offset_in_bytes(), T_INT)), result);
+    return result;
+  };
+  BasicTypeList signature(5);
+  LIR_OprList args(5);
+  auto pointer = [&](int index, BasicType type, int offset = -1) {
+    LIR_Opr result = new_register(T_ADDRESS);
+    LIR_Address* address;
+    if (offset >= 0) {
+      LIR_Opr displacement = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, values.at(offset), displacement);
+      address = generate_address(values.at(index), displacement, 0, arrayOopDesc::base_offset_in_bytes(type), type);
+    } else {
+      address = generate_address(values.at(index), arrayOopDesc::base_offset_in_bytes(type), type);
+    }
+    __ leal(LIR_OprFact::address(address), result);
+    signature.append(T_ADDRESS);
+    args.append(result);
+  };
+  auto word = [&](LIR_Opr value) {
+    LIR_Opr result = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, value, result);
+    signature.append(T_LONG);
+    args.append(result);
+  };
+  vmIntrinsics::ID id = x->id();
+  address entry = nullptr;
+  bool returns_int = true;
+  if (x->has_receiver() && x->needs_null_check()) {
+    guard(lir_cond_equal, values.at(0), LIR_OprFact::oopConst(nullptr));
+  }
+  switch (id) {
+    case vmIntrinsics::_ghash_processBlocks:
+      bounded(values.at(2), CommonIntrinsics::max_leaf_elements / 16);
+      pointer(3, T_LONG); pointer(4, T_LONG); pointer(0, T_BYTE, 1); word(values.at(2));
+      entry = StubRoutines::ghash_processBlocks(); returns_int = false;
+      break;
+    case vmIntrinsics::_chacha20Block:
+      pointer(0, T_INT); pointer(1, T_BYTE);
+      entry = StubRoutines::chacha20Block();
+      break;
+    case vmIntrinsics::_poly1305_processBlocks:
+      guard(lir_cond_greater, values.at(3), LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
+      pointer(1, T_BYTE, 2); word(values.at(3)); pointer(4, T_LONG); pointer(5, T_LONG);
+      entry = StubRoutines::poly1305_processBlocks(); returns_int = false;
+      break;
+    case vmIntrinsics::_intpoly_montgomeryMult_P256:
+      pointer(1, T_LONG); pointer(2, T_LONG); pointer(3, T_LONG);
+      entry = StubRoutines::intpoly_montgomeryMult_P256(); returns_int = false;
+      break;
+    case vmIntrinsics::_intpoly_assign: {
+      LIR_Opr count = length(1);
+      guard(lir_cond_greater, count, LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
+      word(values.at(0)); pointer(1, T_LONG); pointer(2, T_LONG); word(count);
+      entry = StubRoutines::intpoly_assign(); returns_int = false;
+      break;
+    }
+    case vmIntrinsics::_double_keccak:
+    case vmIntrinsics::_quad_keccak: {
+      int count = id == vmIntrinsics::_double_keccak ? 2 : 4;
+      for (int i = 0; i < count; i++) {
+        for (int j = 0; j < i; j++) guard(lir_cond_equal, values.at(i), values.at(j));
+      }
+      for (int i = 0; i < count; i++) pointer(i, T_LONG);
+      entry = count == 2 ? StubRoutines::double_keccak() : StubRoutines::quad_keccak();
+      break;
+    }
+    case vmIntrinsics::_kyberNtt:
+    case vmIntrinsics::_kyberInverseNtt:
+      pointer(0, T_SHORT); pointer(1, T_SHORT);
+      entry = id == vmIntrinsics::_kyberNtt ? StubRoutines::kyberNtt() : StubRoutines::kyberInverseNtt();
+      break;
+    case vmIntrinsics::_kyberNttMult:
+    case vmIntrinsics::_kyberAddPoly_3:
+      pointer(0, T_SHORT); pointer(1, T_SHORT); pointer(2, T_SHORT); pointer(3, T_SHORT);
+      entry = id == vmIntrinsics::_kyberNttMult ? StubRoutines::kyberNttMult() : StubRoutines::kyberAddPoly_3();
+      break;
+    case vmIntrinsics::_kyberAddPoly_2:
+      pointer(0, T_SHORT); pointer(1, T_SHORT); pointer(2, T_SHORT);
+      entry = StubRoutines::kyberAddPoly_2();
+      break;
+    case vmIntrinsics::_kyber12To16: {
+      bounded(values.at(3), (CommonIntrinsics::max_leaf_elements / 192) * 128);
+      LIR_Opr odd = new_register(T_INT);
+      logic_op(Bytecodes::_iand, odd, values.at(3), LIR_OprFact::intConst(1));
+      guard(lir_cond_notEqual, odd, LIR_OprFact::intConst(0));
+      pointer(0, T_BYTE); word(values.at(1)); pointer(2, T_SHORT); word(values.at(3));
+      entry = StubRoutines::kyber12To16();
+      break;
+    }
+    case vmIntrinsics::_kyberBarrettReduce:
+      pointer(0, T_SHORT); entry = StubRoutines::kyberBarrettReduce();
+      break;
+    case vmIntrinsics::_dilithiumAlmostNtt:
+    case vmIntrinsics::_dilithiumAlmostInverseNtt:
+      pointer(0, T_INT); pointer(1, T_INT);
+      entry = id == vmIntrinsics::_dilithiumAlmostNtt ? StubRoutines::dilithiumAlmostNtt() : StubRoutines::dilithiumAlmostInverseNtt();
+      break;
+    case vmIntrinsics::_dilithiumNttMult:
+      pointer(0, T_INT); pointer(1, T_INT); pointer(2, T_INT);
+      entry = StubRoutines::dilithiumNttMult();
+      break;
+    case vmIntrinsics::_dilithiumMontMulByConstant:
+      pointer(0, T_INT); word(values.at(1)); entry = StubRoutines::dilithiumMontMulByConstant();
+      break;
+    case vmIntrinsics::_dilithiumDecomposePoly:
+      pointer(0, T_INT); pointer(1, T_INT); pointer(2, T_INT); word(values.at(3)); word(values.at(4));
+      entry = StubRoutines::dilithiumDecomposePoly();
+      break;
+    default: ShouldNotReachHere();
+  }
+  ValueType* result_type = voidType;
+  if (returns_int) result_type = intType;
+  LIR_Opr result = call_runtime(&signature, &args, entry, result_type, nullptr);
+  if (returns_int) {
     __ move(result, rlock_result(x));
   } else {
-    __ convert(Bytecodes::_l2i, result, rlock_result(x));
+    set_no_result(x);
   }
+}
+
+void LIRGenerator::do_DigestIntrinsic(Intrinsic* x) {
+#if defined(AMD64) || defined(AARCH64)
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info, true);
+#ifdef AMD64
+  const Register registers[] = { rdi, rsi, rdx, rcx };
+  LIR_Opr tmp = FrameMap::as_long_opr(rbx);
+#ifdef _WIN64
+  frame_map()->update_reserved_argument_area_size(48);
+#endif
+#else
+  const Register registers[] = { r0, r1, r2, r3 };
+  LIR_Opr tmp = LIR_OprFact::illegalOpr;
+#endif
+  LIR_Opr args[4];
+  for (int i = 0; i < 4; i++) {
+    LIRItem item(x->argument_at(i), this);
+    args[i] = i < 2 ? FrameMap::as_oop_opr(registers[i]) : FrameMap::as_opr(registers[i]);
+    item.load_item_force(args[i]);
+  }
+  LIR_Opr result = result_register_for(intType);
+  __ append(new LIR_OpDigestMB(args[0], args[1], args[2], args[3], result, tmp, info, fallback));
+  __ move(result, rlock_result(x));
+#else
+  ShouldNotReachHere();
+#endif
+}
+
+void LIRGenerator::do_HashIntrinsic(Intrinsic* x) {
+#if defined(AMD64) || defined(AARCH64)
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info, true);
+#ifdef AMD64
+  const Register registers[] = { rax, rdi, rsi, rdx, rcx };
+#ifdef _WIN64
+  frame_map()->update_reserved_argument_area_size(frame::arg_reg_save_area_bytes);
+#endif
+#else
+  const Register registers[] = { r0, r1, r2, r3, r4 };
+#endif
+  LIR_Opr args[5];
+  for (int i = 0; i < 5; i++) {
+    LIRItem item(x->argument_at(i), this);
+    args[i] = i == 0 ? FrameMap::as_oop_opr(registers[i]) : FrameMap::as_opr(registers[i]);
+    item.load_item_force(args[i]);
+  }
+  LIR_Opr result = result_register_for(intType);
+  __ append(new LIR_OpHashCode(args[0], args[1], args[2], args[3], args[4], result,
+                              LIR_OprFact::illegalOpr, info, fallback));
+  __ move(result, rlock_result(x));
+#else
+  ShouldNotReachHere();
+#endif
 }
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   if (CommonIntrinsics::is_available_for_c1(x->id())) {
     if (CommonIntrinsics::is_big_integer(x->id())) {
       do_BigIntegerIntrinsic(x);
+    } else if (CommonIntrinsics::is_array_kernel(x->id())) {
+      do_ArrayIntrinsic(x);
+    } else if (x->id() == vmIntrinsics::_digestBase_implCompressMB) {
+      do_DigestIntrinsic(x);
     } else if (CommonIntrinsics::is_crypto(x->id())) {
       do_CryptoIntrinsic(x);
     } else if (CommonIntrinsics::is_scalar(x->id())) {
       do_CommonScalarIntrinsic(x);
     } else {
-      do_CommonIntrinsic(x);
+      do_HashIntrinsic(x);
     }
     return;
   }

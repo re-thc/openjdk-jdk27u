@@ -3701,18 +3701,6 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     // inlined callers and level-1 compilations without ordinary profiling.
     return false;
   }
-  if (callee->intrinsic_id() == vmIntrinsics::_vectorizedHashCode && CommonIntrinsics::enabled()) {
-    if (method()->intrinsic_id() == vmIntrinsics::_vectorizedHashCodeLeaf) {
-      // The leaf's Java body is the fallback, so do not substitute its helper again.
-      return false;
-    }
-    ciMethod* helper = callee->holder()->find_method(ciSymbol::make("vectorizedHashCodeC1"),
-                                                  callee->signature()->as_symbol());
-    if (helper == nullptr) {
-      return false;
-    }
-    return try_inline_full(helper, true, ignore_return, Bytecodes::_invokestatic);
-  }
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
     return false;

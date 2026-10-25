@@ -191,6 +191,8 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_opBranch(LIR_OpBranch* op);
   void emit_opLabel(LIR_OpLabel* op);
   void emit_arraycopy(LIR_OpArrayCopy* op);
+  void emit_digest_mb(LIR_OpDigestMB* op);
+  void emit_hash_code(LIR_OpHashCode* op);
   void emit_updatecrc32(LIR_OpUpdateCRC32* op);
   void emit_opConvert(LIR_OpConvert* op);
   void emit_alloc_obj(LIR_OpAllocObj* op);

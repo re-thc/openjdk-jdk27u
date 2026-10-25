@@ -129,8 +129,7 @@ public class TestCommonIntrinsicAvailability {
         new Entry("_subtractExactI", "java.lang.Math", "subtractExact", "(II)I", "UseMathExactIntrinsics,InlineMathNatives"),
         new Entry("_subtractExactL", "java.lang.Math", "subtractExact", "(JJ)J", "UseMathExactIntrinsics,InlineMathNatives"),
         new Entry("_multiplyExactI", "java.lang.Math", "multiplyExact", "(II)I", "UseMathExactIntrinsics,InlineMathNatives"),
-        new Entry("_multiplyExactL", "java.lang.Math", "multiplyExact", "(JJ)J", "UseMathExactIntrinsics,InlineMathNatives"),
-        new Entry("_vectorizedHashCodeLeaf", "jdk.internal.util.ArraysSupport", "vectorizedHashCodeLeaf", "(Ljava/lang/Object;IIII)I", "UseVectorizedHashCodeIntrinsic")
+        new Entry("_multiplyExactL", "java.lang.Math", "multiplyExact", "(JJ)J", "UseMathExactIntrinsics,InlineMathNatives")
     };
 
     public static void main(String[] args) throws Exception {
@@ -138,7 +137,7 @@ public class TestCommonIntrinsicAvailability {
         String cpuFeatures = wb.getCPUFeatures();
         boolean enabled = !args[0].equals("disabled");
         Set<String> disabled = switch (args[0]) {
-            case "selective" -> Set.of("_multiplyToLen", "_vectorizedHashCode", "_vectorizedHashCodeLeaf", "_addExactI");
+            case "selective" -> Set.of("_multiplyToLen", "_vectorizedHashCode", "_addExactI");
             case "no_sha3" -> Set.of("_sha3_implCompress", "_digestBase_implCompressMB");
             default -> Set.of();
         };

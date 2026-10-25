@@ -41,6 +41,8 @@
 #include "oops/arrayOop.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "memory/universe.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -1319,6 +1321,326 @@ void TemplateInterpreterGenerator::generate_crypto_entry(vmIntrinsics::ID id, La
   __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
 }
 
+void TemplateInterpreterGenerator::generate_array_entry(vmIntrinsics::ID id, Label& slow_path) {
+  int slots = 0;
+  address entry_slot = nullptr;
+  auto java_slot = [&](int index) { return Address(esp, (slots - index - 1) * wordSize); };
+  auto argument = [&](int index, Register value) {
+    const Register registers[] = { c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4 };
+    __ mov(registers[index], value);
+  };
+  auto pointer = [&](int arg, int index, BasicType type, int offset = -1) {
+    __ ldr(rscratch2, java_slot(index));
+    if (offset >= 0) {
+      __ ldrsw(rscratch1, java_slot(offset));
+      __ add(rscratch2, rscratch2, rscratch1);
+    }
+    __ add(rscratch2, rscratch2, arrayOopDesc::base_offset_in_bytes(type));
+    argument(arg, rscratch2);
+  };
+  auto word = [&](int arg, int index) {
+    __ ldrsw(rscratch2, java_slot(index));
+    argument(arg, rscratch2);
+  };
+  auto bounded = [&](int index, int maximum) {
+    __ ldrw(rscratch1, java_slot(index));
+    __ cmpw(rscratch1, 0);
+    __ br(Assembler::LE, slow_path);
+    __ mov(rscratch2, maximum);
+    __ cmpw(rscratch1, rscratch2);
+    __ br(Assembler::GT, slow_path);
+  };
+  auto distinct = [&](int first, int second) {
+    __ ldr(rscratch1, java_slot(first));
+    __ ldr(rscratch2, java_slot(second));
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::EQ, slow_path);
+  };
+  switch (id) {
+    case vmIntrinsics::_ghash_processBlocks:
+      slots = 5;
+      bounded(2, CommonIntrinsics::max_leaf_elements / 16);
+      word(3, 2);
+      pointer(2, 0, T_BYTE, 1);
+      pointer(1, 4, T_LONG);
+      pointer(0, 3, T_LONG);
+      entry_slot = StubRoutines::ghash_processBlocks_entry_address();
+      break;
+    case vmIntrinsics::_chacha20Block:
+      slots = 2;
+      pointer(1, 1, T_BYTE);
+      pointer(0, 0, T_INT);
+      entry_slot = StubRoutines::chacha20Block_entry_address();
+      break;
+    case vmIntrinsics::_poly1305_processBlocks:
+      slots = 6;
+      __ ldrw(rscratch1, java_slot(3));
+      __ cmpw(rscratch1, CommonIntrinsics::max_leaf_elements);
+      __ br(Assembler::GT, slow_path);
+      pointer(3, 5, T_LONG);
+      pointer(2, 4, T_LONG);
+      word(1, 3);
+      pointer(0, 1, T_BYTE, 2);
+      entry_slot = StubRoutines::poly1305_processBlocks_entry_address();
+      break;
+    case vmIntrinsics::_intpoly_montgomeryMult_P256:
+      slots = 4;
+      pointer(2, 3, T_LONG);
+      pointer(1, 2, T_LONG);
+      pointer(0, 1, T_LONG);
+      entry_slot = StubRoutines::intpoly_montgomeryMult_P256_entry_address();
+      break;
+    case vmIntrinsics::_intpoly_assign:
+      slots = 3;
+      __ ldr(rscratch1, java_slot(1));
+      __ ldrw(rscratch2, Address(rscratch1, arrayOopDesc::length_offset_in_bytes()));
+      __ cmpw(rscratch2, CommonIntrinsics::max_leaf_elements);
+      __ br(Assembler::GT, slow_path);
+      argument(3, rscratch2);
+      pointer(2, 2, T_LONG);
+      pointer(1, 1, T_LONG);
+      word(0, 0);
+      entry_slot = StubRoutines::intpoly_assign_entry_address();
+      break;
+    case vmIntrinsics::_double_keccak:
+      slots = 2;
+      distinct(1, 0);
+      pointer(1, 1, T_LONG);
+      pointer(0, 0, T_LONG);
+      entry_slot = StubRoutines::double_keccak_entry_address();
+      break;
+    case vmIntrinsics::_quad_keccak:
+      slots = 4;
+      distinct(1, 0);
+      distinct(2, 0);
+      distinct(2, 1);
+      distinct(3, 0);
+      distinct(3, 1);
+      distinct(3, 2);
+      pointer(3, 3, T_LONG);
+      pointer(2, 2, T_LONG);
+      pointer(1, 1, T_LONG);
+      pointer(0, 0, T_LONG);
+      entry_slot = StubRoutines::quad_keccak_entry_address();
+      break;
+    case vmIntrinsics::_kyberNtt:
+      slots = 2;
+      pointer(1, 1, T_SHORT);
+      pointer(0, 0, T_SHORT);
+      entry_slot = StubRoutines::kyberNtt_entry_address();
+      break;
+    case vmIntrinsics::_kyberInverseNtt:
+      slots = 2;
+      pointer(1, 1, T_SHORT);
+      pointer(0, 0, T_SHORT);
+      entry_slot = StubRoutines::kyberInverseNtt_entry_address();
+      break;
+    case vmIntrinsics::_kyberNttMult:
+      slots = 4;
+      pointer(3, 3, T_SHORT);
+      pointer(2, 2, T_SHORT);
+      pointer(1, 1, T_SHORT);
+      pointer(0, 0, T_SHORT);
+      entry_slot = StubRoutines::kyberNttMult_entry_address();
+      break;
+    case vmIntrinsics::_kyberAddPoly_2:
+      slots = 3;
+      pointer(2, 2, T_SHORT);
+      pointer(1, 1, T_SHORT);
+      pointer(0, 0, T_SHORT);
+      entry_slot = StubRoutines::kyberAddPoly_2_entry_address();
+      break;
+    case vmIntrinsics::_kyberAddPoly_3:
+      slots = 4;
+      pointer(3, 3, T_SHORT);
+      pointer(2, 2, T_SHORT);
+      pointer(1, 1, T_SHORT);
+      pointer(0, 0, T_SHORT);
+      entry_slot = StubRoutines::kyberAddPoly_3_entry_address();
+      break;
+    case vmIntrinsics::_kyber12To16:
+      slots = 4;
+      bounded(3, (CommonIntrinsics::max_leaf_elements / 192) * 128);
+      __ tbnz(rscratch1, 0, slow_path);
+      word(3, 3);
+      pointer(2, 2, T_SHORT);
+      word(1, 1);
+      pointer(0, 0, T_BYTE);
+      entry_slot = StubRoutines::kyber12To16_entry_address();
+      break;
+    case vmIntrinsics::_kyberBarrettReduce:
+      slots = 1;
+      pointer(0, 0, T_SHORT);
+      entry_slot = StubRoutines::kyberBarrettReduce_entry_address();
+      break;
+    case vmIntrinsics::_dilithiumAlmostNtt:
+      slots = 2;
+      pointer(1, 1, T_INT);
+      pointer(0, 0, T_INT);
+      entry_slot = StubRoutines::dilithiumAlmostNtt_entry_address();
+      break;
+    case vmIntrinsics::_dilithiumAlmostInverseNtt:
+      slots = 2;
+      pointer(1, 1, T_INT);
+      pointer(0, 0, T_INT);
+      entry_slot = StubRoutines::dilithiumAlmostInverseNtt_entry_address();
+      break;
+    case vmIntrinsics::_dilithiumNttMult:
+      slots = 3;
+      pointer(2, 2, T_INT);
+      pointer(1, 1, T_INT);
+      pointer(0, 0, T_INT);
+      entry_slot = StubRoutines::dilithiumNttMult_entry_address();
+      break;
+    case vmIntrinsics::_dilithiumMontMulByConstant:
+      slots = 2;
+      word(1, 1);
+      pointer(0, 0, T_INT);
+      entry_slot = StubRoutines::dilithiumMontMulByConstant_entry_address();
+      break;
+    case vmIntrinsics::_dilithiumDecomposePoly:
+      slots = 5;
+      word(4, 4);
+      word(3, 3);
+      pointer(2, 2, T_INT);
+      pointer(1, 1, T_INT);
+      pointer(0, 0, T_INT);
+      entry_slot = StubRoutines::dilithiumDecomposePoly_entry_address();
+      break;
+    default: ShouldNotReachHere();
+  }
+  __ lea(rscratch2, ExternalAddress(entry_slot));
+  __ ldr(rscratch2, Address(rscratch2, 0));
+  __ cbz(rscratch2, slow_path);
+  __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
+  __ blr(rscratch2);
+  __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
+}
+
+void TemplateInterpreterGenerator::generate_digest_entry(Label& slow_path) {
+  auto java_slot = [&](int index) { return Address(esp, (3 - index) * wordSize); };
+  auto layout = [&](InstanceKlass** klass, Register dst, Label& absent) {
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(klass)));
+    __ ldar(dst, rscratch1);
+    __ cbz(dst, absent);
+  };
+  auto field_address = [&](int* offset) {
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(offset)));
+    __ ldrw(rscratch1, Address(rscratch1, 0));
+    __ tbnz(rscratch1, 31, slow_path);
+    __ add(r15, r0, rscratch1);
+  };
+  layout(&CommonIntrinsics::digest_base_klass, r11, slow_path);
+  __ ldr(r0, java_slot(0));
+  field_address(&CommonIntrinsics::digest_block_size_offset);
+  __ ldrw(r11, Address(r15, 0));
+  __ ldrw(rscratch1, java_slot(2));
+  __ ldrw(rscratch2, java_slot(3));
+  __ cmpw(rscratch2, rscratch1);
+  __ br(Assembler::LT, slow_path);
+  __ subw(rscratch2, rscratch2, rscratch1);
+  __ mov(rscratch1, CommonIntrinsics::max_leaf_elements);
+  __ subw(rscratch1, rscratch1, r11);
+  __ cmpw(rscratch2, rscratch1);
+  __ br(Assembler::GT, slow_path);
+  Label done;
+  InstanceKlass** classes[] = { &CommonIntrinsics::md5_klass, &CommonIntrinsics::sha1_klass,
+                              &CommonIntrinsics::sha256_klass, &CommonIntrinsics::sha512_klass, &CommonIntrinsics::sha3_klass };
+  int* offsets[] = { &CommonIntrinsics::md5_state_offset, &CommonIntrinsics::sha1_state_offset,
+                   &CommonIntrinsics::sha256_state_offset, &CommonIntrinsics::sha512_state_offset, &CommonIntrinsics::sha3_state_offset };
+  address entries[] = { StubRoutines::md5_implCompressMB_entry_address(), StubRoutines::sha1_implCompressMB_entry_address(),
+                        StubRoutines::sha256_implCompressMB_entry_address(), StubRoutines::sha512_implCompressMB_entry_address(),
+                        StubRoutines::sha3_implCompressMB_entry_address() };
+  for (int i = 0; i < 5; i++) {
+    Label next, matches;
+    layout(classes[i], r11, next);
+    __ ldr(r0, java_slot(0));
+    __ load_klass(r10, r0);
+    // These provider classes are primary superclasses, including for their subclasses.
+    __ check_klass_subtype_fast_path(r10, r11, r13, &matches, &next, &next);
+    __ bind(matches);
+    __ ldr(r0, java_slot(0));
+    if (i == 4) {
+      field_address(&CommonIntrinsics::digest_block_size_offset);
+      __ ldrw(r11, Address(r15, 0));
+    }
+    field_address(offsets[i]);
+    __ load_heap_oop(r10, Address(r15, 0), rscratch1, rscratch2);
+    __ add(c_rarg1, r10, arrayOopDesc::base_offset_in_bytes(i >= 3 ? T_LONG : T_INT));
+    if (i == 4) {
+      __ mov(c_rarg2, r11);
+      __ ldrsw(c_rarg3, java_slot(2));
+      __ ldrsw(c_rarg4, java_slot(3));
+    } else {
+      __ ldrsw(c_rarg2, java_slot(2));
+      __ ldrsw(c_rarg3, java_slot(3));
+    }
+    __ ldr(c_rarg0, java_slot(1));
+    __ ldrsw(rscratch1, java_slot(2));
+    __ add(c_rarg0, c_rarg0, rscratch1);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ lea(rscratch2, ExternalAddress(entries[i]));
+    __ ldr(rscratch2, Address(rscratch2, 0));
+    __ cbz(rscratch2, slow_path);
+    __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
+    __ blr(rscratch2);
+    __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
+    __ b(done);
+    __ bind(next);
+  }
+  __ b(slow_path);
+  __ bind(done);
+}
+
+void TemplateInterpreterGenerator::generate_hash_entry(Label& slow_path) {
+  Label done;
+  auto java_slot = [&](int index) { return Address(esp, (4 - index) * wordSize); };
+  __ ldr(r10, java_slot(0));
+  __ cbz(r10, slow_path);
+  __ ldrw(r11, java_slot(1));
+  __ tbnz(r11, 31, slow_path);
+  __ ldrw(r13, java_slot(2));
+  __ tbnz(r13, 31, slow_path);
+  __ cmpw(r13, CommonIntrinsics::max_hash_elements);
+  __ br(Assembler::GT, slow_path);
+  const BasicType tags[] = { T_BOOLEAN, T_BYTE, T_SHORT, T_CHAR, T_CHAR, T_INT };
+  const BasicType arrays[] = { T_BYTE, T_BYTE, T_SHORT, T_CHAR, T_BYTE, T_INT };
+  const address entries[] = { CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_unsigned_bytes), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_bytes),
+                        CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_shorts), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars),
+                        CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_ints) };
+  for (int i = 0; i < 6; i++) {
+    BasicType type = tags[i];
+    int shift = type == T_INT ? 2 : (type == T_SHORT || type == T_CHAR) ? 1 : 0;
+    Label next;
+    __ ldrw(rscratch1, java_slot(4));
+    __ cmpw(rscratch1, type);
+    __ br(Assembler::NE, next);
+    __ load_klass(rscratch1, r10);
+    __ mov_metadata(rscratch2, Universe::typeArrayKlass(arrays[i]));
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::NE, next);
+    __ ldrw(r14, Address(r10, arrayOopDesc::length_offset_in_bytes()));
+    if (type == T_CHAR && arrays[i] == T_BYTE) __ lsrw(r14, r14, 1);
+    __ cmpw(r11, r14);
+    __ br(Assembler::GT, slow_path);
+    __ subw(r14, r14, r11);
+    __ cmpw(r13, r14);
+    __ br(Assembler::GT, slow_path);
+    __ add(r10, r10, r11, Assembler::LSL, shift);
+    __ add(c_rarg0, r10, arrayOopDesc::base_offset_in_bytes(arrays[i]));
+    __ movw(c_rarg1, r13);
+    __ ldrw(c_rarg2, java_slot(3));
+    __ lea(rscratch2, RuntimeAddress(entries[i]));
+    __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
+    __ blr(rscratch2);
+    __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
+    __ b(done);
+    __ bind(next);
+  }
+  __ b(slow_path);
+  __ bind(done);
+}
+
 address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
   address entry = __ pc();
   Label slow_path;
@@ -1356,17 +1678,15 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
   }
   if (CommonIntrinsics::is_big_integer(id)) {
     generate_big_integer_entry(id, slow_path);
+  } else if (CommonIntrinsics::is_array_kernel(id)) {
+    generate_array_entry(id, slow_path);
+  } else if (id == vmIntrinsics::_digestBase_implCompressMB) {
+    generate_digest_entry(slow_path);
   } else if (CommonIntrinsics::is_crypto(id)) {
     generate_crypto_entry(id, slow_path);
   } else {
-    // Arguments stay on the expression stack so the Java fallback can reuse them.
-    __ mov(c_rarg0, esp);
-    __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
-    __ super_call_VM_leaf(CommonIntrinsics::entry_for(id), c_rarg0);
-    __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
-    __ mov(rscratch1, CommonIntrinsics::fallback);
-    __ cmp(r0, rscratch1);
-    __ br(Assembler::EQ, slow_path);
+    assert(id == vmIntrinsics::_vectorizedHashCode, "typed hash helper");
+    generate_hash_entry(slow_path);
   }
   __ andr(sp, r19_sender_sp, -16);
   __ ret(lr);

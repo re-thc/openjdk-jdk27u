@@ -312,10 +312,11 @@ const char* Runtime1::name_for(StubId id) {
 }
 
 const char* Runtime1::name_for_address(address entry) {
-#define COMMON_NAME(id, slots, result) \
-  if (entry == CommonIntrinsics::entry_for(vmIntrinsics::id)) return "common" #id;
-  COMMON_INTRINSICS_DO(COMMON_NAME)
-#undef COMMON_NAME
+  if (entry == CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_unsigned_bytes)) return "hash_unsigned_bytes";
+  if (entry == CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_bytes)) return "hash_bytes";
+  if (entry == CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_shorts)) return "hash_shorts";
+  if (entry == CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars)) return "hash_chars";
+  if (entry == CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_ints)) return "hash_ints";
   // iterate stubs starting from C1 group base
   StubId id = StubInfo::stub_base(StubGroup::C1);
   StubId limit = StubInfo::next(StubInfo::stub_max(StubGroup::C1));

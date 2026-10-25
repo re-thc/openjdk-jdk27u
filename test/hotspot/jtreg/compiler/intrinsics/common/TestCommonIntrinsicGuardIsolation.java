@@ -115,9 +115,9 @@ public class TestCommonIntrinsicGuardIsolation {
         WB.deoptimizeMethod(method);
         WB.clearMethodState(method);
         compile(method, level);
-        Method hashLeaf = ArraysSupport.class.getDeclaredMethod("vectorizedHashCodeLeaf",
+        Method hash = ArraysSupport.class.getDeclaredMethod("vectorizedHashCode",
                 Object.class, int.class, int.class, int.class, int.class);
-        int sites = WB.isIntrinsicAvailable(hashLeaf, level) ? 3 : 2;
+        int sites = WB.isIntrinsicAvailable(hash, level) ? 3 : 2;
         for (int site = 0; site < sites; site++) {
             reject(site);
             if (WB.isMethodCompiled(method)) {
