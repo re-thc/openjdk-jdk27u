@@ -42,34 +42,53 @@ bool Zmij::is_enabled() {
 #endif
 }
 
-int Zmij::format(void* output, uint64_t bits, int format) {
-  bool is_double = (format & 1) != 0;
-  // Wide upstream stores stay in this initialized stack buffer.
+// Keep upstream wide stores within initialized scratch, not Java's MAX_CHARS.
+int Zmij::format_float_latin1(void* output, uint64_t bits) {
   char buffer[40] = {};
-  char* end;
-  if (is_double) {
-    double value;
-    memcpy(&value, &bits, sizeof(value));
-    end = zmij::detail::write<double>(buffer, value);
-  } else {
-    uint32_t raw = uint32_t(bits);
-    float value;
-    memcpy(&value, &raw, sizeof(value));
-    end = zmij::detail::write<float>(buffer, value);
-  }
+  uint32_t raw = uint32_t(bits);
+  float value;
+  memcpy(&value, &raw, sizeof(value));
+  char* end = zmij::detail::write<float>(buffer, value);
   int length = int(end - buffer);
-  if ((format & 2) != 0) {
-    uint16_t* utf16 = static_cast<uint16_t*>(output);
-    for (int i = 0; i < length; ++i) {
-      utf16[i] = uint8_t(buffer[i]);
-    }
-  } else {
-    // Constant-sized copies avoid libc. Padding remains within MAX_CHARS.
-    if (is_double) {
-      memcpy(output, buffer, 24);
-    } else {
-      memcpy(output, buffer, 15);
-    }
+  memcpy(output, buffer, 15);
+  return length;
+}
+
+int Zmij::format_float_utf16(void* output, uint64_t bits) {
+  char buffer[40] = {};
+  uint32_t raw = uint32_t(bits);
+  float value;
+  memcpy(&value, &raw, sizeof(value));
+  char* end = zmij::detail::write<float>(buffer, value);
+  int length = int(end - buffer);
+  uint16_t* utf16 = static_cast<uint16_t*>(output);
+  for (int i = 0; i < length; ++i) {
+    utf16[i] = uint8_t(buffer[i]);
+  }
+  return length;
+}
+
+int Zmij::format_double_latin1(void* output, uint64_t bits) {
+  char buffer[40] = {};
+  uint64_t raw = uint64_t(bits);
+  double value;
+  memcpy(&value, &raw, sizeof(value));
+  char* end = zmij::detail::write<double>(buffer, value);
+  int length = int(end - buffer);
+  memcpy(output, buffer, 24);
+  return length;
+}
+
+int Zmij::format_double_utf16(void* output, uint64_t bits) {
+  char buffer[40] = {};
+  uint64_t raw = uint64_t(bits);
+  double value;
+  memcpy(&value, &raw, sizeof(value));
+  char* end = zmij::detail::write<double>(buffer, value);
+  int length = int(end - buffer);
+  uint16_t* utf16 = static_cast<uint16_t*>(output);
+  for (int i = 0; i < length; ++i) {
+    utf16[i] = uint8_t(buffer[i]);
   }
   return length;
 }

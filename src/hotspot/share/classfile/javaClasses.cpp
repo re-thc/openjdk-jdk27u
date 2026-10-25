@@ -5292,23 +5292,6 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-int jdk_internal_math_ToDecimal::_latin1_offset;
-
-#define TODECIMAL_FIELDS_DO(macro) \
-  macro(_latin1_offset, k, "latin1", bool_signature, false)
-
-void jdk_internal_math_ToDecimal::compute_offsets() {
-  InstanceKlass* k = vmClasses::ToDecimal_klass();
-  TODECIMAL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void jdk_internal_math_ToDecimal::serialize_offsets(SerializeClosure* f) {
-  TODECIMAL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-#undef TODECIMAL_FIELDS_DO
-
 #define BASIC_JAVA_CLASSES_DO_PART1(f) \
   f(java_lang_Class) \
   f(java_lang_String) \
@@ -5358,7 +5341,6 @@ void jdk_internal_math_ToDecimal::serialize_offsets(SerializeClosure* f) {
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
   f(vector_VectorPayload) \
-  f(jdk_internal_math_ToDecimal) \
   //end
 
 #define BASIC_JAVA_CLASSES_DO(f) \

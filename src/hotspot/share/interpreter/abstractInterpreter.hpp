@@ -94,9 +94,12 @@ class AbstractInterpreter: AllStatic {
     jdk_internal_util_formatIntUTF16,
     jdk_internal_util_formatLongLatin1,
     jdk_internal_util_formatLongUTF16,
-    jdk_internal_math_putFloatDecimal,                          // FloatToDecimal.putDecimal(byte[], int, float)
+    jdk_internal_math_putFloatDecimalLatin1,
+    jdk_internal_math_putFloatDecimalUTF16,
+    jdk_internal_math_putDoubleDecimalLatin1,
+    jdk_internal_math_putDoubleDecimalUTF16,
+    jdk_internal_math_floatToDecimalLatin1,
     jdk_internal_math_decimalZmij,
-    jdk_internal_math_formatZmij,
     jdk_internal_math_parseFastFloatDigits,
     jdk_internal_math_parseFastFloat,                           // FloatingDecimal.parseFastFloat(String, int)
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()

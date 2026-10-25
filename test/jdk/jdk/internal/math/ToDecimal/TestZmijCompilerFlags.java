@@ -30,7 +30,7 @@
  * @run main/othervm -Xint -XX:UseSSE=2 TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:UseSSE=2 TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseSSE=2 TestZmij
- * @run main/othervm -Xint -XX:UseSSE=2 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij,_putFloatDecimal TestZmij
+ * @run main/othervm -Xint -XX:UseSSE=2 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16,_decimalZmij,_putFloatDecimalLatin1,_putFloatDecimalUTF16 TestZmij
  */
 
 public class TestZmijCompilerFlags { }

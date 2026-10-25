@@ -458,17 +458,22 @@ class methodHandle;
   do_intrinsic(_bigIntegerLeftShiftWorker, java_math_BigInteger, leftShift_name, big_integer_shift_worker_signature, F_S) \
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
-  do_class(jdk_internal_math_Zmij, "jdk/internal/math/Zmij")                                                           \
-  do_intrinsic(_putFloatDecimal, jdk_internal_math_FloatToDecimal, putDecimal_name, putFloatDecimal_signature, F_R)         \
-   do_class(jdk_internal_math_FloatToDecimal, "jdk/internal/math/FloatToDecimal")                                        \
-   do_name(putDecimal_name, "putDecimal")                                                                                \
-   do_signature(putFloatDecimal_signature, "([BIF)I")                                                                    \
-  do_intrinsic(_decimalZmij, jdk_internal_math_Zmij, decimalZmij_name, long_long_signature, F_SN)                          \
-   do_name(decimalZmij_name, "decimal0")                                                                                \
-  do_intrinsic(_formatZmij, jdk_internal_math_Zmij, formatZmij_name, formatZmij_signature, F_SN)                             \
-   do_name(formatZmij_name, "format0")                                                                                 \
-   do_signature(formatZmij_signature, "([BIJI)I")                                                                       \
-                                                                                                                     \
+  do_class(jdk_internal_math_Zmij, "jdk/internal/math/Zmij")                                                                            \
+  do_class(jdk_internal_math_FloatToDecimal, "jdk/internal/math/FloatToDecimal")                                                        \
+  do_class(jdk_internal_math_DoubleToDecimal, "jdk/internal/math/DoubleToDecimal")                                                      \
+  do_name(putDecimalLatin1_name, "putDecimalLatin1")                                                                                    \
+  do_name(putDecimalUTF16_name, "putDecimalUTF16")                                                                                      \
+  do_signature(putFloatDecimal_signature, "([BIF)I")                                                                                    \
+  do_signature(putDoubleDecimal_signature, "([BID)I")                                                                                   \
+  do_intrinsic(_putFloatDecimalLatin1, jdk_internal_math_FloatToDecimal, putDecimalLatin1_name, putFloatDecimal_signature, F_S)         \
+  do_intrinsic(_putFloatDecimalUTF16, jdk_internal_math_FloatToDecimal, putDecimalUTF16_name, putFloatDecimal_signature, F_S)           \
+  do_intrinsic(_putDoubleDecimalLatin1, jdk_internal_math_DoubleToDecimal, putDecimalLatin1_name, putDoubleDecimal_signature, F_S)      \
+  do_intrinsic(_putDoubleDecimalUTF16, jdk_internal_math_DoubleToDecimal, putDecimalUTF16_name, putDoubleDecimal_signature, F_S)        \
+  do_intrinsic(_floatToDecimalLatin1, jdk_internal_math_FloatToDecimal, floatToDecimalLatin1_name, putFloatDecimal_signature, F_S)      \
+   do_name(floatToDecimalLatin1_name, "toDecimalLatin1")                                                                                \
+  do_intrinsic(_decimalZmij, jdk_internal_math_Zmij, decimalZmij_name, long_long_signature, F_SN)                                       \
+   do_name(decimalZmij_name, "decimal0")                                                                                                \
+                                                                                                                                        \
   do_class(jdk_internal_util_DecimalDigits, "jdk/internal/util/DecimalDigits")                                              \
   do_intrinsic(_parseDecimalInt, java_lang_Integer, parseDecimalInt_name, parseDecimalInt_signature, F_S)                   \
    do_name(parseDecimalInt_name, "parseInt")                                                                                \

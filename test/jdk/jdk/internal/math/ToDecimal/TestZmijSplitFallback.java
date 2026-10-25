@@ -35,9 +35,9 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=2 -XX:-UseZmijIntrinsics TestZmijSplitFallback
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=3 -XX:-UseZmijIntrinsics TestZmijSplitFallback
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_formatZmij TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_formatZmij TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_formatZmij TestZmijSplitFallback
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback
  */
 
 import java.lang.reflect.Constructor;

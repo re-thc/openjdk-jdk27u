@@ -234,9 +234,12 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
 #endif
 #if defined(AMD64) || defined(AARCH64)
-  case vmIntrinsics::_putFloatDecimal:
+  case vmIntrinsics::_putFloatDecimalLatin1:
+  case vmIntrinsics::_putFloatDecimalUTF16:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
   case vmIntrinsics::_decimalZmij:
-  case vmIntrinsics::_formatZmij:
   case vmIntrinsics::_parseFastFloatDigits:
   case vmIntrinsics::_parseFastFloat:
 #endif

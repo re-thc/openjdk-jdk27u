@@ -28,13 +28,13 @@
  * @run main/othervm TestZmij
  * @run main/othervm -Xint TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestZmij
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_putFloatDecimal TestZmij
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_putFloatDecimalLatin1,_putFloatDecimalUTF16 TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestZmij
  * @run main/othervm -Xint -XX:-CompactStrings TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestZmij
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij,_putFloatDecimal TestZmij
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij,_putFloatDecimal TestZmij
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16,_decimalZmij,_putFloatDecimalLatin1,_putFloatDecimalUTF16 TestZmij
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16,_decimalZmij,_putFloatDecimalLatin1,_putFloatDecimalUTF16 TestZmij
  * @run main/othervm -XX:-UseZmijIntrinsics TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseZmijIntrinsics TestZmij
  */

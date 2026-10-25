@@ -177,8 +177,24 @@ public final class FloatToDecimal extends ToDecimal {
      * @param v the {@code float} whose rendering is into str.
      */
     @ForceInline
-    @IntrinsicCandidate
     public int putDecimal(byte[] str, int index, float v) {
+        return isLatin1() ? putDecimalLatin1(str, index, v) : putDecimalUTF16(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int putDecimalLatin1(byte[] str, int index, float v) {
+        return LATIN1.putDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int putDecimalUTF16(byte[] str, int index, float v) {
+        return UTF16.putDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    private int putDecimalJava(byte[] str, int index, float v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
         int pair = toDecimalJava(str, index, v);
@@ -209,13 +225,13 @@ public final class FloatToDecimal extends ToDecimal {
         if (magnitude >= 0x7f800000) {
             return magnitude != 0x7f800000 ? NAN : (bits > 0 ? PLUS_INF : MINUS_INF);
         }
-        if (str != null) {
-            int size = Zmij.format(str, index, bits, 0, isLatin1());
-            if (size != 0) {
-                return size;
-            }
-        }
-        return toDecimalJava(str, index, v);
+        return toDecimalLatin1(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    private static int toDecimalLatin1(byte[] str, int index, float v) {
+        return LATIN1.toDecimalJava(str, index, v);
     }
 
     @ForceInline

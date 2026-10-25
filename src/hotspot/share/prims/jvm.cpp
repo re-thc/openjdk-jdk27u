@@ -3212,13 +3212,6 @@ JVM_LEAF(jlong, JVM_DecimalZmij(jlong bits))
   return jlong(Zmij::decimal(uint64_t(bits)));
 JVM_END
 
-JVM_ENTRY(jint, JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong bits, jint format))
-  typeArrayOop value = typeArrayOop(JNIHandles::resolve_non_null(output));
-  assert(index >= 0 && index <= value->length() - (((format & 1) == 0 ? 15 : 24) << ((format & 2) >> 1)),
-         "trusted caller must reserve MAX_CHARS");
-  return Zmij::format(static_cast<char*>(value->base(T_BYTE)) + index, uint64_t(bits), format);
-JVM_END
-
 JVM_LEAF(jboolean, JVM_IsFastFloatEnabled(void))
   return UseFastFloatIntrinsics;
 JVM_END

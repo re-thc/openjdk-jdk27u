@@ -33,6 +33,7 @@ import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class exposes a method to render a {@code double} as a string.
@@ -156,7 +157,7 @@ public final class DoubleToDecimal extends ToDecimal {
      */
     public static String toString(double v) {
         byte[] str = new byte[MAX_CHARS];
-        int pair = LATIN1.toDecimal(str, 0, v, null);
+        int pair = LATIN1.toDecimal(str, 0, v);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             int size = pair & 0xFF;
@@ -209,10 +210,28 @@ public final class DoubleToDecimal extends ToDecimal {
      * @param index the index into str
      * @param v the {@code double} whose rendering is into str.
      */
+    @ForceInline
     public int putDecimal(byte[] str, int index, double v) {
+        return isLatin1() ? putDecimalLatin1(str, index, v) : putDecimalUTF16(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int putDecimalLatin1(byte[] str, int index, double v) {
+        return LATIN1.putDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int putDecimalUTF16(byte[] str, int index, double v) {
+        return UTF16.putDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    private int putDecimalJava(byte[] str, int index, double v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
-        int pair = toDecimal(str, index, v, null);
+        int pair = toDecimalJava(str, index, v, null);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             return index + (pair & 0xFF);
@@ -230,7 +249,7 @@ public final class DoubleToDecimal extends ToDecimal {
      *     otherwise NON_SPECIAL
      */
     @ForceInline
-    private int toDecimal(byte[] str, int index, double v, FormattedFPDecimal fd) {
+    private int toDecimal(byte[] str, int index, double v) {
         long bits = doubleToRawLongBits(v);
         long magnitude = bits & 0x7fffffffffffffffL;
         if (magnitude == 0) {
@@ -239,13 +258,7 @@ public final class DoubleToDecimal extends ToDecimal {
         if (magnitude >= 0x7ff0000000000000L) {
             return magnitude != 0x7ff0000000000000L ? NAN : (bits > 0 ? PLUS_INF : MINUS_INF);
         }
-        if (fd == null && str != null) {
-            int size = Zmij.format(str, index, bits, 1, isLatin1());
-            if (size != 0) {
-                return size;
-            }
-        }
-        return toDecimalJava(str, index, v, fd);
+        return putDecimalLatin1(str, index, v) - index;
     }
 
     private int toDecimalJava(byte[] str, int index, double v, FormattedFPDecimal fd) {

@@ -629,7 +629,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_bigIntegerShift(false);
 
   case vmIntrinsics::_decimalZmij:
-  case vmIntrinsics::_formatZmij:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
     return inline_formatZmij();
   case vmIntrinsics::_parseFastFloatDigits:
   case vmIntrinsics::_parseFastFloat:
@@ -6751,31 +6753,33 @@ bool LibraryCallKit::inline_formatZmij() {
     set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
     return true;
   }
+  bool is_double = intrinsic_id() != vmIntrinsics::_floatToDecimalLatin1;
+  bool utf16 = intrinsic_id() == vmIntrinsics::_putDoubleDecimalUTF16;
   Node* output = null_check(argument(0));
   if (stopped()) {
     return true;
   }
-  Node* data = array_element_address(output, argument(1), T_BYTE);
-  const Type** fields = TypeTuple::fields(4);
+  Node* index = argument(1);
+  Node* byte_index = utf16 ? _gvn.transform(new LShiftINode(index, intcon(1))) : index;
+  Node* data = array_element_address(output, byte_index, T_BYTE);
+  Node* bits = is_double ? _gvn.transform(new MoveD2LNode(argument(2)))
+                         : _gvn.transform(new ConvI2LNode(_gvn.transform(new MoveF2INode(argument(2)))));
+  const Type** fields = TypeTuple::fields(3);
   fields[TypeFunc::Parms] = TypePtr::NOTNULL;
   fields[TypeFunc::Parms + 1] = TypeLong::LONG;
   fields[TypeFunc::Parms + 2] = Type::HALF;
-  fields[TypeFunc::Parms + 3] = TypeInt::INT;
-  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
   fields = TypeTuple::fields(1);
-  Node* kind = _gvn.transform(new AndINode(argument(4), intcon(1)));
-  int max_chars = _gvn.type(kind) == TypeInt::ZERO ? 15 : 24;
-  // Float's result fits its 15-character buffer. A wider range prevents C2
-  // from removing checks and padding in the subsequent String array copy.
-  fields[TypeFunc::Parms] = TypeInt::make(1, max_chars, Type::WidenMin);
+  fields[TypeFunc::Parms] = TypeInt::make(1, is_double ? 24 : 15, Type::WidenMin);
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   const TypeFunc* type = TypeFunc::make(domain, range);
-  // Keep a wide memory input to order allocation and initialization, but
-  // record writes only to byte-array bodies. This leaf cannot change object
-  // headers, Java fields, or the thread's allocation cursor.
-  Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, Zmij::format),
-                                "formatZmij", TypeAryPtr::BYTES, data, argument(2), top(), argument(4));
-  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  address target = is_double
+      ? (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_double_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_double_latin1))
+      : CAST_FROM_FN_PTR(address, Zmij::format_float_latin1);
+  // Order allocation and initialization; the leaf writes only byte-array bodies.
+  Node* call = make_runtime_call(RC_LEAF, type, target, "formatZmij", TypeAryPtr::BYTES, data, bits, top());
+  Node* length = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(is_double ? _gvn.transform(new AddINode(index, length)) : length);
   return true;
 }
 

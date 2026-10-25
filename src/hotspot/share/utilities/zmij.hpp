@@ -31,11 +31,12 @@
 class Zmij : AllStatic {
  public:
   static bool is_enabled();
-  // Format bit 0 selects binary64 (otherwise binary32).
-  // Bit 1 selects UTF16 output.
-  // The caller reserves MAX_CHARS characters.
   static uint64_t decimal(uint64_t bits);
-  static int format(void* output, uint64_t bits, int format);
+  // Each caller reserves its formatter's MAX_CHARS characters.
+  static int format_float_latin1(void* output, uint64_t bits);
+  static int format_float_utf16(void* output, uint64_t bits);
+  static int format_double_latin1(void* output, uint64_t bits);
+  static int format_double_utf16(void* output, uint64_t bits);
 };
 
 #endif // SHARE_UTILITIES_ZMIJ_HPP

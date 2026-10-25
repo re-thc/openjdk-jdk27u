@@ -164,7 +164,6 @@
   /* support for stack dump lock analysis */                                                                    \
   do_klass(java_util_concurrent_locks_AbstractOwnableSynchronizer_klass, java_util_concurrent_locks_AbstractOwnableSynchronizer) \
                                                                                                                 \
-  do_klass(ToDecimal_klass,                             jdk_internal_math_ToDecimal                           ) \
                                                                                                                 \
   /* boxing klasses */                                                                                          \
   do_klass(Boolean_klass,                               java_lang_Boolean                                     ) \

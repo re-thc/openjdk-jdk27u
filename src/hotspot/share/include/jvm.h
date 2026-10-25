@@ -174,9 +174,6 @@ JVM_IsZmijEnabled(void);
 JNIEXPORT jlong JNICALL
 JVM_DecimalZmij(jlong bits);
 
-JNIEXPORT jint JNICALL
-JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong bits, jint format);
-
 JNIEXPORT jboolean JNICALL
 JVM_IsFastFloatEnabled(void);
 

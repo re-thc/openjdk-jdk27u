@@ -28,7 +28,7 @@ package jdk.internal.math;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
-/** Shared native formatting entry; zero requests the Java conversion. */
+/** Decimal metadata for precision formatting. */
 final class Zmij {
     private static final boolean ENABLED = isEnabled0();
 
@@ -40,9 +40,6 @@ final class Zmij {
     static boolean isEnabled() {
         return ENABLED;
     }
-
-    @IntrinsicCandidate
-    private static native int format0(byte[] output, int byteIndex, long bits, int format);
 
     @IntrinsicCandidate
     private static native long decimal0(long bits);
@@ -92,15 +89,4 @@ final class Zmij {
         return n;
     }
 
-    @ForceInline
-    static int format(byte[] output, int index, long bits, int type, boolean latin1) {
-        if (!ENABLED) {
-            return 0;
-        }
-        int coder = latin1 ? 0 : 1;
-        assert index >= 0 && index <= (output.length >> coder)
-                - (type == 0 ? FloatToDecimal.MAX_CHARS : DoubleToDecimal.MAX_CHARS)
-                : "Trusted caller missed bounds check";
-        return format0(output, index << coder, bits, type | (coder << 1));
-    }
 }

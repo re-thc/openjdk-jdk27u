@@ -532,9 +532,12 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
     break;
-  case vmIntrinsics::_putFloatDecimal:
+  case vmIntrinsics::_putFloatDecimalLatin1:
+  case vmIntrinsics::_putFloatDecimalUTF16:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
   case vmIntrinsics::_decimalZmij:
-  case vmIntrinsics::_formatZmij:
     if (!UseZmijIntrinsics) return true;
     break;
   case vmIntrinsics::_parseFastFloatDigits:

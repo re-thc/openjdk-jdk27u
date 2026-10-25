@@ -761,7 +761,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_decimalZmij:
-  case vmIntrinsics::_formatZmij:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
   case vmIntrinsics::_parseFastFloatDigits:
   case vmIntrinsics::_parseFastFloat:
   case vmIntrinsics::_nanoTime:

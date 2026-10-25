@@ -163,19 +163,34 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
           return jdk_internal_util_formatLongUTF16;
         }
         break;
-      case vmIntrinsics::_putFloatDecimal:
+      case vmIntrinsics::_putFloatDecimalLatin1:
         if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
-          return jdk_internal_math_putFloatDecimal;
+          return jdk_internal_math_putFloatDecimalLatin1;
+        }
+        break;
+      case vmIntrinsics::_putFloatDecimalUTF16:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_putFloatDecimalUTF16;
+        }
+        break;
+      case vmIntrinsics::_putDoubleDecimalLatin1:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_putDoubleDecimalLatin1;
+        }
+        break;
+      case vmIntrinsics::_putDoubleDecimalUTF16:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_putDoubleDecimalUTF16;
+        }
+        break;
+      case vmIntrinsics::_floatToDecimalLatin1:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_floatToDecimalLatin1;
         }
         break;
       case vmIntrinsics::_decimalZmij:
         if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
           return jdk_internal_math_decimalZmij;
-        }
-        break;
-      case vmIntrinsics::_formatZmij:
-        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
-          return jdk_internal_math_formatZmij;
         }
         break;
       case vmIntrinsics::_parseFastFloatDigits:
@@ -288,9 +303,12 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case jdk_internal_util_formatIntUTF16: return vmIntrinsics::_formatDecimalIntUTF16;
   case jdk_internal_util_formatLongLatin1: return vmIntrinsics::_formatDecimalLongLatin1;
   case jdk_internal_util_formatLongUTF16: return vmIntrinsics::_formatDecimalLongUTF16;
-  case jdk_internal_math_putFloatDecimal: return vmIntrinsics::_putFloatDecimal;
+  case jdk_internal_math_putFloatDecimalLatin1: return vmIntrinsics::_putFloatDecimalLatin1;
+  case jdk_internal_math_putFloatDecimalUTF16: return vmIntrinsics::_putFloatDecimalUTF16;
+  case jdk_internal_math_putDoubleDecimalLatin1: return vmIntrinsics::_putDoubleDecimalLatin1;
+  case jdk_internal_math_putDoubleDecimalUTF16: return vmIntrinsics::_putDoubleDecimalUTF16;
+  case jdk_internal_math_floatToDecimalLatin1: return vmIntrinsics::_floatToDecimalLatin1;
   case jdk_internal_math_decimalZmij: return vmIntrinsics::_decimalZmij;
-  case jdk_internal_math_formatZmij: return vmIntrinsics::_formatZmij;
   case jdk_internal_math_parseFastFloatDigits: return vmIntrinsics::_parseFastFloatDigits;
   case jdk_internal_math_parseFastFloat: return vmIntrinsics::_parseFastFloat;
   case java_util_zip_CRC32_update : return vmIntrinsics::_updateCRC32;
@@ -407,9 +425,12 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case jdk_internal_util_formatIntUTF16: tty->print("jdk_internal_util_formatIntUTF16"); break;
     case jdk_internal_util_formatLongLatin1: tty->print("jdk_internal_util_formatLongLatin1"); break;
     case jdk_internal_util_formatLongUTF16: tty->print("jdk_internal_util_formatLongUTF16"); break;
-    case jdk_internal_math_putFloatDecimal: tty->print("jdk_internal_math_putFloatDecimal"); break;
+    case jdk_internal_math_putFloatDecimalLatin1: tty->print("jdk_internal_math_putFloatDecimalLatin1"); break;
+    case jdk_internal_math_putFloatDecimalUTF16: tty->print("jdk_internal_math_putFloatDecimalUTF16"); break;
+    case jdk_internal_math_putDoubleDecimalLatin1: tty->print("jdk_internal_math_putDoubleDecimalLatin1"); break;
+    case jdk_internal_math_putDoubleDecimalUTF16: tty->print("jdk_internal_math_putDoubleDecimalUTF16"); break;
+    case jdk_internal_math_floatToDecimalLatin1: tty->print("jdk_internal_math_floatToDecimalLatin1"); break;
     case jdk_internal_math_decimalZmij: tty->print("jdk_internal_math_decimalZmij"); break;
-    case jdk_internal_math_formatZmij: tty->print("jdk_internal_math_formatZmij"); break;
     case jdk_internal_math_parseFastFloatDigits: tty->print("jdk_internal_math_parseFastFloatDigits"); break;
     case jdk_internal_math_parseFastFloat    : tty->print("jdk_internal_math_parseFastFloat"); break;
     case java_util_zip_CRC32_update           : tty->print("java_util_zip_CRC32_update"); break;

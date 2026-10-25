@@ -36,9 +36,3 @@ JNIEXPORT jlong JNICALL
 Java_jdk_internal_math_Zmij_decimal0(JNIEnv* env, jclass unused, jlong bits) {
     return JVM_DecimalZmij(bits);
 }
-
-JNIEXPORT jint JNICALL
-Java_jdk_internal_math_Zmij_format0(JNIEnv* env, jclass unused,
-                                  jbyteArray output, jint index, jlong bits, jint format) {
-    return JVM_FormatZmij(env, output, index, bits, format);
-}

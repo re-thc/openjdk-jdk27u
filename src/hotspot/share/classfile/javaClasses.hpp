@@ -1774,15 +1774,6 @@ class vector_VectorPayload : AllStatic {
   static bool is_instance(oop obj);
 };
 
-class jdk_internal_math_ToDecimal : AllStatic {
- private:
-  static int _latin1_offset;
- public:
-  static int latin1_offset() { CHECK_INIT(_latin1_offset); }
-  static void compute_offsets();
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-};
-
 class java_lang_Boolean : AllStatic {
  private:
   static int _static_TRUE_offset;

@@ -256,52 +256,50 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
   if (!UseZmijIntrinsics) {
     return nullptr;
   }
+  bool decimal = kind == Interpreter::jdk_internal_math_decimalZmij;
+  bool is_double = kind == Interpreter::jdk_internal_math_putDoubleDecimalLatin1 ||
+                   kind == Interpreter::jdk_internal_math_putDoubleDecimalUTF16;
+  bool utf16 = kind == Interpreter::jdk_internal_math_putFloatDecimalUTF16 ||
+               kind == Interpreter::jdk_internal_math_putDoubleDecimalUTF16;
+  address target = decimal ? CAST_FROM_FN_PTR(address, Zmij::decimal)
+      : is_double
+          ? (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_double_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_double_latin1))
+          : (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_float_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_float_latin1));
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
-  if (kind == Interpreter::jdk_internal_math_putFloatDecimal) {
+  if (!decimal) {
     if (JvmtiExport::can_post_interpreter_events()) {
       __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
       __ jcc(Assembler::notEqual, slow_path);
     }
-    __ movptr(c_rarg0, Address(rsp, 4 * wordSize));
+    __ movptr(c_rarg0, Address(rsp, (is_double ? 4 : 3) * wordSize));
     __ testptr(c_rarg0, c_rarg0);
     __ jcc(Assembler::zero, slow_path);
-    __ load_unsigned_byte(c_rarg2, Address(c_rarg0, jdk_internal_math_ToDecimal::latin1_offset()));
-    __ xorl(c_rarg2, 1);
-    __ shll(c_rarg2, 1);
-    __ movl(rax, Address(rsp, 2 * wordSize));
-    Label latin1;
-    __ testl(c_rarg2, 2);
-    __ jccb(Assembler::zero, latin1);
-    __ shll(rax, 1);
-    __ bind(latin1);
-    __ movptr(c_rarg0, Address(rsp, 3 * wordSize));
-    __ testptr(c_rarg0, c_rarg0);
-    __ jcc(Assembler::zero, slow_path);
+    __ movl(rax, Address(rsp, (is_double ? 3 : 2) * wordSize));
+    if (utf16) {
+      __ shll(rax, 1);
+    }
     __ addptr(c_rarg0, rax);
     __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    __ movl(c_rarg1, Address(rsp, wordSize));
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::format), c_rarg0, c_rarg1, c_rarg2);
-    __ addl(rax, Address(rsp, 2 * wordSize));
-  } else if (kind == Interpreter::jdk_internal_math_decimalZmij) {
-    __ movptr(c_rarg0, Address(rsp, wordSize));
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::decimal), c_rarg0);
+    if (is_double) {
+      __ movptr(c_rarg1, Address(rsp, wordSize));
+    } else {
+      __ movl(c_rarg1, Address(rsp, wordSize));
+    }
+    __ super_call_VM_leaf(target, c_rarg0, c_rarg1);
+    if (kind != Interpreter::jdk_internal_math_floatToDecimalLatin1) {
+      __ addl(rax, Address(rsp, (is_double ? 3 : 2) * wordSize));
+    }
   } else {
-    __ movptr(c_rarg0, Address(rsp, 5 * wordSize));
-    __ movl(rax, Address(rsp, 4 * wordSize));
-    __ addptr(c_rarg0, rax);
-    __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    __ movptr(c_rarg1, Address(rsp, 2 * wordSize));
-    __ movl(c_rarg2, Address(rsp, wordSize));
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::format), c_rarg0, c_rarg1, c_rarg2);
+    __ movptr(c_rarg0, Address(rsp, wordSize));
+    __ super_call_VM_leaf(target, c_rarg0);
   }
   __ pop(rdi);
   __ mov(rsp, r13);
   __ jmp(rdi);
   __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(kind == Interpreter::jdk_internal_math_putFloatDecimal
-                                              ? Interpreter::zerolocals : Interpreter::native));
+  __ jump_to_entry(Interpreter::entry_for_kind(decimal ? Interpreter::native : Interpreter::zerolocals));
   return entry;
 }
 
