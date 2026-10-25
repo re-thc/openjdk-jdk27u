@@ -2091,11 +2091,6 @@ final class StringUTF16 {
             }
             if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
         }
-        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
-    }
-
-    static int lastIndexOfLatin1Java(byte[] src,
-                                        byte[] tgt, int tgtCount, int fromIndex) {
         if (StringZilla.ENABLED && fromIndex + 1 >= (StringZilla.MIN_BYTES >> 1)
                 && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
             // Locate the first candidate using the existing character intrinsic.
@@ -2112,6 +2107,11 @@ final class StringUTF16 {
                 fromIndex = result >> 1;
             }
         }
+        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
+    }
+
+    static int lastIndexOfLatin1Java(byte[] src,
+                                        byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
