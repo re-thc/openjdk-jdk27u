@@ -3218,6 +3218,12 @@ JVM_ENTRY(jint, JVM_FormatZmij(JNIEnv* env, jbyteArray output, jint index, jlong
   if (index < 0 || index > value->length() - capacity) {
     return 0;
   }
+  uint64_t magnitude = uint64_t(bits) & ((format & 1) != 0
+      ? UINT64_C(0x7fffffffffffffff) : UINT64_C(0x7fffffff));
+  if (magnitude == 0 || magnitude >= ((format & 1) != 0
+      ? UINT64_C(0x7ff0000000000000) : UINT64_C(0x7f800000))) {
+    return 0;
+  }
   return Zmij::formatter()(static_cast<char*>(value->base(T_BYTE)) + index, uint64_t(bits), format);
 JVM_END
 

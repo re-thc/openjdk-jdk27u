@@ -33,7 +33,7 @@ class Zmij : AllStatic {
   static bool is_enabled();
   // Format bit 0 selects binary64 (otherwise binary32).
   // Bit 1 selects UTF16 output.
-  // The caller reserves MAX_CHARS characters. Return 0 for Java fallback.
+  // The caller supplies a finite, nonzero value and reserves MAX_CHARS characters.
   typedef int (*Formatter)(void* output, uint64_t bits, int format);
   // Chosen while generating an intrinsic; no dispatch remains in its hot path.
   static Formatter formatter();
@@ -48,10 +48,6 @@ class Zmij : AllStatic {
   static inline int format_impl(void* output, uint64_t bits, int format,
                                 DoubleWriter double_writer, FloatWriter float_writer) {
     bool is_double = (format & 1) != 0;
-    uint64_t magnitude = bits & (is_double ? UINT64_C(0x7fffffffffffffff) : UINT64_C(0x7fffffff));
-    if (magnitude == 0 || magnitude >= (is_double ? UINT64_C(0x7ff0000000000000) : UINT64_C(0x7f800000))) {
-      return 0;
-    }
     // Wide upstream stores stay in this initialized stack buffer.
     char buffer[40] = {};
     char* end;

@@ -71,8 +71,6 @@ with tempfile.TemporaryDirectory() as tmp:
     # Validate the production bridge before changing any installed vendor file.
     subprocess.run([sys.executable, str(root / 'make/scripts/check-zmij-metadata.py'),
                     str(staged), '--cxx', args.cxx], check=True)
-    subprocess.run([sys.executable, str(root / 'make/scripts/check-zmij.py'),
-                    str(staged), '--cxx', args.cxx], check=True)
     subprocess.run([sys.executable, str(root / 'make/scripts/check-zmij-integer.py'),
                     str(staged), '--cxx', args.cxx], check=True)
     destination = root / 'src/hotspot/share/utilities/zmij'

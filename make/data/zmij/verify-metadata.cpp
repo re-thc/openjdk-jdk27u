@@ -25,7 +25,6 @@
 #include <cinttypes>
 #include <cstdio>
 
-#define ZMIJ_HOTSPOT_SHORTEST_ONLY
 #include "zmij.cc"
 #include "utilities/zmijMetadata.inline.hpp"
 

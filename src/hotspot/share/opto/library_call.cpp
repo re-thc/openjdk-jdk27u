@@ -6770,7 +6770,7 @@ bool LibraryCallKit::inline_formatZmij() {
   int max_chars = _gvn.type(kind) == TypeInt::ZERO ? 15 : 24;
   // Float's result fits its 15-character buffer. A wider range prevents C2
   // from removing checks and padding in the subsequent String array copy.
-  fields[TypeFunc::Parms] = TypeInt::make(0, max_chars, Type::WidenMin);
+  fields[TypeFunc::Parms] = TypeInt::make(1, max_chars, Type::WidenMin);
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   const TypeFunc* type = TypeFunc::make(domain, range);
   // Keep a wide memory input to order allocation and initialization, but

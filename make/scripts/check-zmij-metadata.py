@@ -22,8 +22,14 @@
 # questions.
 #
 
-"""Verify the production decimal bridge against a staged Żmij implementation."""
+"""Check internal Żmij table/decimal contracts before installing an update.
+
+The driver compiles the production metadata method with the staged vendor.
+Python integer/rational arithmetic supplies independent table and flag oracles.
+"""
 import argparse
+from decimal import Decimal
+from fractions import Fraction
 import os
 from pathlib import Path
 import random
@@ -33,100 +39,123 @@ import subprocess
 import tempfile
 
 
-def verify(source, compiler):
-    root = Path(__file__).resolve().parents[2]
-    samples = set(range(257))
-    samples.update((0x7ff0000000000000, 0x7ff8000000000001,
-                    0x8000000000000000, 0xfff0000000000000))
-    for bq in range(2048):
-        for delta in range(-2, 3):
-            bits = (bq << 52) + delta
-            if 0 <= bits < 1 << 64:
-                samples.add(bits)
+def fixtures():
+    values = set(range(257))
+    for exponent in range(2048):
+        for fraction in (0, 1, 2, (1 << 51) - 1, 1 << 51, (1 << 52) - 2, (1 << 52) - 1):
+            values.add((exponent << 52) | fraction)
+        values.update((exponent << 52) + delta for delta in range(-2, 3)
+                      if (exponent << 52) + delta >= 0)
     for exponent in range(-323, 309):
         value = float('1e' + str(exponent))
         bits = struct.unpack('>Q', struct.pack('>d', value))[0]
-        samples.update(bits + delta for delta in range(-2, 3))
-    random_source = random.Random(0xF70A111)
-    samples.update(random_source.getrandbits(64) for _ in range(12000))
-    with tempfile.TemporaryDirectory() as temporary:
-        executable = Path(temporary) / 'verify-metadata'
-        subprocess.run(shlex.split(compiler) + [
-            '-std=c++17', '-O2', '-I' + str(source),
-            '-I' + str(root / 'src/hotspot/share'),
-            str(root / 'make/data/zmij/verify-metadata.cpp'),
-            '-o', str(executable)], check=True)
-        output = subprocess.check_output([str(executable)], text=True,
-                                         input=''.join(f'{b:x}\n' for b in sorted(samples)))
-    powers, records = 0, 0
-    exact_count, away_count = 0, 0
+        values.update(bits + delta for delta in range(-2, 3))
+    rng = random.Random(9271)
+    values.update(rng.randrange(0x7ff0000000000000) for _ in range(10000))
+    rng = random.Random(0xF70A111)
+    values.update(rng.getrandbits(64) for _ in range(12000))
+    values.update((0x8000000000000000, 0x7ff0000000000000, 0xfff0000000000000,
+                   0x7ff8000000000000, 0x7ff8000000000001, 0x7ff0000000000001, 0xffffffffffffffff))
+    return sorted(values)
+
+
+def pow10(exponent):
+    return Fraction(10 ** exponent) if exponent >= 0 else Fraction(1, 10 ** -exponent)
+
+
+def verify(output, values):
+    tables = set()
     seen = set()
+    exact_count = away_count = 0
     for line in output.splitlines():
-        fields = line.split()
-        if fields[0] == 'T':
-            exponent = int(fields[1])
-            actual = (int(fields[2], 16) << 64) | int(fields[3], 16)
-            numerator = 10 ** max(exponent, 0)
-            denominator = 10 ** max(-exponent, 0)
-            binary_exp = numerator.bit_length() - denominator.bit_length()
-            if (numerator < denominator << binary_exp if binary_exp >= 0
-                    else numerator << -binary_exp < denominator):
-                binary_exp -= 1
-            shift = 127 - binary_exp
+        kind, *fields = line.split()
+        if kind == 'T':
+            exponent = int(fields[0])
+            hi, lo = int(fields[1], 16), int(fields[2], 16)
+            if exponent in tables:
+                raise AssertionError('Duplicate table coverage')
+            numerator = 10 ** exponent if exponent >= 0 else 1
+            denominator = 1 if exponent >= 0 else 10 ** -exponent
+            binary_exponent = numerator.bit_length() - 1 if exponent >= 0 else -denominator.bit_length()
+            shift = 127 - binary_exponent
             expected = ((numerator << shift) // denominator if shift >= 0
                         else numerator // (denominator << -shift))
-            if actual != expected:
-                raise ValueError(f'10**{exponent}: power cache is not rounded down to 128 bits')
-            powers += 1
+            if ((hi << 64) | lo) != expected:
+                raise AssertionError(f'Downward-rounded power table changed at 10**{exponent}')
+            tables.add(exponent)
             continue
-        bits, packed = int(fields[1], 16), int(fields[2], 16)
-        if bits not in samples or bits in seen:
-            raise ValueError('Missing or duplicate bridge input')
+        if kind != 'M':
+            raise AssertionError('Unexpected checker output')
+        bits, packed = int(fields[0], 16), int(fields[1], 16)
+        sig, exp = int(fields[2]), int(fields[3])
+        if bits in seen:
+            raise AssertionError('Duplicate fixture coverage')
         seen.add(bits)
-        records += 1
         if bits <= 128 or bits >= 0x7ff0000000000000:
             if packed != 0:
-                raise ValueError(f'{bits:x}: invalid-input fallback changed')
+                raise AssertionError(f'Fallback/totality contract changed for {bits:016x}')
             continue
-        sig, exponent = int(fields[3]), int(fields[4])
-        if not 0 < sig < 10 ** 17:
-            raise ValueError(f'{bits:x}: unexpected decimal significand width')
-        value = float(str(sig) + 'e' + str(exponent))
-        recovered = struct.unpack('>Q', struct.pack('>d', value))[0]
-        if recovered != bits:
-            raise ValueError(f'{bits:x}: vendor decimal representation does not round-trip')
+        value = struct.unpack('>d', struct.pack('>Q', bits))[0]
+        if not 0 < sig < 10 ** 17 or not -400 <= exp <= 400:
+            raise AssertionError(f'Decimal representation changed for {bits:016x}')
+        if float(str(sig) + 'e' + str(exp)) != value:
+            raise AssertionError(f'Decimal does not round-trip for {bits:016x}')
+        # Python's independent shortest formatter supplies a digit-count bound.
+        # Java considers two-digit candidates when one digit would round-trip.
+        digits = len(str(sig).rstrip('0'))
+        original_digits = len(''.join(map(str, Decimal(repr(value)).as_tuple().digits)).rstrip('0'))
+        if digits > max(2, original_digits):
+            raise AssertionError(f'Decimal is no longer shortest for {bits:016x}')
         bq = bits >> 52
-        q = -1074 if bq == 0 else bq - 1075
-        c = bits & 0xfffffffffffff
-        if bq != 0:
-            c |= 1 << 52
+        q = bq - 1075 if bq else -1074
+        c = (bits & ((1 << 52) - 1)) | ((1 << 52) if bq else 0)
         irregular = c == 1 << 52 and q != -1074
         k = (q * 661971961083 - (274743187321 if irregular else 0)) >> 41
         h = q + ((-k * 913124641741) >> 38) + 2
         if not -292 <= -k <= 324 or not 0 <= h < 64 or (c << (2 + h)) >= 1 << 64:
-            raise ValueError(f'{bits:x}: bridge power/shift bounds changed')
-        f = sig * 10 ** (exponent - k) if exponent >= k else 1 << 57
-        if f >= 1 << 57 or packed & ((1 << 57) - 1) != f:
-            raise ValueError(f'{bits:x}: decimal cannot be represented by the bridge')
-        decimal_num = sig * 10 ** max(exponent, 0)
-        decimal_den = 10 ** max(-exponent, 0)
-        binary_num = c << max(q, 0)
-        binary_den = 1 << max(-q, 0)
-        difference = decimal_num * binary_den - binary_num * decimal_den
-        exact, away = difference == 0, difference > 0
-        if bool(packed & (1 << 62)) != exact or bool(packed & (1 << 63)) != away:
-            raise ValueError(f'{bits:x}: exactness/rounding direction differs from exact arithmetic')
+            raise AssertionError(f'Bridge power/shift bounds changed for {bits:016x}')
+        if exp < k or sig * 10 ** (exp - k) >= 1 << 57:
+            raise AssertionError(f'Decimal cannot be represented by the bridge for {bits:016x}')
+        f = sig * 10 ** (exp - k)
+        exact_value = Fraction(c << q) if q >= 0 else Fraction(c, 1 << -q)
+        decimal_value = f * pow10(k)
+        exact, away = decimal_value == exact_value, decimal_value > exact_value
+        expected = f | (int(exact) << 62) | (int(away) << 63)
         exact_count += exact
         away_count += away
-    if powers != 649 or seen != samples or not exact_count or not away_count:
-        raise ValueError('Incomplete table/metadata verification')
-    print(f'Żmij bridge verified: {powers} exact power entries, {records} inputs; '
-          f'{exact_count} exact and {away_count} rounded away from zero.')
+        if packed != expected:
+            raise AssertionError(f'Metadata changed for {bits:016x}: {packed:016x} != {expected:016x}')
+    if (tables != set(range(-307, 342)) or seen != set(values)
+            or not exact_count or not away_count):
+        raise AssertionError('Missing table/fixture coverage')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('staged', type=Path, help='patched zmij.cc/zmij.h directory')
+    parser.add_argument('--cxx', default=os.environ.get('CXX', 'c++'), help='host C++ compiler and flags')
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parents[2]
+    if 'return hotspot_zmij_decimal_metadata(bits);' not in (root / 'src/hotspot/share/utilities/zmij.cpp').read_text():
+        raise RuntimeError('Review checker binding after changing Zmij::decimal')
+    values = fixtures()
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        source = root / 'make/data/zmij/verify-metadata.cpp'
+        for profile, flags in (('full-table', []),
+                               ('shortest-table', ['-DZMIJ_HOTSPOT_SHORTEST_ONLY=1']),
+                               ('shortest-compressed', ['-DZMIJ_HOTSPOT_SHORTEST_ONLY=1', '-DZMIJ_OPTIMIZE_SIZE=1'])):
+            binary = directory / profile
+            subprocess.run(shlex.split(args.cxx) + ['-std=c++17', '-O2',
+                           '-fsanitize=undefined', '-fno-sanitize-recover=undefined',
+                           '-I' + str(args.staged.resolve()),
+                           '-I' + str(root / 'src/hotspot/share'), *flags,
+                           str(source), '-o', str(binary)], check=True)
+            result = subprocess.run([str(binary)], input=''.join(f'{v:x}\n' for v in values),
+                                    capture_output=True, text=True, check=True)
+            verify(result.stdout, values)
+            print(f'{profile}: 649 exact power tables and {len(values)} metadata/round-trip fixtures passed')
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('source', type=Path, help='directory containing patched zmij.cc and zmij.h')
-    parser.add_argument('--cxx', default=os.environ.get('CXX', 'c++'))
-    arguments = parser.parse_args()
-    verify(arguments.source.resolve(), arguments.cxx)
+    main()
