@@ -22,17 +22,47 @@
  */
 
 #include "classfile/classLoaderData.hpp"
-#include "oops/fieldInfo.inline.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "oops/instanceKlass.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/commonIntrinsics.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
+
+int CommonIntrinsics::aes_encrypt_key_offset = -1;
+int CommonIntrinsics::aes_decrypt_key_offset = -1;
+int CommonIntrinsics::cbc_r_offset = -1;
+int CommonIntrinsics::ctr_counter_offset = -1;
+int CommonIntrinsics::ctr_encrypted_offset = -1;
+int CommonIntrinsics::ctr_used_offset = -1;
+int CommonIntrinsics::ghash_state_offset = -1;
+int CommonIntrinsics::ghash_key_offset = -1;
+int CommonIntrinsics::digest_block_size_offset = -1;
+int CommonIntrinsics::md5_state_offset = -1;
+int CommonIntrinsics::sha1_state_offset = -1;
+int CommonIntrinsics::sha256_state_offset = -1;
+int CommonIntrinsics::sha512_state_offset = -1;
+int CommonIntrinsics::sha3_state_offset = -1;
+int CommonIntrinsics::embedded_cipher_offset = -1;
+InstanceKlass* CommonIntrinsics::aescrypt_klass = nullptr;
+InstanceKlass* CommonIntrinsics::cbc_klass = nullptr;
+InstanceKlass* CommonIntrinsics::ctr_klass = nullptr;
+InstanceKlass* CommonIntrinsics::ghash_klass = nullptr;
+InstanceKlass* CommonIntrinsics::digest_base_klass = nullptr;
+InstanceKlass* CommonIntrinsics::md5_klass = nullptr;
+InstanceKlass* CommonIntrinsics::sha1_klass = nullptr;
+InstanceKlass* CommonIntrinsics::sha256_klass = nullptr;
+InstanceKlass* CommonIntrinsics::sha512_klass = nullptr;
+InstanceKlass* CommonIntrinsics::sha3_klass = nullptr;
+InstanceKlass* CommonIntrinsics::feedback_cipher_klass = nullptr;
 
 namespace {
 
@@ -83,86 +113,17 @@ R invoke_stub(address entry, Args... args) {
   return CAST_TO_FN_PTR(R (*)(decltype(stub_argument(args))...), entry)(stub_argument(args)...);
 }
 
-// Resolve only fields declared by the known bootstrap class. A subclass
-// can legally shadow a field, so a lookup starting in the receiver is unsafe.
-// Cache the immutable layout without retaining unloadable application classes.
-class KnownField {
-  const char* _class_name;
-  const char* _name;
-  const char* _signature;
-  Klass* volatile _holder;
-  volatile int _offset;
- public:
-  KnownField(const char* class_name, const char* name, const char* signature)
-    : _class_name(class_name), _name(name), _signature(signature), _holder(nullptr), _offset(-1) {}
-
-  int offset(oop obj) {
-    if (obj == nullptr) {
-      return -1;
-    }
-    Klass* holder = AtomicAccess::load_acquire(&_holder);
-    if (holder != nullptr) {
-      return obj->klass()->is_subclass_of(holder) ? AtomicAccess::load(&_offset) : -1;
-    }
-    for (Klass* k = obj->klass(); k != nullptr; k = k->super()) {
-      if (k->is_instance_klass() && k->name()->equals(_class_name) &&
-          k->class_loader_data()->is_the_null_class_loader_data()) {
-        // Decode immutable metadata directly. FieldStreamBase creates a
-        // metadata handle, whose backing array can allocate in this leaf.
-        InstanceKlass* ik = InstanceKlass::cast(k);
-        FieldInfoReader reader(ik->fieldinfo_stream());
-        int java_fields, injected_fields;
-        reader.read_field_counts(&java_fields, &injected_fields);
-        for (int i = 0; i < java_fields; i++) {
-          FieldInfo field;
-          reader.read_field_info(field);
-          if (!field.access_flags().is_static() &&
-              field.name(ik->constants())->equals(_name) &&
-              field.signature(ik->constants())->equals(_signature)) {
-            int offset = field.offset();
-            AtomicAccess::store(&_offset, offset);
-            AtomicAccess::release_store(&_holder, k);
-            return offset;
-          }
-        }
-        return -1;
-      }
-    }
-    return -1;
+// The class is already being linked; do not load or initialize any class here.
+int crypto_field_offset(InstanceKlass* holder, const char* name, const char* signature) {
+  TempNewSymbol field_name = SymbolTable::probe(name, static_cast<int>(strlen(name)));
+  TempNewSymbol field_signature = SymbolTable::probe(signature, static_cast<int>(strlen(signature)));
+  fieldDescriptor field;
+  if (field_name != nullptr && field_signature != nullptr &&
+      holder->find_local_field(field_name, field_signature, &field) && !field.is_static()) {
+    return field.offset();
   }
-
-  oop object(oop obj) {
-    int off = offset(obj);
-    return off < 0 ? nullptr : obj->obj_field(off);
-  }
-  jint integer(oop obj) {
-    int off = offset(obj);
-    return off < 0 ? -1 : obj->int_field(off);
-  }
-};
-
-KnownField aes_encrypt_key("com/sun/crypto/provider/AES_Crypt", "sessionKe", "[I");
-KnownField aes_decrypt_key("com/sun/crypto/provider/AES_Crypt", "sessionKd", "[I");
-KnownField embedded_cipher("com/sun/crypto/provider/FeedbackCipher", "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;");
-KnownField cbc_r("com/sun/crypto/provider/CipherBlockChaining", "r", "[B");
-KnownField ctr_counter("com/sun/crypto/provider/CounterMode", "counter", "[B");
-KnownField ctr_encrypted("com/sun/crypto/provider/CounterMode", "encryptedCounter", "[B");
-KnownField ctr_used("com/sun/crypto/provider/CounterMode", "used", "I");
-KnownField digest_block_size("sun/security/provider/DigestBase", "blockSize", "I");
-KnownField md5_state("sun/security/provider/MD5", "state", "[I");
-KnownField sha1_state("sun/security/provider/SHA", "state", "[I");
-KnownField sha256_state("sun/security/provider/SHA2", "state", "[I");
-KnownField sha512_state("sun/security/provider/SHA5", "state", "[J");
-KnownField sha3_state("sun/security/provider/SHA3", "state", "[J");
-
-bool aes_key(oop key) {
-  return array_range(key, T_INT, 0, 0) &&
-         (typeArrayOop(key)->length() == 44 || typeArrayOop(key)->length() == 52 ||
-          typeArrayOop(key)->length() == 60);
+  return -1;
 }
-
-KnownField ghash_state("com/sun/crypto/provider/GHASH", "state", "[J");
-KnownField ghash_key("com/sun/crypto/provider/GHASH", "subkeyHtbl", "[J");
 
 template <typename T>
 jint polynomial_hash(const T* data, jint len, jint initial) {
@@ -450,225 +411,6 @@ JRT_LEAF(jlong, common_dilithiumDecomposePoly(const intptr_t* args))
   return invoke_stub<jint>(stub, elements<jint>(src), elements<jint>(low), elements<jint>(high), gamma, multiplier);
 JRT_END
 
-JRT_LEAF(jlong, common_aescrypt_encryptBlock(const intptr_t* args))
-  Arguments a(args, 5);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::aescrypt_encryptBlock();
-  oop key = aes_encrypt_key.object(receiver);
-  if (stub == nullptr || !aes_key(key) ||
-      !array_range(src, T_BYTE, offset, 16) || !array_range(dst, T_BYTE, dp, 16)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp, elements<jint>(key));
-  return 0;
-JRT_END
-
-JRT_LEAF(jlong, common_electronicCodeBook_encryptAESCrypt(const intptr_t* args))
-  Arguments a(args, 6);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  jint len = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::electronicCodeBook_encryptAESCrypt();
-  oop cipher = embedded_cipher.object(receiver);
-  oop key = aes_encrypt_key.object(cipher);
-  if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || (src == dst && offset != dp) ||
-      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len)) {
-    return CommonIntrinsics::fallback;
-  }
-  return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
-                           elements<jint>(key), len);
-JRT_END
-
-JRT_LEAF(jlong, common_cipherBlockChaining_encryptAESCrypt(const intptr_t* args))
-  Arguments a(args, 6);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  jint len = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::cipherBlockChaining_encryptAESCrypt();
-  oop cipher = embedded_cipher.object(receiver);
-  oop key = aes_encrypt_key.object(cipher);
-  oop r = cbc_r.object(receiver);
-  if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || (src == dst && offset != dp) ||
-      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len) ||
-      !array_range(r, T_BYTE, 0, 16)) {
-    return CommonIntrinsics::fallback;
-  }
-  return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
-                           elements<jint>(key), elements<jbyte>(r), len);
-JRT_END
-
-JRT_LEAF(jlong, common_aescrypt_decryptBlock(const intptr_t* args))
-  Arguments a(args, 5);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::aescrypt_decryptBlock();
-  oop key = aes_decrypt_key.object(receiver);
-  if (stub == nullptr || !aes_key(key) ||
-      !array_range(src, T_BYTE, offset, 16) || !array_range(dst, T_BYTE, dp, 16)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp, elements<jint>(key));
-  return 0;
-JRT_END
-
-JRT_LEAF(jlong, common_electronicCodeBook_decryptAESCrypt(const intptr_t* args))
-  Arguments a(args, 6);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  jint len = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::electronicCodeBook_decryptAESCrypt();
-  oop cipher = embedded_cipher.object(receiver);
-  oop key = aes_decrypt_key.object(cipher);
-  if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || (src == dst && offset != dp) ||
-      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len)) {
-    return CommonIntrinsics::fallback;
-  }
-  return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
-                           elements<jint>(key), len);
-JRT_END
-
-JRT_LEAF(jlong, common_cipherBlockChaining_decryptAESCrypt(const intptr_t* args))
-  Arguments a(args, 6);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  jint len = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::cipherBlockChaining_decryptAESCrypt();
-  oop cipher = embedded_cipher.object(receiver);
-  oop key = aes_decrypt_key.object(cipher);
-  oop r = cbc_r.object(receiver);
-  if (stub == nullptr || !aes_key(key) || len <= 0 || (len & 15) != 0 || src == dst ||
-      !array_range(src, T_BYTE, offset, len) || !array_range(dst, T_BYTE, dp, len) ||
-      !array_range(r, T_BYTE, 0, 16)) {
-    return CommonIntrinsics::fallback;
-  }
-  return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
-                           elements<jint>(key), elements<jbyte>(r), len);
-JRT_END
-
-JRT_LEAF(jlong, common_counterMode_AESCrypt(const intptr_t* args))
-  Arguments a(args, 6);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  jint len = a.integer();
-  oop dst = a.object();
-  jint dp = a.integer();
-  address stub = StubRoutines::counterMode_AESCrypt();
-  oop key = aes_encrypt_key.object(embedded_cipher.object(receiver));
-  oop counter = ctr_counter.object(receiver);
-  oop encrypted = ctr_encrypted.object(receiver);
-  int used_offset = ctr_used.offset(receiver);
-  jint used = ctr_used.integer(receiver);
-  if (stub == nullptr || !aes_key(key) || len <= 0 || used < 0 || used > 16 ||
-      (src == dst && offset != dp) || !array_range(src, T_BYTE, offset, len) ||
-      !array_range(dst, T_BYTE, dp, len) || !array_range(counter, T_BYTE, 0, 16) ||
-      !array_range(encrypted, T_BYTE, 0, 16)) {
-    return CommonIntrinsics::fallback;
-  }
-  jint* used_addr = reinterpret_cast<jint*>(cast_from_oop<intptr_t>(receiver) + used_offset);
-  return invoke_stub<jint>(stub, elements<jbyte>(src) + offset, elements<jbyte>(dst) + dp,
-                           elements<jint>(key), elements<jbyte>(counter), len, elements<jbyte>(encrypted), used_addr);
-JRT_END
-
-JRT_LEAF(jlong, common_md5_implCompress(const intptr_t* args))
-  Arguments a(args, 3);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  address stub = StubRoutines::md5_implCompress();
-  oop state = md5_state.object(receiver);
-  constexpr jint block = 64;
-  if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 4)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
-  return 0;
-JRT_END
-
-JRT_LEAF(jlong, common_sha_implCompress(const intptr_t* args))
-  Arguments a(args, 3);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  address stub = StubRoutines::sha1_implCompress();
-  oop state = sha1_state.object(receiver);
-  constexpr jint block = 64;
-  if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 5)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
-  return 0;
-JRT_END
-
-JRT_LEAF(jlong, common_sha2_implCompress(const intptr_t* args))
-  Arguments a(args, 3);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  address stub = StubRoutines::sha256_implCompress();
-  oop state = sha256_state.object(receiver);
-  constexpr jint block = 64;
-  if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_INT, 0, 8)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jint>(state));
-  return 0;
-JRT_END
-
-JRT_LEAF(jlong, common_sha5_implCompress(const intptr_t* args))
-  Arguments a(args, 3);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  address stub = StubRoutines::sha512_implCompress();
-  oop state = sha512_state.object(receiver);
-  constexpr jint block = 128;
-  if (stub == nullptr ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 8)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jlong>(state));
-  return 0;
-JRT_END
-
-JRT_LEAF(jlong, common_sha3_implCompress(const intptr_t* args))
-  Arguments a(args, 3);
-  oop receiver = a.object();
-  oop src = a.object();
-  jint offset = a.integer();
-  address stub = StubRoutines::sha3_implCompress();
-  oop state = sha3_state.object(receiver);
-  jint block = digest_block_size.integer(receiver);
-  if (stub == nullptr || block <= 0 || block > 200 || (block & 7) != 0 ||
-      !array_range(src, T_BYTE, offset, block) || !array_range(state, T_LONG, 0, 25)) {
-    return CommonIntrinsics::fallback;
-  }
-  invoke_stub<void>(stub, elements<jbyte>(src) + offset, elements<jlong>(state), block);
-  return 0;
-JRT_END
-
 JRT_LEAF(jlong, common_digestBase_implCompressMB(const intptr_t* args))
   Arguments a(args, 4);
   oop receiver = a.object();
@@ -679,25 +421,34 @@ JRT_LEAF(jlong, common_digestBase_implCompressMB(const intptr_t* args))
   oop state = nullptr;
   BasicType type = T_INT;
   jint words = 0;
-  jint block = digest_block_size.integer(receiver);
+  if (receiver == nullptr || AtomicAccess::load_acquire(&CommonIntrinsics::digest_base_klass) == nullptr ||
+      CommonIntrinsics::digest_block_size_offset < 0) {
+    return CommonIntrinsics::fallback;
+  }
+  jint block = receiver->int_field(CommonIntrinsics::digest_block_size_offset);
+  auto digest_state = [&](InstanceKlass** slot, int* offset) -> oop {
+    InstanceKlass* klass = AtomicAccess::load_acquire(slot);
+    return klass != nullptr && receiver->is_a(klass) && AtomicAccess::load(offset) >= 0
+           ? receiver->obj_field(AtomicAccess::load(offset)) : nullptr;
+  };
   if (receiver == nullptr || block <= 0 || block > 200 || (block & 7) != 0 || limit < offset ||
       !array_range(src, T_BYTE, offset, static_cast<jlong>(limit) - offset + block)) {
     return CommonIntrinsics::fallback;
   }
-  if ((state = md5_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress)) {
+  if ((state = digest_state(&CommonIntrinsics::md5_klass, &CommonIntrinsics::md5_state_offset)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress)) {
     stub = StubRoutines::md5_implCompressMB();
     words = 4;
-  } else if ((state = sha1_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress)) {
+  } else if ((state = digest_state(&CommonIntrinsics::sha1_klass, &CommonIntrinsics::sha1_state_offset)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress)) {
     stub = StubRoutines::sha1_implCompressMB();
     words = 5;
-  } else if ((state = sha256_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress)) {
+  } else if ((state = digest_state(&CommonIntrinsics::sha256_klass, &CommonIntrinsics::sha256_state_offset)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress)) {
     stub = StubRoutines::sha256_implCompressMB();
     words = 8;
-  } else if ((state = sha512_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress)) {
+  } else if ((state = digest_state(&CommonIntrinsics::sha512_klass, &CommonIntrinsics::sha512_state_offset)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress)) {
     stub = StubRoutines::sha512_implCompressMB();
     words = 8;
     type = T_LONG;
-  } else if ((state = sha3_state.object(receiver)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress)) {
+  } else if ((state = digest_state(&CommonIntrinsics::sha3_klass, &CommonIntrinsics::sha3_state_offset)) != nullptr && vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress)) {
     stub = StubRoutines::sha3_implCompressMB();
     words = 25;
     type = T_LONG;
@@ -712,33 +463,6 @@ JRT_LEAF(jlong, common_digestBase_implCompressMB(const intptr_t* args))
   // Both state element types use the same pointer ABI.
   return invoke_stub<jint>(stub, elements<jbyte>(src) + offset,
                            typeArrayOop(state)->base(type), offset, limit);
-JRT_END
-
-JRT_LEAF(jlong, common_galoisCounterMode_AESCrypt(const intptr_t* args))
-  Arguments a(args, 9);
-  oop in = a.object();
-  jint offset = a.integer();
-  jint len = a.integer();
-  oop ct = a.object();
-  jint ctp = a.integer();
-  oop out = a.object();
-  jint dp = a.integer();
-  oop gctr = a.object();
-  oop ghash = a.object();
-  address stub = StubRoutines::galoisCounterMode_AESCrypt();
-  oop key = aes_encrypt_key.object(embedded_cipher.object(gctr));
-  oop counter = ctr_counter.object(gctr);
-  oop state = ghash_state.object(ghash);
-  oop h = ghash_key.object(ghash);
-  if (stub == nullptr || !aes_key(key) || len <= 0 || in == out ||
-      !array_range(in, T_BYTE, offset, len) || !array_range(ct, T_BYTE, ctp, len) ||
-      !array_range(out, T_BYTE, dp, len) || !array_range(counter, T_BYTE, 0, 16) ||
-      !array_range(state, T_LONG, 0, 2) || !array_range(h, T_LONG, 0, 18)) {
-    return CommonIntrinsics::fallback;
-  }
-  return invoke_stub<jint>(stub, elements<jbyte>(in) + offset, len, elements<jbyte>(ct) + ctp,
-                           elements<jbyte>(out) + dp, elements<jint>(key), elements<jlong>(state),
-                           elements<jlong>(h), elements<jbyte>(counter));
 JRT_END
 
 JRT_LEAF(jlong, common_vectorizedHashCode(const intptr_t* args))
@@ -811,15 +535,128 @@ bool CommonIntrinsics::needs_compiler_stubs(vmIntrinsics::ID id) {
 #ifdef COMPILER2
   return enabled() && !is_scalar(id) && id != vmIntrinsics::_vectorizedHashCode &&
          id != vmIntrinsics::_vectorizedHashCodeLeaf &&
-         (is_big_integer(id) || entry_for(id) != nullptr);
+         (is_big_integer(id) || is_crypto(id) || entry_for(id) != nullptr);
 #else
   return false;
 #endif
 }
 
-void CommonIntrinsics::prepare(vmIntrinsics::ID id) {
-  // Linking can allocate and block; the interpreter and C1 leaf adapters cannot.
-  // Bootstrap calls retain the Java fallback until the stubs are published.
+bool CommonIntrinsics::is_crypto(vmIntrinsics::ID id) {
+  switch (id) {
+    case vmIntrinsics::_aescrypt_encryptBlock:
+    case vmIntrinsics::_aescrypt_decryptBlock:
+    case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+    case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+    case vmIntrinsics::_counterMode_AESCrypt:
+    case vmIntrinsics::_galoisCounterMode_AESCrypt:
+    case vmIntrinsics::_md5_implCompress:
+    case vmIntrinsics::_sha_implCompress:
+    case vmIntrinsics::_sha2_implCompress:
+    case vmIntrinsics::_sha5_implCompress:
+    case vmIntrinsics::_sha3_implCompress:
+      return true;
+    default: return false;
+  }
+}
+
+bool CommonIntrinsics::crypto_layout_ready(vmIntrinsics::ID id) {
+  bool aes = AtomicAccess::load_acquire(&aescrypt_klass) != nullptr &&
+             aes_encrypt_key_offset >= 0 && aes_decrypt_key_offset >= 0;
+  bool feedback = AtomicAccess::load_acquire(&feedback_cipher_klass) != nullptr && embedded_cipher_offset >= 0;
+  switch (id) {
+    case vmIntrinsics::_aescrypt_encryptBlock:
+    case vmIntrinsics::_aescrypt_decryptBlock: return aes;
+    case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_decryptAESCrypt: return aes && feedback;
+    case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+    case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+      return aes && feedback && AtomicAccess::load_acquire(&cbc_klass) != nullptr && cbc_r_offset >= 0;
+    case vmIntrinsics::_counterMode_AESCrypt:
+      return aes && feedback && AtomicAccess::load_acquire(&ctr_klass) != nullptr &&
+             ctr_counter_offset >= 0 && ctr_encrypted_offset >= 0 && ctr_used_offset >= 0;
+    case vmIntrinsics::_galoisCounterMode_AESCrypt:
+      return aes && feedback && AtomicAccess::load_acquire(&ctr_klass) != nullptr && ctr_counter_offset >= 0 &&
+             AtomicAccess::load_acquire(&ghash_klass) != nullptr && ghash_state_offset >= 0 && ghash_key_offset >= 0;
+    case vmIntrinsics::_md5_implCompress:
+      return AtomicAccess::load_acquire(&md5_klass) != nullptr && md5_state_offset >= 0;
+    case vmIntrinsics::_sha_implCompress:
+      return AtomicAccess::load_acquire(&sha1_klass) != nullptr && sha1_state_offset >= 0;
+    case vmIntrinsics::_sha2_implCompress:
+      return AtomicAccess::load_acquire(&sha256_klass) != nullptr && sha256_state_offset >= 0;
+    case vmIntrinsics::_sha5_implCompress:
+      return AtomicAccess::load_acquire(&sha512_klass) != nullptr && sha512_state_offset >= 0;
+    case vmIntrinsics::_sha3_implCompress:
+      return AtomicAccess::load_acquire(&sha3_klass) != nullptr && sha3_state_offset >= 0 &&
+             AtomicAccess::load_acquire(&digest_base_klass) != nullptr && digest_block_size_offset >= 0;
+    default: ShouldNotReachHere(); return false;
+  }
+}
+
+void CommonIntrinsics::prepare(const methodHandle& method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  InstanceKlass* holder = method->method_holder();
+  if (enabled() && holder->class_loader_data()->is_the_null_class_loader_data()) {
+    Symbol* name = holder->name();
+    if (name == vmSymbols::com_sun_crypto_provider_aescrypt() && AtomicAccess::load_acquire(&aescrypt_klass) == nullptr) {
+      AtomicAccess::store(&aes_encrypt_key_offset, crypto_field_offset(holder, "sessionKe", "[I"));
+      AtomicAccess::store(&aes_decrypt_key_offset, crypto_field_offset(holder, "sessionKd", "[I"));
+      AtomicAccess::release_store(&aescrypt_klass, holder);
+    }
+    if (name == vmSymbols::com_sun_crypto_provider_cipherBlockChaining() && AtomicAccess::load_acquire(&cbc_klass) == nullptr) {
+      AtomicAccess::store(&cbc_r_offset, crypto_field_offset(holder, "r", "[B"));
+      AtomicAccess::release_store(&cbc_klass, holder);
+    }
+    if (name == vmSymbols::com_sun_crypto_provider_counterMode() && AtomicAccess::load_acquire(&ctr_klass) == nullptr) {
+      AtomicAccess::store(&ctr_counter_offset, crypto_field_offset(holder, "counter", "[B"));
+      AtomicAccess::store(&ctr_encrypted_offset, crypto_field_offset(holder, "encryptedCounter", "[B"));
+      AtomicAccess::store(&ctr_used_offset, crypto_field_offset(holder, "used", "I"));
+      AtomicAccess::release_store(&ctr_klass, holder);
+    }
+    if (name == vmSymbols::com_sun_crypto_provider_ghash() && AtomicAccess::load_acquire(&ghash_klass) == nullptr) {
+      AtomicAccess::store(&ghash_state_offset, crypto_field_offset(holder, "state", "[J"));
+      AtomicAccess::store(&ghash_key_offset, crypto_field_offset(holder, "subkeyHtbl", "[J"));
+      AtomicAccess::release_store(&ghash_klass, holder);
+    }
+    if (name == vmSymbols::sun_security_provider_digestbase() && AtomicAccess::load_acquire(&digest_base_klass) == nullptr) {
+      AtomicAccess::store(&digest_block_size_offset, crypto_field_offset(holder, "blockSize", "I"));
+      AtomicAccess::release_store(&digest_base_klass, holder);
+    }
+    if (name == vmSymbols::sun_security_provider_md5() && AtomicAccess::load_acquire(&md5_klass) == nullptr) {
+      AtomicAccess::store(&md5_state_offset, crypto_field_offset(holder, "state", "[I"));
+      AtomicAccess::release_store(&md5_klass, holder);
+    }
+    if (name == vmSymbols::sun_security_provider_sha() && AtomicAccess::load_acquire(&sha1_klass) == nullptr) {
+      AtomicAccess::store(&sha1_state_offset, crypto_field_offset(holder, "state", "[I"));
+      AtomicAccess::release_store(&sha1_klass, holder);
+    }
+    if (name == vmSymbols::sun_security_provider_sha2() && AtomicAccess::load_acquire(&sha256_klass) == nullptr) {
+      AtomicAccess::store(&sha256_state_offset, crypto_field_offset(holder, "state", "[I"));
+      AtomicAccess::release_store(&sha256_klass, holder);
+    }
+    if (name == vmSymbols::sun_security_provider_sha5() && AtomicAccess::load_acquire(&sha512_klass) == nullptr) {
+      AtomicAccess::store(&sha512_state_offset, crypto_field_offset(holder, "state", "[J"));
+      AtomicAccess::release_store(&sha512_klass, holder);
+    }
+    if (name == vmSymbols::sun_security_provider_sha3() && AtomicAccess::load_acquire(&sha3_klass) == nullptr) {
+      AtomicAccess::store(&sha3_state_offset, crypto_field_offset(holder, "state", "[J"));
+      AtomicAccess::release_store(&sha3_klass, holder);
+    }
+    if ((name == vmSymbols::com_sun_crypto_provider_cipherBlockChaining() ||
+         name == vmSymbols::com_sun_crypto_provider_electronicCodeBook() ||
+         name == vmSymbols::com_sun_crypto_provider_counterMode()) &&
+        AtomicAccess::load_acquire(&feedback_cipher_klass) == nullptr) {
+      InstanceKlass* feedback = holder->java_super();
+      if (feedback != nullptr && feedback->name()->equals("com/sun/crypto/provider/FeedbackCipher") &&
+          feedback->class_loader_data()->is_the_null_class_loader_data()) {
+        AtomicAccess::cmpxchg(&embedded_cipher_offset, -1, crypto_field_offset(feedback, "embeddedCipher",
+            "Lcom/sun/crypto/provider/SymmetricCipher;"));
+        AtomicAccess::release_store(&feedback_cipher_klass, feedback);
+      }
+    }
+  }
+  // Linking may allocate and block. Bootstrap calls keep Java until stubs are published.
   if (is_init_completed() && needs_compiler_stubs(id) &&
       is_available_for_interpreter(id) && vmIntrinsics::is_intrinsic_available(id)) {
     StubRoutines::ensure_compiler_stubs_initialized();
@@ -901,7 +738,7 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
     return true;
   }
 #ifdef COMPILER2
-  return is_big_integer(id) || entry_for(id) != nullptr;
+  return is_big_integer(id) || is_crypto(id) || entry_for(id) != nullptr;
 #else
   return false;
 #endif
@@ -942,6 +779,9 @@ bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
   }
   if (is_scalar(id)) {
     return true;
+  }
+  if (is_crypto(id) && !crypto_layout_ready(id)) {
+    return false;
   }
   switch (id) {
     case vmIntrinsics::_multiplyToLen: return StubRoutines::multiplyToLen() != nullptr;

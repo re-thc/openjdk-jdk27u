@@ -266,6 +266,58 @@ public:
     return reinterpret_cast<address>(&STUB_FIELD_NAME(squareToLen));
   }
 
+  static address aescrypt_encryptBlock_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(aescrypt_encryptBlock));
+  }
+
+  static address aescrypt_decryptBlock_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(aescrypt_decryptBlock));
+  }
+
+  static address electronicCodeBook_encryptAESCrypt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(electronicCodeBook_encryptAESCrypt));
+  }
+
+  static address electronicCodeBook_decryptAESCrypt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(electronicCodeBook_decryptAESCrypt));
+  }
+
+  static address cipherBlockChaining_encryptAESCrypt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(cipherBlockChaining_encryptAESCrypt));
+  }
+
+  static address cipherBlockChaining_decryptAESCrypt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(cipherBlockChaining_decryptAESCrypt));
+  }
+
+  static address counterMode_AESCrypt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(counterMode_AESCrypt));
+  }
+
+  static address galoisCounterMode_AESCrypt_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(galoisCounterMode_AESCrypt));
+  }
+
+  static address md5_implCompress_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(md5_implCompress));
+  }
+
+  static address sha1_implCompress_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha1_implCompress));
+  }
+
+  static address sha256_implCompress_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha256_implCompress));
+  }
+
+  static address sha512_implCompress_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha512_implCompress));
+  }
+
+  static address sha3_implCompress_entry_address() {
+    return reinterpret_cast<address>(&STUB_FIELD_NAME(sha3_implCompress));
+  }
+
   // Calls to Java
   typedef void (*CallStub)(
     address   link,

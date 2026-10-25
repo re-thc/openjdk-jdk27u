@@ -1680,6 +1680,14 @@ void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
   }
 }
 
+void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
+                                  LIR_Opr base, LIR_Opr offset, LIR_Opr result) {
+  assert((decorators & (ON_UNKNOWN_OOP_REF | ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) == 0,
+         "known strong field");
+  LIRAccess access(this, decorators | ACCESS_READ, base, offset, type);
+  _barrier_set->load_at(access, result);
+}
+
 void LIRGenerator::access_load(DecoratorSet decorators, BasicType type,
                                LIR_Opr addr, LIR_Opr result) {
   decorators |= ACCESS_READ;
@@ -2959,7 +2967,7 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
     LIR_Opr value = values.at(i);
     BasicType type = as_BasicType(x->argument_at(i)->type());
     if (type == T_OBJECT) {
-      LIR_Opr base = new_pointer_register();
+      LIR_Opr base = new_register(T_ADDRESS);
       __ leal(LIR_OprFact::address(generate_address(value, arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), base);
       value = base;
       type = T_ADDRESS;
@@ -2985,6 +2993,179 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
   if (output >= 0) {
     __ move(values.at(output), rlock_result(x));
   } else if (id == vmIntrinsics::_mulAdd) {
+    __ move(result, rlock_result(x));
+  } else {
+    set_no_result(x);
+  }
+}
+
+void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info, true);
+  LIR_OprList values(x->number_of_arguments());
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    LIRItem item(x->argument_at(i), this);
+    item.load_item();
+    values.append(item.result());
+  }
+  auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    __ cmp(condition, left, right);
+    __ branch(condition, fallback);
+  };
+  auto field = [&](LIR_Opr object, int offset, BasicType type = T_OBJECT) {
+    LIR_Opr result = new_register(type);
+    access_load_at(IN_HEAP, type, object, LIR_OprFact::intConst(offset), result);
+    return result;
+  };
+  auto aes_key = [&](LIR_Opr mode, bool decrypting) {
+    LIR_Opr cipher = field(mode, CommonIntrinsics::embedded_cipher_offset);
+    guard(lir_cond_equal, cipher, LIR_OprFact::oopConst(nullptr));
+    LIR_Opr klass = new_register(T_METADATA);
+    load_klass(cipher, klass, nullptr);
+    ciKlass* aes = compilation()->env()->Object_klass()->find_klass(
+        ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
+    LIR_Opr expected = new_register(T_METADATA);
+    __ metadata2reg(aes->constant_encoding(), expected);
+    guard(lir_cond_notEqual, klass, expected);
+    return field(cipher, decrypting ? CommonIntrinsics::aes_decrypt_key_offset
+                                    : CommonIntrinsics::aes_encrypt_key_offset);
+  };
+  auto bounded = [&](LIR_Opr length) {
+    guard(lir_cond_lessEqual, length, LIR_OprFact::intConst(0));
+    guard(lir_cond_greater, length, LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
+  };
+  auto same_position = [&](int src, int src_offset, int dst, int dst_offset) {
+    LabelObj* disjoint = new LabelObj();
+    __ cmp(lir_cond_notEqual, values.at(src), values.at(dst));
+    __ branch(lir_cond_notEqual, disjoint->label());
+    guard(lir_cond_notEqual, values.at(src_offset), values.at(dst_offset));
+    __ branch_destination(disjoint->label());
+  };
+
+  vmIntrinsics::ID id = x->id();
+  bool gcm = id == vmIntrinsics::_galoisCounterMode_AESCrypt;
+  if (!gcm && x->needs_null_check()) {
+    guard(lir_cond_equal, values.at(0), LIR_OprFact::oopConst(nullptr));
+  }
+  LIR_Opr key = LIR_OprFact::illegalOpr;
+  LIR_Opr state = LIR_OprFact::illegalOpr;
+  LIR_Opr counter = LIR_OprFact::illegalOpr;
+  LIR_Opr encrypted = LIR_OprFact::illegalOpr;
+  LIR_Opr htable = LIR_OprFact::illegalOpr;
+  LIR_Opr rate = LIR_OprFact::illegalOpr;
+  address entry = nullptr;
+  bool block = id == vmIntrinsics::_aescrypt_encryptBlock || id == vmIntrinsics::_aescrypt_decryptBlock;
+  bool ecb = id == vmIntrinsics::_electronicCodeBook_encryptAESCrypt || id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt;
+  bool cbc = id == vmIntrinsics::_cipherBlockChaining_encryptAESCrypt || id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
+  bool ctr = id == vmIntrinsics::_counterMode_AESCrypt;
+  bool decrypting = id == vmIntrinsics::_aescrypt_decryptBlock ||
+                    id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt ||
+                    id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
+  if (block) {
+    key = field(values.at(0), decrypting ? CommonIntrinsics::aes_decrypt_key_offset
+                                       : CommonIntrinsics::aes_encrypt_key_offset);
+    entry = decrypting ? StubRoutines::aescrypt_decryptBlock() : StubRoutines::aescrypt_encryptBlock();
+  } else if (ecb || cbc || ctr) {
+    bounded(values.at(3));
+    if (cbc && decrypting) {
+      guard(lir_cond_equal, values.at(1), values.at(4));
+    } else {
+      same_position(1, 2, 4, 5);
+    }
+    key = aes_key(values.at(0), decrypting);
+    if (cbc) {
+      state = field(values.at(0), CommonIntrinsics::cbc_r_offset);
+      entry = decrypting ? StubRoutines::cipherBlockChaining_decryptAESCrypt()
+                         : StubRoutines::cipherBlockChaining_encryptAESCrypt();
+    } else if (ctr) {
+      counter = field(values.at(0), CommonIntrinsics::ctr_counter_offset);
+      encrypted = field(values.at(0), CommonIntrinsics::ctr_encrypted_offset);
+      entry = StubRoutines::counterMode_AESCrypt();
+    } else {
+      entry = decrypting ? StubRoutines::electronicCodeBook_decryptAESCrypt()
+                         : StubRoutines::electronicCodeBook_encryptAESCrypt();
+    }
+  } else if (gcm) {
+    bounded(values.at(2));
+    guard(lir_cond_equal, values.at(0), values.at(5));
+    key = aes_key(values.at(7), false);
+    counter = field(values.at(7), CommonIntrinsics::ctr_counter_offset);
+    state = field(values.at(8), CommonIntrinsics::ghash_state_offset);
+    htable = field(values.at(8), CommonIntrinsics::ghash_key_offset);
+    entry = StubRoutines::galoisCounterMode_AESCrypt();
+  } else {
+    int offset = -1;
+    switch (id) {
+      case vmIntrinsics::_md5_implCompress: offset = CommonIntrinsics::md5_state_offset; entry = StubRoutines::md5_implCompress(); break;
+      case vmIntrinsics::_sha_implCompress: offset = CommonIntrinsics::sha1_state_offset; entry = StubRoutines::sha1_implCompress(); break;
+      case vmIntrinsics::_sha2_implCompress: offset = CommonIntrinsics::sha256_state_offset; entry = StubRoutines::sha256_implCompress(); break;
+      case vmIntrinsics::_sha5_implCompress: offset = CommonIntrinsics::sha512_state_offset; entry = StubRoutines::sha512_implCompress(); break;
+      case vmIntrinsics::_sha3_implCompress:
+        offset = CommonIntrinsics::sha3_state_offset; entry = StubRoutines::sha3_implCompress();
+        rate = field(values.at(0), CommonIntrinsics::digest_block_size_offset, T_INT);
+        break;
+      default: ShouldNotReachHere();
+    }
+    state = field(values.at(0), offset);
+  }
+
+  // Finish all barriered heap loads before deriving any raw address.
+  BasicTypeList signature(8);
+  LIR_OprList args(8);
+  auto pointer = [&](LIR_Opr object, BasicType element_type, LIR_Opr offset = LIR_OprFact::illegalOpr) {
+    LIR_Opr index = offset;
+    if (offset->is_valid()) {
+      index = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, offset, index);
+    }
+    LIR_Opr result = new_register(T_ADDRESS);
+    LIR_Address* address = offset->is_valid()
+        ? generate_address(object, index, 0, arrayOopDesc::base_offset_in_bytes(element_type), element_type)
+        : generate_address(object, arrayOopDesc::base_offset_in_bytes(element_type), element_type);
+    __ leal(LIR_OprFact::address(address), result);
+    signature.append(T_ADDRESS);
+    args.append(result);
+  };
+  auto word = [&](LIR_Opr value) {
+    LIR_Opr result = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, value, result);
+    signature.append(T_LONG);
+    args.append(result);
+  };
+  if (gcm) {
+    pointer(values.at(0), T_BYTE, values.at(1));
+    word(values.at(2));
+    pointer(values.at(3), T_BYTE, values.at(4));
+    pointer(values.at(5), T_BYTE, values.at(6));
+    pointer(key, T_INT);
+    pointer(state, T_LONG);
+    pointer(htable, T_LONG);
+    pointer(counter, T_BYTE);
+  } else if (block || ecb || cbc || ctr) {
+    pointer(values.at(1), T_BYTE, values.at(2));
+    pointer(values.at(block ? 3 : 4), T_BYTE, values.at(block ? 4 : 5));
+    pointer(key, T_INT);
+    if (cbc) pointer(state, T_BYTE);
+    if (ctr) pointer(counter, T_BYTE);
+    if (!block) word(values.at(3));
+    if (ctr) {
+      pointer(encrypted, T_BYTE);
+      LIR_Opr used = new_register(T_ADDRESS);
+      __ leal(LIR_OprFact::address(generate_address(values.at(0), CommonIntrinsics::ctr_used_offset, T_INT)), used);
+      signature.append(T_ADDRESS);
+      args.append(used);
+    }
+  } else {
+    pointer(values.at(1), T_BYTE, values.at(2));
+    pointer(state, id == vmIntrinsics::_sha5_implCompress || id == vmIntrinsics::_sha3_implCompress ? T_LONG : T_INT);
+    if (rate->is_valid()) word(rate);
+  }
+  bool returns_int = ecb || cbc || ctr || gcm;
+  ValueType* result_type = voidType;
+  if (returns_int) result_type = intType;
+  LIR_Opr result = call_runtime(&signature, &args, entry, result_type, nullptr);
+  if (returns_int) {
     __ move(result, rlock_result(x));
   } else {
     set_no_result(x);
@@ -3043,6 +3224,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   if (CommonIntrinsics::is_available_for_c1(x->id())) {
     if (CommonIntrinsics::is_big_integer(x->id())) {
       do_BigIntegerIntrinsic(x);
+    } else if (CommonIntrinsics::is_crypto(x->id())) {
+      do_CryptoIntrinsic(x);
     } else if (CommonIntrinsics::is_scalar(x->id())) {
       do_CommonScalarIntrinsic(x);
     } else {

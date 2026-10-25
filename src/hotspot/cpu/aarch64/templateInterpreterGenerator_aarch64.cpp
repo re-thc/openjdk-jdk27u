@@ -1113,6 +1113,212 @@ void TemplateInterpreterGenerator::generate_big_integer_entry(vmIntrinsics::ID i
   if (result_slot >= 0) __ ldr(r0, Address(esp, result_slot * wordSize));
 }
 
+void TemplateInterpreterGenerator::generate_crypto_entry(vmIntrinsics::ID id, Label& slow_path) {
+  bool block = id == vmIntrinsics::_aescrypt_encryptBlock || id == vmIntrinsics::_aescrypt_decryptBlock;
+  bool ecb = id == vmIntrinsics::_electronicCodeBook_encryptAESCrypt || id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt;
+  bool cbc = id == vmIntrinsics::_cipherBlockChaining_encryptAESCrypt || id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
+  bool ctr = id == vmIntrinsics::_counterMode_AESCrypt;
+  bool gcm = id == vmIntrinsics::_galoisCounterMode_AESCrypt;
+  bool decrypting = id == vmIntrinsics::_aescrypt_decryptBlock ||
+                    id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt ||
+                    id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
+  int slots = gcm ? 9 : block ? 5 : (ecb || cbc || ctr) ? 6 : 3;
+  address entry_slot = nullptr;
+  const Register key = r10, state = r11, htable = r13, counter = r14;
+  const Register mode = r0, encrypted = r13, used = r11, rate = r14;
+  auto java_slot = [&](int index) { return Address(esp, (slots - index - 1) * wordSize); };
+  auto object = [&](Register dst, int index) { __ ldr(dst, java_slot(index)); };
+  auto integer = [&](Register dst, int index) { __ ldrw(dst, java_slot(index)); };
+  auto layout = [&](InstanceKlass** klass) {
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(klass)));
+    __ ldar(rscratch2, rscratch1);
+    __ cbz(rscratch2, slow_path);
+  };
+  auto field_address = [&](Register dst, Register base, int* offset) {
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(offset)));
+    __ ldrw(rscratch1, Address(rscratch1, 0));
+    __ tbnz(rscratch1, 31, slow_path);
+    __ add(dst, base, rscratch1);
+  };
+  auto field = [&](Register dst, Register base, int* offset) {
+    field_address(r15, base, offset);
+    __ load_heap_oop(dst, Address(r15, 0), rscratch1, rscratch2);
+  };
+  auto int_field = [&](Register dst, Register base, int* offset) {
+    field_address(rscratch1, base, offset);
+    __ ldrw(dst, Address(rscratch1, 0));
+  };
+  auto elements = [&](Register array, BasicType type) {
+    __ add(array, array, arrayOopDesc::base_offset_in_bytes(type));
+  };
+  auto bytes = [&](Register dst, int array, int offset) {
+    object(dst, array);
+    integer(rscratch1, offset);
+    __ add(dst, dst, rscratch1);
+    elements(dst, T_BYTE);
+  };
+  auto argument = [&](int index, Register value) {
+    const Register registers[] = { c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7 };
+    if (registers[index] != value) __ mov(registers[index], value);
+  };
+  auto bounded = [&](int index) {
+    integer(rscratch1, index);
+    __ cmpw(rscratch1, 0);
+    __ br(Assembler::LE, slow_path);
+    __ cmpw(rscratch1, CommonIntrinsics::max_leaf_elements);
+    __ br(Assembler::GT, slow_path);
+  };
+  auto overlap = [&](bool disjoint) {
+    Label different;
+    object(rscratch1, 1);
+    object(rscratch2, 4);
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::NE, different);
+    if (disjoint) {
+      __ b(slow_path);
+    } else {
+      integer(rscratch1, 2);
+      integer(rscratch2, 5);
+      __ cmpw(rscratch1, rscratch2);
+      __ br(Assembler::NE, slow_path);
+    }
+    __ bind(different);
+  };
+  auto aes_key = [&]() {
+    layout(&CommonIntrinsics::aescrypt_klass);
+    layout(&CommonIntrinsics::feedback_cipher_klass);
+    field(key, mode, &CommonIntrinsics::embedded_cipher_offset);
+    __ cbz(key, slow_path);
+    __ load_klass(rscratch1, key);
+    __ lea(rscratch2, ExternalAddress(reinterpret_cast<address>(&CommonIntrinsics::aescrypt_klass)));
+    __ ldr(rscratch2, Address(rscratch2, 0));
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::NE, slow_path);
+    field(key, key, decrypting ? &CommonIntrinsics::aes_decrypt_key_offset
+                               : &CommonIntrinsics::aes_encrypt_key_offset);
+  };
+  if (block) {
+    layout(&CommonIntrinsics::aescrypt_klass);
+    object(mode, 0);
+    field(key, mode, decrypting ? &CommonIntrinsics::aes_decrypt_key_offset
+                                : &CommonIntrinsics::aes_encrypt_key_offset);
+    entry_slot = decrypting ? StubRoutines::aescrypt_decryptBlock_entry_address()
+                            : StubRoutines::aescrypt_encryptBlock_entry_address();
+  } else if (ecb || cbc || ctr) {
+    bounded(3);
+    overlap(cbc && decrypting);
+    object(mode, 0);
+    aes_key();
+    if (cbc) {
+      layout(&CommonIntrinsics::cbc_klass);
+      field(rate, mode, &CommonIntrinsics::cbc_r_offset);
+      entry_slot = decrypting ? StubRoutines::cipherBlockChaining_decryptAESCrypt_entry_address()
+                              : StubRoutines::cipherBlockChaining_encryptAESCrypt_entry_address();
+    } else if (ctr) {
+      layout(&CommonIntrinsics::ctr_klass);
+      field(counter, mode, &CommonIntrinsics::ctr_counter_offset);
+      field(encrypted, mode, &CommonIntrinsics::ctr_encrypted_offset);
+      field_address(used, mode, &CommonIntrinsics::ctr_used_offset);
+      entry_slot = StubRoutines::counterMode_AESCrypt_entry_address();
+    } else {
+      entry_slot = decrypting ? StubRoutines::electronicCodeBook_decryptAESCrypt_entry_address()
+                              : StubRoutines::electronicCodeBook_encryptAESCrypt_entry_address();
+    }
+  } else if (gcm) {
+    bounded(2);
+    object(rscratch1, 0);
+    object(rscratch2, 5);
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::EQ, slow_path);
+    object(mode, 7);
+    aes_key();
+    layout(&CommonIntrinsics::ctr_klass);
+    field(counter, mode, &CommonIntrinsics::ctr_counter_offset);
+    layout(&CommonIntrinsics::ghash_klass);
+    object(mode, 8);
+    field(state, mode, &CommonIntrinsics::ghash_state_offset);
+    field(htable, mode, &CommonIntrinsics::ghash_key_offset);
+    entry_slot = StubRoutines::galoisCounterMode_AESCrypt_entry_address();
+  } else {
+    int* offset = nullptr;
+    switch (id) {
+      case vmIntrinsics::_md5_implCompress:
+        layout(&CommonIntrinsics::md5_klass);
+        offset = &CommonIntrinsics::md5_state_offset;
+        entry_slot = StubRoutines::md5_implCompress_entry_address();
+        break;
+      case vmIntrinsics::_sha_implCompress:
+        layout(&CommonIntrinsics::sha1_klass);
+        offset = &CommonIntrinsics::sha1_state_offset;
+        entry_slot = StubRoutines::sha1_implCompress_entry_address();
+        break;
+      case vmIntrinsics::_sha2_implCompress:
+        layout(&CommonIntrinsics::sha256_klass);
+        offset = &CommonIntrinsics::sha256_state_offset;
+        entry_slot = StubRoutines::sha256_implCompress_entry_address();
+        break;
+      case vmIntrinsics::_sha5_implCompress:
+        layout(&CommonIntrinsics::sha512_klass);
+        offset = &CommonIntrinsics::sha512_state_offset;
+        entry_slot = StubRoutines::sha512_implCompress_entry_address();
+        break;
+      case vmIntrinsics::_sha3_implCompress:
+        layout(&CommonIntrinsics::sha3_klass);
+        offset = &CommonIntrinsics::sha3_state_offset;
+        entry_slot = StubRoutines::sha3_implCompress_entry_address();
+        break;
+      default: ShouldNotReachHere();
+    }
+    object(mode, 0);
+    field(state, mode, offset);
+    if (id == vmIntrinsics::_sha3_implCompress) {
+      layout(&CommonIntrinsics::digest_base_klass);
+      int_field(rate, mode, &CommonIntrinsics::digest_block_size_offset);
+    }
+  }
+
+  // All barriered oop loads precede the raw addresses passed to the stub.
+  if (gcm) {
+    elements(counter, T_BYTE); argument(7, counter);
+    elements(htable, T_LONG); argument(6, htable);
+    elements(state, T_LONG); argument(5, state);
+    elements(key, T_INT); argument(4, key);
+    bytes(c_rarg3, 5, 6);
+    bytes(c_rarg2, 3, 4);
+    integer(c_rarg1, 2);
+    bytes(c_rarg0, 0, 1);
+  } else if (ctr) {
+    argument(6, used);
+    elements(encrypted, T_BYTE); argument(5, encrypted);
+    elements(counter, T_BYTE); argument(3, counter);
+    elements(key, T_INT); argument(2, key);
+    integer(rscratch2, 3); argument(4, rscratch2);
+    bytes(c_rarg1, 4, 5);
+    bytes(c_rarg0, 1, 2);
+  } else if (block || ecb || cbc) {
+    if (cbc) {
+      integer(rscratch2, 3); argument(4, rscratch2);
+      elements(rate, T_BYTE); argument(3, rate);
+    } else if (ecb) {
+      integer(rscratch2, 3); argument(3, rscratch2);
+    }
+    elements(key, T_INT); argument(2, key);
+    bytes(c_rarg1, block ? 3 : 4, block ? 4 : 5);
+    bytes(c_rarg0, 1, 2);
+  } else {
+    if (id == vmIntrinsics::_sha3_implCompress) argument(2, rate);
+    elements(state, id == vmIntrinsics::_sha5_implCompress || id == vmIntrinsics::_sha3_implCompress ? T_LONG : T_INT);
+    argument(1, state);
+    bytes(c_rarg0, 1, 2);
+  }
+  __ lea(rscratch2, ExternalAddress(entry_slot));
+  __ ldr(rscratch2, Address(rscratch2, 0));
+  __ cbz(rscratch2, slow_path);
+  __ stp(rmethod, lr, Address(__ pre(sp, -2 * wordSize)));
+  __ blr(rscratch2);
+  __ ldp(rmethod, lr, Address(__ post(sp, 2 * wordSize)));
+}
+
 address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsics::ID id) {
   address entry = __ pc();
   Label slow_path;
@@ -1150,6 +1356,8 @@ address TemplateInterpreterGenerator::generate_common_intrinsic_entry(vmIntrinsi
   }
   if (CommonIntrinsics::is_big_integer(id)) {
     generate_big_integer_entry(id, slow_path);
+  } else if (CommonIntrinsics::is_crypto(id)) {
+    generate_crypto_entry(id, slow_path);
   } else {
     // Arguments stay on the expression stack so the Java fallback can reuse them.
     __ mov(c_rarg0, esp);

@@ -27,10 +27,10 @@
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xint -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
  * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xint -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
- * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
- * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
- * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
- * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=3 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileThresholdScaling=0.01 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileThresholdScaling=0.01 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=3 -XX:CompileThresholdScaling=0.01 -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
+ * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:TieredStopAtLevel=3 -XX:CompileThresholdScaling=0.01 -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
  * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:-TieredCompilation -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
  * @run main/othervm --add-opens=java.base/java.math=ALL-UNNAMED -Xbatch -XX:-TieredCompilation -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonIntrinsics
  */

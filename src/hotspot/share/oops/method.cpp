@@ -1258,7 +1258,7 @@ void Method::remove_unshareable_flags() {
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
   if (h_method->intrinsic_id() != vmIntrinsics::_none) {
-    CommonIntrinsics::prepare(h_method->intrinsic_id());
+    CommonIntrinsics::prepare(h_method);
   }
   if (log_is_enabled(Info, perf, class, link)) {
     ClassLoader::perf_ik_link_methods_count()->inc();

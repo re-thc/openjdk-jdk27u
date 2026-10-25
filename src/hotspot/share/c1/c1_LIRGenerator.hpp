@@ -294,6 +294,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
                       LIRItem& base, LIR_Opr offset, LIR_Opr result,
                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* load_emit_info = nullptr);
 
+  void access_load_at(DecoratorSet decorators, BasicType type,
+                      LIR_Opr base, LIR_Opr offset, LIR_Opr result);
+
   void access_load(DecoratorSet decorators, BasicType type,
                    LIR_Opr addr, LIR_Opr result);
 
@@ -572,6 +575,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_CommonScalarIntrinsic(Intrinsic* x);
   void do_CommonIntrinsic(Intrinsic* x);
   void do_BigIntegerIntrinsic(Intrinsic* x);
+  void do_CryptoIntrinsic(Intrinsic* x);
   virtual void do_BlockBegin     (BlockBegin*      x);
   virtual void do_Goto           (Goto*            x);
   virtual void do_If             (If*              x);
