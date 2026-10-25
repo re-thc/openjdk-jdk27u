@@ -88,7 +88,11 @@ misses use the Java formatter.
    representations, library spellings, date boundaries, pre-epoch fractions,
    JNI loading/concurrency and Serial/G1/ZGC, with interpreter, C1, C2 and normal
    tiered execution as applicable. Native-enabled platform checks must prove
-   actual native hits; Java fallback alone is insufficient.
+   actual native hits; Java fallback alone is insufficient. The permanent
+   `TestInstantParseIntrinsic` also accepts `-Dtest.instant.jniMiss=true` with a
+   library built using `INSTANT_SPEEDATE_FORCE_FAILURE`. Enabled interpreter,
+   C1 and C2 runs must still return a value from the direct helper; intrinsic-off
+   controls must return a helper miss. This proves the JNI parser body is bypassed.
 
 The regression entry points are `TestInstantParseIntrinsic`, `TestInstantSpeedate`, `TestInstantParserCache`,
 `InstantSpeedateDisabled`, `InstantSpeedateUnavailable`,
