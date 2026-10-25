@@ -94,6 +94,7 @@ class AbstractInterpreter: AllStatic {
     jdk_internal_util_formatIntUTF16,
     jdk_internal_util_formatLongLatin1,
     jdk_internal_util_formatLongUTF16,
+    jdk_internal_math_putFloatDecimal,                          // FloatToDecimal.putDecimal(byte[], int, float)
     jdk_internal_math_decimalZmij,
     jdk_internal_math_formatZmij,
     jdk_internal_math_parseFastFloatDigits,

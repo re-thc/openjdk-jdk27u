@@ -5,7 +5,7 @@
  // A double-to-string conversion library: https://github.com/vitaut/zmij/
  //
  // Copyright (c) 2025 - present, Victor Zverovich
-@@ -354,9 +355,8 @@
+@@ -367,9 +368,8 @@
    static constexpr int exp_mask = (1 << num_exp_bits) - 1;
    static constexpr int exp_bias = (1 << (num_exp_bits - 1)) - 1;
    static constexpr int exp_offset = exp_bias + num_sig_bits;
@@ -111,10 +111,25 @@
  }
  
  ZMIJ_INLINE auto write_float_simd(char*, const dec_digits<64>&, int, bool, bool,
-@@ -1617,6 +1622,27 @@
-       *buffer = '0';
-       return buffer + 1;
-     }
+@@ -1613,9 +1618,38 @@
+   shortest_decimal dec;
+   if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
+-    if (bin_exp != 0) return write_inf_nan(buffer, bin_sig != 0);
++    if (bin_exp != 0) {
++      if (bin_sig != 0) {
++        buffer -= traits::is_negative(bits);
++        memcpy(buffer, "NaN", 3);
++        return buffer + 3;
++      }
++      memcpy(buffer, "Infinity", 8);
++      return buffer + 8;
++    }
+     if (bin_sig == 0) {
+-      *buffer = '0';
+-      return buffer + 1;
++      memcpy(buffer, "0.0", 3);
++      return buffer + 3;
++    }
 +    // Java selects the closest of one AND two digits when one digit suffices.
 +    // Only tiny subnormals can have a closer two-digit alternative. Round these
 +    // values to two digits directly; the integer formulas are exact over the
@@ -135,11 +150,10 @@
 +      buffer[1] = '.';
 +      buffer[2] = char('0' + sig % 10);
 +      return buffer + (traits::num_bits == 64 ? 8 : 7);
-+    }
+     }
      dec = ::to_decimal<Float>(bin_sig, 1, true, *d);
      // to_decimal's power of ten comes from the exponent alone, so a subnormal
-     // significand comes out short; clz estimates its length within a digit, and
-@@ -1694,7 +1720,7 @@
+@@ -1694,7 +1728,7 @@
    buffer += select(has_last_digit, bcd_size + 1, dig.num_digits);
    start[0] = start[1];
    start[1] = '.';
@@ -148,7 +162,7 @@
  
    // Write exponent.
    if (exp_string_table::enable) {
-@@ -1851,14 +1877,14 @@
+@@ -1851,14 +1885,14 @@
        traits::big_digits > float_traits<double>::big_digits;
    uint32_t stack_scratch[use_heap ? 1 : scratch_words];
    uint32_t* scratch =

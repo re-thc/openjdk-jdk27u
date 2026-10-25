@@ -1068,7 +1068,35 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
   address target;
-  if (kind == Interpreter::jdk_internal_math_decimalZmij) {
+  if (kind == Interpreter::jdk_internal_math_putFloatDecimal) {
+    if (JvmtiExport::can_post_interpreter_events()) {
+      __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+      __ cbnz(rscratch1, slow_path);
+    }
+    __ ldr(c_rarg0, Address(esp, 3 * wordSize));
+    __ cbz(c_rarg0, slow_path);
+    __ ldrb(c_rarg2, Address(c_rarg0, jdk_internal_math_ToDecimal::latin1_offset()));
+    __ eor(c_rarg2, c_rarg2, 1);
+    __ lsl(c_rarg2, c_rarg2, 1);
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ lsr(rscratch2, c_rarg2, 1);
+    __ lslv(rscratch1, rscratch1, rscratch2);
+    __ ldr(c_rarg0, Address(esp, 2 * wordSize));
+    __ cbz(c_rarg0, slow_path);
+    __ add(c_rarg0, c_rarg0, rscratch1);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldrw(c_rarg1, Address(esp));
+    __ mov(rscratch2, sp);
+    __ andr(sp, rscratch2, -16);
+    __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Zmij::format), c_rarg0, c_rarg1, c_rarg2);
+    __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
+    __ mov(sp, rscratch2);
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ addw(r0, r0, rscratch1);
+    __ andr(sp, r19_sender_sp, -16);
+    __ ret(lr);
+  } else if (kind == Interpreter::jdk_internal_math_decimalZmij) {
     __ ldr(c_rarg0, Address(esp));
     target = CAST_FROM_FN_PTR(address, Zmij::decimal);
   } else {
@@ -1084,7 +1112,8 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
   __ lea(rscratch1, RuntimeAddress(target));
   __ br(rscratch1);
   __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  __ jump_to_entry(Interpreter::entry_for_kind(kind == Interpreter::jdk_internal_math_putFloatDecimal
+                                              ? Interpreter::zerolocals : Interpreter::native));
   return entry;
 }
 

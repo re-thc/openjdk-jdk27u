@@ -1617,10 +1617,18 @@ auto write(char* buffer, Float value) noexcept -> char* {
 
   shortest_decimal dec;
   if (!traits::is_normal(bin_exp)) [[ZMIJ_UNLIKELY]] {
-    if (bin_exp != 0) return write_inf_nan(buffer, bin_sig != 0);
+    if (bin_exp != 0) {
+      if (bin_sig != 0) {
+        buffer -= traits::is_negative(bits);
+        memcpy(buffer, "NaN", 3);
+        return buffer + 3;
+      }
+      memcpy(buffer, "Infinity", 8);
+      return buffer + 8;
+    }
     if (bin_sig == 0) {
-      *buffer = '0';
-      return buffer + 1;
+      memcpy(buffer, "0.0", 3);
+      return buffer + 3;
     }
     // Java selects the closest of one AND two digits when one digit suffices.
     // Only tiny subnormals can have a closer two-digit alternative. Round these

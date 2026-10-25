@@ -28,12 +28,13 @@
  * @run main/othervm TestZmij
  * @run main/othervm -Xint TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestZmij
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_putFloatDecimal TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestZmij
  * @run main/othervm -Xint -XX:-CompactStrings TestZmij
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestZmij
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij TestZmij
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij TestZmij
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij,_putFloatDecimal TestZmij
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_formatZmij,_decimalZmij,_putFloatDecimal TestZmij
  * @run main/othervm -XX:-UseZmijIntrinsics TestZmij
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseZmijIntrinsics TestZmij
  */

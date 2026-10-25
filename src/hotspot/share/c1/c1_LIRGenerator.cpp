@@ -2809,6 +2809,50 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   __ move(reg, result);
 }
 
+void LIRGenerator::do_putFloatDecimal(Intrinsic* x) {
+  LIRItem receiver(x->argument_at(0), this);
+  LIRItem output(x->argument_at(1), this);
+  LIRItem index(x->argument_at(2), this);
+  LIRItem value(x->argument_at(3), this);
+  receiver.load_item();
+  output.load_item();
+  index.load_item();
+  value.load_item();
+  __ null_check(receiver.result(), state_for(x));
+  __ null_check(output.result(), state_for(x));
+
+  LIR_Opr latin1 = new_register(T_INT);
+  access_load_at(IN_HEAP, T_BOOLEAN, receiver,
+                 LIR_OprFact::intConst(jdk_internal_math_ToDecimal::latin1_offset()), latin1);
+  LIR_Opr byte_index = new_register(T_INT);
+  arithmetic_op_int(Bytecodes::_iadd, byte_index, index.result(), index.result(), LIR_OprFact::illegalOpr);
+  __ cmp(lir_cond_notEqual, latin1, LIR_OprFact::intConst(0));
+  __ cmove(lir_cond_notEqual, index.result(), byte_index, byte_index, T_INT);
+  LIR_Opr coder = new_register(T_INT);
+  logic_op(Bytecodes::_ixor, coder, latin1, LIR_OprFact::intConst(1));
+  LIR_Opr format = new_register(T_INT);
+  shift_op(Bytecodes::_ishl, format, coder, LIR_OprFact::intConst(1), LIR_OprFact::illegalOpr);
+
+  LIR_Opr raw = new_register(T_INT);
+  LIR_Opr raw_memory = force_to_spill(value.result(), T_INT);
+  __ move(raw_memory, raw);
+  LIR_Opr bits = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, raw, bits);
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(emit_array_address(output.result(), byte_index, T_BYTE)), data);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_LONG);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  __ move(bits, cc->at(1));
+  __ move(format, cc->at(2));
+  LIR_Opr result = result_register_for(x->type());
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Zmij::format), getThreadTemp(), result, cc->args());
+  arithmetic_op_int(Bytecodes::_iadd, rlock_result(x), result, index.result(), LIR_OprFact::illegalOpr);
+}
+
 void LIRGenerator::do_formatZmij(Intrinsic* x) {
   if (x->id() == vmIntrinsics::_decimalZmij) {
     LIRItem bits(x->argument_at(0), this);
@@ -2991,6 +3035,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
+  case vmIntrinsics::_putFloatDecimal:
+    do_putFloatDecimal(x);
+    break;
   case vmIntrinsics::_decimalZmij:
   case vmIntrinsics::_formatZmij:
     do_formatZmij(x);

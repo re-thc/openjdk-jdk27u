@@ -221,6 +221,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(jdk_internal_util_formatIntUTF16)
   method_entry(jdk_internal_util_formatLongLatin1)
   method_entry(jdk_internal_util_formatLongUTF16)
+  method_entry(jdk_internal_math_putFloatDecimal)
 #endif
 
   method_entry(java_lang_Float_float16ToFloat);
@@ -497,6 +498,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::jdk_internal_util_formatIntUTF16:
   case Interpreter::jdk_internal_util_formatLongLatin1:
   case Interpreter::jdk_internal_util_formatLongUTF16: entry_point = generate_integer_entry(kind); break;
+  case Interpreter::jdk_internal_math_putFloatDecimal:
   case Interpreter::jdk_internal_math_decimalZmij:
   case Interpreter::jdk_internal_math_formatZmij: entry_point = generate_zmij_entry(kind); break;
   case Interpreter::jdk_internal_math_parseFastFloatDigits:

@@ -459,6 +459,10 @@ class methodHandle;
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
   do_class(jdk_internal_math_Zmij, "jdk/internal/math/Zmij")                                                           \
+  do_intrinsic(_putFloatDecimal, jdk_internal_math_FloatToDecimal, putDecimal_name, putFloatDecimal_signature, F_R)         \
+   do_class(jdk_internal_math_FloatToDecimal, "jdk/internal/math/FloatToDecimal")                                        \
+   do_name(putDecimal_name, "putDecimal")                                                                                \
+   do_signature(putFloatDecimal_signature, "([BIF)I")                                                                    \
   do_intrinsic(_decimalZmij, jdk_internal_math_Zmij, decimalZmij_name, long_long_signature, F_SN)                          \
    do_name(decimalZmij_name, "decimal0")                                                                                \
   do_intrinsic(_formatZmij, jdk_internal_math_Zmij, formatZmij_name, formatZmij_signature, F_SN)                             \

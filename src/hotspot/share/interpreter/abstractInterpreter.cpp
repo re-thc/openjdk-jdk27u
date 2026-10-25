@@ -163,6 +163,11 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
           return jdk_internal_util_formatLongUTF16;
         }
         break;
+      case vmIntrinsics::_putFloatDecimal:
+        if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
+          return jdk_internal_math_putFloatDecimal;
+        }
+        break;
       case vmIntrinsics::_decimalZmij:
         if (UseZmijIntrinsics && vmIntrinsics::is_intrinsic_available(iid)) {
           return jdk_internal_math_decimalZmij;
@@ -283,6 +288,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case jdk_internal_util_formatIntUTF16: return vmIntrinsics::_formatDecimalIntUTF16;
   case jdk_internal_util_formatLongLatin1: return vmIntrinsics::_formatDecimalLongLatin1;
   case jdk_internal_util_formatLongUTF16: return vmIntrinsics::_formatDecimalLongUTF16;
+  case jdk_internal_math_putFloatDecimal: return vmIntrinsics::_putFloatDecimal;
   case jdk_internal_math_decimalZmij: return vmIntrinsics::_decimalZmij;
   case jdk_internal_math_formatZmij: return vmIntrinsics::_formatZmij;
   case jdk_internal_math_parseFastFloatDigits: return vmIntrinsics::_parseFastFloatDigits;
@@ -401,6 +407,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case jdk_internal_util_formatIntUTF16: tty->print("jdk_internal_util_formatIntUTF16"); break;
     case jdk_internal_util_formatLongLatin1: tty->print("jdk_internal_util_formatLongLatin1"); break;
     case jdk_internal_util_formatLongUTF16: tty->print("jdk_internal_util_formatLongUTF16"); break;
+    case jdk_internal_math_putFloatDecimal: tty->print("jdk_internal_math_putFloatDecimal"); break;
     case jdk_internal_math_decimalZmij: tty->print("jdk_internal_math_decimalZmij"); break;
     case jdk_internal_math_formatZmij: tty->print("jdk_internal_math_formatZmij"); break;
     case jdk_internal_math_parseFastFloatDigits: tty->print("jdk_internal_math_parseFastFloatDigits"); break;

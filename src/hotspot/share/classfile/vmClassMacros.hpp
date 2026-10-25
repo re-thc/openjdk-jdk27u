@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +163,8 @@
                                                                                                                 \
   /* support for stack dump lock analysis */                                                                    \
   do_klass(java_util_concurrent_locks_AbstractOwnableSynchronizer_klass, java_util_concurrent_locks_AbstractOwnableSynchronizer) \
+                                                                                                                \
+  do_klass(ToDecimal_klass,                             jdk_internal_math_ToDecimal                           ) \
                                                                                                                 \
   /* boxing klasses */                                                                                          \
   do_klass(Boolean_klass,                               java_lang_Boolean                                     ) \

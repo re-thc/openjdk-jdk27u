@@ -33,7 +33,7 @@ class Zmij : AllStatic {
   static bool is_enabled();
   // Format bit 0 selects binary64 (otherwise binary32).
   // Bit 1 selects UTF16 output.
-  // The caller supplies a finite, nonzero value and reserves MAX_CHARS characters.
+  // The caller reserves MAX_CHARS characters.
   static uint64_t decimal(uint64_t bits);
   static int format(void* output, uint64_t bits, int format);
 };

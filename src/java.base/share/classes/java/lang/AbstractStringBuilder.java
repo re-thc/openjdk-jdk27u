@@ -978,7 +978,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder,count + FloatToDecimal.MAX_CHARS);
         FloatToDecimal toDecimal = isLatin1(coder) ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
-        this.count = toDecimal.putDecimalForAppend(value, count, f);
+        this.count = toDecimal.putDecimal(value, count, f);
         this.value = value;
         return this;
     }

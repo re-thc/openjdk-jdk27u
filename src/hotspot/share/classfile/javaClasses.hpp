@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1771,6 +1772,15 @@ class vector_VectorPayload : AllStatic {
     return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
   }
   static bool is_instance(oop obj);
+};
+
+class jdk_internal_math_ToDecimal : AllStatic {
+ private:
+  static int _latin1_offset;
+ public:
+  static int latin1_offset() { CHECK_INIT(_latin1_offset); }
+  static void compute_offsets();
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
 class java_lang_Boolean : AllStatic {

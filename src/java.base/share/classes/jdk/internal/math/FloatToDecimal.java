@@ -33,6 +33,7 @@ import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class exposes a method to render a {@code float} as a string.
@@ -175,24 +176,17 @@ public final class FloatToDecimal extends ToDecimal {
      * @param index the index into str
      * @param v the {@code float} whose rendering is into str.
      */
+    @ForceInline
+    @IntrinsicCandidate
     public int putDecimal(byte[] str, int index, float v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
-        int pair = toDecimal(str, index, v);
+        int pair = toDecimalJava(str, index, v);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             return index + (pair & 0xFF);
         }
         return putSpecial(str, index, type);
-    }
-
-    /** Uses Java stores so builder buffers remain eligible for scalar replacement. */
-    @ForceInline
-    public int putDecimalForAppend(byte[] str, int index, float v) {
-        assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
-        int pair = toDecimalJava(str, index, v);
-        int type = pair & 0xFF00;
-        return type == NON_SPECIAL ? index + (pair & 0xFF) : putSpecial(str, index, type);
     }
 
     /*
