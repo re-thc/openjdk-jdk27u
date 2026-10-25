@@ -191,6 +191,7 @@ final class StringZilla {
 
     // Chunk boundaries provide safepoint polls without retaining heap addresses.
     // Source ranges use bytes; mixed-coder needle counts use Latin-1 code units.
+    // Called after the whole-range leaf declines.
     @DontInline
     static int searchLarge(byte[] src, int offset, int length, byte[] tgt,
                            int count, int encoding, boolean reverse) {
@@ -203,6 +204,7 @@ final class StringZilla {
             return reverse ? length : 0;
         }
         int window = Math.min(MAX_BYTES, MAX_WORK / bytes) & -unit;
+        if (length <= window) return FALLBACK;
         // Avoid almost-complete overlaps: at most half a chunk is rescanned.
         if (bytes > window / 2) {
             return FALLBACK;
@@ -240,6 +242,8 @@ final class StringZilla {
     @DontInline
     static int searchCharLarge(byte[] src, int offset, int length, int ch,
                                boolean utf16, boolean reverse) {
+        // A fitting whole-range leaf has already declined.
+        if (length <= MAX_BYTES) return FALLBACK;
         int unit = utf16 ? 2 : 1;
         int bytes = utf16 && ch >= Character.MIN_SUPPLEMENTARY_CODE_POINT ? 4 : unit;
         int end = offset + length;
