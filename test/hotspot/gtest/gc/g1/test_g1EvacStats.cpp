@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "utilities/autoRestore.hpp"
 
 #include "unittest.hpp"

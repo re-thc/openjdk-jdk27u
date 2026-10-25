@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/utf8.hpp"
+
+#ifdef AMD64
+#include <emmintrin.h>
+#endif
 
 // Assume the utf8 string is in legal form and has been
 // checked in the class file parser/format checker.
@@ -106,7 +111,7 @@ char* UTF8::next_character(const char* str, jint* value) {
 // by counting bytes of the form 10xxxxxx and deducting this count
 // from the total byte count.  The utf8 string must be in
 // legal form which has been verified in the format checker.
-int UTF8::unicode_length(const char* str, size_t len, bool& is_latin1, bool& has_multibyte) {
+static int unicode_length_scalar(const char* str, size_t len, bool& is_latin1, bool& has_multibyte) {
   size_t num_chars = len;
   has_multibyte = false;
   is_latin1 = true;
@@ -124,6 +129,32 @@ int UTF8::unicode_length(const char* str, size_t len, bool& is_latin1, bool& has
     prev = c;
   }
   return checked_cast<int>(num_chars);
+}
+
+int UTF8::unicode_length(const char* str, size_t len, bool& is_latin1, bool& has_multibyte) {
+#ifdef AMD64
+  // Keep short inputs on the original scalar path.
+  if (len >= 32) {
+    size_t i = 0;
+    // Only the byte-bounded overload can safely load a whole vector. ASCII
+    // contributes one code unit per byte and does not change the flags.
+    do {
+      __m128i bytes = _mm_loadu_si128(reinterpret_cast<const __m128i*>(str + i));
+      if (_mm_movemask_epi8(bytes) != 0) {
+        break;
+      }
+      i += 16;
+    } while (len - i >= 16);
+    if (i != 0) {
+      // The preceding byte was ASCII, so the scalar suffix starts with the
+      // same classification state as a complete string. Keep encoded NUL,
+      // surrogate units and legacy overlong encodings on that scalar path.
+      int suffix_length = unicode_length_scalar(str + i, len - i, is_latin1, has_multibyte);
+      return checked_cast<int>(i + suffix_length);
+    }
+  }
+#endif
+  return unicode_length_scalar(str, len, is_latin1, has_multibyte);
 }
 
 // Calculate the unicode length of a nul-terminated utf8 string
