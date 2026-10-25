@@ -23,14 +23,26 @@
 
 package test.java.time;
 
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.LongSupplier;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestInstantSpeedate {
     private static Object result(CharSequence value, boolean original) {
@@ -50,125 +62,195 @@ public class TestInstantSpeedate {
         }
     }
 
-    @Test
-    public void testOriginalOutcomesAndNativeGrammar() throws Exception {
-        for (String s : new String[] {
-                "0000-02-29T23:59:59.999999Z", "0100-02-29T00:00:00Z",
-                "1900-02-29T00:00:00Z", "2000-02-29T00:00:00Z", "2000-04-31T00:00:00Z",
-                "1969-12-31T23:59:59.000001Z", "1970-01-01T00:00:00Z",
-                "9999-12-31T23:59:59.1234Z", "9999-12-31T24:00:00Z",
-                "2016-12-31T23:59:60.123456Z", "2000-01-01T00:00:00.000000000Z",
-                "2000-01-01T00:00:00.1234567Z", "2000-01-01T00:00:00.12345678Z",
-                "2000-01-01T00:00:00.123456789Z",
-                "2000-01-01t00:00:00z", "2000-01-01T00:00:00+00:00:30",
-                "2000-01-01T00:00:00.Z", "2000-01-01T00:00:00,1Z"}) {
-            compare(s);
-        }
-        compare(null);
-        compare(new StringBuilder("1969-12-31T23:59:59.000001Z"));
-        for (int y : new int[] {0, 1, 100, 400, 1900, 1970, 2000, 2100, 2400, 9999}) {
-            for (int m = 0; m <= 13; m++) for (int d = 0; d <= 32; d++) {
-                compare(String.format(java.util.Locale.ROOT, "%04d-%02d-%02dT12:34:56.000001Z", y, m, d));
-            }
-        }
+    private static Method nativeParser() throws Exception {
         Class<?> config = Class.forName("java.time.InstantParserConfig");
         var enabled = config.getDeclaredField("ENABLED");
         enabled.setAccessible(true);
         if (!(boolean)enabled.get(null) || "false".equals(System.getProperty("jdk.time.instantSpeedate"))) {
-            return;
+            return null;
         }
-        Class<?> parser = Class.forName("java.time.InstantParser");
-        Method eligible = parser.getDeclaredMethod("eligible", String.class);
-        Method fast = parser.getDeclaredMethod("tryParse", String.class);
-        Method raw = parser.getDeclaredMethod("parse0", String.class);
-        eligible.setAccessible(true); fast.setAccessible(true); raw.setAccessible(true);
-        Instant epoch = (Instant)fast.invoke(null, "1970-01-01T00:00:00Z");
-        if (!Instant.EPOCH.equals(epoch)) throw new AssertionError("Native backend did not execute");
-        if (fast.invoke(null, "1900-02-29T00:00:00Z") != null
-                || !Instant.EPOCH.equals(fast.invoke(null, "1970-01-01T00:00:00Z"))) {
-            throw new AssertionError("A calendar miss disabled the native backend");
-        }
-        for (String fraction : new String[] {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"}) {
-            String text = "2000-02-29T12:34:56" + fraction + "Z";
-            compare(text);
-            Instant expected = DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
-            if (!expected.equals(fast.invoke(null, text))) {
-                throw new AssertionError("Native fraction miss or mismatch: " + text);
-            }
-        }
-        for (String text : new String[] {"0000-01-01T00:00:00Z", "0000-02-29T12:34:56.000001Z",
-                "9999-12-31T23:59:59.999999Z"}) {
-            Instant expected = DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
-            if (!expected.equals(fast.invoke(null, text))) {
-                throw new AssertionError("Native year boundary mismatch: " + text);
-            }
-        }
-        String negativeText = "1969-12-31T23:59:59.000001Z";
-        compare(negativeText);
-        Instant negative = (Instant)fast.invoke(null, negativeText);
-        if (negative == null || negative.getEpochSecond() != -1 || negative.getNano() != 1000) {
-            throw new AssertionError("Native pre-epoch fraction mismatch: " + negative);
-        }
-        for (String text : new String[] {"2000-01-01T00:00:00.1234567Z",
-                "2000-01-01T00:00:00.12345678Z", "2000-01-01T00:00:00.123456789Z"}) {
-            compare(text);
-            if (fast.invoke(null, text) != null || (long)raw.invoke(null, text) != Long.MIN_VALUE) {
-                throw new AssertionError("Excess precision must use original Java parsing: " + text);
-            }
-        }
-        char[] unicode = "2000-01-01T00:00:00Z".toCharArray();
-        unicode[11] = 0; unicode[12] = '\u0210';
-        for (String s : new String[] {"2000-01-01T/::00:00Z", "2000-/;-01T00:00:00Z", new String(unicode)}) {
-            if (!(boolean)eligible.invoke(null, s)) throw new AssertionError("Test must exercise coarse eligibility");
-            if (fast.invoke(null, s) != null || (long)raw.invoke(null, s) != Long.MIN_VALUE) {
-                throw new AssertionError("Native grammar validation was bypassed");
-            }
-            compare(s);
+        Method fast = Class.forName("java.time.InstantParser").getDeclaredMethod("tryParse", String.class);
+        fast.setAccessible(true);
+        assertEquals(Instant.EPOCH, fast.invoke(null, "1970-01-01T00:00:00Z"),
+                "Native backend did not execute");
+        return fast;
+    }
+
+    private static void nativeValue(Method fast, String text, Instant expected) throws Exception {
+        assertEquals(expected, fast.invoke(null, text), "Native value: " + text);
+        assertEquals(expected, Instant.parse(text), "Public value: " + text);
+    }
+
+    private static void fallback(Method fast, String text) throws Exception {
+        compare(text);
+        if (fast != null) {
+            assertNull(fast.invoke(null, text), "Expected Java fallback: " + text);
         }
     }
 
     @Test
-    public void testMalformedPositions() throws Exception {
-        Class<?> config = Class.forName("java.time.InstantParserConfig");
-        var enabled = config.getDeclaredField("ENABLED");
-        enabled.setAccessible(true);
-        if (!(boolean)enabled.get(null) || "false".equals(System.getProperty("jdk.time.instantSpeedate"))) {
-            return;
+    public void testNativeValuesAndLibraryGrammar() throws Exception {
+        Method fast = nativeParser();
+        if (fast == null) return;
+        String[] fractions = {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"};
+        int[] nanos = {0, 100_000_000, 120_000_000, 123_000_000, 123_400_000, 123_450_000, 123_456_000};
+        for (int i = 0; i < fractions.length; i++) {
+            nativeValue(fast, "1970-01-01T00:00:00" + fractions[i] + "Z",
+                    Instant.ofEpochSecond(0, nanos[i]));
         }
-        Class<?> parser = Class.forName("java.time.InstantParser");
-        Method fast = parser.getDeclaredMethod("tryParse", String.class);
-        Method raw = parser.getDeclaredMethod("parse0", String.class);
-        fast.setAccessible(true);
-        raw.setAccessible(true);
-        if (!Instant.EPOCH.equals(fast.invoke(null, "1970-01-01T00:00:00Z"))) {
-            throw new AssertionError("Native backend did not execute");
+        for (String text : new String[] {"0000-01-01T00:00:00Z", "0000-02-29T12:34:56.000001Z",
+                "2000-02-29T12:34:56Z", "9999-12-31T23:59:59.999999Z"}) {
+            nativeValue(fast, text, DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from));
         }
-        for (String fraction : new String[] {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"}) {
-            String valid = "2000-02-29T12:34:56" + fraction + "Z";
-            for (int position = 0; position < valid.length(); position++) {
-                for (char replacement : new char[] {'\0', ' ', '+', '-', '/', ':', ';', '@', 'Z', 'z', '\u007f',
-                        '\u0080', '\u0100', '\u0210', '\ud800', '\uff10'}) {
-                    if (replacement == valid.charAt(position)) {
-                        continue;
+        nativeValue(fast, "1969-12-31T23:59:59.000001Z", Instant.ofEpochSecond(-1, 1000));
+        nativeValue(fast, "1969-12-31T23:59:59.999999Z", Instant.ofEpochSecond(-1, 999_999_000));
+        // These spellings deliberately follow speedate when the native backend is available.
+        for (String text : new String[] {"1969-12-31 23:59:59,000001Z",
+                "1969-12-31_23:59:59.000001z", "1969-12-31t23:59:59.000001Z",
+                "1969-12-31T23:59:59,000001Z"}) {
+            nativeValue(fast, text, Instant.ofEpochSecond(-1, 1000));
+        }
+    }
+
+    @Test
+    public void testJavaFallbacksAndNanosecondPrecision() throws Exception {
+        Method fast = nativeParser();
+        String[] fractions = {"1234567", "12345678", "123456789"};
+        int[] nanos = {123_456_700, 123_456_780, 123_456_789};
+        for (int i = 0; i < fractions.length; i++) {
+            String text = "1970-01-01T00:00:00." + fractions[i] + "Z";
+            fallback(fast, text);
+            assertEquals(Instant.ofEpochSecond(0, nanos[i]), Instant.parse(text));
+        }
+        for (String text : new String[] {"2000-01-01T00:00:00+01:00",
+                "2000-01-01T00:00:00+00:00:30", "2000-01-01T24:00:00Z",
+                "2016-12-31T23:59:60.123456Z", "+10000-01-01T00:00:00Z",
+                "-0001-01-01T00:00:00Z", "2000-01-01T00:00:00.Z"}) {
+            fallback(fast, text);
+        }
+        compare(null);
+        compare(new StringBuilder("1969-12-31T23:59:59.000001Z"));
+    }
+
+    @Test
+    public void testLibraryMissesAndRecovery() throws Exception {
+        Method fast = nativeParser();
+        for (String text : new String[] {"1900-02-29T00:00:00Z", "2000-04-31T00:00:00Z",
+                "2000-13-01T00:00:00Z", "2000-00-01T00:00:00Z", "2000-02-00T00:00:00Z"}) {
+            DateTimeParseException rejected = assertThrows(DateTimeParseException.class,
+                    () -> Instant.parse(text));
+            assertEquals(text, rejected.getParsedString());
+            if (fast != null) {
+                InvocationTargetException nativeRejection = assertThrows(InvocationTargetException.class,
+                        () -> fast.invoke(null, text));
+                assertEquals(DateTimeParseException.class, nativeRejection.getCause().getClass());
+            }
+        }
+        for (String text : new String[] {"2000-02-29T24:01:00Z", "2000-02-29T00:60:00Z",
+                "2000-02-29T00:00:61Z", "2000-02-29T0x:00:00Z",
+                "2000-02-29T00:00:00ZZ", "2000-02-29T00:00:00Z!"}) {
+            fallback(fast, text);
+        }
+        for (char replacement : new char[] {'\0', '\u0130', '\ud800'}) {
+            char[] chars = "2000-02-29T00:00:00Z".toCharArray();
+            chars[11] = replacement;
+            fallback(fast, new String(chars));
+        }
+        if (fast != null) {
+            nativeValue(fast, "1970-01-01T00:00:00Z", Instant.EPOCH);
+        }
+    }
+
+    @Test
+    public void testConcurrentParsingWithGC() throws Exception {
+        Method fast = nativeParser();
+        if (fast == null) return;
+        String[] texts = {"1970-01-01T00:00:00Z", "1969-12-31T23:59:59.000001Z",
+                "0000-01-01T00:00:00Z", "9999-12-31T23:59:59.999999Z"};
+        Instant[] expected = {Instant.EPOCH, Instant.ofEpochSecond(-1, 1000),
+                Instant.ofEpochSecond(-62_167_219_200L),
+                Instant.ofEpochSecond(253_402_300_799L, 999_999_000)};
+        var collectors = ManagementFactory.getGarbageCollectorMXBeans();
+        LongSupplier collectionCount = () -> collectors.stream()
+                .mapToLong(collector -> Math.max(0, collector.getCollectionCount())).sum();
+        long[] initialCollections = {collectionCount.getAsLong()};
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicInteger active = new AtomicInteger(3);
+        AtomicBoolean collectedWhileActive = new AtomicBoolean();
+        CountDownLatch workersStarted = new CountDownLatch(3);
+        CountDownLatch start = new CountDownLatch(1);
+        Thread[] threads = new Thread[4];
+        for (int worker = 0; worker < 3; worker++) {
+            int offset = worker;
+            threads[worker] = new Thread(() -> {
+                try {
+                    workersStarted.countDown();
+                    start.await();
+                    for (int i = 0; i < 40_000; i++) {
+                        int index = (i + offset) % texts.length;
+                        // String(String) shares storage; this creates fresh backing arrays.
+                        String text = new String(texts[index].toCharArray());
+                        assertEquals(expected[index], Instant.parse(text), text);
+                        // Also observe during ZGC's cycle, while System.gc may still be waiting.
+                        if ((i & 255) == 0 && collectionCount.getAsLong() > initialCollections[0]) {
+                            collectedWhileActive.set(true);
+                        }
                     }
-                    char[] chars = valid.toCharArray();
-                    chars[position] = replacement;
-                    String invalid = new String(chars);
-                    if (fast.invoke(null, invalid) != null || (long)raw.invoke(null, invalid) != Long.MIN_VALUE) {
-                        throw new AssertionError("Native accepted malformed position " + position
-                                + " with character " + Integer.toHexString(replacement));
+                } catch (Throwable ex) {
+                    failure.compareAndSet(null, ex);
+                } finally {
+                    active.decrementAndGet();
+                }
+            }, "instant-parser-" + worker);
+        }
+        threads[3] = new Thread(() -> {
+            try {
+                start.await();
+                byte[][] retained = new byte[8][];
+                for (int round = 0; round < 32 && active.get() > 0; round++) {
+                    for (int i = 0; i < retained.length; i++) {
+                        retained[i] = new byte[64 * 1024];
                     }
-                    compare(invalid);
+                    System.gc();
+                    java.lang.ref.Reference.reachabilityFence(retained);
+                    if (collectionCount.getAsLong() > initialCollections[0] && active.get() > 0) {
+                        collectedWhileActive.set(true);
+                    }
+                }
+            } catch (Throwable ex) {
+                failure.compareAndSet(null, ex);
+            }
+        }, "instant-parser-gc");
+        for (Thread thread : threads) thread.start();
+        boolean interrupted = false;
+        for (;;) {
+            try {
+                workersStarted.await();
+                break;
+            } catch (InterruptedException ex) {
+                interrupted = true;
+                failure.compareAndSet(null, ex);
+            }
+        }
+        // Publish a fresh baseline after worker setup, immediately before parsing starts.
+        initialCollections[0] = collectionCount.getAsLong();
+        start.countDown();
+        for (Thread thread : threads) {
+            for (;;) {
+                try {
+                    thread.join();
+                    break;
+                } catch (InterruptedException ex) {
+                    interrupted = true;
+                    failure.compareAndSet(null, ex);
                 }
             }
         }
-        for (String invalid : new String[] {"2000-02-29T24:00:00Z", "2000-02-29T99:00:00Z",
-                "2000-02-29T00:60:00Z", "2000-02-29T00:99:00Z",
-                "2016-12-31T23:59:60Z", "2000-02-29T00:00:99Z"}) {
-            if ((long)raw.invoke(null, invalid) != Long.MIN_VALUE) {
-                throw new AssertionError("Native accepted an out-of-range time: " + invalid);
-            }
-            compare(invalid);
+        if (interrupted) Thread.currentThread().interrupt();
+        if (failure.get() != null) {
+            throw new AssertionError("Concurrent parsing or GC failed", failure.get());
         }
+        assertTrue(collectedWhileActive.get(), "No collection observed while parsing workers were active");
+        nativeValue(fast, new String(texts[1].toCharArray()), expected[1]);
     }
 }

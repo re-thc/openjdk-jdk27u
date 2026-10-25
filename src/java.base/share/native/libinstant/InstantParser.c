@@ -26,8 +26,27 @@
 #include <jni.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 extern int64_t jdk_instant_speedate_parse(const uint8_t *, size_t);
+
+static jfieldID string_value;
+static jfieldID string_coder;
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    (void)reserved;
+    if ((*vm)->GetEnv(vm, (void **)&env, JNI_VERSION_1_8) != JNI_OK) {
+        return JNI_ERR;
+    }
+    jclass cls = (*env)->FindClass(env, "java/lang/String");
+    if (cls == NULL) return JNI_ERR;
+    string_value = (*env)->GetFieldID(env, cls, "value", "[B");
+    if (string_value == NULL) return JNI_ERR;
+    string_coder = (*env)->GetFieldID(env, cls, "coder", "B");
+    if (string_coder == NULL) return JNI_ERR;
+    return JNI_VERSION_1_8;
+}
 
 #ifndef INSTANT_SPEEDATE_NO_SYMBOL
 JNIEXPORT jlong JNICALL Java_java_time_InstantParser_parse0
@@ -37,18 +56,28 @@ JNIEXPORT jlong JNICALL Java_java_time_InstantParser_parse0
     return INT64_MIN;
 #else
     if (text == NULL) return INT64_MIN;
-    jsize len = (*env)->GetStringLength(env, text);
-    if (!(len == 20 || (len >= 22 && len <= 27))) return INT64_MIN;
-    jchar chars[27];
-    uint8_t ascii[27];
-    (*env)->GetStringRegion(env, text, 0, len, chars);
-    /* Never clear JVM exceptions. Bounds are checked above on immutable String. */
-    if ((*env)->ExceptionCheck(env)) return INT64_MIN;
-    for (jsize i = 0; i < len; i++) {
-        if (chars[i] > 127) return INT64_MIN;
-        ascii[i] = (uint8_t)chars[i];
+    jbyte coder = (*env)->GetByteField(env, text, string_coder);
+    if (coder != 0) {
+        jsize len = (*env)->GetStringLength(env, text);
+        if (len < 20 || len > 27) return INT64_MIN;
+        char utf8[3 * 27 + 1];
+        (*env)->GetStringUTFRegion(env, text, 0, len, utf8);
+        if ((*env)->ExceptionCheck(env)) return INT64_MIN;
+        // HotSpot terminates GetStringUTFRegion's output. Convert UTF-16 only
+        // once; the compact representation below needs no conversion or copy.
+        return (jlong)jdk_instant_speedate_parse((const uint8_t *)utf8, strlen(utf8));
     }
-    return (jlong)jdk_instant_speedate_parse(ascii, (size_t)len);
+    jbyteArray value = (*env)->GetObjectField(env, text, string_value);
+    if (value == NULL) return INT64_MIN;
+    jsize len = (*env)->GetArrayLength(env, value);
+    if (len < 20 || len > 27) return INT64_MIN;
+    const jbyte *bytes = (*env)->GetPrimitiveArrayCritical(env, value, NULL);
+    if (bytes == NULL) return INT64_MIN;
+    // Speedate neither retains the pointer nor calls Java while this exact
+    // array is pinned. Release the handle we acquired even if StringDedup runs.
+    int64_t result = jdk_instant_speedate_parse((const uint8_t *)bytes, (size_t)len);
+    (*env)->ReleasePrimitiveArrayCritical(env, value, (void *)bytes, JNI_ABORT);
+    return (jlong)result;
 #endif
 }
 #endif

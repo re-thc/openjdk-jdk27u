@@ -29,6 +29,27 @@ the surrounding JDK's CPU flags are configured separately. Startup
 `-Djdk.time.instantSpeedate=false` selects Java parsing. Missing native libraries
 also fall back to Java.
 
+## Native boundary
+
+Java routes String inputs of 20–27 characters ending in `Z` or `z` to speedate.
+The library parses the date and time, validates their fields, and consumes the
+complete input. The adapter does not parse the fields or repeat its delimiter
+checks. Library-supported spellings such as a space or underscore between date
+and time, and a comma before fractional seconds, are deliberately accepted when
+the native backend is available. Other routes retain the Java formatter.
+
+The compact String path borrows its backing byte array with
+`GetPrimitiveArrayCritical`, without an adapter copy or encoding conversion.
+The UTF-16 path uses one VM conversion into a bounded modified UTF-8 buffer.
+Neither path narrows characters to their low byte. Speedate validates the bytes;
+the Rust adapter retains no pointer and calls no Java while storage is borrowed.
+Results use integer epoch seconds and microseconds packed into one native return
+value. Precision overflow is `Error`, so 7–9 fractional digits fall back to Java
+with their nanoseconds intact. Speedate's definite invalid-month and invalid-day
+results throw `DateTimeParseException` directly, without reparsing the input.
+Their error wording and indices may differ from the Java formatter. Other native
+misses use the Java formatter.
+
 ## Updating
 
 1. Review the upstream release, source revision, minimum Rust version and parser
@@ -47,17 +68,15 @@ also fall back to Java.
 3. Review and update `src/java.base/share/legal/speedate.md` for every locked
    dependency. Keep upstream copyright and license texts intact. The selected
    compiler's standard-library notices are packaged separately by the build.
-4. Preserve the bounded grammar: four-digit ASCII UTC String timestamps with
-   uppercase T/Z, ordinary time fields and no fraction or 1–6 fractional digits.
-   Keep precision overflow set to `Error`, require `tz_offset == Some(0)`, and use
-   integer epoch seconds/microseconds. Other inputs and native failures must
-   retain Java values and parse-error details. Keep JNI ASCII narrowing, bounded
-   stack copies and Rust panic containment. Recheck the library's ASCII digit,
-   field-range, fraction and full-input-consumption behavior before removing any
-   adapter guards.
+4. Keep the bounded UTC routing, precision overflow set to `Error`, integer epoch
+   seconds/microseconds and Rust panic containment. Delegate date/time grammar,
+   field ranges and full-input consumption to speedate. Review upstream changes
+   to those semantics and to accepted spellings; do not add a second field parser
+   to reproduce them. Preserve the borrowed-storage lifetime and bounded UTF-16
+   conversion at the JNI boundary.
 5. Run the adapter's frozen Cargo tests, the configure/path fixtures and focused
    java.time tests after building with the normal JDK recipes. Check both String
-   representations, malformed positions, date boundaries, pre-epoch fractions,
+   representations, library spellings, date boundaries, pre-epoch fractions,
    JNI loading/concurrency and Serial/G1/ZGC, with interpreter, C1, C2 and normal
    tiered execution as applicable. Native-enabled platform checks must prove
    actual native hits; Java fallback alone is insufficient.

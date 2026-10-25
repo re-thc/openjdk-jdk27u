@@ -64,11 +64,13 @@ package java.time;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.misc.VM;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Internal, bounded library path for Instant.parse. */
 final class InstantParser {
     private static volatile boolean failed;
+    private static final long INVALID_DATE = Long.MIN_VALUE + 1;
 
     private static final class RuntimeConfig {
         // Read only after VM boot. Later System.setProperty changes must not
@@ -111,29 +113,10 @@ final class InstantParser {
         }
     }
 
-    // Eligibility only: native code independently enforces the ASCII grammar,
-    // and speedate validates the calendar. No Java fields are used as a result.
+    // Route common UTC strings; speedate parses and validates their fields.
     static boolean eligible(String text) {
         int n = text.length();
-        if (!(n == 20 || (n >= 22 && n <= 27)) || text.charAt(n - 1) != 'Z'
-                || text.charAt(4) != '-' || text.charAt(7) != '-'
-                || text.charAt(10) != 'T' || text.charAt(13) != ':'
-                || text.charAt(16) != ':' || (n > 20 && text.charAt(19) != '.')) {
-            return false;
-        }
-        int hour = pair(text, 11);
-        int minute = pair(text, 14);
-        int second = pair(text, 17);
-        if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
-            return false;
-        }
-        int month = pair(text, 5);
-        int day = pair(text, 8);
-        return month >= 1 && month <= 12 && day >= 1 && day <= 31;
-    }
-
-    private static int pair(String text, int offset) {
-        return (text.charAt(offset) - '0') * 10 + text.charAt(offset + 1) - '0';
+        return n >= 20 && n <= 27 && (text.charAt(n - 1) | 0x20) == 'z';
     }
 
     static Instant parse(String text) {
@@ -157,7 +140,11 @@ final class InstantParser {
                 return null;
             }
             long packed = parse0(text);
-            if (packed == Long.MIN_VALUE) {
+            // Both error tags lie below the packed four-digit-year range.
+            if (packed <= INVALID_DATE) {
+                if (packed == INVALID_DATE) {
+                    throw new DateTimeParseException("Invalid date", text, 0);
+                }
                 return null;
             }
             return Instant.ofEpochSecond(packed >> 20, (packed & 0xfffffL) * 1000L);
