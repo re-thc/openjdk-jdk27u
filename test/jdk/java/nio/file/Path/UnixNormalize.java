@@ -75,9 +75,10 @@ public class UnixNormalize {
 
         // Native symbolic-link targets reach UnixPath as raw bytes and can
         // contain repeated or trailing separators, unlike Path.of(String).
-        for (String input : List.of("//", "///", "///a", "///a/.", "//./a",
+        for (String input : List.of("//", "///", "////", "///a", "///a/.", "//./a",
                 "///.", "///..", "///a/../..", "a//./b", "a///..",
-                "a/./", "a/..//", "a////.", "//a//b///./c/../..")) {
+                "a/./", "a/..//", "a////.", "//a//b///./c/../..",
+                "a//.", ".//x", "../a//", "//a//.")) {
             check(bytes(input));
         }
         check(new byte[] {'/', '/', (byte) 0xff, '/', '/', '.', '/', (byte) 0x80});
