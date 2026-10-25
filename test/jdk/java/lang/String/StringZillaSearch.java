@@ -341,6 +341,7 @@ public class StringZillaSearch {
             builder.setCharAt(0, 'c');
             equal(builder.lastIndexOf(longMixedTarget), -1);
         }
+        check("\u0100" + "a".repeat(512), "b" + "a".repeat(256), Integer.MAX_VALUE);
         // Reject later near-matches without losing an earlier full match.
         for (int count : new int[]{65, 66, 127, 128, 129, 257}) {
             String target = "b" + "a".repeat(count - 1);
