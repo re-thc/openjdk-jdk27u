@@ -133,9 +133,8 @@ JRT_LEAF(jint, SimdUTF::decode_base64(const jbyte* src, jint length, jbyte* dst,
   const size_t input_length = (length - 1) & ~size_t(3);
   simdutf::result result = simdutf::base64_to_binary_safe(
       reinterpret_cast<const char*>(src), input_length, reinterpret_cast<char*>(dst), count,
-      url ? simdutf::base64_url : simdutf::base64_default, simdutf::only_full_chunks);
-  // Upstream ignores whitespace, while Java derives consumed input from the
-  // output count. Accept only complete groups with that exact relationship.
-  return result.error == simdutf::SUCCESS && count % 3 == 0 &&
-      result.count == (count / 3) * 4 ? static_cast<jint>(count) : -1;
+      url ? simdutf::base64_url_no_whitespace : simdutf::base64_default_no_whitespace,
+      simdutf::only_full_chunks);
+  // Without skipped characters, each complete output group consumes one quartet.
+  return result.error == simdutf::SUCCESS ? static_cast<jint>(count) : -1;
 JRT_END

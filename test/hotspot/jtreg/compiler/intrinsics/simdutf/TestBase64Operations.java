@@ -94,8 +94,8 @@ public class TestBase64Operations {
         // A late native error must return through this block's Java fallback,
         // rather than return zero and retry the same long suffix per quartet.
         for (Base64.Decoder decoder : new Base64.Decoder[]{Base64.getDecoder(), Base64.getUrlDecoder()}) {
-            for (byte bad : new byte[]{'!', ' '}) {
-                for (int at : new int[]{1024,65528,65529,65530,65531}) {
+            for (byte bad : new byte[]{'!', ' ', '\t', '\r', '\n', '\f'}) {
+                for (int at : new int[]{63,64,127,128,1023,1024,65528,65529,65530,65531}) {
                     byte[] invalid = new byte[65536]; Arrays.fill(invalid, (byte)'A');
                     invalid[at] = bad;
                     try { decoder.decode(invalid); throw new AssertionError("late invalid input"); }

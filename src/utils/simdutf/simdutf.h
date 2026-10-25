@@ -9991,9 +9991,14 @@ trim_partial_utf16(std::span<const char16_t> valid_utf16_input) noexcept {
 // nor ASCII spaces.
 constexpr uint64_t base64_reverse_padding =
     2; /* modifier for base64_default and base64_url */
+// Decode-only bit used by the two no_whitespace options below.
+// Do not combine with accept_garbage or default_or_url.
+constexpr uint64_t base64_reject_whitespace = 16;
 enum base64_options : uint64_t {
   base64_default = 0, /* standard base64 format (with padding) */
   base64_url = 1,     /* base64url format (no padding) */
+  base64_default_no_whitespace = base64_reject_whitespace,
+  base64_url_no_whitespace = base64_url | base64_reject_whitespace,
   base64_default_no_padding =
       base64_default |
       base64_reverse_padding, /* standard base64 format without padding */
@@ -11011,7 +11016,8 @@ simdutf_constexpr23 bool is_ignorable(char_type c,
   if (is_eight_byte(c) && code <= 63) {
     return false;
   }
-  if (is_eight_byte(c) && code == 64) {
+  if (is_eight_byte(c) && code == 64 &&
+      !(options & base64_reject_whitespace)) {
     return true;
   }
   return ignore_garbage;
@@ -11085,7 +11091,8 @@ simdutf_constexpr23 reduced_input find_end(const char_type *src, size_t srclen,
   // See https://github.com/simdutf/simdutf/issues/824
   size_t full_input_length = srclen;
   // skip trailing spaces
-  while (!ignore_garbage && srclen > 0 &&
+  while (!ignore_garbage && !(options & base64_reject_whitespace) &&
+         srclen > 0 &&
          scalar::base64::is_eight_byte(src[srclen - 1]) &&
          to_base64[uint8_t(src[srclen - 1])] == 64) {
     srclen--;
@@ -11110,7 +11117,8 @@ simdutf_constexpr23 reduced_input find_end(const char_type *src, size_t srclen,
     srclen--;
     equalsigns = 1;
     // skip trailing spaces
-    while (srclen > 0 && scalar::base64::is_eight_byte(src[srclen - 1]) &&
+    while (!(options & base64_reject_whitespace) && srclen > 0 &&
+           scalar::base64::is_eight_byte(src[srclen - 1]) &&
            to_base64[uint8_t(src[srclen - 1])] == 64) {
       srclen--;
     }
@@ -11225,7 +11233,8 @@ simdutf_constexpr23 full_result base64_tail_decode_impl(
       if (is_eight_byte(c) && code <= 63) {
         idx++;
       } else if (!ignore_garbage &&
-                 (code > 64 || !scalar::base64::is_eight_byte(c))) {
+                 (code > ((options & base64_reject_whitespace) ? 63 : 64) ||
+                  !scalar::base64::is_eight_byte(c))) {
         return {INVALID_BASE64_CHARACTER, size_t(src - srcinit),
                 size_t(dst - dstinit)};
       } else {
@@ -11898,6 +11907,10 @@ inline std::string_view to_string(base64_options options) {
     return "base64_url_accept_garbage";
   case base64_default_or_url:
     return "base64_default_or_url";
+  case base64_default_no_whitespace:
+    return "base64_default_no_whitespace";
+  case base64_url_no_whitespace:
+    return "base64_url_no_whitespace";
   case base64_default_or_url_accept_garbage:
     return "base64_default_or_url_accept_garbage";
   }

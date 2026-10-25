@@ -52,16 +52,23 @@ version_header = (upstream / "include/simdutf/simdutf_version.h").read_text()
 if f'#define SIMDUTF_VERSION "{version}"' not in version_header:
     parser.error("release tag does not match the source version")
 destination = root / "src/utils/simdutf"
+patch = root / "make/data/simdutf/base64-no-whitespace.patch"
 with tempfile.TemporaryDirectory(prefix="update-simdutf-") as temporary:
+    patched = Path(temporary) / "source"
+    subprocess.run(["git", "clone", "--quiet", "--shared", "--no-checkout",
+                    str(upstream), str(patched)], check=True)
+    subprocess.run(["git", "checkout", "--quiet", "--detach", commit], cwd=patched, check=True)
+    subprocess.run(["git", "apply", "--check", str(patch)], cwd=patched, check=True)
+    subprocess.run(["git", "apply", str(patch)], cwd=patched, check=True)
     environment = os.environ.copy()
     for name in ("AMALGAMATE_SOURCE_PATH", "AMALGAMATE_INCLUDE_PATH", "AMALGAMATE_OUTPUT_PATH"):
         environment.pop(name, None)
-    subprocess.run([sys.executable, str(upstream / "singleheader/amalgamate.py"),
-                    "--source-dir", str(upstream / "src"),
-                    "--include-dir", str(upstream / "include"),
+    subprocess.run([sys.executable, str(patched / "singleheader/amalgamate.py"),
+                    "--source-dir", str(patched / "src"),
+                    "--include-dir", str(patched / "include"),
                     "--output-dir", temporary, "--no-zip", "--no-readme",
                     "--with-utf8", "--with-utf16", "--with-utf32", "--with-base64",
-                    "--with-ascii", "--with-latin1"], check=True, cwd=upstream, env=environment)
+                    "--with-ascii", "--with-latin1"], check=True, cwd=patched, env=environment)
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("simdutf.h", "simdutf.cpp"):
         shutil.copyfile(Path(temporary) / name, destination / name)
@@ -80,7 +87,9 @@ checksums = "".join(
 (destination / "UPDATING.txt").write_text(
     f"Repository: https://github.com/simdutf/simdutf\nRelease: {tag}\nCommit: {commit}\n"
     "Features: UTF-8, UTF-16, UTF-32, Latin-1, ASCII, Base64\n"
-    "Local source changes: none\n"
+    "Local source changes: decode-only basic/URL no-whitespace options\n"
+    "Patch: make/data/simdutf/base64-no-whitespace.patch (includes upstream tests)\n"
+    f"SHA-256 (patch): {hashlib.sha256(patch.read_bytes()).hexdigest()}\n"
     f"{checksums}"
     "Update: python3 make/scripts/update-simdutf.py /path/to/clean/release/checkout\n")
 print(f"Updated simdutf to {tag} ({commit})")
