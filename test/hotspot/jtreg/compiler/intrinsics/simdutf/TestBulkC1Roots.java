@@ -35,6 +35,7 @@
  *      -XX:CompileCommand=dontinline,java.lang.StringLatin1::indexOfChar0
  *      -XX:CompileCommand=dontinline,java.lang.StringUTF16::indexOfChar0
  *      -XX:CompileCommand=dontinline,java.util.Base64$Encoder::encodeBlock
+ *      -XX:CompileCommand=dontinline,java.util.Base64$Decoder::decode0
  *      -XX:CompileCommand=dontinline,java.util.Base64$Decoder::decodeBlock
  *      TestBulkC1Roots
  */
@@ -49,6 +50,7 @@ public class TestBulkC1Roots {
                 Class.forName("java.lang.StringLatin1").getDeclaredMethod("indexOfChar0", byte[].class, int.class, int.class, int.class),
                 Class.forName("java.lang.StringUTF16").getDeclaredMethod("indexOfChar0", byte[].class, int.class, int.class, int.class),
                 Class.forName("java.util.Base64$Encoder").getDeclaredMethod("encodeBlock", byte[].class, int.class, int.class, byte[].class, int.class, boolean.class),
+                Class.forName("java.util.Base64$Decoder").getDeclaredMethod("decode0", byte[].class, int.class, int.class, byte[].class),
                 Class.forName("java.util.Base64$Decoder").getDeclaredMethod("decodeBlock", byte[].class, int.class, int.class, byte[].class, int.class, boolean.class, boolean.class)
         };
         for (Method method : methods) {

@@ -810,6 +810,7 @@ public final class Base64 {
             return new_dp - dp;
         }
 
+        @IntrinsicCandidate
         private int decode0(byte[] src, int sp, int sl, byte[] dst) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int dp = 0;

@@ -138,3 +138,12 @@ JRT_LEAF(jint, SimdUTF::decode_base64(const jbyte* src, jint length, jbyte* dst,
   // Without skipped characters, each complete output group consumes one quartet.
   return result.error == simdutf::SUCCESS ? static_cast<jint>(count) : -1;
 JRT_END
+
+// decode0 owns the full MIME operation; Java handles errors on native decline.
+JRT_LEAF(jint, SimdUTF::decode_base64_mime(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  size_t count = capacity;
+  simdutf::result result = simdutf::base64_to_binary_safe(
+      reinterpret_cast<const char*>(src), length, reinterpret_cast<char*>(dst), count,
+      simdutf::base64_java_mime);
+  return result.error == simdutf::SUCCESS ? static_cast<jint>(count) : -1;
+JRT_END

@@ -339,6 +339,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_dilithiumMontMulByConstant();
   bool inline_dilithiumDecomposePoly();
   bool inline_base64_encodeBlock();
+  Node* inline_base64_decode0_predicate();
+  bool inline_base64_decode0();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
   bool inline_intpoly_montgomeryMult_P256();

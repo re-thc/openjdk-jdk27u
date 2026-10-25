@@ -661,6 +661,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_dilithiumDecomposePoly();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
+  case vmIntrinsics::_base64_decode0: return inline_base64_decode0();
   case vmIntrinsics::_base64_decodeBlock:
     return inline_base64_decodeBlock();
   case vmIntrinsics::_poly1305_processBlocks:
@@ -814,6 +815,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
   assert(merged_memory(), "");
 
   switch (intrinsic_id()) {
+  case vmIntrinsics::_base64_decode0: return inline_base64_decode0_predicate();
   case vmIntrinsics::_encodeUTF8Latin1:
     return inline_encodeUTF8_predicate(false);
   case vmIntrinsics::_encodeUTF8UTF16:
@@ -9775,6 +9777,104 @@ bool LibraryCallKit::inline_decodeUTF8UTF16() {
   region->init_req(1, control());
   result->init_req(1, _gvn.transform(new AddINode(dp, written)));
   io->init_req(1, i_o());
+  region->init_req(2, top());
+  result->init_req(2, top());
+  io->init_req(2, top());
+  if (malformed != nullptr) {
+    PreserveJVMState state(this);
+    set_control(malformed);
+    // Parse the original Java body directly: invoking this method again could
+    // re-enter its interpreter/C1 intrinsic and repeat the failed conversion.
+    JVMState* next = java_fallback->generate(sync_jvms());
+    if (next == nullptr) {
+      assert(C->failing(), "Java fallback parsing failed");
+      return true; // The compilation has been abandoned; no code is emitted.
+    }
+    C->env()->notice_inlined_method(callee());
+    add_exception_states_from(next);
+    if (next->map()->control() != top()) {
+      set_jvms(next);
+      Node* fallback_result = pop();
+      region->set_req(2, control());
+      result->set_req(2, fallback_result);
+      fallback_memory = merged_memory();
+      io->set_req(2, i_o());
+    }
+  }
+  // A parsed Java loop has separate alias slices. Merge each slice with the
+  // native-call memory, as the predicated intrinsic call generator does.
+  if (fallback_memory != nullptr) {
+    merge_memory(fallback_memory, region, 2);
+  }
+  set_control(_gvn.transform(region));
+  for (MergeMemStream mms(merged_memory()); mms.next_non_empty();) {
+    Node* phi = mms.memory();
+    if (phi->is_Phi() && phi->in(0) == region) {
+      mms.set_memory(_gvn.transform(phi));
+    }
+  }
+  set_i_o(_gvn.transform(io));
+  set_result(region, result);
+  return true;
+}
+
+Node* LibraryCallKit::inline_base64_decode0_predicate() {
+  const int maximum = 1024 * 1024;
+  const int minimum = (int)(FLAG_IS_DEFAULT(SIMDUTFMinLength)
+      ? MAX2(SIMDUTFMinLength, intx(1024)) : SIMDUTFMinLength);
+  if (!SimdUTF::available() || !UseBASE64Intrinsics || minimum > maximum) {
+    Node* slow = control(); set_control(top()); return slow;
+  }
+  RegionNode* slow = new RegionNode(4);
+  Node* receiver = must_be_not_null(argument(0), true);
+  Node* mime = make_load(control(), basic_plus_adr(receiver,
+      java_util_Base64_Decoder::isMIME_offset()), TypeInt::BOOL, T_BOOLEAN, MemNode::unordered);
+  Node* edge = generate_guard(_gvn.transform(new BoolNode(_gvn.transform(new CmpINode(mime, intcon(0))), BoolTest::eq)), nullptr, PROB_FAIR);
+  slow->init_req(1, edge == nullptr ? top() : edge);
+  Node* length = _gvn.transform(new SubINode(argument(3), argument(2)));
+  Node* comparison = _gvn.transform(new CmpUNode(
+      _gvn.transform(new SubINode(length, intcon(minimum))), intcon(maximum - minimum)));
+  edge = generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
+  slow->init_req(2, edge == nullptr ? top() : edge);
+  edge = generate_guard(_gvn.transform(new BoolNode(_gvn.transform(new CmpPNode(argument(1), argument(4))), BoolTest::eq)), nullptr, PROB_MIN);
+  slow->init_req(3, edge == nullptr ? top() : edge);
+  return _gvn.transform(slow);
+}
+
+bool LibraryCallKit::inline_base64_decode0() {
+  CallGenerator* java_fallback = CallGenerator::for_inline(callee(), PROB_ALWAYS);
+  if (java_fallback == nullptr) {
+    return false;
+  }
+  Node* src = must_be_not_null(argument(1), true);
+  Node* start = argument(2);
+  Node* dst = must_be_not_null(argument(4), true);
+  Node* length = _gvn.transform(new SubINode(argument(3), start));
+  const Type** fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 3] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime), "decode_base64_mime", TypePtr::BOTTOM,
+      array_element_address(src, start, T_BYTE), length, array_element_address(dst, intcon(0), T_BYTE), load_array_length(dst));
+  Node* written = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  Node* malformed = generate_guard(_gvn.transform(new BoolNode(
+      _gvn.transform(new CmpINode(written, intcon(0))), BoolTest::lt)), nullptr, PROB_MIN);
+  Node* converted_memory = reset_memory();
+  set_all_memory(converted_memory);
+  Node* initial_io = i_o();
+  RegionNode* region = new RegionNode(3);
+  PhiNode* result = new PhiNode(region, TypeInt::INT);
+  MergeMemNode* fallback_memory = nullptr;
+  PhiNode* io = new PhiNode(region, Type::ABIO);
+  region->init_req(1, control());
+  result->init_req(1, written);
+  io->init_req(1, initial_io);
   region->init_req(2, top());
   result->init_req(2, top());
   io->init_req(2, top());

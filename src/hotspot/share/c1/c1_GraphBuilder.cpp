@@ -2800,7 +2800,8 @@ void GraphBuilder::append_bulk_entry() {
   vmIntrinsics::ID id = method()->intrinsic_id();
   const bool search = id == vmIntrinsics::_indexOfL_char || id == vmIntrinsics::_indexOfU_char;
   const bool encode = id == vmIntrinsics::_base64_encodeBlock;
-  const bool decode = id == vmIntrinsics::_base64_decodeBlock;
+  const bool mime = id == vmIntrinsics::_base64_decode0;
+  const bool decode = mime || id == vmIntrinsics::_base64_decodeBlock;
   if ((!search && !encode && !decode) || !SimdUTF::available() ||
       SIMDUTFMinLength > 1024 * 1024 ||
       (compilation()->is_osr_compile() && scope()->is_top_scope())) return;
@@ -2837,6 +2838,12 @@ void GraphBuilder::append_bulk_entry() {
     enter_block(reachable ? accepted : fallback);
     return reachable;
   };
+  if (mime) {
+    ciField* field = method()->holder()->get_field_by_name(ciSymbol::make("isMIME"), ciSymbols::bool_signature(), false);
+    Value is_mime = append(new LoadField(state()->local_at(0), field->offset_in_bytes(), field, false,
+                                        copy_state_for_exception(), false));
+    if (!admit(is_mime, If::neq, append(new Constant(intZero)))) return;
+  }
   if (!admit(length, If::geq, append(new Constant(new IntConstant((jint)SIMDUTFMinLength)))) ||
       !admit(length, If::leq, append(new Constant(new IntConstant(1024 * 1024))))) {
     return;
@@ -2845,7 +2852,9 @@ void GraphBuilder::append_bulk_entry() {
   if (id == vmIntrinsics::_indexOfU_char &&
       !admit(state()->local_at(1), If::geq, append(new Constant(intZero)))) return;
   Value dst = search ? nullptr : state()->local_at(4);
-  if (decode && (!admit(state()->local_at(7), If::eql, append(new Constant(intZero))) ||
+
+
+  if (decode && ((!mime && !admit(state()->local_at(7), If::eql, append(new Constant(intZero)))) ||
                  !admit(src, If::neq, dst))) return;
   Values* args = new Values(search ? 4 : 7);
   args->push(src);
@@ -2855,11 +2864,11 @@ void GraphBuilder::append_bulk_entry() {
     args->push(state()->local_at(1));
   } else {
     args->push(dst);
-    args->push(state()->local_at(5));
-    args->push(state()->local_at(6));
+    args->push(mime ? append(new Constant(intZero)) : state()->local_at(5));
+    args->push(mime ? append(new Constant(intZero)) : state()->local_at(6));
     if (decode) {
       args->push(append(new ArithmeticOp(Bytecodes::_isub,
-          append(new ArrayLength(dst, copy_state_for_exception())), state()->local_at(5), nullptr)));
+          append(new ArrayLength(dst, copy_state_for_exception())), mime ? append(new Constant(intZero)) : state()->local_at(5), nullptr)));
     }
   }
   Intrinsic* intrinsic = new Intrinsic(encode ? static_cast<ValueType*>(voidType) : intType, id, args, false,
@@ -3872,6 +3881,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   if (callee->intrinsic_id() == vmIntrinsics::_indexOfL_char ||
       callee->intrinsic_id() == vmIntrinsics::_indexOfU_char ||
       callee->intrinsic_id() == vmIntrinsics::_base64_encodeBlock ||
+      callee->intrinsic_id() == vmIntrinsics::_base64_decode0 ||
       callee->intrinsic_id() == vmIntrinsics::_base64_decodeBlock ||
       callee->intrinsic_id() == vmIntrinsics::_encodeUTF8Latin1 ||
       callee->intrinsic_id() == vmIntrinsics::_encodeUTF8UTF16 ||

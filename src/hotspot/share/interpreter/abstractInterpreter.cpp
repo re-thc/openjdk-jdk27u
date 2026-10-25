@@ -135,6 +135,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_indexOfL_char: return java_lang_StringLatin1_indexOfChar;
       case vmIntrinsics::_indexOfU_char: return java_lang_StringUTF16_indexOfChar;
       case vmIntrinsics::_base64_encodeBlock: return java_util_Base64_encodeBlock;
+      case vmIntrinsics::_base64_decode0: return java_util_Base64_decode0;
       case vmIntrinsics::_base64_decodeBlock: return java_util_Base64_decodeBlock;
       case vmIntrinsics::_encodeUTF8Latin1: return java_lang_String_encodeUTF8Latin1;
       case vmIntrinsics::_encodeUTF8UTF16: return java_lang_String_encodeUTF8UTF16;
@@ -233,6 +234,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_StringLatin1_indexOfChar: return vmIntrinsics::_indexOfL_char;
   case java_lang_StringUTF16_indexOfChar: return vmIntrinsics::_indexOfU_char;
   case java_util_Base64_encodeBlock: return vmIntrinsics::_base64_encodeBlock;
+  case java_util_Base64_decode0: return vmIntrinsics::_base64_decode0;
   case java_util_Base64_decodeBlock: return vmIntrinsics::_base64_decodeBlock;
   case java_lang_String_encodeUTF8Latin1: return vmIntrinsics::_encodeUTF8Latin1;
   case java_lang_String_encodeUTF8UTF16: return vmIntrinsics::_encodeUTF8UTF16;

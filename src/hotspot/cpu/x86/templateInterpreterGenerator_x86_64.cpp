@@ -31,6 +31,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/simdutfSupport.hpp"
+#include "classfile/javaClasses.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -585,20 +586,27 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
   const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
                       kind == Interpreter::java_lang_StringUTF16_indexOfChar;
   const bool wide = kind == Interpreter::java_lang_StringUTF16_indexOfChar;
-  const bool decode = kind == Interpreter::java_util_Base64_decodeBlock;
-  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024) return nullptr;
+  const bool mime = kind == Interpreter::java_util_Base64_decode0;
+  const bool decode = mime || kind == Interpreter::java_util_Base64_decodeBlock;
+  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 ||
+      (mime && !UseBASE64Intrinsics)) return nullptr;
   address entry = __ pc();
   Label slow, done;
   __ safepoint_poll(slow, false, false);
-  if (decode) {
+  if (decode && !mime) {
     __ cmpl(Address(rsp, wordSize), 0); // isMIME
     __ jcc(Assembler::notEqual, slow);
   }
+  if (mime) {
+    __ movptr(r10, Address(rsp, 5 * wordSize));
+    __ cmpb(Address(r10, java_util_Base64_Decoder::isMIME_offset()), 0);
+    __ jcc(Assembler::equal, slow);
+  }
   // Offsets count from the return address; Base64 includes its receiver.
-  const int src_slot = search ? 4 : decode ? 7 : 6;
+  const int src_slot = search ? 4 : mime ? 4 : decode ? 7 : 6;
   const int start_slot = search ? 2 : src_slot - 1;
   const int limit_slot = search ? 1 : src_slot - 2;
-  const int dst_slot = decode ? 4 : 3;
+  const int dst_slot = mime ? 1 : decode ? 4 : 3;
   const int dp_slot = decode ? 3 : 2;
   __ movptr(c_rarg0, Address(rsp, src_slot * wordSize));
   __ movl(c_rarg1, Address(rsp, limit_slot * wordSize));
@@ -619,11 +627,12 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
       __ cmpptr(c_rarg0, c_rarg2);
       __ jcc(Assembler::equal, slow);
       __ movl(c_rarg3, Address(c_rarg2, arrayOopDesc::length_offset_in_bytes()));
-      __ subl(c_rarg3, Address(rsp, dp_slot * wordSize));
+      if (!mime) __ subl(c_rarg3, Address(rsp, dp_slot * wordSize));
     } else {
       __ movl(c_rarg3, Address(rsp, wordSize));
     }
-    __ movl2ptr(r10, Address(rsp, dp_slot * wordSize));
+    if (mime) { __ xorptr(r10, r10); }
+    else { __ movl2ptr(r10, Address(rsp, dp_slot * wordSize)); }
     __ lea(c_rarg2, Address(c_rarg2, r10, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
   }
   __ movl2ptr(r10, Address(rsp, start_slot * wordSize));
@@ -631,9 +640,10 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
                          arrayOopDesc::base_offset_in_bytes(T_BYTE)));
   address leaf = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
                                : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                        : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
                         : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
                                  : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
-  if (decode) {
+  if (decode && !mime) {
 #ifdef _WIN64
     // The fifth C argument follows the four-register shadow area. Preserve
     // sender_sp while using its callee-saved register to restore alignment.

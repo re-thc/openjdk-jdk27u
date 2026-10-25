@@ -53,6 +53,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/simdutfSupport.hpp"
+#include "classfile/javaClasses.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -2229,19 +2230,26 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
   const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
                       kind == Interpreter::java_lang_StringUTF16_indexOfChar;
   const bool wide = kind == Interpreter::java_lang_StringUTF16_indexOfChar;
-  const bool decode = kind == Interpreter::java_util_Base64_decodeBlock;
-  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024) return nullptr;
+  const bool mime = kind == Interpreter::java_util_Base64_decode0;
+  const bool decode = mime || kind == Interpreter::java_util_Base64_decodeBlock;
+  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 ||
+      (mime && !UseBASE64Intrinsics)) return nullptr;
   address entry = __ pc();
   Label slow, done;
   __ safepoint_poll(slow, false, false);
-  if (decode) {
+  if (decode && !mime) {
     __ ldrw(rscratch1, Address(esp)); // isMIME
     __ cbnzw(rscratch1, slow);
   }
-  const int src_slot = search ? 3 : decode ? 6 : 5;
+  if (mime) {
+    __ ldr(rscratch1, Address(esp, 4 * wordSize));
+    __ ldrb(rscratch1, Address(rscratch1, java_util_Base64_Decoder::isMIME_offset()));
+    __ cbzw(rscratch1, slow);
+  }
+  const int src_slot = search ? 3 : mime ? 3 : decode ? 6 : 5;
   const int start_slot = search ? 1 : src_slot - 1;
   const int limit_slot = search ? 0 : src_slot - 2;
-  const int dst_slot = decode ? 3 : 2;
+  const int dst_slot = mime ? 0 : decode ? 3 : 2;
   const int dp_slot = decode ? 2 : 1;
   __ ldr(c_rarg0, Address(esp, src_slot * wordSize));
   __ ldrw(c_rarg1, Address(esp, limit_slot * wordSize));
@@ -2262,14 +2270,18 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
       __ cmp(c_rarg0, c_rarg2);
       __ br(Assembler::EQ, slow);
       __ ldrw(c_rarg3, Address(c_rarg2, arrayOopDesc::length_offset_in_bytes()));
-      __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
-      __ subw(c_rarg3, c_rarg3, rscratch1);
-      __ ldrw(c_rarg4, Address(esp, wordSize));
+      if (!mime) {
+        __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
+        __ subw(c_rarg3, c_rarg3, rscratch1);
+        __ ldrw(c_rarg4, Address(esp, wordSize));
+      }
     } else {
       __ ldrw(c_rarg3, Address(esp));
     }
-    __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
-    __ add(c_rarg2, c_rarg2, rscratch1);
+    if (!mime) {
+      __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
+      __ add(c_rarg2, c_rarg2, rscratch1);
+    }
     __ add(c_rarg2, c_rarg2, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   }
   __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
@@ -2277,6 +2289,7 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
   __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   address leaf = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
                                : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                        : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
                         : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
                                  : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
   __ stp(lr, zr, Address(pre(sp, -2 * wordSize)));

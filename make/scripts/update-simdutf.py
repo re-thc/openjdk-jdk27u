@@ -52,14 +52,16 @@ version_header = (upstream / "include/simdutf/simdutf_version.h").read_text()
 if f'#define SIMDUTF_VERSION "{version}"' not in version_header:
     parser.error("release tag does not match the source version")
 destination = root / "src/utils/simdutf"
-patch = root / "make/data/simdutf/base64-no-whitespace.patch"
+patches = [root / "make/data/simdutf" / name for name in
+           ("base64-no-whitespace.patch", "base64-java-mime.patch")]
 with tempfile.TemporaryDirectory(prefix="update-simdutf-") as temporary:
     patched = Path(temporary) / "source"
     subprocess.run(["git", "clone", "--quiet", "--shared", "--no-checkout",
                     str(upstream), str(patched)], check=True)
     subprocess.run(["git", "checkout", "--quiet", "--detach", commit], cwd=patched, check=True)
-    subprocess.run(["git", "apply", "--check", str(patch)], cwd=patched, check=True)
-    subprocess.run(["git", "apply", str(patch)], cwd=patched, check=True)
+    for patch in patches:
+        subprocess.run(["git", "apply", "--check", str(patch)], cwd=patched, check=True)
+        subprocess.run(["git", "apply", str(patch)], cwd=patched, check=True)
     environment = os.environ.copy()
     for name in ("AMALGAMATE_SOURCE_PATH", "AMALGAMATE_INCLUDE_PATH", "AMALGAMATE_OUTPUT_PATH"):
         environment.pop(name, None)
@@ -87,9 +89,10 @@ checksums = "".join(
 (destination / "UPDATING.txt").write_text(
     f"Repository: https://github.com/simdutf/simdutf\nRelease: {tag}\nCommit: {commit}\n"
     "Features: UTF-8, UTF-16, UTF-32, Latin-1, ASCII, Base64\n"
-    "Local source changes: decode-only basic/URL no-whitespace options\n"
-    "Patch: make/data/simdutf/base64-no-whitespace.patch (includes upstream tests)\n"
-    f"SHA-256 (patch): {hashlib.sha256(patch.read_bytes()).hexdigest()}\n"
+    "Local source changes: decode-only Java basic/URL and MIME options\n"
+    + "".join(f"Patch: {patch.relative_to(root)} (includes upstream tests)\n"
+              f"SHA-256 (patch): {hashlib.sha256(patch.read_bytes()).hexdigest()}\n"
+              for patch in patches) +
     f"{checksums}"
     "Update: python3 make/scripts/update-simdutf.py /path/to/clean/release/checkout\n")
 print(f"Updated simdutf to {tag} ({commit})")

@@ -2862,7 +2862,8 @@ void LIRGenerator::do_stringUTF8(Intrinsic* x) {
 void LIRGenerator::do_bulk(Intrinsic* x) {
   const bool search = x->id() == vmIntrinsics::_indexOfL_char || x->id() == vmIntrinsics::_indexOfU_char;
   const bool wide = x->id() == vmIntrinsics::_indexOfU_char;
-  const bool decode = x->id() == vmIntrinsics::_base64_decodeBlock;
+  const bool mime = x->id() == vmIntrinsics::_base64_decode0;
+  const bool decode = mime || x->id() == vmIntrinsics::_base64_decodeBlock;
   LIRItem src(x->argument_at(0), this), start(x->argument_at(1), this), length(x->argument_at(2), this);
   src.load_item(); start.load_item(); length.load_item();
   LIR_Opr offset = new_register(T_LONG);
@@ -2875,7 +2876,7 @@ void LIRGenerator::do_bulk(Intrinsic* x) {
   signature.append(T_ADDRESS); signature.append(T_INT);
   signature.append(search ? T_INT : T_ADDRESS);
   if (!search) signature.append(T_INT);
-  if (decode) signature.append(T_INT);
+  if (decode && !mime) signature.append(T_INT);
   CallingConvention* cc = frame_map()->c_calling_convention(&signature);
   LIR_Opr third, url = LIR_OprFact::illegalOpr, capacity = LIR_OprFact::illegalOpr;
   if (search) {
@@ -2892,9 +2893,10 @@ void LIRGenerator::do_bulk(Intrinsic* x) {
   }
   __ move(source, cc->at(0)); __ move(length.result(), cc->at(1)); __ move(third, cc->at(2));
   if (!search) { __ move(decode ? capacity : url, cc->at(3)); }
-  if (decode) { __ move(url, cc->at(4)); }
+  if (decode && !mime) { __ move(url, cc->at(4)); }
   address entry = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
                                 : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                         : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
                          : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
                                   : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
   LIR_Opr result_reg = x->type() == voidType ? LIR_OprFact::illegalOpr : result_register_for(x->type());
@@ -2917,6 +2919,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_indexOfL_char:
   case vmIntrinsics::_indexOfU_char:
   case vmIntrinsics::_base64_encodeBlock:
+  case vmIntrinsics::_base64_decode0:
   case vmIntrinsics::_base64_decodeBlock:
     do_bulk(x);
     break;

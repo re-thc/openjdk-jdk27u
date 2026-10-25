@@ -161,6 +161,7 @@
   do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo                          ) \
                                                                                                                 \
   /* support for stack dump lock analysis */                                                                    \
+  do_klass(java_util_Base64_Decoder_klass, java_util_Base64_Decoder) \
   do_klass(java_util_concurrent_locks_AbstractOwnableSynchronizer_klass, java_util_concurrent_locks_AbstractOwnableSynchronizer) \
                                                                                                                 \
   /* boxing klasses */                                                                                          \

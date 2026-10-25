@@ -9995,6 +9995,7 @@ constexpr uint64_t base64_reverse_padding =
 // Do not combine with accept_garbage or default_or_url.
 constexpr uint64_t base64_reject_whitespace = 16;
 enum base64_options : uint64_t {
+  base64_java_mime = 32, /* decode-only: Java MIME ignored characters and padding */
   base64_default = 0, /* standard base64 format (with padding) */
   base64_url = 1,     /* base64url format (no padding) */
   base64_default_no_whitespace = base64_reject_whitespace,
@@ -10981,6 +10982,9 @@ static_assert(to_base64_url_value[uint8_t('_')] == 63,
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#endif
 
 namespace simdutf {
 namespace scalar {
@@ -11009,6 +11013,7 @@ simdutf_constexpr23 bool is_ignorable(char_type c,
           : ((options & base64_url) ? tables::base64::to_base64_url_value
                                     : tables::base64::to_base64_value);
   const bool ignore_garbage =
+      (options == base64_options::base64_java_mime) ||
       (options == base64_options::base64_url_accept_garbage) ||
       (options == base64_options::base64_default_accept_garbage) ||
       (options == base64_options::base64_default_or_url_accept_garbage);
@@ -11020,7 +11025,7 @@ simdutf_constexpr23 bool is_ignorable(char_type c,
       !(options & base64_reject_whitespace)) {
     return true;
   }
-  return ignore_garbage;
+  return ignore_garbage && (options != base64_java_mime || c != '=');
 }
 template <class char_type>
 simdutf_constexpr23 bool is_base64(char_type c,
@@ -11082,10 +11087,14 @@ simdutf_constexpr23 reduced_input find_end(const char_type *src, size_t srclen,
           : ((options & base64_url) ? tables::base64::to_base64_url_value
                                     : tables::base64::to_base64_value);
   const bool ignore_garbage =
+      (options == base64_options::base64_java_mime) ||
       (options == base64_options::base64_url_accept_garbage) ||
       (options == base64_options::base64_default_accept_garbage) ||
       (options == base64_options::base64_default_or_url_accept_garbage);
 
+  if (options == base64_java_mime) {
+    return {0, srclen, srclen, srclen};
+  }
   size_t equalsigns = 0;
   // We intentionally include trailing spaces in the full input length.
   // See https://github.com/simdutf/simdutf/issues/824
@@ -11141,7 +11150,9 @@ simdutf_constexpr23 full_result base64_tail_decode_impl(
     char *dst, size_t outlen, const char_type *src, size_t length,
     size_t padding_characters, // number of padding characters
                                // '=', typically 0, 1, 2.
-    base64_options options, last_chunk_handling_options last_chunk_options) {
+    base64_options options, last_chunk_handling_options last_chunk_options,
+    const char_type *pending_start = nullptr, const char *pending = nullptr,
+    size_t pending_count = 0) {
   char *dstend = dst + outlen;
   (void)dstend;
   // This looks like 10 branches, but we expect the compiler to resolve this to
@@ -11172,19 +11183,20 @@ simdutf_constexpr23 full_result base64_tail_decode_impl(
           : ((options & base64_url) ? tables::base64::base64_url::d3
                                     : tables::base64::base64_default::d3);
   const bool ignore_garbage =
+      (options == base64_options::base64_java_mime) ||
       (options == base64_options::base64_url_accept_garbage) ||
       (options == base64_options::base64_default_accept_garbage) ||
       (options == base64_options::base64_default_or_url_accept_garbage);
 
   const char_type *srcend = src + length;
-  const char_type *srcinit = src;
+  const char_type *srcinit = pending_count != 0 ? pending_start : src;
   const char *dstinit = dst;
 
   uint32_t x;
   size_t idx;
   uint8_t buffer[4];
   while (true) {
-    while (srcend - src >= 4 && is_eight_byte(src[0]) &&
+    while (pending_count == 0 && srcend - src >= 4 && is_eight_byte(src[0]) &&
            is_eight_byte(src[1]) && is_eight_byte(src[2]) &&
            is_eight_byte(src[3]) &&
            (x = d0[uint8_t(src[0])] | d1[uint8_t(src[1])] |
@@ -11198,12 +11210,14 @@ simdutf_constexpr23 full_result base64_tail_decode_impl(
       *dst++ = static_cast<char>((x >> 16) & 0xFF);
       src += 4;
     }
-    const char_type *srccur = src;
-    idx = 0;
+    const char_type *srccur = pending_count != 0 ? pending_start : src;
+    idx = pending_count;
+    for (size_t i = 0; i < pending_count; i++) buffer[i] = uint8_t(pending[i]);
+    pending_count = 0;
     // we need at least four characters.
 #ifdef __clang__
     // If possible, we read four characters at a time. (It is an optimization.)
-    if (ignore_garbage && src + 4 <= srcend) {
+    if (ignore_garbage && options != base64_java_mime && src + 4 <= srcend) {
       char_type c0 = src[0];
       char_type c1 = src[1];
       char_type c2 = src[2];
@@ -11228,6 +11242,25 @@ simdutf_constexpr23 full_result base64_tail_decode_impl(
     while ((idx < 4) && (src < srcend)) {
       char_type c = *src;
 
+      if (options == base64_java_mime && c == '=') {
+        if (idx < 2) {
+          return {INVALID_BASE64_CHARACTER, size_t(src - srcinit), size_t(dst - dstinit)};
+        }
+        if (last_chunk_options == only_full_chunks) {
+          return {SUCCESS, size_t(srccur - srcinit), size_t(dst - dstinit)};
+        }
+        ++src;
+        if (idx == 2 && (src == srcend || *src++ != '=')) {
+          return {INVALID_BASE64_CHARACTER, size_t(src - srcinit), size_t(dst - dstinit)};
+        }
+        while (src < srcend) {
+          if (is_base64(*src, options)) {
+            return {INVALID_BASE64_CHARACTER, size_t(src - srcinit), size_t(dst - dstinit)};
+          }
+          ++src;
+        }
+        break;
+      }
       uint8_t code = to_base64[uint8_t(c)];
       buffer[idx] = uint8_t(code);
       if (is_eight_byte(c) && code <= 63) {
@@ -11318,7 +11351,7 @@ simdutf_constexpr23 full_result base64_tail_decode_impl(
               }
               *dst++ = static_cast<char>((triple >> 16) & 0xFF);
               *dst++ = static_cast<char>((triple >> 8) & 0xFF);
-            } else if (!ignore_garbage && idx == 1 &&
+            } else if ((!ignore_garbage || options == base64_java_mime) && idx == 1 &&
                        (!is_partial(last_chunk_options) ||
                         (is_partial(last_chunk_options) &&
                          padding_characters > 0))) {
@@ -11367,6 +11400,38 @@ simdutf_constexpr23 full_result base64_tail_decode_safe(
   return base64_tail_decode_impl<true>(dst, outlen, src, length,
                                        padding_characters, options,
                                        last_chunk_options);
+}
+
+inline size_t last_set_bit(uint64_t bits) {
+#if defined(_MSC_VER) && !defined(__clang__)
+  unsigned long index;
+  _BitScanReverse64(&index, bits);
+  return index;
+#else
+  return 63 - __builtin_clzll(bits);
+#endif
+}
+
+template <class C>
+inline full_result finish_java_mime(char *dst, const C *src, const C *end,
+                                    const C *input, const char *output,
+                                    const char *buffer, size_t count, const C *pending_start,
+                                    last_chunk_handling_options last_chunk) {
+  size_t used = 0;
+  while (count - used >= 4) {
+    uint32_t bits = (uint32_t(uint8_t(buffer[used])) << 18) |
+                    (uint32_t(uint8_t(buffer[used + 1])) << 12) |
+                    (uint32_t(uint8_t(buffer[used + 2])) << 6) |
+                    uint8_t(buffer[used + 3]);
+    *dst++ = char(bits >> 16); *dst++ = char(bits >> 8); *dst++ = char(bits);
+    used += 4;
+  }
+  const size_t pending_count = count - used;
+  full_result result = base64_tail_decode_impl<false>(dst, 0, src, size_t(end - src), 0,
+      base64_java_mime, last_chunk, pending_start, buffer + used, pending_count);
+  result.input_count += size_t((pending_count != 0 ? pending_start : src) - input);
+  result.output_count += size_t(dst - output);
+  return result;
 }
 
 inline simdutf_constexpr23 full_result
@@ -11707,6 +11772,7 @@ base64_to_binary_details_impl(
     const char_type *input, size_t length, char *output, base64_options options,
     last_chunk_handling_options last_chunk_options) noexcept {
   const bool ignore_garbage =
+      (options == base64_options::base64_java_mime) ||
       (options == base64_options::base64_url_accept_garbage) ||
       (options == base64_options::base64_default_accept_garbage) ||
       (options == base64_options::base64_default_or_url_accept_garbage);
@@ -11763,6 +11829,7 @@ base64_to_binary_details_safe_impl(
     base64_options options,
     last_chunk_handling_options last_chunk_options) noexcept {
   const bool ignore_garbage =
+      (options == base64_options::base64_java_mime) ||
       (options == base64_options::base64_url_accept_garbage) ||
       (options == base64_options::base64_default_accept_garbage) ||
       (options == base64_options::base64_default_or_url_accept_garbage);
@@ -11907,6 +11974,8 @@ inline std::string_view to_string(base64_options options) {
     return "base64_url_accept_garbage";
   case base64_default_or_url:
     return "base64_default_or_url";
+  case base64_java_mime:
+    return "base64_java_mime";
   case base64_default_no_whitespace:
     return "base64_default_no_whitespace";
   case base64_url_no_whitespace:

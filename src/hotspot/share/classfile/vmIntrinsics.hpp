@@ -569,6 +569,9 @@ class methodHandle;
                                                                                                                         \
   /* support for java.util.Base64.Decoder*/                                                                             \
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decode0, java_util_Base64_Decoder, decode0_name, decode0_signature, F_R) \
+   do_name(decode0_name, "decode0") \
+   do_signature(decode0_signature, "([BII[B)I") \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
    do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                  \

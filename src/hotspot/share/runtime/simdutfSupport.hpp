@@ -38,6 +38,7 @@ class SimdUTF : AllStatic {
   static jint index_of_latin1(const jbyte* src, jint length, jint ch);
   static jint index_of_utf16(const jbyte* src, jint length, jint ch);
   static void encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url);
+  static jint decode_base64_mime(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jint decode_base64(const jbyte* src, jint length, jbyte* dst, jint capacity, jboolean url);
 };
 

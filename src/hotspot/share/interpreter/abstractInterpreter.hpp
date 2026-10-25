@@ -95,6 +95,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_StringLatin1_indexOfChar,
     java_lang_StringUTF16_indexOfChar,
     java_util_Base64_encodeBlock,
+    java_util_Base64_decode0,
     java_util_Base64_decodeBlock,
     java_lang_String_encodeUTF8Latin1,
     java_lang_String_encodeUTF8UTF16,
