@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +170,7 @@ public final class IOUtil {
                       int alignment, NativeDispatcher nd)
         throws IOException
     {
-        IOVecWrapper vec = IOVecWrapper.get(Math.min(length, IOV_MAX));
+        IOVecWrapper vec = IOVecWrapper.get(length);
 
         boolean completed = false;
         int iov_len = 0;
@@ -383,7 +382,7 @@ public final class IOUtil {
 
         throws IOException
     {
-        IOVecWrapper vec = IOVecWrapper.get(Math.min(length, IOV_MAX));
+        IOVecWrapper vec = IOVecWrapper.get(length);
 
         boolean completed = false;
         int iov_len = 0;

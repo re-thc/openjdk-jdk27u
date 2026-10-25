@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +53,7 @@ class IOVecWrapper {
     // The iovec array
     private final AllocatedNativeObject vecArray;
 
-    // Number of elements in iovec array
+    // Number of buffer slots
     private final int size;
 
     // Buffers and position/remaining corresponding to elements in iovec array
@@ -91,7 +92,7 @@ class IOVecWrapper {
         this.position  = new int[size];
         this.remaining = new int[size];
         this.shadow    = new ByteBuffer[size];
-        this.vecArray  = new AllocatedNativeObject(size * SIZE_IOVEC, false);
+        this.vecArray  = new AllocatedNativeObject(Math.min(size, IOUtil.IOV_MAX) * SIZE_IOVEC, false);
         this.address   = vecArray.address();
     }
 
