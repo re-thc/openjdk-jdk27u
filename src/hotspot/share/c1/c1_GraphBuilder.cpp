@@ -2701,7 +2701,7 @@ void GraphBuilder::connect_to_end(BlockBegin* beg) {
 void GraphBuilder::append_string_utf8_entry() {
   vmIntrinsics::ID id = method()->intrinsic_id();
   if ((id != vmIntrinsics::_encodeUTF8Latin1 && id != vmIntrinsics::_encodeUTF8UTF16 &&
-       id != vmIntrinsics::_decodeUTF8UTF16) ||
+       id != vmIntrinsics::_decodeUTF8UTF16 && id != vmIntrinsics::_decodeUTF8UTF16OrThrow) ||
       !SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 ||
       (compilation()->is_osr_compile() && scope()->is_top_scope())) {
     return;
@@ -2715,7 +2715,8 @@ void GraphBuilder::append_string_utf8_entry() {
   }
 
   const bool utf16 = id == vmIntrinsics::_encodeUTF8UTF16;
-  const bool decode = id == vmIntrinsics::_decodeUTF8UTF16;
+  const bool decode = id == vmIntrinsics::_decodeUTF8UTF16 ||
+                      id == vmIntrinsics::_decodeUTF8UTF16OrThrow;
   Value src = state()->local_at(0);
   Value start = state()->local_at(1);
   Value dst = state()->local_at(decode ? 3 : 2);
@@ -3778,7 +3779,8 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   // Install the guarded intrinsic when parsing their method entry instead.
   if (callee->intrinsic_id() == vmIntrinsics::_encodeUTF8Latin1 ||
       callee->intrinsic_id() == vmIntrinsics::_encodeUTF8UTF16 ||
-      callee->intrinsic_id() == vmIntrinsics::_decodeUTF8UTF16) {
+      callee->intrinsic_id() == vmIntrinsics::_decodeUTF8UTF16 ||
+      callee->intrinsic_id() == vmIntrinsics::_decodeUTF8UTF16OrThrow) {
     return false;
   }
   // For calling is_intrinsic_available we need to transition to

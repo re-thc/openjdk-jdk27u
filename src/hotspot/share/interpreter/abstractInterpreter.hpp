@@ -95,6 +95,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_String_encodeUTF8Latin1,
     java_lang_String_encodeUTF8UTF16,
     java_lang_String_decodeUTF8UTF16,
+    java_lang_String_decodeUTF8UTF16OrThrow,
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1

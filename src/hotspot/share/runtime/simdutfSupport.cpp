@@ -91,8 +91,8 @@ JRT_LEAF(jint, SimdUTF::encode_utf16_utf8(const jbyte* src, jint length, jbyte* 
   return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
 JRT_END
 
-// The CompactStrings constructor already owns a stable input snapshot and a
-// private destination with one UTF-16 unit of room for every remaining byte.
+// String owns either its constructor snapshot or the input transferred to
+// newStringOrThrow. Private output has one UTF-16 unit per remaining input byte.
 JRT_LEAF(jint, SimdUTF::decode_utf8_utf16(const jbyte* src, jint length, jbyte* dst))
   assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
   simdutf::result result = simdutf::convert_utf8_to_utf16_with_errors(

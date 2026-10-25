@@ -698,6 +698,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_encodeUTF8Latin1: return inline_encodeUTF8Latin1();
   case vmIntrinsics::_encodeUTF8UTF16: return inline_encodeUTF8UTF16();
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
   case vmIntrinsics::_decodeUTF8UTF16: return inline_decodeUTF8UTF16();
   case vmIntrinsics::_countPositives:
     return inline_countPositives();
@@ -816,6 +817,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_encodeUTF8_predicate(false);
   case vmIntrinsics::_encodeUTF8UTF16:
     return inline_encodeUTF8_predicate(true);
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
   case vmIntrinsics::_decodeUTF8UTF16:
     return inline_decodeUTF8UTF16_predicate();
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:

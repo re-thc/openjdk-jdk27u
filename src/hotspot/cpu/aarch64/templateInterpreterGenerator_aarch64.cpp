@@ -2159,7 +2159,8 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 
 address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpreter::MethodKind kind) {
   const bool utf16 = kind == Interpreter::java_lang_String_encodeUTF8UTF16;
-  const bool decode = kind == Interpreter::java_lang_String_decodeUTF8UTF16;
+  const bool decode = kind == Interpreter::java_lang_String_decodeUTF8UTF16 ||
+                      kind == Interpreter::java_lang_String_decodeUTF8UTF16OrThrow;
   const int maximum = 1024 * 1024;
   if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
     return nullptr;

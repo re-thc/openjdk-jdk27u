@@ -215,6 +215,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_String_encodeUTF8Latin1)
   method_entry(java_lang_String_encodeUTF8UTF16)
   method_entry(java_lang_String_decodeUTF8UTF16)
+  method_entry(java_lang_String_decodeUTF8UTF16OrThrow)
 
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
@@ -488,6 +489,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_String_encodeUTF8Latin1:
   case Interpreter::java_lang_String_encodeUTF8UTF16:
   case Interpreter::java_lang_String_decodeUTF8UTF16:
+  case Interpreter::java_lang_String_decodeUTF8UTF16OrThrow:
 #if defined(AMD64) || defined(AARCH64)
     entry_point = generate_String_utf8_entry(kind);
 #endif

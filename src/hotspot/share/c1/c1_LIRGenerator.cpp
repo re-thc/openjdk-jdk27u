@@ -2814,7 +2814,8 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 // an unconditional leaf, so linear scan can preserve all fallback values.
 void LIRGenerator::do_stringUTF8(Intrinsic* x) {
   bool utf16 = x->id() == vmIntrinsics::_encodeUTF8UTF16;
-  bool decode = x->id() == vmIntrinsics::_decodeUTF8UTF16;
+  bool decode = x->id() == vmIntrinsics::_decodeUTF8UTF16 ||
+                x->id() == vmIntrinsics::_decodeUTF8UTF16OrThrow;
   LIRItem src(x->argument_at(0), this);
   LIRItem start(x->argument_at(1), this);
   LIRItem dst(x->argument_at(2), this);
@@ -2862,6 +2863,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
   case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
   case vmIntrinsics::_decodeUTF8UTF16:
     do_stringUTF8(x);
     break;

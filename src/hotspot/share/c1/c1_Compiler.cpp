@@ -112,6 +112,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
   case vmIntrinsics::_decodeUTF8UTF16:
 #if defined(AMD64) || defined(AARCH64)
     return true;

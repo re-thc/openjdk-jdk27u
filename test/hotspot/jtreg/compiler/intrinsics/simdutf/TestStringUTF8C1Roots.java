@@ -28,13 +28,14 @@
  * @requires vm.compiler1.enabled
  * @library /test/lib
  * @modules java.base/jdk.internal.access
- * @build jdk.test.whitebox.WhiteBox TestLatin1UTF8 TestUTF16UTF8 TestUTF8Decode
+ * @build jdk.test.whitebox.WhiteBox TestLatin1UTF8 TestUTF16UTF8 TestUTF8Decode TestStrictUTF8Decode
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:TieredStopAtLevel=1
  *      -XX:CompileCommand=dontinline,java.lang.String::encodeUTF8Latin1
  *      -XX:CompileCommand=dontinline,java.lang.String::encodeUTF8UTF16
  *      -XX:CompileCommand=dontinline,java.lang.String::decodeUTF8_UTF16
+ *      -XX:CompileCommand=dontinline,java.lang.String::decodeUTF8_UTF16OrThrow
  *      TestStringUTF8C1Roots
  */
 
@@ -47,7 +48,8 @@ public class TestStringUTF8C1Roots {
         Method[] methods = {
                 String.class.getDeclaredMethod("encodeUTF8Latin1", byte[].class, int.class, byte[].class, int.class),
                 String.class.getDeclaredMethod("encodeUTF8UTF16", byte[].class, int.class, byte[].class, int.class, Class.class),
-                String.class.getDeclaredMethod("decodeUTF8_UTF16", byte[].class, int.class, int.class, byte[].class, int.class)
+                String.class.getDeclaredMethod("decodeUTF8_UTF16", byte[].class, int.class, int.class, byte[].class, int.class),
+                String.class.getDeclaredMethod("decodeUTF8_UTF16OrThrow", byte[].class, int.class, int.class, byte[].class, int.class)
         };
         for (Method method : methods) {
             if (!wb.enqueueMethodForCompilation(method, 1) || wb.getMethodCompilationLevel(method) != 1) {
@@ -57,5 +59,6 @@ public class TestStringUTF8C1Roots {
         TestLatin1UTF8.main(args);
         TestUTF16UTF8.main(args);
         TestUTF8Decode.main(args);
+        TestStrictUTF8Decode.main(args);
     }
 }

@@ -426,6 +426,8 @@ class methodHandle;
   do_intrinsic(_decodeUTF8UTF16, java_lang_String, decodeUTF8UTF16_name, decodeUTF8UTF16_signature, F_S)                \
    do_name(decodeUTF8UTF16_name, "decodeUTF8_UTF16")                                                                     \
    do_signature(decodeUTF8UTF16_signature, "([BII[BI)I")                                                                 \
+  do_intrinsic(_decodeUTF8UTF16OrThrow, java_lang_String, decodeUTF8UTF16OrThrow_name, decodeUTF8UTF16_signature, F_S) \
+   do_name(decodeUTF8UTF16OrThrow_name, "decodeUTF8_UTF16OrThrow")                                                        \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \
    do_signature(countPositives_signature,                  "([BII)I")                                                   \

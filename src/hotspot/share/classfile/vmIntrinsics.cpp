@@ -198,6 +198,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
   case vmIntrinsics::_decodeUTF8UTF16:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -522,6 +523,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_encodeUTF8Latin1:
   case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
   case vmIntrinsics::_decodeUTF8UTF16:
     if (!UseSIMDUTFIntrinsics) return true;
     break;

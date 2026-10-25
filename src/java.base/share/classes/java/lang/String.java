@@ -1245,6 +1245,8 @@ public final class String
         return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
     }
 
+    // newStringOrThrow transfers ownership of the input array to String.
+    @IntrinsicCandidate
     private static int decodeUTF8_UTF16OrThrow(
             byte[] src, int sp, int sl, byte[] dst, int dp)
             throws MalformedInputException {
