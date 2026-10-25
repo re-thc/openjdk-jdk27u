@@ -1101,9 +1101,10 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
+  const bool equality = kind == Interpreter::stringzilla_equalsRange;
   const Register src = c_rarg0;
-  const Register length = c_rarg1;
-  const Register tgt = c_rarg2;
+  const Register length = equality ? c_rarg2 : c_rarg1;
+  const Register tgt = equality ? c_rarg1 : c_rarg2;
   const Register tgt_length = c_rarg3;
   const bool utf16 = kind == Interpreter::stringzilla_indexOfUTF16 ||
                      kind == Interpreter::stringzilla_indexOfUTF16Latin1;
@@ -1152,9 +1153,19 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   __ andr(sp, r19_sender_sp, -16);
   __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
   __ mov(r29, sp);
-  __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
-                        src, length, tgt, tgt_length);
+  if (equality) {
+    __ add(tgt, tgt, tgt_length);
+    __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
+                          src, tgt, length);
+  } else {
+    __ super_call_VM_leaf(StringZilla::entry(AbstractInterpreter::method_intrinsic(kind)),
+                          src, length, tgt, tgt_length);
+  }
   __ ldp(r29, r30, Address(__ post(sp, 2 * wordSize)));
+  if (whole_array) {
+    __ cmpw(r0, JVM_STRINGZILLA_FALLBACK);
+    __ br(Assembler::EQ, slow_path);
+  }
   if (utf16) __ asrw(r0, r0, 1);
   __ ret(lr);
   __ bind(slow_path);

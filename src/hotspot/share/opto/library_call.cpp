@@ -298,9 +298,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
   case vmIntrinsics::_compareToUL:              return inline_string_compareTo(StrIntrinsicNode::UL);
 
-  case vmIntrinsics::_stringzillaCompilerTier:
-    set_result(intcon(CompLevel_full_optimization));
-    return true;
   case vmIntrinsics::_stringzillaScanLatin1:
   case vmIntrinsics::_stringzillaFindCharLatin1:
   case vmIntrinsics::_stringzillaFindCharUTF16:
@@ -308,6 +305,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_stringzillaRfindCharUTF16:
     return inline_stringzilla_char();
   case vmIntrinsics::_stringzillaEqualsRange:
+    return inline_stringzilla_equals_range();
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
   case vmIntrinsics::_stringzillaFindLatin1:
@@ -1247,9 +1245,6 @@ bool LibraryCallKit::inline_stringzilla_char() {
   Node* src = must_be_not_null(argument(0), true);
   Node* offset = argument(1);
   Node* length = argument(2);
-  RegionNode* bailout = create_bailout();
-  generate_string_range_check(src, offset, length, false, bailout);
-  if (check_bailout(bailout)) return true;
   const Type** fields = TypeTuple::fields(3);
   fields[TypeFunc::Parms] = TypePtr::NOTNULL;
   fields[TypeFunc::Parms + 1] = TypeInt::INT;
@@ -1266,23 +1261,34 @@ bool LibraryCallKit::inline_stringzilla_char() {
   return true;
 }
 
+bool LibraryCallKit::inline_stringzilla_equals_range() {
+  Node* src = must_be_not_null(argument(0), true);
+  Node* tgt = must_be_not_null(argument(3), true);
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* src_start = array_element_address(src, argument(1), T_BYTE);
+  Node* tgt_start = array_element_address(tgt, argument(4), T_BYTE);
+  Node* call = make_runtime_call(RC_LEAF, type, StringZilla::entry(intrinsic_id()),
+                                "stringzillaEqual", TypePtr::BOTTOM, src_start, tgt_start, argument(2));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  clear_upper_avx();
+  return true;
+}
+
 bool LibraryCallKit::inline_stringzilla() {
   Node* src = must_be_not_null(argument(0), true);
-  Node* offset = argument(1);
-  Node* length = argument(2);
   Node* tgt = must_be_not_null(argument(3), true);
-  Node* tgt_length = argument(4);
-  RegionNode* bailout = create_bailout();
-  generate_string_range_check(src, offset, length, false, bailout);
-  bool equality = intrinsic_id() == vmIntrinsics::_stringzillaEqualsRange;
-  generate_string_range_check(tgt, equality ? tgt_length : intcon(0),
-                              equality ? length : tgt_length, false, bailout);
-  if (check_bailout(bailout)) return true;
-  Node* src_start = array_element_address(src, offset, T_BYTE);
+  Node* src_start = array_element_address(src, argument(1), T_BYTE);
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
   Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
                                 StringZilla::entry(intrinsic_id()), "stringzillaSearch",
-                                TypePtr::BOTTOM, src_start, length, tgt_start, tgt_length);
+                                TypePtr::BOTTOM, src_start, argument(2), tgt_start, argument(4));
   set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   clear_upper_avx();
   return true;

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Reverse-search dispatch folds the compiling tier and preserves boundary matches
+ * @summary Reverse searches preserve matches across compilation tiers and boundaries
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
  * @library /test/lib
@@ -33,7 +33,6 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaCompilerTier TestStringZillaDispatch
  * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestStringZillaDispatch interpreted
  * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseStringZillaIntrinsics TestStringZillaDispatch interpreted
  * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:DisableIntrinsic=_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaRfindUTF16Latin1 TestStringZillaDispatch interpreted
@@ -66,152 +65,30 @@ public class TestStringZillaDispatch {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
-        Class<?> bridge = Class.forName("java.lang.StringZilla");
-        var backendField = bridge.getDeclaredField("BACKEND");
-        backendField.setAccessible(true);
-        int backend = backendField.getInt(null);
-        var configurationField = bridge.getDeclaredField("CONFIGURATION");
-        configurationField.setAccessible(true);
-        boolean msvcSerial = backend == 0 && (configurationField.getInt(null) & 16) != 0;
-        Class<?> helper = Class.forName("java.lang.StringZillaDispatchHelper");
-        Method tier = helper.getMethod("tier");
-        Method latin = helper.getMethod("latin", int.class, int.class);
-        Method latinFilter = helper.getMethod("latinFilter");
-        Method utf16 = helper.getMethod("utf16", int.class, int.class);
-        Method search = helper.getMethod("search", String.class, String.class, int.class);
-        Method forwardUTF16 = helper.getMethod("forwardUTF16", int.class, boolean.class);
-        Method charUTF16 = helper.getMethod("charUTF16", int.class, boolean.class);
-        Method intrinsic = String.class.getDeclaredMethod("compilerTier");
+        Method search = Class.forName("java.lang.StringZillaDispatchHelper")
+                .getMethod("search", String.class, String.class, int.class);
         if (args.length != 0) {
-            checkForwardAndChar(forwardUTF16, charUTF16, backend, msvcSerial, 0);
-            checkNarrowCandidates(search);
-            checkShortAndMixed(search);
-            checkIntermediateUTF16(search);
-            checkReverseSuffixes(search);
-            checkLongUTF16Filters(search);
+            checkSearches(search);
             return;
         }
         for (int level : new int[]{1, 4}) {
-            for (Method method : new Method[]{tier, latin, latinFilter, utf16, search, forwardUTF16, charUTF16}) {
-                WB.deoptimizeMethod(method);
-                if (!WB.enqueueMethodForCompilation(method, level)
-                        || !WB.isMethodCompiled(method)
-                        || WB.getMethodCompilationLevel(method) != level) {
-                    throw new AssertionError("Cannot compile " + method + " at " + level);
-                }
+            WB.deoptimizeMethod(search);
+            if (!WB.enqueueMethodForCompilation(search, level) || !WB.isMethodCompiled(search)
+                    || WB.getMethodCompilationLevel(search) != level) {
+                throw new AssertionError("Cannot compile " + search + " at " + level);
             }
-            int expectedTier = WB.isIntrinsicAvailable(intrinsic, level) ? level : 0;
-            if ((int)tier.invoke(null) != expectedTier) {
-                throw new AssertionError("Tier not folded at compilation level " + level);
-            }
-            checkForwardAndChar(forwardUTF16, charUTF16, backend, msvcSerial, expectedTier);
-            boolean serialC2 = backend == 0 && expectedTier == 4;
-            boolean avx2C2 = backend == 1 && expectedTier == 4;
-            boolean msvcC2 = msvcSerial && expectedTier == 4;
-            boolean msvcC1 = msvcSerial && expectedTier == 1;
-            boolean scalarC1 = (backend == 0 || backend == 1) && expectedTier == 1;
-            boolean scalarC2 = (backend == 0 || backend == 1) && expectedTier == 4;
-            boolean neonC1 = backend == 4 && expectedTier == 1;
-            boolean neonC2 = backend == 4 && expectedTier == 4;
-            boolean longLatinC1 = (backend == 0 || backend == 4) && expectedTier == 1;
-            boolean longLatinC2 = serialC2 || neonC2;
-            boolean shortUTF16C2 = scalarC2 || neonC2;
-            boolean longUTF16C1 = scalarC1 || neonC1;
-            if ((boolean)latinFilter.invoke(null) != serialC2) {
-                throw new AssertionError("Latin-1 filter routing at compilation level " + level);
-            }
-            check(latin, 4096, 31, !serialC2);
-            check(latin, 1023, 32, !serialC2);
-            check(latin, 1024, 32, true);
-            check(latin, 4096, 64, true);
-            check(latin, 257, 256, !scalarC2);
-            check(latin, 258, 256, !scalarC2);
-            check(latin, 259, 256, !serialC2);
-            check(latin, 260, 256, !serialC2);
-            check(latin, 257, 257, !longLatinC1 && !longLatinC2);
-            check(latin, 258, 257, !longLatinC1 && !longLatinC2);
-            check(latin, 259, 257, !longLatinC1 && !longLatinC2);
-            check(latin, 260, 257, !longLatinC2);
-            check(latin, 261, 257, !longLatinC2);
-            check(latin, 271, 257, !longLatinC2);
-            check(latin, 272, 257, !neonC2);
-            check(latin, 273, 257, true);
-            check(latin, 288, 257, true);
-            check(latin, 289, 257, true);
-            check(latin, 290, 257, true);
-            check(latin, 319, 257, true);
-            check(latin, 320, 257, true);
-            check(latin, 321, 257, true);
-            check(latin, 322, 257, true);
-            check(latin, 770, 257, true);
-            check(utf16, 128, 4, !shortUTF16C2);
-            check(utf16, 255, 4, !shortUTF16C2);
-            check(utf16, 256, 4, !shortUTF16C2);
-            check(utf16, 511, 32, !shortUTF16C2);
-            check(utf16, 512, 8, !msvcC2 && !neonC2);
-            check(utf16, 1023, 8, !msvcC2 && !neonC2);
-            check(utf16, 1024, 8, !msvcC2);
-            check(utf16, 1025, 8, !msvcC2);
-            check(utf16, 512, 9, !msvcC2);
-            check(utf16, 512, 32, !msvcC2);
-            check(utf16, 512, 128, !msvcC2);
-            check(utf16, 512, 129, true);
-            check(utf16, 128, 33, !shortUTF16C2);
-            check(utf16, 129, 128, !shortUTF16C2);
-            check(utf16, 129, 129, msvcC1 || (!longUTF16C1 && !shortUTF16C2));
-            check(utf16, 130, 129, msvcC1 || (!longUTF16C1 && !shortUTF16C2));
-            check(utf16, 135, 129, !longUTF16C1 && !shortUTF16C2);
-            check(utf16, 136, 129, !shortUTF16C2);
-            check(utf16, 137, 129, !shortUTF16C2);
-            check(utf16, 142, 129, !shortUTF16C2);
-            check(utf16, 143, 129, !shortUTF16C2);
-            check(utf16, 144, 129, !avx2C2);
-            check(utf16, 145, 129, true);
-            check(utf16, 146, 129, true);
-            check(utf16, 512, 385, true);
-            check(utf16, 4096, 4, !msvcC2);
-            checkBoundaries(search);
-            checkNarrowCandidates(search);
-            checkFilteredBlocks(search);
-            checkShortAndMixed(search);
-            checkIntermediateUTF16(search);
-            checkReverseSuffixes(search);
-            checkLongUTF16Filters(search);
+            checkSearches(search);
         }
     }
 
-    private static void checkForwardAndChar(Method forward, Method chars, int backend,
-                                             boolean msvcSerial, int tier) throws Exception {
-        boolean serialC1 = backend == 0 && tier == 1;
-        boolean serialC2 = backend == 0 && tier == 4;
-        boolean avx2C2 = backend == 1 && tier == 4;
-        boolean neonC2 = backend == 4 && tier == 4;
-        boolean msvcC1 = msvcSerial && tier == 1;
-        for (int count : new int[]{1, 4, 8, 9, 31, 32, 63, 64, 65, 128, 129}) {
-            for (boolean mixed : new boolean[]{false, true}) {
-                boolean forwardSearchNative = !serialC1 || (mixed && count == 64);
-                if ((boolean)forward.invoke(null, count, mixed) != forwardSearchNative) {
-                    throw new AssertionError("Forward UTF-16 routing: tier=" + tier
-                            + " count=" + count + " mixed=" + mixed);
-                }
-            }
-        }
-        for (int length : new int[]{0, 127, 128, 129, 255, 256, 257, 767, 768, 769, 4096, 65536}) {
-            boolean forwardNative = !msvcC1;
-            boolean reverseNative = forwardNative && !serialC2
-                    && (!avx2C2 || length >= 256)
-                    && (!neonC2 || length >= 768);
-            if ((boolean)chars.invoke(null, length, false) != forwardNative
-                    || (boolean)chars.invoke(null, length, true) != reverseNative) {
-                throw new AssertionError("UTF-16 character routing: tier=" + tier + " length=" + length);
-            }
-        }
-    }
-
-    private static void check(Method method, int length, int count, boolean expected) throws Exception {
-        if ((boolean)method.invoke(null, length, count) != expected) {
-            throw new AssertionError(method + " length=" + length + " count=" + count);
-        }
+    private static void checkSearches(Method search) throws Exception {
+        checkBoundaries(search);
+        checkNarrowCandidates(search);
+        checkFilteredBlocks(search);
+        checkShortAndMixed(search);
+        checkIntermediateUTF16(search);
+        checkReverseSuffixes(search);
+        checkLongUTF16Filters(search);
     }
 
     private static void checkFilteredBlocks(Method search) throws Exception {

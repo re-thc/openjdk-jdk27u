@@ -24,30 +24,6 @@
 package java.lang;
 
 public class StringZillaDispatchHelper {
-    public static int tier() {
-        return String.compilerTier();
-    }
-
-    public static boolean latin(int length, int count) {
-        return StringZilla.useReverseLatin1(length, count);
-    }
-
-    public static boolean latinFilter() {
-        return StringZilla.useReverseLatin1Filter();
-    }
-
-    public static boolean utf16(int length, int count) {
-        return StringZilla.useReverseUTF16(length, count);
-    }
-
-    public static boolean forwardUTF16(int count, boolean mixed) {
-        return StringZilla.useForwardUTF16(count, mixed);
-    }
-
-    public static boolean charUTF16(int length, boolean reverse) {
-        return StringZilla.useCharUTF16(length, reverse);
-    }
-
     public static int search(String value, String needle, int from) {
         return value.lastIndexOf(needle, from);
     }

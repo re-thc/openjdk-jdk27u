@@ -282,8 +282,8 @@ JVM_ENTRY(jint, JVM_StringZillaEqualsRange(JNIEnv* env, jclass ignored, jbyteArr
                                         jint offset, jint length, jbyteArray tgt, jint tgt_offset))
   typeArrayOop s = typeArrayOop(JNIHandles::resolve_non_null(src));
   typeArrayOop t = typeArrayOop(JNIHandles::resolve_non_null(tgt));
-  return StringZilla::equal_range((const char*)s->byte_at_addr(offset), length,
-                                (const char*)t->byte_at_addr(0), tgt_offset);
+  return StringZilla::equal((const char*)s->byte_at_addr(offset),
+                            (const char*)t->byte_at_addr(tgt_offset), length);
 JVM_END
 
 JVM_LEAF(jlong, JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored))

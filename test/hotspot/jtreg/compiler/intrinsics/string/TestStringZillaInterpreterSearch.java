@@ -56,6 +56,9 @@ public class TestStringZillaInterpreterSearch {
     }
 
     public static void main(String[] args) {
+        // A first odd-byte vendor hit must resume Java and find the aligned match.
+        check(new char[]{0x100, 0x200, 0, 1, 2}, new char[]{1, 2});
+        check(new char[]{0x200, 0x401, 3, 0x102, 0x304}, new char[]{0x102, 0x304});
         Random random = new Random(729041);
         for (int coder = 0; coder < 3; coder++) {
             int sourceBase = coder == 0 ? 0 : 0x400;

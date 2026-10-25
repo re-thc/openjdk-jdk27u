@@ -45,9 +45,10 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestStringZillaWork {
     private static final int MAX = 65536;
-    private static Method search, character, equality;
+    private static Method search, character, equality, range;
     private static final MethodHandle privateEquals;
     private static final MethodHandle checkedEquals;
+    private static final MethodHandle rangeEquals;
     static {
         try {
             Class<?> latin = Class.forName("java.lang.StringLatin1");
@@ -55,6 +56,10 @@ public class TestStringZillaWork {
                     .findStatic(latin, "equals0", MethodType.methodType(boolean.class, byte[].class, byte[].class));
             checkedEquals = MethodHandles.privateLookupIn(latin, MethodHandles.lookup())
                     .findStatic(latin, "equals", MethodType.methodType(boolean.class, byte[].class, byte[].class));
+            Class<?> bridge = Class.forName("java.lang.StringZilla");
+            rangeEquals = MethodHandles.privateLookupIn(bridge, MethodHandles.lookup())
+                    .findStatic(bridge, "equalsRange", MethodType.methodType(int.class,
+                            byte[].class, int.class, int.class, byte[].class, int.class));
         } catch (ReflectiveOperationException failure) {
             throw new ExceptionInInitializerError(failure);
         }
@@ -68,6 +73,11 @@ public class TestStringZillaWork {
         return (boolean)checkedEquals.invokeExact(left, right) ? cookie : -cookie;
     }
 
+    public static int probeRange(byte[] source, int offset, int length,
+                                 byte[] target, int targetOffset) throws Throwable {
+        return (int)rangeEquals.invokeExact(source, offset, length, target, targetOffset);
+    }
+
     private static void equal(int actual, int expected) {
         if (actual != expected) throw new AssertionError(actual + " != " + expected);
     }
@@ -78,7 +88,7 @@ public class TestStringZillaWork {
         return buffer.array();
     }
 
-    private static void check() throws Exception {
+    private static void check() throws Throwable {
         for (int encoding = 0; encoding < 3; encoding++) {
             byte[] source = new byte[MAX * 2 + 34];
             if (encoding == 0) Arrays.fill(source, (byte)'a');
@@ -108,6 +118,14 @@ public class TestStringZillaWork {
             equal((Integer)character.invoke(null, source, offset, source.length - offset,
                                             0x1f642, true, reverse), position - offset);
         }
+        // Independent source/target offsets exercise the equality leaf ABI.
+        byte[] sourceRange = new byte[320], targetRange = new byte[352];
+        for (int i = 0; i < 257; i++) sourceRange[7 + i] = targetRange[19 + i] = (byte)i;
+        equal((Integer)range.invoke(null, sourceRange, 7, 257, targetRange, 19), 1);
+        equal(probeRange(sourceRange, 7, 257, targetRange, 19), 1);
+        targetRange[19 + 256] ^= 1;
+        equal((Integer)range.invoke(null, sourceRange, 7, 257, targetRange, 19), 0);
+        equal(probeRange(sourceRange, 7, 257, targetRange, 19), 0);
         byte[] left = new byte[MAX * 2 + 17];
         Arrays.fill(left, (byte)7);
         byte[] right = left.clone();
@@ -129,7 +147,12 @@ public class TestStringZillaWork {
         character = bridge.getDeclaredMethod("searchCharLarge", byte[].class, int.class, int.class,
                                              int.class, boolean.class, boolean.class);
         equality = bridge.getDeclaredMethod("equalsLarge", byte[].class, byte[].class);
-        Method[] methods = {search, character, equality};
+        range = bridge.getDeclaredMethod("equalsRange", byte[].class, int.class, int.class,
+                                         byte[].class, int.class);
+        range.setAccessible(true);
+        Method probe = TestStringZillaWork.class.getMethod("probeRange",
+                byte[].class, int.class, int.class, byte[].class, int.class);
+        Method[] methods = {search, character, equality, probe};
         for (Method method : methods) method.setAccessible(true);
         check();
         WhiteBox wb = WhiteBox.getWhiteBox();
@@ -149,7 +172,7 @@ public class TestStringZillaWork {
             equal(probeChecked(small, small.clone(), 123), 123);
         }
         for (String name : new String[]{"probePrivate", "probeChecked"}) {
-            Method probe = TestStringZillaWork.class.getMethod(name, byte[].class, byte[].class, int.class);
+            probe = TestStringZillaWork.class.getMethod(name, byte[].class, byte[].class, int.class);
             for (boolean same : new boolean[]{true, false}) {
                 wb.deoptimizeMethod(probe);
                 if (!wb.enqueueMethodForCompilation(probe, 1) || !wb.isMethodCompiled(probe) ||

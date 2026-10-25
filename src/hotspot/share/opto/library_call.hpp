@@ -199,6 +199,7 @@ class LibraryCallKit : public GraphKit {
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
   bool inline_stringzilla();
+  bool inline_stringzilla_equals_range();
   bool inline_stringzilla_char();
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOf(StrIntrinsicNode::ArgEnc ae);

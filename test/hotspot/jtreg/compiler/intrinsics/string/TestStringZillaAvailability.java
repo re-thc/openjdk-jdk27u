@@ -55,18 +55,17 @@ public class TestStringZillaAvailability {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, byte[].class, int.class), expected);
         }
         check(wb, klass.getDeclaredMethod("equalsRange", byte[].class, int.class, int.class, byte[].class, int.class), expected);
-        check(wb, String.class.getDeclaredMethod("compilerTier"), expected);
         for (String name : characters) {
             check(wb, klass.getDeclaredMethod(name, byte[].class, int.class, int.class, int.class), expected);
         }
         Class<?> latin1 = Class.forName("java.lang.StringLatin1");
         Method equals = latin1.getDeclaredMethod("equals0", byte[].class, byte[].class);
-        if (wb.isIntrinsicAvailable(equals, 1) != expected || !wb.isIntrinsicAvailable(equals, 4)) {
-            throw new AssertionError("String equality must enable C1 independently and retain C2");
+        if (wb.isIntrinsicAvailable(equals, 1) || !wb.isIntrinsicAvailable(equals, 4)) {
+            throw new AssertionError("C1 must parse Java equality and retain its leaf intrinsic; C2 keeps string equality");
         }
         Method checked = latin1.getDeclaredMethod("equals", byte[].class, byte[].class);
-        if (wb.isIntrinsicAvailable(checked, 1) != expected || wb.isIntrinsicAvailable(checked, 4)) {
-            throw new AssertionError("Checked equality must be C1-only");
+        if (wb.isIntrinsicAvailable(checked, 1) || wb.isIntrinsicAvailable(checked, 4)) {
+            throw new AssertionError("The ordinary checked wrapper must remain Java");
         }
     }
 

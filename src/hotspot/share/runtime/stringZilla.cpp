@@ -81,8 +81,8 @@ address StringZilla::kernels_address() {
   return (address)&published_kernels + Atomic<const StringZillaKernels*>::value_offset_in_bytes();
 }
 
-int StringZilla::equal_range(const char* src, int length, const char* tgt, int tgt_offset) {
-  return equal_bytes(src, tgt + tgt_offset, length);
+int StringZilla::equal(const char* src, const char* tgt, int length) {
+  return equal_bytes(src, tgt, length);
 }
 
 int StringZilla::scan_latin1(const char* src, int length, int mode) {
@@ -129,7 +129,7 @@ address StringZilla::entry(vmIntrinsics::ID id) {
       return table == nullptr ? CAST_FROM_FN_PTR(address, StringZilla::scan_latin1)
                               : CAST_FROM_FN_PTR(address, table->scanLatin1);
     }
-    case vmIntrinsics::_stringzillaEqualsRange: return CAST_FROM_FN_PTR(address, StringZilla::equal_range);
+    case vmIntrinsics::_stringzillaEqualsRange:
     case vmIntrinsics::_equalsL:
       return table == nullptr ? CAST_FROM_FN_PTR(address, equal_bytes)
                               : CAST_FROM_FN_PTR(address, table->equal);
@@ -194,8 +194,5 @@ const char* StringZilla::name_for_address(address addr) {
   NAME_ENTRY(_stringzillaScanLatin1, scanLatin1, StringZilla::scan_latin1)
   NAME_ENTRY(_equalsL, equal, equal_bytes)
 #undef NAME_ENTRY
-  if (addr == CAST_FROM_FN_PTR(address, StringZilla::equal_range)) {
-    return "StringZilla::entry(vmIntrinsics::_stringzillaEqualsRange)";
-  }
   return nullptr;
 }

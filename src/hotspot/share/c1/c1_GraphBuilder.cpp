@@ -3570,9 +3570,6 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   // Some intrinsics need special IR nodes.
   switch(id) {
-  case vmIntrinsics::_stringzillaCompilerTier:
-    if (!ignore_return) ipush(append(new Constant(new IntConstant(CompLevel_simple))));
-    return;
   case vmIntrinsics::_getReference           : append_unsafe_get(callee, T_OBJECT,  false); return;
   case vmIntrinsics::_getBoolean             : append_unsafe_get(callee, T_BOOLEAN, false); return;
   case vmIntrinsics::_getByte                : append_unsafe_get(callee, T_BYTE,    false); return;
@@ -3638,9 +3635,7 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   // create intrinsic node
   const bool has_receiver = !callee->is_static();
   ValueType* result_type = as_ValueType(callee->return_type());
-  // The bounded equality intrinsic can deoptimize and reexecute its call.
-  // Exception-only state may discard the arguments and live caller locals.
-  ValueStack* state_before = id == vmIntrinsics::_equalsL ? copy_state_before() : copy_state_for_exception();
+  ValueStack* state_before = copy_state_for_exception();
 
   Values* args = state()->pop_arguments(callee->arg_size());
 
@@ -3661,14 +3656,6 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
     }
   }
 
-  if (id == vmIntrinsics::_equalsL) {
-    // Expose lengths to HIR value numbering. In particular, reuse the source
-    // length already loaded by the public wrapper's bounded-work guard.
-    Value src_length = append(new ArrayLength(args->at(0), state_before));
-    Value tgt_length = append(new ArrayLength(args->at(1), state_before));
-    args->append(src_length);
-    args->append(tgt_length);
-  }
 
   Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(),
                                     args, has_receiver, state_before,
@@ -3704,15 +3691,6 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     } else {
       return false;
     }
-  }
-  if (callee->intrinsic_id() == vmIntrinsics::_equalsLChecked) {
-    // Parse Java control flow, including its ordinary safepointing slow call.
-    // Reuse the existing range intrinsic without another platform LIR stub.
-    ciMethod* helper = callee->holder()->find_method(ciSymbol::make("equalsC1"), callee->signature()->as_symbol());
-    if (helper == nullptr) {
-      return false;
-    }
-    return try_inline_full(helper, true, ignore_return, Bytecodes::_invokestatic);
   }
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
@@ -4243,15 +4221,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
           // We don't do CHA here so only inline static and statically bindable methods.
           if (target->is_static() || target->can_be_statically_bound()) {
             Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-            // linkTo* has already popped MemberName. A guarded intrinsic has
-            // no callee Java frame in which to resume, so parsing the private
-            // equality body preserves method-handle deoptimization semantics.
-            if (target->intrinsic_id() == vmIntrinsics::_equalsL ||
-                target->intrinsic_id() == vmIntrinsics::_equalsLChecked) {
-              if (try_inline_full(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
-                return true;
-              }
-            } else if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
+            if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
               return true;
             }
           } else {

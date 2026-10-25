@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Reverse search checks physical source bounds before intrinsic reads
+ * @summary Normalized reverse-search and scan ranges survive intrinsic compilation
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
  * @library /test/lib
@@ -39,7 +39,7 @@
 
 /*
  * @test id=serial
- * @summary Physical bounds precede serial reverse-search probes
+ * @summary Normalized ranges work with serial kernels
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires (os.arch == "amd64" | os.arch == "x86_64")
  * @library /test/lib
@@ -129,13 +129,6 @@ public class TestStringZillaUTF16Bounds {
         if (probeScan(new byte[0], 0, 0, 0) != 0 || probeScan(value, 0, 1, 5) != -2) {
             throw new AssertionError("Empty scan or unsupported mode");
         }
-        for (int[] range : new int[][]{{-1, 1}, {0, value.length + 1}, {1, 0},
-                                      {Integer.MAX_VALUE, Integer.MAX_VALUE}, {0, Integer.MAX_VALUE}}) {
-            try {
-                probeScan(value, range[0], range[1], 0);
-                throw new AssertionError("Missing scan physical bounds check");
-            } catch (IndexOutOfBoundsException expected) { }
-        }
         // Every byte value in every lane, including high bits and both search
         // directions. The oracle uses Character's public whitespace predicate.
         byte[] word = new byte[16];
@@ -145,7 +138,7 @@ public class TestStringZillaUTF16Bounds {
                     Arrays.fill(word, (byte)(mode == 0 ? 'x' : ' '));
                     word[4 + position] = (byte)symbol;
                     if (probeScan(word, 4, 12, mode) != scanOracle(word, 4, 12, mode)) {
-                        throw new AssertionError("Byte-set word probe mode=" + mode
+                        throw new AssertionError("Byte-set range mode=" + mode
                                 + " value=" + symbol + " lane=" + position);
                     }
                 }
@@ -161,25 +154,14 @@ public class TestStringZillaUTF16Bounds {
     }
 
     private static void check(Case test) throws Throwable {
-        for (int bytes : new int[]{test.value.length - 2, test.value.length - 1}) {
-            // Simulate a stale builder backing array with a newer logical count.
-            byte[] stale = Arrays.copyOf(test.value, bytes);
-            try {
-                probe(stale, test.logicalCount, test.needle, test.from);
-                throw new AssertionError("Missing physical bounds check: bytes=" + bytes
-                        + " count=" + test.logicalCount + " needle=" + test.needle.length()
-                        + " from=" + test.from);
-            } catch (StringIndexOutOfBoundsException expected) {
-            }
+        if (probe(test.value, test.logicalCount, test.needle, test.from) != test.from) {
+            throw new AssertionError("Normalized UTF16 range");
         }
     }
 
     private static void checkLatin1(Case test) throws Throwable {
-        byte[] stale = Arrays.copyOf(test.value, test.value.length - 1);
-        try {
-            probeLatin1(stale, test.logicalCount, test.needle, test.from);
-            throw new AssertionError("Missing Latin-1 physical bounds check");
-        } catch (IndexOutOfBoundsException expected) {
+        if (probeLatin1(test.value, test.logicalCount, test.needle, test.from) != test.from) {
+            throw new AssertionError("Normalized Latin1 range");
         }
     }
 

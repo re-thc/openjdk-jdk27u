@@ -36,7 +36,7 @@ class StringZilla : AllStatic {
   static address kernels_address();
   static void register_kernels(const void* table);
   static int capabilities();
-  static int equal_range(const char* src, int length, const char* tgt, int tgt_offset);
+  static int equal(const char* src, const char* tgt, int length);
   static int scan_latin1(const char* src, int length, int mode);
   static address entry(vmIntrinsics::ID id);
   static const char* name_for_address(address addr);

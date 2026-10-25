@@ -254,9 +254,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_compareToUL:
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
-  case vmIntrinsics::_equalsLChecked:
-    // C1 substitutes equalsC1. C2 retains the Java null checks before equals0.
-    return false;
   case vmIntrinsics::_equalsL:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
@@ -807,7 +804,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
-  case vmIntrinsics::_stringzillaCompilerTier:
   case vmIntrinsics::_stringzillaEqualsRange:
   case vmIntrinsics::_stringzillaFindUTF16Latin1:
   case vmIntrinsics::_stringzillaRfindUTF16Latin1:
