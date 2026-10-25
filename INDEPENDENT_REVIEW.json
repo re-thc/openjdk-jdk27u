@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 2,
+  "reviewedAtUtc": "2026-10-25T05:35:21Z",
+  "verdict": "pass_source_recovery_and_provenance_review",
+  "scope": "Independent source identity, reconstruction, historical evidence consistency, scope, package hygiene, and informational origin/notice review of original intrinsic audit PR3 rows 24/26 and PR5 row 30. This report is not legal clearance, a license grant, production qualification, or publication authorization.",
+  "reviewedPayload": [
+    {
+      "path": "NOTICE.md",
+      "bytes": 1161,
+      "sha256": "5368932a8495a1dc0d889267d301d901d722dc4497ad3ddb3c95fac1572e5fba"
+    },
+    {
+      "path": "PROVENANCE.json",
+      "bytes": 5976,
+      "sha256": "89108434ce351b68111a6317de62e3dfb8f599b79c5256e9677431730197e561"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2831,
+      "sha256": "9f193eb775ac7c2c0685371253cd61f752bf40f58fb6374f22c5a8305894ecc7"
+    },
+    {
+      "path": "SOURCE_ORIGIN.json",
+      "bytes": 3213,
+      "sha256": "0c26d27fbbc79be37fca0a0f1e2fff88665ceec23ffcc4f8588ae60302b9c3d3"
+    },
+    {
+      "path": "evidence/source-result-links.json",
+      "bytes": 12807,
+      "sha256": "1915a403bea876d85d24155a12b967f2cef57ab43c3d3cd1d91453580f485303"
+    },
+    {
+      "path": "licenses/OpenJDK-LICENSE.txt",
+      "bytes": 19274,
+      "sha256": "4b9abebc4338048a7c2dc184e9f800deb349366bdf28eb23c2677a77b4c87726"
+    },
+    {
+      "path": "licenses/Pattern-NOTICE.txt",
+      "bytes": 1679,
+      "sha256": "148e40993a9fe4d064b90e962cabe0965c0bdb052e0cf89f449a812147154dd3"
+    },
+    {
+      "path": "pr3/DecimalResiduals.java",
+      "bytes": 2354,
+      "sha256": "9b1da28ca4cba846d91214fdf41169d55e4d7af2ef876202d3f96fef8c59c77f"
+    },
+    {
+      "path": "pr5/Pattern.normalized.patch",
+      "bytes": 2323,
+      "sha256": "163f0fb4c8445ffe13d1c46414e3ca59589b0e9906b59c02e3c813af0e6f4ebf"
+    },
+    {
+      "path": "pr5/PublicCallerProbe.java",
+      "bytes": 4327,
+      "sha256": "92eb060a17661a15b11fd06b53abb5de9711ab72545b4f99af8fcc729df180f6"
+    },
+    {
+      "path": "pr5/RegexCorrectness.java",
+      "bytes": 1754,
+      "sha256": "5f98fb0078f35fb7313b2c9e6acdf9f192ff2c03649e87c3fc42af34135a19e9"
+    },
+    {
+      "path": "pr5/make_regex_overlay.original.py",
+      "bytes": 2487,
+      "sha256": "c2d8ca76d676c4d3af36c7157984373207954f727799ef35b3e4d70c0fae482a"
+    },
+    {
+      "path": "pr5/regex.original.patch",
+      "bytes": 2396,
+      "sha256": "4313c824abfa43e2b3e7fd689fa1ec697aafc7aaafe5d479269bdbbb4082432f"
+    }
+  ],
+  "reviewedPayloadCount": 13,
+  "reviewedPayloadBytes": 62582,
+  "checks": [
+    {
+      "id": "manifest_integrity",
+      "result": "pass",
+      "detail": "All thirteen non-review payload files match FILES.json byte counts and SHA-256 values and SHA256SUMS. The previous review also matched its recorded hash before replacement. Original source/patch/script identities remain unchanged. Final manifests must be refreshed for this replacement report."
+    },
+    {
+      "id": "exact_original_identity",
+      "result": "pass",
+      "detail": "DecimalResiduals.java, RegexCorrectness.java, PublicCallerProbe.java, regex.original.patch, and make_regex_overlay.original.py are byte-for-byte equal to their retained originals and match the original text-results.json artifact hashes."
+    },
+    {
+      "id": "pr3_scope",
+      "result": "pass",
+      "detail": "DecimalResiduals.java is the original untimed standalone bounded 9/18-digit ASCII parse model with public-parser fallback, plus byte[] put8 emission. Its retained 300,036 checks comprise 36 parse edge cases and 100,000 iterations of int parse, long parse, and eight-digit byte emission checks. It is not a production patch, complete formatter, UTF16/char[] emitter, native PR3 implementation, or performance result."
+    },
+    {
+      "id": "pr5_scope",
+      "result": "pass",
+      "detail": "The recovered overlay adds String-only Pattern.Slice regionMatches and Pattern.BnM indexOf paths against the retained f360 baseline. Custom/mutable CharSequence paths remain separate. It is not native PR5 integration. The copied PublicCallerProbe has seven regex cases among 41 total and is explicitly not a PR5-only runner. Unrelated TextProbe models are not staged or represented as PR3/PR5 evidence."
+    },
+    {
+      "id": "regex_reconstruction",
+      "result": "pass",
+      "detail": "Independent in-memory application of all three original diff hunks to the retained baseline reproduces the retained candidate exactly. The normalized patch has identical hunks and only normalized diff headers/paths with historical timestamps removed. No source generator, JVM, or build was run.",
+      "baselineSha256": "54127025968dc7f52ccc085229b7f53900c8819cf0de8652a2477f2991b557e5",
+      "candidateSha256": "1a222867a671eb8a3dd25b07d4cb12b0ddf688b32398e9c05844286a21e5101e"
+    },
+    {
+      "id": "historical_correctness_records",
+      "result": "pass",
+      "detail": "Compact decimal and regex outcome text and log hashes exactly match the retained original logs. The regex baseline/prototype logs both record 83,268 outcomes and the same digest. These are verified historical records, not rerun correctness checks."
+    },
+    {
+      "id": "historical_timing_records",
+      "result": "pass",
+      "detail": "All 41 case statistics in the retained public-summary.json were independently recalculated from all 24 retained raw process outputs and match exactly, including medians, paired ratios, nominal bootstrap intervals, order splits, allocations, wins, and raw ratios. The seven staged regex summaries match exactly. All original recorded exits are zero, stderr files are empty, and ordering is six AB plus six BA pairs. No timing was rerun."
+    },
+    {
+      "id": "baseline_runtime_and_harness",
+      "result": "pass",
+      "detail": "Historical f360107d541ff20d06bff4816a717e9805718fff source-overlay baseline and older 8d030adbd245b19e6339e3ccd052eb7fe3635319 runtime labels remain distinct. PublicCallerProbe source bytes match recorded harness SHA-256 92eb060a17661a15b11fd06b53abb5de9711ab72545b4f99af8fcc729df180f6. This is source identity evidence, not independent proof of historical class-file identity or a current whole-JDK/native PR5 result."
+    },
+    {
+      "id": "tradeoff_preservation",
+      "result": "pass",
+      "detail": "The package retains noisy small-case/order uncertainty, custom-CharSequence control status, short-screen limits, unreconciled native PR5 integration, and the measured +128 B/op compile+match32 allocation cost. It makes no decimal timing or automatic adoption claim."
+    },
+    {
+      "id": "license_and_history_honesty",
+      "result": "pass_for_provenance_documentation",
+      "detail": "Both patches preserve the original Pattern copyright/license header. The new Pattern-NOTICE.txt contains that complete unchanged header and explicitly covers both patches and embedded Pattern fragments in make_regex_overlay.original.py. Included LICENSE bytes retain Git blob identity 8b400c7ab81b7b18baff3f81d597f5e511883134. SOURCE_ORIGIN.json distinguishes three audit-specific drivers from upstream-derived patch/script material and asserts no copyright owner, new license, authorship, relicensing right, or legal clearance. No historical model Git commit is invented."
+    },
+    {
+      "id": "package_hygiene",
+      "result": "pass",
+      "detail": "All payload files are small UTF-8 text, without NUL bytes or symlinks. The largest is 19,274 bytes. No class files, archives, runtime images, large raw logs, hard-coded local runtime launcher, or credential-like strings were found by manual review and bounded common secret-pattern checks. This is not a guarantee that every possible secret form is detectable."
+    },
+    {
+      "id": "origin_sidecars",
+      "result": "pass",
+      "detail": "SOURCE_ORIGIN.json source-manifest hash, three driver hashes, exact script-to-Pattern source ranges, bounded source-comparison results, and explicit limits match independent inspection. Missing per-file headers alone are not treated as a demonstrated source-provenance defect. The sidecars document provenance; they do not grant distribution rights or determine ownership."
+    }
+  ],
+  "correctionsVerified": [
+    "The unsupported claim that no historical Git commit exists was replaced by the supported statement that none is known or was discovered.",
+    "Normalized-patch wording now includes header normalization and removed historical timestamps rather than claiming paths alone changed.",
+    "The earlier blanket missing-header publication gate was replaced by per-file informational provenance and complete upstream notice coverage, without changing original source bytes or asserting legal permission."
+  ],
+  "privateRecoveryBlockers": [],
+  "verificationLimits": [
+    "No Java process, compilation, benchmark, CI, source adoption, Git publication, or Library operation was performed during this review.",
+    "Baseline/runtime commit labels were reconciled against retained original records. This reviewer did not independently fetch or verify upstream Git ancestry or historical runtime/class-file binaries.",
+    "The package intentionally omits full baseline/candidate files and raw timing logs. A consumer must obtain the exact authorized baseline and verify its SHA-256 before applying the normalized patch.",
+    "Future qualification or current PR3/PR5 integration requires separate authorization and work; the historical screen is not a universal speedup or production correctness proof."
+  ],
+  "manifestFinalization": "Refresh FILES.json and SHA256SUMS for this replacement report before use. This report binds thirteen non-review payload files and intentionally contains no self-hash.",
+  "sourceOriginFindings": {
+    "boundedComparison": {
+      "upstreamJavaFilesInspected": 29,
+      "method": "Compare contiguous lexical tokens after removing comments, preserving identifier/literal text, against the retained upstream Java inputs. Manual review supplemented the mechanical comparison.",
+      "longestTokenRuns": {
+        "DecimalResiduals.java": 10,
+        "RegexCorrectness.java": 10,
+        "PublicCallerProbe.java": 15
+      },
+      "interpretation": "The longest matches are ordinary loop/import syntax, not identified copied implementation blocks. Together with retained artifact roles this supports classification as audit-specific compositions, not verified authorship or absence of all possible third-party rights."
+    },
+    "decimalDistinction": "The model uses four-digit positive accumulation and four division/remainder byte pairs. Retained PR3 Integer.java:483 onward and Long.java:516 onward use general-radix negative accumulation and range checks; ToDecimal.java:102-119 uses an eight-step y recurrence and distinct Latin1/UTF16 stores. The model is not a verbatim copy of those retained implementations.",
+    "knownPatternCopyRanges": [
+      {
+        "scriptLines": [
+          4,
+          9
+        ],
+        "baselinePatternLines": [
+          4257,
+          4262
+        ],
+        "kind": "Exact original Slice anchor"
+      },
+      {
+        "scriptLines": [
+          28,
+          29
+        ],
+        "baselinePatternLines": [
+          5710,
+          5711
+        ],
+        "kind": "Exact original BnM constructor anchor"
+      },
+      {
+        "scriptLines": [
+          35,
+          37
+        ],
+        "baselinePatternLines": [
+          5719,
+          5721
+        ],
+        "kind": "Exact original BnM search anchor"
+      }
+    ],
+    "patchContextBaselineRanges": [
+      [
+        4255,
+        4264
+      ],
+      [
+        5707,
+        5713
+      ],
+      [
+        5717,
+        5722
+      ]
+    ],
+    "additionalAdaptedPatternLogic": "Replacement blocks retain/adapt existing Slice short-input state at baseline 4265-4268 and BnM first/groups/last and end-state logic at 5734-5740 and 5747-5748. This reinforces treating the reconstruction script as upstream-derived material alongside the patches."
+  },
+  "sourceProvenanceBlockers": [],
+  "publicationBoundary": "No publication was performed by this reviewer. A coordinating parent reports separate owner authorization for a source-only checkpoint; this review neither verifies that authorization nor expands it. Any publication must remain within the separately established authorization and applicable repository requirements.",
+  "unresolvedLimitsNotBlanketBlockers": [
+    "No named copyright owner or affirmative per-file license grant is established for the three audit-specific drivers by this source review. The sidecar does not manufacture either.",
+    "A bounded source comparison cannot establish that no other third-party rights exist. Legal ownership and repository contribution-policy determinations are outside this review.",
+    "Absence of per-file headers by itself is not an identified source defect and is not used here to impose a blanket relicensing requirement."
+  ]
+}

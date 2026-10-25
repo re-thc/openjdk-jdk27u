@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "assembledAtUtc": "2026-10-25T05:26:35Z",
+  "status": "Source-only checkpoint authorized for public re-thc/openjdk-jdk27u; not yet published. Original byte identities unchanged.",
+  "purpose": "Recover original intrinsic audit PR3 rows 24/26 and PR5 row 30 source, not invent replacement models or imply qualification.",
+  "repository": "https://github.com/re-thc/openjdk-jdk27u",
+  "baselineCommit": "f360107d541ff20d06bff4816a717e9805718fff",
+  "originalAuditCommit": "5d729f4ae372250d8fa1753eec38e42f8bd12997",
+  "retainedRuntimeSourceCommit": "8d030adbd245b19e6339e3ccd052eb7fe3635319",
+  "producer": "Original intrinsic text/front-end audit artifacts retained in the root task filesystem. No historical source Git commit was recorded or discovered.",
+  "historicalGitCommit": null,
+  "files": {
+    "pr3/DecimalResiduals.java": {
+      "originalPath": "intrinsic-audit/text/prototype/DecimalResiduals.java",
+      "originalSha256": "9b1da28ca4cba846d91214fdf41169d55e4d7af2ef876202d3f96fef8c59c77f",
+      "role": "Exact original standalone compiled decimal parse and byte-only put8 model with embedded correctness driver; not production source.",
+      "copiedByteForByte": true
+    },
+    "pr5/regex.original.patch": {
+      "originalPath": "intrinsic-audit/text/prototype/regex.patch",
+      "originalSha256": "4313c824abfa43e2b3e7fd689fa1ec697aafc7aaafe5d479269bdbbb4082432f",
+      "role": "Exact original source-overlay patch for Pattern.Slice and Pattern.BnM, including historical headers.",
+      "copiedByteForByte": true
+    },
+    "pr5/RegexCorrectness.java": {
+      "originalPath": "intrinsic-audit/text/prototype/RegexCorrectness.java",
+      "originalSha256": "5f98fb0078f35fb7313b2c9e6acdf9f192ff2c03649e87c3fc42af34135a19e9",
+      "role": "Exact original public Matcher outcome-digest correctness driver.",
+      "copiedByteForByte": true
+    },
+    "pr5/PublicCallerProbe.java": {
+      "originalPath": "intrinsic-audit/text/prototype/PublicCallerProbe.java",
+      "originalSha256": "92eb060a17661a15b11fd06b53abb5de9711ab72545b4f99af8fcc729df180f6",
+      "role": "Exact timed caller harness. It contains all 41 historical cases; seven regex cases are relevant. It depends on standard JDK compiler internals and is not a PR5-only runner.",
+      "copiedByteForByte": true
+    },
+    "pr5/make_regex_overlay.original.py": {
+      "originalPath": "intrinsic-audit/text/prototype/make_regex_overlay.py",
+      "originalSha256": "c2d8ca76d676c4d3af36c7157984373207954f727799ef35b3e4d70c0fae482a",
+      "role": "Exact original source-reconstruction recipe, retained as provenance. Historical directory layout required; not a portable launcher.",
+      "copiedByteForByte": true
+    },
+    "pr5/Pattern.normalized.patch": {
+      "role": "New recovery-only normalized-path diff from the retained exact baseline and candidate. No source edits or new implementation.",
+      "derivedFrom": [
+        "pr5/regex.original.patch",
+        "retained original baseline/candidate Pattern.java"
+      ],
+      "baselineSha256": "54127025968dc7f52ccc085229b7f53900c8819cf0de8652a2477f2991b557e5",
+      "candidateSha256": "1a222867a671eb8a3dd25b07d4cb12b0ddf688b32398e9c05844286a21e5101e"
+    }
+  },
+  "PatternSource": {
+    "repositoryPath": "src/java.base/share/classes/java/util/regex/Pattern.java",
+    "baselineSha256": "54127025968dc7f52ccc085229b7f53900c8819cf0de8652a2477f2991b557e5",
+    "baselineBytes": 235991,
+    "candidateSha256": "1a222867a671eb8a3dd25b07d4cb12b0ddf688b32398e9c05844286a21e5101e",
+    "candidateBytes": 237236
+  },
+  "license": {
+    "OpenJDKLicenseSource": "https://github.com/re-thc/openjdk-jdk27u/blob/f360107d541ff20d06bff4816a717e9805718fff/LICENSE",
+    "OpenJDKLicenseBlob": "8b400c7ab81b7b18baff3f81d597f5e511883134",
+    "PatternHeader": "Copyright (c) 1999, 2025, Oracle and/or its affiliates. GPL version 2 only with Classpath exception. Original target header untouched by both patches.",
+    "OriginalAuditDrivers": "The retained artifact manifest identifies DecimalResiduals.java, RegexCorrectness.java and PublicCallerProbe.java as audit-specific model/harness sources. They have no original per-file license header. Preserve original bytes; this recovery assigns no copyright owner or new license. Source inspection found no copied implementation block among the 29 inspected retained upstream Java inputs. This is corroborating provenance, not proof of authorship or a legal permission opinion.",
+    "ReconstructionScript": "make_regex_overlay.original.py embeds copied Pattern context and replacement fragments; the OpenJDK Pattern notice and pinned LICENSE accompany these fragments as well as both patches.",
+    "scopeNotice": "See SOURCE_ORIGIN.json and licenses/Pattern-NOTICE.txt. No missing-header-only publication gate or relicensing requirement is asserted."
+  },
+  "forbiddenActionsNotTaken": [
+    "Library upload/download",
+    "public or private Git publication",
+    "JVM/Java compilation",
+    "build",
+    "benchmark",
+    "source adoption",
+    "CI"
+  ],
+  "consumerInstructions": [
+    "Use an authorized Git checkpoint only after root chooses and approves exact destination.",
+    "Verify FILES.json and SHA256SUMS, then obtain exact f360 baseline from Git and verify Pattern source SHA-256.",
+    "Apply pr5/Pattern.normalized.patch only to matching baseline; verify reconstructed candidate SHA-256 before separately planned compilation.",
+    "PR3 can read original DecimalResiduals.java directly. Do not claim UTF16/char[] emission coverage or decimal timing.",
+    "PR5 must reconcile with its existing native changes and inspect compile allocation and region/bounds semantics. Historical public harness is exact identity evidence, not permission to rerun its other cases.",
+    "No historical Git commit is known or was discovered for these model bytes; the forthcoming checkpoint commit will be new recovery provenance, not the original experiment commit."
+  ]
+}

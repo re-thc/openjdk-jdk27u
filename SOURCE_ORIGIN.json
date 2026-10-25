@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Informational origin and license-scope documentation; no new license grant, copyright assignment, author assertion, or legal clearance opinion.",
+  "sourceManifest": "intrinsic-audit/text-results.json artifact_manifest",
+  "sourceManifestSha256": "2f05f41231ee363950d53ffa7ead7d97bf90f3f819b3a1af275561dbeb9df993",
+  "auditSpecificDrivers": [
+    {
+      "path": "pr3/DecimalResiduals.java",
+      "sha256": "9b1da28ca4cba846d91214fdf41169d55e4d7af2ef876202d3f96fef8c59c77f",
+      "role": "Standalone grouped-digit parser/byte-emitter feasibility model and embedded correctness driver",
+      "originalHeader": "No per-file license/copyright header present; unchanged.",
+      "inspection": "No copied implementation block identified among 29 retained upstream Java inputs.",
+      "longestSharedTokenRun": 10,
+      "authorOrCopyrightOwner": "Not asserted by this recovery."
+    },
+    {
+      "path": "pr5/RegexCorrectness.java",
+      "sha256": "5f98fb0078f35fb7313b2c9e6acdf9f192ff2c03649e87c3fc42af34135a19e9",
+      "role": "Public Matcher output-digest harness",
+      "originalHeader": "No per-file license/copyright header present; unchanged.",
+      "inspection": "No copied implementation block identified among 29 retained upstream Java inputs.",
+      "longestSharedTokenRun": 10,
+      "authorOrCopyrightOwner": "Not asserted by this recovery."
+    },
+    {
+      "path": "pr5/PublicCallerProbe.java",
+      "sha256": "92eb060a17661a15b11fd06b53abb5de9711ab72545b4f99af8fcc729df180f6",
+      "role": "Public-call timing harness, including seven regex cases among 41 total",
+      "originalHeader": "No per-file license/copyright header present; unchanged.",
+      "inspection": "No copied implementation block identified among 29 retained upstream Java inputs.",
+      "longestSharedTokenRun": 15,
+      "authorOrCopyrightOwner": "Not asserted by this recovery."
+    }
+  ],
+  "openJdkDerivedFiles": [
+    "pr5/regex.original.patch",
+    "pr5/Pattern.normalized.patch",
+    "pr5/make_regex_overlay.original.py"
+  ],
+  "embeddedPatternExamples": [
+    {
+      "scriptLines": [
+        4,
+        9
+      ],
+      "baselinePatternLines": [
+        4257,
+        4262
+      ]
+    },
+    {
+      "scriptLines": [
+        28,
+        29
+      ],
+      "baselinePatternLines": [
+        5710,
+        5711
+      ]
+    },
+    {
+      "scriptLines": [
+        35,
+        37
+      ],
+      "baselinePatternLines": [
+        5719,
+        5721
+      ]
+    }
+  ],
+  "upstreamNotice": "licenses/Pattern-NOTICE.txt",
+  "upstreamLicense": "licenses/OpenJDK-LICENSE.txt",
+  "identityPolicy": "No headers were added to original sources. They remain byte-for-byte historical artifacts. The normalized patch only normalizes diff headers and paths.",
+  "limitations": [
+    "Retained metadata identifies these files as audit artifacts; no original source Git commit or named copyright owner is established.",
+    "Comparison with inspected inputs does not establish absence of every possible third-party right.",
+    "This code review does not determine legal ownership or relicense content. Missing per-file headers alone are not treated as a demonstrated source defect."
+  ]
+}

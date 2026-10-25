@@ -1,0 +1,55 @@
+--- a/src/java.base/share/classes/java/util/regex/Pattern.java
++++ b/src/java.base/share/classes/java/util/regex/Pattern.java
+@@ -4255,10 +4255,21 @@
+      * characters.
+      */
+     static class Slice extends SliceNode {
++        private final String literal;
+         Slice(int[] buf) {
+             super(buf);
++            literal = new String(buf, 0, buf.length);
+         }
+         boolean match(Matcher matcher, int i, CharSequence seq) {
++            if (seq instanceof String text) {
++                int available = Math.min(buffer.length, Math.max(0, matcher.to - i));
++                if (!text.regionMatches(i, literal, 0, available)) return false;
++                if (available < buffer.length) {
++                    matcher.hitEnd = true;
++                    return false;
++                }
++                return next.match(matcher, i + buffer.length, seq);
++            }
+             int[] buf = buffer;
+             int len = buf.length;
+             for (int j=0; j<len; j++) {
+@@ -5707,7 +5718,9 @@
+                 return new BnMS(src, lastOcc, optoSft, node.next);
+             return new BnM(src, lastOcc, optoSft, node.next);
+         }
++        private final String literal;
+         BnM(int[] src, int[] lastOcc, int[] optoSft, Node next) {
++            this.literal = new String(src, 0, src.length);
+             this.buffer = src;
+             this.lastOcc = lastOcc;
+             this.optoSft = optoSft;
+@@ -5717,6 +5730,20 @@
+             int[] src = buffer;
+             int patternLength = src.length;
+             int last = matcher.to - patternLength;
++            if (seq instanceof String text) {
++                for (int at = text.indexOf(literal, i); at >= 0 && at <= last;
++                     at = text.indexOf(literal, at + 1)) {
++                    matcher.first = at;
++                    if (next.match(matcher, at + patternLength, seq)) {
++                        matcher.first = at;
++                        matcher.groups[0] = matcher.first;
++                        matcher.groups[1] = matcher.last;
++                        return true;
++                    }
++                }
++                matcher.hitEnd = true;
++                return false;
++            }
+ 
+             // Loop over all possible match positions in text
+ NEXT:       while (i <= last) {
