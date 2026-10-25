@@ -423,10 +423,9 @@ class methodHandle;
   do_intrinsic(_encodeUTF8UTF16, java_lang_String, encodeUTF8UTF16_name, encodeUTF8UTF16_signature, F_S)                \
    do_name(encodeUTF8UTF16_name, "encodeUTF8UTF16")                                                                      \
    do_signature(encodeUTF8UTF16_signature, "([BI[BILjava/lang/Class;)I")                                                 \
-  do_intrinsic(_decodeUTF8UTF16, java_lang_String, decodeUTF8UTF16_name, decodeUTF8UTF16_signature, F_S)                \
+  do_intrinsic(_decodeUTF8UTF16, java_lang_String, decodeUTF8UTF16_name, byteArray_int_int_byteArray_int_signature, F_S) \
    do_name(decodeUTF8UTF16_name, "decodeUTF8_UTF16")                                                                     \
-   do_signature(decodeUTF8UTF16_signature, "([BII[BI)I")                                                                 \
-  do_intrinsic(_decodeUTF8UTF16OrThrow, java_lang_String, decodeUTF8UTF16OrThrow_name, decodeUTF8UTF16_signature, F_S) \
+  do_intrinsic(_decodeUTF8UTF16OrThrow, java_lang_String, decodeUTF8UTF16OrThrow_name, byteArray_int_int_byteArray_int_signature, F_S) \
    do_name(decodeUTF8UTF16OrThrow_name, "decodeUTF8_UTF16OrThrow")                                                        \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \
