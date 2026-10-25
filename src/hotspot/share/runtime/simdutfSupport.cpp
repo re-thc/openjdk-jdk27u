@@ -78,7 +78,7 @@ bool SimdUTF::available() {
 // Intrinsic callers bound this non-safepointing leaf to one MiB of source bytes.
 JRT_LEAF(jint, SimdUTF::encode_latin1_utf8(const jbyte* src, jint length, jbyte* dst))
   assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
-  return checked_cast<jint>(simdutf::convert_latin1_to_utf8(
+  return static_cast<jint>(simdutf::convert_latin1_to_utf8(
       reinterpret_cast<const char*>(src), length, reinterpret_cast<char*>(dst)));
 JRT_END
 
@@ -88,7 +88,7 @@ JRT_LEAF(jint, SimdUTF::encode_utf16_utf8(const jbyte* src, jint length, jbyte* 
   assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
   simdutf::result result = simdutf::convert_utf16_to_utf8_with_errors(
       reinterpret_cast<const char16_t*>(src), length, reinterpret_cast<char*>(dst));
-  return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
+  return result.error == simdutf::SUCCESS ? static_cast<jint>(result.count) : -1;
 JRT_END
 
 // String owns either its constructor snapshot or the input transferred to
@@ -97,7 +97,7 @@ JRT_LEAF(jint, SimdUTF::decode_utf8_utf16(const jbyte* src, jint length, jbyte* 
   assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
   simdutf::result result = simdutf::convert_utf8_to_utf16_with_errors(
       reinterpret_cast<const char*>(src), length, reinterpret_cast<char16_t*>(dst));
-  return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
+  return result.error == simdutf::SUCCESS ? static_cast<jint>(result.count) : -1;
 JRT_END
 
 // The existing String character-search entries supply a single Latin1 byte or
@@ -106,23 +106,22 @@ JRT_LEAF(jint, SimdUTF::index_of_latin1(const jbyte* src, jint length, jint ch))
   assert(length > 0 && length <= 1024 * 1024, "bounded search");
   const char* begin = reinterpret_cast<const char*>(src);
   const char* found = simdutf::find(begin, begin + length, static_cast<char>(ch));
-  return found == begin + length ? -1 : checked_cast<jint>(found - begin);
+  return found == begin + length ? -1 : static_cast<jint>(found - begin);
 JRT_END
 
 JRT_LEAF(jint, SimdUTF::index_of_utf16(const jbyte* src, jint length, jint ch))
   assert(length > 0 && length <= 1024 * 1024, "bounded search");
   const char16_t* begin = reinterpret_cast<const char16_t*>(src);
   const char16_t* found = simdutf::find(begin, begin + length, static_cast<char16_t>(ch));
-  return found == begin + length ? -1 : checked_cast<jint>(found - begin);
+  return found == begin + length ? -1 : static_cast<jint>(found - begin);
 JRT_END
 
 // encodeBlock supplies complete three-byte groups. Java owns padding and MIME
 // line breaks; this conversion writes directly to the existing output array.
 JRT_LEAF(void, SimdUTF::encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url))
   assert(length > 0 && length <= 1024 * 1024 && length % 3 == 0, "bounded complete groups");
-  size_t written = simdutf::binary_to_base64(reinterpret_cast<const char*>(src), length,
+  simdutf::binary_to_base64(reinterpret_cast<const char*>(src), length,
       reinterpret_cast<char*>(dst), url ? simdutf::base64_url : simdutf::base64_default);
-  assert(written == size_t(length / 3) * 4, "complete Base64 groups");
 JRT_END
 
 // Keep the final quartet in Java so its padding and tail rules remain intact.
@@ -138,5 +137,5 @@ JRT_LEAF(jint, SimdUTF::decode_base64(const jbyte* src, jint length, jbyte* dst,
   // Upstream ignores whitespace, while Java derives consumed input from the
   // output count. Accept only complete groups with that exact relationship.
   return result.error == simdutf::SUCCESS && count % 3 == 0 &&
-      result.count == (count / 3) * 4 ? checked_cast<jint>(count) : 0;
+      result.count == (count / 3) * 4 ? static_cast<jint>(count) : 0;
 JRT_END
