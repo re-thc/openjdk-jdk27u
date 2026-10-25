@@ -121,31 +121,81 @@ int StringZilla::search_char(const char* src, int length, int ch, bool utf16, bo
 }
 
 address StringZilla::entry(vmIntrinsics::ID id) {
+  // Initialization fixes the table for the VM lifetime. Keep the bootstrap
+  // wrappers for callers compiled before libjava publishes its callbacks.
+  const StringZillaKernels* table = published_kernels.load_acquire();
   switch (id) {
     case vmIntrinsics::_stringzillaScanLatin1: {
-      const StringZillaKernels* table = published_kernels.load_acquire();
-      // Initialization fixes this table for the VM lifetime. Early compilation
-      // retains the bootstrap wrapper until Java has initialized StringZilla.
       return table == nullptr ? CAST_FROM_FN_PTR(address, StringZilla::scan_latin1)
                               : CAST_FROM_FN_PTR(address, table->scanLatin1);
     }
     case vmIntrinsics::_stringzillaEqualsRange: return CAST_FROM_FN_PTR(address, StringZilla::equal_range);
-    case vmIntrinsics::_equalsL: return CAST_FROM_FN_PTR(address, equal_bytes);
-    case vmIntrinsics::_stringzillaFindCharLatin1: return CAST_FROM_FN_PTR(address, find_char_latin1);
-    case vmIntrinsics::_stringzillaFindCharUTF16: return CAST_FROM_FN_PTR(address, find_char_utf16);
-    case vmIntrinsics::_stringzillaRfindCharLatin1: return CAST_FROM_FN_PTR(address, rfind_char_latin1);
-    case vmIntrinsics::_stringzillaRfindCharUTF16: return CAST_FROM_FN_PTR(address, rfind_char_utf16);
+    case vmIntrinsics::_equalsL:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, equal_bytes)
+                              : CAST_FROM_FN_PTR(address, table->equal);
+    case vmIntrinsics::_stringzillaFindCharLatin1:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, find_char_latin1)
+                              : CAST_FROM_FN_PTR(address, table->findCharLatin1);
+    case vmIntrinsics::_stringzillaFindCharUTF16:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, find_char_utf16)
+                              : CAST_FROM_FN_PTR(address, table->findCharUTF16);
+    case vmIntrinsics::_stringzillaRfindCharLatin1:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, rfind_char_latin1)
+                              : CAST_FROM_FN_PTR(address, table->rfindCharLatin1);
+    case vmIntrinsics::_stringzillaRfindCharUTF16:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, rfind_char_utf16)
+                              : CAST_FROM_FN_PTR(address, table->rfindCharUTF16);
 
     case vmIntrinsics::_indexOfUL:
-    case vmIntrinsics::_stringzillaFindUTF16Latin1: return CAST_FROM_FN_PTR(address, find_utf16_latin1);
-    case vmIntrinsics::_stringzillaRfindUTF16Latin1: return CAST_FROM_FN_PTR(address, rfind_utf16_latin1);
+    case vmIntrinsics::_stringzillaFindUTF16Latin1:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, find_utf16_latin1)
+                              : CAST_FROM_FN_PTR(address, table->findUTF16Latin1);
+    case vmIntrinsics::_stringzillaRfindUTF16Latin1:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, rfind_utf16_latin1)
+                              : CAST_FROM_FN_PTR(address, table->rfindUTF16Latin1);
 
     case vmIntrinsics::_indexOfL:
-    case vmIntrinsics::_stringzillaFindLatin1: return CAST_FROM_FN_PTR(address, find_latin1);
+    case vmIntrinsics::_stringzillaFindLatin1:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, find_latin1)
+                              : CAST_FROM_FN_PTR(address, table->findLatin1);
     case vmIntrinsics::_indexOfU:
-    case vmIntrinsics::_stringzillaFindUTF16: return CAST_FROM_FN_PTR(address, find_utf16);
-    case vmIntrinsics::_stringzillaRfindLatin1: return CAST_FROM_FN_PTR(address, rfind_latin1);
-    case vmIntrinsics::_stringzillaRfindUTF16: return CAST_FROM_FN_PTR(address, rfind_utf16);
+    case vmIntrinsics::_stringzillaFindUTF16:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, find_utf16)
+                              : CAST_FROM_FN_PTR(address, table->findUTF16);
+    case vmIntrinsics::_stringzillaRfindLatin1:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, rfind_latin1)
+                              : CAST_FROM_FN_PTR(address, table->rfindLatin1);
+    case vmIntrinsics::_stringzillaRfindUTF16:
+      return table == nullptr ? CAST_FROM_FN_PTR(address, rfind_utf16)
+                              : CAST_FROM_FN_PTR(address, table->rfindUTF16);
     default: ShouldNotReachHere(); return nullptr;
   }
+}
+
+// Generated code may retain a bootstrap target after publication. Recognize
+// both targets without adding a lookup to the executing leaf call.
+const char* StringZilla::name_for_address(address addr) {
+  const StringZillaKernels* table = published_kernels.load_acquire();
+#define NAME_ENTRY(id, field, bootstrap) \
+  if (addr == CAST_FROM_FN_PTR(address, bootstrap) || \
+      (table != nullptr && addr == CAST_FROM_FN_PTR(address, table->field))) { \
+    return "StringZilla::entry(vmIntrinsics::" #id ")"; \
+  }
+  NAME_ENTRY(_stringzillaFindCharLatin1, findCharLatin1, find_char_latin1)
+  NAME_ENTRY(_stringzillaFindCharUTF16, findCharUTF16, find_char_utf16)
+  NAME_ENTRY(_stringzillaRfindCharLatin1, rfindCharLatin1, rfind_char_latin1)
+  NAME_ENTRY(_stringzillaRfindCharUTF16, rfindCharUTF16, rfind_char_utf16)
+  NAME_ENTRY(_stringzillaFindUTF16Latin1, findUTF16Latin1, find_utf16_latin1)
+  NAME_ENTRY(_stringzillaRfindUTF16Latin1, rfindUTF16Latin1, rfind_utf16_latin1)
+  NAME_ENTRY(_stringzillaFindLatin1, findLatin1, find_latin1)
+  NAME_ENTRY(_stringzillaFindUTF16, findUTF16, find_utf16)
+  NAME_ENTRY(_stringzillaRfindLatin1, rfindLatin1, rfind_latin1)
+  NAME_ENTRY(_stringzillaRfindUTF16, rfindUTF16, rfind_utf16)
+  NAME_ENTRY(_stringzillaScanLatin1, scanLatin1, StringZilla::scan_latin1)
+  NAME_ENTRY(_equalsL, equal, equal_bytes)
+#undef NAME_ENTRY
+  if (addr == CAST_FROM_FN_PTR(address, StringZilla::equal_range)) {
+    return "StringZilla::entry(vmIntrinsics::_stringzillaEqualsRange)";
+  }
+  return nullptr;
 }
