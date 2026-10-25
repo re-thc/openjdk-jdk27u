@@ -50,8 +50,6 @@ import sun.security.util.KeyUtil;
  *  . "SHA256withRSA"
  *  . "SHA384withRSA"
  *  . "SHA512withRSA"
- *  . "MD5withRSA"
- *  . "MD2withRSA"
  *  . "RSASSA-PSS"
  *  . "SHA1withECDSA"
  *  . "SHA224withECDSA"
@@ -379,18 +377,6 @@ abstract class CSignature extends SignatureSpi {
     public static final class SHA512withRSA extends RSA {
         public SHA512withRSA() {
             super("SHA-512");
-        }
-    }
-
-    public static final class MD5withRSA extends RSA {
-        public MD5withRSA() {
-            super("MD5");
-        }
-    }
-
-    public static final class MD2withRSA extends RSA {
-        public MD2withRSA() {
-            super("MD2");
         }
     }
 

@@ -770,6 +770,17 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_insert();
   case vmIntrinsics::_VectorExtract:
     return inline_vector_extract();
+  case vmIntrinsics::_VectorExtractBSupported: {
+    const TypeInt* length = gvn().type(argument(0))->isa_int();
+    if (length == nullptr || !length->is_con()) {
+      return false;
+    }
+    int lanes = length->get_con();
+    bool supported = (lanes == 8 || lanes == 16) &&
+                     arch_supports_vector(Op_ExtractBVar, lanes, T_BYTE, VecMaskNotUsed);
+    set_result(intcon(supported ? 1 : 0));
+    return true;
+  }
   case vmIntrinsics::_VectorCompressExpand:
     return inline_vector_compress_expand();
   case vmIntrinsics::_VectorSelectFromTwoVectorOp:

@@ -28,15 +28,13 @@
  * @test
  *
  * @bug 6861062 7011497
- * @summary Disable MD2 support
- *          new CertPathValidatorException.BasicReason enum constant for
- *     constrained algorithm
+ * @summary Disabled algorithms in a self-signed certificate path report
+ *          ALGORITHM_CONSTRAINED even when the certificate is a trust anchor
  * @enablePreview
  * @run main/othervm CPValidatorTrustAnchor
  * @author Xuelei Fan
  */
 
-import java.io.ByteArrayInputStream;
 import java.security.PEMDecoder;
 import java.security.Security;
 import java.security.cert.CertPath;
@@ -49,10 +47,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -95,10 +91,10 @@ public class CPValidatorTrustAnchor {
         "U5r+8B9nzx+j2Zh3kw==\n" +
         "-----END CERTIFICATE-----";
 
-    // MD2withRSA 2048
-    static String trustAnchor_MD2withRSA_2048 =
+    // SHA224withRSA 2048
+    static String trustAnchor_SHA224withRSA_2048 =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIIDQzCCAiugAwIBAgIBADANBgkqhkiG9w0BAQIFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIIDQzCCAiugAwIBAgIBADANBgkqhkiG9w0BAQ4FADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA4MDYwMTExNDdaFw0zMDA3MTcwMTExNDda\n" +
         "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIIBIjANBgkqhkiG9w0B\n" +
         "AQEFAAOCAQ8AMIIBCgKCAQEArF5pINc5s+aUlmdYlxtAQ3V4TXFnP/XOYHxjfLuX\n" +
@@ -109,13 +105,13 @@ public class CPValidatorTrustAnchor {
         "EFCzM7+zqT/c+pC079HOKXz+m2us+HKp5BKWNnbvgaYPOQIDAQABo4GJMIGGMB0G\n" +
         "A1UdDgQWBBSrSukJf+mO5LTRasAGD9RRs7SASTBHBgNVHSMEQDA+gBSrSukJf+mO\n" +
         "5LTRasAGD9RRs7SASaEjpCEwHzELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0V4YW1w\n" +
-        "bGWCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQEC\n" +
-        "BQADggEBAHvsv+DqMJeIW/D+ltkhw37OdMzkMPp4E6Hbp03O3GZ5LfNGczHCb2uL\n" +
-        "sr5T7e/jaBFn6QfmqbOAYAHJSNq2bNNtTbatnHBLuVx13cfxmwk89Cg/tFeoUdcf\n" +
-        "m5hzurB6Ub6SsYMOxZHUYp/KxM9x9a7llC1bK3SKXwd4rVDlXh8DOBvdQNr5Q3yq\n" +
-        "JjY86bSXO14VzNxL/1rqHiszQdPyR/28SBsQVYSi0Zeyc4Yy1ui/cXu1+PWYw3YZ\n" +
-        "QUPHTnkVdPGwRiUqeZIcps+q+ePlQQmDu5qiLD6d8gsyGyY/RvCHWKO5Y9DuX9hs\n" +
-        "he/AhCWQx+TQYGLu0liQqLkGZydyRnA=\n" +
+        "bGWCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQEO\n" +
+        "BQADggEBABB757iLT3Y8eK1KbTJvVty717Ah90r+cuhD2bL7sKVTAQP0Gr1xU+PC\n" +
+        "c/V+vXrezzbOqDt3YSK2OjtBNPJ2Hf+xqUp9p7FyIdgY1+xTKCh5JUqxzrvefbbF\n" +
+        "OxvQN+tALuPZh+DoPqsJNYVaMV/hqS7eQRUM3a4CGeoMYCi3eCRji1t9sOniXklJ\n" +
+        "kplKuCsMd4WnmePyazXLoHLeIwdexO9VIXAb1n32zsdJzNIsNYQ5FBvKWdSqyg2P\n" +
+        "rLN6t8mHELEmIgG4lzrS1UFVcHMLT+KjiICcXLxtu9faJEJMoUNbYKYvkji6Cf8S\n" +
+        "sYiRiVnu0qkU5PWwKmAKWXmMRFLakEM=\n" +
         "-----END CERTIFICATE-----";
 
     private static CertPath generateCertificatePath()
@@ -147,7 +143,7 @@ public class CPValidatorTrustAnchor {
     public static void main(String args[]) throws Exception {
         // reset the security property to make sure that the algorithms
         // and keys used in this test are not disabled.
-        Security.setProperty("jdk.certpath.disabledAlgorithms", "MD2");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "SHA224");
 
         try {
             validate(trustAnchor_SHA1withRSA_1024);
@@ -158,7 +154,7 @@ public class CPValidatorTrustAnchor {
         }
 
         try {
-            validate(trustAnchor_MD2withRSA_2048);
+            validate(trustAnchor_SHA224withRSA_2048);
             throw new Exception("expected algorithm disabled exception");
         } catch (CertPathValidatorException cpve) {
             // we may get ClassCastException here

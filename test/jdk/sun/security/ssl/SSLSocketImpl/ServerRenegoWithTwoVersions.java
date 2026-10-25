@@ -31,9 +31,6 @@
  * @bug 8208642
  * @summary Server initiated TLSv1.2 renegotiation fails if Java
  *      client allows TLSv1.3
- * @run main/othervm ServerRenegoWithTwoVersions TLSv1 SSLv3
- * @run main/othervm ServerRenegoWithTwoVersions TLSv1 TLSv1.1
- * @run main/othervm ServerRenegoWithTwoVersions TLSv1.2 TLSv1.1
  * @run main/othervm ServerRenegoWithTwoVersions TLSv1.3 TLSv1.2
  */
 

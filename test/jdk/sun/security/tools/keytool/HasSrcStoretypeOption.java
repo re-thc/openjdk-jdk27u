@@ -33,9 +33,9 @@ import sun.security.tools.keytool.Main;
 public class HasSrcStoretypeOption {
 
     public static void main(String[] args) throws Exception {
-        run("-genkeypair -keyalg DSA -alias a -dname CN=A -storetype jceks -keystore jce");
+        run("-genkeypair -keyalg EC -alias a -dname CN=A -storetype pkcs12 -keystore src");
         // When there is no -srcstoretype, it should be probed from the file
-        run("-importkeystore -srckeystore jce -destkeystore jks -deststoretype jks");
+        run("-importkeystore -srckeystore src -destkeystore dest -deststoretype pkcs12");
     }
 
     private static void run(String cmd) throws Exception {

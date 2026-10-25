@@ -33,7 +33,6 @@ import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
-import java.util.Objects;
 
 import javax.crypto.*;
 import javax.crypto.spec.PSource;
@@ -41,8 +40,6 @@ import javax.crypto.spec.OAEPParameterSpec;
 
 import sun.security.rsa.*;
 import sun.security.jca.Providers;
-import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
-import sun.security.util.KeyUtil;
 
 /**
  * RSA cipher implementation. Supports RSA en/decryption and signing/verifying
@@ -97,9 +94,8 @@ public final class RSACipher extends CipherSpi {
     // padding object
     private RSAPadding padding;
 
-    // cipher parameter for OAEP padding and TLS RSA premaster secret
+    // cipher parameter for OAEP padding
     private AlgorithmParameterSpec spec = null;
-    private boolean forTlsPremasterSecret = false;
 
     // buffer for the data
     private byte[] buffer;
@@ -116,9 +112,6 @@ public final class RSACipher extends CipherSpi {
 
     // hash algorithm for OAEP
     private String oaepHashAlgorithm = "SHA-1";
-
-    // the source of randomness
-    private SecureRandom random;
 
     public RSACipher() {
         paddingType = PAD_PKCS1;
@@ -243,7 +236,6 @@ public final class RSACipher extends CipherSpi {
     }
 
     // initialize this cipher
-    @SuppressWarnings("deprecation")
     private void init(int opmode, Key key, SecureRandom random,
             AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -283,14 +275,8 @@ public final class RSACipher extends CipherSpi {
             buffer = new byte[n];
         } else if (paddingType == PAD_PKCS1) {
             if (params != null) {
-                if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
-                    throw new InvalidAlgorithmParameterException(
-                            "Parameters not supported");
-                }
-
-                spec = params;
-                forTlsPremasterSecret = true;
-                this.random = random;   // for TLS RSA premaster secret
+                throw new InvalidAlgorithmParameterException
+                ("Parameters not supported");
             }
             int blockType = (mode <= MODE_DECRYPT) ? RSAPadding.PAD_BLOCKTYPE_2
                                                    : RSAPadding.PAD_BLOCKTYPE_1;
@@ -381,7 +367,7 @@ public final class RSACipher extends CipherSpi {
                 byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(decryptBuffer, privateKey, false);
                 result = padding.unpad(paddingCopy);
-                if (!forTlsPremasterSecret && result == null) {
+                if (result == null) {
                     throw new BadPaddingException
                             ("Padding error in decryption");
                 }
@@ -389,34 +375,6 @@ public final class RSACipher extends CipherSpi {
             default:
                 throw new AssertionError("Internal error");
             }
-            return result;
-        } finally {
-            Arrays.fill(buffer, 0, bufOfs, (byte)0);
-            bufOfs = 0;
-            if (paddingCopy != null
-                    && paddingCopy != buffer    // already cleaned
-                    && paddingCopy != result) { // DO NOT CLEAN, THIS IS RESULT
-                Arrays.fill(paddingCopy, (byte)0);
-            }
-        }
-    }
-
-    // TLS master secret decode version of the doFinal() method.
-    private byte[] doFinalForTls(int clientVersion, int serverVersion)
-            throws BadPaddingException, IllegalBlockSizeException {
-        if (bufOfs > buffer.length) {
-            throw new IllegalBlockSizeException("Data must not be longer "
-                    + "than " + buffer.length + " bytes");
-        }
-        byte[] paddingCopy = null;
-        byte[] result = null;
-        try {
-            byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
-
-            paddingCopy = RSACore.rsa(decryptBuffer, privateKey, false);
-            result = padding.unpadForTls(paddingCopy, clientVersion,
-                    serverVersion);
-
             return result;
         } finally {
             Arrays.fill(buffer, 0, bufOfs, (byte)0);
@@ -489,37 +447,20 @@ public final class RSACipher extends CipherSpi {
     }
 
     // see JCE spec
-    @SuppressWarnings("deprecation")
     protected Key engineUnwrap(byte[] wrappedKey, String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
         if (wrappedKey.length > buffer.length) {
             throw new InvalidKeyException("Key is too long for unwrapping");
         }
 
-        boolean isTlsRsaPremasterSecret =
-                algorithm.equals("TlsRsaPremasterSecret");
         byte[] encoded = null;
 
         update(wrappedKey, 0, wrappedKey.length);
         try {
-            if (isTlsRsaPremasterSecret) {
-                if (!forTlsPremasterSecret) {
-                    throw new IllegalStateException(
-                            "No TlsRsaPremasterSecretParameterSpec specified");
-                }
-                TlsRsaPremasterSecretParameterSpec parameterSpec =
-                        (TlsRsaPremasterSecretParameterSpec) spec;
-                encoded = doFinalForTls(parameterSpec.getClientVersion(),
-                        parameterSpec.getServerVersion());
-            } else {
-                encoded = doFinal();
-            }
+            encoded = doFinal();
             return ConstructKeys.constructKey(encoded, algorithm, type);
 
         } catch (BadPaddingException | IllegalBlockSizeException e) {
-            // BadPaddingException cannot happen for TLS RSA unwrap.
-            // Neither padding error nor server version error is indicated
-            // for TLS, but a fake unwrapped value is returned.
             // IllegalBlockSizeException cannot happen in any case,
             // because of the length check above.
             throw new InvalidKeyException("Unwrapping failed", e);

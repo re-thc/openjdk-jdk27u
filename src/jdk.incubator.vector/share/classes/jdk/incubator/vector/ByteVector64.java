@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,6 +530,12 @@ final class ByteVector64 extends ByteVector {
     @ForceInline
     @Override
     public byte lane(int i) {
+        if (VectorSupport.isVariableByteLaneSupported(VLENGTH)) {
+            if (i < 0 || i >= VLENGTH) {
+                throw new IllegalArgumentException("Index " + i + " must be zero or positive, and less than " + VLENGTH);
+            }
+            return laneHelper(i & (VLENGTH - 1));
+        }
         switch(i) {
             case 0: return laneHelper(0);
             case 1: return laneHelper(1);

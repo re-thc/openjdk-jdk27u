@@ -44,8 +44,6 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
-import sun.security.ssl.X509Authentication.X509Credentials;
-import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.ssl.XDHKeyExchange.XDHECredentials;
 import sun.security.ssl.XDHKeyExchange.XDHEPossession;
 import sun.security.util.ECUtil;
@@ -53,8 +51,6 @@ import sun.security.util.ECUtil;
 final class ECDHKeyExchange {
     static final SSLPossessionGenerator poGenerator =
             new ECDHEPossessionGenerator();
-    static final SSLKeyAgreementGenerator ecdhKAGenerator =
-            new ECDHKAGenerator();
 
     // TLSv1.3
     static final SSLKeyAgreementGenerator ecdheKAGenerator =
@@ -261,123 +257,6 @@ final class ECDHKeyExchange {
             // no match found, cannot use this cipher suite.
             //
             return null;
-        }
-    }
-
-    private static final
-            class ECDHKAGenerator implements SSLKeyAgreementGenerator {
-        // Prevent instantiation of this class.
-        private ECDHKAGenerator() {
-            // blank
-        }
-
-        @Override
-        public SSLKeyDerivation createKeyDerivation(
-                HandshakeContext context) throws IOException {
-            if (context instanceof ServerHandshakeContext) {
-                return createServerKeyDerivation(
-                        (ServerHandshakeContext)context);
-            } else {
-                return createClientKeyDerivation(
-                        (ClientHandshakeContext)context);
-            }
-        }
-
-        private SSLKeyDerivation createServerKeyDerivation(
-                ServerHandshakeContext shc) throws IOException {
-            X509Possession x509Possession = null;
-            ECDHECredentials ecdheCredentials = null;
-            for (SSLPossession poss : shc.handshakePossessions) {
-                if (!(poss instanceof X509Possession)) {
-                    continue;
-                }
-
-                ECParameterSpec params =
-                        ((X509Possession)poss).getECParameterSpec();
-                if (params == null) {
-                    continue;
-                }
-
-                NamedGroup ng = NamedGroup.valueOf(params);
-                if (ng == null) {
-                    // unlikely, have been checked during cipher suite
-                    // negotiation.
-                    throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                        "Unsupported EC server cert for ECDH key exchange");
-                }
-
-                for (SSLCredentials cred : shc.handshakeCredentials) {
-                    if (!(cred instanceof ECDHECredentials)) {
-                        continue;
-                    }
-                    if (ng.equals(((ECDHECredentials)cred).namedGroup)) {
-                        ecdheCredentials = (ECDHECredentials)cred;
-                        break;
-                    }
-                }
-
-                if (ecdheCredentials != null) {
-                    x509Possession = (X509Possession)poss;
-                    break;
-                }
-            }
-
-            if (x509Possession == null) {
-                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No sufficient ECDHE key agreement parameters negotiated");
-            }
-
-            return new KAKeyDerivation("ECDH", shc,
-                x509Possession.popPrivateKey, ecdheCredentials.popPublicKey);
-        }
-
-        private SSLKeyDerivation createClientKeyDerivation(
-                ClientHandshakeContext chc) throws IOException {
-            ECDHEPossession ecdhePossession = null;
-            X509Credentials x509Credentials = null;
-            for (SSLPossession poss : chc.handshakePossessions) {
-                if (!(poss instanceof ECDHEPossession)) {
-                    continue;
-                }
-
-                NamedGroup ng = ((ECDHEPossession)poss).namedGroup;
-                for (SSLCredentials cred : chc.handshakeCredentials) {
-                    if (!(cred instanceof X509Credentials)) {
-                        continue;
-                    }
-
-                    PublicKey publicKey = ((X509Credentials)cred).popPublicKey;
-                    if (!publicKey.getAlgorithm().equals("EC")) {
-                        continue;
-                    }
-                    ECParameterSpec params =
-                            ((ECPublicKey)publicKey).getParams();
-                    NamedGroup namedGroup = NamedGroup.valueOf(params);
-                    if (namedGroup == null) {
-                        // unlikely, should have been checked previously
-                        throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                            "Unsupported EC server cert for ECDH key exchange");
-                    }
-
-                    if (ng.equals(namedGroup)) {
-                        x509Credentials = (X509Credentials)cred;
-                        break;
-                    }
-                }
-
-                if (x509Credentials != null) {
-                    ecdhePossession = (ECDHEPossession)poss;
-                    break;
-                }
-            }
-
-            if (ecdhePossession == null) {
-                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                    "No sufficient ECDH key agreement parameters negotiated");
-            }
-
-            return new KAKeyDerivation("ECDH", chc,
-                ecdhePossession.privateKey, x509Credentials.popPublicKey);
         }
     }
 

@@ -58,8 +58,7 @@ public class ConcurrentClientAccessTest {
     public static void main(String[] args) throws Exception {
 
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
-        for (String tlsProtocol : new String[]{"TLSv1.3", "TLSv1.2",
-            "TLSv1.1", "TLSv1"}) {
+        for (String tlsProtocol : new String[]{"TLSv1.3", "TLSv1.2"}) {
             System.out.printf("Protocol: %s%n", tlsProtocol);
             CountDownLatch tillServerReady = new CountDownLatch(1);
             Server server = new Server(tlsProtocol, tillServerReady);

@@ -118,7 +118,7 @@ abstract class HelloCookieManager {
     abstract boolean isCookieValid(ServerHandshakeContext context,
             ClientHelloMessage clientHello, byte[] cookie) throws IOException;
 
-    // DTLS 1.0/1.2
+    // DTLS 1.2
     private static final
             class D10HelloCookieManager extends HelloCookieManager {
 

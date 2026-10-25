@@ -62,7 +62,7 @@ public class PaddingTest {
         (byte)0x76,(byte)0x54,(byte)0x32,(byte)0x10};
 
     static String[] crypts = {"DES", "DESede"};
-    static String[] modes = {"ECB", "CBC", "CFB", "OFB", "PCBC"};
+    static String[] modes = {"ECB", "CBC", "CFB", "OFB"};
     static String[] paddings = {"PKCS5Padding", "NoPadding"};
     static int numFiles = 11;
     static final String currDir = System.getProperty("test.src", ".");

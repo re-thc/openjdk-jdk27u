@@ -29,7 +29,6 @@ public final class JDKSecurityProperties {
 
     public static final List<String> jdkProps = List.of(
         "crypto.policy",
-        "jceks.key.serialFilter",
         "jdk.certpath.disabledAlgorithms",
         "keystore.type",
         "krb5.kdc.bad.policy",

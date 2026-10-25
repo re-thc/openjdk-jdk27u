@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +51,6 @@ import javax.security.auth.x500.X500Principal;
 import jdk.internal.access.SharedSecrets;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
-import sun.security.provider.JavaKeyStore.JKS;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
@@ -87,28 +87,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static final int DEFAULT_CERT_PBE_ITERATION_COUNT = 10000;
     private static final int DEFAULT_KEY_PBE_ITERATION_COUNT = 10000;
     private static final int DEFAULT_MAC_ITERATION_COUNT = 10000;
-
-    // Legacy settings. Used when "keystore.pkcs12.legacy" is set.
-    private static final String LEGACY_CERT_PBE_ALGORITHM
-            = "PBEWithSHA1AndRC2_40";
-    private static final String LEGACY_KEY_PBE_ALGORITHM
-            = "PBEWithSHA1AndDESede";
-    private static final String LEGACY_MAC_ALGORITHM = "HmacPBESHA1";
-    private static final int LEGACY_PBE_ITERATION_COUNT = 50000;
-    private static final int LEGACY_MAC_ITERATION_COUNT = 100000;
-
-    // Big switch. When this system property is set. Legacy settings
-    // are used no matter what other keystore.pkcs12.* properties are set.
-    // Note: This is only a system property, there's no same-name
-    // security property defined.
-    private static final String USE_LEGACY_PROP = "keystore.pkcs12.legacy";
-
-    // special PKCS12 keystore that supports PKCS12 and JKS file formats
-    public static final class DualFormatPKCS12 extends KeyStoreDelegator {
-        public DualFormatPKCS12() {
-            super("PKCS12", PKCS12KeyStore.class, "JKS", JKS.class);
-        }
-    }
 
     public static final int VERSION_3 = 3;
 
@@ -185,6 +163,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         String alias;
         byte[] keyId;
         Set<KeyStore.Entry.Attribute> attributes;
+        // whether the attributes used by the implementation are still to be
+        // added to the attributes, see getAttributes
+        boolean populatePending;
     }
 
     // A key entry
@@ -393,8 +374,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         byte[] keyBytes = in.getOctetString();
                         if (keyAlgo.equals(KnownOIDs.OIW_DES_CBC.stdName())) {
                             keyAlgo = "DES";
-                        } else if (keyAlgo.equals(KnownOIDs.RC2$CBC$PKCS5Padding.stdName())) {
-                            keyAlgo = "RC2";
                         }
                         SecretKeySpec secretKeySpec =
                                 new SecretKeySpec(keyBytes, keyAlgo);
@@ -823,10 +802,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         AlgorithmParameters algParams;
 
         byte[] salt = getSalt();
-        if (KnownOIDs.findMatch(algorithm) == KnownOIDs.PBEWithMD5AndDES) {
-            // PBES1 scheme such as PBEWithMD5AndDES requires a 8-byte salt
-            salt = Arrays.copyOf(salt, 8);
-        }
 
         // create PBE parameters from salt and iteration count
         PBEParameterSpec paramSpec =
@@ -1277,7 +1252,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             return super.engineGetAttributes(alias);
         }
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        return Collections.unmodifiableSet(new HashSet<>(entry.attributes));
+        return Collections.unmodifiableSet(new HashSet<>(getAttributes(entry)));
     }
 
     /**
@@ -1323,7 +1298,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
 
                 return new KeyStore.TrustedCertificateEntry(
-                        ((CertEntry)entry).cert, entry.attributes);
+                        ((CertEntry)entry).cert, getAttributes(entry));
             } else {
                 throw new UnrecoverableKeyException
                         ("requested entry requires a password");
@@ -1344,12 +1319,12 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     Certificate[] chain = internalGetCertificateChain(entry);
 
                     return new KeyStore.PrivateKeyEntry((PrivateKey)key, chain,
-                        entry.attributes);
+                        getAttributes(entry));
 
                 } else if (key instanceof SecretKey) {
 
                     return new KeyStore.SecretKeyEntry((SecretKey)key,
-                        entry.attributes);
+                        getAttributes(entry));
                 }
             } else {
                 throw new UnsupportedOperationException
@@ -1438,9 +1413,23 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
+     * Returns the attributes of the entry. The attributes of an entry that was
+     * loaded are populated when they are first needed.
+     */
+    private static Set<KeyStore.Entry.Attribute> getAttributes(Entry entry) {
+        synchronized (entry) {
+            if (entry.populatePending) {
+                populateAttributes(entry);
+                entry.populatePending = false;
+            }
+            return entry.attributes;
+        }
+    }
+
+    /*
      * Populate the entry with additional attributes used by the implementation.
      */
-    private void populateAttributes(Entry entry) {
+    private static void populateAttributes(Entry entry) {
 
         if (entry.attributes == null) {
             entry.attributes = new HashSet<>();
@@ -1695,13 +1684,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     if (entry instanceof KeyEntry keyEntry) {
                         bagAttrs =
                             getBagAttributes(keyEntry.alias, keyEntry.keyId,
-                                keyEntry.attributes);
+                                getAttributes(keyEntry));
                     } else {
                         CertEntry certEntry = (CertEntry) entry;
                         bagAttrs =
                             getBagAttributes(certEntry.alias, certEntry.keyId,
                                 certEntry.trustedKeyUsage,
-                                certEntry.attributes);
+                                getAttributes(certEntry));
                     }
                 } else {
                     // Trusted root CA certs and Intermediate CA certs do not
@@ -1712,7 +1701,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     // However, IE/OpenSSL do not impose this restriction.
                     bagAttrs = getBagAttributes(
                             cert.getSubjectX500Principal().getName(), null,
-                            entry.attributes);
+                            getAttributes(entry));
                 }
                 if (bagAttrs != null) {
                     safeBag.writeBytes(bagAttrs);
@@ -1805,7 +1794,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
             // write SafeBag Attributes
             byte[] bagAttrs =
-                getBagAttributes(alias, entry.keyId, entry.attributes);
+                getBagAttributes(alias, entry.keyId, getAttributes(entry));
             safeBag.writeBytes(bagAttrs);
 
             // wrap as Sequence
@@ -2290,6 +2279,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         throws IOException, CertificateException {
         DerValue[] safeBags = stream.getSequence(2);
         int count = safeBags.length;
+        CertificateFactory cf = null;
 
         /*
          * Spin over the SafeBags.
@@ -2325,7 +2315,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                         + certValues[1].tag);
                 }
                 DerValue certValue = certValues[1].data.getDerValue();
-                CertificateFactory cf = CertificateFactory.getInstance("X509");
+                if (cf == null) {
+                    cf = CertificateFactory.getInstance("X509");
+                }
                 X509Certificate cert;
                 cert = (X509Certificate)cf.generateCertificate
                         (new ByteArrayInputStream(certValue.getOctetString()));
@@ -2460,7 +2452,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                    alias = getUnfriendlyName();
                 }
                 entry.alias = alias;
-                populateAttributes(entry);
+                entry.populatePending = true;
                 entries.put(alias.toLowerCase(Locale.ENGLISH), entry);
 
             } else if (bagItem instanceof X509Certificate cert) {
@@ -2482,7 +2474,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     CertEntry certEntry =
                         new CertEntry(cert, keyId, alias, trustedKeyUsage,
                             attributes);
-                    populateAttributes(certEntry);
+                    certEntry.populatePending = true;
                     entries.put(alias.toLowerCase(Locale.ENGLISH), certEntry);
                 } else {
                     certEntries.add(new CertEntry(cert, keyId, alias));
@@ -2576,14 +2568,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     // the generation of a PKCS12 keystore or private/secret
     // key entries.
 
-    private static boolean useLegacy() {
-        return System.getProperty(USE_LEGACY_PROP) != null;
-    }
-
     private static String defaultCertProtectionAlgorithm() {
-        if (useLegacy()) {
-            return LEGACY_CERT_PBE_ALGORITHM;
-        }
         String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.certProtectionAlgorithm");
         return (result != null && !result.isEmpty())
@@ -2591,9 +2576,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     private static int defaultCertPbeIterationCount() {
-        if (useLegacy()) {
-            return LEGACY_PBE_ITERATION_COUNT;
-        }
         String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.certPbeIterationCount");
         return (result != null && !result.isEmpty())
@@ -2604,9 +2586,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     // Read both "keystore.pkcs12.keyProtectionAlgorithm" and
     // "keystore.PKCS12.keyProtectionAlgorithm" for compatibility.
     private static String defaultKeyProtectionAlgorithm() {
-        if (useLegacy()) {
-            return LEGACY_KEY_PBE_ALGORITHM;
-        }
         String name1 = "keystore.pkcs12.keyProtectionAlgorithm";
         String name2 = "keystore.PKCS12.keyProtectionAlgorithm";
         String result = System.getProperty(name1);
@@ -2624,9 +2603,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     private static int defaultKeyPbeIterationCount() {
-        if (useLegacy()) {
-            return LEGACY_PBE_ITERATION_COUNT;
-        }
         String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.keyPbeIterationCount");
         return (result != null && !result.isEmpty())
@@ -2635,9 +2611,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     private static String defaultMacAlgorithm() {
-        if (useLegacy()) {
-            return LEGACY_MAC_ALGORITHM;
-        }
         String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.macAlgorithm");
         return (result != null && !result.isEmpty())
@@ -2645,9 +2618,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     private static int defaultMacIterationCount() {
-        if (useLegacy()) {
-            return LEGACY_MAC_ITERATION_COUNT;
-        }
         String result = SecurityProperties.getOverridableProperty(
                 "keystore.pkcs12.macIterationCount");
         return (result != null && !result.isEmpty())

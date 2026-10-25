@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -173,6 +174,35 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
     AC_MSG_NOTICE([This can happen if you mix --with-jvm-features and --enable-jvm-feature-*])
     AC_MSG_NOTICE([The recommendation is to only use --enable-jvm-feature-*])
     AC_MSG_ERROR([Cannot continue])
+  fi
+
+  # The server product keeps these collectors on every configured VM variant.
+  # Derive the excluded set so new upstream collectors cannot enter by default.
+  SERVER_JVM_COLLECTORS="g1gc serialgc zgc"
+  AC_SUBST(SERVER_JVM_COLLECTORS)
+  all_collectors=`$ECHO $JVM_FEATURES_VALID | \
+      $AWK '{ for (i=1; i<=NF; i++) if ($i ~ /gc$/) printf("%s ", $i) }'`
+  UTIL_GET_NON_MATCHING_VALUES(excluded_collectors, $all_collectors, $SERVER_JVM_COLLECTORS)
+  UTIL_GET_MATCHING_VALUES(incompatible_collectors, $JVM_FEATURES_ENABLED, $excluded_collectors)
+  UTIL_GET_MATCHING_VALUES(disabled_collectors, $JVM_FEATURES_DISABLED, $SERVER_JVM_COLLECTORS)
+  if test "x$incompatible_collectors$disabled_collectors" != x; then
+    AC_MSG_ERROR([This fork requires exactly these collectors: $SERVER_JVM_COLLECTORS])
+  fi
+  JVM_FEATURES_ENABLED="$JVM_FEATURES_ENABLED $SERVER_JVM_COLLECTORS"
+  JVM_FEATURES_DISABLED="$JVM_FEATURES_DISABLED $excluded_collectors"
+
+  # Refuse to reuse outputs from a different product. In particular, incremental
+  # builds must not carry desktop classes or disabled GC objects into an image.
+  if test -f "$OUTPUTDIR/spec.gmk"; then
+    previous_collectors=`$AWK '/^JVM_FEATURES_[[a-z]]+ *:=/ {
+        for (i=3; i<=NF; i++) if ($i ~ /gc$/) printf("%s ", $i)
+        print ""
+      }' "$OUTPUTDIR/spec.gmk" | $SED '/^$/d; s/ *$//' | $SORT -u`
+    if test "x$previous_collectors" != "x$SERVER_JVM_COLLECTORS" \
+        || ! $GREP -q '^ENABLE_DESKTOP *:= *false' "$OUTPUTDIR/spec.gmk" \
+        || ! $GREP -q '^ENABLE_HEADLESS_ONLY *:= *true' "$OUTPUTDIR/spec.gmk"; then
+      AC_MSG_ERROR([Incompatible existing build outputs. Use a new --with-conf-name or run make dist-clean for this configuration first.])
+    fi
   fi
 
   # Clean up lists and announce results to user
@@ -490,6 +520,13 @@ AC_DEFUN([JVM_FEATURES_IS_ACTIVE],
 AC_DEFUN([JVM_FEATURES_VERIFY],
 [
   variant=$1
+
+  active_collectors=`$ECHO $JVM_FEATURES_ACTIVE | \
+      $AWK '{ for (i=1; i<=NF; i++) if ($i ~ /gc$/) printf("%s ", $i) }' | $SED 's/ *$//'`
+  UTIL_SORT_LIST(active_collectors, $active_collectors)
+  if test "x$active_collectors" != "x$SERVER_JVM_COLLECTORS"; then
+    AC_MSG_ERROR([JVM variant '$variant' cannot provide the required collectors: $SERVER_JVM_COLLECTORS])
+  fi
 
   if JVM_FEATURES_IS_ACTIVE(jfr) && ! JVM_FEATURES_IS_ACTIVE(services); then
     AC_MSG_ERROR([Specified JVM feature 'jfr' requires feature 'services' for variant '$variant'])

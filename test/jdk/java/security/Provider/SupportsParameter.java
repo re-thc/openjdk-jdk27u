@@ -39,12 +39,12 @@ import jdk.test.lib.security.SecurityUtils;
 public class SupportsParameter {
 
     public static void main(String[] args) throws Exception {
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
         kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
-        PublicKey dsaPublicKey = kp.getPublic();
-        PrivateKey dsaPrivateKey = kp.getPrivate();
+        PublicKey ecPublicKey = kp.getPublic();
+        PrivateKey ecPrivateKey = kp.getPrivate();
 
         PublicKey myPublicKey = new MyPublicKey();
         PrivateKey myPrivateKey = new MyPrivateKey();
@@ -54,42 +54,42 @@ public class SupportsParameter {
         Service s;
 
         // none specified, always true
-        s = p.getService("Signature", "DSA0");
+        s = p.getService("Signature", "ECDSA0");
         checkSupports(s, null, true);
-        checkSupports(s, dsaPublicKey, true);
-        checkSupports(s, dsaPrivateKey, true);
+        checkSupports(s, ecPublicKey, true);
+        checkSupports(s, ecPrivateKey, true);
         checkSupports(s, myPublicKey, true);
         checkSupports(s, myPrivateKey, true);
         checkSupports(s, mySecretKey, true);
 
-        // DSAPublic/PrivateKey specified as classes
-        s = p.getService("Signature", "DSA");
-        checkSupports(s, dsaPublicKey, true);
-        checkSupports(s, dsaPrivateKey, true);
+        // ECPublic/PrivateKey specified as classes
+        s = p.getService("Signature", "ECDSA");
+        checkSupports(s, ecPublicKey, true);
+        checkSupports(s, ecPrivateKey, true);
         checkSupports(s, myPublicKey, false);
         checkSupports(s, myPrivateKey, false);
         checkSupports(s, mySecretKey, false);
 
         // X.509/PKCS#8 specified as formats
-        s = p.getService("Signature", "DSA2");
-        checkSupports(s, dsaPublicKey, true);
-        checkSupports(s, dsaPrivateKey, true);
+        s = p.getService("Signature", "ECDSA2");
+        checkSupports(s, ecPublicKey, true);
+        checkSupports(s, ecPrivateKey, true);
         checkSupports(s, myPublicKey, false);
         checkSupports(s, myPrivateKey, false);
         checkSupports(s, mySecretKey, false);
 
-        // MyPublic/PrivateKey + DSAPublicKey specified as classes
-        s = p.getService("Signature", "DSA3");
-        checkSupports(s, dsaPublicKey, true);
-        checkSupports(s, dsaPrivateKey, false);
+        // MyPublic/PrivateKey + ECPublicKey specified as classes
+        s = p.getService("Signature", "ECDSA3");
+        checkSupports(s, ecPublicKey, true);
+        checkSupports(s, ecPrivateKey, false);
         checkSupports(s, myPublicKey, true);
         checkSupports(s, myPrivateKey, true);
         checkSupports(s, mySecretKey, false);
 
-        // MyPublic/PrivateKey + DSAPublicKey specified as classes
+        // MyPublic/PrivateKey + ECPublicKey specified as classes
         s = p.getService("Cipher", "DES");
-        checkSupports(s, dsaPublicKey, false);
-        checkSupports(s, dsaPrivateKey, false);
+        checkSupports(s, ecPublicKey, false);
+        checkSupports(s, ecPrivateKey, false);
         checkSupports(s, myPublicKey, false);
         checkSupports(s, myPrivateKey, false);
         checkSupports(s, mySecretKey, true);
@@ -109,21 +109,21 @@ public class SupportsParameter {
         MyProvider() {
             super("MyProvider", "1.0", "MyProvider");
 
-            put("Signature.DSA0", "foo.DSA0");
+            put("Signature.ECDSA0", "foo.ECDSA0");
 
-            put("Signature.DSA", "foo.DSA");
-            put("Signature.DSA SupportedKeyClasses",
-                "java.security.interfaces.DSAPublicKey" +
-                "|java.security.interfaces.DSAPrivateKey");
+            put("Signature.ECDSA", "foo.ECDSA");
+            put("Signature.ECDSA SupportedKeyClasses",
+                "java.security.interfaces.ECPublicKey" +
+                "|java.security.interfaces.ECPrivateKey");
 
-            put("Signature.DSA2", "foo.DSA2");
-            put("Signature.DSA2 SupportedKeyFormats", "X.509|PKCS#8");
+            put("Signature.ECDSA2", "foo.ECDSA2");
+            put("Signature.ECDSA2 SupportedKeyFormats", "X.509|PKCS#8");
 
-            put("Signature.DSA3", "foo.DSA3");
-            put("Signature.DSA3 SupportedKeyClasses",
+            put("Signature.ECDSA3", "foo.ECDSA3");
+            put("Signature.ECDSA3 SupportedKeyClasses",
                 "SupportsParameter$MyPrivateKey" +
                 "|SupportsParameter$MyPublicKey" +
-                "|java.security.interfaces.DSAPublicKey");
+                "|java.security.interfaces.ECPublicKey");
 
             put("Cipher.DES", "foo.DES");
             put("Cipher.DES SupportedKeyFormats", "RAW");

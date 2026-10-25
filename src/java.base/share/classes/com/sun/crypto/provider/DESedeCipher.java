@@ -33,7 +33,7 @@ import javax.crypto.*;
 /**
  * This class implements the DESede algorithm (DES-EDE, tripleDES) in
  * its various modes (<code>ECB</code>, <code>CFB</code>, <code>OFB</code>,
- * <code>CBC</code>, <code>PCBC</code>) and padding schemes
+ * <code>CBC</code>) and padding schemes
  * (<code>PKCS5Padding</code>, <code>NoPadding</code>,
  * <code>ISO10126Padding</code>).
  *

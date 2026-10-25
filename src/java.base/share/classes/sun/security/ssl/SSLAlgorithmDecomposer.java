@@ -52,63 +52,12 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
     private Set<String> decomposes(CipherSuite.KeyExchange keyExchange) {
         Set<String> components = new HashSet<>();
         switch (keyExchange) {
-            case K_NULL:
-                if (!onlyX509) {
-                    components.add("K_NULL");
-                }
-                break;
-            case K_RSA:
-                components.add("RSA");
-                break;
-            case K_RSA_EXPORT:
-                components.add("RSA");
-                components.add("RSA_EXPORT");
-                break;
-            case K_DH_RSA:
-                components.add("RSA");
-                components.add("DH");
-                components.add("DiffieHellman");
-                components.add("DH_RSA");
-                break;
-            case K_DH_DSS:
-                components.add("DSA");
-                components.add("DSS");
-                components.add("DH");
-                components.add("DiffieHellman");
-                components.add("DH_DSS");
-                break;
-            case K_DHE_DSS:
-                components.add("DSA");
-                components.add("DSS");
-                components.add("DH");
-                components.add("DHE");
-                components.add("DiffieHellman");
-                components.add("DHE_DSS");
-                break;
             case K_DHE_RSA:
                 components.add("RSA");
                 components.add("DH");
                 components.add("DHE");
                 components.add("DiffieHellman");
                 components.add("DHE_RSA");
-                break;
-            case K_DH_ANON:
-                if (!onlyX509) {
-                    components.add("ANON");
-                    components.add("DH");
-                    components.add("DiffieHellman");
-                    components.add("DH_ANON");
-                }
-                break;
-            case K_ECDH_ECDSA:
-                components.add("ECDH");
-                components.add("ECDSA");
-                components.add("ECDH_ECDSA");
-                break;
-            case K_ECDH_RSA:
-                components.add("ECDH");
-                components.add("RSA");
-                components.add("ECDH_RSA");
                 break;
             case K_ECDHE_ECDSA:
                 components.add("ECDHE");
@@ -119,13 +68,6 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
                 components.add("ECDHE");
                 components.add("RSA");
                 components.add("ECDHE_RSA");
-                break;
-            case K_ECDH_ANON:
-                if (!onlyX509) {
-                    components.add("ECDH");
-                    components.add("ANON");
-                    components.add("ECDH_ANON");
-                }
                 break;
             default:
                 // otherwise ignore
@@ -142,28 +84,6 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
         }
 
         switch (bulkCipher) {
-            case B_NULL:
-                components.add("C_NULL");
-                break;
-            case B_RC2_40:
-                components.add("RC2_CBC_40");
-                break;
-            case B_RC4_40:
-                components.add("RC4_40");
-                break;
-            case B_RC4_128:
-                components.add("RC4_128");
-                break;
-            case B_DES_40:
-                components.add("DES40_CBC");
-                components.add("DES_CBC_40");
-                break;
-            case B_DES:
-                components.add("DES_CBC");
-                break;
-            case B_3DES:
-                components.add("3DES_EDE_CBC");
-                break;
             case B_AES_128:
                 components.add("AES_128_CBC");
                 break;
@@ -190,17 +110,10 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
         return components;
     }
 
-    private Set<String> decomposes(CipherSuite.MacAlg macAlg,
-            SSLCipher cipher) {
+    private Set<String> decomposes(CipherSuite.MacAlg macAlg) {
         Set<String> components = new HashSet<>();
 
-        if (macAlg == CipherSuite.MacAlg.M_NULL
-                && cipher.cipherType != CipherType.AEAD_CIPHER) {
-            components.add("M_NULL");
-        } else if (macAlg == CipherSuite.MacAlg.M_MD5) {
-            components.add("MD5");
-            components.add("HmacMD5");
-        } else if (macAlg == CipherSuite.MacAlg.M_SHA) {
+        if (macAlg == CipherSuite.MacAlg.M_SHA) {
             components.add("SHA1");
             components.add("SHA-1");
             components.add("HmacSHA1");
@@ -254,7 +167,7 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
         }
 
         if (macAlg != null) {
-            components.addAll(decomposes(macAlg, cipher));
+            components.addAll(decomposes(macAlg));
         }
 
         if (hashAlg != null) {

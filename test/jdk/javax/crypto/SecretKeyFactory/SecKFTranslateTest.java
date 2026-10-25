@@ -108,7 +108,7 @@ public class SecKFTranslateTest {
 
 class MyOwnSecKey implements SecretKey {
 
-    private static final String DEFAULT_ALGO = "PBEWithMD5AndDES";
+    private static final String DEFAULT_ALGO = "PBEWithSHA1AndDESede";
     private final byte[] key;
     private final String algorithm;
     private final int keySize;
@@ -188,7 +188,7 @@ enum Algorithm {
             return key1;
         }
     },
-    PBEWithMD5ANDdes {
+    PBEWithSHA1AndDESede {
         @Override
         SecretKey intSecurityKey(AlgorithmParameterSpec[] spec)
                 throws InvalidKeySpecException {

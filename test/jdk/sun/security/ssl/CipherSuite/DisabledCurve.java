@@ -49,17 +49,13 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class DisabledCurve extends SSLSocketTemplate {
 
     private static volatile int index;
     private static final String[][][] protocols = {
-            { { "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" }, { "TLSv1.2" } },
-            { { "TLSv1.2" }, { "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1" } },
+            { { "TLSv1.3", "TLSv1.2" }, { "TLSv1.2" } },
+            { { "TLSv1.2" }, { "TLSv1.3", "TLSv1.2" } },
             { { "TLSv1.2" }, { "TLSv1.2" } },
-            { { "TLSv1.1" }, { "TLSv1.1" } },
-            { { "TLSv1" }, { "TLSv1" } },
             { { "TLSv1.3" }, { "TLSv1.3" } } };
 
     @Override
@@ -121,9 +117,6 @@ public class DisabledCurve extends SSLSocketTemplate {
                 Security.setProperty("jdk.disabled.namedCurves", "");
             }
         }
-
-        // Re-enable TLSv1 and TLSv1.1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
         String namedGroups = System.getProperty("jdk.tls.namedGroups", "");
         boolean hybridGroup = namedGroups.contains("MLKEM");

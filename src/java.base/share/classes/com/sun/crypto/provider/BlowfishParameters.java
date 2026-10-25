@@ -47,8 +47,7 @@ public final class BlowfishParameters extends AlgorithmParametersSpi {
     private final BlockCipherParamsCore core;
 
     public BlowfishParameters() {
-        core = new BlockCipherParamsCore
-            (BlowfishConstants.BLOWFISH_BLOCK_SIZE);
+        core = new BlockCipherParamsCore(8); // the Blowfish block size
     }
     protected void engineInit(AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException {

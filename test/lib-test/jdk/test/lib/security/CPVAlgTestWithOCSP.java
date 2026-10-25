@@ -35,8 +35,6 @@
  * @library /test/lib
  * @run main/othervm CPVAlgTestWithOCSP RSA
  * @run main/othervm CPVAlgTestWithOCSP RSA:3072
- * @run main/othervm CPVAlgTestWithOCSP DSA
- * @run main/othervm CPVAlgTestWithOCSP DSA:3072
  * @run main/othervm CPVAlgTestWithOCSP RSASSA-PSS
  * @run main/othervm CPVAlgTestWithOCSP RSASSA-PSS:3072
  * @run main/othervm CPVAlgTestWithOCSP RSASSA-PSS:4096:SHA-512:SHA3-384:128:1
@@ -179,8 +177,7 @@ public class CPVAlgTestWithOCSP {
                 kpg.initialize(new ECGenParameterSpec(curveName));
                 break;
             case "RSA":
-            case "DSA":
-                // Form is RSA|DSA[:<KeyBitLen>]
+                // Form is RSA[:<KeyBitLen>]
                 bitLen = (algComps.length >= 2) ?
                         Integer.parseInt(algComps[1]) : 2048;
                 kpg.initialize(bitLen);

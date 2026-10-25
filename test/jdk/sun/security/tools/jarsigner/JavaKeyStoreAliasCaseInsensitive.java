@@ -28,8 +28,7 @@
  * @run testng JavaKeyStoreAliasCaseInsensitive
  * @summary Checks that jarsigner verifies a signed jar with the same alias as
  * was specified for signing, particularly regarding upper and lower case and
- * its conversion to lower case by JKS
- * ({@link sun.security.provider.JavaKeyStore.JKS#convertAlias(String)}).
+ * its conversion to lower case by PKCS12.
  */
 
 import java.nio.file.Files;
@@ -48,9 +47,9 @@ public class JavaKeyStoreAliasCaseInsensitive {
 
     @Test
     public void testAliasCase() throws Exception {
-        final String KEYSTORE_OPTIONS = "-storetype JKS -keystore "
-                + "test-alias-case.jks -storepass changeit";
-        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
+        final String KEYSTORE_OPTIONS = "-storetype PKCS12 -keystore "
+                + "test-alias-case.p12 -storepass changeit";
+        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg EC"
                 + " -keypass changeit -alias " + ALIAS + " -dname CN=" + ALIAS)
                 .shouldHaveExitValue(0);
         String jarFilename = "test-alias-case.jar";
@@ -86,12 +85,12 @@ public class JavaKeyStoreAliasCaseInsensitive {
     public void testAliasCaseStoreHash() throws Exception {
         // Create a keystore with a certificate associated with ALIAS + "2"
         // signed by another certificate associated with ALIAS + "1".
-        final String KEYSTORE_OPTIONS = "-storetype JKS -keystore"
-                + " test-alias-storeHash-case.jks -storepass changeit";
-        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
+        final String KEYSTORE_OPTIONS = "-storetype PKCS12 -keystore"
+                + " test-alias-storeHash-case.p12 -storepass changeit";
+        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg EC"
                 + " -keypass changeit -alias " + ALIAS + "1 -dname CN=" +
                 ALIAS + "1" + " -ext bc:c").shouldHaveExitValue(0);
-        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg DSA"
+        SecurityTools.keytool(KEYSTORE_OPTIONS + " -genkeypair -keyalg EC"
                 + " -keypass changeit -alias " + ALIAS + "2 -dname CN="
                 + ALIAS + "2").shouldHaveExitValue(0);
         String certReq = SecurityTools.keytool(KEYSTORE_OPTIONS +
