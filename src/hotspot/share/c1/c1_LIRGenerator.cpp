@@ -2824,10 +2824,11 @@ void LIRGenerator::do_putFloatDecimal(Intrinsic* x) {
   LIR_Opr latin1 = new_register(T_INT);
   access_load_at(IN_HEAP, T_BOOLEAN, receiver,
                  LIR_OprFact::intConst(jdk_internal_math_ToDecimal::latin1_offset()), latin1);
+  LIR_Opr doubled_index = new_register(T_INT);
+  arithmetic_op_int(Bytecodes::_iadd, doubled_index, index.result(), index.result(), LIR_OprFact::illegalOpr);
   LIR_Opr byte_index = new_register(T_INT);
-  arithmetic_op_int(Bytecodes::_iadd, byte_index, index.result(), index.result(), LIR_OprFact::illegalOpr);
   __ cmp(lir_cond_notEqual, latin1, LIR_OprFact::intConst(0));
-  __ cmove(lir_cond_notEqual, index.result(), byte_index, byte_index, T_INT);
+  __ cmove(lir_cond_notEqual, index.result(), doubled_index, byte_index, T_INT);
   LIR_Opr coder = new_register(T_INT);
   logic_op(Bytecodes::_ixor, coder, latin1, LIR_OprFact::intConst(1));
   LIR_Opr format = new_register(T_INT);
