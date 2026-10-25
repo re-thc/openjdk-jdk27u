@@ -53,7 +53,7 @@ class IOVecWrapper {
     // The iovec array
     private final AllocatedNativeObject vecArray;
 
-    // Number of buffer slots
+    // Caller length used as the cache sizing key
     private final int size;
 
     // Buffers and position/remaining corresponding to elements in iovec array
@@ -88,11 +88,12 @@ class IOVecWrapper {
 
     private IOVecWrapper(int size) {
         this.size      = size;
-        this.buf       = new ByteBuffer[size];
-        this.position  = new int[size];
-        this.remaining = new int[size];
-        this.shadow    = new ByteBuffer[size];
-        this.vecArray  = new AllocatedNativeObject(Math.min(size, IOUtil.IOV_MAX) * SIZE_IOVEC, false);
+        int capacity = Math.min(size, IOUtil.IOV_MAX);
+        this.buf       = new ByteBuffer[capacity];
+        this.position  = new int[capacity];
+        this.remaining = new int[capacity];
+        this.shadow    = new ByteBuffer[capacity];
+        this.vecArray  = new AllocatedNativeObject(capacity * SIZE_IOVEC, false);
         this.address   = vecArray.address();
     }
 

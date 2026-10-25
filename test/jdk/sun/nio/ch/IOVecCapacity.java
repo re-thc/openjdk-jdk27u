@@ -64,6 +64,11 @@ public class IOVecCapacity {
         return field;
     }
 
+    private static Object cachedWrapper() throws ReflectiveOperationException {
+        ThreadLocal<?> cache = (ThreadLocal<?>) field(WRAPPER, "IOV_CACHE").get(null);
+        return ((Object[]) cache.get())[0];
+    }
+
     private static void checkCache(int expectedSize) throws ReflectiveOperationException {
         ThreadLocal<?> cache = (ThreadLocal<?>) field(WRAPPER, "IOV_CACHE").get(null);
         Object wrapper = ((Object[]) cache.get())[0];
@@ -73,7 +78,7 @@ public class IOVecCapacity {
         }
         for (String name : new String[] {"buf", "shadow"}) {
             Object[] refs = (Object[]) field(WRAPPER, name).get(wrapper);
-            if (refs.length != expectedSize || Arrays.stream(refs).anyMatch(x -> x != null)) {
+            if (refs.length != Math.min(expectedSize, IOV_MAX) || Arrays.stream(refs).anyMatch(x -> x != null)) {
                 throw new AssertionError("Retained references in " + name);
             }
         }
@@ -106,6 +111,26 @@ public class IOVecCapacity {
                 throw new AssertionError("Sparse vector content or position");
             }
             checkCache(length);
+            Object large = cachedWrapper();
+            n = read ? channel.read(buffers, 1, IOV_MAX / 2)
+                     : channel.write(buffers, 1, IOV_MAX / 2);
+            if (n != 0 || cachedWrapper() != large) {
+                throw new AssertionError("Shorter empty request did not reuse wrapper");
+            }
+            checkCache(length);
+            ByteBuffer[] grown = new ByteBuffer[length + 1];
+            Arrays.fill(grown, ByteBuffer.allocate(0));
+            n = read ? channel.read(grown) : channel.write(grown);
+            if (n != 0 || cachedWrapper() == large) {
+                throw new AssertionError("Growing request did not replace wrapper");
+            }
+            checkCache(grown.length);
+            Object replacement = cachedWrapper();
+            n = read ? channel.read(grown, 0, 0) : channel.write(grown, 0, 0);
+            if (n != 0 || cachedWrapper() != replacement) {
+                throw new AssertionError("Zero-length request did not reuse wrapper");
+            }
+            checkCache(grown.length);
         } finally {
             Files.delete(path);
         }
