@@ -99,7 +99,7 @@ int64_t parse_java_integer(const void* value, int length, int mode) {
 
 double FastFloat::parse(const void* value, int byte_length, int coder, int ix) {
   int length = byte_length >> coder;
-  assert(length <= max_input_length, "trusted bounded input");
+  assert(length <= max_input_length);
   return coder == java_lang_String::CODER_LATIN1
       ? parse_java_decimal<char>(value, length, ix)
       : parse_java_decimal<char16_t>(value, length, ix);
@@ -119,13 +119,13 @@ int64_t FastFloat::parse_integer(const void* value, int byte_length, int coder, 
 // Parse the original digit buffer and adjust its exponent without copying or
 // formatting an exponent. from_chars_advanced accepts this tokenized form.
 double FastFloat::parse_digits(const void* digits, int length, int decimal_exponent) {
-  assert(length >= 8 && length <= 768, "trusted bounded digit span");
+  assert(length >= 8 && length <= 768);
   const char* first = static_cast<const char*>(digits);
   const char* last = first + length;
   // This entry accepts trusted ASCII digits, not Java's String grammar.
   // Use fast_float's eight-digit primitive to tokenize only the significant
   // prefix. The complete span is retained for exact rounding of long inputs.
-  assert(*first != '0', "trusted normalized digits");
+  assert(*first != '0');
   int count = MIN2(length, 19);
   const char* end = first + count;
   const char* cursor = first;
