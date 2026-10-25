@@ -356,5 +356,5 @@ TEST_VM(FastFloat, input_bounds) {
       }
     }
   }
-  EXPECT_TRUE(os::release_memory(memory, 3 * page));
+  os::release_memory(memory, 3 * page);
 }
