@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +93,12 @@ class MutableBigInteger {
      * of two from the dividend and divisor.
      */
     static final int KNUTH_POW2_THRESH_ZEROS = 3;
+
+    /**
+     * The minimum dividend length for preparing a reciprocal in one word
+     * division.
+     */
+    private static final int DIVIDE_ONE_WORD_RECIPROCAL_THRESHOLD = 256;
 
     // Constructors
 
@@ -1217,6 +1224,11 @@ class MutableBigInteger {
         quotient.offset = 0;
         quotient.intLen = intLen;
 
+        if (intLen >= DIVIDE_ONE_WORD_RECIPROCAL_THRESHOLD &&
+                (divisor & (divisor - 1)) != 0) {
+            return divideOneWordReciprocal(divisorLong, quotient);
+        }
+
         long rem = 0;
         for (int xlen = intLen; xlen > 0; xlen--) {
             long dividendEstimate = (rem << 32) |
@@ -1226,6 +1238,32 @@ class MutableBigInteger {
             quotient.value[intLen - xlen] = q;
         }
 
+        quotient.normalize();
+        return (int)rem;
+    }
+
+    /**
+     * Divides using the quotient storage prepared by {@code divideOneWord}.
+     */
+    private int divideOneWordReciprocal(long divisor, MutableBigInteger quotient) {
+        // Let B = 2^64 and m = floor((B - 1) / divisor). For 0 <= n < B,
+        // floor(n*m/B) is either floor(n/divisor) or one less: the error
+        // before rounding is n*(B - divisor*m)/(B*divisor), which is < 1.
+        // Thus n - q*divisor is in [0, 2*divisor) and one correction suffices.
+        long reciprocal = Long.divideUnsigned(-1L, divisor);
+        long rem = 0;
+        for (int i = 0; i < intLen; i++) {
+            long n = (rem << 32) | (value[offset + i] & LONG_MASK);
+            long q = Math.unsignedMultiplyHigh(n, reciprocal);
+            // Both operations may wrap, but their difference is the exact
+            // nonnegative remainder estimate, which fits in 33 bits.
+            rem = n - q * divisor;
+            if (rem >= divisor) {
+                q++;
+                rem -= divisor;
+            }
+            quotient.value[i] = (int)q;
+        }
         quotient.normalize();
         return (int)rem;
     }
