@@ -904,6 +904,8 @@ public class SimdUTFTest {
             Arrays.fill(input, (byte)'a');
             byte[] output = guardedBytes(input.length, 7);
             byte[] utf16 = guardedBytes(input.length * 2, 14);
+            char[] chars = new char[input.length + 14];
+            Arrays.fill(chars, (char)0x5555);
             AtomicBoolean stop = new AtomicBoolean();
             Thread mutator = new Thread(() -> {
                 while (!stop.get()) {
@@ -929,6 +931,14 @@ public class SimdUTFTest {
                     check(units >= -input.length - 1 && units <= input.length,
                             "mutable UTF8 String conversion bounds");
                     guards(utf16, 14, input.length * 2);
+                    units = (int)process.invoke(null, input, 0, input.length,
+                            chars, 7, input.length, 1);
+                    check(units >= -input.length - 1 && units <= input.length,
+                            "mutable UTF8 char array conversion bounds");
+                    for (int j = 0; j < 7; j++) {
+                        check(chars[j] == 0x5555 && chars[chars.length - 1 - j] == 0x5555,
+                                "mutable UTF8 char array guards");
+                    }
                 }
             } finally {
                 stop.set(true);
