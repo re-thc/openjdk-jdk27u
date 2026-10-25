@@ -9466,7 +9466,9 @@ Node* LibraryCallKit::inline_encodeUTF8_predicate(bool utf16) {
   }
   // Huge Strings can have an exact-sized destination rather than 3 * length.
   // Only the bounded native arm needs worst-case room; Java handles the rest.
-  Node* dst = must_be_not_null(argument(2), true);
+  // This check is below the size guard. Do not export its branch-local cast
+  // to the shared caller map used by the short Java fallback.
+  Node* dst = must_be_not_null(argument(2), false);
   Node* capacity = _gvn.transform(new SubINode(load_array_length(dst), argument(3)));
   Node* required = _gvn.transform(new MulINode(length, intcon(3)));
   Node* tight = _gvn.transform(new BoolNode(
@@ -9532,15 +9534,13 @@ bool LibraryCallKit::inline_encodeUTF8UTF16() {
   Node* initial_io = i_o();
   RegionNode* region = new RegionNode(3);
   PhiNode* result = new PhiNode(region, TypeInt::INT);
-  PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+  MergeMemNode* fallback_memory = nullptr;
   PhiNode* io = new PhiNode(region, Type::ABIO);
   region->init_req(1, control());
   result->init_req(1, _gvn.transform(new AddINode(dp, written)));
-  memory->init_req(1, converted_memory);
   io->init_req(1, initial_io);
   region->init_req(2, top());
   result->init_req(2, top());
-  memory->init_req(2, top());
   io->init_req(2, top());
   if (malformed != nullptr) {
     PreserveJVMState state(this);
@@ -9559,11 +9559,22 @@ bool LibraryCallKit::inline_encodeUTF8UTF16() {
       Node* fallback_result = pop();
       region->set_req(2, control());
       result->set_req(2, fallback_result);
-      memory->set_req(2, reset_memory());
+      fallback_memory = merged_memory();
       io->set_req(2, i_o());
     }
   }
-  set_all_memory(_gvn.transform(memory));
+  // A parsed Java loop has separate alias slices. Merge each slice with the
+  // native-call memory, as the predicated intrinsic call generator does.
+  if (fallback_memory != nullptr) {
+    merge_memory(fallback_memory, region, 2);
+  }
+  set_control(_gvn.transform(region));
+  for (MergeMemStream mms(merged_memory()); mms.next_non_empty();) {
+    Node* phi = mms.memory();
+    if (phi->is_Phi() && phi->in(0) == region) {
+      mms.set_memory(_gvn.transform(phi));
+    }
+  }
   set_i_o(_gvn.transform(io));
   set_result(region, result);
   return true;
@@ -9613,15 +9624,13 @@ bool LibraryCallKit::inline_decodeUTF8UTF16() {
   set_all_memory(converted_memory);
   RegionNode* region = new RegionNode(3);
   PhiNode* result = new PhiNode(region, TypeInt::INT);
-  PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+  MergeMemNode* fallback_memory = nullptr;
   PhiNode* io = new PhiNode(region, Type::ABIO);
   region->init_req(1, control());
   result->init_req(1, _gvn.transform(new AddINode(dp, written)));
-  memory->init_req(1, converted_memory);
   io->init_req(1, i_o());
   region->init_req(2, top());
   result->init_req(2, top());
-  memory->init_req(2, top());
   io->init_req(2, top());
   if (malformed != nullptr) {
     PreserveJVMState state(this);
@@ -9640,11 +9649,22 @@ bool LibraryCallKit::inline_decodeUTF8UTF16() {
       Node* fallback_result = pop();
       region->set_req(2, control());
       result->set_req(2, fallback_result);
-      memory->set_req(2, reset_memory());
+      fallback_memory = merged_memory();
       io->set_req(2, i_o());
     }
   }
-  set_all_memory(_gvn.transform(memory));
+  // A parsed Java loop has separate alias slices. Merge each slice with the
+  // native-call memory, as the predicated intrinsic call generator does.
+  if (fallback_memory != nullptr) {
+    merge_memory(fallback_memory, region, 2);
+  }
+  set_control(_gvn.transform(region));
+  for (MergeMemStream mms(merged_memory()); mms.next_non_empty();) {
+    Node* phi = mms.memory();
+    if (phi->is_Phi() && phi->in(0) == region) {
+      mms.set_memory(_gvn.transform(phi));
+    }
+  }
   set_i_o(_gvn.transform(io));
   set_result(region, result);
   return true;
