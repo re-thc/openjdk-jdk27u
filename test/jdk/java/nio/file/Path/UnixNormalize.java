@@ -115,7 +115,22 @@ public class UnixNormalize {
                     names.add(name);
                 }
             }
-            check(compose(random.nextBoolean(), names));
+            byte[] input = compose(random.nextBoolean(), names);
+            check(input);
+            if (iteration < 2_000) {
+                ByteArrayOutputStream nativeTarget = new ByteArrayOutputStream();
+                for (int i = 0; i < input.length; i++) {
+                    nativeTarget.write(input[i]);
+                    if (input[i] == '/') {
+                        nativeTarget.write('/');
+                        if (i % 2 == 0)
+                            nativeTarget.write('/');
+                    }
+                }
+                if (iteration % 3 == 0)
+                    nativeTarget.write('/');
+                check(nativeTarget.toByteArray());
+            }
         }
 
         for (int depth : new int[] {1, 2, 31, 128, 512}) {
