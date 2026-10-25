@@ -1,0 +1,78 @@
+{
+  "review_type": "independent source-only review, final frozen executable sources",
+  "checkout": "/workspace/pr57-xss-prototype-20261023/source",
+  "base_commit": "98be5181dac1d5eff26745ac716aad7b76b348d8",
+  "reviewed_at": "2026-10-23",
+  "source_hashes_sha256": {
+    "src/java.base/share/classes/java/util/DualPivotQuicksort.java": "eee3d452d90fbe7824102435e66383479c715fea3f1e98bf8a9dc08f5103dc0b",
+    "src/hotspot/share/classfile/vmIntrinsics.hpp": "855fe1319651b07824eb72ce91eb14e36ab3667d35856e2a31276dd0f70f3357",
+    "src/hotspot/share/opto/c2compiler.cpp": "1b9fcdf4369338ff00a1b2020389587933a1447c24e6565de00b52fb6cc68d22",
+    "src/hotspot/share/opto/library_call.cpp": "7aef9d9df426d5db5998db06066eea27140c09f2f4a48b4f3c057cea25be12de",
+    "src/hotspot/share/opto/library_call.hpp": "d43e8864df5f462b7b7d454583017de25e81e0edf0bb1794e5a2892266988a2a",
+    "src/hotspot/share/opto/runtime.cpp": "4a21f2c64876f1dae8f38fc2e4c8fc653b6737caef3cfc5dd68226b2d9dabaa3",
+    "src/hotspot/share/opto/runtime.hpp": "ea9b95445fd1b2b2c346fbedd9c82dedb0122d6d67c1c9a39dc78678b5495c4d",
+    "src/hotspot/share/runtime/stubDeclarations.hpp": "6a2d1bb8651e6f09a0f09077999e6bfe2296ff8481654d0b0232af6672ccb77c",
+    "src/hotspot/share/runtime/stubRoutines.hpp": "23dbdec169319be57ef6e4f1f6150da35803f09b19a433f6c87c4fc09bd15b16",
+    "src/hotspot/share/runtime/stubRoutines.cpp": "b8d5195d712520802b6f36c400a6c6ba30b6226150599256b586fc39338ac5b2",
+    "src/hotspot/cpu/x86/stubGenerator_x86_64.cpp": "6df514882d6202f6bd617e5421a6135e552c627d13e99c0ee26962aa0504ce1c",
+    "src/hotspot/cpu/x86/stubRoutines_x86.hpp": "b5c1d1fa1e468fad35ae667c8d8b842fcd950120e40980d99a792bd615fac9c7",
+    "src/hotspot/cpu/x86/vm_version_x86.hpp": "b821845e2c8d8efb5a878d9a41bcd2272eee456114bba5c7bc37c8b40deadaa1",
+    "make/modules/java.base/Lib.gmk": "ef9d67a33d2a5b4df0a6c23e801b46f0ca96eb43b637db1a89950c201c68bb36",
+    "src/java.base/linux/native/librangesort/range-sort.cpp": "b7d5fd16197fa8bae2e94f409a0e6275d927149fb2c396924936e84258c9c5a0",
+    "src/java.base/linux/native/librangesort/embedded/xss-common-qsort.h": "17658b84c3dcc21f662e56a5db4db73b1ab2ef92c78a07e028ad57f7e4cda91d",
+    "src/java.base/linux/native/librangesort/upstream/xss-common-qsort.h": "86ef180342d515cf950b9a9e8065d4f1e4f72af077e022e382f2916735c5fbdb",
+    "src/java.base/linux/native/librangesort/upstream/UPSTREAM-PIN.txt": "8c55817e2f6417ebd574b641ac102bf82837dde952df0a3def48ed03b5f9f7f4",
+    "test/jdk/java/util/Arrays/BoundedSimdSort.java": "e068b0c08b360b9dde96883823c845c602540f173848c3b4bfe40bdafc198b9e"
+  },
+  "findings": [
+    {
+      "severity": "source-pass",
+      "finding": "Java caller is narrowly placed after the unchanged long run scanner/tryMergeRuns admission declines, bounded to 512..8192. A false Java stub/C1/interpreter result follows the original recursion/depth/pivot code; true returns only after the whole range is sorted. No duplicate scan, adaptive path, or other primitive route was added."
+    },
+    {
+      "severity": "source-pass",
+      "finding": "The C2 intrinsic signature ([JII)Z and TypeFunc domain/result agree: nonnull array base pointer, low/high int indices, raw stack-limit pointer, BOOL result. The range guards use unsigned low<=high, high<=array_length and unsigned (size-512)<=7680 before any native pointer arithmetic. Invalid calls deopt to the Java false stub. Native validates pointer/low/order/length and stack reserve before computing array+low; Java/C2 supplies the high<=length proof."
+    },
+    {
+      "severity": "source-pass",
+      "finding": "The native entry is a non-inlined generic-ISA wrapper; only a noinline kernel is compiled for avx512f,dq,vl,avx2,popcnt. E/U invoke in-place int64 kernels on array+low, no array copy or input-sized allocation is visible in the bounded call chain. Max range is 8192 and recursion is capped at 8; forced depth-zero test TU exercises the same vendored qsort fallback without adding a product hook."
+    },
+    {
+      "severity": "source-pass",
+      "finding": "Both embedded and upstream qsort now reject partition indices outside [left,right+1] before child math, and only form pivot_index-1 for a nonempty left child (pivot_index>left); right recurses only for pivot_index<=right. Index-bounded heap fallback addresses both whole subrange and remains within count by its child/end bounds. This supports machine-level bounded indexing under value races, but does not establish C++ language-level data-race freedom; stress must not be represented as proof of it or of sorted output under race."
+    },
+    {
+      "severity": "source-pass-with-runtime-gate",
+      "finding": "Optional C2 stub loading is null-safe and requires HotSpot AVX-512 SIMD sort, AVX512VL, AVX2, and POPCNT features; DSO compiles for AVX512F/DQ/VL plus AVX2/POPCNT. CPUID dependencies plus the existing HotSpot sort gate are relied on for AVX512F. Runtime flag/feature consistency, actual DSO loading, generated call behavior, and emitted ISA must still be verified on the chosen machine."
+    },
+    {
+      "severity": "blocker-before-ordinary-run",
+      "finding": "The 32 KiB carrier stack reserve is not substantiated by a built .su stack audit, compiler output, disassembly/call graph, or measured stack high-water evidence. The new stack audit script is only a checker and no results exist. Before ordinary execution, inspect actual E/U optimized stack reports and machine code, including the guarded noinline kernel transition and worst-depth fallback, then retain a successful audit receipt."
+    },
+    {
+      "severity": "blocker-before-ordinary-run",
+      "finding": "No compiled C2 graph, safepoint/GC map, register/stack ABI, native symbol, intrinsic activation, fallback, or feature-disabled evidence exists yet. Source inspection cannot establish that the raw array pointer survives the RC_LEAF call correctly or that every intended C2 flag/VM policy routes as expected."
+    },
+    {
+      "severity": "limitation",
+      "finding": "The ordinary racy stress is only a bounded crash/termination probe with no sorted assertion. Plain Java writes concurrent with C++ reads/writes are not C++ data-race-free; it cannot prove formal race safety or correctness under concurrent mutation."
+    }
+  ],
+  "test_review": {
+    "permanent_test": "test/jdk/java/util/Arrays/BoundedSimdSort.java",
+    "sha256": "e068b0c08b360b9dde96883823c845c602540f173848c3b4bfe40bdafc198b9e",
+    "observed": "Source includes direct helper contract checks on interpreter/C1/disabled-intrinsic/C2 jtreg modes, long serial/range/full/parallel coverage, integer extremes, float/double NaN/infinities/signed zero on public paths, guard/canary and exception checks. It is uncompiled and unrun."
+  },
+  "ordinary_plan_review": {
+    "source": "../ordinary/XssActivation.java",
+    "sha256": "f8465939a5ad95e8328f4b03d255f9fc6955de471054d083a844bca0b0b24231",
+    "mapping": "Eight JVM jobs map to E activation, U activation, E interpreted, U C1, U disabled intrinsic, U UseAVX2, E stress, U stress; run_ordinary ORDER contains those eight plus one E/U native guard process (9 serial slots total). Activation checks actual entry/completion counters and public-sort routing; equal/sorted/reverse public exits assert zero native entries. Interpreted verifies both attempt/router compilation levels remain zero. Stress does not make an ordering assertion for racy arrays.",
+    "limit": "The exact image/argv/whitebox/module-open bindings remain future manifest evidence; this source review does not establish commands were prepared or executed."
+  },
+  "review_limits": [
+    "No product edits, compiler/build, Java compilation, JVM, native execution, activation probe, or performance run was performed.",
+    "`make/modules/java.base/Lib.gmk` currently links LIBM and uses eager `-z now -z defs` only on BUILD_LIBRANGE_SORT.",
+    "Root indicated only a non-executable local checkout path in UPSTREAM-PIN.txt may still be removed; that metadata change must be hashed into the final freeze.",
+    "Source PASS is not a binary/runtime PASS."
+  ]
+}

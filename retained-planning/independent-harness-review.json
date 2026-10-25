@@ -1,0 +1,85 @@
+{
+  "review_type": "independent source and offline harness review, final current files",
+  "review_date": "2026-10-23",
+  "harness_root": "/workspace/pr57-xss-prototype-20261023/harness",
+  "source_sha256": {
+    "XssPublicBench.java": "6b3d78ceb93d6e8d10d5b8cff90cc6735d31fb926260a2f666ce3e10632f7462",
+    "run_comparison.py": "a34bf2448beefff739b0261117db7e58f857edf2e2d0b1cb1c6f204f307d8b2f",
+    "analyze_results.py": "6a4030e58013d91eaa23343fb771f324c608eb40bb48275ec4281238eaa3d3be",
+    "test_offline.py": "20c083224d7ad18cfd1cef6528b19099c19581926587fd8b6a80a773322d08f4",
+    "CONTRACT.md": "eb00fff70f4fd91174ac6cd413840693ca5db37fc02ab9ade56a7e94267ede05"
+  },
+  "ordinary_source_sha256": {
+    "XssActivation.java": "f8465939a5ad95e8328f4b03d255f9fc6955de471054d083a844bca0b0b24231",
+    "native_guard_harness.cpp": "c6e06c02286b8e500e14548ef67a50d20d4246cf9ed7df569363ba50077b5137",
+    "heapsort_fallback.cpp": "0d14587345f4f45817df0716ea78f3b5755d3dadcc432b854005ca4cead3bb9d",
+    "librangesort_witness.cpp": "aaeb073e63ad9051648d200203373c85c309d68e30ce2eb41b65924a2a66b000",
+    "audit_stack_usage.py": "ad6607a4e7f6de47b5be3b3896fd0558f14f20bdeef309edd5ab4494a3a74dd6",
+    "native-guard-coverage-review.json": "8c800d14a248768c32c685ed18c4556a8fb19a329585647582da20091a12ce8b",
+    "run_ordinary.py": "f220468cc6e941af1990504d55ee1a58757936c3975a6496902a9317b9c34e10"
+  },
+  "offline_checks": {
+    "command": "Python unittest with subprocess.Popen globally replaced by a hard failure before importing the test module; analyzer self-test under the same block.",
+    "result": "8 offline tests passed; analyzer self-test passed. No OS child process was launched."
+  },
+  "accounting_review": {
+    "comparison_plan": "36 JVMs: 12 A/E/U triplets, 4 history levels, 3 triplets/history; 32 cases/JVM with 20 warmups, 8 conditioning and 16 measured per case. Totals 18,432 measured, 9,216 conditioning, 720 global warmups.",
+    "coverage": "Retains original 18 size/pattern cases and adds six sparseSorted/singleNegative, four smaller random, four organ-pipe cases. Case/input identity is matched among roles; seed differs from the prior benchmark seed.",
+    "measurement": "Reset outside timer; independent signed radix oracle and guard checks after timer. Timer wraps a sort wrapper around Arrays.sort, allocation counters are sorter-thread-only, not process/native/worker peak allocation."
+  },
+  "review_findings": [
+    {
+      "severity": "pass-offline",
+      "finding": "Prior controller/analyzer NameErrors and preparation-binding gaps are fixed in current sources. Offline simulation reaches all 36 exact slots, verifies source/DSO receipt bindings and completed collection analysis, rejects corrupted samples/commands/authority and stops on a simulated failed first slot without retry."
+    },
+    {
+      "severity": "pass-with-evidence-limit",
+      "finding": "Prepared/build receipts now bind A/E/U roles, backend names, exact DSO paths/hashes, Java/HotSpot files, fixture overlay, toolchain maps, source-tree digests, and separate E/U production-entry activation reviews. These are signed/hash-bound receipt assertions; the runner does not independently rebuild binaries or derive every provenance claim from executable contents. Independent preparation review remains required."
+    },
+    {
+      "severity": "pass-with-evidence-limit",
+      "finding": "The per-role activation receipt proves that a C2-compiled private helper and production symbol entry succeeded in ordinary activation checks. It does not show per-call entry selection for every timed sample. Public routing/adaptive behavior is separately probed, but no timed-run per-call counters are claimed."
+    },
+    {
+      "severity": "moderate",
+      "finding": "The runner uses a denylist for unsafe VM/environment options rather than a strict allowlist. The future exact prepared command remains separately reviewed and byte-bound, so this is a reviewability weakness rather than a current executed-policy drift."
+    },
+    {
+      "severity": "moderate",
+      "finding": "Input semantics match the prior pattern families, but seeds have changed, so this is internally matched rather than byte-identical replay. Timer includes the source-level sort wrapper call; sorter-thread allocation does not include native or other-thread allocations."
+    },
+    {
+      "severity": "limitation",
+      "finding": "No timed or JVM execution, DSO entry in the comparison harness, or performance result is established. Activation evidence must stay distinct from timed per-call use and DSO availability/mappings."
+    },
+    {
+      "severity": "blocker-before-ordinary-run",
+      "finding": "`ordinary/run_ordinary.py` requires and hashes `ordinary/test_ordinary_offline.py` in `validate_preparation`, but that file is absent from the current task tree. Consequently an ordinary manifest cannot pass validation until that pinned offline test file is supplied, or the requirement is deliberately revised and independently reviewed."
+    },
+    {
+      "severity": "blocker-before-ordinary-run",
+      "finding": "`run_ordinary.run_slot` starts a process group but calls `terminate_owned_group` only for explicit timeout/log-cap branches. An unexpected exception or KeyboardInterrupt after Popen propagates through `finally` without terminating/reaping the child. Add unconditional owned-group cleanup for failure paths before using this supervisor; do not broaden cleanup to unrelated processes."
+    }
+  ],
+  "ordinary_mode_mapping": {
+    "slots": 9,
+    "jvm_slots": 8,
+    "modes": [
+      "E activation",
+      "U activation",
+      "E interpreted",
+      "U C1",
+      "U disabled intrinsic",
+      "U UseAVX2",
+      "E stress",
+      "U stress"
+    ],
+    "native_slot": "one process covering both E/U DSOs, direct heap fallback and guard-page cases",
+    "status": "source plan only; exact frozen argv/prepared manifest not yet present"
+  },
+  "limits": [
+    "Python offline tests only were run, with child process creation blocked.",
+    "No Java/native compilation, JVM, C++ harness execution, build, or performance test was run.",
+    "Result is source/controller-test PASS only; does not prove prepared binaries, actual runtime activation, stack, correctness on CPU, or benchmark results."
+  ]
+}

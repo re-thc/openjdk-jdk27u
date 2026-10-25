@@ -1,0 +1,37 @@
+{
+  "schema": "native-guard-coverage-review-v1",
+  "scope": "source-only harness preparation; no compiler, JVM, DSO, or test process was run",
+  "files": {
+    "native_guard_harness.cpp": "ordinary/native_guard_harness.cpp",
+    "heap_fallback_test_tu": "ordinary/heapsort_fallback.cpp",
+    "activation_java_reviewed": "ordinary/XssActivation.java",
+    "forwarding_witness_reviewed": "ordinary/librangesort_witness.cpp"
+  },
+  "coverage_added": [
+    "A separate test-only translation unit includes each exact production vendored core and calls its qsort_ implementation with max_iters=0, forcing the shared bounded heap fallback. Compile it once with RANGE_SORT_FALLBACK_E and once with RANGE_SORT_FALLBACK_U; unique exported symbols allow both objects in one harness.",
+    "Fallback oracle case sorts a nonzero-low 73-element interval while checking prefix and suffix sentinels.",
+    "Native guard harness now covers INT32_MIN low, INT32_MAX high and empty bounds, null stack-limit, null array, low-stack and existing invalid size/order declines; every array-backed decline checks no mutation.",
+    "Both normal kernels get guard-page/oracle coverage at sizes 512..519, 1023..1025, 4095..4097, 8191..8192 with equal, two-value, extreme, reverse, organ-pipe, and deterministic random patterns. Nonzero-low tests cover lower-edge-near and upper-edge-abutting placements, with surrounding canaries."
+  ],
+  "edge_limit": "A nonzero low index cannot have array+low abut a protected lower page while array itself remains a valid readable pointer: the array base must point into accessible memory. The harness therefore uses exact lower-guard adjacency for low=0 and low=7 with the selected interval 7 words inside the lower page, plus a nonzero-low interval ending exactly at the upper guard. It verifies that surrounding prefix/suffix words remain unchanged.",
+  "allocation_audit": {
+    "claim": "Guard pages and oracle/canary checks do not establish absence of native allocation.",
+    "source_observation": "The bounded entry and its visible kernel wrapper contain no explicit allocation; this is a source observation, not a whole-closure or binary proof.",
+    "future_requirement": "Before ordinary execution, inspect the built E/U dynamic imports and retained disassembly for allocator/loader calls and audit all invoked source paths. If allocation-free behavior must be proved, use a separately designed complete allocation interception or binary/source proof; this harness does not intercept allocations.",
+    "why_no_harness_interposition": "Overriding malloc/new in this standalone harness would not reliably cover allocator entry points or allocations from all statically/dynamically linked library paths, and would alter the diagnostic process. It is not treated as sound proof."
+  },
+  "JNI_witness_review": {
+    "result": "The forwarding witness exports the same four-argument C entry ABI and XssActivation JNI counter/reset names; constructor-only dlopen/dlsym resolution occurs before calls, and the leaf path only counts and forwards.",
+    "limits": "Counter reads are diagnostic and happen outside measured runs. A successful forwarding counter proves the normal real DSO entry ran, not absence of allocations or correctness under Java data races."
+  },
+  "future_compile_argv": {
+    "toolchain": "Use only the GCC g++ selected by the approved Linux x86_64 JDK toolchain; do not substitute Clang. Resolve GXX to that exact executable before the future authorized compile.",
+    "include_root": "<source>/src/java.base/linux/native/librangesort",
+    "compile_E": "${GXX} -std=c++17 -O2 -fno-exceptions -fno-rtti -fno-omit-frame-pointer -fstack-usage -fstack-clash-protection -I<include_root> -DRANGE_SORT_FALLBACK_E -c ordinary/heapsort_fallback.cpp -o ordinary/heapsort-e.o",
+    "compile_U": "${GXX} -std=c++17 -O2 -fno-exceptions -fno-rtti -fno-omit-frame-pointer -fstack-usage -fstack-clash-protection -I<include_root> -DRANGE_SORT_FALLBACK_U -c ordinary/heapsort_fallback.cpp -o ordinary/heapsort-u.o",
+    "compile_harness": "${GXX} -std=c++17 -O2 -fno-exceptions -fno-rtti -fno-omit-frame-pointer -fstack-usage -fstack-clash-protection -c ordinary/native_guard_harness.cpp -o ordinary/native-guard-harness.o",
+    "link_harness": "${GXX} ordinary/native-guard-harness.o ordinary/heapsort-e.o ordinary/heapsort-u.o -ldl -lm -Wl,-z,now -o ordinary/native_guard_harness",
+    "execution_constraint": "These are future argv only. No invocation is authorized by this review. The harness then needs exactly two immutable E/U DSOs as argv and feature gating for AVX512F/DQ/VL, AVX2, and POPCNT."
+  },
+  "product_state": "No product source changes were made in this update. Prior root-owned worktree edits remain uncommitted and preserved."
+}
