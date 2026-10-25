@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-2.0-only WITH Classpath-exception-2.0
 
 # Instant parser dependency
 
-This directory contains the JNI boundary and Rust adapter for speedate 0.18.0.
+This directory contains the native boundary and Rust adapter for speedate 0.18.0.
 Dependency sources are managed by Cargo rather than copied into the JDK tree.
 `rust/Cargo.toml` pins speedate exactly; `rust/Cargo.lock` pins transitive packages
 and their registry checksums. The upstream source is
@@ -38,11 +38,21 @@ checks. Library-supported spellings such as a space or underscore between date
 and time, and a comma before fractional seconds, are deliberately accepted when
 the native backend is available. Other routes retain the Java formatter.
 
-The compact String path borrows its backing byte array with
-`GetPrimitiveArrayCritical`, without an adapter copy or encoding conversion.
-The UTF-16 path uses one VM conversion into a bounded modified UTF-8 buffer.
-Neither path narrows characters to their low byte. Speedate validates the bytes;
-the Rust adapter retains no pointer and calls no Java while storage is borrowed.
+HotSpot intrinsifies `InstantParser.parse0` in C2, C1 and the x64/AArch64
+interpreter. Each route calls the same bounded VM leaf without a JNI transition.
+The compact String path passes its backing bytes directly; UTF-16 is narrowed
+once into at most 27 ASCII bytes, rejecting wider characters to Java. No safepoint,
+allocation, lock, Java callback or retained pointer is allowed while the leaf
+borrows heap storage. `JNI_OnLoad` registers the Rust entry before Java publishes
+the bootstrap-owned library as available; that library remains loaded until VM
+shutdown. The leaf does no loading or symbol lookup.
+
+JNI is the fallback when intrinsification is disabled or unsupported. It borrows
+compact storage with `GetPrimitiveArrayCritical` and uses one bounded VM UTF-8
+conversion for UTF-16. `-XX:+UnlockDiagnosticVMOptions
+-XX:-UseInstantParseIntrinsic` or `-XX:DisableIntrinsic=_parseInstant` selects this
+fallback. The startup property above selects Java without entering either native
+route. Speedate validates the bytes on both routes.
 Results use integer epoch seconds and microseconds packed into one native return
 value. Precision overflow is `Error`, so 7–9 fractional digits fall back to Java
 with their nanoseconds intact. Speedate's definite invalid-month and invalid-day
@@ -73,7 +83,7 @@ misses use the Java formatter.
    field ranges and full-input consumption to speedate. Review upstream changes
    to those semantics and to accepted spellings; do not add a second field parser
    to reproduce them. Preserve the borrowed-storage lifetime and bounded UTF-16
-   conversion at the JNI boundary.
+   conversion at both the VM leaf and JNI boundary.
 5. Run the adapter's frozen Cargo tests, the configure/path fixtures and focused
    java.time tests after building with the normal JDK recipes. Check both String
    representations, library spellings, date boundaries, pre-epoch fractions,
@@ -81,7 +91,7 @@ misses use the Java formatter.
    tiered execution as applicable. Native-enabled platform checks must prove
    actual native hits; Java fallback alone is insufficient.
 
-The regression entry points are `TestInstantSpeedate`, `TestInstantParserCache`,
+The regression entry points are `TestInstantParseIntrinsic`, `TestInstantSpeedate`, `TestInstantParserCache`,
 `InstantSpeedateDisabled`, `InstantSpeedateUnavailable`,
 `TestInstantSpeedateConfigure.py` and `TestInstantSpeedatePaths.py`. The standard
 JMH fixture `org.openjdk.bench.java.time.InstantParsing` measures complete public

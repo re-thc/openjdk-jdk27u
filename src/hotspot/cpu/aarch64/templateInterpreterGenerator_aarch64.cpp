@@ -49,6 +49,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/instantParser.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -978,6 +979,30 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 
+}
+
+// Reuse fast_float's frameless leaf-call adapter. The original link register
+// returns directly to the interpreter caller, with jlong in c_rarg0.
+address TemplateInterpreterGenerator::generate_instant_parse_entry() {
+  if (!UseInstantParseIntrinsic) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  __ ldr(c_rarg0, Address(esp, 0));
+  __ cbz(c_rarg0, slow_path);
+  __ ldrb(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
+  __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()),
+                    rscratch1, rscratch2);
+  __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+  __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ andr(sp, r19_sender_sp, -16);
+  __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, InstantParser::parse)));
+  __ br(rscratch1);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
 }
 
 /**

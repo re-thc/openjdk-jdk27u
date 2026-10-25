@@ -63,6 +63,7 @@ package java.time;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -155,5 +156,6 @@ final class InstantParser {
         }
     }
 
+    @IntrinsicCandidate
     private static native long parse0(String text);
 }

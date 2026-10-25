@@ -457,6 +457,11 @@ class methodHandle;
   do_intrinsic(_bigIntegerLeftShiftWorker, java_math_BigInteger, leftShift_name, big_integer_shift_worker_signature, F_S) \
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
+  do_class(java_time_InstantParser, "java/time/InstantParser")                                                            \
+  do_intrinsic(_parseInstant, java_time_InstantParser, parseInstant_name, parseInstant_signature, F_SN)                    \
+   do_name(parseInstant_name, "parse0")                                                                                   \
+   do_signature(parseInstant_signature, "(Ljava/lang/String;)J")                                                          \
+                                                                                                                        \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
    do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \

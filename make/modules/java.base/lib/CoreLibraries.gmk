@@ -107,6 +107,7 @@ ifeq ($(ENABLE_INSTANT_SPEEDATE):$(filter true,$(STATIC_LIBS)), true:)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBINSTANT, \
       NAME := instant, \
+      JDK_LIBS := libjvm, \
       ONLY_EXPORTED := true, \
       OPTIMIZATION := HIGH, \
       EXTRA_LINK_DEPS := $(SPEEDATE_ARCHIVE) $(SPEEDATE_SRC)/exports.map $(SPEEDATE_SRC)/exports.list, \

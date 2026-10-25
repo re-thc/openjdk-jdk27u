@@ -58,6 +58,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/instantParser.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
@@ -626,6 +627,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     return inline_bigIntegerShift(false);
 
+  case vmIntrinsics::_parseInstant: return inline_parseInstant();
   case vmIntrinsics::_vectorizedMismatch:
     return inline_vectorizedMismatch();
 
@@ -6731,6 +6733,31 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
 }
 
 //-------------inline_vectorizedMismatch------------------------------
+bool LibraryCallKit::inline_parseInstant() {
+  Node* str = null_check(argument(0));
+  if (stopped()) return true;
+  Node* value = load_String_value(str, true);
+  Node* coder = load_String_coder(str, true);
+  Node* length = load_array_length(value);
+  Node* data = array_element_address(value, intcon(0), T_BYTE);
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  // The memory input orders String reads and keeps its storage alive. No
+  // safepoint or native transition can occur while the leaf borrows the bytes.
+  Node* call = make_runtime_call(RC_LEAF, TypeFunc::make(domain, range),
+      CAST_FROM_FN_PTR(address, InstantParser::parse), "parseInstant",
+      TypePtr::BOTTOM, data, length, coder);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}
+
 bool LibraryCallKit::inline_vectorizedMismatch() {
   assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
 

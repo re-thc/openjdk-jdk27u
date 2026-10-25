@@ -328,6 +328,13 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_float16ToFloat:
     if (!InlineIntrinsics) return true;
     break;
+  case vmIntrinsics::_parseInstant:
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+    if (!UseInstantParseIntrinsic) return true;
+    break;
+#else
+    return true;
+#endif
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy) return true;
     break;

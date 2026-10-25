@@ -93,6 +93,9 @@ class AbstractInterpreter: AllStatic {
     java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
     java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+    java_time_instant_parse,                                    // InstantParser.parse0(String)
+#endif
     number_of_method_entries,
     invalid = -1
   };

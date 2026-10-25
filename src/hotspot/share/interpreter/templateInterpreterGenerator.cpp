@@ -234,6 +234,9 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
   native_method_entry(java_util_zip_CRC32_updateByteBuffer)
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  native_method_entry(java_time_instant_parse)
+#endif
 
 #undef native_method_entry
 
@@ -452,6 +455,9 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   address entry_point = nullptr;
 
   switch (kind) {
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  case Interpreter::java_time_instant_parse : entry_point = generate_instant_parse_entry(); break;
+#endif
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
   case Interpreter::java_lang_math_tan     : // fall thru

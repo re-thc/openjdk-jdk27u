@@ -24,6 +24,7 @@
  */
 
 #include <jni.h>
+#include "jvm.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -45,6 +46,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (string_value == NULL) return JNI_ERR;
     string_coder = (*env)->GetFieldID(env, cls, "coder", "B");
     if (string_coder == NULL) return JNI_ERR;
+    // Bootstrap native libraries live until VM shutdown. Publish the leaf
+    // backend before Java makes the library available to parser calls.
+    JVM_RegisterInstantParser((void *)jdk_instant_speedate_parse);
     return JNI_VERSION_1_8;
 }
 
