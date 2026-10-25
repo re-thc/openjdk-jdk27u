@@ -30,6 +30,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -514,4 +515,66 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   __ jmp(rcx);
 
   return entry_point;
+}
+
+// The Java arguments stay on the expression stack, including exClass, so the
+// ordinary bytecode entry can handle short input or malformed UTF-16 unchanged.
+address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpreter::MethodKind kind) {
+  const bool utf16 = kind == Interpreter::java_lang_String_encodeUTF8UTF16;
+  const bool decode = kind == Interpreter::java_lang_String_decodeUTF8UTF16;
+  const int maximum = 1024 * 1024;
+  if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false, false);
+  const int args = utf16 || decode ? 5 : 4;
+  const int dst_slot = decode ? 2 : args - 2;
+  const int dp_slot = decode ? 1 : args - 3;
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  __ movptr(src, Address(rsp, args * wordSize));
+  if (decode) {
+    __ movl(length, Address(rsp, 3 * wordSize));
+  } else {
+    __ movl(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  }
+  if (utf16) {
+    __ shrl(length, 1);
+  }
+  __ subl(length, Address(rsp, (args - 1) * wordSize));
+  __ cmpl(length, (int)SIMDUTFMinLength);
+  __ jcc(Assembler::below, slow);
+  __ cmpl(length, maximum);
+  __ jcc(Assembler::above, slow);
+  __ movptr(dst, Address(rsp, dst_slot * wordSize));
+  if (utf16) {
+    __ movl(rax, Address(dst, arrayOopDesc::length_offset_in_bytes()));
+    __ subl(rax, Address(rsp, dp_slot * wordSize));
+    __ leal(r10, Address(length, length, Address::times_2));
+    __ cmpl(rax, r10);
+    __ jcc(Assembler::less, slow);
+  }
+  __ movl2ptr(r10, Address(rsp, (args - 1) * wordSize));
+  __ lea(src, Address(src, r10, utf16 ? Address::times_2 : Address::times_1,
+                     arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ movl2ptr(r10, Address(rsp, dp_slot * wordSize));
+  __ lea(dst, Address(dst, r10, decode ? Address::times_2 : Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ super_call_VM_leaf(decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
+                              : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
+                              : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8),
+                        src, length, dst);
+  if (utf16 || decode) {
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, slow);
+  }
+  __ addl(rax, Address(rsp, dp_slot * wordSize));
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
 }

@@ -41,6 +41,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2809,8 +2810,61 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+// Admission and malformed-result branches are HIR edges. This LIR sequence is
+// an unconditional leaf, so linear scan can preserve all fallback values.
+void LIRGenerator::do_stringUTF8(Intrinsic* x) {
+  bool utf16 = x->id() == vmIntrinsics::_encodeUTF8UTF16;
+  bool decode = x->id() == vmIntrinsics::_decodeUTF8UTF16;
+  LIRItem src(x->argument_at(0), this);
+  LIRItem start(x->argument_at(1), this);
+  LIRItem dst(x->argument_at(2), this);
+  LIRItem dp(x->argument_at(3), this);
+  LIRItem length(x->argument_at(4), this);
+  src.load_item();
+  start.load_item();
+  dst.load_item();
+  dp.load_item();
+  length.load_item();
+  LIR_Opr result = rlock_result(x);
+  LIR_Opr src_offset = new_register(T_LONG);
+  LIR_Opr dst_offset = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, start.result(), src_offset);
+  __ convert(Bytecodes::_i2l, dp.result(), dst_offset);
+  if (utf16) {
+    __ shift_left(src_offset, 1, src_offset);
+  }
+  if (decode) {
+    __ shift_left(dst_offset, 1, dst_offset);
+  }
+  LIR_Opr src_address = new_register(T_ADDRESS);
+  LIR_Opr dst_address = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(src.result(), src_offset,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), src_address);
+  __ leal(LIR_OprFact::address(new LIR_Address(dst.result(), dst_offset,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), dst_address);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_address, cc->at(0));
+  __ move(length.result(), cc->at(1));
+  __ move(dst_address, cc->at(2));
+  LIR_Opr result_reg = result_register_for(x->type());
+  address entry = decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
+                : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
+                       : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8);
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16:
+    do_stringUTF8(x);
+    break;
   case vmIntrinsics::_intBitsToFloat      :
   case vmIntrinsics::_doubleToRawLongBits :
   case vmIntrinsics::_longBitsToDouble    :

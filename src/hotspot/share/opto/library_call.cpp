@@ -698,6 +698,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_encodeUTF8Latin1: return inline_encodeUTF8Latin1();
   case vmIntrinsics::_encodeUTF8UTF16: return inline_encodeUTF8UTF16();
+  case vmIntrinsics::_decodeUTF8UTF16: return inline_decodeUTF8UTF16();
   case vmIntrinsics::_countPositives:
     return inline_countPositives();
 
@@ -815,6 +816,8 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_encodeUTF8_predicate(false);
   case vmIntrinsics::_encodeUTF8UTF16:
     return inline_encodeUTF8_predicate(true);
+  case vmIntrinsics::_decodeUTF8UTF16:
+    return inline_decodeUTF8UTF16_predicate();
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -9499,6 +9502,10 @@ bool LibraryCallKit::inline_encodeUTF8Latin1() {
 
 
 bool LibraryCallKit::inline_encodeUTF8UTF16() {
+  CallGenerator* java_fallback = CallGenerator::for_inline(callee(), PROB_ALWAYS);
+  if (java_fallback == nullptr) {
+    return false;
+  }
   Node* src = must_be_not_null(argument(0), true);
   Node* start = argument(1);
   Node* dst = must_be_not_null(argument(2), true);
@@ -9531,16 +9538,111 @@ bool LibraryCallKit::inline_encodeUTF8UTF16() {
   result->init_req(1, _gvn.transform(new AddINode(dp, written)));
   memory->init_req(1, converted_memory);
   io->init_req(1, initial_io);
+  region->init_req(2, top());
+  result->init_req(2, top());
+  memory->init_req(2, top());
+  io->init_req(2, top());
   if (malformed != nullptr) {
+    PreserveJVMState state(this);
     set_control(malformed);
-    // The output is private. Reuse the original Java loop for replacement or
-    // the original exception, overwriting any prefix written by the converter.
-    CallJavaNode* fallback = generate_method_call(vmIntrinsics::_encodeUTF8UTF16, false, true, false);
-    Node* fallback_result = set_results_for_java_call(fallback);
-    region->init_req(2, control());
-    result->init_req(2, fallback_result);
-    memory->init_req(2, reset_memory());
-    io->init_req(2, i_o());
+    // Parse the original Java body directly: invoking this method again could
+    // re-enter its interpreter/C1 intrinsic and repeat the failed conversion.
+    JVMState* next = java_fallback->generate(sync_jvms());
+    if (next == nullptr) {
+      assert(C->failing(), "Java fallback parsing failed");
+      return true; // The compilation has been abandoned; no code is emitted.
+    }
+    C->env()->notice_inlined_method(callee());
+    add_exception_states_from(next);
+    if (next->map()->control() != top()) {
+      set_jvms(next);
+      Node* fallback_result = pop();
+      region->set_req(2, control());
+      result->set_req(2, fallback_result);
+      memory->set_req(2, reset_memory());
+      io->set_req(2, i_o());
+    }
+  }
+  set_all_memory(_gvn.transform(memory));
+  set_i_o(_gvn.transform(io));
+  set_result(region, result);
+  return true;
+}
+
+
+Node* LibraryCallKit::inline_decodeUTF8UTF16_predicate() {
+  const int maximum = 1024 * 1024;
+  if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
+    Node* slow = control();
+    set_control(top());
+    return slow;
+  }
+  Node* length = _gvn.transform(new SubINode(argument(2), argument(1)));
+  Node* comparison = _gvn.transform(new CmpUNode(
+      _gvn.transform(new SubINode(length, intcon((int)SIMDUTFMinLength))),
+      intcon(maximum - (int)SIMDUTFMinLength)));
+  return generate_guard(_gvn.transform(new BoolNode(comparison, BoolTest::gt)), nullptr, PROB_FAIR);
+}
+
+bool LibraryCallKit::inline_decodeUTF8UTF16() {
+  CallGenerator* java_fallback = CallGenerator::for_inline(callee(), PROB_ALWAYS);
+  if (java_fallback == nullptr) {
+    return false;
+  }
+  Node* src = must_be_not_null(argument(0), true);
+  Node* start = argument(1);
+  Node* length = _gvn.transform(new SubINode(argument(2), start));
+  Node* dst = must_be_not_null(argument(3), true);
+  Node* dp = argument(4);
+  Node* byte_dp = _gvn.transform(new LShiftINode(dp, intcon(1)));
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* call = make_runtime_call(RC_LEAF, type,
+      CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16), "decode_utf8_utf16", TypePtr::BOTTOM,
+      array_element_address(src, start, T_BYTE), length, array_element_address(dst, byte_dp, T_BYTE));
+  Node* written = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  Node* malformed = generate_guard(_gvn.transform(new BoolNode(
+      _gvn.transform(new CmpINode(written, intcon(0))), BoolTest::lt)), nullptr, PROB_MIN);
+  Node* converted_memory = reset_memory();
+  set_all_memory(converted_memory);
+  RegionNode* region = new RegionNode(3);
+  PhiNode* result = new PhiNode(region, TypeInt::INT);
+  PhiNode* memory = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+  PhiNode* io = new PhiNode(region, Type::ABIO);
+  region->init_req(1, control());
+  result->init_req(1, _gvn.transform(new AddINode(dp, written)));
+  memory->init_req(1, converted_memory);
+  io->init_req(1, i_o());
+  region->init_req(2, top());
+  result->init_req(2, top());
+  memory->init_req(2, top());
+  io->init_req(2, top());
+  if (malformed != nullptr) {
+    PreserveJVMState state(this);
+    set_control(malformed);
+    // Parse the original Java body directly: invoking this method again could
+    // re-enter its interpreter/C1 intrinsic and repeat the failed conversion.
+    JVMState* next = java_fallback->generate(sync_jvms());
+    if (next == nullptr) {
+      assert(C->failing(), "Java fallback parsing failed");
+      return true; // The compilation has been abandoned; no code is emitted.
+    }
+    C->env()->notice_inlined_method(callee());
+    add_exception_states_from(next);
+    if (next->map()->control() != top()) {
+      set_jvms(next);
+      Node* fallback_result = pop();
+      region->set_req(2, control());
+      result->set_req(2, fallback_result);
+      memory->set_req(2, reset_memory());
+      io->set_req(2, i_o());
+    }
   }
   set_all_memory(_gvn.transform(memory));
   set_i_o(_gvn.transform(io));

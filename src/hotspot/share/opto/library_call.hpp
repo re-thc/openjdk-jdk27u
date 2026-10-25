@@ -366,6 +366,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_encodeUTF8Latin1();
   Node* inline_encodeUTF8_predicate(bool utf16);
   bool inline_encodeUTF8UTF16();
+  Node* inline_decodeUTF8UTF16_predicate();
+  bool inline_decodeUTF8UTF16();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();

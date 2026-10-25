@@ -52,6 +52,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -2155,3 +2156,70 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
+
+address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpreter::MethodKind kind) {
+  const bool utf16 = kind == Interpreter::java_lang_String_encodeUTF8UTF16;
+  const bool decode = kind == Interpreter::java_lang_String_decodeUTF8UTF16;
+  const int maximum = 1024 * 1024;
+  if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false, false);
+  const int args = utf16 || decode ? 5 : 4;
+  const int dst_slot = decode ? 2 : args - 2;
+  const int dp_slot = decode ? 1 : args - 3;
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  __ ldr(src, Address(esp, (args - 1) * wordSize));
+  if (decode) {
+    __ ldrw(length, Address(esp, 2 * wordSize));
+  } else {
+    __ ldrw(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  }
+  if (utf16) {
+    __ lsrw(length, length, 1);
+  }
+  __ ldrw(rscratch1, Address(esp, (args - 2) * wordSize));
+  __ subw(length, length, rscratch1);
+  __ movw(rscratch1, (int)SIMDUTFMinLength);
+  __ cmpw(length, rscratch1);
+  __ br(Assembler::LO, slow);
+  __ movw(rscratch1, maximum);
+  __ cmpw(length, rscratch1);
+  __ br(Assembler::HI, slow);
+  __ ldr(dst, Address(esp, (dst_slot - 1) * wordSize));
+  if (utf16) {
+    __ ldrw(rscratch1, Address(dst, arrayOopDesc::length_offset_in_bytes()));
+    __ ldrw(rscratch2, Address(esp, (dp_slot - 1) * wordSize));
+    __ subw(rscratch1, rscratch1, rscratch2);
+    __ addw(rscratch2, length, length, Assembler::LSL, 1);
+    __ cmpw(rscratch1, rscratch2);
+    __ br(Assembler::LT, slow);
+  }
+  __ ldrw(rscratch1, Address(esp, (args - 2) * wordSize));
+  __ add(src, src, rscratch1, Assembler::LSL, utf16 ? 1 : 0);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(rscratch1, Address(esp, (dp_slot - 1) * wordSize));
+  __ add(dst, dst, rscratch1, Assembler::LSL, decode ? 1 : 0);
+  __ add(dst, dst, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
+  __ stp(lr, zr, Address(pre(sp, -2 * wordSize)));
+  __ super_call_VM_leaf(decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
+                              : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
+                              : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8),
+                        src, length, dst);
+  __ ldp(lr, zr, Address(post(sp, 2 * wordSize)));
+  if (utf16 || decode) {
+    __ tbnz(r0, 31, slow);
+  }
+  __ ldrw(rscratch1, Address(esp, (dp_slot - 1) * wordSize));
+  __ addw(r0, r0, rscratch1);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}

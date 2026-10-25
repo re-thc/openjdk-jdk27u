@@ -132,6 +132,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
       case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
       case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
+      case vmIntrinsics::_encodeUTF8Latin1: return java_lang_String_encodeUTF8Latin1;
+      case vmIntrinsics::_encodeUTF8UTF16: return java_lang_String_encodeUTF8UTF16;
+      case vmIntrinsics::_decodeUTF8UTF16: return java_lang_String_decodeUTF8UTF16;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
@@ -222,6 +225,9 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_updateBytesCRC32C;
   case java_util_zip_CRC32C_updateDirectByteBuffer
                                   : return vmIntrinsics::_updateDirectByteBufferCRC32C;
+  case java_lang_String_encodeUTF8Latin1: return vmIntrinsics::_encodeUTF8Latin1;
+  case java_lang_String_encodeUTF8UTF16: return vmIntrinsics::_encodeUTF8UTF16;
+  case java_lang_String_decodeUTF8UTF16: return vmIntrinsics::_decodeUTF8UTF16;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;
   case java_lang_Float_float16ToFloat

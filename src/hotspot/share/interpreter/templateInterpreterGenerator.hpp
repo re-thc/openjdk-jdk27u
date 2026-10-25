@@ -97,6 +97,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_Reference_get_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+  address generate_String_utf8_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_currentThread();
   address generate_Float_float16ToFloat_entry();

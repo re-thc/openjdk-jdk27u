@@ -42,6 +42,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -2695,6 +2696,102 @@ void GraphBuilder::connect_to_end(BlockBegin* beg) {
 }
 
 
+// Keep the ordinary bytecodes as the decline path, including when this helper
+// is the root compilation. No Java invocation or additional wrapper is needed.
+void GraphBuilder::append_string_utf8_entry() {
+  vmIntrinsics::ID id = method()->intrinsic_id();
+  if ((id != vmIntrinsics::_encodeUTF8Latin1 && id != vmIntrinsics::_encodeUTF8UTF16 &&
+       id != vmIntrinsics::_decodeUTF8UTF16) ||
+      !SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 || compilation()->is_osr_compile()) {
+    return;
+  }
+  {
+    VM_ENTRY_MARK;
+    methodHandle mh(THREAD, method()->get_Method());
+    if (!compilation()->compiler()->is_intrinsic_available(mh, compilation()->directive())) {
+      return;
+    }
+  }
+
+  const bool utf16 = id == vmIntrinsics::_encodeUTF8UTF16;
+  const bool decode = id == vmIntrinsics::_decodeUTF8UTF16;
+  Value src = state()->local_at(0);
+  Value start = state()->local_at(1);
+  Value dst = state()->local_at(decode ? 3 : 2);
+  Value dp = state()->local_at(decode ? 4 : 3);
+  Value limit = decode ? state()->local_at(2)
+      : append(new ArrayLength(src, copy_state_for_exception()));
+  if (utf16) {
+    limit = append(new ShiftOp(Bytecodes::_ishr, limit, append(new Constant(intOne))));
+  }
+  Value length = append(new ArithmeticOp(Bytecodes::_isub, limit, start, nullptr));
+  BlockBegin* fallback = new BlockBegin(0);
+
+  auto enter_block = [&](BlockBegin* next) {
+    kill_all();
+    next->set(BlockBegin::was_visited_flag);
+    _last = _block = next;
+    _state = next->state()->copy_for_parsing();
+  };
+  // Every admission edge is a HIR edge: register allocation must see the paths
+  // that bypass the call, including the values needed by the Java fallback.
+  auto admit = [&](Value left, If::Condition condition, Value right) {
+    BlockBegin* accepted = new BlockBegin(0);
+    BlockEnd* branch = append(new If(left, condition, false, right,
+        accepted, fallback, nullptr, false))->as_BlockEnd();
+    block()->set_end(branch);
+    bool reachable = false;
+    for (int i = 0; i < branch->number_of_sux(); i++) {
+      BlockBegin* sux = branch->sux_at(i);
+      sux->merge(branch->state(), compilation()->has_irreducible_loops());
+      reachable |= sux == accepted;
+    }
+    enter_block(reachable ? accepted : fallback);
+    return reachable;
+  };
+  if (!admit(length, If::geq, append(new Constant(new IntConstant((jint)SIMDUTFMinLength)))) ||
+      !admit(length, If::leq, append(new Constant(new IntConstant(1024 * 1024))))) {
+    return;
+  }
+  if (utf16) {
+    Value capacity = append(new ArithmeticOp(Bytecodes::_isub,
+        append(new ArrayLength(dst, copy_state_for_exception())), dp, nullptr));
+    Value required = append(new ArithmeticOp(Bytecodes::_imul, length,
+        append(new Constant(new IntConstant(3))), nullptr));
+    if (!admit(capacity, If::geq, required)) {
+      return;
+    }
+  }
+
+  // Pass the already checked length; the LIR leaf has no local control flow.
+  Values* args = new Values(5);
+  args->push(src);
+  args->push(start);
+  args->push(dst);
+  args->push(dp);
+  args->push(length);
+  Intrinsic* intrinsic = new Intrinsic(intType, id, args, false,
+      copy_state_before(), false, false);
+  intrinsic->pin(); // The converter writes private output even when it declines.
+  Value converted = append_split(intrinsic);
+  if (compilation()->log() != nullptr) {
+    compilation()->log()->elem("intrinsic id='%s'", vmIntrinsics::name_at(id));
+  }
+  if (!admit(converted, If::geq, append(new Constant(intZero)))) {
+    return;
+  }
+  Value result = append(new ArithmeticOp(Bytecodes::_iadd, dp, converted, nullptr));
+  method_return(result, scope_data()->ignore_return());
+  BlockEnd* end = last()->as_BlockEnd();
+  block()->set_end(end);
+  for (int i = 0; i < end->number_of_sux(); i++) {
+    BlockBegin* sux = end->sux_at(i);
+    sux->merge(end->state(), compilation()->has_irreducible_loops());
+    scope_data()->add_to_work_list(sux);
+  }
+  enter_block(fallback);
+}
+
 BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
 #ifndef PRODUCT
   if (PrintIRDuringConstruction) {
@@ -2744,6 +2841,10 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
     if (push_exception) {
       apush(append(new ExceptionObject()));
       push_exception = false;
+    }
+
+    if (s.cur_bci() == 0) {
+      append_string_utf8_entry();
     }
 
     // handle bytecode
@@ -3672,6 +3773,13 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 }
 
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
+  // These helpers need their original bytecodes on a declined conversion.
+  // Install the guarded intrinsic when parsing their method entry instead.
+  if (callee->intrinsic_id() == vmIntrinsics::_encodeUTF8Latin1 ||
+      callee->intrinsic_id() == vmIntrinsics::_encodeUTF8UTF16 ||
+      callee->intrinsic_id() == vmIntrinsics::_decodeUTF8UTF16) {
+    return false;
+  }
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
   // accesses critical VM-internal data.

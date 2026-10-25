@@ -641,7 +641,7 @@ public final class String
             return new String(utf16, UTF16);
         } else { // !COMPACT_STRINGS
             byte[] dst = StringUTF16.newBytesFor(length);
-            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0);
+            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, null);
             if (dp != length) {
                 dst = Arrays.copyOf(dst, dp << 1);
             }
@@ -1239,6 +1239,8 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
+    // This entry receives the private snapshot made by utf8, not caller-owned bytes.
+    @IntrinsicCandidate
     private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
         return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
     }

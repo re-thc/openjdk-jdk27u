@@ -27,6 +27,7 @@
  * @summary String UTF16 UTF-8 encoding retains replacement and throwing semantics
  * @modules java.base/jdk.internal.access
  * @run main/othervm -Xint TestUTF16UTF8
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestUTF16UTF8
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestUTF16UTF8
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestUTF16UTF8
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestUTF16UTF8

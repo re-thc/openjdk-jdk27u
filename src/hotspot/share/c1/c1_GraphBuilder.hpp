@@ -202,6 +202,7 @@ class GraphBuilder {
   BlockBegin*       block() const                { return _block; }
   ValueStack*       state() const                { return _state; }
   void              set_state(ValueStack* state) { _state = state; }
+  void append_string_utf8_entry();
   IRScope*          scope() const                { return scope_data()->scope(); }
   ciMethod*         method() const               { return scope()->method(); }
   ciBytecodeStream* stream() const               { return scope_data()->stream(); }

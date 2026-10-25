@@ -26,6 +26,7 @@
  * @test
  * @summary String Latin1 UTF-8 encoding preserves the original Java conversion across intrinsic boundaries
  * @run main/othervm -Xint TestLatin1UTF8
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestLatin1UTF8
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestLatin1UTF8
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestLatin1UTF8
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestLatin1UTF8

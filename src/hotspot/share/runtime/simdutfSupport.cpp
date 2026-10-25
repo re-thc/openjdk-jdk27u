@@ -75,7 +75,7 @@ bool SimdUTF::available() {
 }
 
 // String owns the immutable Latin1 input and allocates worst-case UTF-8 room.
-// The C2 caller bounds this non-safepointing leaf to one MiB of source bytes.
+// Intrinsic callers bound this non-safepointing leaf to one MiB of source bytes.
 JRT_LEAF(jint, SimdUTF::encode_latin1_utf8(const jbyte* src, jint length, jbyte* dst))
   assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
   return checked_cast<jint>(simdutf::convert_latin1_to_utf8(
@@ -88,5 +88,14 @@ JRT_LEAF(jint, SimdUTF::encode_utf16_utf8(const jbyte* src, jint length, jbyte* 
   assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
   simdutf::result result = simdutf::convert_utf16_to_utf8_with_errors(
       reinterpret_cast<const char16_t*>(src), length, reinterpret_cast<char*>(dst));
+  return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
+JRT_END
+
+// The CompactStrings constructor already owns a stable input snapshot and a
+// private destination with one UTF-16 unit of room for every remaining byte.
+JRT_LEAF(jint, SimdUTF::decode_utf8_utf16(const jbyte* src, jint length, jbyte* dst))
+  assert(length > 0 && length <= 1024 * 1024, "bounded conversion");
+  simdutf::result result = simdutf::convert_utf8_to_utf16_with_errors(
+      reinterpret_cast<const char*>(src), length, reinterpret_cast<char16_t*>(dst));
   return result.error == simdutf::SUCCESS ? checked_cast<jint>(result.count) : -1;
 JRT_END
