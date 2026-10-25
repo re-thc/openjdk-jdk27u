@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2306,6 +2307,13 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "dilithiumDecomposePoly") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decodeBlock") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "simdutf_index_of") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "simdutf_encode_base64") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "simdutf_decode_base64") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "decode_base64_mime") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "encode_latin1_utf8") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "encode_utf16_utf8") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "decode_utf8_utf16") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha1_implCompress") == 0 ||
