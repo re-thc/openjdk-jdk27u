@@ -234,9 +234,51 @@ public class TestZlibNG {
         }
     }
 
+    private static void zeroCapacity() throws Exception {
+        byte[] data = new byte[64];
+        new Random(2718).nextBytes(data);
+        for (boolean directInput : new boolean[]{false, true}) {
+            for (int shape = 0; shape < 3; shape++) {
+                byte[] encoded = new byte[256];
+                int length;
+                try (Deflater d = new Deflater(6)) {
+                    d.setInput(buffer(data, directInput));
+                    d.finish();
+                    for (int n = 0; n < 3; n++) {
+                        int written = shape == 0 ? d.deflate(new byte[0])
+                            : d.deflate(shape == 1 ? ByteBuffer.allocate(0)
+                                                  : ByteBuffer.allocateDirect(0));
+                        if (written != 0 || d.getBytesRead() != 0 || d.getBytesWritten() != 0)
+                            throw new AssertionError("zero deflate output");
+                    }
+                    length = d.deflate(encoded);
+                    if (!d.finished()) throw new AssertionError("zero-output deflate recovery");
+                }
+                try (Inflater i = new Inflater()) {
+                    ByteBuffer input = buffer(Arrays.copyOf(encoded, length), directInput);
+                    i.setInput(input);
+                    for (int n = 0; n < 3; n++) {
+                        int written = shape == 0 ? i.inflate(new byte[0])
+                            : i.inflate(shape == 1 ? ByteBuffer.allocate(0)
+                                                  : ByteBuffer.allocateDirect(0));
+                        if (written != 0 || i.getBytesWritten() != 0 ||
+                            input.position() != i.getBytesRead() ||
+                            i.getRemaining() != length - i.getBytesRead())
+                            throw new AssertionError("zero inflate output/accounting");
+                    }
+                    byte[] decoded = new byte[data.length];
+                    if (i.inflate(decoded) != data.length || !i.finished() ||
+                        !Arrays.equals(data, decoded))
+                        throw new AssertionError("zero-output inflate recovery");
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         directCallPaths();
         resetStreams();
+        zeroCapacity();
         byte[] data = new byte[4096];
         new Random(12345).nextBytes(data);
         byte[] dictionary = Arrays.copyOfRange(data, 0, 1024);

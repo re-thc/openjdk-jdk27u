@@ -37,13 +37,17 @@ jlong ZipRuntime::process(jint inflate, oop receiver, jlong stream,
     oop output, jlong output_offset, jint output_len, jint flush, jint params,
     JavaThread* current) {
   Handle recv(current, receiver);
-  Handle in(current, input);
-  Handle out(current, output);
-  current->enter_jni_deferred_suspension();
+  // A zero-length range cannot be read or written. Keep a valid native
+  // address for zlib's pointer checks without pinning an empty heap array.
+  static jbyte empty;
+  Handle in(current, input_len == 0 ? nullptr : input);
+  Handle out(current, output_len == 0 ? nullptr : output);
+  const bool pin_arrays = in.not_null() || out.not_null();
+  if (pin_arrays) current->enter_jni_deferred_suspension();
   if (in.not_null()) Universe::heap()->pin_object(current, in());
   if (out.not_null()) Universe::heap()->pin_object(current, out());
-  jlong in_addr = input_offset;
-  jlong out_addr = output_offset;
+  jlong in_addr = input_len == 0 ? reinterpret_cast<jlong>(&empty) : input_offset;
+  jlong out_addr = output_len == 0 ? reinterpret_cast<jlong>(&empty) : output_offset;
   if (in.not_null()) in_addr += cast_from_oop<jlong>(in()) + arrayOopDesc::base_offset_in_bytes(T_BYTE);
   if (out.not_null()) out_addr += cast_from_oop<jlong>(out()) + arrayOopDesc::base_offset_in_bytes(T_BYTE);
   jlong result;
@@ -54,7 +58,7 @@ jlong ZipRuntime::process(jint inflate, oop receiver, jlong stream,
   }
   if (out.not_null()) Universe::heap()->unpin_object(current, out());
   if (in.not_null()) Universe::heap()->unpin_object(current, in());
-  current->exit_jni_deferred_suspension();
+  if (pin_arrays) current->exit_jni_deferred_suspension();
   if ((static_cast<uint64_t>(result) >> 62) == 3) {
     jobject recv_handle = JNIHandles::make_local(current, recv());
     {
