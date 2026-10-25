@@ -538,7 +538,11 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_putDoubleDecimalUTF16:
   case vmIntrinsics::_floatToDecimalLatin1:
   case vmIntrinsics::_decimalZmij:
+#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
     if (!UseZmijIntrinsics) return true;
+#else
+    return true;
+#endif
     break;
   case vmIntrinsics::_parseFastFloatDigits:
   case vmIntrinsics::_parseFastFloat:
