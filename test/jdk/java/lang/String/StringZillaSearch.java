@@ -326,6 +326,21 @@ public class StringZillaSearch {
             check("\uff01\u0400".repeat(count + 128), "\u00ff".repeat(count), Integer.MAX_VALUE);
             check("\u0100" + "x".repeat(65536) + target, target, Integer.MAX_VALUE);
         }
+        // The mixed reverse character filter searches candidate endings, not
+        // the whole backing array. Cover its admission and chunk boundaries.
+        String longMixedTarget = "b" + "a".repeat(256);
+        for (int candidates : new int[]{127, 128, 129, 32768, 32769}) {
+            String suffix = "\u0401".repeat(candidates - 1);
+            String source = longMixedTarget + suffix;
+            equal(source.lastIndexOf(longMixedTarget), 0);
+            equal(source.lastIndexOf(longMixedTarget, candidates - 2), 0);
+            equal(("\u0401".repeat(257) + suffix).lastIndexOf(longMixedTarget), -1);
+            StringBuilder builder = new StringBuilder(source + longMixedTarget);
+            builder.setLength(source.length());
+            equal(builder.lastIndexOf(longMixedTarget), 0);
+            builder.setCharAt(0, 'c');
+            equal(builder.lastIndexOf(longMixedTarget), -1);
+        }
         // Reject later near-matches without losing an earlier full match.
         for (int count : new int[]{65, 66, 127, 128, 129}) {
             String target = "b" + "a".repeat(count - 1);

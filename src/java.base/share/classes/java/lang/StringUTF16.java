@@ -2073,16 +2073,18 @@ final class StringUTF16 {
                            byte[] tgt, int tgtCount, int fromIndex) {
         if (StringZilla.ENABLED && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)
                 && tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
-            int last = tgtCount - 1;
-            if (getChar(src, fromIndex + last) != (tgt[last] & 0xff)) {
-                if (--fromIndex < 0) return -1;
-            } else if (tgtCount == 1) {
-                return fromIndex;
-            } else if (tgtCount <= 16) {
-                int i = last - 1;
-                while (i >= 0 && getChar(src, fromIndex + i) == (tgt[i] & 0xff)) i--;
-                if (i < 0) return fromIndex;
-                if (--fromIndex < 0) return -1;
+            if (tgtCount <= 16) {
+                int last = tgtCount - 1;
+                if (getChar(src, fromIndex + last) != (tgt[last] & 0xff)) {
+                    if (--fromIndex < 0) return -1;
+                } else if (tgtCount == 1) {
+                    return fromIndex;
+                } else {
+                    int i = last - 1;
+                    while (i >= 0 && getChar(src, fromIndex + i) == (tgt[i] & 0xff)) i--;
+                    if (i < 0) return fromIndex;
+                    if (--fromIndex < 0) return -1;
+                }
             }
             int end = (fromIndex + tgtCount) << 1;
             int result = StringZilla.rfindUTF16Latin1(src, 0, end, tgt, tgtCount);
@@ -2091,11 +2093,23 @@ final class StringUTF16 {
             }
             if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
         }
-        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
-    }
-
-    static int lastIndexOfLatin1Java(byte[] src,
-                                        byte[] tgt, int tgtCount, int fromIndex) {
+        if (tgtCount > StringZilla.MAX_MIXED_NEEDLE && StringZilla.ENABLED
+                && fromIndex + 1 >= (StringZilla.MIN_BYTES >> 1)
+                && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+            // Locate the first candidate using the existing character intrinsic.
+            // After conversion to code units, its relative byte result is also
+            // the candidate start index.
+            int offset = (tgtCount - 1) << 1;
+            int size = (fromIndex + 1) << 1;
+            int result = StringZilla.rfindCharUTF16(src, offset, size, tgt[tgtCount - 1] & 0xff);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(src, offset, size, tgt[tgtCount - 1] & 0xff, true, true);
+            }
+            if (result != StringZilla.FALLBACK) {
+                if (result < 0) return -1;
+                fromIndex = result >> 1;
+            }
+        }
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
