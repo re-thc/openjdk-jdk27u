@@ -205,7 +205,7 @@ jobs:
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
           ${{ steps.extra-options.outputs.test-jdk }}
           ${{ steps.extra-options.outputs.compile-jdk }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash ${{ matrix.test-name == 'hs/tier1 compiler part 3' && inputs.static-suffix != '-static' && (inputs.platform == 'linux-x64' || inputs.platform == 'linux-aarch64' || inputs.platform == 'macos-aarch64' || inputs.platform == 'windows-x64') && '-Dtest.instant.requireNative=true' || '' }};VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}

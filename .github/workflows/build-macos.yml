@@ -90,6 +90,10 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Get Rust'
+        uses: ./.github/actions/get-rust
+        if: inputs.platform == 'macos-aarch64'
+
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Homebrew installation and xcode-select
@@ -122,6 +126,14 @@ jobs:
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
+
+      - name: 'Require native Instant backend'
+        if: inputs.platform == 'macos-aarch64'
+        run: |
+          if ! grep -Eq '^ENABLE_INSTANT_SPEEDATE *:?= *true *$' 'build/${{ inputs.platform }}/spec.gmk'; then
+            echo '::error::The supported CI build must enable the native Instant backend.'
+            exit 1
+          fi
 
       - name: 'Build'
         id: build

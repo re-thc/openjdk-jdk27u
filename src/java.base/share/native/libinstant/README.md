@@ -16,14 +16,15 @@ and their registry checksums. The upstream source is
 
 Configure selects the optional library automatically on native Linux GNU
 x64/AArch64, macOS arm64 and Windows x64 when the installed Rust 1.88+ toolchain,
-target standard library, its `COPYRIGHT-library.html`, and locked dependencies
-are available locally. Configure and make do not acquire dependencies or install
-toolchains. Explicit `--enable-instant-speedate` requires usable prerequisites;
+target standard library and its `COPYRIGHT-library.html` are available locally.
+Configure checks the installed tools without resolving crates or installing a
+toolchain. Explicit `--enable-instant-speedate` requires usable prerequisites;
 `--disable-instant-speedate` skips Rust probing and compiles out native routing.
 The Java formatter's immutable parser reuse applies in either configuration.
 
 `make/modules/java.base/lib/CoreLibraries.gmk` builds the archive and JNI library
-with frozen Cargo dependencies. Static-library recipes omit both. Rust targets
+with locked Cargo dependencies. Cargo downloads missing locked crates during
+the normal build and honors caller registry, proxy and offline settings. Static-library recipes omit both. Rust targets
 baseline `x86-64` on x64, `generic` on Linux AArch64 and `apple-m1` on macOS arm64;
 the surrounding JDK's CPU flags are configured separately. Startup
 `-Djdk.time.instantSpeedate=false` selects Java parsing. Missing native libraries
@@ -83,16 +84,18 @@ misses use the Java formatter.
    to those semantics and to accepted spellings; do not add a second field parser
    to reproduce them. Preserve the borrowed-storage lifetime and bounded UTF-16
    conversion at both the VM leaf and JNI boundary.
-5. Run the adapter's frozen Cargo tests, the configure/path fixtures and focused
+5. Run the adapter's locked Cargo tests, the configure/path fixtures and focused
    java.time tests after building with the normal JDK recipes. Check both String
    representations, library spellings, date boundaries, pre-epoch fractions,
    JNI loading/concurrency and Serial/G1/ZGC, with interpreter, C1, C2 and normal
    tiered execution as applicable. Native-enabled platform checks must prove
    actual native hits; Java fallback alone is insufficient. The permanent
-   `TestInstantParseIntrinsic` also accepts `-Dtest.instant.jniMiss=true` with a
-   library built using `INSTANT_SPEEDATE_FORCE_FAILURE`. Enabled interpreter,
-   C1 and C2 runs must still return a value from the direct helper; intrinsic-off
-   controls must return a helper miss. This proves the JNI parser body is bypassed.
+   `TestInstantParseIntrinsic` initializes the real backend, then loads a small
+   jtreg native fixture that makes only the JNI parser entry decline. Enabled
+   interpreter, C1 and C2 runs must still return a value from the direct helper;
+   intrinsic-off controls must miss. Ordinary supported CI builds require native
+   selection, and `test.instant.requireNative=true` makes a missing backend fail
+   the route test rather than skip. User builds without Rust retain Java parsing.
 
 The regression entry points are `TestInstantParseIntrinsic`, `TestInstantSpeedate`, `TestInstantParserCache`,
 `InstantSpeedateDisabled`, `InstantSpeedateUnavailable`,

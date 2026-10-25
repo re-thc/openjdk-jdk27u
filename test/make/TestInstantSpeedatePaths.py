@@ -55,7 +55,10 @@ assert 'fixpath' not in actual and ' exec ' not in actual,actual
 assert 'CARGO_ENCODED_RUSTFLAGS' not in os.environ
 assert os.environ['CARGO_BUILD_JOBS']=='2'
 assert os.environ['RUSTFLAGS']=='-C target-cpu=x86-64 -C panic=unwind'
-assert sys.argv[1:4]==['build','--frozen','--release'],sys.argv
+assert os.environ['CARGO_HOME']==os.environ['EXPECTED_CARGO_HOME']
+assert os.environ['CARGO_NET_OFFLINE']==os.environ['EXPECTED_CARGO_NET_OFFLINE']
+assert sys.argv[1:4]==['build','--locked','--release'],sys.argv
+assert '--frozen' not in sys.argv and '--offline' not in sys.argv,sys.argv
 assert sys.argv[sys.argv.index('--manifest-path')+1]==os.environ['EXPECTED_MANIFEST'],sys.argv
 assert sys.argv[sys.argv.index('--target-dir')+1]==os.environ['EXPECTED_TARGET'],sys.argv
 subprocess.run([os.environ['FIXTURE_RUSTC'], '--version'],check=True,stdout=subprocess.PIPE)
@@ -103,6 +106,8 @@ AC_OUTPUT
         (source / 'rust/Cargo.toml').touch()
         output = work / 'c/build/native'
         output.mkdir(parents=True)
+        cache = work / 'empty-cargo-home'
+        cache.mkdir()
         (work / 'Makefile').write_text('include paths.mk\n'
             f'SPEEDATE_SRC := {source}\nSPEEDATE_OUT := {output}\n'
             'SPEEDATE_RUST_TARGET := x86_64-pc-windows-msvc\n'
@@ -112,6 +117,9 @@ AC_OUTPUT
         env = dict(os.environ, EXPECTED_RUSTC=converted(rust),
                    EXPECTED_MANIFEST=converted(source / 'rust/Cargo.toml'),
                    EXPECTED_TARGET=converted(output), FIXTURE_RUSTC=str(rust),
+                   CARGO_HOME=str(cache), EXPECTED_CARGO_HOME=str(cache),
+                   CARGO_NET_OFFLINE='true' if windows else 'false',
+                   EXPECTED_CARGO_NET_OFFLINE='true' if windows else 'false',
                    FIXTURE_RECORD=str(work / 'record.jsonl'),
                    CARGO_ENCODED_RUSTFLAGS='must-be-removed', DEBUG_FIXPATH='1')
         result = subprocess.run(['make', '--no-print-directory', '-f', 'Makefile'], cwd=work,
@@ -119,6 +127,7 @@ AC_OUTPUT
         if result.returncode:
             raise AssertionError(result.stdout)
         assert len((work / 'record.jsonl').read_text().splitlines()) == 1
+        assert not list(cache.iterdir())
         assert result.stdout.count('fixpath: debug: input:') == (1 if windows else 0),result.stdout
         print(('Windows-path' if windows else 'Unix') + ' extraction/production-recipe fixture PASS')
 print('Fixture limits: no native Windows compiler/link/runtime executed.')

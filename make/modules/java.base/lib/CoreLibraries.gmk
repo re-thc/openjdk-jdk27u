@@ -75,7 +75,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
 TARGETS += $(BUILD_LIBJAVA)
 
 ################################################################################
-## Optional, image-owned speedate parser. Cargo never fetches during make.
+## Optional, image-owned speedate parser with locked Cargo dependencies.
 ################################################################################
 
 # Static JDKs use the Java fallback and must not embed a Rust archive or its
@@ -100,7 +100,7 @@ ifeq ($(ENABLE_INSTANT_SPEEDATE):$(filter true,$(STATIC_LIBS)), true:)
 	$(call ExecuteWithLog, $(SPEEDATE_OUT)/cargo, \
 	    env -u CARGO_ENCODED_RUSTFLAGS RUSTUP_AUTO_INSTALL=0 $(FIXPATH) RUSTC="$(RUSTC_EXECUTABLE)" \
 	        RUSTFLAGS="-C target-cpu=$(SPEEDATE_RUST_CPU) -C panic=unwind" \
-	        CARGO_BUILD_JOBS=2 "$(CARGO_EXECUTABLE)" build --frozen --release \
+	        CARGO_BUILD_JOBS=2 "$(CARGO_EXECUTABLE)" build --locked --release \
 	        --manifest-path $(SPEEDATE_SRC)/rust/Cargo.toml \
 	        --target $(SPEEDATE_RUST_TARGET) --target-dir $(SPEEDATE_OUT))
 	$(TOUCH) $@

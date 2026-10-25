@@ -41,9 +41,10 @@ TOOL = '''#!{python}
 import json, os, pathlib, sys
 args = sys.argv[1:]
 name = pathlib.Path(sys.argv[0]).name
-assert os.environ.get('RUSTUP_AUTO_INSTALL') == '0'
 with open(os.environ['FIXTURE_CALLS'], 'a') as stream:
     stream.write(json.dumps([name, args]) + '\\n')
+assert name == 'rustc', 'Configure must not invoke Cargo: ' + repr(args)
+assert os.environ.get('RUSTUP_AUTO_INSTALL') == '0'
 broken = os.environ.get('FIXTURE_BROKEN')
 if name == 'rustc':
     if args == ['--version']:
@@ -56,15 +57,6 @@ if name == 'rustc':
     if args == ['--print', 'sysroot']:
         print(os.environ['FIXTURE_SYSROOT'])
         sys.exit(1 if broken == 'sysroot-status' else 0)
-else:
-    assert name == 'cargo' and args[0] == 'metadata', args
-    assert '--frozen' in args and '--offline' in args, args
-    assert args[args.index('--filter-platform') + 1] == os.environ['FIXTURE_RUST_TARGET']
-    assert args[args.index('--manifest-path') + 1] == os.environ['FIXTURE_MANIFEST']
-    assert os.environ['RUSTC'] == str(pathlib.Path(sys.argv[0]).with_name('rustc'))
-    assert 'CARGO_ENCODED_RUSTFLAGS' not in os.environ
-    print('{{"packages": []}}')
-    sys.exit(1 if broken == 'offline' else 0)
 raise AssertionError('Unexpected tool invocation: ' + repr(args))
 '''
 
@@ -138,11 +130,12 @@ AC_OUTPUT
             if broken != 'missing-notices':
                 notices.write_text('fixture notices\n')
             calls = case / 'calls.jsonl'
+            cache = case / 'empty-cargo-home'
+            cache.mkdir()
             env = dict(os.environ, FIXTURE_OS=target[0], FIXTURE_CPU=target[1], FIXTURE_LIBC=target[2],
                        FIXTURE_COMPILE_TYPE=compile_type, FIXTURE_TOOLS=str(tools), FIXTURE_BROKEN=broken,
                        FIXTURE_RUST_TARGET=rust_target, FIXTURE_STD=str(std), FIXTURE_SYSROOT=str(sysroot),
-                       FIXTURE_CALLS=str(calls), FIXTURE_MANIFEST=str(root / 'src/java.base/share/native/libinstant/rust/Cargo.toml'),
-                       CARGO_ENCODED_RUSTFLAGS='must-be-removed', CONFIG_SHELL=bash)
+                       FIXTURE_CALLS=str(calls), CARGO_HOME=str(cache), CONFIG_SHELL=bash)
             for name in ('CARGO', 'RUSTC'):
                 env.pop(name, None)
             result = subprocess.run([bash, str(work / 'configure'), *([option] if option else [])],
@@ -163,20 +156,21 @@ AC_OUTPUT
             else:
                 assert 'not available' in result.stdout, label + '\n' + result.stdout
             recorded = [json.loads(line) for line in calls.read_text().splitlines()] if calls.exists() else []
+            assert all(name != 'cargo' for name, _ in recorded), (label, recorded)
+            assert not list(cache.iterdir()), (label, list(cache.iterdir()))
             if no_probes:
                 assert not recorded, (label, recorded)
-            if enabled:
-                assert any(name == 'cargo' for name, _ in recorded), (label, recorded)
             print(label + ' PASS')
 
-        check('default cached Linux x64', enabled=True)
-        check('explicit auto cached Linux x64', option='--enable-instant-speedate=auto', enabled=True)
+        check('default empty-cache Linux x64', enabled=True)
+        check('explicit auto empty-cache Linux x64', option='--enable-instant-speedate=auto', enabled=True)
+        check('explicit enable empty-cache Linux x64', option='--enable-instant-speedate', enabled=True)
         check('explicit disable never probes', option='--disable-instant-speedate', no_probes=True)
         check('spaced tools auto', spaced_tools=True, no_probes=True)
         check('spaced tools explicit', spaced_tools=True, option='--enable-instant-speedate',
               succeeds=False, no_probes=True)
         for broken in ('missing-cargo', 'missing-rustc', 'old-rust', 'missing-std', 'empty-std',
-                       'missing-notices', 'offline', 'version-status', 'std-status', 'sysroot-status'):
+                       'missing-notices', 'version-status', 'std-status', 'sysroot-status'):
             check(broken + ' auto', broken=broken)
             check(broken + ' explicit', broken=broken, option='--enable-instant-speedate', succeeds=False)
         for label, target, compile_type in (
@@ -190,9 +184,9 @@ AC_OUTPUT
                 (('linux', 'aarch64', 'gnu'), 'aarch64-unknown-linux-gnu', 'generic'),
                 (('macosx', 'aarch64', ''), 'aarch64-apple-darwin', 'apple-m1'),
                 (('windows', 'x86_64', ''), 'x86_64-pc-windows-msvc', 'x86-64')):
-            check(target[0] + ' default cached', target=target,
+            check(target[0] + ' default empty-cache', target=target,
                   enabled=True, rust_target=rust_target, cpu=cpu)
-            check(target[0] + ' explicit auto cached', target=target,
+            check(target[0] + ' explicit auto empty-cache', target=target,
                   option='--enable-instant-speedate=auto',
                   enabled=True, rust_target=rust_target, cpu=cpu)
             check(target[0] + ' other-target explicit', target=target, option='--enable-instant-speedate',
@@ -200,7 +194,7 @@ AC_OUTPUT
             check(target[0] + ' disabled never probes', target=target,
                   option='--disable-instant-speedate', no_probes=True)
             for broken in ('missing-cargo', 'missing-rustc', 'old-rust', 'missing-std',
-                           'missing-notices', 'offline'):
+                           'missing-notices'):
                 check(target[0] + ' ' + broken + ' auto', target=target, broken=broken,
                       rust_target=rust_target, cpu=cpu)
                 check(target[0] + ' ' + broken + ' explicit', target=target, broken=broken,

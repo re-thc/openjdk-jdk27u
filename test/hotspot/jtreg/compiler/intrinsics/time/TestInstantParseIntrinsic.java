@@ -27,46 +27,61 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires vm.simpleArch == "x64" | vm.simpleArch == "aarch64"
  * @requires vm.compMode != "Xcomp"
+ * @requires !jdk.static
  * @library /test/lib
  * @modules java.base/java.time:open
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xint -XX:+CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 0 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xint -XX:-CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 0 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xint -XX:-UseInstantParseIntrinsic -XX:+CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 0 false
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xint -XX:-UseInstantParseIntrinsic -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 0 false
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:TieredStopAtLevel=1 -XX:+CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-TieredCompilation -XX:+CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-TieredCompilation -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:+CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-UseInstantParseIntrinsic -XX:+CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 false
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-UseInstantParseIntrinsic -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 false
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:DisableIntrinsic=_parseInstant -XX:+CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 false
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:DisableIntrinsic=_parseInstant -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 false
  */
@@ -89,22 +104,20 @@ public class TestInstantParseIntrinsic {
     private static Method fast;
 
     /*
-     * Normal jtreg runs check availability, compilation and correctness.
-     * With a matching VM and an INSTANT_SPEEDATE_FORCE_FAILURE JNI library,
-     * -Dtest.instant.jniMiss=true additionally proves bypass of the JNI body.
-     * Run the disabled controls too: they must observe MISS, confirming that
-     * this is the poisoned fixture rather than an ordinary JNI implementation.
+     * Register the genuine library entry, then replace only the JNI binding
+     * with a MISS stub. Enabled cases must still parse through the VM leaf;
+     * disabled cases must observe MISS and use the Java fallback.
      */
     public static void main(String[] args) throws Exception {
         int level = Integer.parseInt(args[0]);
         boolean intrinsic = Boolean.parseBoolean(args[1]);
-        boolean jniMiss = Boolean.getBoolean("test.instant.jniMiss");
         check(level == 0 || level == 1 || level == 4, "Unexpected compilation level");
         Class<?> config = Class.forName("java.time.InstantParserConfig");
         var enabled = config.getDeclaredField("ENABLED");
         enabled.setAccessible(true);
         if (!enabled.getBoolean(null) || "false".equals(System.getProperty("jdk.time.instantSpeedate"))) {
-            check(!jniMiss, "Poisoned-JNI route proof requires an enabled native image");
+            check(!Boolean.getBoolean("test.instant.requireNative"),
+                    "Native Instant parsing is required but configured out or startup-disabled");
             throw new SkippedException("Native Instant parsing is configured out or startup-disabled");
         }
         Class<?> parser = Class.forName("java.time.InstantParser");
@@ -112,8 +125,9 @@ public class TestInstantParseIntrinsic {
         fast.setAccessible(true);
         Method nativeMethod = parser.getDeclaredMethod("parse0", String.class);
 
-        // Initialize the independent library entry before asking the compiler.
+        // Register the Rust entry before replacing the separate JNI binding.
         same(Instant.parse("1970-01-01T00:00:00Z"), Instant.EPOCH, "Library initialization");
+        System.loadLibrary("InstantJniMiss");
         for (int i = 0; i < 32; i++) invokeFast("1970-01-01T00:00:00Z");
         check(WB.getBooleanVMFlag("UseInstantParseIntrinsic") != null, "Intrinsic flag is missing");
         if (intrinsic) {
@@ -135,7 +149,7 @@ public class TestInstantParseIntrinsic {
         }
         check(WB.getMethodCompilationLevel(fast) == level, "Wrong helper compilation level");
 
-        boolean libraryResult = intrinsic || !jniMiss;
+        boolean libraryResult = intrinsic;
         String[] fractions = {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"};
         int[] nanos = {0, 100_000_000, 120_000_000, 123_000_000, 123_400_000, 123_450_000, 123_456_000};
         for (int i = 0; i < fractions.length; i++) {
@@ -172,7 +186,7 @@ public class TestInstantParseIntrinsic {
         same(Instant.parse(new StringBuilder("1969-12-31T23:59:59.000001Z")),
                 Instant.ofEpochSecond(-1, 1000), "Custom CharSequence fallback");
         System.out.println("Instant intrinsic: level=" + level + ", enabled=" + intrinsic
-                + ", poisonedJNI=" + jniMiss + "; availability and values checked");
+                + "; JNI binding replaced with MISS; availability and values checked");
     }
 
     private static Instant invokeFast(String text) throws Exception {

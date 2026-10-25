@@ -72,12 +72,6 @@ if test "x$enable_instant_speedate" != xno && test -z "$speedate_unavailable"; t
     if test ! -d "$rust_std_dir" || test ! -f "$SPEEDATE_RUST_LICENSE" || \
         ! $LS "$rust_std_dir"/libstd-*.rlib >/dev/null 2>&1; then
       speedate_unavailable="installed target standard library and COPYRIGHT-library.html are required"
-    elif ! env -u CARGO_ENCODED_RUSTFLAGS RUSTUP_AUTO_INSTALL=0 $FIXPATH \
-        RUSTC="$RUSTC_EXECUTABLE" "$CARGO_EXECUTABLE" metadata --frozen --offline \
-        --format-version 1 --filter-platform "$SPEEDATE_RUST_TARGET" \
-        --manifest-path "$TOPDIR/src/java.base/share/native/libinstant/rust/Cargo.toml" \
-        >>config.log 2>&1; then
-      speedate_unavailable="locked speedate dependencies must already be cached (cargo fetch --locked)"
     fi
   fi
 fi
