@@ -56,7 +56,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
-#include "runtime/zipRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -1208,14 +1207,11 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
-  return generate_native_entry(synchronized, false);
+  return generate_native_entry(synchronized, nullptr);
 }
 
-address TemplateInterpreterGenerator::generate_zip_entry() {
-  return generate_native_entry(false, true);
-}
-
-address TemplateInterpreterGenerator::generate_native_entry(bool synchronized, bool zip_process) {
+address TemplateInterpreterGenerator::generate_native_entry(bool synchronized, address zip_entry) {
+  const bool zip_process = zip_entry != nullptr;
   // The ZIP method itself must retain this entry; compiled callers still inline
   // its C1/C2 intrinsic rather than compiling a JNI wrapper for the native method.
   bool inc_counter = !zip_process && (UseCompiler || CountCompiledCalls);
@@ -1343,7 +1339,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized, b
     __ adr(result_handler, ExternalAddress(AbstractInterpreter::result_handler(T_LONG)));
     __ str(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset * wordSize));
     // Keep the native frame walkable and use its normal exception/return path.
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, ZipRuntime::process_interpreter),
+    __ call_VM(noreg, zip_entry,
                rlocals, false /* check_exceptions */);
     __ sub(rscratch1, esp, 4 * wordSize);
     __ andr(sp, rscratch1, -16);

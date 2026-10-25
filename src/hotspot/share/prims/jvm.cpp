@@ -240,14 +240,6 @@ JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_LEAF(jboolean, JVM_ZipIntrinsicsEnabled())
-#if defined(AMD64) || defined(AARCH64)
-  return UseZipIntrinsics;
-#else
-  return false;
-#endif
-JVM_END
-
 JVM_LEAF(jlong, JVM_CurrentTimeMillis(JNIEnv *env, jclass ignored))
   return os::javaTimeMillis();
 JVM_END

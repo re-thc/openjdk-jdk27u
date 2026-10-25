@@ -674,8 +674,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_encodeAsciiArray:
     return inline_encodeISOArray(true);
 
-  case vmIntrinsics::_zipProcess:
-    return inline_zip_process();
+  case vmIntrinsics::_deflateBytesBytes: return inline_zip_process(false, true, true);
+  case vmIntrinsics::_deflateBytesBuffer: return inline_zip_process(false, true, false);
+  case vmIntrinsics::_deflateBufferBytes: return inline_zip_process(false, false, true);
+  case vmIntrinsics::_deflateBufferBuffer: return inline_zip_process(false, false, false);
+  case vmIntrinsics::_inflateBytesBytes: return inline_zip_process(true, true, true);
+  case vmIntrinsics::_inflateBytesBuffer: return inline_zip_process(true, true, false);
+  case vmIntrinsics::_inflateBufferBytes: return inline_zip_process(true, false, true);
+  case vmIntrinsics::_inflateBufferBuffer: return inline_zip_process(true, false, false);
   case vmIntrinsics::_updateCRC32:
     return inline_updateCRC32();
   case vmIntrinsics::_updateBytesCRC32:
@@ -6907,12 +6913,18 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   return true;
 }
 
-bool LibraryCallKit::inline_zip_process() {
+bool LibraryCallKit::inline_zip_process(bool inflate, bool input_array, bool output_array) {
+  // The existing native signatures use two Java slots for either an array and
+  // its int offset, or a native long address. Lengths are at the same slots.
+  Node* input_offset = input_array ? _gvn.transform(new ConvI2LNode(argument(4))) : argument(3);
+  Node* output_offset = output_array ? _gvn.transform(new ConvI2LNode(argument(7))) : argument(6);
   Node* call = make_runtime_call(RC_NO_LEAF, OptoRuntime::zip_process_Type(),
       OptoRuntime::zip_process_Java(), nullptr, TypePtr::BOTTOM,
-      argument(0), argument(7), argument(11), argument(12), argument(13),
-      argument(1), argument(2), top(), argument(4), argument(8),
-      argument(5), top(), argument(9), top());
+      intcon(inflate), argument(5), argument(8),
+      inflate ? intcon(0) : argument(9), inflate ? intcon(0) : argument(10),
+      argument(0), argument(1), top(),
+      input_array ? argument(3) : null(), output_array ? argument(6) : null(),
+      input_offset, top(), output_offset, top());
   make_slow_call_ex(call, env()->Throwable_klass(), false);
   set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;

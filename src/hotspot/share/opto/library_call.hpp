@@ -353,7 +353,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_block_size_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);
-  bool inline_zip_process();
+  bool inline_zip_process(bool inflate, bool input_array, bool output_array);
   bool inline_updateCRC32();
   Node* make_crc32_call(Node* crc, Node* src, Node* length);
   bool inline_updateBytesCRC32();

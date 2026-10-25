@@ -24,12 +24,8 @@
  */
 
 #include "jni.h"
-#include "jvm.h"
 #include "jlong.h"
 #include "zip_zlib_backend.h"
-
-#include "java_util_zip_Deflater.h"
-#include "java_util_zip_Inflater.h"
 
 JNIEXPORT jint JNICALL ZIP_Inflate(jlong, jlong, jint, jlong, jint);
 JNIEXPORT jint JNICALL ZIP_Deflate(jlong, jlong, jint, jlong, jint, jint, jint);
@@ -60,48 +56,4 @@ ZIP_Complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
              jint inputLen, jint outputLen, jint params, jint status) {
     if (inflate) return ZIP_FinishInflate(env, receiver, stream, inputLen, outputLen, status);
     return ZIP_FinishDeflate(env, receiver, stream, inputLen, outputLen, params, status);
-}
-
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_ZipUtils_zipIntrinsicLimits(JNIEnv* env, jclass cls) {
-    return JVM_ZipIntrinsicsEnabled() ? 1 : 0;
-}
-
-JNIEXPORT jlong JNICALL
-Java_java_util_zip_ZipUtils_process(JNIEnv* env, jclass cls,
-        jboolean inflate, jobject receiver, jlong stream,
-        jbyteArray input, jlong inputOffset, jint inputLen,
-        jbyteArray output, jlong outputOffset, jint outputLen,
-        jint flush, jint params) {
-    /* Reuse JNI pinning and exception handling without an extra VM transition. */
-    if (inflate) {
-        if (input != NULL) {
-            if (output != NULL) {
-                return Java_java_util_zip_Inflater_inflateBytesBytes(env, receiver, stream,
-                    input, (jint)inputOffset, inputLen, output, (jint)outputOffset, outputLen);
-            }
-            return Java_java_util_zip_Inflater_inflateBytesBuffer(env, receiver, stream,
-                input, (jint)inputOffset, inputLen, outputOffset, outputLen);
-        }
-        if (output != NULL) {
-            return Java_java_util_zip_Inflater_inflateBufferBytes(env, receiver, stream,
-                inputOffset, inputLen, output, (jint)outputOffset, outputLen);
-        }
-        return Java_java_util_zip_Inflater_inflateBufferBuffer(env, receiver, stream,
-            inputOffset, inputLen, outputOffset, outputLen);
-    }
-    if (input != NULL) {
-        if (output != NULL) {
-            return Java_java_util_zip_Deflater_deflateBytesBytes(env, receiver, stream,
-                input, (jint)inputOffset, inputLen, output, (jint)outputOffset, outputLen, flush, params);
-        }
-        return Java_java_util_zip_Deflater_deflateBytesBuffer(env, receiver, stream,
-            input, (jint)inputOffset, inputLen, outputOffset, outputLen, flush, params);
-    }
-    if (output != NULL) {
-        return Java_java_util_zip_Deflater_deflateBufferBytes(env, receiver, stream,
-            inputOffset, inputLen, output, (jint)outputOffset, outputLen, flush, params);
-    }
-    return Java_java_util_zip_Deflater_deflateBufferBuffer(env, receiver, stream,
-        inputOffset, inputLen, outputOffset, outputLen, flush, params);
 }

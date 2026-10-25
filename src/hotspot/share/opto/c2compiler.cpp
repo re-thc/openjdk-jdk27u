@@ -828,7 +828,14 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
-  case vmIntrinsics::_zipProcess:
+  case vmIntrinsics::_deflateBytesBytes:
+  case vmIntrinsics::_deflateBytesBuffer:
+  case vmIntrinsics::_deflateBufferBytes:
+  case vmIntrinsics::_deflateBufferBuffer:
+  case vmIntrinsics::_inflateBytesBytes:
+  case vmIntrinsics::_inflateBytesBuffer:
+  case vmIntrinsics::_inflateBufferBytes:
+  case vmIntrinsics::_inflateBufferBuffer:
 #if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_updateAdler32:
 #endif

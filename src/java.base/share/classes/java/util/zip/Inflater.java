@@ -352,13 +352,9 @@ public class Inflater implements AutoCloseable {
                 if (input == null) {
                     inputPos = this.inputPos;
                     try {
-                        result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                            ? ZipUtils.process(true, this, zsRef.address(),
-                                inputArray, inputPos, inputLim - inputPos,
-                                output, off, len, 0, 0)
-                            : inflateBytesBytes(zsRef.address(),
-                                inputArray, inputPos, inputLim - inputPos,
-                                output, off, len);
+                        result = inflateBytesBytes(zsRef.address(),
+                            inputArray, inputPos, inputLim - inputPos,
+                            output, off, len);
                     } catch (DataFormatException e) {
                         this.inputPos = inputPos + inputConsumed;
                         throw e;
@@ -371,26 +367,18 @@ public class Inflater implements AutoCloseable {
                             NIO_ACCESS.acquireSession(input);
                             try {
                                 long inputAddress = NIO_ACCESS.getBufferAddress(input);
-                                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                    ? ZipUtils.process(true, this, zsRef.address(),
-                                        null, inputAddress + inputPos, inputRem,
-                                        output, off, len, 0, 0)
-                                    : inflateBufferBytes(zsRef.address(),
-                                        inputAddress + inputPos, inputRem,
-                                        output, off, len);
+                                result = inflateBufferBytes(zsRef.address(),
+                                    inputAddress + inputPos, inputRem,
+                                    output, off, len);
                             } finally {
                                 NIO_ACCESS.releaseSession(input);
                             }
                         } else {
                             byte[] inputArray = ZipUtils.getBufferArray(input);
                             int inputOffset = ZipUtils.getBufferOffset(input);
-                            result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                ? ZipUtils.process(true, this, zsRef.address(),
-                                    inputArray, inputOffset + inputPos, inputRem,
-                                    output, off, len, 0, 0)
-                                : inflateBytesBytes(zsRef.address(),
-                                    inputArray, inputOffset + inputPos, inputRem,
-                                    output, off, len);
+                            result = inflateBytesBytes(zsRef.address(),
+                                inputArray, inputOffset + inputPos, inputRem,
+                                output, off, len);
                         }
                     } catch (DataFormatException e) {
                         input.position(inputPos + inputConsumed);
@@ -516,26 +504,18 @@ public class Inflater implements AutoCloseable {
                             NIO_ACCESS.acquireSession(output);
                             try {
                                 long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                    ? ZipUtils.process(true, this, zsRef.address(),
-                                        inputArray, inputPos, inputLim - inputPos,
-                                        null, outputAddress + outputPos, outputRem, 0, 0)
-                                    : inflateBytesBuffer(zsRef.address(),
-                                        inputArray, inputPos, inputLim - inputPos,
-                                        outputAddress + outputPos, outputRem);
+                                result = inflateBytesBuffer(zsRef.address(),
+                                    inputArray, inputPos, inputLim - inputPos,
+                                    outputAddress + outputPos, outputRem);
                             } finally {
                                 NIO_ACCESS.releaseSession(output);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
                             int outputOffset = ZipUtils.getBufferOffset(output);
-                            result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                ? ZipUtils.process(true, this, zsRef.address(),
-                                    inputArray, inputPos, inputLim - inputPos,
-                                    outputArray, outputOffset + outputPos, outputRem, 0, 0)
-                                : inflateBytesBytes(zsRef.address(),
-                                    inputArray, inputPos, inputLim - inputPos,
-                                    outputArray, outputOffset + outputPos, outputRem);
+                            result = inflateBytesBytes(zsRef.address(),
+                                inputArray, inputPos, inputLim - inputPos,
+                                outputArray, outputOffset + outputPos, outputRem);
                         }
                     } catch (DataFormatException e) {
                         this.inputPos = inputPos + inputConsumed;
@@ -553,26 +533,18 @@ public class Inflater implements AutoCloseable {
                                     NIO_ACCESS.acquireSession(output);
                                     try {
                                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                        result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                            ? ZipUtils.process(true, this, zsRef.address(),
-                                                null, inputAddress + inputPos, inputRem,
-                                                null, outputAddress + outputPos, outputRem, 0, 0)
-                                            : inflateBufferBuffer(zsRef.address(),
-                                                inputAddress + inputPos, inputRem,
-                                                outputAddress + outputPos, outputRem);
+                                        result = inflateBufferBuffer(zsRef.address(),
+                                            inputAddress + inputPos, inputRem,
+                                            outputAddress + outputPos, outputRem);
                                     } finally {
                                         NIO_ACCESS.releaseSession(output);
                                     }
                                 } else {
                                     byte[] outputArray = ZipUtils.getBufferArray(output);
                                     int outputOffset = ZipUtils.getBufferOffset(output);
-                                    result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                        ? ZipUtils.process(true, this, zsRef.address(),
-                                            null, inputAddress + inputPos, inputRem,
-                                            outputArray, outputOffset + outputPos, outputRem, 0, 0)
-                                        : inflateBufferBytes(zsRef.address(),
-                                            inputAddress + inputPos, inputRem,
-                                            outputArray, outputOffset + outputPos, outputRem);
+                                    result = inflateBufferBytes(zsRef.address(),
+                                        inputAddress + inputPos, inputRem,
+                                        outputArray, outputOffset + outputPos, outputRem);
                                 }
                             } finally {
                                 NIO_ACCESS.releaseSession(input);
@@ -584,26 +556,18 @@ public class Inflater implements AutoCloseable {
                                 NIO_ACCESS.acquireSession(output);
                                 try {
                                     long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                                    result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                        ? ZipUtils.process(true, this, zsRef.address(),
-                                            inputArray, inputOffset + inputPos, inputRem,
-                                            null, outputAddress + outputPos, outputRem, 0, 0)
-                                        : inflateBytesBuffer(zsRef.address(),
-                                            inputArray, inputOffset + inputPos, inputRem,
-                                            outputAddress + outputPos, outputRem);
+                                    result = inflateBytesBuffer(zsRef.address(),
+                                        inputArray, inputOffset + inputPos, inputRem,
+                                        outputAddress + outputPos, outputRem);
                                 } finally {
                                     NIO_ACCESS.releaseSession(output);
                                 }
                             } else {
                                 byte[] outputArray = ZipUtils.getBufferArray(output);
                                 int outputOffset = ZipUtils.getBufferOffset(output);
-                                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                    ? ZipUtils.process(true, this, zsRef.address(),
-                                        inputArray, inputOffset + inputPos, inputRem,
-                                        outputArray, outputOffset + outputPos, outputRem, 0, 0)
-                                    : inflateBytesBytes(zsRef.address(),
-                                        inputArray, inputOffset + inputPos, inputRem,
-                                        outputArray, outputOffset + outputPos, outputRem);
+                                result = inflateBytesBytes(zsRef.address(),
+                                    inputArray, inputOffset + inputPos, inputRem,
+                                    outputArray, outputOffset + outputPos, outputRem);
                             }
                         }
                     } catch (DataFormatException e) {
@@ -784,15 +748,19 @@ public class Inflater implements AutoCloseable {
     private static native void setDictionary(long addr, byte[] b, int off,
                                              int len);
     private static native void setDictionaryBuffer(long addr, long bufAddress, int len);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBytesBytes(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         byte[] outputArray, int outputOff, int outputLen) throws DataFormatException;
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBytesBuffer(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         long outputAddress, int outputLen) throws DataFormatException;
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBufferBytes(long addr,
         long inputAddress, int inputLen,
         byte[] outputArray, int outputOff, int outputLen) throws DataFormatException;
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBufferBuffer(long addr,
         long inputAddress, int inputLen,
         long outputAddress, int outputLen) throws DataFormatException;

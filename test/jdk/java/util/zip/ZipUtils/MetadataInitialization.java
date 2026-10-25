@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary ZIP metadata helpers must not initialize native compression capabilities
+ * @summary ZIP metadata helpers must not initialize compression classes
  * @library /test/lib
  * @run main MetadataInitialization
  */
@@ -70,19 +70,17 @@ public class MetadataInitialization {
             return;
         }
         // Directory classpath and disabled sharing keep the child independent of
-        // jtreg's JARs. libzip may already be loaded by VM startup; observe the
-        // Java capability query itself, not whether the OS library is present.
+        // jtreg's JARs. libzip may already be loaded by VM startup; inspect Java
+        // compression-class initialization rather than the OS library load.
         for (String mode : new String[]{"metadata", "stream"}) {
             OutputAnalyzer out = ProcessTools.executeTestJava("-Xshare:off",
                 "-Xlog:jni+resolve=debug,class+init=info", "-cp",
                 System.getProperty("test.classes"), "MetadataInitialization", mode);
             out.shouldHaveExitValue(0).shouldContain("PASS " + mode);
-            String query = "java.util.zip.ZipUtils.zipIntrinsicLimits";
-            String holder = "java/util/zip/ZipUtils$IntrinsicLimits";
-            if (mode.equals("metadata")) {
-                out.shouldNotContain(query).shouldNotContain(holder);
-            } else {
-                out.shouldContain(query).shouldContain(holder);
+            for (String cls : new String[]{"Deflater", "Inflater"}) {
+                String marker = "Initializing 'java/util/zip/" + cls + "'";
+                if (mode.equals("metadata")) out.shouldNotContain(marker);
+                else out.shouldContain(marker);
             }
         }
     }

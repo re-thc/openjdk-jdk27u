@@ -2901,9 +2901,14 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
 
 #if defined(AMD64) || defined(AARCH64)
-  case vmIntrinsics::_zipProcess:
-    do_zip_process(x);
-    break;
+  case vmIntrinsics::_deflateBytesBytes: do_zip_process(x, false, true, true); break;
+  case vmIntrinsics::_deflateBytesBuffer: do_zip_process(x, false, true, false); break;
+  case vmIntrinsics::_deflateBufferBytes: do_zip_process(x, false, false, true); break;
+  case vmIntrinsics::_deflateBufferBuffer: do_zip_process(x, false, false, false); break;
+  case vmIntrinsics::_inflateBytesBytes: do_zip_process(x, true, true, true); break;
+  case vmIntrinsics::_inflateBytesBuffer: do_zip_process(x, true, true, false); break;
+  case vmIntrinsics::_inflateBufferBytes: do_zip_process(x, true, false, true); break;
+  case vmIntrinsics::_inflateBufferBuffer: do_zip_process(x, true, false, false); break;
 #endif
 #if defined(AMD64) || defined(AARCH64)
   case vmIntrinsics::_updateAdler32:
@@ -3519,16 +3524,39 @@ void LIRGenerator::do_update_Adler32(Intrinsic* x) {
   __ move(result, rlock_result(x));
 }
 
-void LIRGenerator::do_zip_process(Intrinsic* x) {
+void LIRGenerator::do_zip_process(Intrinsic* x, bool inflate, bool input_array, bool output_array) {
   CodeEmitInfo* info = state_for(x, x->state());
-  frame_map()->update_reserved_argument_area_size(x->number_of_arguments() * BytesPerLong);
-  for (int i = 0; i < x->number_of_arguments(); i++) {
-    LIRItem item(x->argument_at(i), this);
+  auto load_arg = [&](int index, bool widen = false) {
+    LIRItem item(x->argument_at(index), this);
     item.load_item();
+    LIR_Opr value = item.result();
+    if (widen) {
+      value = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, item.result(), value);
+    }
+    return value;
+  };
+  int index = 2; // skip the receiver and native stream
+  LIR_Opr input = load_arg(index++);
+  LIR_Opr input_offset = input_array ? load_arg(index++, true) : input;
+  LIR_Opr input_len = load_arg(index++);
+  LIR_Opr output = load_arg(index++);
+  LIR_Opr output_offset = output_array ? load_arg(index++, true) : output;
+  LIR_Opr output_len = load_arg(index++);
+  LIR_Opr flush = inflate ? LIR_OprFact::intConst(0) : load_arg(index++);
+  LIR_Opr params = inflate ? LIR_OprFact::intConst(0) : load_arg(index++);
+  LIR_Opr normalized[] = {
+    LIR_OprFact::intConst(inflate), load_arg(0), load_arg(1),
+    input_array ? input : LIR_OprFact::oopConst(nullptr), input_offset, input_len,
+    output_array ? output : LIR_OprFact::oopConst(nullptr), output_offset, output_len,
+    flush, params
+  };
+  frame_map()->update_reserved_argument_area_size(ARRAY_SIZE(normalized) * BytesPerLong);
+  for (unsigned i = 0; i < ARRAY_SIZE(normalized); i++) {
     LIR_Address* slot = new LIR_Address(FrameMap::stack_pointer(),
-        i * BytesPerLong, as_BasicType(item.value()->type()));
-    // The block carries full oops, not compressed heap-field references.
-    __ move_wide(item.result(), slot);
+        i * BytesPerLong, normalized[i]->type());
+    // Preserve the full-oop block layout used by the runtime stub's OopMap.
+    __ move_wide(normalized[i], slot);
   }
   LIR_Opr block = new_pointer_register();
   __ leal(LIR_OprFact::address(new LIR_Address(FrameMap::stack_pointer(), 0, T_ADDRESS)), block);

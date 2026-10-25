@@ -567,14 +567,10 @@ public class Deflater implements AutoCloseable {
             long result;
             if (input == null) {
                 inputPos = this.inputPos;
-                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                    ? ZipUtils.process(false, this, zsRef.address(),
-                        inputArray, inputPos, inputLim - inputPos,
-                        output, off, len, flush, params)
-                    : deflateBytesBytes(zsRef.address(),
-                        inputArray, inputPos, inputLim - inputPos,
-                        output, off, len,
-                        flush, params);
+                result = deflateBytesBytes(zsRef.address(),
+                    inputArray, inputPos, inputLim - inputPos,
+                    output, off, len,
+                    flush, params);
             } else {
                 inputPos = input.position();
                 int inputRem = Math.max(input.limit() - inputPos, 0);
@@ -582,28 +578,20 @@ public class Deflater implements AutoCloseable {
                     NIO_ACCESS.acquireSession(input);
                     try {
                         long inputAddress = NIO_ACCESS.getBufferAddress(input);
-                        result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                            ? ZipUtils.process(false, this, zsRef.address(),
-                                null, inputAddress + inputPos, inputRem,
-                                output, off, len, flush, params)
-                            : deflateBufferBytes(zsRef.address(),
-                                inputAddress + inputPos, inputRem,
-                                output, off, len,
-                                flush, params);
+                        result = deflateBufferBytes(zsRef.address(),
+                            inputAddress + inputPos, inputRem,
+                            output, off, len,
+                            flush, params);
                     } finally {
                         NIO_ACCESS.releaseSession(input);
                     }
                 } else {
                     byte[] inputArray = ZipUtils.getBufferArray(input);
                     int inputOffset = ZipUtils.getBufferOffset(input);
-                    result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                        ? ZipUtils.process(false, this, zsRef.address(),
-                            inputArray, inputOffset + inputPos, inputRem,
-                            output, off, len, flush, params)
-                        : deflateBytesBytes(zsRef.address(),
-                            inputArray, inputOffset + inputPos, inputRem,
-                            output, off, len,
-                            flush, params);
+                    result = deflateBytesBytes(zsRef.address(),
+                        inputArray, inputOffset + inputPos, inputRem,
+                        output, off, len,
+                        flush, params);
                 }
             }
             int read = (int) (result & 0x7fff_ffffL);
@@ -714,28 +702,20 @@ public class Deflater implements AutoCloseable {
                     NIO_ACCESS.acquireSession(output);
                     try {
                         long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                        result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                            ? ZipUtils.process(false, this, zsRef.address(),
-                                inputArray, inputPos, inputLim - inputPos,
-                                null, outputAddress + outputPos, outputRem, flush, params)
-                            : deflateBytesBuffer(zsRef.address(),
-                                inputArray, inputPos, inputLim - inputPos,
-                                outputAddress + outputPos, outputRem,
-                                flush, params);
+                        result = deflateBytesBuffer(zsRef.address(),
+                            inputArray, inputPos, inputLim - inputPos,
+                            outputAddress + outputPos, outputRem,
+                            flush, params);
                     } finally {
                         NIO_ACCESS.releaseSession(output);
                     }
                 } else {
                     byte[] outputArray = ZipUtils.getBufferArray(output);
                     int outputOffset = ZipUtils.getBufferOffset(output);
-                    result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                        ? ZipUtils.process(false, this, zsRef.address(),
-                            inputArray, inputPos, inputLim - inputPos,
-                            outputArray, outputOffset + outputPos, outputRem, flush, params)
-                        : deflateBytesBytes(zsRef.address(),
-                            inputArray, inputPos, inputLim - inputPos,
-                            outputArray, outputOffset + outputPos, outputRem,
-                            flush, params);
+                    result = deflateBytesBytes(zsRef.address(),
+                        inputArray, inputPos, inputLim - inputPos,
+                        outputArray, outputOffset + outputPos, outputRem,
+                        flush, params);
                 }
             } else {
                 inputPos = input.position();
@@ -748,28 +728,20 @@ public class Deflater implements AutoCloseable {
                             NIO_ACCESS.acquireSession(output);
                             try {
                                 long outputAddress = outputPos + NIO_ACCESS.getBufferAddress(output);
-                                result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                    ? ZipUtils.process(false, this, zsRef.address(),
-                                        null, inputAddress + inputPos, inputRem,
-                                        null, outputAddress, outputRem, flush, params)
-                                    : deflateBufferBuffer(zsRef.address(),
-                                        inputAddress + inputPos, inputRem,
-                                        outputAddress, outputRem,
-                                        flush, params);
+                                result = deflateBufferBuffer(zsRef.address(),
+                                    inputAddress + inputPos, inputRem,
+                                    outputAddress, outputRem,
+                                    flush, params);
                             } finally {
                                 NIO_ACCESS.releaseSession(output);
                             }
                         } else {
                             byte[] outputArray = ZipUtils.getBufferArray(output);
                             int outputOffset = ZipUtils.getBufferOffset(output);
-                            result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                ? ZipUtils.process(false, this, zsRef.address(),
-                                    null, inputAddress + inputPos, inputRem,
-                                    outputArray, outputOffset + outputPos, outputRem, flush, params)
-                                : deflateBufferBytes(zsRef.address(),
-                                    inputAddress + inputPos, inputRem,
-                                    outputArray, outputOffset + outputPos, outputRem,
-                                    flush, params);
+                            result = deflateBufferBytes(zsRef.address(),
+                                inputAddress + inputPos, inputRem,
+                                outputArray, outputOffset + outputPos, outputRem,
+                                flush, params);
                         }
                     } finally {
                         NIO_ACCESS.releaseSession(input);
@@ -781,28 +753,20 @@ public class Deflater implements AutoCloseable {
                         NIO_ACCESS.acquireSession(output);
                         try {
                             long outputAddress = NIO_ACCESS.getBufferAddress(output);
-                            result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                                ? ZipUtils.process(false, this, zsRef.address(),
-                                    inputArray, inputOffset + inputPos, inputRem,
-                                    null, outputAddress + outputPos, outputRem, flush, params)
-                                : deflateBytesBuffer(zsRef.address(),
-                                    inputArray, inputOffset + inputPos, inputRem,
-                                    outputAddress + outputPos, outputRem,
-                                    flush, params);
+                            result = deflateBytesBuffer(zsRef.address(),
+                                inputArray, inputOffset + inputPos, inputRem,
+                                outputAddress + outputPos, outputRem,
+                                flush, params);
                         } finally {
                             NIO_ACCESS.releaseSession(output);
                         }
                     } else {
                         byte[] outputArray = ZipUtils.getBufferArray(output);
                         int outputOffset = ZipUtils.getBufferOffset(output);
-                        result = ZipUtils.IntrinsicLimits.USE_ZIP_INTRINSICS
-                            ? ZipUtils.process(false, this, zsRef.address(),
-                                inputArray, inputOffset + inputPos, inputRem,
-                                outputArray, outputOffset + outputPos, outputRem, flush, params)
-                            : deflateBytesBytes(zsRef.address(),
-                                inputArray, inputOffset + inputPos, inputRem,
-                                outputArray, outputOffset + outputPos, outputRem,
-                                flush, params);
+                        result = deflateBytesBytes(zsRef.address(),
+                            inputArray, inputOffset + inputPos, inputRem,
+                            outputArray, outputOffset + outputPos, outputRem,
+                            flush, params);
                     }
                 }
             }
@@ -974,18 +938,22 @@ public class Deflater implements AutoCloseable {
     private static native void setDictionary(long addr, byte[] b, int off,
                                              int len);
     private static native void setDictionaryBuffer(long addr, long bufAddress, int len);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBytesBytes(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         byte[] outputArray, int outputOff, int outputLen,
         int flush, int params);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBytesBuffer(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         long outputAddress, int outputLen,
         int flush, int params);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBufferBytes(long addr,
         long inputAddress, int inputLen,
         byte[] outputArray, int outputOff, int outputLen,
         int flush, int params);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBufferBuffer(long addr,
         long inputAddress, int inputLen,
         long outputAddress, int outputLen,

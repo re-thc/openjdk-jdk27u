@@ -45,6 +45,15 @@ import org.w3c.dom.Node;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestZipIntrinsicRoutes {
+    private static final Set<String> METHODS = Set.of(
+        "deflateBytesBytes",
+        "deflateBytesBuffer",
+        "deflateBufferBytes",
+        "deflateBufferBuffer",
+        "inflateBytesBytes",
+        "inflateBytesBuffer",
+        "inflateBufferBytes",
+        "inflateBufferBuffer");
     private static Map<String, Element> ids(Element task, String tag) {
         Map<String, Element> result = new HashMap<>();
         var nodes = task.getElementsByTagName(tag);
@@ -74,7 +83,7 @@ public class TestZipIntrinsicRoutes {
                 compiled.add(e.getAttribute("compile_id"));
             }
         }
-        Set<String> callers = new HashSet<>();
+        Set<String> routes = new HashSet<>();
         var tasks = document.getElementsByTagName("task");
         for (int i = 0; i < tasks.getLength(); i++) {
             Element task = (Element) tasks.item(i);
@@ -87,28 +96,25 @@ public class TestZipIntrinsicRoutes {
             for (int j = 0; j < calls.getLength(); j++) {
                 Element call = (Element) calls.item(j);
                 Element target = methods.get(call.getAttribute("method"));
-                if (target == null || !target.getAttribute("name").equals("process") ||
-                    !holder(call.getAttribute("method"), methods, classes)
-                        .equals("java.util.zip.ZipUtils")) continue;
+                if (target == null || !METHODS.contains(target.getAttribute("name"))) continue;
+                String name = target.getAttribute("name");
+                String expectedHolder = name.startsWith("deflate")
+                    ? "java.util.zip.Deflater" : "java.util.zip.Inflater";
+                if (!holder(call.getAttribute("method"), methods, classes).equals(expectedHolder)) continue;
                 boolean intrinsic = false;
                 for (Node next = call.getNextSibling(); next != null; next = next.getNextSibling()) {
                     if (!(next instanceof Element e)) continue;
                     if (Set.of("call", "parse").contains(e.getTagName())) break;
                     intrinsic |= e.getTagName().equals("intrinsic") &&
-                                 e.getAttribute("id").equals("_zipProcess");
+                                 e.getAttribute("id").equals("_" + name);
                     intrinsic |= e.getTagName().equals("inline_success") &&
                                  e.getAttribute("reason").equals("intrinsic");
                 }
-                if (!intrinsic) continue;
-                for (Node parent = call.getParentNode(); parent != task; parent = parent.getParentNode()) {
-                    if (parent instanceof Element e && e.getTagName().equals("parse")) {
-                        callers.add(holder(e.getAttribute("method"), methods, classes));
-                    }
-                }
+                if (intrinsic) routes.add(name);
             }
         }
-        if (!callers.containsAll(Set.of("java.util.zip.Deflater", "java.util.zip.Inflater"))) {
-            throw new AssertionError(compiler + " did not intrinsify both ZIP callers: " + callers);
+        if (!routes.containsAll(METHODS)) {
+            throw new AssertionError(compiler + " did not intrinsify every typed ZIP method: " + routes);
         }
     }
 
@@ -131,22 +137,22 @@ public class TestZipIntrinsicRoutes {
         options.add("TestZlibNG");
         var output = ProcessTools.executeTestJava(options).shouldHaveExitValue(0);
         String text = output.getOutput();
-        for (String name : List.of("java.util.zip.Deflater.deflate",
-                                   "java.util.zip.Inflater.inflate")) {
+        for (String method : METHODS) {
+            String name = (method.startsWith("deflate")
+                ? "java.util.zip.Deflater." : "java.util.zip.Inflater.") + method;
             if (enabled == text.contains("Dynamic-linking native method " + name)) {
                 throw new AssertionError("Wrong JNI route for " + name + " in " + mode +
                                          " enabled=" + enabled);
             }
-        }
-        if (text.contains("Dynamic-linking native method java.util.zip.ZipUtils.process")) {
-            throw new AssertionError("ZIP processing resolved its JNI fallback in " + mode);
         }
         if (enabled && !mode.equals("int")) verifyCompilation(log, mode);
         System.out.println("Verified " + mode + " ZIP route, enabled=" + enabled);
     }
 
     public static void main(String[] args) throws Exception {
-        run("int", false); // Positive control for the JNI-resolution oracle.
-        for (String mode : List.of("int", "c1", "c2")) run(mode, true);
+        for (String mode : List.of("int", "c1", "c2")) {
+            run(mode, false); // Positive controls for the JNI-resolution oracle.
+            run(mode, true);
+        }
     }
 }

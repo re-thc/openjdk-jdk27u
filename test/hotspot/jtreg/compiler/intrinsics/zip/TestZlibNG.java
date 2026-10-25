@@ -30,8 +30,8 @@
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNG
  * @run main/othervm -Xmx64m -Xint TestZlibNG
  * @run main/othervm -Xmx64m -XX:-UseZipIntrinsics TestZlibNG
- * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
- * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNG
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_deflateBytesBytes,_deflateBytesBuffer,_deflateBufferBytes,_deflateBufferBuffer,_inflateBytesBytes,_inflateBytesBuffer,_inflateBufferBytes,_inflateBufferBuffer TestZlibNG
+ * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_deflateBytesBytes,_deflateBytesBuffer,_deflateBufferBytes,_deflateBufferBuffer,_inflateBytesBytes,_inflateBytesBuffer,_inflateBufferBytes,_inflateBufferBuffer TestZlibNG
  */
 
 import java.io.ByteArrayOutputStream;

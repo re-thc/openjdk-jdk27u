@@ -80,20 +80,54 @@ JRT_ENTRY(jlong, ZipRuntime::process_c1(JavaThread* current, const jlong* args))
       static_cast<jint>(args[9]), static_cast<jint>(args[10]), current);
 JRT_END
 
-// Native interpreter frames keep arguments in Java local-slot order. Longs
-// occupy two slots, with the value in the second slot, as for lload/lstore.
-// The walkable native frame keeps the three oop slots visible across entry;
-// process() creates handles before pinning or transitioning to native code.
-JRT_ENTRY(jlong, ZipRuntime::process_interpreter(JavaThread* current, intptr_t* locals))
-  return process(*AbstractInterpreter::int_addr_in_slot(locals),
-      *AbstractInterpreter::oop_addr_in_slot(locals - 1),
-      AbstractInterpreter::long_in_slot(locals - 3),
-      *AbstractInterpreter::oop_addr_in_slot(locals - 4),
-      AbstractInterpreter::long_in_slot(locals - 6),
-      *AbstractInterpreter::int_addr_in_slot(locals - 7),
-      *AbstractInterpreter::oop_addr_in_slot(locals - 8),
-      AbstractInterpreter::long_in_slot(locals - 10),
-      *AbstractInterpreter::int_addr_in_slot(locals - 11),
-      *AbstractInterpreter::int_addr_in_slot(locals - 12),
-      *AbstractInterpreter::int_addr_in_slot(locals - 13), current);
+// In each existing instance-native signature, the receiver is local 0 and
+// stream is local 1/2. An array plus its int offset occupies the same two
+// slots as a native long address, so both lengths have fixed positions.
+template<bool inflate, bool input_array, bool output_array>
+static jlong process_zip_interpreter(JavaThread* current, intptr_t* locals) {
+  return ZipRuntime::process(inflate,
+      *AbstractInterpreter::oop_addr_in_slot(locals),
+      AbstractInterpreter::long_in_slot(locals - 2),
+      input_array ? *AbstractInterpreter::oop_addr_in_slot(locals - 3) : nullptr,
+      input_array ? *AbstractInterpreter::int_addr_in_slot(locals - 4)
+                  : AbstractInterpreter::long_in_slot(locals - 4),
+      *AbstractInterpreter::int_addr_in_slot(locals - 5),
+      output_array ? *AbstractInterpreter::oop_addr_in_slot(locals - 6) : nullptr,
+      output_array ? *AbstractInterpreter::int_addr_in_slot(locals - 7)
+                   : AbstractInterpreter::long_in_slot(locals - 7),
+      *AbstractInterpreter::int_addr_in_slot(locals - 8),
+      inflate ? 0 : *AbstractInterpreter::int_addr_in_slot(locals - 9),
+      inflate ? 0 : *AbstractInterpreter::int_addr_in_slot(locals - 10), current);
+}
+
+JRT_ENTRY(jlong, ZipRuntime::deflate_bytes_bytes_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<false, true, true>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::deflate_bytes_buffer_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<false, true, false>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::deflate_buffer_bytes_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<false, false, true>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::deflate_buffer_buffer_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<false, false, false>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::inflate_bytes_bytes_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<true, true, true>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::inflate_bytes_buffer_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<true, true, false>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::inflate_buffer_bytes_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<true, false, true>(current, locals);
+JRT_END
+
+JRT_ENTRY(jlong, ZipRuntime::inflate_buffer_buffer_interpreter(JavaThread* current, intptr_t* locals))
+  return process_zip_interpreter<true, false, false>(current, locals);
 JRT_END

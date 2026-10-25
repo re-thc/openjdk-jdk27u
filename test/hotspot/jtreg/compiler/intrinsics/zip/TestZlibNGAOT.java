@@ -29,12 +29,15 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires vm.compMode != "Xcomp" & vm.compMode != "Xint"
  * @requires vm.opt.VerifyOops == null | vm.opt.VerifyOops == false
+ * @modules jdk.management
  * @library /test/lib
  * @build TestZlibNGAOT
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ZlibNGAOTApp
  * @run driver/timeout=600 TestZlibNGAOT
  */
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -65,8 +68,7 @@ public class TestZlibNGAOT {
             public String[] vmArgs(RunMode mode) {
                 List<String> options = new ArrayList<>(List.of(
                     "-XX:+UnlockDiagnosticVMOptions", "-XX:-AbortVMOnAOTCodeFailure",
-                    "-Xlog:aot+codecache*=debug",
-                    "--add-opens=java.base/java.util.zip=ALL-UNNAMED"));
+                    "-Xlog:aot+codecache*=debug"));
                 options.add("-XX:" + (value(mode) ? "+" : "-") + "UseZipIntrinsics");
                 return options.toArray(String[]::new);
             }
@@ -90,8 +92,10 @@ public class TestZlibNGAOT {
                     if (changed) {
                         out.shouldContain("AOT Code Cache disabled: it was created with UseZipIntrinsics" +
                             " = " + saved + " vs current " + !saved);
+                        out.shouldNotContain("Read blob ");
                     } else {
                         out.shouldMatch("Loaded [1-9][0-9]+ AOT code entries from AOT Code Cache");
+                        out.shouldMatch("Read blob .* from AOT Code Cache");
                     }
                 }
             }
@@ -101,12 +105,10 @@ public class TestZlibNGAOT {
 
 class ZlibNGAOTApp {
     public static void main(String[] args) throws Exception {
-        // Initialize the lazy routing-capability holder in this VM before
-        // checking its value against the current UseZipIntrinsics setting.
-        var field = Class.forName("java.util.zip.ZipUtils$IntrinsicLimits")
-                         .getDeclaredField("USE_ZIP_INTRINSICS");
-        field.setAccessible(true);
-        if (field.getBoolean(null) != Boolean.parseBoolean(args[0])) {
+        boolean enabled = Boolean.parseBoolean(ManagementFactory
+            .getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+            .getVMOption("UseZipIntrinsics").getValue());
+        if (enabled != Boolean.parseBoolean(args[0])) {
             throw new AssertionError("ZIP flag was restored from a different AOT run");
         }
 

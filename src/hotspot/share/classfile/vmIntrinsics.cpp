@@ -535,7 +535,14 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_vectorizedMismatch:
     if (!UseVectorizedMismatchIntrinsic) return true;
     break;
-  case vmIntrinsics::_zipProcess:
+  case vmIntrinsics::_deflateBytesBytes:
+  case vmIntrinsics::_deflateBytesBuffer:
+  case vmIntrinsics::_deflateBufferBytes:
+  case vmIntrinsics::_deflateBufferBuffer:
+  case vmIntrinsics::_inflateBytesBytes:
+  case vmIntrinsics::_inflateBytesBuffer:
+  case vmIntrinsics::_inflateBufferBytes:
+  case vmIntrinsics::_inflateBufferBuffer:
 #if defined(AMD64) || defined(AARCH64)
     if (!UseZipIntrinsics) return true;
     break;

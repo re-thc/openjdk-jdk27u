@@ -55,24 +55,6 @@ class ZipUtils {
     // static final ByteBuffer defaultBuf = ByteBuffer.allocateDirect(0);
     static final ByteBuffer defaultBuf = ByteBuffer.allocate(0);
 
-    // Metadata helpers also use ZipUtils. Query native support only when
-    // Deflater or Inflater first needs to select its intrinsic or JNI route.
-    static class IntrinsicLimits {
-        static final boolean USE_ZIP_INTRINSICS = initZipIntrinsics() != 0;
-    }
-
-    private static long initZipIntrinsics() {
-        loadLibrary();
-        return zipIntrinsicLimits();
-    }
-
-    private static native long zipIntrinsicLimits();
-
-    @jdk.internal.vm.annotation.IntrinsicCandidate
-    static native long process(boolean inflate, Object receiver, long stream,
-        byte[] input, long inputOffset, int inputLen,
-        byte[] output, long outputOffset, int outputLen, int flush, int params);
-
     /**
      * Converts Windows time (in microseconds, UTC/GMT) time to FileTime.
      */

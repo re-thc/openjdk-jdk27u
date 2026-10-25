@@ -620,11 +620,33 @@ class methodHandle;
    do_name(dilithiumDecomposePoly_name,                    "implDilithiumDecomposePoly")                                \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
-  do_class(java_util_zip_ZipUtils, "java/util/zip/ZipUtils")                                                           \
-  do_intrinsic(_zipProcess, java_util_zip_ZipUtils, zip_process_name, zip_process_signature, F_SN)                     \
-   do_name(zip_process_name, "process")                                                                               \
-   do_signature(zip_process_signature, "(ZLjava/lang/Object;J[BJI[BJIII)J")                                              \
-                                                                                                                     \
+  do_class(java_util_zip_Deflater, "java/util/zip/Deflater")                                                            \
+  do_intrinsic(_deflateBytesBytes, java_util_zip_Deflater, deflateBytesBytes_name, deflateBytesBytes_signature, F_RN)   \
+   do_name(deflateBytesBytes_name, "deflateBytesBytes")                                                                 \
+   do_signature(deflateBytesBytes_signature, "(J[BII[BIIII)J")                                                          \
+  do_intrinsic(_deflateBytesBuffer, java_util_zip_Deflater, deflateBytesBuffer_name, deflateBytesBuffer_signature, F_RN)\
+   do_name(deflateBytesBuffer_name, "deflateBytesBuffer")                                                               \
+   do_signature(deflateBytesBuffer_signature, "(J[BIIJIII)J")                                                           \
+  do_intrinsic(_deflateBufferBytes, java_util_zip_Deflater, deflateBufferBytes_name, deflateBufferBytes_signature, F_RN)\
+   do_name(deflateBufferBytes_name, "deflateBufferBytes")                                                               \
+   do_signature(deflateBufferBytes_signature, "(JJI[BIIII)J")                                                           \
+  do_intrinsic(_deflateBufferBuffer, java_util_zip_Deflater, deflateBufferBuffer_name, deflateBufferBuffer_signature, F_RN)\
+   do_name(deflateBufferBuffer_name, "deflateBufferBuffer")                                                             \
+   do_signature(deflateBufferBuffer_signature, "(JJIJIII)J")                                                            \
+  do_class(java_util_zip_Inflater, "java/util/zip/Inflater")                                                            \
+  do_intrinsic(_inflateBytesBytes, java_util_zip_Inflater, inflateBytesBytes_name, inflateBytesBytes_signature, F_RN)   \
+   do_name(inflateBytesBytes_name, "inflateBytesBytes")                                                                 \
+   do_signature(inflateBytesBytes_signature, "(J[BII[BII)J")                                                            \
+  do_intrinsic(_inflateBytesBuffer, java_util_zip_Inflater, inflateBytesBuffer_name, inflateBytesBuffer_signature, F_RN)\
+   do_name(inflateBytesBuffer_name, "inflateBytesBuffer")                                                               \
+   do_signature(inflateBytesBuffer_signature, "(J[BIIJI)J")                                                             \
+  do_intrinsic(_inflateBufferBytes, java_util_zip_Inflater, inflateBufferBytes_name, inflateBufferBytes_signature, F_RN)\
+   do_name(inflateBufferBytes_name, "inflateBufferBytes")                                                               \
+   do_signature(inflateBufferBytes_signature, "(JJI[BII)J")                                                             \
+  do_intrinsic(_inflateBufferBuffer, java_util_zip_Inflater, inflateBufferBuffer_name, inflateBufferBuffer_signature, F_RN)\
+   do_name(inflateBufferBuffer_name, "inflateBufferBuffer")                                                             \
+   do_signature(inflateBufferBuffer_signature, "(JJIJI)J")                                                              \
+                                                                                                                        \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \
    do_name(     update_name,                                      "update")                                             \

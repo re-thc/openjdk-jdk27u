@@ -29,8 +29,8 @@
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 TestZlibNGLateChecksum
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 TestZlibNGLateChecksum
  * @run main/othervm -Xmx64m -Xcheck:jni -XX:-UseZipIntrinsics TestZlibNGLateChecksum
- * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNGLateChecksum
- * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_zipProcess TestZlibNGLateChecksum
+ * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_deflateBytesBytes,_deflateBytesBuffer,_deflateBufferBytes,_deflateBufferBuffer,_inflateBytesBytes,_inflateBytesBuffer,_inflateBufferBytes,_inflateBufferBuffer TestZlibNGLateChecksum
+ * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1000 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_deflateBytesBytes,_deflateBytesBuffer,_deflateBufferBytes,_deflateBufferBuffer,_inflateBytesBytes,_inflateBytesBuffer,_inflateBufferBytes,_inflateBufferBuffer TestZlibNGLateChecksum
  */
 
 import java.nio.ByteBuffer;

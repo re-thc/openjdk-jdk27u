@@ -124,7 +124,14 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     switch (iid) {
 #ifndef ZERO
 #if defined(AMD64) || defined(AARCH64)
-      case vmIntrinsics::_zipProcess: return java_util_zip_ZipUtils_process;
+      case vmIntrinsics::_deflateBytesBytes: return java_util_zip_Deflater_deflateBytesBytes;
+      case vmIntrinsics::_deflateBytesBuffer: return java_util_zip_Deflater_deflateBytesBuffer;
+      case vmIntrinsics::_deflateBufferBytes: return java_util_zip_Deflater_deflateBufferBytes;
+      case vmIntrinsics::_deflateBufferBuffer: return java_util_zip_Deflater_deflateBufferBuffer;
+      case vmIntrinsics::_inflateBytesBytes: return java_util_zip_Inflater_inflateBytesBytes;
+      case vmIntrinsics::_inflateBytesBuffer: return java_util_zip_Inflater_inflateBytesBuffer;
+      case vmIntrinsics::_inflateBufferBytes: return java_util_zip_Inflater_inflateBufferBytes;
+      case vmIntrinsics::_inflateBufferBuffer: return java_util_zip_Inflater_inflateBufferBuffer;
       case vmIntrinsics::_updateAdler32: return java_util_zip_Adler32_update;
       case vmIntrinsics::_updateBytesAdler32: return java_util_zip_Adler32_updateBytes;
       case vmIntrinsics::_updateByteBufferAdler32: return java_util_zip_Adler32_updateByteBuffer;
@@ -220,7 +227,14 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_fmaF        : return vmIntrinsics::_fmaF;
   case java_lang_ref_reference_get0: return vmIntrinsics::_Reference_get0;
 #if defined(AMD64) || defined(AARCH64)
-  case java_util_zip_ZipUtils_process: return vmIntrinsics::_zipProcess;
+  case java_util_zip_Deflater_deflateBytesBytes: return vmIntrinsics::_deflateBytesBytes;
+  case java_util_zip_Deflater_deflateBytesBuffer: return vmIntrinsics::_deflateBytesBuffer;
+  case java_util_zip_Deflater_deflateBufferBytes: return vmIntrinsics::_deflateBufferBytes;
+  case java_util_zip_Deflater_deflateBufferBuffer: return vmIntrinsics::_deflateBufferBuffer;
+  case java_util_zip_Inflater_inflateBytesBytes: return vmIntrinsics::_inflateBytesBytes;
+  case java_util_zip_Inflater_inflateBytesBuffer: return vmIntrinsics::_inflateBytesBuffer;
+  case java_util_zip_Inflater_inflateBufferBytes: return vmIntrinsics::_inflateBufferBytes;
+  case java_util_zip_Inflater_inflateBufferBuffer: return vmIntrinsics::_inflateBufferBuffer;
   case java_util_zip_Adler32_update: return vmIntrinsics::_updateAdler32;
   case java_util_zip_Adler32_updateBytes: return vmIntrinsics::_updateBytesAdler32;
   case java_util_zip_Adler32_updateByteBuffer: return vmIntrinsics::_updateByteBufferAdler32;
@@ -332,7 +346,14 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sqrt    : tty->print("java_lang_math_sqrt"    ); break;
     case java_lang_math_sqrt_strict           : tty->print("java_lang_math_sqrt_strict"); break;
 #if defined(AMD64) || defined(AARCH64)
-    case java_util_zip_ZipUtils_process: tty->print("java_util_zip_ZipUtils_process"); break;
+    case java_util_zip_Deflater_deflateBytesBytes: tty->print("java_util_zip_Deflater_deflateBytesBytes"); break;
+    case java_util_zip_Deflater_deflateBytesBuffer: tty->print("java_util_zip_Deflater_deflateBytesBuffer"); break;
+    case java_util_zip_Deflater_deflateBufferBytes: tty->print("java_util_zip_Deflater_deflateBufferBytes"); break;
+    case java_util_zip_Deflater_deflateBufferBuffer: tty->print("java_util_zip_Deflater_deflateBufferBuffer"); break;
+    case java_util_zip_Inflater_inflateBytesBytes: tty->print("java_util_zip_Inflater_inflateBytesBytes"); break;
+    case java_util_zip_Inflater_inflateBytesBuffer: tty->print("java_util_zip_Inflater_inflateBytesBuffer"); break;
+    case java_util_zip_Inflater_inflateBufferBytes: tty->print("java_util_zip_Inflater_inflateBufferBytes"); break;
+    case java_util_zip_Inflater_inflateBufferBuffer: tty->print("java_util_zip_Inflater_inflateBufferBuffer"); break;
     case java_util_zip_Adler32_update: tty->print("java_util_zip_Adler32_update"); break;
     case java_util_zip_Adler32_updateBytes: tty->print("java_util_zip_Adler32_updateBytes"); break;
     case java_util_zip_Adler32_updateByteBuffer: tty->print("java_util_zip_Adler32_updateByteBuffer"); break;
