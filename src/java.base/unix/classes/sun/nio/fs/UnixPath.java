@@ -628,6 +628,7 @@ class UnixPath implements Path {
                     if (remaining > 0) {
                         int previous = retained[remaining - 1];
                         int previousBegin = nameOffsets[previous];
+                        // A retained name precedes i, so previous + 1 is in bounds.
                         int previousLength = nameOffsets[previous + 1] - previousBegin - 1;
                         if (previousLength != 2 || path[previousBegin] != '.'
                                 || path[previousBegin + 1] != '.') {

@@ -121,6 +121,25 @@ public class UnixNormalize {
             check(compose(true, names));
         }
 
+        // A late dot followed by cancellations must reach back into a
+        // variable-length prefix and then retain only relative excess parents.
+        for (int depth : new int[] {0, 1, 31, 128}) {
+            List<byte[]> names = new ArrayList<>();
+            for (int i = 0; i < depth; i++) {
+                names.add(i % 2 == 0 ? bytes("name" + i)
+                        : new byte[] {(byte) 0xff, (byte) 0x80, (byte) (i + 1)});
+            }
+            names.add(bytes("."));
+            for (int i = 0; i < depth + 2; i++) {
+                names.add(bytes("temporary"));
+                names.add(bytes(".."));
+                names.add(bytes("."));
+                names.add(bytes(".."));
+            }
+            check(compose(false, names));
+            check(compose(true, names));
+        }
+
         // Cached boundaries must distinguish dot names from long ordinary
         // names, including dot-prefixed and undecodable names. Also place
         // real dot/parent names after long names to exercise the fallback.
