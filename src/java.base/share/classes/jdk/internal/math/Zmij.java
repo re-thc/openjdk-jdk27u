@@ -98,12 +98,9 @@ final class Zmij {
             return 0;
         }
         int coder = latin1 ? 0 : 1;
-        int maxChars = type == 0 ? FloatToDecimal.MAX_CHARS : DoubleToDecimal.MAX_CHARS;
-        // putDecimal callers are trusted, but never pass an unchecked pointer
-        // to native code if a caller misses its capacity check.
-        if (index < 0 || index > (output.length >> coder) - maxChars) {
-            return 0;
-        }
+        assert index >= 0 && index <= (output.length >> coder)
+                - (type == 0 ? FloatToDecimal.MAX_CHARS : DoubleToDecimal.MAX_CHARS)
+                : "Trusted caller missed bounds check";
         return format0(output, index << coder, bits, type | (coder << 1));
     }
 }

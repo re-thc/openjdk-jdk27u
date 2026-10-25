@@ -99,9 +99,7 @@ int64_t parse_java_integer(const void* value, int length, int mode) {
 
 double FastFloat::parse(const void* value, int byte_length, int coder, int ix) {
   int length = byte_length >> coder;
-  if (length > max_input_length) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
+  assert(length <= max_input_length, "trusted bounded input");
   return coder == java_lang_String::CODER_LATIN1
       ? parse_java_decimal<char>(value, length, ix)
       : parse_java_decimal<char16_t>(value, length, ix);
@@ -121,21 +119,16 @@ int64_t FastFloat::parse_integer(const void* value, int byte_length, int coder, 
 // Parse the original digit buffer and adjust its exponent without copying or
 // formatting an exponent. from_chars_advanced accepts this tokenized form.
 double FastFloat::parse_digits(const void* digits, int length, int decimal_exponent) {
-  if (length <= 0 || length > 768) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
+  assert(length >= 8 && length <= 768, "trusted bounded digit span");
   const char* first = static_cast<const char*>(digits);
   const char* last = first + length;
   // This entry accepts trusted ASCII digits, not Java's String grammar.
   // Use fast_float's eight-digit primitive to tokenize only the significant
   // prefix. The complete span is retained for exact rounding of long inputs.
-  const char* significant = first;
-  while (significant != last && *significant == '0') {
-    ++significant;
-  }
-  int count = MIN2(int(last - significant), 19);
-  const char* end = significant + count;
-  const char* cursor = significant;
+  assert(*first != '0', "trusted normalized digits");
+  int count = MIN2(length, 19);
+  const char* end = first + count;
+  const char* cursor = first;
   uint64_t mantissa = 0;
   while (end - cursor >= 8) {
     mantissa = mantissa * 100000000 + fast_float::parse_eight_digits_unrolled(cursor);
@@ -147,7 +140,7 @@ double FastFloat::parse_digits(const void* digits, int length, int decimal_expon
   fast_float::parsed_number_string parsed;
   parsed.mantissa = mantissa;
   parsed.exponent = int64_t(decimal_exponent) - (end - first);
-  parsed.too_many_digits = last - significant > 19;
+  parsed.too_many_digits = length > 19;
   parsed.integer = fast_float::span<const char>(first, length);
   parsed.lastmatch = last;
   parsed.valid = true;
