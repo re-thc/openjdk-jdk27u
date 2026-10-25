@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +82,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     private byte[] comment;
     private int method = DEFLATED;
     private boolean finished;
+    private boolean deflaterNeedsReset;
 
     private boolean closed = false;
 
@@ -281,6 +283,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         if (!isCENHeaderValid(e.name, e.extra, e.comment) ) {
             throw new ZipException("invalid CEN header (bad header size)");
         }
+        if (deflaterNeedsReset && e.method == DEFLATED) {
+            def.reset();
+            deflaterNeedsReset = false;
+        }
         current = new XEntry(e, written);
         xentries.add(current);
         writeLOC(current, nameBytes);
@@ -336,7 +342,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                             e.crc = crc.getValue();
                             writeEXT(e);
                         }
-                        def.reset();
+                        // Release the input now, but reset native compression
+                        // state only if another deflated entry is started.
+                        def.setInput(ZipUtils.defaultBuf);
+                        deflaterNeedsReset = true;
                         written += e.csize;
                     }
                     case STORED -> {
