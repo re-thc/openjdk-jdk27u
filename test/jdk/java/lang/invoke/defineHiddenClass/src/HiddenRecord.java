@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,6 @@
  * questions.
  */
 
-// fail to create HiddenRecord as a hidden class
-// verification fails in the BSM to invoke equals(HiddenRecord, Object) method
-record HiddenRecord(int i) { }
+// Preserve the ObjectMethods call-site descriptor's nominal self-reference for
+// BasicTest's hidden-class verification failure; small direct methods omit it.
+record HiddenRecord(int i, int j, int k, int l, int m) { }
