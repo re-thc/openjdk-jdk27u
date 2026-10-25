@@ -70,6 +70,13 @@ Normal configure targets x86-64-v3 on Linux x64, AVX2 on Windows x64,
 ARMv8.2-A on Linux ARM64, and Apple M1 on macOS ARM64. These are native
 binary requirements, not runtime dispatch choices. Below-baseline machines
 are unsupported and may fault before a diagnostic can be printed.
+Extra C/C++/assembler flags may add ISA features but cannot replace the CPU profile:
+architecture selectors (`-march`, `-mcpu`, `/arch` or `-arch`) and `-mno-*`
+options are rejected, including negative machine tuning options. ABI-changing
+`-m32`/`-mx32` and SIMD-disabling `-mgeneral-regs-only` are also rejected.
+Custom architecture or feature-disabling overrides, including indirect compiler
+driver options, are unsupported; this check is not an exhaustive flag parser.
+Unrelated compiler flags remain supported.
 
 Use `bash bin/configure-dev` with the same arguments for linker and ccache
 development defaults. On Linux it expects mold unless `CONFIGURE_DEV_NO_MOLD=1`

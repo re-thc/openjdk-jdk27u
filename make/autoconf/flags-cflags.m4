@@ -792,16 +792,28 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   # Native CPU minimums for the fork's supported targets. Use FLAGS_OS/CPU
   # so target and build tools receive the appropriate profile when cross-building.
+  $1_CPU_BASELINE_FLAGS=""
   case "$FLAGS_OS:$FLAGS_CPU:$TOOLCHAIN_TYPE" in
     linux:x86_64:gcc | linux:x86_64:clang)
-      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -march=x86-64-v3 -mtune=generic" ;;
+      $1_CPU_BASELINE_FLAGS="-march=x86-64-v3 -mtune=generic" ;;
     linux:aarch64:gcc | linux:aarch64:clang)
-      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -march=armv8.2-a -mtune=generic" ;;
+      $1_CPU_BASELINE_FLAGS="-march=armv8.2-a -mtune=generic" ;;
     macosx:aarch64:clang)
-      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -mcpu=apple-m1" ;;
+      $1_CPU_BASELINE_FLAGS="-mcpu=apple-m1" ;;
     windows:x86_64:microsoft)
-      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -arch:AVX2" ;;
+      $1_CPU_BASELINE_FLAGS="-arch:AVX2" ;;
   esac
+  if test -n "${$1_CPU_BASELINE_FLAGS}"; then
+    # Keep user options from silently weakening the native binary requirements.
+    # Positive ISA extensions remain available; replacing the CPU profile does not.
+    for baseline_option in ${$2EXTRA_CFLAGS} ${$2EXTRA_CXXFLAGS} ${$2EXTRA_ASFLAGS}; do
+      case "$baseline_option" in
+        -march=* | -mcpu=* | -arch:* | /arch:* | -mno-* | -m32 | -mx32 | -mgeneral-regs-only)
+          AC_MSG_ERROR([CPU baseline override is unsupported: $baseline_option. Remove architecture, ABI and feature-disabling options from extra C/C++/assembler flags.]) ;;
+      esac
+    done
+  fi
+  $1_CFLAGS_CPU="${$1_CFLAGS_CPU} ${$1_CPU_BASELINE_FLAGS}"
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     # This flag is required since GCC 6 as undefined behavior in OpenJDK code
