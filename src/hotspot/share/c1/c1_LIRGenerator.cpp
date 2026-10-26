@@ -2839,9 +2839,9 @@ void LIRGenerator::do_stringUTF8(Intrinsic* x) {
   }
   LIR_Opr src_address = new_register(T_ADDRESS);
   LIR_Opr dst_address = new_register(T_ADDRESS);
-  __ leal(LIR_OprFact::address(new LIR_Address(src.result(), src_offset,
+  __ leal(LIR_OprFact::address(generate_address(src.result(), src_offset, 0,
       arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), src_address);
-  __ leal(LIR_OprFact::address(new LIR_Address(dst.result(), dst_offset,
+  __ leal(LIR_OprFact::address(generate_address(dst.result(), dst_offset, 0,
       arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), dst_address);
   BasicTypeList signature(3);
   signature.append(T_ADDRESS);
@@ -2870,7 +2870,7 @@ void LIRGenerator::do_bulk(Intrinsic* x) {
   __ convert(Bytecodes::_i2l, start.result(), offset);
   if (wide) { __ shift_left(offset, 1, offset); }
   LIR_Opr source = new_register(T_ADDRESS);
-  __ leal(LIR_OprFact::address(new LIR_Address(src.result(), offset,
+  __ leal(LIR_OprFact::address(generate_address(src.result(), offset, 0,
       arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), source);
   BasicTypeList signature(search ? 3 : decode ? 5 : 4);
   signature.append(T_ADDRESS); signature.append(T_INT);
@@ -2887,8 +2887,8 @@ void LIRGenerator::do_bulk(Intrinsic* x) {
     LIR_Opr dst_offset = new_register(T_LONG);
     __ convert(Bytecodes::_i2l, dp.result(), dst_offset);
     third = new_register(T_ADDRESS);
-    __ leal(LIR_OprFact::address(new LIR_Address(dst.result(), dst_offset,
-        arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), third);
+    __ leal(LIR_OprFact::address(generate_address(dst.result(), dst_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), third);
     if (decode) { LIRItem cap(x->argument_at(6), this); cap.load_item(); capacity = cap.result(); }
   }
   __ move(source, cc->at(0)); __ move(length.result(), cc->at(1)); __ move(third, cc->at(2));
