@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +54,7 @@ class IOVecWrapper {
     // The iovec array
     private final AllocatedNativeObject vecArray;
 
-    // Number of elements in iovec array
+    // Caller-length cache key, saturated when compact storage reaches IOV_MAX
     private final int size;
 
     // Buffers and position/remaining corresponding to elements in iovec array
@@ -87,12 +88,13 @@ class IOVecWrapper {
     };
 
     private IOVecWrapper(int size) {
-        this.size      = size;
-        this.buf       = new ByteBuffer[size];
-        this.position  = new int[size];
-        this.remaining = new int[size];
-        this.shadow    = new ByteBuffer[size];
-        this.vecArray  = new AllocatedNativeObject(size * SIZE_IOVEC, false);
+        int capacity = Math.min(size, IOUtil.IOV_MAX);
+        this.size      = (capacity == IOUtil.IOV_MAX) ? Integer.MAX_VALUE : capacity;
+        this.buf       = new ByteBuffer[capacity];
+        this.position  = new int[capacity];
+        this.remaining = new int[capacity];
+        this.shadow    = new ByteBuffer[capacity];
+        this.vecArray  = new AllocatedNativeObject(capacity * SIZE_IOVEC, false);
         this.address   = vecArray.address();
     }
 

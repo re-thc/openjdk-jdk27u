@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,17 +577,19 @@ public class Net {
 
     static native void shutdown(FileDescriptor fd, int how) throws IOException;
 
+    // Retains the legacy Windows behavior of returning zero for WSAEINVAL.
     private static native int localPort(FileDescriptor fd)
         throws IOException;
 
-    private static native InetAddress localInetAddress(FileDescriptor fd)
+    // Like localAddress, throws if the local endpoint cannot be queried.
+    static native int localPortStrict(FileDescriptor fd)
         throws IOException;
 
-    public static InetSocketAddress localAddress(FileDescriptor fd)
-        throws IOException
-    {
-        return new InetSocketAddress(localInetAddress(fd), localPort(fd));
-    }
+    static native InetAddress localInetAddress(FileDescriptor fd)
+        throws IOException;
+
+    public static native InetSocketAddress localAddress(FileDescriptor fd)
+        throws IOException;
 
     private static native int remotePort(FileDescriptor fd)
         throws IOException;
