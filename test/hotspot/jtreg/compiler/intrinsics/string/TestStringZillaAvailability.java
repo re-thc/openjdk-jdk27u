@@ -37,6 +37,7 @@
 
 import java.lang.reflect.Method;
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 public class TestStringZillaAvailability {
     public static void main(String[] args) throws Exception {
@@ -47,6 +48,19 @@ public class TestStringZillaAvailability {
         enabled.setAccessible(true);
         if (enabled.getBoolean(null) != expected) {
             throw new AssertionError("Java gate does not match UseStringZillaIntrinsics");
+        }
+        if (CPUInfo.hasFeature("avx2") && CPUInfo.hasFeature("bmi1")
+                && CPUInfo.hasFeature("bmi2") && CPUInfo.hasFeature("lzcnt")
+                && wb.getIntVMFlag("UseAVX") >= 2) {
+            Method initialize = klass.getDeclaredMethod("initialize");
+            initialize.setAccessible(true);
+            int capabilities = (Integer)initialize.invoke(null);
+            // The result identifies the table published by the shipped libjava,
+            // not merely an intrinsic registration or a correct Java fallback.
+            if ((capabilities & 3) == 0) {
+                throw new AssertionError("StringZilla selected serial kernels on an AVX2-capable VM");
+            }
+            System.out.println("StringZilla x64 SIMD backend: " + (capabilities & 3));
         }
         String[] substrings = {"findLatin1", "findUTF16", "rfindLatin1", "rfindUTF16",
                                "findUTF16Latin1", "rfindUTF16Latin1"};
