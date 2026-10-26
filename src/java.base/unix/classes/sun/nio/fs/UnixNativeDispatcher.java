@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,23 +375,38 @@ class UnixNativeDispatcher {
      * futimens(int fildes, const struct timespec times[2])
      */
     static void futimens(int fd, long times0, long times1) throws UnixException {
-        futimens0(fd, times0, times1);
+        futimens(fd, times0, times1, false, false);
     }
-    private static native void futimens0(int fd, long times0, long times1)
+    static void futimens(int fd, long times0, long times1,
+                         boolean omitAccess, boolean omitModification)
+        throws UnixException
+    {
+        futimens0(fd, times0, times1, omitAccess, omitModification);
+    }
+    private static native void futimens0(int fd, long times0, long times1,
+                                         boolean omitAccess, boolean omitModification)
         throws UnixException;
 
     /**
      * utimensat(int fd, const char* path,
-     *           const struct timeval times[2], int flags)
+     *           const struct timespec times[2], int flags)
      */
     static void utimensat(int fd, UnixPath path, long times0, long times1, int flags)
         throws UnixException
     {
+        utimensat(fd, path, times0, times1, flags, false, false);
+    }
+    static void utimensat(int fd, UnixPath path, long times0, long times1, int flags,
+                          boolean omitAccess, boolean omitModification)
+        throws UnixException
+    {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            utimensat0(fd, buffer.address(), times0, times1, flags);
+            utimensat0(fd, buffer.address(), times0, times1, flags,
+                       omitAccess, omitModification);
         }
     }
-    private static native void utimensat0(int fd, long pathAddress, long times0, long times1, int flags)
+    private static native void utimensat0(int fd, long pathAddress, long times0, long times1,
+                                          int flags, boolean omitAccess, boolean omitModification)
         throws UnixException;
 
     /**

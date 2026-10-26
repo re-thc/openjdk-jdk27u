@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,53 +68,44 @@ class BsdFileAttributeViews {
             // not all volumes support setattrlist(2), so set the last
             // modified and last access times use futimens(2)/utimensat(2)
             if (lastModifiedTime != null || lastAccessTime != null) {
-                // if not changing both attributes then need existing attributes
-                if (lastModifiedTime == null || lastAccessTime == null) {
-                    try {
-                        UnixFileAttributes attrs = fd >= 0 ?
-                            UnixFileAttributes.get(fd) :
-                            UnixFileAttributes.get(path, followLinks);
-                        if (lastModifiedTime == null)
-                            lastModifiedTime = attrs.lastModifiedTime();
-                        if (lastAccessTime == null)
-                            lastAccessTime = attrs.lastAccessTime();
-                    } catch (UnixException x) {
-                        x.rethrowAsIOException(path);
-                    }
-                }
-
-                // update times
-                long modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
-                long accessValue= lastAccessTime.to(TimeUnit.NANOSECONDS);
+                // Omit unchanged timestamps to avoid reading and rewriting
+                // a timestamp that could be changed concurrently.
+                boolean omitModification = lastModifiedTime == null;
+                boolean omitAccess = lastAccessTime == null;
+                long modValue = omitModification ? 0L :
+                    lastModifiedTime.to(TimeUnit.NANOSECONDS);
+                long accessValue = omitAccess ? 0L :
+                    lastAccessTime.to(TimeUnit.NANOSECONDS);
 
                 boolean retry = false;
                 int flags = followLinks ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
                 try {
                     if (fd >= 0)
-                        futimens(fd, accessValue, modValue);
+                        futimens(fd, accessValue, modValue, omitAccess, omitModification);
                     else
                         utimensat(UnixConstants.AT_FDCWD, path, accessValue,
-                                  modValue, flags);
+                                  modValue, flags, omitAccess, omitModification);
                 } catch (UnixException x) {
                     // if futimens/utimensat fails with EINVAL and one/both of
                     // the times is negative, then we adjust the value to the
                     // epoch and retry.
                     if (x.errno() == UnixConstants.EINVAL &&
-                        (modValue < 0L || accessValue < 0L)) {
+                        ((!omitModification && modValue < 0L) ||
+                         (!omitAccess && accessValue < 0L))) {
                         retry = true;
                     } else {
                         x.rethrowAsIOException(path);
                     }
                 }
                 if (retry) {
-                    if (modValue < 0L) modValue = 0L;
-                    if (accessValue < 0L) accessValue= 0L;
+                    if (!omitModification && modValue < 0L) modValue = 0L;
+                    if (!omitAccess && accessValue < 0L) accessValue = 0L;
                     try {
                         if (fd >= 0)
-                            futimens(fd, accessValue, modValue);
+                            futimens(fd, accessValue, modValue, omitAccess, omitModification);
                         else
                             utimensat(UnixConstants.AT_FDCWD, path, accessValue,
-                                      modValue, flags);
+                                      modValue, flags, omitAccess, omitModification);
                     } catch (UnixException x) {
                         x.rethrowAsIOException(path);
                     }
