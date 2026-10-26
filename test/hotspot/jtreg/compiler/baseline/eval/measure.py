@@ -30,7 +30,7 @@ for name, (jdk, extra) in configs.items():
         subprocess.run([str(jdk/'bin/java'), *common, *extra, '-XX:+PrintFlagsFinal', '-version'],
                        stdout=log, stderr=subprocess.STDOUT, check=True)
 with (destination/'samples.tsv').open('w', buffering=1) as output:
-    writer = csv.writer(output, delimiter='\t')
+    writer = csv.writer(output, delimiter='\t', lineterminator='\n')
     writer.writerow(['phase','workload','config','repeat','wall_ns','user_s','sys_s','maxrss_kb','warm_median_ns','exit'])
     for phase, repetitions in [('startup',10), ('warm',6)]:
         for repetition in range(repetitions):
