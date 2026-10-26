@@ -1,4 +1,5 @@
 #  Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -53,6 +54,7 @@ tier1_part3 = \
     :jdk_svc_sanity \
     :jdk_foreign \
     :jdk_vector_sanity \
+    java/net/IDN/ToASCII.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -81,7 +83,8 @@ tier2_part2 = \
     :jdk_time
 
 tier2_part3 = \
-    :jdk_net
+    :jdk_net \
+    -java/net/IDN/ToASCII.java
 
 # These sub groups of tier3 allow for running certain tests separately from the
 # rest. When adding tests to tier3, in most cases they should be added to
