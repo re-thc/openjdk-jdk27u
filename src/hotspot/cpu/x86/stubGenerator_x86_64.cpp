@@ -39,8 +39,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/zipLibrary.hpp"
 #include "stubGenerator_x86_64.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"

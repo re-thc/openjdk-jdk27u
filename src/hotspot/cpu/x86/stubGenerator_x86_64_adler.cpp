@@ -30,9 +30,9 @@
 #include "runtime/globals.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
-#include "utilities/zipLibrary.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
+#include "utilities/zipLibrary.hpp"
 
 #define __ _masm->
 
