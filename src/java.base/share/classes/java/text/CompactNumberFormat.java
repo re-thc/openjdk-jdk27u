@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +24,9 @@
  * questions.
  */
 package java.text;
+
+import jdk.internal.access.JavaTextAccess;
+import jdk.internal.access.SharedSecrets;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -474,6 +478,11 @@ public final class CompactNumberFormat extends NumberFormat {
     public CompactNumberFormat(String decimalPattern,
             DecimalFormatSymbols symbols, String[] compactPatterns,
             String pluralRules) {
+        this(decimalPattern, symbols, compactPatterns, pluralRules, false);
+    }
+
+    private CompactNumberFormat(String decimalPattern, DecimalFormatSymbols symbols,
+                                String[] compactPatterns, String pluralRules, boolean trusted) {
 
         Objects.requireNonNull(decimalPattern, "decimalPattern");
         Objects.requireNonNull(symbols, "symbols");
@@ -513,7 +522,54 @@ public final class CompactNumberFormat extends NumberFormat {
 
         // Process compact patterns to extract the prefixes, suffixes, place holders, and
         // divisors
+        if (trusted) {
+            // Lookup and application use only this local snapshot. No runtime admission.
+            String[] snapshot = compactPatterns.clone();
+            var plan = BuiltInCompactPatternPlans.lookup(snapshot);
+            if (plan >= 0) {
+                applyBuiltInPlan(plan);
+                rulesMap = buildPluralRulesMap();
+                return;
+            }
+        }
         processCompactPatterns();
+    }
+
+    private static final class Access implements JavaTextAccess {
+        public CompactNumberFormat createCompactNumberFormat(String decimalPattern,
+                DecimalFormatSymbols symbols, String[] patterns, String rules) {
+            return new CompactNumberFormat(decimalPattern, symbols, patterns, rules, true);
+        }
+    }
+
+    static {
+        SharedSecrets.setJavaTextAccess(new Access());
+    }
+
+    private void applyBuiltInPlan(int plan) {
+        int size = BuiltInCompactPatternPlans.size(plan);
+        positivePrefixPatterns = new ArrayList<>(size);
+        negativePrefixPatterns = new ArrayList<>(size);
+        positiveSuffixPatterns = new ArrayList<>(size);
+        negativeSuffixPatterns = new ArrayList<>(size);
+        placeHolderPatterns = new ArrayList<>(size);
+        divisors = new ArrayList<>(size);
+        for (int index = 0; index < size; index++) {
+            int element = BuiltInCompactPatternPlans.element(plan, index);
+            Patterns pp = new Patterns(), np = new Patterns(), ps = new Patterns(),
+                    ns = new Patterns(), zeros = new Patterns();
+            for (int row = 0; row < BuiltInCompactPatternPlans.count(element); row++) {
+                String key = BuiltInCompactPatternPlans.value(element, row, 0);
+                pp.put(key, BuiltInCompactPatternPlans.value(element, row, 1));
+                np.put(key, BuiltInCompactPatternPlans.value(element, row, 2));
+                ps.put(key, BuiltInCompactPatternPlans.value(element, row, 3));
+                ns.put(key, BuiltInCompactPatternPlans.value(element, row, 4));
+                zeros.put(key, BuiltInCompactPatternPlans.value(element, row, 5));
+            }
+            positivePrefixPatterns.add(pp); negativePrefixPatterns.add(np);
+            positiveSuffixPatterns.add(ps); negativeSuffixPatterns.add(ns);
+            placeHolderPatterns.add(zeros); divisors.add(BuiltInCompactPatternPlans.divisor(element));
+        }
     }
 
     /**
@@ -2583,6 +2639,11 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     private static boolean matchPluralRule(String condition, double input) {
+        Boolean precomputed = CompactPluralRules.match(condition, input);
+        if (precomputed != null) {
+            return precomputed;
+        }
+
         return Arrays.stream(condition.split("or"))
             .anyMatch(and_condition -> Arrays.stream(and_condition.split("and"))
                 .allMatch(r -> relationCheck(r, input)));

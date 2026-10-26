@@ -1,4 +1,5 @@
 #  Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -56,7 +57,11 @@ tier1_part3 = \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
-    sun/nio/cs/ISO8859x.java
+    build/CompactPatternPlansGeneratorTest.java \
+    java/text/Format/CompactNumberFormat/PrecomputedCompactPatterns.java \
+    sun/nio/cs/ISO8859x.java \
+    java/time/nonjunit/java/time/format/DayPeriodCache.java \
+    java/time/nonjunit/java/time/format/SharedZoneTextTreeTest.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
@@ -78,7 +83,10 @@ tier2_part2 = \
     -sun/nio/cs/ISO8859x.java \
     :jdk_other \
     :jdk_text \
-    :jdk_time
+    -java/text/Format/CompactNumberFormat/PrecomputedCompactPatterns.java \
+    :jdk_time \
+    -java/time/nonjunit/java/time/format/DayPeriodCache.java \
+    -java/time/nonjunit/java/time/format/SharedZoneTextTreeTest.java
 
 tier2_part3 = \
     :jdk_net
@@ -92,6 +100,7 @@ tier3 = \
 
 tier3_part1 = \
     :build \
+    -build/CompactPatternPlansGeneratorTest.java \
     :jdk_vector \
     -:jdk_vector_sanity \
     :jdk_rmi \
