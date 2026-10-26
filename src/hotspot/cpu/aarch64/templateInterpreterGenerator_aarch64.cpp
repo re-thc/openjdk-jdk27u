@@ -1150,7 +1150,8 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
     __ ldrw(tgt_length, Address(esp));
   }
   // Preserve LR across the C++ leaf call and restore the caller's Java stack.
-  __ andr(sp, r19_sender_sp, -16);
+  // A whole-array leaf may decline, so keep its Java arguments above the C frame.
+  __ andr(sp, whole_array ? esp : r19_sender_sp, -16);
   __ stp(r29, r30, Address(__ pre(sp, -2 * wordSize)));
   __ mov(r29, sp);
   if (equality) {
@@ -1165,6 +1166,7 @@ address TemplateInterpreterGenerator::generate_stringzilla_entry(AbstractInterpr
   if (whole_array) {
     __ cmpw(r0, JVM_STRINGZILLA_FALLBACK);
     __ br(Assembler::EQ, slow_path);
+    __ andr(sp, r19_sender_sp, -16);
   }
   if (utf16) __ asrw(r0, r0, 1);
   __ ret(lr);

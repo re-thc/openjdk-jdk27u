@@ -32,6 +32,16 @@
  * @run main/othervm -Xint -XX:+UnlockExperimentalVMOptions -XX:-UseCompactObjectHeaders TestStringZillaInterpreterSearch
  */
 
+/*
+ * @test id=compiledCaller
+ * @summary UTF16 interpreter fallback preserves compiled callers' arguments
+ * @requires vm.compiler1.enabled
+ * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOfLatin1_0 TestStringZillaInterpreterSearch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 TestStringZillaInterpreterSearch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings -XX:-UseStringZillaIntrinsics -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 TestStringZillaInterpreterSearch
+ */
+
 import java.util.Arrays;
 import java.util.Random;
 
@@ -55,10 +65,15 @@ public class TestStringZillaInterpreterSearch {
         }
     }
 
-    public static void main(String[] args) {
+    private static void oddByteMatches() {
         // A first odd-byte vendor hit must resume Java and find the aligned match.
         check(new char[]{0x100, 0x200, 0, 1, 2}, new char[]{1, 2});
         check(new char[]{0x200, 0x401, 3, 0x102, 0x304}, new char[]{0x102, 0x304});
+        check(new char[]{'b', 0, 0xff, 0x100}, new char[]{0});
+    }
+
+    public static void main(String[] args) {
+        oddByteMatches();
         Random random = new Random(729041);
         for (int coder = 0; coder < 3; coder++) {
             int sourceBase = coder == 0 ? 0 : 0x400;
@@ -89,6 +104,9 @@ public class TestStringZillaInterpreterSearch {
                 }
             }
         }
+        // Recheck after warmup, when compiled callers can enter the interpreter
+        // through the C2I adapter. The excluded UTF16 boundary stays interpreted.
+        oddByteMatches();
         try {
             "source".indexOf((String)null);
             throw new AssertionError("Missing NullPointerException");
