@@ -270,6 +270,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_update_CRC32(Intrinsic* x);
   void do_stringUTF8(Intrinsic* x);
   void do_convertPrefix(Intrinsic* x);
+  void do_stringCoding(Intrinsic* x);
   void do_bulk(Intrinsic* x);
   void do_update_CRC32C(Intrinsic* x);
   void do_vectorizedMismatch(Intrinsic* x);

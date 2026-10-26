@@ -46,6 +46,11 @@ class SimdUTF : AllStatic {
   static jlong decode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong encode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong utf8_to_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  // Leaves for the String coding boundaries that only C2 implements with stubs. They
+  // are exact for every length, so the interpreter and C1 call them unconditionally.
+  static jint count_positives(const jbyte* src, jint length);
+  static void inflate_latin1(const jbyte* src, jbyte* dst, jint length);
+  static jint compress_utf16(const jbyte* src, jbyte* dst, jint length);
   static void encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url);
   static jint decode_base64_mime(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jint decode_base64(const jbyte* src, jint length, jbyte* dst, jint capacity, jboolean url);

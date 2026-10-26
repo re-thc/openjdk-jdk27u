@@ -40,6 +40,7 @@ public class SimdUTF {
     @Param({"32", "64", "128", "256", "4096", "65536"})
     public int size;
     private String ascii, latin1, bmp, supplementary, latin1Near, utf16Near;
+    private char[] latin1Chars;
     private byte[] asciiBytes, utf8Bytes, supplementaryBytes, latin1Bytes, latin1LateBytes, binary, base64, encoded, decoded;
     private Base64.Encoder base64Encoder;
     private Base64.Decoder base64Decoder;
@@ -59,6 +60,7 @@ public class SimdUTF {
         for (int i = 0; i < size; i++) accented.append(i % 8 == 7 ? (char) ('\u00e0' + i % 32) : (char) ('a' + i % 26));
         latin1Bytes = accented.toString().getBytes(StandardCharsets.UTF_8);
         latin1LateBytes = (accented.substring(0, size - 1) + "\u20ac").getBytes(StandardCharsets.UTF_8);
+        latin1Chars = accented.toString().toCharArray();
         asciiBytes = ascii.getBytes(StandardCharsets.UTF_8);
         utf8Bytes = bmp.getBytes(StandardCharsets.UTF_8);
         supplementaryBytes = supplementary.getBytes(StandardCharsets.UTF_8);
@@ -76,6 +78,10 @@ public class SimdUTF {
     @Benchmark public byte[] asciiEncode() { return ascii.getBytes(StandardCharsets.UTF_8); }
     @Benchmark public String latin1Decode() { return new String(latin1Bytes, StandardCharsets.UTF_8); }
     @Benchmark public String latin1LateUtf16Decode() { return new String(latin1LateBytes, StandardCharsets.UTF_8); }
+    // String callers of the boundaries that C2 has stubs for: countPositives is behind asciiDecode,
+    // Latin-1 inflation behind toCharArray, and UTF-16 compression behind the char[] constructor.
+    @Benchmark public char[] latin1ToChars() { return latin1.toCharArray(); }
+    @Benchmark public String charsToLatin1() { return new String(latin1Chars); }
     @Benchmark public String utf8Decode() { return new String(utf8Bytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] utf16Encode() { return bmp.getBytes(StandardCharsets.UTF_8); }
     @Benchmark public byte[] latin1Encode() { return latin1.getBytes(StandardCharsets.UTF_8); }

@@ -2970,8 +2970,77 @@ void LIRGenerator::do_convertPrefix(Intrinsic* x) {
   __ move(result_reg, result);
 }
 
+// The Java wrappers have checked the ranges, and the leaves are exact for every length,
+// so the call needs no HIR edges. An offset counts UTF-16 elements on the char side.
+void LIRGenerator::do_stringCoding(Intrinsic* x) {
+  const bool count = x->id() == vmIntrinsics::_countPositives;
+  const bool inflate = x->id() == vmIntrinsics::_inflateStringC ||
+                       x->id() == vmIntrinsics::_inflateStringB;
+  // (array, offset[, array, offset], length)
+  LIRItem src(x->argument_at(0), this);
+  LIRItem src_start(x->argument_at(1), this);
+  src.load_item();
+  src_start.load_item();
+  LIR_Opr src_offset = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, src_start.result(), src_offset);
+  if (!count && !inflate) {
+    __ shift_left(src_offset, 1, src_offset);
+  }
+  LIR_Opr src_address = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(generate_address(src.result(), src_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), src_address);
+  LIR_Opr dst_address = LIR_OprFact::illegalOpr;
+  if (!count) {
+    LIRItem dst(x->argument_at(2), this);
+    LIRItem dst_start(x->argument_at(3), this);
+    dst.load_item();
+    dst_start.load_item();
+    LIR_Opr dst_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, dst_start.result(), dst_offset);
+    if (inflate) {
+      __ shift_left(dst_offset, 1, dst_offset);
+    }
+    dst_address = new_register(T_ADDRESS);
+    __ leal(LIR_OprFact::address(generate_address(dst.result(), dst_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), dst_address);
+  }
+  LIRItem length(x->argument_at(count ? 2 : 4), this);
+  length.load_item();
+  BasicTypeList signature(count ? 2 : 3);
+  signature.append(T_ADDRESS);
+  if (!count) {
+    signature.append(T_ADDRESS);
+  }
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_address, cc->at(0));
+  if (count) {
+    __ move(length.result(), cc->at(1));
+  } else {
+    __ move(dst_address, cc->at(1));
+    __ move(length.result(), cc->at(2));
+  }
+  address entry = count   ? CAST_FROM_FN_PTR(address, SimdUTF::count_positives)
+                : inflate ? CAST_FROM_FN_PTR(address, SimdUTF::inflate_latin1)
+                          : CAST_FROM_FN_PTR(address, SimdUTF::compress_utf16);
+  LIR_Opr result_reg = x->type() == voidType ? LIR_OprFact::illegalOpr : result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  if (x->type() != voidType) {
+    __ move(result_reg, rlock_result(x));
+  }
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_countPositives:
+  case vmIntrinsics::_inflateStringC:
+  case vmIntrinsics::_inflateStringB:
+  case vmIntrinsics::_compressStringC:
+  case vmIntrinsics::_compressStringB:
+  case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
+    do_stringCoding(x);
+    break;
   case vmIntrinsics::_decodeUTF8Bulk:
   case vmIntrinsics::_encodeUTF8Bulk:
   case vmIntrinsics::_decodeUTF32Bulk:

@@ -683,6 +683,54 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
   return entry;
 }
 
+// Method entries for the String coding helpers that only C2 implements with stubs:
+//   int  countPositives0(byte[] ba, int off, int len)
+//   void inflate0(byte[] src, int srcOff, char[] / byte[] dst, int dstOff, int len)
+//   int  compress0(char[] / byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+// encodeISOArray0 has the arguments, the result and the semantics of compress0.
+// The Java wrappers have checked the ranges and the leaves are exact for every
+// length. Offsets count UTF-16 elements for the char side of a conversion.
+address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives;
+  const bool inflate = kind == Interpreter::java_lang_StringLatin1_inflateChars ||
+                       kind == Interpreter::java_lang_StringLatin1_inflateBytes;
+  const Address::ScaleFactor src_scale = (!count && !inflate) ? Address::times_2 : Address::times_1;
+  const Address::ScaleFactor dst_scale = inflate ? Address::times_2 : Address::times_1;
+  address leaf = count   ? CAST_FROM_FN_PTR(address, SimdUTF::count_positives)
+               : inflate ? CAST_FROM_FN_PTR(address, SimdUTF::inflate_latin1)
+                         : CAST_FROM_FN_PTR(address, SimdUTF::compress_utf16);
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
+  // The last argument is at rsp + wordSize; slot 0 holds the return address.
+  if (count) {
+    __ movl(c_rarg1, Address(rsp, wordSize));
+    __ movl2ptr(r10, Address(rsp, 2 * wordSize));
+    __ movptr(c_rarg0, Address(rsp, 3 * wordSize));
+    __ lea(c_rarg0, Address(c_rarg0, r10, src_scale, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1);
+  } else {
+    __ movl(c_rarg2, Address(rsp, wordSize));
+    __ movl2ptr(r10, Address(rsp, 4 * wordSize));
+    __ movptr(c_rarg0, Address(rsp, 5 * wordSize));
+    __ lea(c_rarg0, Address(c_rarg0, r10, src_scale, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ movl2ptr(r10, Address(rsp, 2 * wordSize));
+    __ movptr(c_rarg1, Address(rsp, 3 * wordSize));
+    __ lea(c_rarg1, Address(c_rarg1, r10, dst_scale, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  }
+  // result in rax, if any
+  __ pop(rdi);                // get return address
+  __ mov(rsp, r13);           // set sp to sender sp
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 // Method entry for the static prefix conversions of the Charset coder loops and the
 // String UTF-8 decoder:
 //   long f(Object src, long srcAddress, int srcLength, Object dst, long dstAddress, int dstCapacity)

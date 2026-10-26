@@ -2226,6 +2226,62 @@ address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpr
   return entry;
 }
 
+// Method entries for the String coding helpers that only C2 implements with stubs:
+//   int  countPositives0(byte[] ba, int off, int len)
+//   void inflate0(byte[] src, int srcOff, char[] / byte[] dst, int dstOff, int len)
+//   int  compress0(char[] / byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+// encodeISOArray0 has the arguments, the result and the semantics of compress0.
+// The Java wrappers have checked the ranges and the leaves are exact for every
+// length. Offsets count UTF-16 elements for the char side of a conversion.
+address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives;
+  const bool inflate = kind == Interpreter::java_lang_StringLatin1_inflateChars ||
+                       kind == Interpreter::java_lang_StringLatin1_inflateBytes;
+  const int src_shift = (!count && !inflate) ? 1 : 0;
+  const int dst_shift = inflate ? 1 : 0;
+  address leaf = count   ? CAST_FROM_FN_PTR(address, SimdUTF::count_positives)
+               : inflate ? CAST_FROM_FN_PTR(address, SimdUTF::inflate_latin1)
+                         : CAST_FROM_FN_PTR(address, SimdUTF::compress_utf16);
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
+  // esp addresses the last argument; each argument takes one slot.
+  if (count) {
+    __ ldrw(c_rarg1, Address(esp, 0));
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ ldr(c_rarg0, Address(esp, 2 * wordSize));
+    __ add(c_rarg0, c_rarg0, rscratch1, Assembler::LSL, src_shift);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  } else {
+    __ ldrw(c_rarg2, Address(esp, 0));
+    __ ldrw(rscratch1, Address(esp, 3 * wordSize));
+    __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+    __ add(c_rarg0, c_rarg0, rscratch1, Assembler::LSL, src_shift);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ ldr(c_rarg1, Address(esp, 2 * wordSize));
+    __ add(c_rarg1, c_rarg1, rscratch1, Assembler::LSL, dst_shift);
+    __ add(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  }
+  // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
+  if (count) {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1);
+  } else {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  }
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
+  // result in r0, if any
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 // Method entry for the static prefix conversions of the Charset coder loops and the
 // String UTF-8 decoder:
 //   long f(Object src, long srcAddress, int srcLength, Object dst, long dstAddress, int dstCapacity)

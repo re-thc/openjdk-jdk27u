@@ -130,6 +130,14 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_decodeUTF32Bulk:
   case vmIntrinsics::_encodeUTF32Bulk:
   case vmIntrinsics::_utf8ToLatin1Bulk:
+  // C2 implements these with stubs; C1 would otherwise run their Java loops.
+  case vmIntrinsics::_countPositives:
+  case vmIntrinsics::_inflateStringC:
+  case vmIntrinsics::_inflateStringB:
+  case vmIntrinsics::_compressStringC:
+  case vmIntrinsics::_compressStringB:
+  case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
 #if defined(AMD64) || defined(AARCH64)
     return SimdUTF::available();
 #else

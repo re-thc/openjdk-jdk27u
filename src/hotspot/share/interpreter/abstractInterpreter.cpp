@@ -145,6 +145,13 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_decodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_decodeBulk;
       case vmIntrinsics::_encodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_encodeBulk;
       case vmIntrinsics::_utf8ToLatin1Bulk: return java_lang_String_utf8ToLatin1Bulk;
+      case vmIntrinsics::_countPositives: return java_lang_StringCoding_countPositives;
+      case vmIntrinsics::_inflateStringC: return java_lang_StringLatin1_inflateChars;
+      case vmIntrinsics::_inflateStringB: return java_lang_StringLatin1_inflateBytes;
+      case vmIntrinsics::_compressStringC: return java_lang_StringUTF16_compressChars;
+      case vmIntrinsics::_compressStringB: return java_lang_StringUTF16_compressBytes;
+      case vmIntrinsics::_encodeISOArray: return sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray;
+      case vmIntrinsics::_encodeByteISOArray: return java_lang_StringCoding_encodeISOArray;
       case vmIntrinsics::_decodeUTF8UTF16OrThrow: return java_lang_String_decodeUTF8UTF16OrThrow;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif // ZERO
@@ -249,6 +256,13 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case sun_nio_cs_UTF_32Coder_decodeBulk: return vmIntrinsics::_decodeUTF32Bulk;
   case sun_nio_cs_UTF_32Coder_encodeBulk: return vmIntrinsics::_encodeUTF32Bulk;
   case java_lang_String_utf8ToLatin1Bulk: return vmIntrinsics::_utf8ToLatin1Bulk;
+  case java_lang_StringCoding_countPositives: return vmIntrinsics::_countPositives;
+  case java_lang_StringLatin1_inflateChars: return vmIntrinsics::_inflateStringC;
+  case java_lang_StringLatin1_inflateBytes: return vmIntrinsics::_inflateStringB;
+  case java_lang_StringUTF16_compressChars: return vmIntrinsics::_compressStringC;
+  case java_lang_StringUTF16_compressBytes: return vmIntrinsics::_compressStringB;
+  case sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray: return vmIntrinsics::_encodeISOArray;
+  case java_lang_StringCoding_encodeISOArray: return vmIntrinsics::_encodeByteISOArray;
   case java_lang_String_decodeUTF8UTF16OrThrow: return vmIntrinsics::_decodeUTF8UTF16OrThrow;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;

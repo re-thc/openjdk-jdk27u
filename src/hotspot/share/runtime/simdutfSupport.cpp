@@ -252,6 +252,68 @@ JRT_LEAF(jlong, SimdUTF::utf8_to_latin1_prefix(const jbyte* src, jint length, jb
   return pack(complete, static_cast<jint>(result.count));
 JRT_END
 
+namespace {
+// The library call is not worth its dispatch below this many elements.
+const jint ShortRange = 16;
+}
+
+// StringCoding.countPositives0: the index of the first negative byte, or the length.
+// The range is bounds-checked by the Java caller; like the C2 stub, this leaf does not
+// poll for safepoints inside the range.
+JRT_LEAF(jint, SimdUTF::count_positives(const jbyte* src, jint length))
+  if (length < ShortRange) {
+    for (jint i = 0; i < length; i++) {
+      if (src[i] < 0) {
+        return i;
+      }
+    }
+    return length;
+  }
+  return static_cast<jint>(simdutf::validate_ascii_with_errors(
+      reinterpret_cast<const char*>(src), length).count);
+JRT_END
+
+// StringLatin1.inflate0: Latin-1 bytes to UTF-16 units in native byte order, the order
+// of both char[] and String's UTF-16 byte[].
+JRT_LEAF(void, SimdUTF::inflate_latin1(const jbyte* src, jbyte* dst, jint length))
+  if (length < ShortRange) {
+    jchar* output = reinterpret_cast<jchar*>(dst);
+    for (jint i = 0; i < length; i++) {
+      output[i] = static_cast<jchar>(src[i] & 0xff);
+    }
+    return;
+  }
+  size_t written = simdutf::convert_latin1_to_utf16(reinterpret_cast<const char*>(src), length,
+                                                    reinterpret_cast<char16_t*>(dst));
+  assert(written == static_cast<size_t>(length), "every byte is converted");
+  (void)written;
+JRT_END
+
+// StringUTF16.compress0 and the ISO-8859-1 encodeISOArray0, which have the same contract:
+// copy the leading Latin-1 units and return their number. The callers keep the copied
+// prefix, so it is written again after an error rather than relying on how much of the
+// failing block the library stored.
+JRT_LEAF(jint, SimdUTF::compress_utf16(const jbyte* src, jbyte* dst, jint length))
+  const jchar* input = reinterpret_cast<const jchar*>(src);
+  if (length < ShortRange) {
+    for (jint i = 0; i < length; i++) {
+      if (input[i] > 0xff) {
+        return i;
+      }
+      dst[i] = static_cast<jbyte>(input[i]);
+    }
+    return length;
+  }
+  simdutf::result result = simdutf::convert_utf16_to_latin1_with_errors(
+      reinterpret_cast<const char16_t*>(src), length, reinterpret_cast<char*>(dst));
+  if (result.error == simdutf::SUCCESS) {
+    return length;
+  }
+  jint valid = static_cast<jint>(result.count);
+  return static_cast<jint>(simdutf::convert_utf16_to_latin1(
+      reinterpret_cast<const char16_t*>(src), valid, reinterpret_cast<char*>(dst)));
+JRT_END
+
 // encodeBlock supplies complete three-byte groups. Java owns padding and MIME
 // line breaks; this conversion writes directly to the existing output array.
 JRT_LEAF(void, SimdUTF::encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url))

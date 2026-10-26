@@ -105,6 +105,13 @@ class AbstractInterpreter: AllStatic {
     sun_nio_cs_UTF_32Coder_decodeBulk,
     sun_nio_cs_UTF_32Coder_encodeBulk,
     java_lang_String_utf8ToLatin1Bulk,
+    java_lang_StringCoding_countPositives,
+    java_lang_StringLatin1_inflateChars,
+    java_lang_StringLatin1_inflateBytes,
+    java_lang_StringUTF16_compressChars,
+    java_lang_StringUTF16_compressBytes,
+    sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray,
+    java_lang_StringCoding_encodeISOArray,
     java_lang_String_decodeUTF8UTF16OrThrow,
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,

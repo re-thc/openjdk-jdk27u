@@ -100,6 +100,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_bulk_entry(AbstractInterpreter::MethodKind kind);
   address generate_String_utf8_entry(AbstractInterpreter::MethodKind kind);
   address generate_convert_prefix_entry(AbstractInterpreter::MethodKind kind);
+  address generate_string_coding_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_currentThread();
   address generate_Float_float16ToFloat_entry();
