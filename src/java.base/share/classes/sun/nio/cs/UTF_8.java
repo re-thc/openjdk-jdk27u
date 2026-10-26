@@ -28,6 +28,8 @@ package sun.nio.cs;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -84,6 +86,11 @@ public final class UTF_8 extends Unicode {
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
+    // Ranges shorter than BULK_MIN stay in the Java loops. The intrinsics convert at
+    // most BULK_MAX source elements per call, so the loops below call them repeatedly.
+    private static final int BULK_MIN = 32;
+    private static final int BULK_MAX = 1 << 20;
 
     private static class Decoder extends CharsetDecoder {
 
@@ -214,6 +221,55 @@ public final class UTF_8 extends Unicode {
                    ? CoderResult.UNDERFLOW : CoderResult.OVERFLOW;
         }
 
+        // Converts the longest prefix of complete, valid UTF-8 that fits, reading and
+        // writing the given storage as (object, address) pairs, and returns the
+        // consumed bytes in the high word and the produced chars in the low word.
+        // The caller's loop handles malformed input, a trailing partial sequence and
+        // output that does not fit. The Java body declines by consuming nothing.
+        @IntrinsicCandidate
+        private static long decodeBulk(Object src, long srcAddress, int srcLength,
+                                       Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // The buffer loop's counterpart of the array loop's bulk step: direct buffers,
+        // and heap buffers without an accessible array, are advanced through
+        // their storage before the remainder is decoded element by element.
+        private static void decodeBuffers(ByteBuffer src, CharBuffer dst) {
+            int n = src.remaining();
+            int room = dst.remaining();
+            if (n < BULK_MIN || room < BULK_MIN
+                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            Object srcBase = BufferStorage.base(src);
+            Object dstBase = BufferStorage.base(dst);
+            long srcAddress = BufferStorage.address(src, 0);
+            long dstAddress = BufferStorage.address(dst, 1);
+            if (BufferStorage.overlaps(srcBase, srcAddress, n, dstBase, dstAddress, (long) room << 1)) {
+                return;
+            }
+            BufferStorage.acquire(src, dst);
+            try {
+                int sp = 0;
+                int dp = 0;
+                while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                    long r = decodeBulk(srcBase, srcAddress + sp, Math.min(n - sp, BULK_MAX),
+                                        dstBase, dstAddress + ((long) dp << 1), room - dp);
+                    int consumed = (int) (r >>> 32);
+                    if (consumed == 0) {
+                        break;
+                    }
+                    sp += consumed;
+                    dp += (int) r;
+                }
+                src.position(src.position() + sp);
+                dst.position(dst.position() + dp);
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
         private CoderResult decodeArrayLoop(ByteBuffer src,
                                             CharBuffer dst)
         {
@@ -231,6 +287,17 @@ public final class UTF_8 extends Unicode {
             int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
+
+            while (sl - sp >= BULK_MIN && dl - dp >= BULK_MIN) {
+                long r = decodeBulk(sa, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, Math.min(sl - sp, BULK_MAX),
+                                    da, Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) dp << 1), dl - dp);
+                int consumed = (int) (r >>> 32);
+                if (consumed == 0) {
+                    break;
+                }
+                sp += consumed;
+                dp += (int) r;
+            }
 
             while (sp < sl) {
                 int b1 = sa[sp];
@@ -322,6 +389,7 @@ public final class UTF_8 extends Unicode {
         private CoderResult decodeBufferLoop(ByteBuffer src,
                                              CharBuffer dst)
         {
+            decodeBuffers(src, dst);
             int mark = src.position();
             int limit = src.limit();
             while (mark < limit) {
@@ -445,6 +513,53 @@ public final class UTF_8 extends Unicode {
             return CoderResult.OVERFLOW;
         }
 
+        // Converts the longest prefix of complete characters that fits, reading and
+        // writing the given storage as (object, address) pairs, and returns the
+        // consumed chars in the high word and the produced bytes in the low word.
+        // The caller's loop handles unpaired surrogates and output that does not
+        // fit. The Java body declines by consuming nothing.
+        @IntrinsicCandidate
+        private static long encodeBulk(Object src, long srcAddress, int srcLength,
+                                       Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // The buffer loop's counterpart of the array loop's bulk step.
+        private static void encodeBuffers(CharBuffer src, ByteBuffer dst) {
+            int n = src.remaining();
+            int room = dst.remaining();
+            if (n < BULK_MIN || room < BULK_MIN
+                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            Object srcBase = BufferStorage.base(src);
+            Object dstBase = BufferStorage.base(dst);
+            long srcAddress = BufferStorage.address(src, 1);
+            long dstAddress = BufferStorage.address(dst, 0);
+            if (BufferStorage.overlaps(srcBase, srcAddress, (long) n << 1, dstBase, dstAddress, room)) {
+                return;
+            }
+            BufferStorage.acquire(src, dst);
+            try {
+                int sp = 0;
+                int dp = 0;
+                while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                    long r = encodeBulk(srcBase, srcAddress + ((long) sp << 1), Math.min(n - sp, BULK_MAX),
+                                        dstBase, dstAddress + dp, room - dp);
+                    int consumed = (int) (r >>> 32);
+                    if (consumed == 0) {
+                        break;
+                    }
+                    sp += consumed;
+                    dp += (int) r;
+                }
+                src.position(src.position() + sp);
+                dst.position(dst.position() + dp);
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
         private Surrogate.Parser sgp;
         private CoderResult encodeArrayLoop(CharBuffer src,
                                             ByteBuffer dst) {
@@ -460,6 +575,17 @@ public final class UTF_8 extends Unicode {
             int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
             sp += n;
             dp += n;
+
+            while (sl - sp >= BULK_MIN && dl - dp >= BULK_MIN) {
+                long r = encodeBulk(sa, Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) sp << 1), Math.min(sl - sp, BULK_MAX),
+                                    da, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dl - dp);
+                int consumed = (int) (r >>> 32);
+                if (consumed == 0) {
+                    break;
+                }
+                sp += consumed;
+                dp += (int) r;
+            }
 
             if (sp < sl) {
                 return encodeArrayLoopSlow(src, sa, sp, sl, dst, da, dp, dl);
@@ -517,6 +643,7 @@ public final class UTF_8 extends Unicode {
         private CoderResult encodeBufferLoop(CharBuffer src,
                                              ByteBuffer dst)
         {
+            encodeBuffers(src, dst);
             int mark = src.position();
             while (src.hasRemaining()) {
                 char c = src.get();

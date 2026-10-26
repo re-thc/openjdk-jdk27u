@@ -40,7 +40,7 @@ public class SimdUTF {
     @Param({"32", "64", "128", "256", "4096", "65536"})
     public int size;
     private String ascii, latin1, bmp, supplementary, latin1Near, utf16Near;
-    private byte[] asciiBytes, utf8Bytes, supplementaryBytes, binary, base64, encoded, decoded;
+    private byte[] asciiBytes, utf8Bytes, supplementaryBytes, latin1Bytes, latin1LateBytes, binary, base64, encoded, decoded;
     private Base64.Encoder base64Encoder;
     private Base64.Decoder base64Decoder;
 
@@ -53,6 +53,12 @@ public class SimdUTF {
         latin1Near = "é".repeat(near) + "z" + "é".repeat(size - near - 1);
         utf16Near = "漢".repeat(near) + "z" + "漢".repeat(size - near - 1);
         supplementary = "😃".repeat(size / 2);
+        // Text with an accented letter after every few ASCII letters, which compact Strings keep as Latin-1,
+        // and the same text ending in a character that needs UTF-16
+        StringBuilder accented = new StringBuilder();
+        for (int i = 0; i < size; i++) accented.append(i % 8 == 7 ? (char) ('\u00e0' + i % 32) : (char) ('a' + i % 26));
+        latin1Bytes = accented.toString().getBytes(StandardCharsets.UTF_8);
+        latin1LateBytes = (accented.substring(0, size - 1) + "\u20ac").getBytes(StandardCharsets.UTF_8);
         asciiBytes = ascii.getBytes(StandardCharsets.UTF_8);
         utf8Bytes = bmp.getBytes(StandardCharsets.UTF_8);
         supplementaryBytes = supplementary.getBytes(StandardCharsets.UTF_8);
@@ -68,6 +74,8 @@ public class SimdUTF {
     // ASCII-only conversion is a stock-path control for the UTF8 operations.
     @Benchmark public String asciiDecode() { return new String(asciiBytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] asciiEncode() { return ascii.getBytes(StandardCharsets.UTF_8); }
+    @Benchmark public String latin1Decode() { return new String(latin1Bytes, StandardCharsets.UTF_8); }
+    @Benchmark public String latin1LateUtf16Decode() { return new String(latin1LateBytes, StandardCharsets.UTF_8); }
     @Benchmark public String utf8Decode() { return new String(utf8Bytes, StandardCharsets.UTF_8); }
     @Benchmark public byte[] utf16Encode() { return bmp.getBytes(StandardCharsets.UTF_8); }
     @Benchmark public byte[] latin1Encode() { return latin1.getBytes(StandardCharsets.UTF_8); }

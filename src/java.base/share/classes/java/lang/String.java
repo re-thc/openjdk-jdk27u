@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -605,8 +606,21 @@ public final class String
                 return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
             }
             // Decode with a stable copy, to be the result if the decoded length is the same
-            byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+            byte[] latin1;
             int sp = dp;            // first dp bytes are already in the copy
+            if (length - dp >= UTF8_BULK_MIN && (bytes[offset + dp] & 0xfe) == 0xc2) {
+                // The text continues with Latin-1 characters. Convert them from the
+                // caller's array into the new copy, then copy what follows, so that the
+                // loop below and the UTF-16 decode read only the private copy.
+                latin1 = new byte[length];
+                System.arraycopy(bytes, offset, latin1, 0, dp);
+                long converted = utf8ToLatin1(bytes, offset + dp, offset + length, latin1, dp);
+                sp += (int) (converted >>> 32);
+                dp += (int) converted;
+                System.arraycopy(bytes, offset + sp, latin1, sp, length - sp);
+            } else {
+                latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+            }
             while (sp < length) {
                 int b1 = latin1[sp++];
                 if (b1 >= 0) {
@@ -755,6 +769,11 @@ public final class String
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
             offset += dp;
+            if (sl - offset >= UTF8_BULK_MIN && (bytes[offset] & 0xfe) == 0xc2) {
+                long converted = utf8ToLatin1(bytes, offset, sl, dst, dp);
+                offset += (int) (converted >>> 32);
+                dp += (int) converted;
+            }
             while (offset < sl) {
                 int b1 = bytes[offset++];
                 if (b1 >= 0) {
@@ -1237,6 +1256,42 @@ public final class String
                                 ((byte) 0x80 << 12) ^
                                 ((byte) 0x80 <<  6) ^
                                 ((byte) 0x80 <<  0))));
+    }
+
+    // Ranges shorter than UTF8_BULK_MIN stay in the loops; the intrinsic converts at
+    // most UTF8_BULK_MAX source bytes per call.
+    private static final int UTF8_BULK_MIN = 32;
+    private static final int UTF8_BULK_MAX = 1 << 20;
+
+    // Converts the longest prefix of complete, valid UTF-8 whose characters are all
+    // Latin-1, reading and writing the given storage as (object, address) pairs, and
+    // returns the consumed bytes in the high word and the produced bytes in the low
+    // word. The caller's loop handles any other character, including malformed input
+    // and a trailing partial sequence. The Java body declines by consuming nothing.
+    @IntrinsicCandidate
+    private static long utf8ToLatin1Bulk(Object src, long srcAddress, int srcLength,
+                                         Object dst, long dstAddress, int dstCapacity) {
+        return 0L;
+    }
+
+    // Converts the UTF-8 text in src[sp, sl) that is Latin-1 into dst from dp on, in
+    // calls of bounded length, and returns the consumed and produced bytes as above.
+    private static long utf8ToLatin1(byte[] src, int sp, int sl, byte[] dst, int dp) {
+        int consumed = 0;
+        int produced = 0;
+        while (sl - sp - consumed >= UTF8_BULK_MIN) {
+            long r = utf8ToLatin1Bulk(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp + consumed,
+                                      Math.min(sl - sp - consumed, UTF8_BULK_MAX),
+                                      dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp + produced,
+                                      dst.length - dp - produced);
+            int count = (int) (r >>> 32);
+            if (count == 0) {
+                break;
+            }
+            consumed += count;
+            produced += (int) r;
+        }
+        return ((long) consumed << 32) | produced;
     }
 
     // This entry receives the private snapshot made by utf8, not caller-owned bytes.
