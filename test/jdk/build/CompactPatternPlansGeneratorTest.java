@@ -28,7 +28,7 @@
  * @compile -sourcepath ${test.root}/../../make/jdk/src/classes
  *          ${test.root}/../../make/jdk/src/classes/build/tools/cldrconverter/CLDRConverter.java
  *          CompactPatternPlansGeneratorTest.java
- * @run main/othervm/timeout=120 build.tools.cldrconverter.CompactPatternPlansGeneratorTest
+ * @run main/othervm/timeout=120 -ea -esa build.tools.cldrconverter.CompactPatternPlansGeneratorTest
  */
 
 package build.tools.cldrconverter;
@@ -55,6 +55,9 @@ public class CompactPatternPlansGeneratorTest {
             "placeHolderPatterns");
 
     public static void main(String[] args) throws Exception {
+        if (!PluralsParseHandler.class.desiredAssertionStatus()) {
+            throw new AssertionError("Plural handler assertions must be enabled");
+        }
         Path repository = Path.of(System.getProperty("test.root"), "..", "..").normalize();
         Path first = Files.createTempDirectory(Path.of("."), "compact-plans-first");
         Path second = Files.createTempDirectory(Path.of("."), "compact-plans-second");

@@ -47,7 +47,7 @@ idea:
 compile-commands:
 	+$(MAKE) -f TestCompileCommands.gmk $(TEST_SUBTARGET)
 
-headless:
+headless: compact-pattern-plans
 	+$(MAKE) -f TestHeadless.gmk $(TEST_SUBTARGET)
 
 compact-pattern-plans:
