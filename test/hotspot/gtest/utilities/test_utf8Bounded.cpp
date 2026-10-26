@@ -23,6 +23,7 @@
 
 
 #include "runtime/os.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/utf8.hpp"
 #include "unittest.hpp"
 
@@ -112,7 +113,8 @@ TEST_VM(utf8, bounded_classification_units) {
       memcpy(bytes + prefix, encoded, width);
       for (size_t suffix : {size_t(0), size_t(17)}) {
         size_t length = prefix + width + suffix;
-        check_classification(bytes, length, prefix + 1 + suffix, unit <= 255, width != 1);
+        check_classification(bytes, length, checked_cast<int>(prefix + 1 + suffix),
+                             unit <= 255, width != 1);
         check_legality(bytes, length);
       }
     }
@@ -121,7 +123,7 @@ TEST_VM(utf8, bounded_classification_units) {
   for (size_t prefix = 0; prefix < 64; prefix++) {
     memset(bytes, 'a', sizeof(bytes));
     memcpy(bytes + prefix, pair, sizeof(pair));
-    check_classification(bytes, prefix + sizeof(pair), prefix + 2, false, true);
+    check_classification(bytes, prefix + sizeof(pair), checked_cast<int>(prefix + 2), false, true);
     check_legality(bytes, prefix + sizeof(pair));
   }
 }
@@ -188,7 +190,7 @@ TEST_VM(utf8, bounded_legality_errors) {
 
 static void check_boundary(unsigned char* bytes, size_t length) {
   memset(bytes, 'a', length);
-  check_classification(bytes, length, length, true, false);
+  check_classification(bytes, length, checked_cast<int>(length), true, false);
   check_legality(bytes, length);
   if (length > 0) {
     for (unsigned char lead : {0xc2, 0xe0, 0xf0, 0xff}) {
@@ -213,7 +215,7 @@ static void check_boundary(unsigned char* bytes, size_t length) {
     if (length - i >= 2) {
       bytes[i] = 0xc0;
       bytes[i + 1] = 0x80;
-      check_classification(bytes, length, length - 1, true, true);
+      check_classification(bytes, length, checked_cast<int>(length - 1), true, true);
       check_legality(bytes, length);
       bytes[i] = bytes[i + 1] = 'a';
     }
@@ -221,7 +223,7 @@ static void check_boundary(unsigned char* bytes, size_t length) {
       bytes[i] = 0xed;
       bytes[i + 1] = 0xa0;
       bytes[i + 2] = 0x80;
-      check_classification(bytes, length, length - 2, false, true);
+      check_classification(bytes, length, checked_cast<int>(length - 2), false, true);
       check_legality(bytes, length);
       bytes[i] = bytes[i + 1] = bytes[i + 2] = 'a';
     }
