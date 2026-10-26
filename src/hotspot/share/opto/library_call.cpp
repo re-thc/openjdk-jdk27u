@@ -703,6 +703,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_decodeUTF32Bulk:
   case vmIntrinsics::_encodeUTF32Bulk:
   case vmIntrinsics::_utf8ToLatin1Bulk:
+  case vmIntrinsics::_decodeUTF16LEBulk:
+  case vmIntrinsics::_decodeUTF16BEBulk:
+  case vmIntrinsics::_encodeUTF16LEBulk:
+  case vmIntrinsics::_encodeUTF16BEBulk:
     return inline_convert_prefix(intrinsic_id());
 
   case vmIntrinsics::_encodeUTF8Latin1: return inline_encodeUTF8Latin1();

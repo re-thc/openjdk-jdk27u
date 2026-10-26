@@ -87,6 +87,10 @@ address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
   SIMDUTF_LEAF(_decodeUTF32Bulk, decode_utf32_prefix)
   SIMDUTF_LEAF(_encodeUTF32Bulk, encode_utf32_prefix)
   SIMDUTF_LEAF(_utf8ToLatin1Bulk, utf8_to_latin1_prefix)
+  SIMDUTF_LEAF(_decodeUTF16LEBulk, decode_utf16le_prefix)
+  SIMDUTF_LEAF(_decodeUTF16BEBulk, decode_utf16be_prefix)
+  SIMDUTF_LEAF(_encodeUTF16LEBulk, encode_utf16le_prefix)
+  SIMDUTF_LEAF(_encodeUTF16BEBulk, encode_utf16be_prefix)
   SIMDUTF_LEAF(_countPositives, count_positives)
   SIMDUTF_LEAF(_inflateStringC, inflate_latin1)
   SIMDUTF_LEAF(_inflateStringB, inflate_latin1)
@@ -290,6 +294,61 @@ JRT_LEAF(jlong, SimdUTF::utf8_to_latin1_prefix(const jbyte* src, jint length, jb
     return written > 0 ? pack(valid, written) : 0;
   }
   return pack(complete, static_cast<jint>(result.count));
+JRT_END
+
+namespace {
+// Copies the longest prefix of well-formed UTF-16 units that fits, from one byte order to
+// the other when swap is set, and returns the units converted in both halves. A surrogate
+// pair that the bound would cut, and a lone surrogate, end the prefix and are left to the
+// caller. The units are validated where they are read, and then copied, so the count is
+// of units that were valid when they were read. Only little-endian hosts convert.
+jlong copy_utf16_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity,
+                        bool input_big, bool swap) {
+#ifdef VM_LITTLE_ENDIAN
+  const char16_t* input = reinterpret_cast<const char16_t*>(src);
+  char16_t* output = reinterpret_cast<char16_t*>(dst);
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail || !aligned(input, sizeof(char16_t)) || !aligned(output, sizeof(char16_t))) {
+    return 0;
+  }
+  simdutf::result result = input_big ? simdutf::validate_utf16be_with_errors(input, chunk)
+                                     : simdutf::validate_utf16le_with_errors(input, chunk);
+  jint valid = result.error == simdutf::SUCCESS ? chunk : static_cast<jint>(result.count);
+  if (valid == 0) {
+    return 0;
+  }
+  if (swap) {
+    simdutf::change_endianness_utf16(input, valid, output);
+  } else {
+    memcpy(output, input, static_cast<size_t>(valid) * sizeof(char16_t));
+  }
+  return pack(valid, valid);
+#else
+  return 0;
+#endif
+}
+}
+
+// UTF-16 bytes to chars. Bytes of either order are read as 16-bit units.
+JRT_LEAF(jlong, SimdUTF::decode_utf16le_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  return copy_utf16_prefix(src, length, dst, capacity, false, false);
+JRT_END
+
+JRT_LEAF(jlong, SimdUTF::decode_utf16be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  return copy_utf16_prefix(src, length, dst, capacity, true, true);
+JRT_END
+
+// Chars to UTF-16 bytes. The chars are in the order of the host.
+JRT_LEAF(jlong, SimdUTF::encode_utf16le_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  return copy_utf16_prefix(src, length, dst, capacity, false, false);
+JRT_END
+
+JRT_LEAF(jlong, SimdUTF::encode_utf16be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  return copy_utf16_prefix(src, length, dst, capacity, false, true);
 JRT_END
 
 namespace {

@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
 /**
- * UTF-8 and UTF-32LE Charset coders over array-backed and direct buffers, and the stream
+ * UTF-8, UTF-16 and UTF-32LE Charset coders over array-backed and direct buffers, and the stream
  * classes built on them. The coder loops convert ranges of 64 elements or more in bulk.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -57,7 +57,13 @@ public class SimdUTFCoders {
 
     private static final Charset UTF_32LE = Charset.forName("UTF-32LE");
 
-    private byte[] utf8Bytes, utf32Bytes;
+    private static final Charset UTF_16LE = StandardCharsets.UTF_16LE;
+    private static final Charset UTF_16BE = StandardCharsets.UTF_16BE;
+
+    private byte[] utf8Bytes, utf32Bytes, utf16leBytes, utf16beBytes;
+    private ByteBuffer utf16leHeap, utf16leDirect, utf16beHeap;
+    private CharsetDecoder utf16leDecoder, utf16beDecoder;
+    private CharsetEncoder utf16leEncoder, utf16beEncoder;
     private char[] chars;
     private ByteBuffer utf8Heap, utf8Direct, utf32Heap, utf32Direct;
     private ByteBuffer bytesHeap, bytesDirect;
@@ -91,6 +97,15 @@ public class SimdUTFCoders {
         chars = s.toCharArray();
         utf8Bytes = s.getBytes(StandardCharsets.UTF_8);
         utf32Bytes = s.getBytes(UTF_32LE);
+        utf16leBytes = s.getBytes(UTF_16LE);
+        utf16beBytes = s.getBytes(UTF_16BE);
+        utf16leHeap = ByteBuffer.wrap(utf16leBytes);
+        utf16leDirect = ByteBuffer.allocateDirect(utf16leBytes.length).put(utf16leBytes).flip();
+        utf16beHeap = ByteBuffer.wrap(utf16beBytes);
+        utf16leDecoder = UTF_16LE.newDecoder();
+        utf16beDecoder = UTF_16BE.newDecoder();
+        utf16leEncoder = UTF_16LE.newEncoder();
+        utf16beEncoder = UTF_16BE.newEncoder();
         utf8Heap = ByteBuffer.wrap(utf8Bytes);
         utf8Direct = ByteBuffer.allocateDirect(utf8Bytes.length).put(utf8Bytes).flip();
         utf32Heap = ByteBuffer.wrap(utf32Bytes);
@@ -131,6 +146,12 @@ public class SimdUTFCoders {
     @Benchmark public int utf8EncodeHeap() { return encode(utf8Encoder, textHeap, bytesHeap); }
     @Benchmark public int utf8EncodeDirect() { return encode(utf8Encoder, textHeap, bytesDirect); }
     @Benchmark public int utf8EncodeDirectToDirect() { return encode(utf8Encoder, textDirect, bytesDirect); }
+    @Benchmark public int utf16LEDecodeHeap() { return decode(utf16leDecoder, utf16leHeap, charsHeap); }
+    @Benchmark public int utf16LEDecodeDirect() { return decode(utf16leDecoder, utf16leDirect, charsHeap); }
+    @Benchmark public int utf16BEDecodeHeap() { return decode(utf16beDecoder, utf16beHeap, charsHeap); }
+    @Benchmark public int utf16LEEncodeHeap() { return encode(utf16leEncoder, textHeap, bytesHeap); }
+    @Benchmark public int utf16LEEncodeDirect() { return encode(utf16leEncoder, textHeap, bytesDirect); }
+    @Benchmark public int utf16BEEncodeHeap() { return encode(utf16beEncoder, textHeap, bytesHeap); }
     @Benchmark public int utf32DecodeHeap() { return decode(utf32Decoder, utf32Heap, charsHeap); }
     @Benchmark public int utf32DecodeDirect() { return decode(utf32Decoder, utf32Direct, charsHeap); }
     @Benchmark public int utf32EncodeHeap() { return encode(utf32Encoder, textHeap, bytesHeap); }

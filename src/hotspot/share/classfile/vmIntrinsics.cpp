@@ -531,6 +531,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_decodeUTF32Bulk:
   case vmIntrinsics::_encodeUTF32Bulk:
   case vmIntrinsics::_utf8ToLatin1Bulk:
+  case vmIntrinsics::_decodeUTF16LEBulk:
+  case vmIntrinsics::_decodeUTF16BEBulk:
+  case vmIntrinsics::_encodeUTF16LEBulk:
+  case vmIntrinsics::_encodeUTF16BEBulk:
     if (!UseSIMDUTFIntrinsics) return true;
     break;
   case vmIntrinsics::_base64_decode0:

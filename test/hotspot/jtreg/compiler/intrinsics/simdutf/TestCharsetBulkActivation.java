@@ -98,6 +98,18 @@ public class TestCharsetBulkActivation {
                 chars, chr, chars.length, new byte[utf32.length + 16], bytes, chars.length, chars.length, codePoints));
         String latin1Text = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8);
         byte[] latin1Utf8 = latin1Text.getBytes(StandardCharsets.UTF_8);
+        // UTF-16 counts 16-bit units, and the bytes are in the order of the method
+        for (boolean big : new boolean[]{false, true}) {
+            String order = big ? "BE" : "LE";
+            Charset charset = Charset.forName("UTF-16" + order);
+            byte[] data = TEXT.getBytes(charset);
+            list.add(new Bulk("UTF-16" + order + " decode", method("sun.nio.cs.UnicodeDecoder", "decodeBulk" + order),
+                    data, bytes, chars.length, new char[chars.length], chr, chars.length,
+                    chars.length, chars.length));
+            list.add(new Bulk("UTF-16" + order + " encode", method("sun.nio.cs.UnicodeEncoder", "encodeBulk" + order),
+                    chars, chr, chars.length, new byte[2 * chars.length + 16], bytes, chars.length + 8,
+                    chars.length, chars.length));
+        }
         list.add(new Bulk("UTF-8 to Latin-1", method("java.lang.String", "utf8ToLatin1Bulk"),
                 latin1Utf8, bytes, latin1Utf8.length, new byte[latin1Utf8.length], bytes, latin1Utf8.length,
                 latin1Utf8.length, latin1Text.length()));
@@ -132,7 +144,9 @@ public class TestCharsetBulkActivation {
             output.shouldHaveExitValue(0);
             for (String method : new String[]{"UTF_8$Decoder::decodeBulk", "UTF_8$Encoder::encodeBulk",
                                               "UTF_32Coder$Decoder::decodeBulk", "UTF_32Coder$Encoder::encodeBulk",
-                                              "String::utf8ToLatin1Bulk"}) {
+                                              "String::utf8ToLatin1Bulk",
+                                              "UnicodeDecoder::decodeBulkLE", "UnicodeDecoder::decodeBulkBE",
+                                              "UnicodeEncoder::encodeBulkLE", "UnicodeEncoder::encodeBulkBE"}) {
                 output.shouldMatch(Pattern.quote(method) + " \\(\\d+ bytes\\)\\s+\\(?intrinsic\\)?");
             }
         }
@@ -161,6 +175,14 @@ class CharsetBulkWork {
         CharsetEncoder utf8Encoder = StandardCharsets.UTF_8.newEncoder();
         CharsetDecoder utf32Decoder = le.newDecoder();
         CharsetEncoder utf32Encoder = le.newEncoder();
+        Charset u16le = Charset.forName("UTF-16LE");
+        Charset u16be = Charset.forName("UTF-16BE");
+        byte[] utf16le = TEXT.getBytes(u16le);
+        byte[] utf16be = TEXT.getBytes(u16be);
+        CharsetDecoder utf16leDecoder = u16le.newDecoder();
+        CharsetDecoder utf16beDecoder = u16be.newDecoder();
+        CharsetEncoder utf16leEncoder = u16le.newEncoder();
+        CharsetEncoder utf16beEncoder = u16be.newEncoder();
         byte[] latin1Utf8 = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8).getBytes(StandardCharsets.UTF_8);
         long sum = 0;
         for (int i = 0; i < 20000; i++) {
@@ -176,6 +198,18 @@ class CharsetBulkWork {
             sum += bytes.position();
             bytes.clear();
             utf32Encoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
+            sum += bytes.position();
+            out.clear();
+            utf16leDecoder.reset().decode(ByteBuffer.wrap(utf16le), out, true);
+            sum += out.position();
+            out.clear();
+            utf16beDecoder.reset().decode(ByteBuffer.wrap(utf16be), out, true);
+            sum += out.position();
+            bytes.clear();
+            utf16leEncoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
+            sum += bytes.position();
+            bytes.clear();
+            utf16beEncoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
             sum += bytes.position();
         }
         System.out.println(sum);

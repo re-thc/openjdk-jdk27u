@@ -445,6 +445,16 @@ class methodHandle;
   do_intrinsic(_encodeUTF32Bulk, sun_nio_cs_utf32_Encoder, encodeBulk_name, bulkConvert_signature, F_S)                  \
   do_intrinsic(_utf8ToLatin1Bulk, java_lang_String,        utf8ToLatin1Bulk_name, bulkConvert_signature, F_S)             \
    do_name(     utf8ToLatin1Bulk_name,                   "utf8ToLatin1Bulk")                                              \
+  do_class(sun_nio_cs_UnicodeDecoder, "sun/nio/cs/UnicodeDecoder")                                                      \
+  do_class(sun_nio_cs_UnicodeEncoder, "sun/nio/cs/UnicodeEncoder")                                                      \
+  do_intrinsic(_decodeUTF16LEBulk, sun_nio_cs_UnicodeDecoder, decodeBulkLE_name, bulkConvert_signature, F_S)            \
+   do_name(     decodeBulkLE_name,                           "decodeBulkLE")                                            \
+  do_intrinsic(_decodeUTF16BEBulk, sun_nio_cs_UnicodeDecoder, decodeBulkBE_name, bulkConvert_signature, F_S)            \
+   do_name(     decodeBulkBE_name,                           "decodeBulkBE")                                            \
+  do_intrinsic(_encodeUTF16LEBulk, sun_nio_cs_UnicodeEncoder, encodeBulkLE_name, bulkConvert_signature, F_S)            \
+   do_name(     encodeBulkLE_name,                           "encodeBulkLE")                                            \
+  do_intrinsic(_encodeUTF16BEBulk, sun_nio_cs_UnicodeEncoder, encodeBulkBE_name, bulkConvert_signature, F_S)            \
+   do_name(     encodeBulkBE_name,                           "encodeBulkBE")                                            \
                                                                                                                         \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \

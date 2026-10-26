@@ -28,6 +28,7 @@ package sun.nio.cs;
 
 import java.nio.*;
 import java.nio.charset.*;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Base class for different flavors of UTF-16 encoders
@@ -68,6 +69,80 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
 
     private final Surrogate.Parser sgp = new Surrogate.Parser();
 
+    // Converts the longest prefix of well-formed chars that fits, reading and writing the
+    // given storage as (object, address) pairs, with the units counted in 16-bit units, and
+    // returns the consumed chars in the high word and the produced units in the low word.
+    // A lone surrogate, and a pair that the end of the range cuts, end the prefix, so that
+    // the loop in encodeLoop keeps deciding what they mean. The Java bodies decline by
+    // consuming nothing.
+    @IntrinsicCandidate
+    private static long encodeBulkLE(Object src, long srcAddress, int srcLength,
+                                     Object dst, long dstAddress, int dstCapacity) {
+        return 0L;
+    }
+
+    @IntrinsicCandidate
+    private static long encodeBulkBE(Object src, long srcAddress, int srcLength,
+                                     Object dst, long dstAddress, int dstCapacity) {
+        return 0L;
+    }
+
+    // Converts prefixes of the n chars at srcAddress until one makes no progress, and
+    // returns the consumed chars in the high word and the produced units in the low word.
+    private static long encodeRun(boolean big, Object src, long srcAddress, int n,
+                                  Object dst, long dstAddress, int room) {
+        int sp = 0;
+        int dp = 0;
+        while (n - sp >= BufferStorage.BULK_MIN && room - dp >= BufferStorage.BULK_MIN) {
+            int chunk = Math.min(n - sp, BufferStorage.BULK_MAX);
+            long srcPart = srcAddress + ((long) sp << 1);
+            long dstPart = dstAddress + ((long) dp << 1);
+            long r = big ? encodeBulkBE(src, srcPart, chunk, dst, dstPart, room - dp)
+                         : encodeBulkLE(src, srcPart, chunk, dst, dstPart, room - dp);
+            int consumed = (int) (r >>> 32);
+            sp += consumed;
+            dp += (int) r;
+            if (chunk - consumed >= BufferStorage.BULK_TAIL) {
+                break;
+            }
+        }
+        return ((long) sp << 32) | dp;
+    }
+
+    // Advances both buffers over a converted prefix, unless the first char is a surrogate
+    // that does not begin a pair, which the loop reports.
+    private void encodeBuffers(CharBuffer src, ByteBuffer dst) {
+        int n = src.remaining();
+        int room = dst.remaining() >> 1;
+        if (n < BufferStorage.BULK_MIN || room < BufferStorage.BULK_MIN) {
+            return;
+        }
+        int p = src.position();
+        char first = src.get(p);
+        if (Character.isSurrogate(first)
+                && !(Character.isHighSurrogate(first) && Character.isLowSurrogate(src.get(p + 1)))) {
+            return;
+        }
+        if (!BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+            return;
+        }
+        Object srcBase = BufferStorage.base(src);
+        Object dstBase = BufferStorage.base(dst);
+        long srcAddress = BufferStorage.address(src, 1);
+        long dstAddress = BufferStorage.address(dst, 0);
+        if (BufferStorage.overlaps(srcBase, srcAddress, (long) n << 1, dstBase, dstAddress, (long) room << 1)) {
+            return;
+        }
+        BufferStorage.acquire(src, dst);
+        try {
+            long r = encodeRun(byteOrder == BIG, srcBase, srcAddress, n, dstBase, dstAddress, room);
+            src.position(p + (int) (r >>> 32));
+            dst.position(dst.position() + ((int) r << 1));
+        } finally {
+            BufferStorage.release(src, dst);
+        }
+    }
+
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
         int mark = src.position();
 
@@ -78,6 +153,8 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
             needsMark = false;
         }
         try {
+            encodeBuffers(src, dst);
+            mark = src.position();
             while (src.hasRemaining()) {
                 char c = src.get();
                 if (!Character.isSurrogate(c)) {
