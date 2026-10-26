@@ -155,6 +155,15 @@ inline jlong pack(jint consumed, jint produced) {
   return (static_cast<jlong>(consumed) << 32) | static_cast<jlong>(static_cast<juint>(produced));
 }
 
+// The library reports positions and counts that lie within the ranges it is given. They can
+// lie outside them only if the input changed while it was converted, because its scalar
+// fallbacks look at the input again after a vector pass. Such a result is not used to move
+// a pointer or to count output, so that a racing writer can cost a conversion but not
+// memory outside the buffers or counts that the caller cannot trust.
+inline bool within(size_t count, jint bound) {
+  return count <= static_cast<size_t>(bound);
+}
+
 // The vector kernels assume natural alignment of their element types. Java
 // arrays satisfy it, but a direct buffer view can start at any byte.
 inline bool aligned(const void* address, size_t size) {
@@ -184,16 +193,18 @@ JRT_LEAF(jlong, SimdUTF::decode_utf8_prefix(const jbyte* src, jint length, jbyte
     jint complete = static_cast<jint>(simdutf::trim_partial_utf8(input + consumed, chunk));
     simdutf::result result = simdutf::convert_utf8_to_utf16_with_errors(
         input + consumed, complete, output + produced);
+    if (!within(result.count, complete)) {
+      break;
+    }
     if (result.error != simdutf::SUCCESS) {
       // The library reports where the valid prefix ends, not how much it wrote. Convert
       // the prefix again and take the count from that conversion, so the counts describe
       // the output even if the caller changes the input concurrently.
       jint valid = static_cast<jint>(result.count);
-      jint written = static_cast<jint>(simdutf::convert_utf8_to_utf16(
-          input + consumed, valid, output + produced));
-      if (written > 0) {
+      size_t written = simdutf::convert_utf8_to_utf16(input + consumed, valid, output + produced);
+      if (written > 0 && within(written, valid)) {
         consumed += valid;
-        produced += written;
+        produced += static_cast<jint>(written);
       }
       break;
     }
@@ -215,6 +226,9 @@ JRT_LEAF(jlong, SimdUTF::encode_utf8_prefix(const jbyte* src, jint length, jbyte
   }
   simdutf::full_result result = simdutf::convert_utf16_to_utf8_safe_with_details(
       input, length, reinterpret_cast<char*>(dst), capacity);
+  if (!within(result.input_count, length) || !within(result.output_count, capacity)) {
+    return 0;
+  }
   return pack(static_cast<jint>(result.input_count), static_cast<jint>(result.output_count));
 JRT_END
 
@@ -238,13 +252,18 @@ JRT_LEAF(jlong, SimdUTF::decode_utf32_prefix(const jbyte* src, jint length, jbyt
     simdutf::result result = simdutf::convert_utf32_to_utf16_with_errors(
         input + consumed, chunk, output + produced);
     if (result.error != simdutf::SUCCESS) {
-      jint valid = static_cast<jint>(result.count);
-      jint written = static_cast<jint>(simdutf::convert_utf32_to_utf16(
-          input + consumed, valid, output + produced));
-      if (written > 0) {
-        consumed += valid;
-        produced += written;
+      if (!within(result.count, chunk)) {
+        break;
       }
+      jint valid = static_cast<jint>(result.count);
+      size_t written = simdutf::convert_utf32_to_utf16(input + consumed, valid, output + produced);
+      if (written > 0 && within(written, 2 * valid)) {
+        consumed += valid;
+        produced += static_cast<jint>(written);
+      }
+      break;
+    }
+    if (!within(result.count, 2 * chunk)) {
       break;
     }
     consumed += chunk;
@@ -265,10 +284,13 @@ JRT_LEAF(jlong, SimdUTF::encode_utf32_prefix(const jbyte* src, jint length, jbyt
     return 0;
   }
   simdutf::result result = simdutf::convert_utf16_to_utf32_with_errors(input, chunk, output);
+  if (!within(result.count, chunk)) {
+    return 0;
+  }
   if (result.error != simdutf::SUCCESS) {
     jint valid = static_cast<jint>(result.count);
-    jint written = static_cast<jint>(simdutf::convert_utf16_to_utf32(input, valid, output));
-    return written > 0 ? pack(valid, written) : 0;
+    size_t written = simdutf::convert_utf16_to_utf32(input, valid, output);
+    return written > 0 && within(written, valid) ? pack(valid, static_cast<jint>(written)) : 0;
   }
   return pack(chunk, static_cast<jint>(result.count));
 JRT_END
@@ -288,10 +310,13 @@ JRT_LEAF(jlong, SimdUTF::utf8_to_latin1_prefix(const jbyte* src, jint length, jb
   }
   jint complete = static_cast<jint>(simdutf::trim_partial_utf8(input, chunk));
   simdutf::result result = simdutf::convert_utf8_to_latin1_with_errors(input, complete, output);
+  if (!within(result.count, complete)) {
+    return 0;
+  }
   if (result.error != simdutf::SUCCESS) {
     jint valid = static_cast<jint>(result.count);
-    jint written = static_cast<jint>(simdutf::convert_utf8_to_latin1(input, valid, output));
-    return written > 0 ? pack(valid, written) : 0;
+    size_t written = simdutf::convert_utf8_to_latin1(input, valid, output);
+    return written > 0 && within(written, valid) ? pack(valid, static_cast<jint>(written)) : 0;
   }
   return pack(complete, static_cast<jint>(result.count));
 JRT_END
@@ -313,6 +338,9 @@ jlong copy_utf16_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity
   }
   simdutf::result result = input_big ? simdutf::validate_utf16be_with_errors(input, chunk)
                                      : simdutf::validate_utf16le_with_errors(input, chunk);
+  if (!within(result.count, chunk)) {
+    return 0;
+  }
   jint valid = result.error == simdutf::SUCCESS ? chunk : static_cast<jint>(result.count);
   if (valid == 0) {
     return 0;
@@ -368,8 +396,10 @@ JRT_LEAF(jint, SimdUTF::count_positives(const jbyte* src, jint length))
     }
     return length;
   }
-  return static_cast<jint>(simdutf::validate_ascii_with_errors(
-      reinterpret_cast<const char*>(src), length).count);
+  // The scalar fallback of the library can report a position past the end of a range that
+  // changed meanwhile; a count may be short of the first negative byte but not past the end
+  simdutf::result result = simdutf::validate_ascii_with_errors(reinterpret_cast<const char*>(src), length);
+  return within(result.count, length) ? static_cast<jint>(result.count) : length;
 JRT_END
 
 // StringLatin1.inflate0: Latin-1 bytes to UTF-16 units in native byte order, the order
@@ -408,7 +438,7 @@ JRT_LEAF(jint, SimdUTF::compress_utf16(const jbyte* src, jbyte* dst, jint length
   if (result.error == simdutf::SUCCESS) {
     return length;
   }
-  jint valid = static_cast<jint>(result.count);
+  jint valid = within(result.count, length) ? static_cast<jint>(result.count) : length;
   return static_cast<jint>(simdutf::convert_utf16_to_latin1(
       reinterpret_cast<const char16_t*>(src), valid, reinterpret_cast<char*>(dst)));
 JRT_END
