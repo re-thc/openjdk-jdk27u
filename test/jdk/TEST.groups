@@ -53,6 +53,7 @@ tier1_part3 = \
     :jdk_svc_sanity \
     :jdk_foreign \
     :jdk_vector_sanity \
+    :jdk_xml_serializer \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -333,6 +334,10 @@ jdk_jfr = \
 
 jdk_jpackage = \
     tools/jpackage
+
+# Serializer entity table regression tests
+jdk_xml_serializer = \
+    com/sun/org/apache/xml/internal/serializer
 
 #
 # Catch-all for other areas with a small number of tests
