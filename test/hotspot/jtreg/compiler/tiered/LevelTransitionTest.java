@@ -24,7 +24,7 @@
 /**
  * @test LevelTransitionTest
  * @requires vm.compMode != "Xcomp"
- * @summary Test the correctness of compilation level transitions for different methods
+ * @summary Test compilation level transitions under the legacy opt-out policy
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,7 +33,7 @@
  *        compiler.tiered.LevelTransitionTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseC1L
  *                   -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*

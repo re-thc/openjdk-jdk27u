@@ -246,6 +246,10 @@
           "given timeout in milliseconds")                                  \
           range(0, max_intx)                                                \
                                                                             \
+  product(bool, UseC1L, true,                                                \
+          "Use lean normal-entry full-profile C1 with early call "          \
+          "compilation for eligible methods with loops or monitors")         \
+                                                                            \
   product(intx, TieredStopAtLevel, 4,                                       \
           "Stop at given compilation level")                                \
           range(0, 4)                                                       \
