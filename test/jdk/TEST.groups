@@ -56,7 +56,8 @@ tier1_part3 = \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
-    sun/nio/cs/ISO8859x.java
+    sun/nio/cs/ISO8859x.java \
+    java/time/nonjunit/java/time/format/DayPeriodCache.java
 
 # When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
@@ -78,7 +79,8 @@ tier2_part2 = \
     -sun/nio/cs/ISO8859x.java \
     :jdk_other \
     :jdk_text \
-    :jdk_time
+    :jdk_time \
+    -java/time/nonjunit/java/time/format/DayPeriodCache.java
 
 tier2_part3 = \
     :jdk_net
