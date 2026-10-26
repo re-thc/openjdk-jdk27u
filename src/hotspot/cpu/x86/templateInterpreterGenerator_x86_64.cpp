@@ -24,6 +24,7 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
@@ -31,7 +32,6 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/simdutfSupport.hpp"
-#include "classfile/javaClasses.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->

@@ -22,7 +22,6 @@
  *
  */
 
-#include "runtime/simdutfSupport.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/aotCodeCache.hpp"
@@ -46,6 +45,7 @@
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/macros.hpp"
 
