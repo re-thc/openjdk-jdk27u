@@ -36,10 +36,10 @@ also fall back to Java.
 
 Java routes String inputs of 20–27 characters ending in `Z` or `z` to speedate.
 The library parses the date and time, validates their fields, and consumes the
-complete input. The adapter does not parse the fields or repeat its delimiter
-checks. Library-supported spellings such as a space or underscore between date
-and time, and a comma before fractional seconds, are deliberately accepted when
-the native backend is available. Other routes retain the Java formatter.
+complete input. The adapter classifies two fixed delimiter positions to exclude
+speedate's extra space/underscore separators and comma fractions. It does not
+scan or parse the fields. Case-insensitive `T` and `Z` follow `ISO_INSTANT`.
+Unsupported inputs and all native parse failures use the Java formatter.
 
 HotSpot intrinsifies `InstantParser.parse0` in C2, C1 and the x64/AArch64
 interpreter. Each route calls the same bounded VM leaf without a JNI transition.
@@ -57,10 +57,9 @@ fallback. The startup property above selects Java without entering either native
 route. Speedate validates the bytes on both routes.
 Results use integer epoch seconds and microseconds packed into one native return
 value. Precision overflow is `Error`, so 7–9 fractional digits fall back to Java
-with their nanoseconds intact. Speedate's definite invalid-month and invalid-day
-results throw `DateTimeParseException` directly, without reparsing the input.
-Their error wording and indices may differ from the Java formatter. Other native
-misses use the Java formatter.
+with their nanoseconds intact. Native failures, including invalid calendar dates,
+return a miss so the Java formatter produces its original exception, message and
+error index.
 
 ## Updating
 
@@ -83,12 +82,12 @@ misses use the Java formatter.
 4. Keep the bounded UTC routing, precision overflow set to `Error`, integer epoch
    seconds/microseconds and Rust panic containment. Delegate date/time grammar,
    field ranges and full-input consumption to speedate. Review upstream changes
-   to those semantics and to accepted spellings; do not add a second field parser
+   to those semantics against `ISO_INSTANT`; do not add a second field parser
    to reproduce them. Preserve the borrowed-storage lifetime and bounded UTF-16
    conversion at both the VM leaf and JNI boundary.
 5. Run the adapter's locked Cargo tests, the configure/path fixtures and focused
    java.time tests after building with the normal JDK recipes. Check both String
-   representations, library spellings, date boundaries, pre-epoch fractions,
+   representations, Java grammar and errors, date boundaries, pre-epoch fractions,
    JNI loading/concurrency and Serial/G1/ZGC, with interpreter, C1, C2 and normal
    tiered execution as applicable. Native-enabled platform checks must prove
    actual native hits; Java fallback alone is insufficient. The permanent

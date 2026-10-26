@@ -65,13 +65,11 @@ import jdk.internal.loader.BootLoader;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Internal, bounded library path for Instant.parse. */
 final class InstantParser {
     private static volatile boolean failed;
-    private static final long INVALID_DATE = Long.MIN_VALUE + 1;
 
     private static final class RuntimeConfig {
         // Read only after VM boot. Later System.setProperty changes must not
@@ -141,11 +139,8 @@ final class InstantParser {
                 return null;
             }
             long packed = parse0(text);
-            // Both error tags lie below the packed four-digit-year range.
-            if (packed <= INVALID_DATE) {
-                if (packed == INVALID_DATE) {
-                    throw new DateTimeParseException("Invalid date", text, 0);
-                }
+            // Java retains ownership of parse failures and their error details.
+            if (packed == Long.MIN_VALUE) {
                 return null;
             }
             return Instant.ofEpochSecond(packed >> 20, (packed & 0xfffffL) * 1000L);

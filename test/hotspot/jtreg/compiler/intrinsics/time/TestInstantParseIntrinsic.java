@@ -163,11 +163,11 @@ public class TestInstantParseIntrinsic {
                 Instant.ofEpochSecond(253_402_300_799L, 999_999_000), libraryResult);
         check(WB.getMethodCompilationLevel(fast) == level, "Valid values lost the selected compilation tier");
 
-        String lexical = "1969-12-31_23:59:59,000001z";
-        if (libraryResult) {
-            nativeValue(lexical, Instant.ofEpochSecond(-1, 1000), true);
-        } else {
-            same(invokeFast(lexical), null, "Poisoned JNI must miss");
+        nativeValue("1969-12-31t23:59:59.000001z", Instant.ofEpochSecond(-1, 1000), libraryResult);
+        for (String lexical : new String[] {"1969-12-31 23:59:59Z", "1969-12-31_23:59:59.000001z",
+                "1969-12-31T23:59:59,000001Z", "1900-02-29_00:00:00Z",
+                "1900-02-29T00:00:00,1Z", "1900-02-29T0x:00:00Z"}) {
+            same(invokeFast(lexical), null, "Lexical error must use Java");
             reject(lexical);
         }
         for (String text : new String[] {"1970-01-01T00:00:00.1234567Z",
@@ -207,11 +207,21 @@ public class TestInstantParseIntrinsic {
     }
 
     private static void reject(String text) {
+        DateTimeParseException original;
+        try {
+            DateTimeFormatter.ISO_INSTANT.parse(text, Instant::from);
+            throw new AssertionError("Oracle accepted invalid input: " + text);
+        } catch (DateTimeParseException expected) {
+            original = expected;
+        }
         try {
             Instant.parse(text);
             throw new AssertionError("Accepted invalid input: " + text);
         } catch (DateTimeParseException expected) {
+            same(expected.getClass(), original.getClass(), "Exception type");
             same(expected.getParsedString(), text, "Rejected input");
+            same(expected.getMessage(), original.getMessage(), "Error message");
+            same(expected.getErrorIndex(), original.getErrorIndex(), "Error index");
         }
     }
 

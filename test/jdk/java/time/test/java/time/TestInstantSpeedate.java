@@ -24,7 +24,6 @@
 package test.java.time;
 
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -41,7 +40,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestInstantSpeedate {
@@ -89,7 +87,7 @@ public class TestInstantSpeedate {
     }
 
     @Test
-    public void testNativeValuesAndLibraryGrammar() throws Exception {
+    public void testNativeValuesAndCaseInsensitiveGrammar() throws Exception {
         Method fast = nativeParser();
         if (fast == null) return;
         String[] fractions = {"", ".1", ".12", ".123", ".1234", ".12345", ".123456"};
@@ -104,11 +102,35 @@ public class TestInstantSpeedate {
         }
         nativeValue(fast, "1969-12-31T23:59:59.000001Z", Instant.ofEpochSecond(-1, 1000));
         nativeValue(fast, "1969-12-31T23:59:59.999999Z", Instant.ofEpochSecond(-1, 999_999_000));
-        // These spellings deliberately follow speedate when the native backend is available.
-        for (String text : new String[] {"1969-12-31 23:59:59,000001Z",
-                "1969-12-31_23:59:59.000001z", "1969-12-31t23:59:59.000001Z",
-                "1969-12-31T23:59:59,000001Z"}) {
+        for (String text : new String[] {"1969-12-31t23:59:59.000001Z",
+                "1969-12-31T23:59:59.000001z", "1969-12-31t23:59:59.000001z"}) {
             nativeValue(fast, text, Instant.ofEpochSecond(-1, 1000));
+        }
+    }
+
+    @Test
+    public void testLexicalRejectionsUseJavaErrors() throws Exception {
+        Method fast = nativeParser();
+        for (String date : new String[] {"1969-12-31", "1900-02-29", "2000-13-01"}) {
+            for (char separator : new char[] {'T', 't', ' ', '_'}) {
+                for (String fraction : new String[] {"", ".000001", ",000001"}) {
+                    if (date.equals("1969-12-31") && (separator == 'T' || separator == 't')
+                            && !fraction.startsWith(",")) continue;
+                    for (char zone : new char[] {'Z', 'z'}) {
+                        // Compare exception type, text, message and error index. A date
+                        // error must not hide the formatter's later lexical error.
+                        fallback(fast, date + separator + "23:59:59" + fraction + zone);
+                    }
+                }
+            }
+        }
+        String canonical = "2000-02-29T12:34:56.123456Z";
+        for (int position = 0; position < canonical.length(); position++) {
+            for (char replacement : new char[] {' ', '_', ',', '/', 'x', '\0', '\u0130', '\ud800'}) {
+                char[] chars = canonical.toCharArray();
+                chars[position] = replacement;
+                fallback(fast, new String(chars));
+            }
         }
     }
 
@@ -136,15 +158,9 @@ public class TestInstantSpeedate {
     public void testLibraryMissesAndRecovery() throws Exception {
         Method fast = nativeParser();
         for (String text : new String[] {"1900-02-29T00:00:00Z", "2000-04-31T00:00:00Z",
-                "2000-13-01T00:00:00Z", "2000-00-01T00:00:00Z", "2000-02-00T00:00:00Z"}) {
-            DateTimeParseException rejected = assertThrows(DateTimeParseException.class,
-                    () -> Instant.parse(text));
-            assertEquals(text, rejected.getParsedString());
-            if (fast != null) {
-                InvocationTargetException nativeRejection = assertThrows(InvocationTargetException.class,
-                        () -> fast.invoke(null, text));
-                assertEquals(DateTimeParseException.class, nativeRejection.getCause().getClass());
-            }
+                "2000-13-01T00:00:00Z", "2000-00-01T00:00:00Z", "2000-02-00T00:00:00Z",
+                "1900-02-29T0x:00:00Z", "2000-13-01T00:00:00ZZ"}) {
+            fallback(fast, text);
         }
         for (String text : new String[] {"2000-02-29T24:01:00Z", "2000-02-29T00:60:00Z",
                 "2000-02-29T00:00:61Z", "2000-02-29T0x:00:00Z",

@@ -23,20 +23,23 @@
  * questions.
  */
 
-use speedate::{DateTime, MicrosecondsPrecisionOverflowBehavior, ParseError, TimeConfig};
+use speedate::{DateTime, MicrosecondsPrecisionOverflowBehavior, TimeConfig};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 const MISS: i64 = i64::MIN;
-const INVALID_DATE: i64 = MISS + 1;
 const SCALE: i64 = 1 << 20;
 
 fn parse(bytes: &[u8]) -> i64 {
+    // Speedate also accepts these spellings; ISO_INSTANT does not. Classify
+    // only the two delimiter positions, leaving parsing and validation to it.
+    if matches!(bytes.get(10), Some(b' ' | b'_')) || bytes.get(19) == Some(&b',') {
+        return MISS;
+    }
     let config = TimeConfig::builder()
         .microseconds_precision_overflow_behavior(MicrosecondsPrecisionOverflowBehavior::Error)
         .build();
     let value = match DateTime::parse_bytes_rfc3339_with_config(bytes, &config) {
         Ok(value) => value,
-        Err(ParseError::OutOfRangeMonth | ParseError::OutOfRangeDay) => return INVALID_DATE,
         Err(_) => return MISS,
     };
     // Multiplication rather than a C left shift of a negative signed value.
@@ -70,18 +73,23 @@ mod tests {
         assert_eq!(parse(b"1969-12-31T23:59:59.999999Z"), -SCALE + 999999);
         assert_eq!(parse(b"1970-01-01T00:00:00.000001Z"), 1);
         assert_ne!(parse(b"0000-02-29T00:00:00Z"), MISS);
-        assert_eq!(parse(b"1900-02-29T00:00:00Z"), INVALID_DATE);
-        assert_eq!(parse(b"2000-04-31T00:00:00Z"), INVALID_DATE);
+        assert_eq!(parse(b"1900-02-29T00:00:00Z"), MISS);
+        assert_eq!(parse(b"2000-04-31T00:00:00Z"), MISS);
     }
     #[test]
-    fn library_grammar_and_precision() {
-        for separator in ['T', 't', ' ', '_'] {
-            for point in ['.', ','] {
-                let text = format!("1969-12-31{separator}23:59:59{point}000001Z");
+    fn java_grammar_and_precision() {
+        for separator in ['T', 't'] {
+            for zone in ['Z', 'z'] {
+                let text = format!("1969-12-31{separator}23:59:59.000001{zone}");
                 assert_eq!(parse(text.as_bytes()), -SCALE + 1);
             }
         }
         for bytes in [
+            b"1969-12-31 23:59:59Z".as_slice(),
+            b"1969-12-31_23:59:59.000001Z",
+            b"1969-12-31T23:59:59,000001Z",
+            b"1900-02-29_00:00:00Z",
+            b"1900-02-29T00:00:00,1Z",
             b"2000-01-01T00:00:00.1234567Z".as_slice(),
             b"2000-01-01T00:00:00.Z",
             b"2000-01-01T24:00:00Z",
