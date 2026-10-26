@@ -2242,9 +2242,8 @@ address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInter
                        kind == Interpreter::java_lang_StringLatin1_inflateBytes;
   const int src_shift = (!count && !inflate) ? 1 : 0;
   const int dst_shift = inflate ? 1 : 0;
-  address leaf = count   ? CAST_FROM_FN_PTR(address, SimdUTF::count_positives)
-               : inflate ? CAST_FROM_FN_PTR(address, SimdUTF::inflate_latin1)
-                         : CAST_FROM_FN_PTR(address, SimdUTF::compress_utf16);
+  address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
+  assert(leaf != nullptr, "every string coding kind has a leaf");
   address entry = __ pc();
   Label slow;
   __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
@@ -2291,27 +2290,8 @@ address TemplateInterpreterGenerator::generate_convert_prefix_entry(AbstractInte
   if (!SimdUTF::available()) {
     return nullptr;
   }
-  address leaf = nullptr;
-  switch (kind) {
-  case Interpreter::sun_nio_cs_UTF_8_decodeBulk:
-    leaf = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
-    break;
-  case Interpreter::sun_nio_cs_UTF_8_encodeBulk:
-    leaf = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
-    break;
-  case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulk:
-    leaf = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
-    break;
-  case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulk:
-    leaf = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
-    break;
-  case Interpreter::java_lang_String_utf8ToLatin1Bulk:
-    leaf = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
-    break;
-  default:
-    ShouldNotReachHere();
-    break;
-  }
+  address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
+  assert(leaf != nullptr, "every prefix kind has a leaf");
   address entry = __ pc();
   Label slow;
   __ safepoint_poll(slow, false, false);

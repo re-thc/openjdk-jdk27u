@@ -74,6 +74,33 @@ bool SimdUTF::available() {
   return simdutf_implementation != nullptr;
 }
 
+address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
+#define SIMDUTF_LEAF(ID, FN) \
+  case vmIntrinsics::ID:     \
+    if (name != nullptr) {   \
+      *name = #FN;           \
+    }                        \
+    return CAST_FROM_FN_PTR(address, SimdUTF::FN);
+  switch (id) {
+  SIMDUTF_LEAF(_decodeUTF8Bulk, decode_utf8_prefix)
+  SIMDUTF_LEAF(_encodeUTF8Bulk, encode_utf8_prefix)
+  SIMDUTF_LEAF(_decodeUTF32Bulk, decode_utf32_prefix)
+  SIMDUTF_LEAF(_encodeUTF32Bulk, encode_utf32_prefix)
+  SIMDUTF_LEAF(_utf8ToLatin1Bulk, utf8_to_latin1_prefix)
+  SIMDUTF_LEAF(_countPositives, count_positives)
+  SIMDUTF_LEAF(_inflateStringC, inflate_latin1)
+  SIMDUTF_LEAF(_inflateStringB, inflate_latin1)
+  // The ISO-8859-1 encoders narrow like the UTF-16 compression does
+  SIMDUTF_LEAF(_compressStringC, compress_utf16)
+  SIMDUTF_LEAF(_compressStringB, compress_utf16)
+  SIMDUTF_LEAF(_encodeISOArray, compress_utf16)
+  SIMDUTF_LEAF(_encodeByteISOArray, compress_utf16)
+  default:
+    return nullptr;
+  }
+#undef SIMDUTF_LEAF
+}
+
 // String owns the immutable Latin1 input and allocates worst-case UTF-8 room.
 // Intrinsic callers bound this non-safepointing leaf to one MiB of source bytes.
 JRT_LEAF(jint, SimdUTF::encode_latin1_utf8(const jbyte* src, jint length, jbyte* dst))
@@ -154,9 +181,16 @@ JRT_LEAF(jlong, SimdUTF::decode_utf8_prefix(const jbyte* src, jint length, jbyte
     simdutf::result result = simdutf::convert_utf8_to_utf16_with_errors(
         input + consumed, complete, output + produced);
     if (result.error != simdutf::SUCCESS) {
+      // The library reports where the valid prefix ends, not how much it wrote. Convert
+      // the prefix again and take the count from that conversion, so the counts describe
+      // the output even if the caller changes the input concurrently.
       jint valid = static_cast<jint>(result.count);
-      produced += static_cast<jint>(simdutf::utf16_length_from_utf8(input + consumed, valid));
-      consumed += valid;
+      jint written = static_cast<jint>(simdutf::convert_utf8_to_utf16(
+          input + consumed, valid, output + produced));
+      if (written > 0) {
+        consumed += valid;
+        produced += written;
+      }
       break;
     }
     consumed += complete;
@@ -201,8 +235,12 @@ JRT_LEAF(jlong, SimdUTF::decode_utf32_prefix(const jbyte* src, jint length, jbyt
         input + consumed, chunk, output + produced);
     if (result.error != simdutf::SUCCESS) {
       jint valid = static_cast<jint>(result.count);
-      produced += static_cast<jint>(simdutf::utf16_length_from_utf32(input + consumed, valid));
-      consumed += valid;
+      jint written = static_cast<jint>(simdutf::convert_utf32_to_utf16(
+          input + consumed, valid, output + produced));
+      if (written > 0) {
+        consumed += valid;
+        produced += written;
+      }
       break;
     }
     consumed += chunk;
@@ -225,7 +263,8 @@ JRT_LEAF(jlong, SimdUTF::encode_utf32_prefix(const jbyte* src, jint length, jbyt
   simdutf::result result = simdutf::convert_utf16_to_utf32_with_errors(input, chunk, output);
   if (result.error != simdutf::SUCCESS) {
     jint valid = static_cast<jint>(result.count);
-    return pack(valid, static_cast<jint>(simdutf::utf32_length_from_utf16(input, valid)));
+    jint written = static_cast<jint>(simdutf::convert_utf16_to_utf32(input, valid, output));
+    return written > 0 ? pack(valid, written) : 0;
   }
   return pack(chunk, static_cast<jint>(result.count));
 JRT_END
@@ -247,7 +286,8 @@ JRT_LEAF(jlong, SimdUTF::utf8_to_latin1_prefix(const jbyte* src, jint length, jb
   simdutf::result result = simdutf::convert_utf8_to_latin1_with_errors(input, complete, output);
   if (result.error != simdutf::SUCCESS) {
     jint valid = static_cast<jint>(result.count);
-    return pack(valid, static_cast<jint>(simdutf::convert_utf8_to_latin1(input, valid, output)));
+    jint written = static_cast<jint>(simdutf::convert_utf8_to_latin1(input, valid, output));
+    return written > 0 ? pack(valid, written) : 0;
   }
   return pack(complete, static_cast<jint>(result.count));
 JRT_END

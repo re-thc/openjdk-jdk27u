@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_SIMDUTFSUPPORT_HPP
 #define SHARE_RUNTIME_SIMDUTFSUPPORT_HPP
 
+#include "classfile/vmIntrinsics.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -32,15 +33,22 @@ class SimdUTF : AllStatic {
  public:
   static void initialize();
   static bool available();
+  // The leaf behind a prefix or String coding intrinsic, and its name for runtime calls,
+  // or nullptr for any other intrinsic.
+  static address leaf_for(vmIntrinsics::ID id, const char** name = nullptr);
   static jint encode_latin1_utf8(const jbyte* src, jint length, jbyte* dst);
   static jint encode_utf16_utf8(const jbyte* src, jint length, jbyte* dst);
   static jint decode_utf8_utf16(const jbyte* src, jint length, jbyte* dst);
   static jint index_of_latin1(const jbyte* src, jint length, jint ch);
   static jint index_of_utf16(const jbyte* src, jint length, jint ch);
-  // Charset coder leaves. Each converts the longest prefix of complete, valid
-  // input whose output fits the capacity, and returns the consumed source units
-  // in the high word and the produced destination units in the low word. The
-  // caller's Java loop handles whatever follows, including malformed input.
+  // Charset coder leaves. Each converts a prefix of complete, valid input whose
+  // output fits the capacity, and returns the consumed source units in the high
+  // word and the produced destination units in the low word, or 0 if it declines.
+  // A call may stop short of the longest prefix, for example below a few units
+  // from the end or after one bounded chunk, so callers call again until it
+  // makes no progress. The caller's Java loop handles whatever follows,
+  // including malformed input. The counts are consistent with the output even
+  // if the caller changes the input concurrently.
   static jlong decode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong encode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong decode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);

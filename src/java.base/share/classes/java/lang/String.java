@@ -611,7 +611,9 @@ public final class String
             if (length - dp >= UTF8_BULK_MIN && (bytes[offset + dp] & 0xfe) == 0xc2) {
                 // The text continues with Latin-1 characters. Convert them from the
                 // caller's array into the new copy, then copy what follows, so that the
-                // loop below and the UTF-16 decode read only the private copy.
+                // loop below and the UTF-16 decode read only the private copy. If another
+                // thread changes the array meanwhile, the result mixes old and new bytes,
+                // as copying the array does, but the characters converted are never lost.
                 latin1 = new byte[length];
                 System.arraycopy(bytes, offset, latin1, 0, dp);
                 long converted = utf8ToLatin1(bytes, offset + dp, offset + length, latin1, dp);

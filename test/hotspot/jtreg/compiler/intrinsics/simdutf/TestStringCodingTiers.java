@@ -27,6 +27,7 @@
  *          Java loops in the interpreter, C1 and C2, and the interpreter and C1 run them as
  *          leaves where the C2 stubs do not exist
  * @requires (os.arch == "aarch64") | (os.arch == "amd64" & vm.cpu.features ~= ".*sse4.2.*")
+ * @requires vm.compiler1.enabled & vm.compMode != "Xint"
  * @library /test/lib
  * @modules java.base/java.lang:open
  *          java.base/sun.nio.cs:open
@@ -374,27 +375,56 @@ class StringCodingWork {
             int n = 1 << 18;
             char[] dc = new char[n];
             byte[] db = new byte[2 * n];
-            long t = System.nanoTime();
-            sink += (int) count.invoke(ascii, 0, n);
-            System.out.println("countPositives " + (System.nanoTime() - t));
-            t = System.nanoTime();
-            inflateC.invoke(ascii, 0, dc, 0, n);
-            System.out.println("inflateChars " + (System.nanoTime() - t));
-            t = System.nanoTime();
-            inflateB.invoke(ascii, 0, db, 0, n);
-            System.out.println("inflateBytes " + (System.nanoTime() - t));
-            t = System.nanoTime();
-            sink += (int) compressC.invoke(chars, 0, latin1, 0, n);
-            System.out.println("compressChars " + (System.nanoTime() - t));
-            t = System.nanoTime();
-            sink += (int) compressB.invoke(utf16, 0, latin1, 0, n);
-            System.out.println("compressBytes " + (System.nanoTime() - t));
-            t = System.nanoTime();
-            sink += (int) isoC.invoke(chars, 0, latin1, 0, n);
-            System.out.println("isoChars " + (System.nanoTime() - t));
-            t = System.nanoTime();
-            sink += (int) isoB.invoke(utf16, 0, latin1, 0, n);
-            System.out.println("isoBytes " + (System.nanoTime() - t));
+            // The best of several runs, so that a preemption does not decide the comparison
+            long best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                sink += (int) count.invoke(ascii, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("countPositives " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                inflateC.invoke(ascii, 0, dc, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("inflateChars " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                inflateB.invoke(ascii, 0, db, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("inflateBytes " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                sink += (int) compressC.invoke(chars, 0, latin1, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("compressChars " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                sink += (int) compressB.invoke(utf16, 0, latin1, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("compressBytes " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                sink += (int) isoC.invoke(chars, 0, latin1, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("isoChars " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                sink += (int) isoB.invoke(utf16, 0, latin1, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("isoBytes " + best);
         } else {
             // Callers of each boundary, hot enough to be compiled and inlined
             String text = "héllo wide world ".repeat(16);

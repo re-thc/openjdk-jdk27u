@@ -26,6 +26,7 @@
  * @summary The Charset coder bulk conversions are intrinsics in the interpreter, C1 and C2
  *          and decline when the intrinsics are disabled
  * @requires (os.arch == "aarch64") | (os.arch == "amd64" & vm.cpu.features ~= ".*sse4.2.*")
+ * @requires vm.compiler1.enabled & vm.compMode != "Xint"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.base/sun.nio.cs:open

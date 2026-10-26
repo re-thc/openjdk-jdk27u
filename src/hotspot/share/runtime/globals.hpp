@@ -235,10 +235,12 @@ const int ObjectAlignmentInBytes = 8;
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
   product(bool, UseSIMDUTFIntrinsics, true,                                 \
-          "Use simdutf for bulk UTF and Base64 operations")                 \
+          "Use simdutf for text conversion, Base64 and character search")   \
                                                                             \
   product(intx, SIMDUTFMinLength, 256,                                      \
-          "Minimum input elements for simdutf acceleration")                \
+          "Minimum input length for the simdutf String conversion, Base64 " \
+          "and character search intrinsics; the Charset coders and the "    \
+          "String coding leaves use fixed lengths")                         \
           range(1, max_jint)                                                \
                                                                             \
   product(bool, UseBASE64Intrinsics, false,                                 \

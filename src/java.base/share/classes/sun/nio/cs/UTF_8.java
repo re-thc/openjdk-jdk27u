@@ -89,8 +89,9 @@ public final class UTF_8 extends Unicode {
 
     // Ranges shorter than BULK_MIN stay in the Java loops. The intrinsics convert at
     // most BULK_MAX source elements per call, so the loops below call them repeatedly.
-    private static final int BULK_MIN = 32;
-    private static final int BULK_MAX = 1 << 20;
+    private static final int BULK_MIN = BufferStorage.BULK_MIN;
+    private static final int BULK_MAX = BufferStorage.BULK_MAX;
+    private static final int BULK_TAIL = BufferStorage.BULK_TAIL;
 
     private static class Decoder extends CharsetDecoder {
 
@@ -232,6 +233,33 @@ public final class UTF_8 extends Unicode {
             return 0L;
         }
 
+        // Whether converting in bulk would make progress at an element, which is so for ASCII
+        // and for a lead byte with its continuation byte. Elements for which it does not are
+        // left to the loops, which report them without a call that fails at its first byte.
+        private static boolean mayStart(int b1, int b2) {
+            int lead = b1 & 0xff;
+            return b1 >= 0 || (lead >= 0xc2 && lead <= 0xf4 && (b2 & 0xc0) == 0x80);
+        }
+
+        // Converts prefixes of the n bytes at srcAddress until one makes no progress, and
+        // returns the consumed bytes in the high word and the produced chars in the low word.
+        private static long decodeRun(Object src, long srcAddress, int n,
+                                      Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = decodeBulk(src, srcAddress + sp, chunk, dst, dstAddress + ((long) dp << 1), room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
         // The buffer loop's counterpart of the array loop's bulk step: direct buffers,
         // and heap buffers without an accessible array, are advanced through
         // their storage before the remainder is decoded element by element.
@@ -239,6 +267,7 @@ public final class UTF_8 extends Unicode {
             int n = src.remaining();
             int room = dst.remaining();
             if (n < BULK_MIN || room < BULK_MIN
+                    || !mayStart(src.get(src.position()), src.get(src.position() + 1))
                     || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
                 return;
             }
@@ -251,20 +280,9 @@ public final class UTF_8 extends Unicode {
             }
             BufferStorage.acquire(src, dst);
             try {
-                int sp = 0;
-                int dp = 0;
-                while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
-                    long r = decodeBulk(srcBase, srcAddress + sp, Math.min(n - sp, BULK_MAX),
-                                        dstBase, dstAddress + ((long) dp << 1), room - dp);
-                    int consumed = (int) (r >>> 32);
-                    if (consumed == 0) {
-                        break;
-                    }
-                    sp += consumed;
-                    dp += (int) r;
-                }
-                src.position(src.position() + sp);
-                dst.position(dst.position() + dp);
+                long r = decodeRun(srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + (int) (r >>> 32));
+                dst.position(dst.position() + (int) r);
             } finally {
                 BufferStorage.release(src, dst);
             }
@@ -288,14 +306,10 @@ public final class UTF_8 extends Unicode {
             sp += n;
             dp += n;
 
-            while (sl - sp >= BULK_MIN && dl - dp >= BULK_MIN) {
-                long r = decodeBulk(sa, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, Math.min(sl - sp, BULK_MAX),
-                                    da, Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) dp << 1), dl - dp);
-                int consumed = (int) (r >>> 32);
-                if (consumed == 0) {
-                    break;
-                }
-                sp += consumed;
+            if (sl - sp >= BULK_MIN && dl - dp >= BULK_MIN && mayStart(sa[sp], sa[sp + 1])) {
+                long r = decodeRun(sa, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, sl - sp,
+                                   da, Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) dp << 1), dl - dp);
+                sp += (int) (r >>> 32);
                 dp += (int) r;
             }
 
@@ -524,11 +538,39 @@ public final class UTF_8 extends Unicode {
             return 0L;
         }
 
+        // Whether converting in bulk would make progress at a char, which is so unless it is
+        // a surrogate that does not begin a pair. Such chars are left to the loops, which
+        // report them without a call that fails at its first char.
+        private static boolean mayStart(char c, char next) {
+            return !Character.isSurrogate(c)
+                    || (Character.isHighSurrogate(c) && Character.isLowSurrogate(next));
+        }
+
+        // Converts prefixes of the n chars at srcAddress until one makes no progress, and
+        // returns the consumed chars in the high word and the produced bytes in the low word.
+        private static long encodeRun(Object src, long srcAddress, int n,
+                                      Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = encodeBulk(src, srcAddress + ((long) sp << 1), chunk, dst, dstAddress + dp, room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
         // The buffer loop's counterpart of the array loop's bulk step.
         private static void encodeBuffers(CharBuffer src, ByteBuffer dst) {
             int n = src.remaining();
             int room = dst.remaining();
             if (n < BULK_MIN || room < BULK_MIN
+                    || !mayStart(src.get(src.position()), src.get(src.position() + 1))
                     || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
                 return;
             }
@@ -541,20 +583,9 @@ public final class UTF_8 extends Unicode {
             }
             BufferStorage.acquire(src, dst);
             try {
-                int sp = 0;
-                int dp = 0;
-                while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
-                    long r = encodeBulk(srcBase, srcAddress + ((long) sp << 1), Math.min(n - sp, BULK_MAX),
-                                        dstBase, dstAddress + dp, room - dp);
-                    int consumed = (int) (r >>> 32);
-                    if (consumed == 0) {
-                        break;
-                    }
-                    sp += consumed;
-                    dp += (int) r;
-                }
-                src.position(src.position() + sp);
-                dst.position(dst.position() + dp);
+                long r = encodeRun(srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + (int) (r >>> 32));
+                dst.position(dst.position() + (int) r);
             } finally {
                 BufferStorage.release(src, dst);
             }
@@ -576,14 +607,10 @@ public final class UTF_8 extends Unicode {
             sp += n;
             dp += n;
 
-            while (sl - sp >= BULK_MIN && dl - dp >= BULK_MIN) {
-                long r = encodeBulk(sa, Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) sp << 1), Math.min(sl - sp, BULK_MAX),
-                                    da, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dl - dp);
-                int consumed = (int) (r >>> 32);
-                if (consumed == 0) {
-                    break;
-                }
-                sp += consumed;
+            if (sl - sp >= BULK_MIN && dl - dp >= BULK_MIN && mayStart(sa[sp], sa[sp + 1])) {
+                long r = encodeRun(sa, Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) sp << 1), sl - sp,
+                                   da, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dl - dp);
+                sp += (int) (r >>> 32);
                 dp += (int) r;
             }
 

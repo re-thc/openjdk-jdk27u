@@ -150,6 +150,17 @@ public class TestUTF8Latin1Decode {
                 check(latin1Text(random, chars, 0, false), 0, chars);
             }
         }
+        // More than the bulk conversion does in one call, which is converted in several
+        if (!light) {
+            byte[] big = latin1Text(random, 1_600_000, 3, true);
+            check(big, 0, big.length);
+            byte[] bigEnd = latin1Text(random, 1_600_000, 3, true);
+            byte[] withEuro = Arrays.copyOf(bigEnd, bigEnd.length + 3);
+            withEuro[bigEnd.length] = (byte) 0xe2;
+            withEuro[bigEnd.length + 1] = (byte) 0x82;
+            withEuro[bigEnd.length + 2] = (byte) 0xac;
+            check(withEuro, 0, withEuro.length);
+        }
         // The decoder chooses its path from the first non-ASCII byte and the range length
         for (String text : new String[]{"é".repeat(500), "Â".repeat(500), "Ā".repeat(500),
                                         "a".repeat(100) + "ÿ" + "€".repeat(100), "😀".repeat(100)}) {

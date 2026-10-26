@@ -41,8 +41,9 @@ class UTF_32Coder {
     // so a big-endian coder keeps the loops below. Ranges shorter than BULK_MIN
     // stay in the loops, and the intrinsics convert at most BULK_MAX units per call.
     private static final boolean NATIVE_LITTLE = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
-    private static final int BULK_MIN = 32;
-    private static final int BULK_MAX = 1 << 20;
+    private static final int BULK_MIN = BufferStorage.BULK_MIN;
+    private static final int BULK_MAX = BufferStorage.BULK_MAX;
+    private static final int BULK_TAIL = BufferStorage.BULK_TAIL;
 
     protected static final int BOM_BIG = 0xFEFF;
     protected static final int BOM_LITTLE = 0xFFFE0000;
@@ -72,11 +73,33 @@ class UTF_32Coder {
             return 0L;
         }
 
-        // Advances both buffers over a converted prefix of little-endian code points.
+        // Converts prefixes of the n code points at srcAddress until one makes no progress,
+        // and returns the consumed code points in the high word and the produced chars in
+        // the low word.
+        private static long decodeRun(Object src, long srcAddress, int n,
+                                      Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = decodeBulk(src, srcAddress + ((long) sp << 2), chunk,
+                                    dst, dstAddress + ((long) dp << 1), room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
+        // Advances both buffers over a converted prefix of little-endian code points,
+        // unless the first code point is one that the loop below must decide on.
         private static void decodeBuffers(ByteBuffer src, CharBuffer dst) {
             int n = src.remaining() >> 2;
             int room = dst.remaining();
-            if (!NATIVE_LITTLE || n < BULK_MIN || room < BULK_MIN
+            if (!NATIVE_LITTLE || n < BULK_MIN || room < BULK_MIN || !isScalarValue(src)
                     || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
                 return;
             }
@@ -89,23 +112,22 @@ class UTF_32Coder {
             }
             BufferStorage.acquire(src, dst);
             try {
-                int sp = 0;
-                int dp = 0;
-                while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
-                    long r = decodeBulk(srcBase, srcAddress + ((long) sp << 2), Math.min(n - sp, BULK_MAX),
-                                        dstBase, dstAddress + ((long) dp << 1), room - dp);
-                    int consumed = (int) (r >>> 32);
-                    if (consumed == 0) {
-                        break;
-                    }
-                    sp += consumed;
-                    dp += (int) r;
-                }
-                src.position(src.position() + (sp << 2));
-                dst.position(dst.position() + dp);
+                long r = decodeRun(srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + ((int) (r >>> 32) << 2));
+                dst.position(dst.position() + (int) r);
             } finally {
                 BufferStorage.release(src, dst);
             }
+        }
+
+        // Whether the little-endian code point at the position is a Unicode scalar value, so
+        // that converting in bulk makes progress. Surrogate code points and values above
+        // U+10FFFF are left to the loop.
+        private static boolean isScalarValue(ByteBuffer src) {
+            int p = src.position();
+            int cp = (src.get(p) & 0xff) | ((src.get(p + 1) & 0xff) << 8)
+                   | ((src.get(p + 2) & 0xff) << 16) | ((src.get(p + 3) & 0xff) << 24);
+            return cp >= 0 && cp <= 0x10ffff && (cp < 0xd800 || cp > 0xdfff);
         }
 
         private int getCP(ByteBuffer src) {
@@ -156,6 +178,11 @@ class UTF_32Coder {
                             return CoderResult.OVERFLOW;
                         mark += 4;
                         dst.put((char) cp);
+                        if (currentBO == LITTLE && Character.isSurrogate((char) cp)) {
+                            // A surrogate code point is passed through, so convert the rest in bulk
+                            decodeBuffers(src, dst);
+                            mark = src.position();
+                        }
                     } else if (Character.isValidCodePoint(cp)) {
                         if (dst.remaining() < 2)
                             return CoderResult.OVERFLOW;
@@ -206,11 +233,34 @@ class UTF_32Coder {
             return 0L;
         }
 
-        // Advances both buffers over a converted prefix, written as little-endian code points.
+        // Converts prefixes of the n chars at srcAddress until one makes no progress, and
+        // returns the consumed chars in the high word and the produced code points in
+        // the low word.
+        private static long encodeRun(Object src, long srcAddress, int n,
+                                      Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = encodeBulk(src, srcAddress + ((long) sp << 1), chunk,
+                                    dst, dstAddress + ((long) dp << 2), room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
+        // Advances both buffers over a converted prefix, written as little-endian code
+        // points, unless the first char is a surrogate that does not begin a pair.
         private static void encodeBuffers(CharBuffer src, ByteBuffer dst) {
             int n = src.remaining();
             int room = dst.remaining() >> 2;
             if (!NATIVE_LITTLE || n < BULK_MIN || room < BULK_MIN
+                    || !startsScalarValue(src.get(src.position()), src.get(src.position() + 1))
                     || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
                 return;
             }
@@ -223,23 +273,17 @@ class UTF_32Coder {
             }
             BufferStorage.acquire(src, dst);
             try {
-                int sp = 0;
-                int dp = 0;
-                while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
-                    long r = encodeBulk(srcBase, srcAddress + ((long) sp << 1), Math.min(n - sp, BULK_MAX),
-                                        dstBase, dstAddress + ((long) dp << 2), room - dp);
-                    int consumed = (int) (r >>> 32);
-                    if (consumed == 0) {
-                        break;
-                    }
-                    sp += consumed;
-                    dp += (int) r;
-                }
-                src.position(src.position() + sp);
-                dst.position(dst.position() + (dp << 2));
+                long r = encodeRun(srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + (int) (r >>> 32));
+                dst.position(dst.position() + ((int) r << 2));
             } finally {
                 BufferStorage.release(src, dst);
             }
+        }
+
+        private static boolean startsScalarValue(char c, char next) {
+            return !Character.isSurrogate(c)
+                    || (Character.isHighSurrogate(c) && Character.isLowSurrogate(next));
         }
 
         protected Encoder(Charset cs, int byteOrder, boolean doBOM) {

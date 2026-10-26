@@ -44,6 +44,24 @@ final class BufferStorage {
 
     private BufferStorage() { }
 
+    // Thresholds of the bulk conversion steps of the coders, which hand ranges of buffers to
+    // intrinsics that convert a prefix and leave the rest to the Java loops.
+
+    /** Ranges shorter than this stay in the Java loops. */
+    static final int BULK_MIN = 32;
+
+    /**
+     * The most source elements one step is given. It bounds the time a step runs without
+     * polling for a safepoint, so the loops call it repeatedly for longer ranges.
+     */
+    static final int BULK_MAX = 1 << 20;
+
+    /**
+     * A step that leaves at least this many elements of its range unconverted has stopped at
+     * an element it declines, and calling it again would stop there again.
+     */
+    static final int BULK_TAIL = 16;
+
     /**
      * Returns true if the buffer's elements are in memory the intrinsic can access
      * directly: a heap array, or native memory that is not a mapped file.

@@ -9653,32 +9653,10 @@ bool LibraryCallKit::inline_convert_prefix(vmIntrinsics::ID id) {
   Node* dst_capacity = argument(7);
   Node* src_address = make_unsafe_address(src, src_offset, T_BYTE);
   Node* dst_address = make_unsafe_address(dst, dst_offset, T_BYTE);
-  address entry = nullptr;
   const char* name = nullptr;
-  switch (id) {
-  case vmIntrinsics::_decodeUTF8Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
-    name = "decode_utf8_prefix";
-    break;
-  case vmIntrinsics::_encodeUTF8Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
-    name = "encode_utf8_prefix";
-    break;
-  case vmIntrinsics::_decodeUTF32Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
-    name = "decode_utf32_prefix";
-    break;
-  case vmIntrinsics::_encodeUTF32Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
-    name = "encode_utf32_prefix";
-    break;
-  case vmIntrinsics::_utf8ToLatin1Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
-    name = "utf8_to_latin1_prefix";
-    break;
-  default:
+  address entry = SimdUTF::leaf_for(id, &name);
+  if (entry == nullptr) {
     fatal_unexpected_iid(id);
-    break;
   }
   const Type** fields = TypeTuple::fields(4);
   fields[TypeFunc::Parms] = TypePtr::NOTNULL;

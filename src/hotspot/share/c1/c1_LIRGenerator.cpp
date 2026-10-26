@@ -2944,27 +2944,8 @@ void LIRGenerator::do_convertPrefix(Intrinsic* x) {
   __ move(src_length.result(), cc->at(1));
   __ move(dst_pointer, cc->at(2));
   __ move(dst_capacity.result(), cc->at(3));
-  address entry = nullptr;
-  switch (x->id()) {
-  case vmIntrinsics::_decodeUTF8Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
-    break;
-  case vmIntrinsics::_encodeUTF8Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
-    break;
-  case vmIntrinsics::_decodeUTF32Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
-    break;
-  case vmIntrinsics::_encodeUTF32Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
-    break;
-  case vmIntrinsics::_utf8ToLatin1Bulk:
-    entry = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
-    break;
-  default:
-    ShouldNotReachHere();
-    break;
-  }
+  address entry = SimdUTF::leaf_for(x->id());
+  assert(entry != nullptr, "every prefix intrinsic has a leaf");
   LIR_Opr result_reg = result_register_for(x->type());
   __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
   __ move(result_reg, result);
@@ -3020,9 +3001,8 @@ void LIRGenerator::do_stringCoding(Intrinsic* x) {
     __ move(dst_address, cc->at(1));
     __ move(length.result(), cc->at(2));
   }
-  address entry = count   ? CAST_FROM_FN_PTR(address, SimdUTF::count_positives)
-                : inflate ? CAST_FROM_FN_PTR(address, SimdUTF::inflate_latin1)
-                          : CAST_FROM_FN_PTR(address, SimdUTF::compress_utf16);
+  address entry = SimdUTF::leaf_for(x->id());
+  assert(entry != nullptr, "every string coding intrinsic has a leaf");
   LIR_Opr result_reg = x->type() == voidType ? LIR_OprFact::illegalOpr : result_register_for(x->type());
   __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
   if (x->type() != voidType) {
