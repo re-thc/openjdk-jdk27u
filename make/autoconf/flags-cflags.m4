@@ -804,12 +804,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       $1_CPU_BASELINE_FLAGS="-arch:AVX2" ;;
   esac
   if test -n "${$1_CPU_BASELINE_FLAGS}"; then
-    # Keep user options from silently weakening the native binary requirements.
-    # Positive ISA extensions remain available; replacing the CPU profile does not.
+    # Reject direct CPU profile replacements. Individual feature and tuning
+    # options remain caller-owned; weakening the baseline is unsupported.
     for baseline_option in ${$2EXTRA_CFLAGS} ${$2EXTRA_CXXFLAGS} ${$2EXTRA_ASFLAGS}; do
       case "$baseline_option" in
-        -march=* | -mcpu=* | -arch:* | /arch:* | -mno-* | -m32 | -mx32 | -mgeneral-regs-only)
-          AC_MSG_ERROR([CPU baseline override is unsupported: $baseline_option. Remove architecture, ABI and feature-disabling options from extra C/C++/assembler flags.]) ;;
+        -march=* | -mcpu=* | -arch:* | /arch:* | -m32 | -mx32 | -mgeneral-regs-only)
+          AC_MSG_ERROR([CPU baseline override is unsupported: $baseline_option. Remove architecture, ABI and general-registers-only options from extra C/C++/assembler flags.]) ;;
       esac
     done
   fi
