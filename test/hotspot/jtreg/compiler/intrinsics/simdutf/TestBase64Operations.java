@@ -30,6 +30,14 @@
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestBase64Operations
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestBase64Operations
  */
+
+/*
+ * @test id=avx2
+ * @summary AVX2 Base64 block stores preserve the destination suffix
+ * @requires vm.compiler2.enabled & os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*"
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 TestBase64Operations
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:UseAVX=2 -XX:-UseSIMDUTFIntrinsics TestBase64Operations
+ */
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -51,7 +59,8 @@ public class TestBase64Operations {
             if (written != input.length || !Arrays.equals(input, Arrays.copyOf(output, written)))
                 throw new AssertionError("destination result");
             for (int j = written; j < output.length; j++) if (output[j] != (byte)0x55)
-                throw new AssertionError("destination suffix");
+                throw new AssertionError("destination suffix: length=" + input.length +
+                        " written=" + written + " at=" + j);
             byte[] alias = expected.clone();
             if (decoder.decode(alias, alias) != input.length ||
                     !Arrays.equals(input, Arrays.copyOf(alias, input.length))) throw new AssertionError("alias");
@@ -82,7 +91,10 @@ public class TestBase64Operations {
     }
     public static void main(String[] args) throws Exception {
         Random random = new Random(4261);
-        for (int length : new int[]{0,1,2,3,31,255,256,257,1023,1024,1025,8192,786432,786435,1048576,1048577,1048578}) {
+        // AVX2 consumes 32 encoded characters per iteration. Padded inputs of
+        // 31 + 24*k bytes expose stores beyond the final decoded byte.
+        for (int length : new int[]{0,1,2,3,30,31,32,33,54,55,56,57,78,79,80,81,
+                255,256,257,1023,1024,1025,8192,786432,786435,1048576,1048577,1048578}) {
             byte[] input = new byte[length]; random.nextBytes(input);
             check(input, Base64.getEncoder(), Base64.getDecoder());
             check(input, Base64.getEncoder().withoutPadding(), Base64.getDecoder());

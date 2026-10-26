@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +41,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "stubGenerator_x86_64.hpp"
 #ifdef COMPILER2
-#include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"
+#include "opto/runtime.hpp"
 #endif
 
 // For a more detailed description of the stub routine structure
@@ -3368,8 +3369,11 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ vpmaddwd(xmm0, xmm0, xmm6, Assembler::AVX_256bit);
     __ vpshufb(xmm0, xmm0, xmm13, Assembler::AVX_256bit);
     __ vpermd(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
-    // Store the output bytes
-    __ vmovdqu(Address(dest, dp, Address::times_1, 0), xmm0);
+    // Store exactly 24 decoded bytes. The remaining input may end with
+    // padding, so it need not produce enough bytes to cover a wide store.
+    __ vmovdqu(Address(dest, dp, Address::times_1, 0), xmm0, Assembler::AVX_128bit);
+    __ vextracti128(xmm1, xmm0, 1);
+    __ movq(Address(dest, dp, Address::times_1, 16), xmm1);
     __ addptr(source, 0x20);
     __ addptr(dest, 0x18);
     __ subl(length, 0x20);
