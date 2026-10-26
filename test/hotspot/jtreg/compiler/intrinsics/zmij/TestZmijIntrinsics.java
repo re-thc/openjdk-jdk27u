@@ -46,7 +46,6 @@ public class TestZmijIntrinsics {
         boolean expected = Boolean.parseBoolean(args[0]);
         boolean expectedFloatUTF16 = args.length > 1 ? Boolean.parseBoolean(args[1]) : expected;
         WhiteBox wb = WhiteBox.getWhiteBox();
-        Class<?> zmij = Class.forName("jdk.internal.math.Zmij");
         Method floatLatin1 = FloatToDecimal.class.getDeclaredMethod("putDecimalLatin1", byte[].class, int.class, float.class);
         Method floatUTF16 = FloatToDecimal.class.getDeclaredMethod("putDecimalUTF16", byte[].class, int.class, float.class);
         Method[] methods = {
@@ -55,7 +54,7 @@ public class TestZmijIntrinsics {
             DoubleToDecimal.class.getDeclaredMethod("putDecimalLatin1", byte[].class, int.class, double.class),
             DoubleToDecimal.class.getDeclaredMethod("putDecimalUTF16", byte[].class, int.class, double.class),
             FloatToDecimal.class.getDeclaredMethod("toDecimalLatin1", byte[].class, int.class, float.class),
-            zmij.getDeclaredMethod("decimal0", long.class)
+            DoubleToDecimal.class.getDeclaredMethod("decimal0", long.class)
         };
         for (Method method : methods) {
             for (int level : new int[] {1, 4}) {

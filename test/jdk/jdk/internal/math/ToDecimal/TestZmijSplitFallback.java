@@ -23,25 +23,24 @@
 
 /*
  * @test
- * @summary Preserve split precision metadata and null-holder behavior across native and Java routes
+ * @summary Preserve split precision metadata across native and Java routes
  * @modules java.base/jdk.internal.math:+open
  * @run main/othervm TestZmijSplitFallback
  * @run main/othervm -Xint TestZmijSplitFallback
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestZmijSplitFallback
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestZmijSplitFallback
- * @run main/othervm -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xint -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=2 -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=3 -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseZmijIntrinsics TestZmijSplitFallback
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback
+ * @run main/othervm -XX:-UseZmijIntrinsics TestZmijSplitFallback java
+ * @run main/othervm -Xint -XX:-UseZmijIntrinsics TestZmijSplitFallback java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseZmijIntrinsics TestZmijSplitFallback java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=2 -XX:-UseZmijIntrinsics TestZmijSplitFallback java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=3 -XX:-UseZmijIntrinsics TestZmijSplitFallback java
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseZmijIntrinsics TestZmijSplitFallback java
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback java
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback java
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_decimalZmij,_floatToDecimalLatin1,_putDoubleDecimalLatin1,_putDoubleDecimalUTF16 TestZmijSplitFallback java
  */
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +51,7 @@ import jdk.internal.math.FormattedFPDecimal;
 
 public class TestZmijSplitFallback {
     static final Constructor<FormattedFPDecimal> CTOR;
-    static final Method JAVA, NATIVE;
+    static final Method JAVA;
     static final MessageDigest DIGEST;
     static int checked;
     static {
@@ -62,9 +61,6 @@ public class TestZmijSplitFallback {
             JAVA = DoubleToDecimal.class.getDeclaredMethod("toDecimalJava", byte[].class,
                     int.class, double.class, FormattedFPDecimal.class);
             JAVA.setAccessible(true);
-            NATIVE = Class.forName("jdk.internal.math.Zmij").getDeclaredMethod("split",
-                    double.class, FormattedFPDecimal.class);
-            NATIVE.setAccessible(true);
             DIGEST = MessageDigest.getInstance("SHA-256");
         } catch (Exception e) { throw new ExceptionInInitializerError(e); }
     }
@@ -108,23 +104,19 @@ public class TestZmijSplitFallback {
             if (!fields(expected, false).equals(fields(withoutBuffer, false)))
                 throw new AssertionError("Java buffer independence " + Long.toHexString(bits));
         }
-        // Check native dispatch and exception behavior for fd == null.
-        String nullExpected;
-        try {
-            if (!(boolean) NATIVE.invoke(null, v, null))
-                JAVA.invoke(DoubleToDecimal.LATIN1, new byte[DoubleToDecimal.MAX_CHARS], 0, v, null);
-            nullExpected = "ok";
-        } catch (InvocationTargetException e) { nullExpected = e.getCause().getClass().getName(); }
-        String nullActual;
-        try { DoubleToDecimal.split(v, null); nullActual = "ok"; }
-        catch (Throwable e) { nullActual = e.getClass().getName(); }
-        if (!nullExpected.equals(nullActual)) throw new AssertionError("null contract " + bits);
-        DIGEST.update((Long.toHexString(bits) + ":" + fields(actual, false) + ":" + nullActual + "\n")
+        DIGEST.update((Long.toHexString(bits) + ":" + fields(actual, false) + "\n")
                 .getBytes(StandardCharsets.UTF_8));
         checked++;
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 0) {
+            Method decimal = DoubleToDecimal.class.getDeclaredMethod("decimal0", long.class);
+            decimal.setAccessible(true);
+            if ((long) decimal.invoke(null, Double.doubleToRawLongBits(1.25)) != 0) {
+                throw new AssertionError("Disabled intrinsic must use the Java fallback");
+            }
+        }
         for (long sign : new long[] {0, Long.MIN_VALUE}) {
             for (long bits = 0; bits < 257; bits++) check(sign | bits);
             for (int bq = 1; bq < 2047; bq++) {

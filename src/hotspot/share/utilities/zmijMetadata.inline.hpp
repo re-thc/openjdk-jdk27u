@@ -42,7 +42,7 @@ inline uint64_t hotspot_zmij_decimal_metadata(uint64_t bits) {
   uint64_t c = (bits & UINT64_C(0xfffffffffffff)) | (bq != 0 ? UINT64_C(1) << 52 : 0);
   bool irregular = c == (UINT64_C(1) << 52) && q != -1074;
   // Use DoubleToDecimal's exponent so the significand and both flags fit in
-  // one long. Zmij.split derives this same exponent without a native call.
+  // one long. DoubleToDecimal.split derives this same exponent.
   int k = int((int64_t(q) * INT64_C(661971961083) - (irregular ? INT64_C(274743187321) : 0)) >> 41);
   uint64_t f = decimal.sig;
   if (decimal.exp < k) {

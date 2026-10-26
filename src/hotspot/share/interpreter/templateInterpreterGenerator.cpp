@@ -226,6 +226,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(jdk_internal_math_putDoubleDecimalLatin1)
   method_entry(jdk_internal_math_putDoubleDecimalUTF16)
   method_entry(jdk_internal_math_floatToDecimalLatin1)
+  method_entry(jdk_internal_math_decimalZmij)
 #endif
 
   method_entry(java_lang_Float_float16ToFloat);
@@ -249,7 +250,6 @@ void TemplateInterpreterGenerator::generate_all() {
   native_method_entry(java_lang_ref_reference_get0)
 
 #if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
-  native_method_entry(jdk_internal_math_decimalZmij)
   native_method_entry(jdk_internal_math_parseFastFloatDigits)
   native_method_entry(jdk_internal_math_parseFastFloat)
 #endif

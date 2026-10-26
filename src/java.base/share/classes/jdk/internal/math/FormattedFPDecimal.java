@@ -153,6 +153,7 @@ public final class FormattedFPDecimal {
         return e;
     }
 
+    @ForceInline
     public void set(long f, int e, int n, boolean exact, boolean away) {
         /* Initially, n = 0 if f = 0, and 10^{n-1} <= f < 10^n if f != 0 */
         this.f = f;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3563,12 +3564,123 @@ const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
   return nullptr;
 }
 
+void GraphBuilder::append_parse_integer(ciMethod* callee, bool ignore_return) {
+  assert(callee->is_static() && callee->arg_size() == 2, "String and radix arguments");
+  int args_base = state()->stack_size() - callee->arg_size();
+  Value str = state()->stack_at(args_base);
+  Value radix = state()->stack_at(args_base + 1);
+  // Keep both arguments in the block states until the chosen path consumes
+  // them, including expressions that are not also present in Java locals.
+  Values* args = new Values(2);
+  args->push(str);
+  args->push(radix);
+  ValueType* result_type = as_ValueType(callee->return_type());
+
+  if (is_profiling()) {
+    compilation()->set_would_profile(true);
+    if (profile_calls()) {
+      profile_call(callee, nullptr, nullptr, collect_args_for_profiling(args, callee, true), true);
+    }
+  }
+
+  BlockBegin* nonnull = new BlockBegin(bci());
+  BlockBegin* parse = new BlockBegin(bci());
+  BlockBegin* success = new BlockBegin(bci());
+  BlockBegin* slow = new BlockBegin(bci());
+  BlockBegin* continuation = new BlockBegin(next_bci());
+
+  // These synthetic blocks belong to the current bytecode scope. Propagate
+  // states through the actual end returned by canonicalization: constant
+  // strings or radices can fold an If into a Goto and leave a block dead.
+  auto finish = [&](BlockEnd* end) {
+    end = append(end)->as_BlockEnd();
+    block()->set_end(end);
+    for (int i = 0; i < end->number_of_sux(); ++i) {
+      if (!end->sux_at(i)->try_merge(end->state(), compilation()->has_irreducible_loops())) {
+        bailout("integer parsing intrinsic block join failed");
+        return false;
+      }
+    }
+    return true;
+  };
+  auto start = [&](BlockBegin* entry) {
+    if (entry->state() == nullptr) {
+      return false;
+    }
+    kill_all();
+    _block = entry;
+    _last = entry;
+    _state = entry->state()->copy_for_parsing();
+    entry->set(BlockBegin::was_visited_flag);
+    return true;
+  };
+
+  Value null_value = append(new Constant(objectNull));
+  if (!finish(new If(str, If::eql, false, null_value, slow, nonnull,
+                     compilation()->is_optimistic() ? copy_state_before() : nullptr, false))) {
+    return;
+  }
+  if (start(nonnull)) {
+    Value decimal_radix = append(new Constant(new IntConstant(10)));
+    if (!finish(new If(radix, If::neq, false, decimal_radix, slow, parse,
+                       compilation()->is_optimistic() ? copy_state_before() : nullptr, false))) {
+      return;
+    }
+  }
+  if (start(parse)) {
+    // Keep the full 64-bit native result until the fallback sentinel has been
+    // checked, including for Java methods whose return type is int.
+    Intrinsic* native = new Intrinsic(longType, callee->intrinsic_id(), args,
+                                      false, nullptr, false, false);
+    native->pin(Instruction::PinStateSplitConstructor);
+    Value parsed = append_split(native);
+    Value declined = append(new Constant(new LongConstant(min_jlong)));
+    if (!finish(new If(parsed, If::eql, false, declined, slow, success,
+                       compilation()->is_optimistic() ? copy_state_before() : nullptr, false))) {
+      return;
+    }
+    if (start(success)) {
+      state()->pop_arguments(callee->arg_size());
+      if (!ignore_return) {
+        Value result = result_type->is_long() ? parsed
+            : append(new Convert(Bytecodes::_l2i, parsed, intType));
+        push(result_type, result);
+      }
+      if (!finish(new Goto(continuation, false))) {
+        return;
+      }
+    }
+  }
+  if (start(slow)) {
+    // A normal HIR Invoke retains Java argument placement, safepoints and
+    // exception handlers. It does not retry intrinsic expansion or deoptimize
+    // the caller when native parsing declines an input.
+    ValueStack* state_before = copy_state_exhandling();
+    Values* slow_args = state()->pop_arguments(callee->arg_size());
+    Invoke* call = new Invoke(Bytecodes::_invokestatic, result_type, nullptr, slow_args, callee, state_before);
+    append_split(call);
+    if (!ignore_return) {
+      push(result_type, call);
+    }
+    if (!finish(new Goto(continuation, false))) {
+      return;
+    }
+  }
+  if (!start(continuation)) {
+    bailout("integer parsing intrinsic continuation is unreachable");
+  }
+}
+
 void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_return) {
   vmIntrinsics::ID id = callee->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   // Some intrinsics need special IR nodes.
   switch(id) {
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong: append_parse_integer(callee, ignore_return); return;
   case vmIntrinsics::_getReference           : append_unsafe_get(callee, T_OBJECT,  false); return;
   case vmIntrinsics::_getBoolean             : append_unsafe_get(callee, T_BOOLEAN, false); return;
   case vmIntrinsics::_getByte                : append_unsafe_get(callee, T_BYTE,    false); return;
@@ -3671,6 +3783,18 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 }
 
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
+  if (callee == compilation()->method()) {
+    switch (callee->intrinsic_id()) {
+      case vmIntrinsics::_parseDecimalInt:
+      case vmIntrinsics::_parseDecimalLong:
+      case vmIntrinsics::_parseUnsignedDecimalInt:
+      case vmIntrinsics::_parseUnsignedDecimalLong:
+        // A declined native parse calls this separately compiled Java body.
+        return false;
+      default:
+        break;
+    }
+  }
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
   // accesses critical VM-internal data.

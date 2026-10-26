@@ -183,21 +183,52 @@ public final class DoubleToDecimal extends ToDecimal {
      * @param v     the finite {@code double} to be split.
      * @param fd    the object that will carry <i>f</i>, <i>e</i>, and <i>n</i>.
      */
+    @ForceInline
     public static void split(double v, FormattedFPDecimal fd) {
-        if (!Zmij.split(v, fd)) {
-            byte[] str = splitBuffer(v, fd);
-            LATIN1.toDecimalJava(str, 0, v, fd);
+        long bits = doubleToRawLongBits(v);
+        if (bits == 0) {
+            return;
         }
+        if (bits > 128 && bits < 0x7ff0000000000000L) {
+            int bq = (int) (bits >>> 52);
+            int q = bq == 0 ? Q_MIN : bq - 1075;
+            int mq = -q;
+            if (0 < mq && mq < P) {
+                long c = (bits & T_MASK) | C_MIN;
+                long f = c >> mq;
+                if (f << mq == c) {
+                    fd.set(f, 0, decimalDigits(f), true, false);
+                    return;
+                }
+            }
+            long packed = decimal0(bits);
+            if (packed != 0) {
+                boolean irregular = (bits & T_MASK) == 0 && q != Q_MIN;
+                int e = irregular ? flog10threeQuartersPow2(q) : flog10pow2(q);
+                long f = packed & ((1L << 57) - 1);
+                fd.set(f, e, decimalDigits(f), (packed & (1L << 62)) != 0, packed < 0);
+                return;
+            }
+            long c = (bits & T_MASK) | (bq == 0 ? 0 : C_MIN);
+            LATIN1.toDecimal(fd == null ? new byte[MAX_CHARS] : null, 0, q, c, 0, fd);
+            return;
+        }
+        byte[] str = fd != null && bits > 128 ? null : new byte[MAX_CHARS];
+        LATIN1.toDecimalJava(str, 0, v, fd);
     }
 
     @ForceInline
-    private static byte[] splitBuffer(double v, FormattedFPDecimal fd) {
-        // Native-declined requests, null holders, negatives and tiny subnormals
-        // retain the scratch buffer.
-        if (!Zmij.isEnabled() && fd != null && doubleToRawLongBits(v) > 128) {
-            return null;
+    private static int decimalDigits(long f) {
+        int n = flog10pow2(64 - Long.numberOfLeadingZeros(f));
+        if (f >= pow10(n)) {
+            ++n;
         }
-        return new byte[MAX_CHARS];
+        return n;
+    }
+
+    @IntrinsicCandidate
+    private static long decimal0(long bits) {
+        return 0;
     }
 
     /**

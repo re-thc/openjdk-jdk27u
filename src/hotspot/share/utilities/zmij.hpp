@@ -30,7 +30,6 @@
 
 class Zmij : AllStatic {
  public:
-  static bool is_enabled();
   static uint64_t decimal(uint64_t bits);
   // Each caller reserves its formatter's MAX_CHARS characters.
   static int format_float_latin1(void* output, uint64_t bits);

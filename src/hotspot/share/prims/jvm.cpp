@@ -108,7 +108,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #include "utilities/zipLibrary.hpp"
-#include "utilities/zmij.hpp"
 #if INCLUDE_CDS
 #include "classfile/systemDictionaryShared.hpp"
 #endif
@@ -3203,14 +3202,6 @@ JVM_END
 
 
 // JNI version ///////////////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jboolean, JVM_IsZmijEnabled(void))
-  return Zmij::is_enabled();
-JVM_END
-
-JVM_LEAF(jlong, JVM_DecimalZmij(jlong bits))
-  return jlong(Zmij::decimal(uint64_t(bits)));
-JVM_END
 
 JVM_LEAF(jboolean, JVM_IsFastFloatEnabled(void))
   return UseFastFloatIntrinsics;

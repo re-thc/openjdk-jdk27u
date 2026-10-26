@@ -182,12 +182,12 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 }
 #endif  // __WIN64
 
-// Decimal integer kernels are interpreter entries; compiled methods keep their Java bodies.
+// Frameless decimal integer entries for interpreter-only VMs.
 address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter::MethodKind kind) {
   bool parse = kind >= Interpreter::java_lang_Integer_parseInt &&
                kind <= Interpreter::java_lang_Long_parseUnsignedLong;
   // Keep ordinary profiling and compilation in tiered VMs. Frameless successes
-  // do not collect the bytecode profiles required by the Java C1/C2 algorithms.
+  // do not collect the bytecode profiles needed for normal tiered compilation.
   if (UseCompiler || CountCompiledCalls ||
       !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) {
     return nullptr;
@@ -209,9 +209,19 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rax);
     __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
     __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    __ movl(c_rarg3, int(kind - Interpreter::java_lang_Integer_parseInt));
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, FastFloat::parse_integer),
-                          c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+    address target;
+    switch (kind) {
+      case Interpreter::java_lang_Integer_parseInt:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_int); break;
+      case Interpreter::java_lang_Long_parseLong:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_long); break;
+      case Interpreter::java_lang_Integer_parseUnsignedInt:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_int); break;
+      case Interpreter::java_lang_Long_parseUnsignedLong:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_long); break;
+      default: ShouldNotReachHere(); target = nullptr;
+    }
+    __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2);
     __ movptr(rscratch1, (intptr_t)min_jlong);
     __ cmpptr(rax, rscratch1);
     __ jcc(Assembler::equal, slow_path);
@@ -293,7 +303,7 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
   __ mov(rsp, r13);
   __ jmp(rdi);
   __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(decimal ? Interpreter::native : Interpreter::zerolocals));
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 }
 

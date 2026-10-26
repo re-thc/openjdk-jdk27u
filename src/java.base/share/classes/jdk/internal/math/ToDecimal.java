@@ -59,7 +59,7 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
 
     @ForceInline
     static String decimalString(byte[] str, int size) {
-        if (Zmij.isEnabled() && JLA.stringInitCoder() == 0) {
+        if (JLA.stringInitCoder() == 0) {
             // Transfer only an exactly sized, exclusively owned array. The
             // formatter's reserved buffer remains separate and mutable.
             byte[] owned = new byte[size];

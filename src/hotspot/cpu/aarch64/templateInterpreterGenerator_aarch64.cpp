@@ -984,12 +984,12 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
 }
 
-// Decimal integer kernels are interpreter entries; compiled methods keep their Java bodies.
+// Frameless decimal integer entries for interpreter-only VMs.
 address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter::MethodKind kind) {
   bool parse = kind >= Interpreter::java_lang_Integer_parseInt &&
                kind <= Interpreter::java_lang_Long_parseUnsignedLong;
   // Keep ordinary profiling and compilation in tiered VMs. Frameless successes
-  // do not collect the bytecode profiles required by the Java C1/C2 algorithms.
+  // do not collect the bytecode profiles needed for normal tiered compilation.
   if (UseCompiler || CountCompiledCalls ||
       !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) {
     return nullptr;
@@ -1012,8 +1012,17 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rscratch1, rscratch2);
     __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
     __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    __ mov(c_rarg3, int(kind - Interpreter::java_lang_Integer_parseInt));
-    target = CAST_FROM_FN_PTR(address, FastFloat::parse_integer);
+    switch (kind) {
+      case Interpreter::java_lang_Integer_parseInt:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_int); break;
+      case Interpreter::java_lang_Long_parseLong:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_long); break;
+      case Interpreter::java_lang_Integer_parseUnsignedInt:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_int); break;
+      case Interpreter::java_lang_Long_parseUnsignedLong:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_long); break;
+      default: ShouldNotReachHere(); target = nullptr;
+    }
   } else {
     __ ldr(c_rarg0, Address(esp));
     __ cbz(c_rarg0, slow_path);
@@ -1037,11 +1046,7 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
   __ mov(rscratch2, sp);
   __ andr(sp, rscratch2, -16);
   __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
-  if (parse) {
-    __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
-  } else {
-    __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2);
-  }
+  __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2);
   __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
   __ mov(sp, rscratch2);
   if (parse) {
@@ -1112,7 +1117,7 @@ address TemplateInterpreterGenerator::generate_zmij_entry(AbstractInterpreter::M
     __ ret(lr);
   }
   __ bind(slow_path);
-  __ jump_to_entry(Interpreter::entry_for_kind(decimal ? Interpreter::native : Interpreter::zerolocals));
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 }
 

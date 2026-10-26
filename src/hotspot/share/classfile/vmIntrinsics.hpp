@@ -458,7 +458,6 @@ class methodHandle;
   do_intrinsic(_bigIntegerLeftShiftWorker, java_math_BigInteger, leftShift_name, big_integer_shift_worker_signature, F_S) \
    do_name(     leftShift_name,                                 "shiftLeftImplWorker")                                  \
                                                                                                                         \
-  do_class(jdk_internal_math_Zmij, "jdk/internal/math/Zmij")                                                                            \
   do_class(jdk_internal_math_FloatToDecimal, "jdk/internal/math/FloatToDecimal")                                                        \
   do_class(jdk_internal_math_DoubleToDecimal, "jdk/internal/math/DoubleToDecimal")                                                      \
   do_name(putDecimalLatin1_name, "putDecimalLatin1")                                                                                    \
@@ -471,7 +470,7 @@ class methodHandle;
   do_intrinsic(_putDoubleDecimalUTF16, jdk_internal_math_DoubleToDecimal, putDecimalUTF16_name, putDoubleDecimal_signature, F_S)        \
   do_intrinsic(_floatToDecimalLatin1, jdk_internal_math_FloatToDecimal, floatToDecimalLatin1_name, putFloatDecimal_signature, F_S)      \
    do_name(floatToDecimalLatin1_name, "toDecimalLatin1")                                                                                \
-  do_intrinsic(_decimalZmij, jdk_internal_math_Zmij, decimalZmij_name, long_long_signature, F_SN)                                       \
+  do_intrinsic(_decimalZmij, jdk_internal_math_DoubleToDecimal, decimalZmij_name, long_long_signature, F_S)                              \
    do_name(decimalZmij_name, "decimal0")                                                                                                \
                                                                                                                                         \
   do_class(jdk_internal_util_DecimalDigits, "jdk/internal/util/DecimalDigits")                                              \

@@ -24,7 +24,6 @@
  *
  */
 
-#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/zmij.hpp"
 
@@ -33,14 +32,6 @@
 #define ZMIJ_FREE(ptr) os::free(ptr)
 #include "utilities/zmij/zmij-impl.hpp"
 #include "utilities/zmijMetadata.inline.hpp"
-
-bool Zmij::is_enabled() {
-#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
-  return UseZmijIntrinsics;
-#else
-  return false;
-#endif
-}
 
 // Keep upstream wide stores within initialized scratch, not Java's MAX_CHARS.
 int Zmij::format_float_latin1(void* output, uint64_t bits) {

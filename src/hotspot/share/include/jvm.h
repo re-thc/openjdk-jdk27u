@@ -169,12 +169,6 @@ JNIEXPORT void * JNICALL
 JVM_FindLibraryEntry(void *handle, const char *name);
 
 JNIEXPORT jboolean JNICALL
-JVM_IsZmijEnabled(void);
-
-JNIEXPORT jlong JNICALL
-JVM_DecimalZmij(jlong bits);
-
-JNIEXPORT jboolean JNICALL
 JVM_IsFastFloatEnabled(void);
 
 JNIEXPORT jdouble JNICALL

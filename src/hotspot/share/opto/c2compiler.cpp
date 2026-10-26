@@ -760,6 +760,14 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_tryUpdateEpochField:
 #endif
   case vmIntrinsics::_currentTimeMillis:
+#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
+  case vmIntrinsics::_formatDecimalLongLatin1:
+  case vmIntrinsics::_formatDecimalLongUTF16:
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong:
+#endif
   case vmIntrinsics::_decimalZmij:
   case vmIntrinsics::_putDoubleDecimalLatin1:
   case vmIntrinsics::_putDoubleDecimalUTF16:

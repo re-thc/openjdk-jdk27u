@@ -383,11 +383,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseFastIntegerIntrinsics,                                   \
           defaultUseDecimalIntegerIntrinsics,                              \
-          "Use fast_float for interpreted decimal Integer and Long parsing")             \
+          "Use fast_float for decimal Integer and Long parsing")                 \
                                                                             \
   product(bool, UseZmijIntegerIntrinsics,                                   \
           defaultUseDecimalIntegerIntrinsics,                              \
-          "Use Zmij for interpreted decimal Integer and Long formatting")                \
+          "Use Zmij for decimal Integer and Long formatting")                    \
                                                                             \
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \

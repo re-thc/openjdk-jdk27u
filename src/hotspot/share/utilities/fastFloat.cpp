@@ -82,17 +82,18 @@ int64_t parse_java_integer(const C* first, const C* last) {
   return result;
 }
 
-template <typename C>
-int64_t parse_java_integer(const void* value, int length, int mode) {
-  const C* first = static_cast<const C*>(value);
-  const C* last = first + length;
-  switch (mode) {
-    case 0: return parse_java_integer<int32_t>(first, last);
-    case 1: return parse_java_integer<int64_t>(first, last);
-    case 2: return parse_java_integer<uint32_t>(first, last);
-    case 3: return parse_java_integer<uint64_t>(first, last);
-    default: return INT64_MIN;
+template <typename T>
+int64_t parse_java_integer(const void* value, int byte_length, int coder) {
+  int length = byte_length >> coder;
+  if (length <= 0 || length > FastFloat::max_input_length) {
+    return INT64_MIN;
   }
+  if (coder == java_lang_String::CODER_LATIN1) {
+    const char* first = static_cast<const char*>(value);
+    return parse_java_integer<T>(first, first + length);
+  }
+  const char16_t* first = static_cast<const char16_t*>(value);
+  return parse_java_integer<T>(first, first + length);
 }
 
 } // namespace
@@ -105,14 +106,20 @@ double FastFloat::parse(const void* value, int byte_length, int coder, int ix) {
       : parse_java_decimal<char16_t>(value, length, ix);
 }
 
-int64_t FastFloat::parse_integer(const void* value, int byte_length, int coder, int mode) {
-  int length = byte_length >> coder;
-  if (length <= 0 || length > max_input_length) {
-    return INT64_MIN;
-  }
-  return coder == java_lang_String::CODER_LATIN1
-      ? parse_java_integer<char>(value, length, mode)
-      : parse_java_integer<char16_t>(value, length, mode);
+int64_t FastFloat::parse_int(const void* value, int byte_length, int coder) {
+  return parse_java_integer<int32_t>(value, byte_length, coder);
+}
+
+int64_t FastFloat::parse_long(const void* value, int byte_length, int coder) {
+  return parse_java_integer<int64_t>(value, byte_length, coder);
+}
+
+int64_t FastFloat::parse_unsigned_int(const void* value, int byte_length, int coder) {
+  return parse_java_integer<uint32_t>(value, byte_length, coder);
+}
+
+int64_t FastFloat::parse_unsigned_long(const void* value, int byte_length, int coder) {
+  return parse_java_integer<uint64_t>(value, byte_length, coder);
 }
 
 // DecimalFormat's DigitList supplies a decimal point position separately.
