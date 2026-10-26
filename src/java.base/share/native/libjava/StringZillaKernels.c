@@ -167,8 +167,10 @@ static const StringZillaKernels tag##_kernels = { \
 };
 
 DEFINE_KERNELS(serial, sz_find_serial, sz_rfind_serial, sz_equal_serial, sz_find_byteset_serial, sz_rfind_byteset_serial, JVM_STRINGZILLA_SERIAL)
-#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+#if SZ_USE_HASWELL
 DEFINE_KERNELS(haswell, sz_find_haswell, sz_rfind_haswell, sz_equal_haswell, sz_find_byteset_haswell, sz_rfind_byteset_haswell, JVM_STRINGZILLA_HASWELL)
+#endif
+#if SZ_USE_SKYLAKE && SZ_USE_HASWELL
 // The AVX-512 byte-set implementation requires Ice Lake capabilities beyond
 // this backend's gate. Reuse the already qualified AVX2 byte-set instructions.
 DEFINE_KERNELS(skylake, sz_find_skylake, sz_rfind_skylake, sz_equal_skylake, sz_find_byteset_haswell, sz_rfind_byteset_haswell, JVM_STRINGZILLA_SKYLAKE)
@@ -182,11 +184,15 @@ jint StringZilla_initialize(void) {
     jint capabilities = JVM_StringZillaCapabilities();
     const StringZillaKernels* kernels = &serial_kernels;
     (void)capabilities; // Serial-only builds have no ISA-specific selection.
-#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+#if SZ_USE_HASWELL
+    // MSVC's AVX2 baseline compiles Haswell kernels, including on AVX-512 hosts.
+    if (capabilities & (JVM_STRINGZILLA_HASWELL | JVM_STRINGZILLA_SKYLAKE)) {
+        kernels = &haswell_kernels;
+    }
+#endif
+#if SZ_USE_SKYLAKE && SZ_USE_HASWELL
     if (capabilities & JVM_STRINGZILLA_SKYLAKE) {
         kernels = &skylake_kernels;
-    } else if (capabilities & JVM_STRINGZILLA_HASWELL) {
-        kernels = &haswell_kernels;
     }
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON

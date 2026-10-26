@@ -60,6 +60,26 @@ static int can_execute(jint capabilities) {
         if (!(__builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512bw") &&
               __builtin_cpu_supports("avx512vl"))) return 0;
     }
+#elif defined(_M_X64) && defined(_MSC_VER)
+    if (capabilities & (JVM_STRINGZILLA_HASWELL | JVM_STRINGZILLA_SKYLAKE)) {
+        int regs[4];
+        __cpuid(regs, 0);
+        if (regs[0] < 7) return 0;
+        __cpuid(regs, (int)0x80000000u);
+        if ((unsigned int)regs[0] < 0x80000001u) return 0;
+        __cpuid(regs, (int)0x80000001u);
+        if (!(regs[2] & (1 << 5))) return 0; // LZCNT
+        __cpuid(regs, 1);
+        if ((regs[2] & ((1 << 27) | (1 << 28))) != ((1 << 27) | (1 << 28))) return 0;
+        if ((_xgetbv(0) & 6) != 6) return 0; // OS enables XMM/YMM state.
+        __cpuidex(regs, 7, 0);
+        const unsigned int haswell = (1u << 3) | (1u << 5) | (1u << 8); // BMI1, AVX2, BMI2
+        if (((unsigned int)regs[1] & haswell) != haswell) return 0;
+        if (capabilities & JVM_STRINGZILLA_SKYLAKE) {
+            const unsigned int skylake = (1u << 16) | (1u << 30) | (1u << 31); // AVX512F/BW/VL
+            if (((unsigned int)regs[1] & skylake) != skylake || (_xgetbv(0) & 0xe6) != 0xe6) return 0;
+        }
+    }
 #endif
     return 1;
 }
@@ -106,9 +126,11 @@ static jint check_kernels(void) {
         test_initialize();
         const StringZillaKernels* kernels = published;
         const StringZillaKernels* expected = &serial_kernels;
-#if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
+#if SZ_USE_HASWELL
+        if (mask & (JVM_STRINGZILLA_HASWELL | JVM_STRINGZILLA_SKYLAKE)) expected = &haswell_kernels;
+#endif
+#if SZ_USE_SKYLAKE && SZ_USE_HASWELL
         if (mask & JVM_STRINGZILLA_SKYLAKE) expected = &skylake_kernels;
-        else if (mask & JVM_STRINGZILLA_HASWELL) expected = &haswell_kernels;
 #endif
 #if (defined(__aarch64__) || defined(_M_ARM64)) && SZ_USE_NEON
         if (mask & JVM_STRINGZILLA_NEON) expected = &neon_kernels;
