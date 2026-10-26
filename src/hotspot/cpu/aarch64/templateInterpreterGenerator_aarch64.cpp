@@ -2208,12 +2208,12 @@ address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpr
   __ add(dst, dst, rscratch1, Assembler::LSL, decode ? 1 : 0);
   __ add(dst, dst, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
-  __ stp(lr, zr, Address(pre(sp, -2 * wordSize)));
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
   __ super_call_VM_leaf(decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
                               : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
                               : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8),
                         src, length, dst);
-  __ ldp(lr, zr, Address(post(sp, 2 * wordSize)));
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
   if (utf16 || decode) {
     __ tbnz(r0, 31, slow);
   }
@@ -2292,14 +2292,14 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
                         : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
                         : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
                                  : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
-  __ stp(lr, zr, Address(pre(sp, -2 * wordSize)));
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
   // Decode argument 5 remains in c_rarg4 across the four-register helper.
   if (search) {
     __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
   } else {
     __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
   }
-  __ ldp(lr, zr, Address(post(sp, 2 * wordSize)));
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
   if (decode) {
     __ tbnz(r0, 31, slow);
   }
