@@ -33,6 +33,7 @@ public class DirectBaselinePolicyTest {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
     static class Box { int value; }
     static int installed(Box b, int x) { b.value = x; return b.value + x; }
+    static int linkedCaller(Box b, int x) { return installed(b, x); }
     static byte[] identity(byte[] a) { return a; }
     static int optimized(int from, byte[] a, int length) {
         if (from >= 0 && length > from) return a[from] + a[length-1];
@@ -49,6 +50,35 @@ public class DirectBaselinePolicyTest {
             Thread.sleep(10);
         }
     }
+    static void checkEntryBarrier(Method method) {
+        // C1_MacroAssembler::build_frame emits NativeNMethodCmpBarrier on x86:
+        // cmp [r15 + disp8], imm32; je +5; call slow_stub. The guard must have
+        // disarmed after an entry. A compiler identity missing from
+        // BarrierSetNMethod::supports_entry_barrier leaves it at zero forever.
+        byte[] code = (byte[]) WB.getNMethod(method, false)[2];
+        for (int i = 0; i + 15 <= Math.min(code.length, 128); i++) {
+            if ((code[i] & 255) == 0x41 && (code[i+1] & 255) == 0x81 &&
+                (code[i+2] & 255) == 0x7f && (code[i+8] & 255) == 0x74 &&
+                code[i+9] == 5 && (code[i+10] & 255) == 0xe8) {
+                int guard = (code[i+4] & 255) | ((code[i+5] & 255) << 8) |
+                            ((code[i+6] & 255) << 16) | (code[i+7] << 24);
+                if (guard <= 0) throw new AssertionError("direct entry barrier did not disarm: " + guard);
+                return;
+            }
+        }
+        throw new AssertionError("missing direct nmethod entry barrier");
+    }
+    static boolean calls(Object[] nmethod, long destination) {
+        byte[] code = (byte[]) nmethod[2];
+        long start = (Long) ((Object[]) nmethod[0])[4];
+        for (int i = 0; i + 5 <= code.length; i++) {
+            if ((code[i] & 255) != 0xe8) continue;
+            int displacement = (code[i+1] & 255) | ((code[i+2] & 255) << 8) |
+                               ((code[i+3] & 255) << 16) | (code[i+4] << 24);
+            if (start + i + 5 + displacement == destination) return true;
+        }
+        return false;
+    }
     public static void main(String[] args) throws Exception {
         Method installed = DirectBaselinePolicyTest.class.getDeclaredMethod("installed", Box.class, int.class);
         Method pending = DirectBaselinePolicyTest.class.getDeclaredMethod("pending", Box.class, int.class);
@@ -64,8 +94,23 @@ public class DirectBaselinePolicyTest {
         Box box = new Box();
         for (int i=0; i<64; i++) { check(installed(box,i)==2*i); Thread.sleep(1); }
         await(installed, 1); // below ordinary C1 admission, so this must be the direct nmethod
+        check(installed(box, 7) == 14);
+        checkEntryBarrier(installed);
+        // A compiled static call must stop using the old direct entry after
+        // replacement, even though its caller remains compiled.
+        Method caller = DirectBaselinePolicyTest.class.getDeclaredMethod("linkedCaller", Box.class, int.class);
+        check(WB.enqueueMethodForCompilation(caller, 1));
+        await(caller, 1);
+        check(linkedCaller(box, 9) == 18);
+        long directEntry = (Long) WB.getNMethod(installed, false)[4];
+        Object[] callerCode = WB.getNMethod(caller, false);
+        check(calls(callerCode, directEntry));
         check(WB.enqueueMethodForCompilation(installed, 4));
         await(installed, 4);
+        check(linkedCaller(box, 11) == 22);
+        Object[] updatedCaller = WB.getNMethod(caller, false);
+        check(callerCode[3].equals(updatedCaller[3]));
+        check(!calls(updatedCaller, directEntry));
         WB.lockCompilation();
         try {
             for (int i=0; i<64; i++) check(pending(box,i)==2*i);

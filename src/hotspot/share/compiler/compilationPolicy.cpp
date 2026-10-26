@@ -691,6 +691,7 @@ void CompilationPolicy::handle_counter_overflow(const methodHandle& method) {
 CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThread* THREAD) {
   CompileTask *max_blocking_task = nullptr;
   CompileTask *max_task = nullptr;
+  CompileTask *direct_task = nullptr;
   Method* max_method = nullptr;
 
   int64_t t = nanos_to_millis(os::javaTimeNanos());
@@ -712,12 +713,16 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
     if (task->is_direct_baseline()) {
       // Baseline tasks have a distinct pending state and never clear the ordinary queue bit.
       if (task->method()->has_compiled_code() || task->method()->queued_for_compilation() ||
-          task->method()->highest_comp_level() != CompLevel_none) {
+          task->method()->highest_comp_level() != CompLevel_none || task->method()->method_data() != nullptr) {
         compile_queue->remove_and_mark_stale(task);
         task = next_task;
         continue;
       }
-      return task;
+      // Keep ordinary C1 selection and blocking-task priority unchanged.
+      // Only use spare compiler capacity for direct work.
+      if (direct_task == nullptr) direct_task = task;
+      task = next_task;
+      continue;
     }
     Method* method = task->method();
     methodHandle mh(THREAD, method);
@@ -779,7 +784,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
       }
     }
   }
-  return max_task;
+  return max_task != nullptr ? max_task : direct_task;
 }
 
 void CompilationPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {

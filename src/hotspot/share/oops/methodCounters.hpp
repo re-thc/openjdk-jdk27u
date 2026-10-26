@@ -62,7 +62,7 @@ class MethodCounters : public Metadata {
   u1                _highest_comp_level;          // Highest compile level this method has ever seen.
   u1                _highest_osr_comp_level;      // Same for OSR level
 
-  bool _direct_baseline_attempted; // Protected by MethodCompileQueue_lock
+  bool _direct_baseline_attempted; // One-way; queued attempts set under MethodCompileQueue_lock
   int _direct_baseline_entries; // Diagnostic, approximate under contention
 
   MethodCounters(const methodHandle& mh);

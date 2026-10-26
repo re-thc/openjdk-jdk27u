@@ -1015,7 +1015,7 @@ void ciEnv::register_method(ciMethod* target,
 
     if (task()->is_direct_baseline() &&
         (method->has_compiled_code() || method->queued_for_compilation() ||
-         method->highest_comp_level() != CompLevel_none ||
+         method->highest_comp_level() != CompLevel_none || method->method_data() != nullptr ||
          (method->is_old() || method->is_not_compilable(CompLevel_simple) || method->number_of_breakpoints() != 0))) {
       record_failure("stale direct baseline install");
     }

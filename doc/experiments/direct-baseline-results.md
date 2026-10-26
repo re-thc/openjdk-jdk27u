@@ -1,5 +1,12 @@
 # Direct baseline prototype: result on 2026-10-26
 
+**Historical result, before the independent implementation audit.** The build
+below still omitted the direct compiler from nmethod entry-barrier support.
+The audit reproduced both permanent slow entry and failed linked-call
+invalidation, then fixed them. The matched diagnosis recovers most of this
+startup loss. See [causal diagnosis and subsequent results](direct-baseline-diagnosis.md).
+All earlier results and failures remain below; they do not qualify the fixed build.
+
 The direct emitter is implemented and executes ordinary HotSpot nmethods, but
 this prototype **fails the performance requirement and must remain off**.
 The corrected build regresses javac startup and the measured warmed window;

@@ -1,7 +1,10 @@
 # Direct bytecode baseline compiler prototype
 
-Measured outcome: the corrected prototype fails the performance gate; see
-[results and retained evidence](direct-baseline-results.md). It remains off.
+The independent audit found and fixed entry-barrier, queue-priority and
+profile-accounting defects. See [causal diagnosis](direct-baseline-diagnosis.md)
+and [earlier results and retained evidence](direct-baseline-results.md).
+The prototype remains off; application benefit and warmed neutrality are
+required before any adoption claim.
 
 This is a local, opt-in x86-64 experiment based on PR95 head
 `5ccc4bfff24830c1b88f093a2cd438304e51983f`. PR95 was an open, unmerged draft
@@ -30,7 +33,8 @@ identity share the C1 worker queue; baseline tasks do not own or clear the
 ordinary queued-for-compilation bit. An ordinary request may bypass a pending
 baseline. Queue selection drops stale baseline work, and installation checks
 again under MethodCompileQueue_lock and Compile_lock. An ordinary installed
-method or outstanding ordinary request wins.
+method or outstanding ordinary request wins. Ordinary tasks retain their
+blocking/rate selection priority; direct work uses an otherwise available worker.
 
 For code-cache storage the nmethod has level 1, with compiler type
 `compiler_direct_baseline`. Policy treats it as level 0 and it does not update
@@ -42,7 +46,14 @@ Baseline entry increments the same MC or MDO counter the interpreter would
 increment, with that counter's existing notification mask. It does not create
 or reset a counter origin. Runtime1 overflow reports policy level 0, allowing
 ordinary profile creation and ordinary admission. Branch/type profiles are not
-collected in the baseline; timely ordinary profiling C1 is retained. Loops are
+collected in the baseline. Methods with an MDO fall back instead of installing
+direct code. When an MDO appears after installation, the direct entry counts
+the current invocation normally, retires its nmethod and deoptimizes before
+executing any bytecode. That activation continues in the interpreter and
+records its profiles. There can be an interpreted interval before unchanged
+ordinary C1 admission. MC/MDO origins, notification masks, profile maturity and
+C2 profile scaling retain their ordinary meanings. Explicit C2 bypasses remain
+valid. Loops are
 excluded, retaining interpreter OSR rather than stranding a loop in baseline
 code. Training recording/replay and compiler replay are excluded. ProfileInterpreter
 must be enabled; other profiling modes fall back to the ordinary policy.
@@ -68,7 +79,7 @@ Every Java value resides in a fixed full-word slot. Calls and traps have exact
 oop maps and scope values, a reserved original-PC slot and deopt entry. The
 assembler supplies stack banging and the nmethod entry barrier. Collector
 BarrierSetAssembler load/store hooks supply compressed-reference handling and
-heap barriers; this first prototype enables Serial/G1 and excludes ZGC.
+heap barriers; this first prototype admits Serial/G1 only.
 Acquire loads retain bytecode ordering; volatile stores emit StoreLoad.
 
 Null/bounds failures deoptimize at the current BCI with reexecution, before the
@@ -81,6 +92,11 @@ JVMTI modes needing unqualified event/monitor/walk support are excluded; other
 state changes participate in ciEnv dependency validation. These statements
 describe implementation mechanisms, not a claim of complete production
 qualification.
+
+The direct compiler is explicitly registered for nmethod entry barriers.
+Successful entry disarms the actual machine guard, and invalidation sets its
+not-entrant bit so previously linked static callers resolve to the successor.
+Counter-overflow scope state uses SynchronizationEntryBCI, before bytecode 0.
 
 ## Validation and measurement
 

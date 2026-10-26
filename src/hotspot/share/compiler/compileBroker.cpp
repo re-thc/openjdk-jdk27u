@@ -2636,9 +2636,10 @@ void CompileBroker::request_direct_baseline(const methodHandle& method, JavaThre
   MethodCounters* mc = method->method_counters();
   if (mc == nullptr) return;
   MutexLocker locker(thread, MethodCompileQueue_lock);
-  if (mc->direct_baseline_attempted() || method->queued_for_compilation() ||
-      method->has_compiled_code() || method->highest_comp_level() != CompLevel_none) return;
+  if (mc->direct_baseline_attempted()) return;
   mc->set_direct_baseline_attempted();
+  if (method->queued_for_compilation() || method->has_compiled_code() ||
+      method->highest_comp_level() != CompLevel_none || method->method_data() != nullptr) return;
   int id = assign_compile_id(method, InvocationEntryBci);
   if (id == 0) return;
   create_compile_task(_c1_compile_queue, id, method, InvocationEntryBci,

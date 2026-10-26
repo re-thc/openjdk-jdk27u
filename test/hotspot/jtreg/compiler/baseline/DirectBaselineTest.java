@@ -159,8 +159,9 @@ public class DirectBaselineTest {
                 .shouldContain("direct install fields(")
                 .shouldContain("direct install call(I)I")
                 .shouldContain("direct install acrossGC(")
-                .shouldContain("direct install exceptionFromCall(")
-                .shouldContain("direct handoff call(I)I");
+                .shouldContain("direct install exceptionFromCall(");
+            // Profiling may retire a direct method before C1 replaces it.
+            // PolicyTest controls a direct-to-C2 linked-call handoff explicitly.
         }
     }
 }

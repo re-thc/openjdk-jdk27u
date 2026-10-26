@@ -46,6 +46,7 @@
 #include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
@@ -136,6 +137,11 @@ class Emitter : StackObj {
         !signature(_method->signature()) || _nl > 64 || _ns > 32 || _size > 512 || _size == 0) {
       return fail("method shape");
     }
+    _states = NEW_RESOURCE_ARRAY(State*, _size);
+    _labels = NEW_RESOURCE_ARRAY(Label, _size);
+    _fields = NEW_RESOURCE_ARRAY(ciField*, _size);
+    _callees = NEW_RESOURCE_ARRAY(ciMethod*, _size);
+    for (int i = 0; i < _size; i++) { _states[i] = nullptr; new (&_labels[i]) Label(); }
     State* start = new State(_nl, _ns);
     ciSignature* sig = _method->signature();
     for (int i = 0; i < sig->count(); i++) start->locals[i] = kind(sig->type_at(i)->basic_type());
@@ -304,16 +310,18 @@ class Emitter : StackObj {
     __ jcc(Assembler::zero, overflow);
   }
   void counter() {
-    Label no_mdo, done, overflow;
+    Label no_mdo, done, overflow, retire;
     __ mov_metadata(rbx, _method->constant_encoding());
-    __ movptr(r10, Address(rbx, Method::method_counters_offset()));
-    if (TraceDirectBaseline) __ incrementl(Address(r10, in_bytes(MethodCounters::direct_baseline_entries_offset())));
+    if (TraceDirectBaseline) {
+      __ movptr(r10, Address(rbx, Method::method_counters_offset()));
+      __ incrementl(Address(r10, in_bytes(MethodCounters::direct_baseline_entries_offset())));
+    }
     __ movptr(r10, Address(rbx, Method::method_data_offset()));
     __ testptr(r10, r10);
     __ jcc(Assembler::zero, no_mdo);
     increment_counter(Address(r10, in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset())),
                                Address(r10, in_bytes(MethodData::invoke_mask_offset())), overflow);
-    __ jmp(done);
+    __ jmp(retire);
     __ bind(no_mdo);
     __ movptr(r10, Address(rbx, Method::method_counters_offset()));
     increment_counter(Address(r10, in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset())),
@@ -323,7 +331,20 @@ class Emitter : StackObj {
     __ movl(Address(rsp, 0), InvocationEntryBci);
     __ movptr(Address(rsp, wordSize), rbx);
     __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
-    safepoint(0, _states[0]);
+    safepoint(SynchronizationEntryBCI, _states[0]);
+    __ movptr(r10, Address(rbx, Method::method_data_offset()));
+    __ testptr(r10, r10);
+    __ jcc(Assembler::zero, done);
+    __ bind(retire);
+    // The entry count is already accounted for. Continue this fresh activation
+    // at bytecode 0 in the interpreter, which records the MDO's actual profiles.
+    // No Java bytecode has executed; future calls resolve through the armed
+    // not-entrant barrier. Do not let counter-only entries age a profile.
+    __ movl(Address(rsp, 0), Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                             Deoptimization::Action_make_not_entrant));
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_deoptimize_id)));
+    safepoint(SynchronizationEntryBCI, _states[0]);
+    __ should_not_reach_here();
     __ bind(done);
   }
   Assembler::Condition condition(Bytecodes::Code bc) {
@@ -587,11 +608,6 @@ class Emitter : StackObj {
     _env(env), _method(method), _compiler(compiler), _failure(nullptr),
     _nl(method->max_locals()), _ns(method->max_stack()), _size(method->code_size()),
     _out_words(2), _frame_bytes(0), _frame_words(0), _last_scope_pc(-1), _code(nullptr), _masm(nullptr), _debug(nullptr), _maps(nullptr) {
-    _states = NEW_RESOURCE_ARRAY(State*, _size);
-    _labels = NEW_RESOURCE_ARRAY(Label, _size);
-    _fields = NEW_RESOURCE_ARRAY(ciField*, _size);
-    _callees = NEW_RESOURCE_ARRAY(ciMethod*, _size);
-    for (int i = 0; i < _size; i++) { _states[i] = nullptr; new (&_labels[i]) Label(); }
   }
   void compile(bool install) {
     if (!prepass()) { _env->record_failure(_failure); return; }
@@ -623,8 +639,8 @@ class DirectCompiler : public AbstractCompiler {
   const char* name() override { return "direct"; }
   void initialize() override {}
   void compile_method(ciEnv* env, ciMethod* target, int bci, bool install, DirectiveSet* directive) override {
-    jlong begin = os::javaTimeNanos();
-    jlong cpu = os::current_thread_cpu_time();
+    jlong begin = TraceDirectBaseline ? os::javaTimeNanos() : 0;
+    jlong cpu = TraceDirectBaseline ? os::current_thread_cpu_time() : 0;
     if (bci != InvocationEntryBci || directive->ExcludeOption || env->dtrace_method_probes() ||
         env->jvmti_can_post_on_exceptions() || env->jvmti_can_get_owned_monitor_info() || env->jvmti_can_walk_any_space() ||
         TrainingData::have_data() || TrainingData::need_data() || ReplayCompiles) {
@@ -646,9 +662,17 @@ AbstractCompiler* DirectBaseline::compiler() { static DirectCompiler* c = new Di
 void DirectBaseline::request(const methodHandle& method, JavaThread* thread) {
   if (!UseDirectBaseline || !UseCompiler || !TieredCompilation || !ProfileInterpreter || TieredStopAtLevel < 3 ||
       !CompilationModeFlag::normal() || ReplayCompiles || TrainingData::have_data() || TrainingData::need_data() ||
-      UseZGC || JvmtiExport::can_post_interpreter_events() || method->is_native() ||
+      (!UseSerialGC && !UseG1GC) || JvmtiExport::can_post_interpreter_events() || method->method_data() != nullptr || method->is_native() ||
       !method->is_static() || method->is_synchronized() || method->is_method_handle_intrinsic() ||
-      method->number_of_breakpoints() != 0 || (method->is_old() || method->is_not_compilable(CompLevel_simple))) return;
+      method->number_of_breakpoints() != 0 || (method->is_old() || method->is_not_compilable(CompLevel_simple))) {
+    // Remember permanent exclusions too: the masked early notification recurs.
+    MethodCounters* mc = method->method_counters();
+    if (mc != nullptr) {
+      MutexLocker locker(thread, MethodCompileQueue_lock);
+      mc->set_direct_baseline_attempted();
+    }
+    return;
+  }
   CompileBroker::request_direct_baseline(method, thread);
 }
 #endif // AMD64 && COMPILER1
