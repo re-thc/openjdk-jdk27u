@@ -92,9 +92,60 @@ public class TestZlibNGSmallStreams {
         }
     }
 
+    private static byte[] equivalentLevelStream(boolean requests, boolean direct) throws Exception {
+        byte[] input = new byte[8192];
+        new Random(735).nextBytes(input);
+        byte[] reference = null;
+        try (Deflater d = new Deflater(requests ? Deflater.DEFAULT_COMPRESSION : 6)) {
+            for (int reuse = 0; reuse < 2; reuse++) {
+                if (reuse != 0) d.reset();
+                d.setStrategy(Deflater.HUFFMAN_ONLY);
+                if (requests) {
+                    // Preserve pending strategy and level changes when an
+                    // equivalent DEFAULT/6 request follows them.
+                    d.setLevel(1);
+                    d.setLevel(Deflater.DEFAULT_COMPRESSION);
+                    d.setLevel(6);
+                    d.setLevel(Deflater.DEFAULT_COMPRESSION);
+                }
+                ByteBuffer empty = direct ? ByteBuffer.allocateDirect(0) : ByteBuffer.allocate(0);
+                if (d.deflate(empty) != 0 || d.getBytesRead() != 0 || d.getBytesWritten() != 0) {
+                    throw new AssertionError("equivalent-level empty call");
+                }
+                d.setInput(input);
+                d.finish();
+                ByteBuffer output = direct ? ByteBuffer.allocateDirect(37) : ByteBuffer.allocate(37);
+                ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+                for (int attempts = 0; !d.finished(); attempts++) {
+                    if (attempts == 1000) throw new AssertionError("equivalent-level stalled");
+                    output.clear();
+                    d.deflate(output);
+                    output.flip();
+                    while (output.hasRemaining()) encoded.write(output.get());
+                }
+                byte[] bytes = encoded.toByteArray();
+                if (d.getBytesRead() != input.length || d.getBytesWritten() != bytes.length) {
+                    throw new AssertionError("equivalent-level counters");
+                }
+                verify(input, new InflaterInputStream(new ByteArrayInputStream(bytes)));
+                if (reference != null && !Arrays.equals(reference, bytes)) {
+                    throw new AssertionError("equivalent-level reset changed stream");
+                }
+                reference = bytes;
+            }
+        }
+        return reference;
+    }
+
     private static void emit() throws Exception {
         checkParameterOnlyCall(false);
         checkParameterOnlyCall(true);
+        for (boolean direct : new boolean[]{false, true}) {
+            if (!Arrays.equals(equivalentLevelStream(false, direct),
+                               equivalentLevelStream(true, direct))) {
+                throw new AssertionError("equivalent-level requests changed stream");
+            }
+        }
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] data = new byte[1024];
         for (int i = 0; i < data.length; i++) {

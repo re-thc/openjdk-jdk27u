@@ -381,8 +381,12 @@ public class Deflater implements AutoCloseable {
             throw new IllegalArgumentException("invalid compression level");
         }
         synchronized (zsRef) {
-            if (this.level != level) {
-                this.level = level;
+            // zlib and zlib-ng use level 6 for DEFAULT_COMPRESSION. Switching
+            // between those requests does not require a native parameter call.
+            int previous = this.level == DEFAULT_COMPRESSION ? 6 : this.level;
+            int requested = level == DEFAULT_COMPRESSION ? 6 : level;
+            this.level = level;
+            if (previous != requested) {
                 setParams = true;
             }
         }
