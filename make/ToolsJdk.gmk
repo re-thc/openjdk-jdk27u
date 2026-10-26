@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +46,12 @@ TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_cla
 
 TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.GenerateCharacter
+
+TOOL_GENERATEXMLUNICODE = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.generatecharacter.GenerateXMLUnicode
+
+TOOL_GENERATECASEINSENSITIVEMAP = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.generatecharacter.GenerateCaseInsensitiveMap
 
 TOOL_CHARACTERNAME = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.CharacterName

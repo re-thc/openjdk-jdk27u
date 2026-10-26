@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,7 +47,7 @@ import jdk.xml.internal.SecuritySupport;
  * DEVELOPERS: See Known Issue in the constructor.
  *
  * @xsl.usage internal
- * @LastModified: Oct 2017
+ * @LastModified: Oct 2026
  */
 final class CharInfo
 {
@@ -162,6 +162,15 @@ final class CharInfo
 
     private CharInfo(String entitiesResource, String method, boolean internal)
     {
+        // Only the module's exact bundled resources use generated data. In
+        // particular, getCharInfo's context-loader and URL paths stay intact.
+        if (internal && useBundledData(entitiesResource)) {
+            boolean html = HTML_ENTITIES_RESOURCE.equals(entitiesResource);
+            initBundled(html, method);
+            onlyQuotAmpLtGt = CharInfoData.onlyQuotAmpLtGt(html);
+            return;
+        }
+
         ResourceBundle entities = null;
         boolean noExtraEntities = true;
 
@@ -353,6 +362,63 @@ final class CharInfo
          */
         if (Method.XML.equals(method))
         {
+            isSpecialAttrASCII[S_HORIZONAL_TAB] = true;
+        }
+    }
+
+    /** Keep module-patched, localized and class-based replacements on the loader path. */
+    private static boolean useBundledData(String name) {
+        if (!XML_ENTITIES_RESOURCE.equals(name) && !HTML_ENTITIES_RESOURCE.equals(name)) {
+            return false;
+        }
+        String base = name.substring(name.lastIndexOf('.') + 1);
+        URL root = CharInfo.class.getResource(base + ".properties");
+        if (root == null || !"jrt".equals(root.getProtocol())) {
+            return false;
+        }
+        ResourceBundle.Control control = ResourceBundle.Control.getControl(
+                ResourceBundle.Control.FORMAT_DEFAULT);
+        for (Locale locale : control.getCandidateLocales(name, Locale.getDefault())) {
+            String candidate = control.toBundleName(base, locale);
+            if (CharInfo.class.getResource(candidate + ".class") != null
+                    || (!Locale.ROOT.equals(locale)
+                        && CharInfo.class.getResource(candidate + ".properties") != null)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Populate the original representation, including HashMap insertion order. */
+    private void initBundled(boolean html, String method) {
+        // Each record is a BMP code point followed by its decorated entity.
+        String entities = CharInfoData.entities(html);
+        for (int offset = 0; offset < entities.length();) {
+            char ch = entities.charAt(offset++);
+            int end = entities.indexOf(';', offset) + 1;
+            m_charToString.put(new CharKey(ch), entities.substring(offset, end));
+            offset = end;
+        }
+
+        // Sparse records contain a word index followed by its high/low halves.
+        String bits = CharInfoData.bits(html);
+        for (int offset = 0; offset < bits.length(); offset += 3) {
+            int word = bits.charAt(offset);
+            array_of_bits[word] = (bits.charAt(offset + 1) << 16)
+                    | bits.charAt(offset + 2);
+            firstWordNotUsed = word + 1;
+        }
+
+        // Attribute, special-text and clean-text masks, eight 16-bit words each.
+        String ascii = CharInfoData.ascii(html);
+        for (int ch = 0; ch < ASCII_MAX; ch++) {
+            int word = ch >> 4;
+            int bit = 1 << (ch & 15);
+            isSpecialAttrASCII[ch] = (ascii.charAt(word) & bit) != 0;
+            isSpecialTextASCII[ch] = (ascii.charAt(8 + word) & bit) != 0;
+            isCleanTextASCII[ch] = (ascii.charAt(16 + word) & bit) != 0;
+        }
+        if (Method.XML.equals(method)) {
             isSpecialAttrASCII[S_HORIZONAL_TAB] = true;
         }
     }
