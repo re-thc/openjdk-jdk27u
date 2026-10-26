@@ -682,3 +682,58 @@ address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::M
   __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
   return entry;
 }
+
+// Method entry for the static prefix conversions of the Charset coder loops and the
+// String UTF-8 decoder:
+//   long f(Object src, long srcAddress, int srcLength, Object dst, long dstAddress, int dstCapacity)
+// A null object makes the address absolute. The Java body declines by consuming
+// nothing, so a pending safepoint simply takes the ordinary bytecode entry.
+address TemplateInterpreterGenerator::generate_convert_prefix_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  address leaf = nullptr;
+  switch (kind) {
+  case Interpreter::sun_nio_cs_UTF_8_decodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
+    break;
+  case Interpreter::sun_nio_cs_UTF_8_encodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
+    break;
+  case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
+    break;
+  case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
+    break;
+  case Interpreter::java_lang_String_utf8ToLatin1Bulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
+    break;
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
+  // Arguments are reversed on the java expression stack, each long taking two
+  // slots. Slot 0 holds the return address.
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  const Register capacity = c_rarg3;
+  __ movptr(src, Address(rsp, 8 * wordSize));
+  __ addptr(src, Address(rsp, 6 * wordSize));
+  __ movl(length, Address(rsp, 5 * wordSize));
+  __ movptr(dst, Address(rsp, 4 * wordSize));
+  __ addptr(dst, Address(rsp, 2 * wordSize));
+  __ movl(capacity, Address(rsp, wordSize));
+  __ super_call_VM_leaf(leaf, src, length, dst, capacity);
+  // result in rax
+  __ pop(rdi);                // get return address
+  __ mov(rsp, r13);           // set sp to sender sp
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}

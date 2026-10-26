@@ -698,6 +698,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isCompileConstant:
     return inline_isCompileConstant();
 
+  case vmIntrinsics::_decodeUTF8Bulk:
+  case vmIntrinsics::_encodeUTF8Bulk:
+  case vmIntrinsics::_decodeUTF32Bulk:
+  case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+    return inline_convert_prefix(intrinsic_id());
+
   case vmIntrinsics::_encodeUTF8Latin1: return inline_encodeUTF8Latin1();
   case vmIntrinsics::_encodeUTF8UTF16: return inline_encodeUTF8UTF16();
   case vmIntrinsics::_decodeUTF8UTF16OrThrow:
@@ -9626,6 +9633,67 @@ Node* LibraryCallKit::inline_encodeUTF8_predicate(bool utf16) {
   Node* tight_slow = generate_guard(tight, nullptr, PROB_MIN);
   slow_region->init_req(2, tight_slow == nullptr ? top() : tight_slow);
   return _gvn.transform(slow_region);
+}
+
+// The Charset coder loops and the String UTF-8 decoder call these static methods for
+// a range they may convert in bulk: (Object src, long srcAddress, int srcLength,
+// Object dst, long dstAddress, int dstCapacity) with a packed (consumed, produced)
+// long result. The Java caller bounds the length and the leaf declines unaligned
+// storage, so there is no Java fallback arm: the Java body consumes nothing, as
+// does a decline.
+bool LibraryCallKit::inline_convert_prefix(vmIntrinsics::ID id) {
+  if (!SimdUTF::available()) {
+    return false;
+  }
+  Node* src = argument(0);
+  Node* src_offset = argument(1);
+  Node* src_length = argument(3);
+  Node* dst = argument(4);
+  Node* dst_offset = argument(5);
+  Node* dst_capacity = argument(7);
+  Node* src_address = make_unsafe_address(src, src_offset, T_BYTE);
+  Node* dst_address = make_unsafe_address(dst, dst_offset, T_BYTE);
+  address entry = nullptr;
+  const char* name = nullptr;
+  switch (id) {
+  case vmIntrinsics::_decodeUTF8Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
+    name = "decode_utf8_prefix";
+    break;
+  case vmIntrinsics::_encodeUTF8Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
+    name = "encode_utf8_prefix";
+    break;
+  case vmIntrinsics::_decodeUTF32Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
+    name = "decode_utf32_prefix";
+    break;
+  case vmIntrinsics::_encodeUTF32Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
+    name = "encode_utf32_prefix";
+    break;
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
+    name = "utf8_to_latin1_prefix";
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
+  const Type** fields = TypeTuple::fields(4);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 3] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, fields);
+  fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 2, fields));
+  Node* call = make_runtime_call(RC_LEAF, type, entry, name, TypePtr::BOTTOM,
+                                 src_address, src_length, dst_address, dst_capacity);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
 }
 
 bool LibraryCallKit::inline_encodeUTF8Latin1() {

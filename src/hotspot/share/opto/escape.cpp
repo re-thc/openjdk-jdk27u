@@ -2314,6 +2314,11 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "encode_latin1_utf8") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encode_utf16_utf8") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decode_utf8_utf16") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "decode_utf8_prefix") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "encode_utf8_prefix") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "decode_utf32_prefix") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "encode_utf32_prefix") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "utf8_to_latin1_prefix") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha1_implCompress") == 0 ||

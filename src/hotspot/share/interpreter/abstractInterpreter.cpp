@@ -140,6 +140,11 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_encodeUTF8Latin1: return java_lang_String_encodeUTF8Latin1;
       case vmIntrinsics::_encodeUTF8UTF16: return java_lang_String_encodeUTF8UTF16;
       case vmIntrinsics::_decodeUTF8UTF16: return java_lang_String_decodeUTF8UTF16;
+      case vmIntrinsics::_decodeUTF8Bulk: return sun_nio_cs_UTF_8_decodeBulk;
+      case vmIntrinsics::_encodeUTF8Bulk: return sun_nio_cs_UTF_8_encodeBulk;
+      case vmIntrinsics::_decodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_decodeBulk;
+      case vmIntrinsics::_encodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_encodeBulk;
+      case vmIntrinsics::_utf8ToLatin1Bulk: return java_lang_String_utf8ToLatin1Bulk;
       case vmIntrinsics::_decodeUTF8UTF16OrThrow: return java_lang_String_decodeUTF8UTF16OrThrow;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif // ZERO
@@ -239,6 +244,11 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_String_encodeUTF8Latin1: return vmIntrinsics::_encodeUTF8Latin1;
   case java_lang_String_encodeUTF8UTF16: return vmIntrinsics::_encodeUTF8UTF16;
   case java_lang_String_decodeUTF8UTF16: return vmIntrinsics::_decodeUTF8UTF16;
+  case sun_nio_cs_UTF_8_decodeBulk: return vmIntrinsics::_decodeUTF8Bulk;
+  case sun_nio_cs_UTF_8_encodeBulk: return vmIntrinsics::_encodeUTF8Bulk;
+  case sun_nio_cs_UTF_32Coder_decodeBulk: return vmIntrinsics::_decodeUTF32Bulk;
+  case sun_nio_cs_UTF_32Coder_encodeBulk: return vmIntrinsics::_encodeUTF32Bulk;
+  case java_lang_String_utf8ToLatin1Bulk: return vmIntrinsics::_utf8ToLatin1Bulk;
   case java_lang_String_decodeUTF8UTF16OrThrow: return vmIntrinsics::_decodeUTF8UTF16OrThrow;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;

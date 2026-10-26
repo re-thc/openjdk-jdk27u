@@ -365,6 +365,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
   bool inline_countPositives();
+  bool inline_convert_prefix(vmIntrinsics::ID id);
   bool inline_encodeUTF8Latin1();
   Node* inline_encodeUTF8_predicate(bool utf16);
   bool inline_encodeUTF8UTF16();

@@ -40,6 +40,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
@@ -121,6 +122,16 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_decodeUTF8UTF16:
 #if defined(AMD64) || defined(AARCH64)
     return true;
+#else
+    return false;
+#endif
+  case vmIntrinsics::_decodeUTF8Bulk:
+  case vmIntrinsics::_encodeUTF8Bulk:
+  case vmIntrinsics::_decodeUTF32Bulk:
+  case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+#if defined(AMD64) || defined(AARCH64)
+    return SimdUTF::available();
 #else
     return false;
 #endif

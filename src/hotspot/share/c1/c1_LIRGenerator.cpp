@@ -2914,8 +2914,71 @@ void LIRGenerator::do_bulk(Intrinsic* x) {
   }
 }
 
+// The callers bound the length and pass storage as (object, address) pairs.
+// Every decline is inside the leaf, so the call needs no HIR edges.
+void LIRGenerator::do_convertPrefix(Intrinsic* x) {
+  LIRItem src(x->argument_at(0), this);
+  LIRItem src_address(x->argument_at(1), this);
+  LIRItem src_length(x->argument_at(2), this);
+  LIRItem dst(x->argument_at(3), this);
+  LIRItem dst_address(x->argument_at(4), this);
+  LIRItem dst_capacity(x->argument_at(5), this);
+  src.load_item();
+  src_address.load_item();
+  src_length.load_item();
+  dst.load_item();
+  dst_address.load_item();
+  dst_capacity.load_item();
+  LIR_Opr result = rlock_result(x);
+  LIR_Opr src_pointer = new_register(T_ADDRESS);
+  LIR_Opr dst_pointer = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(src.result(), src_address.result(), T_BYTE)), src_pointer);
+  __ leal(LIR_OprFact::address(new LIR_Address(dst.result(), dst_address.result(), T_BYTE)), dst_pointer);
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_pointer, cc->at(0));
+  __ move(src_length.result(), cc->at(1));
+  __ move(dst_pointer, cc->at(2));
+  __ move(dst_capacity.result(), cc->at(3));
+  address entry = nullptr;
+  switch (x->id()) {
+  case vmIntrinsics::_decodeUTF8Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
+    break;
+  case vmIntrinsics::_encodeUTF8Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
+    break;
+  case vmIntrinsics::_decodeUTF32Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
+    break;
+  case vmIntrinsics::_encodeUTF32Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
+    break;
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+    entry = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
+    break;
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_decodeUTF8Bulk:
+  case vmIntrinsics::_encodeUTF8Bulk:
+  case vmIntrinsics::_decodeUTF32Bulk:
+  case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+    do_convertPrefix(x);
+    break;
   case vmIntrinsics::_indexOfL_char:
   case vmIntrinsics::_indexOfU_char:
   case vmIntrinsics::_base64_encodeBlock:

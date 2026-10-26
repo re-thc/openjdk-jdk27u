@@ -2226,6 +2226,65 @@ address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpr
   return entry;
 }
 
+// Method entry for the static prefix conversions of the Charset coder loops and the
+// String UTF-8 decoder:
+//   long f(Object src, long srcAddress, int srcLength, Object dst, long dstAddress, int dstCapacity)
+// A null object makes the address absolute. The Java body declines by consuming
+// nothing, so a pending safepoint simply takes the ordinary bytecode entry.
+address TemplateInterpreterGenerator::generate_convert_prefix_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  address leaf = nullptr;
+  switch (kind) {
+  case Interpreter::sun_nio_cs_UTF_8_decodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_prefix);
+    break;
+  case Interpreter::sun_nio_cs_UTF_8_encodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf8_prefix);
+    break;
+  case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::decode_utf32_prefix);
+    break;
+  case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::encode_utf32_prefix);
+    break;
+  case Interpreter::java_lang_String_utf8ToLatin1Bulk:
+    leaf = CAST_FROM_FN_PTR(address, SimdUTF::utf8_to_latin1_prefix);
+    break;
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false, false);
+  // Arguments are reversed on the java expression stack, each long taking two
+  // slots; esp addresses the last argument.
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  const Register capacity = c_rarg3;
+  __ ldr(src, Address(esp, 7 * wordSize));
+  __ ldr(rscratch1, Address(esp, 5 * wordSize));
+  __ add(src, src, rscratch1);
+  __ ldrw(length, Address(esp, 4 * wordSize));
+  __ ldr(dst, Address(esp, 3 * wordSize));
+  __ ldr(rscratch1, Address(esp, wordSize));
+  __ add(dst, dst, rscratch1);
+  __ ldrw(capacity, Address(esp, 0));
+  // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
+  __ super_call_VM_leaf(leaf, src, length, dst, capacity);
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
+  // result in r0
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::MethodKind kind) {
   const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
                       kind == Interpreter::java_lang_StringUTF16_indexOfChar;

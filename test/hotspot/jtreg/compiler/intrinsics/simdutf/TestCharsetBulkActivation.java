@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @summary The Charset coder bulk conversions are intrinsics in the interpreter, C1 and C2
+ *          and decline when the intrinsics are disabled
+ * @requires (os.arch == "aarch64") | (os.arch == "amd64" & vm.cpu.features ~= ".*sse4.2.*")
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.base/sun.nio.cs:open
+ *          java.base/java.lang:open
+ *
+ * @run main/othervm -Xint
+ *      --add-exports java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/sun.nio.cs=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      TestCharsetBulkActivation active
+ * @run main/othervm -XX:-UseSIMDUTFIntrinsics
+ *      --add-exports java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/sun.nio.cs=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      TestCharsetBulkActivation declined
+ * @run main/othervm TestCharsetBulkActivation inlined
+ */
+
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+import jdk.internal.misc.Unsafe;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+public class TestCharsetBulkActivation {
+    private static final String TEXT = "héllo wörld € 漢字 😀 ".repeat(8);
+
+    /**
+     * One bulk method with arguments that it must convert completely. A decoder bounds
+     * its chunks by the worst case of one unit per byte or two per code point, so its
+     * capacity is given with that room.
+     */
+    private record Bulk(String name, Method method, Object src, long srcOffset, int srcLength,
+                        Object dst, long dstOffset, int dstCapacity, int consumed, int produced) {
+        long call() throws Exception {
+            return (long) method.invoke(null, src, srcOffset, srcLength, dst, dstOffset, dstCapacity);
+        }
+    }
+
+    private static Method method(String cls, String name) throws Exception {
+        Method m = Class.forName(cls).getDeclaredMethod(name, Object.class, long.class, int.class,
+                Object.class, long.class, int.class);
+        m.setAccessible(true);
+        return m;
+    }
+
+    private static List<Bulk> bulks() throws Exception {
+        char[] chars = TEXT.toCharArray();
+        byte[] utf8 = TEXT.getBytes(StandardCharsets.UTF_8);
+        Charset le = Charset.forName("UTF-32LE");
+        byte[] utf32 = TEXT.getBytes(le);
+        int codePoints = TEXT.codePointCount(0, TEXT.length());
+        long bytes = Unsafe.ARRAY_BYTE_BASE_OFFSET;
+        long chr = Unsafe.ARRAY_CHAR_BASE_OFFSET;
+        List<Bulk> list = new ArrayList<>();
+        list.add(new Bulk("UTF-8 decode", method("sun.nio.cs.UTF_8$Decoder", "decodeBulk"),
+                utf8, bytes, utf8.length, new char[utf8.length], chr, utf8.length, utf8.length, chars.length));
+        list.add(new Bulk("UTF-8 encode", method("sun.nio.cs.UTF_8$Encoder", "encodeBulk"),
+                chars, chr, chars.length, new byte[utf8.length + 16], bytes, utf8.length + 16, chars.length, utf8.length));
+        list.add(new Bulk("UTF-32 decode", method("sun.nio.cs.UTF_32Coder$Decoder", "decodeBulk"),
+                utf32, bytes, codePoints, new char[2 * codePoints], chr, 2 * codePoints, codePoints, chars.length));
+        list.add(new Bulk("UTF-32 encode", method("sun.nio.cs.UTF_32Coder$Encoder", "encodeBulk"),
+                chars, chr, chars.length, new byte[utf32.length + 16], bytes, chars.length, chars.length, codePoints));
+        String latin1Text = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8);
+        byte[] latin1Utf8 = latin1Text.getBytes(StandardCharsets.UTF_8);
+        list.add(new Bulk("UTF-8 to Latin-1", method("java.lang.String", "utf8ToLatin1Bulk"),
+                latin1Utf8, bytes, latin1Utf8.length, new byte[latin1Utf8.length], bytes, latin1Utf8.length,
+                latin1Utf8.length, latin1Text.length()));
+        return list;
+    }
+
+    private static void check(Bulk bulk, boolean active) throws Exception {
+        long result = bulk.call();
+        int consumed = (int) (result >>> 32);
+        int produced = (int) result;
+        if (active) {
+            if (consumed != bulk.consumed || produced != bulk.produced) {
+                throw new AssertionError(bulk.name + " consumed " + consumed + " produced " + produced
+                        + ", expected " + bulk.consumed + " and " + bulk.produced);
+            }
+        } else if (result != 0) {
+            throw new AssertionError(bulk.name + " must decline: " + result);
+        }
+    }
+
+    private static void probe(boolean active) throws Exception {
+        for (Bulk bulk : bulks()) {
+            check(bulk, active);
+        }
+    }
+
+    private static void inlined() throws Exception {
+        for (String mode : new String[]{"-XX:TieredStopAtLevel=1", "-XX:-TieredCompilation"}) {
+            OutputAnalyzer output = ProcessTools.executeTestJava("-Xbatch", mode,
+                    "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
+                    "-cp", System.getProperty("test.classes"), "CharsetBulkWork");
+            output.shouldHaveExitValue(0);
+            for (String method : new String[]{"UTF_8$Decoder::decodeBulk", "UTF_8$Encoder::encodeBulk",
+                                              "UTF_32Coder$Decoder::decodeBulk", "UTF_32Coder$Encoder::encodeBulk",
+                                              "String::utf8ToLatin1Bulk"}) {
+                output.shouldMatch(Pattern.quote(method) + " \\(\\d+ bytes\\)\\s+\\(?intrinsic\\)?");
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        switch (args[0]) {
+            case "active" -> probe(true);
+            case "declined" -> probe(false);
+            case "inlined" -> inlined();
+            default -> throw new IllegalArgumentException(args[0]);
+        }
+    }
+}
+
+/** A caller whose inlining of the bulk methods is reported by PrintInlining. */
+class CharsetBulkWork {
+    private static final String TEXT = "h\u00e9llo w\u00f6rld \u20ac \u6f22\u5b57 \ud83d\ude00 ".repeat(8);
+
+    public static void main(String[] args) throws Exception {
+        byte[] utf8 = TEXT.getBytes(StandardCharsets.UTF_8);
+        Charset le = Charset.forName("UTF-32LE");
+        byte[] utf32 = TEXT.getBytes(le);
+        char[] chars = TEXT.toCharArray();
+        CharsetDecoder utf8Decoder = StandardCharsets.UTF_8.newDecoder();
+        CharsetEncoder utf8Encoder = StandardCharsets.UTF_8.newEncoder();
+        CharsetDecoder utf32Decoder = le.newDecoder();
+        CharsetEncoder utf32Encoder = le.newEncoder();
+        byte[] latin1Utf8 = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8).getBytes(StandardCharsets.UTF_8);
+        long sum = 0;
+        for (int i = 0; i < 20000; i++) {
+            sum += new String(latin1Utf8, StandardCharsets.UTF_8).length();
+            CharBuffer out = CharBuffer.allocate(chars.length + 8);
+            utf8Decoder.reset().decode(ByteBuffer.wrap(utf8), out, true);
+            sum += out.position();
+            out.clear();
+            utf32Decoder.reset().decode(ByteBuffer.wrap(utf32), out, true);
+            sum += out.position();
+            ByteBuffer bytes = ByteBuffer.allocate(utf32.length + 8);
+            utf8Encoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
+            sum += bytes.position();
+            bytes.clear();
+            utf32Encoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
+            sum += bytes.position();
+        }
+        System.out.println(sum);
+    }
+}

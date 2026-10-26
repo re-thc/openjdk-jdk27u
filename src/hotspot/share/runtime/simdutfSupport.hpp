@@ -37,6 +37,15 @@ class SimdUTF : AllStatic {
   static jint decode_utf8_utf16(const jbyte* src, jint length, jbyte* dst);
   static jint index_of_latin1(const jbyte* src, jint length, jint ch);
   static jint index_of_utf16(const jbyte* src, jint length, jint ch);
+  // Charset coder leaves. Each converts the longest prefix of complete, valid
+  // input whose output fits the capacity, and returns the consumed source units
+  // in the high word and the produced destination units in the low word. The
+  // caller's Java loop handles whatever follows, including malformed input.
+  static jlong decode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong encode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong decode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong encode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong utf8_to_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static void encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url);
   static jint decode_base64_mime(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jint decode_base64(const jbyte* src, jint length, jbyte* dst, jint capacity, jboolean url);

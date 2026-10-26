@@ -116,6 +116,142 @@ JRT_LEAF(jint, SimdUTF::index_of_utf16(const jbyte* src, jint length, jint ch))
   return found == begin + length ? -1 : static_cast<jint>(found - begin);
 JRT_END
 
+namespace {
+// Remainders shorter than this are left to the caller's Java loop.
+const jint ConversionTail = 16;
+
+inline jlong pack(jint consumed, jint produced) {
+  return (static_cast<jlong>(consumed) << 32) | static_cast<jlong>(static_cast<juint>(produced));
+}
+
+// The vector kernels assume natural alignment of their element types. Java
+// arrays satisfy it, but a direct buffer view can start at any byte.
+inline bool aligned(const void* address, size_t size) {
+  return (reinterpret_cast<uintptr_t>(address) & (size - 1)) == 0;
+}
+}
+
+// UTF-8 bytes to UTF-16 units. A UTF-8 byte yields at most one unit, so a chunk of
+// min(input, room) bytes always fits. An incomplete trailing sequence, whether at
+// the end of the input or at a chunk bound, is left for the next chunk or the caller.
+// On malformed input the library reports the first invalid position, and the valid
+// prefix before it has been converted.
+JRT_LEAF(jlong, SimdUTF::decode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  const char* input = reinterpret_cast<const char*>(src);
+  char16_t* output = reinterpret_cast<char16_t*>(dst);
+  if (!aligned(output, sizeof(char16_t))) {
+    return 0;
+  }
+  jint consumed = 0;
+  jint produced = 0;
+  for (;;) {
+    jint chunk = MIN2(length - consumed, capacity - produced);
+    if (chunk < ConversionTail) {
+      break;
+    }
+    jint complete = static_cast<jint>(simdutf::trim_partial_utf8(input + consumed, chunk));
+    simdutf::result result = simdutf::convert_utf8_to_utf16_with_errors(
+        input + consumed, complete, output + produced);
+    if (result.error != simdutf::SUCCESS) {
+      jint valid = static_cast<jint>(result.count);
+      produced += static_cast<jint>(simdutf::utf16_length_from_utf8(input + consumed, valid));
+      consumed += valid;
+      break;
+    }
+    consumed += complete;
+    produced += static_cast<jint>(result.count);
+  }
+  return pack(consumed, produced);
+JRT_END
+
+// UTF-16 units to UTF-8 bytes. The library bounds the output itself and reports
+// both counts, stopping before an unpaired surrogate or a character that does not
+// fit. A trailing high surrogate is left for the caller, which may be waiting for
+// its pair.
+JRT_LEAF(jlong, SimdUTF::encode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  const char16_t* input = reinterpret_cast<const char16_t*>(src);
+  if (!aligned(input, sizeof(char16_t))) {
+    return 0;
+  }
+  simdutf::full_result result = simdutf::convert_utf16_to_utf8_safe_with_details(
+      input, length, reinterpret_cast<char*>(dst), capacity);
+  return pack(static_cast<jint>(result.input_count), static_cast<jint>(result.output_count));
+JRT_END
+
+// UTF-32 in native byte order to UTF-16. Code points above U+10FFFF and surrogate
+// code points are errors for the library; the caller decides what they mean. A code
+// point yields at most two units, which bounds each chunk.
+JRT_LEAF(jlong, SimdUTF::decode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  const char32_t* input = reinterpret_cast<const char32_t*>(src);
+  char16_t* output = reinterpret_cast<char16_t*>(dst);
+  if (!aligned(input, sizeof(char32_t)) || !aligned(output, sizeof(char16_t))) {
+    return 0;
+  }
+  jint consumed = 0;
+  jint produced = 0;
+  for (;;) {
+    jint chunk = MIN2(length - consumed, (capacity - produced) / 2);
+    if (chunk < ConversionTail) {
+      break;
+    }
+    simdutf::result result = simdutf::convert_utf32_to_utf16_with_errors(
+        input + consumed, chunk, output + produced);
+    if (result.error != simdutf::SUCCESS) {
+      jint valid = static_cast<jint>(result.count);
+      produced += static_cast<jint>(simdutf::utf16_length_from_utf32(input + consumed, valid));
+      consumed += valid;
+      break;
+    }
+    consumed += chunk;
+    produced += static_cast<jint>(result.count);
+  }
+  return pack(consumed, produced);
+JRT_END
+
+// UTF-16 to UTF-32 in native byte order. A unit yields at most one code point, so
+// min(input, room) units fit; a pair cut by the bound is reported as an error at
+// the high surrogate and left for the caller.
+JRT_LEAF(jlong, SimdUTF::encode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  const char16_t* input = reinterpret_cast<const char16_t*>(src);
+  char32_t* output = reinterpret_cast<char32_t*>(dst);
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail || !aligned(input, sizeof(char16_t)) || !aligned(output, sizeof(char32_t))) {
+    return 0;
+  }
+  simdutf::result result = simdutf::convert_utf16_to_utf32_with_errors(input, chunk, output);
+  if (result.error != simdutf::SUCCESS) {
+    jint valid = static_cast<jint>(result.count);
+    return pack(valid, static_cast<jint>(simdutf::utf32_length_from_utf16(input, valid)));
+  }
+  return pack(chunk, static_cast<jint>(result.count));
+JRT_END
+
+// UTF-8 bytes to Latin-1, for the String decoder that tries a compact string first. A
+// UTF-8 byte yields at most one Latin-1 byte, so min(input, room) bytes fit. The first
+// character that is malformed or not Latin-1 ends the prefix. The library reports where
+// it ends but does not define the output before an error in every implementation, so
+// the prefix is converted again then; String falls back to UTF-16 from that point.
+JRT_LEAF(jlong, SimdUTF::utf8_to_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  const char* input = reinterpret_cast<const char*>(src);
+  char* output = reinterpret_cast<char*>(dst);
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail) {
+    return 0;
+  }
+  jint complete = static_cast<jint>(simdutf::trim_partial_utf8(input, chunk));
+  simdutf::result result = simdutf::convert_utf8_to_latin1_with_errors(input, complete, output);
+  if (result.error != simdutf::SUCCESS) {
+    jint valid = static_cast<jint>(result.count);
+    return pack(valid, static_cast<jint>(simdutf::convert_utf8_to_latin1(input, valid, output)));
+  }
+  return pack(complete, static_cast<jint>(result.count));
+JRT_END
+
 // encodeBlock supplies complete three-byte groups. Java owns padding and MIME
 // line breaks; this conversion writes directly to the existing output array.
 JRT_LEAF(void, SimdUTF::encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url))

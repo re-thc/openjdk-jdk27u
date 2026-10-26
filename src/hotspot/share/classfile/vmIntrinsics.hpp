@@ -431,6 +431,21 @@ class methodHandle;
    do_name(     countPositives_name,                       "countPositives0")                                           \
    do_signature(countPositives_signature,                  "([BII)I")                                                   \
                                                                                                                         \
+  /* support for the UTF-8 and UTF-32 Charset coders */                                                                 \
+  do_class(sun_nio_cs_utf8_Decoder,  "sun/nio/cs/UTF_8$Decoder")                                                        \
+  do_class(sun_nio_cs_utf8_Encoder,  "sun/nio/cs/UTF_8$Encoder")                                                        \
+  do_class(sun_nio_cs_utf32_Decoder, "sun/nio/cs/UTF_32Coder$Decoder")                                                  \
+  do_class(sun_nio_cs_utf32_Encoder, "sun/nio/cs/UTF_32Coder$Encoder")                                                  \
+  do_intrinsic(_decodeUTF8Bulk,  sun_nio_cs_utf8_Decoder,  decodeBulk_name, bulkConvert_signature, F_S)                  \
+   do_name(     decodeBulk_name,                         "decodeBulk")                                                    \
+   do_signature(bulkConvert_signature,                   "(Ljava/lang/Object;JILjava/lang/Object;JI)J")                   \
+  do_intrinsic(_encodeUTF8Bulk,  sun_nio_cs_utf8_Encoder,  encodeBulk_name, bulkConvert_signature, F_S)                  \
+   do_name(     encodeBulk_name,                         "encodeBulk")                                                    \
+  do_intrinsic(_decodeUTF32Bulk, sun_nio_cs_utf32_Decoder, decodeBulk_name, bulkConvert_signature, F_S)                  \
+  do_intrinsic(_encodeUTF32Bulk, sun_nio_cs_utf32_Encoder, encodeBulk_name, bulkConvert_signature, F_S)                  \
+  do_intrinsic(_utf8ToLatin1Bulk, java_lang_String,        utf8ToLatin1Bulk_name, bulkConvert_signature, F_S)             \
+   do_name(     utf8ToLatin1Bulk_name,                   "utf8ToLatin1Bulk")                                              \
+                                                                                                                        \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \
    do_name(     encodeISOArray_name,                             "encodeISOArray0")                                     \
