@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +26,50 @@
 
 package jdk.internal.net.http;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 
 class FilterFactory {
 
     // Strictly-ordered list of filters.
-    final List<Class<? extends HeaderFilter>> filterClasses = new ArrayList<>(3);
+    private final List<Filter> filters = new ArrayList<>(3);
 
     public void addFilter(Class<? extends HeaderFilter> type) {
-        filterClasses.add(type);
+        filters.add(new Filter(type));
     }
 
     List<HeaderFilter> getFilterChain() {
-        List<HeaderFilter> l = new ArrayList<>(filterClasses.size());
-        for (Class<? extends HeaderFilter> clazz : filterClasses) {
+        List<HeaderFilter> l = new ArrayList<>(filters.size());
+        for (Filter filter : filters) {
             try {
-                // Requires a public no arg constructor.
-                HeaderFilter headerFilter = clazz.getConstructor().newInstance();
-                l.add(headerFilter);
+                l.add(filter.newInstance());
             } catch (ReflectiveOperationException e) {
                 throw new InternalError(e);
             }
         }
         return l;
+    }
+
+    private static final class Filter {
+        private final Class<? extends HeaderFilter> type;
+        private volatile Constructor<? extends HeaderFilter> constructor;
+
+        Filter(Class<? extends HeaderFilter> type) {
+            this.type = type;
+        }
+
+        HeaderFilter newInstance() throws ReflectiveOperationException {
+            Constructor<? extends HeaderFilter> c = constructor;
+            if (c != null) {
+                return c.newInstance();
+            }
+            // Resolve the public no-arg constructor lazily, caching only after success.
+            // Concurrent first exchanges may each resolve their own constructor.
+            c = type.getConstructor();
+            HeaderFilter filter = c.newInstance();
+            constructor = c;
+            return filter;
+        }
     }
 }
