@@ -250,7 +250,7 @@ bool CompilationPolicy::is_trivial(const methodHandle& method) {
 CompLevel CompilationPolicy::comp_level(Method* method) {
   nmethod *nm = method->code();
   if (nm != nullptr && nm->is_in_use()) {
-    return (CompLevel)nm->comp_level();
+    return nm->is_compiled_by_direct_baseline() ? CompLevel_none : (CompLevel)nm->comp_level();
   }
   return CompLevel_none;
 }
@@ -709,6 +709,16 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
       // selection and/or any level adjustments. Just return them in order.
       return task;
     }
+    if (task->is_direct_baseline()) {
+      // Baseline tasks have a distinct pending state and never clear the ordinary queue bit.
+      if (task->method()->has_compiled_code() || task->method()->queued_for_compilation() ||
+          task->method()->highest_comp_level() != CompLevel_none) {
+        compile_queue->remove_and_mark_stale(task);
+        task = next_task;
+        continue;
+      }
+      return task;
+    }
     Method* method = task->method();
     methodHandle mh(THREAD, method);
     if (task->can_become_stale() && is_stale(t, TieredCompileTaskTimeout, mh) && !is_old(mh)) {
@@ -887,6 +897,15 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
     update_rate(nanos_to_millis(os::javaTimeNanos()), mh);
+    if (TraceDirectBaseline && mh->code() != nullptr && mh->code()->is_compiled_by_direct_baseline()) {
+      ResourceMark rm(THREAD);
+      ttyLocker ttyl;
+      tty->print_cr("direct admission %s%s mc=%d mdo=%d total=%d entries=%d level=%d",
+                    mh->name()->as_C_string(), mh->signature()->as_C_string(),
+                    mh->method_counters()->invocation_counter()->count(),
+                    mh->method_data() == nullptr ? 0 : mh->method_data()->invocation_counter()->count(),
+                    mh->invocation_count(), mh->method_counters()->direct_baseline_entries(), level);
+    }
     CompileBroker::compile_method(mh, bci, level, hot_count, CompileTask::Reason_Tiered, THREAD);
   }
 }

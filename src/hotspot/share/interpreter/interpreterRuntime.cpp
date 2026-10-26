@@ -22,6 +22,7 @@
  *
  */
 
+#include "baseline/directBaseline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -1562,3 +1563,9 @@ void InterpreterRuntime::generate_oop_map_alot() {
   }
 }
 #endif // ASSERT
+
+JRT_ENTRY(void, InterpreterRuntime::direct_baseline(JavaThread* current))
+  LastFrameAccessor last_frame(current);
+  methodHandle method(current, last_frame.method());
+  DirectBaseline::request(method, current);
+JRT_END

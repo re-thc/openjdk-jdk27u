@@ -134,6 +134,16 @@
           "and the value of the per-method flag.")                          \
           range(0.0, DBL_MAX)                                               \
                                                                             \
+  product(bool, UseDirectBaseline, false, EXPERIMENTAL,                       \
+          "Enable the x86-64 direct bytecode baseline prototype")            \
+                                                                            \
+  product(intx, DirectBaselineThreshold, 32, EXPERIMENTAL,                     \
+          "MC invocation count for a single early baseline request")         \
+          range(1, 127)                                                     \
+                                                                            \
+  product(bool, TraceDirectBaseline, false, DIAGNOSTIC,                       \
+          "Print baseline coverage, install time and counter continuity")    \
+                                                                            \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \
           range(0, 30)                                                      \

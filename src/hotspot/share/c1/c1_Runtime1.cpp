@@ -476,7 +476,7 @@ static nmethod* counter_overflow_helper(JavaThread* current, int branch_bci, Met
   assert(nm!= nullptr && nm->is_nmethod(), "Sanity check");
   methodHandle enclosing_method(current, nm->method());
 
-  CompLevel level = (CompLevel)nm->comp_level();
+  CompLevel level = nm->is_compiled_by_direct_baseline() ? CompLevel_none : (CompLevel)nm->comp_level();
   int bci = InvocationEntryBci;
   if (branch_bci != InvocationEntryBci) {
     // Compute destination bci

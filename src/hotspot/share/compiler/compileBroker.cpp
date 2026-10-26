@@ -22,6 +22,7 @@
  *
  */
 
+#include "baseline/directBaseline.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -305,13 +306,14 @@ void CompileQueue::add(CompileTask* task) {
     _last = task;
   }
   ++_size;
+  if (task->is_direct_baseline()) ++_direct_baseline_size;
   ++_total_added;
   if (_size > _peak_size) {
     _peak_size = _size;
   }
 
   // Mark the method as being in the compile queue.
-  task->method()->set_queued_for_compilation();
+  if (!task->is_direct_baseline()) task->method()->set_queued_for_compilation();
 
   task->mark_queued(os::elapsed_counter());
 
@@ -323,7 +325,7 @@ void CompileQueue::add(CompileTask* task) {
     task->log_task_queued();
   }
 
-  if (TrainingData::need_data() && !CDSConfig::is_dumping_final_static_archive()) {
+  if (!task->is_direct_baseline() && TrainingData::need_data() && !CDSConfig::is_dumping_final_static_archive()) {
     CompileTrainingData* ctd = CompileTrainingData::make(task);
     if (ctd != nullptr) {
       task->set_training_data(ctd);
@@ -475,6 +477,7 @@ void CompileQueue::remove(CompileTask* task) {
   task->set_next(nullptr);
   task->set_prev(nullptr);
   --_size;
+  if (task->is_direct_baseline()) --_direct_baseline_size;
   ++_total_removed;
 }
 
@@ -1352,7 +1355,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
       return true;
     } else {
       nmethod* result = method->code();
-      if (result == nullptr) return false;
+      if (result == nullptr || result->is_compiled_by_direct_baseline()) return false;
       return comp_level == result->comp_level();
     }
   }
@@ -1749,7 +1752,7 @@ void CompileBroker::compiler_thread_loop() {
           thread->start_idle_timer();
         } else {
           // After compilation is disabled, remove remaining methods from queue
-          method->clear_queued_for_compilation();
+          if (!task->is_direct_baseline()) method->clear_queued_for_compilation();
           task->set_failure_reason("compilation is disabled");
         }
       } else {
@@ -1949,6 +1952,8 @@ static void whitebox_lock_compilation() {
 //
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   task->print_ul();
+  jlong direct_start = TraceDirectBaseline && task->is_direct_baseline() ? os::javaTimeNanos() : 0;
+  jlong direct_cpu = direct_start != 0 ? os::current_thread_cpu_time() : 0;
   elapsedTimer time;
 
   DirectiveSet* directive = task->directive();
@@ -2104,6 +2109,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   DTRACE_METHOD_COMPILE_END_PROBE(method, compiler_name(task_level), task->is_success());
 
   collect_statistics(thread, time, task);
+  if (direct_start != 0) {
+    ttyLocker ttyl;
+    tty->print_cr("direct task id=%d elapsed_ns=" JLONG_FORMAT " cpu_ns=" JLONG_FORMAT " success=%d nmethod_bytes=%d",
+                  task->compile_id(), os::javaTimeNanos()-direct_start, os::current_thread_cpu_time()-direct_cpu,
+                  task->is_success(), task->nm_total_size());
+  }
 
   if (PrintCompilation2 || directive->PrintCompilation2Option) {
     ResourceMark rm;
@@ -2119,7 +2130,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     codecache_print(/* detailed= */ false);
   }
   // Disable compilation, if required.
-  switch (compilable) {
+  if (!task->is_direct_baseline()) switch (compilable) {
   case ciEnv::MethodCompilable_never:
     if (is_osr)
       method->set_not_osr_compilable_quietly("MethodCompilable_never");
@@ -2141,7 +2152,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   // queue lock to get this task off the compile queue; thus (to belabour
   // the point somewhat) our clearing of the bits must be occurring
   // only after the setting of the bits. See also 14012000 above.
-  method->clear_queued_for_compilation();
+  if (!task->is_direct_baseline()) method->clear_queued_for_compilation();
 }
 
 /**
@@ -2291,14 +2302,16 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
 
       // Collect statistic per compilation level
       if (comp_level > CompLevel_none && comp_level <= CompLevel_full_optimization) {
-        CompilerStatistics* stats = &_stats_per_level[comp_level-1];
-        if (is_osr) {
-          stats->_osr.update(time, bytes_compiled);
-        } else {
-          stats->_standard.update(time, bytes_compiled);
+        CompilerStatistics* stats = task->is_direct_baseline() ? nullptr : &_stats_per_level[comp_level-1];
+        if (stats != nullptr) {
+          if (is_osr) {
+            stats->_osr.update(time, bytes_compiled);
+          } else {
+            stats->_standard.update(time, bytes_compiled);
+          }
+          stats->_nmethods_size += task->nm_total_size();
+          stats->_nmethods_code_size += task->nm_insts_size();
         }
-        stats->_nmethods_size += task->nm_total_size();
-        stats->_nmethods_code_size += task->nm_insts_size();
       } else {
         assert(false, "CompilerStatistics object does not exist for compilation level %d", comp_level);
       }
@@ -2616,4 +2629,19 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
     out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());
+}
+
+void CompileBroker::request_direct_baseline(const methodHandle& method, JavaThread* thread) {
+  if (!_initialized || _c1_compile_queue == nullptr || !should_compile_new_jobs()) return;
+  MethodCounters* mc = method->method_counters();
+  if (mc == nullptr) return;
+  MutexLocker locker(thread, MethodCompileQueue_lock);
+  if (mc->direct_baseline_attempted() || method->queued_for_compilation() ||
+      method->has_compiled_code() || method->highest_comp_level() != CompLevel_none) return;
+  mc->set_direct_baseline_attempted();
+  int id = assign_compile_id(method, InvocationEntryBci);
+  if (id == 0) return;
+  create_compile_task(_c1_compile_queue, id, method, InvocationEntryBci,
+                      CompLevel_simple, method->invocation_count(),
+                      CompileTask::Reason_DirectBaseline, false);
 }

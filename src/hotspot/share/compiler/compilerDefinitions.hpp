@@ -33,6 +33,7 @@ enum CompilerType : u1 {
   compiler_none,
   compiler_c1,
   compiler_c2,
+  compiler_direct_baseline,
   compiler_number_of_types
 };
 

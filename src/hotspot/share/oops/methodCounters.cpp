@@ -38,7 +38,9 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
   _prev_time(0),
   _rate(0),
   _highest_comp_level(0),
-  _highest_osr_comp_level(0)
+  _highest_osr_comp_level(0),
+  _direct_baseline_attempted(false),
+  _direct_baseline_entries(0)
 {
   set_interpreter_throwout_count(0);
   JVMTI_ONLY(clear_number_of_breakpoints());

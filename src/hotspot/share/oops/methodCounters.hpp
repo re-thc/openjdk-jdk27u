@@ -62,6 +62,9 @@ class MethodCounters : public Metadata {
   u1                _highest_comp_level;          // Highest compile level this method has ever seen.
   u1                _highest_osr_comp_level;      // Same for OSR level
 
+  bool _direct_baseline_attempted; // Protected by MethodCompileQueue_lock
+  int _direct_baseline_entries; // Diagnostic, approximate under contention
+
   MethodCounters(const methodHandle& mh);
   MethodCounters();
 
@@ -124,6 +127,12 @@ class MethodCounters : public Metadata {
   void set_highest_comp_level(int level)         { _highest_comp_level = (u1)level; }
   int highest_osr_comp_level() const             { return _highest_osr_comp_level;  }
   void set_highest_osr_comp_level(int level)     { _highest_osr_comp_level = (u1)level; }
+
+  int direct_baseline_entries() const { return _direct_baseline_entries; }
+  static ByteSize direct_baseline_entries_offset() { return byte_offset_of(MethodCounters, _direct_baseline_entries); }
+  bool direct_baseline_attempted() const { return _direct_baseline_attempted; }
+  void set_direct_baseline_attempted() { _direct_baseline_attempted = true; }
+  static ByteSize direct_baseline_attempted_offset() { return byte_offset_of(MethodCounters, _direct_baseline_attempted); }
 
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }

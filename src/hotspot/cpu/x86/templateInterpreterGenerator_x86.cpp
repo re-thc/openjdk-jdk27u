@@ -1296,6 +1296,23 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 
   Label continue_after_compile;
+#if defined(AMD64) && defined(COMPILER1)
+  if (UseDirectBaseline && inc_counter && !synchronized) {
+    Label no_baseline;
+    __ cmpl(rcx, checked_cast<int>(DirectBaselineThreshold) << InvocationCounter::count_shift);
+    __ jcc(Assembler::notEqual, no_baseline);
+    __ load_unsigned_short(rax, access_flags);
+    __ testl(rax, JVM_ACC_STATIC);
+    __ jcc(Assembler::zero, no_baseline);
+    __ movptr(rax, Address(rbx, Method::method_counters_offset()));
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, no_baseline);
+    __ cmpb(Address(rax, in_bytes(MethodCounters::direct_baseline_attempted_offset())), 0);
+    __ jcc(Assembler::notEqual, no_baseline);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::direct_baseline));
+    __ bind(no_baseline);
+  }
+#endif
   __ bind(continue_after_compile);
 
   // check for synchronized interpreted methods

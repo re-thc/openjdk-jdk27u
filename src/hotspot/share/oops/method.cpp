@@ -1380,7 +1380,7 @@ void Method::set_code(const methodHandle& mh, nmethod *code) {
   // which jumps to _from_compiled_entry.
   mh->_code = code;             // Assign before allowing compiled code to exec
 
-  int comp_level = code->comp_level();
+  int comp_level = code->is_compiled_by_direct_baseline() ? CompLevel_none : code->comp_level();
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
   if (comp_level > mh->highest_comp_level()) {

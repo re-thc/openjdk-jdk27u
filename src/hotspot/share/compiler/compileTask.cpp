@@ -22,6 +22,7 @@
  *
  */
 
+#include "baseline/directBaseline.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -56,7 +57,7 @@ CompileTask::CompileTask(int compile_id,
   _nm_total_size(0),
   _nm_insts_size(0),
   _comp_level(comp_level),
-  _compiler(CompileBroker::compiler(comp_level)),
+  _compiler(compile_reason == Reason_DirectBaseline ? DirectBaseline::compiler() : CompileBroker::compiler(comp_level)),
   _comp_directive_matcher(method, static_cast<CompLevel>(comp_level)),
   _num_inlined_bytecodes(0),
   _next(nullptr),

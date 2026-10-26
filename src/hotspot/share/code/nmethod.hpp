@@ -600,6 +600,7 @@ public:
   int compile_id() const { return _compile_id; }
   const char* compile_kind() const;
 
+  inline bool  is_compiled_by_direct_baseline() const { return _compiler_type == compiler_direct_baseline; }
   inline bool  is_compiled_by_c1   () const { return _compiler_type == compiler_c1; }
   inline bool  is_compiled_by_c2   () const { return _compiler_type == compiler_c2; }
   CompilerType compiler_type       () const { return _compiler_type; }

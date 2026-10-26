@@ -3245,6 +3245,8 @@ void nmethod::print_on_impl(outputStream* st) const {
     st->print("(c1) ");
   } else if (is_compiled_by_c2()) {
     st->print("(c2) ");
+  } else if (is_compiled_by_direct_baseline()) {
+    st->print("(direct) ");
   } else {
     st->print("(n/a) ");
   }

@@ -810,7 +810,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
   }
 
-  if (t == nullptr && (nm->is_compiled_by_c1() || handler_bci != -1)) {
+  if (t == nullptr && ((nm->is_compiled_by_c1() || nm->is_compiled_by_direct_baseline()) || handler_bci != -1)) {
     // Allow abbreviated catch tables.  The idea is to allow a method
     // to materialize its exceptions without committing to the exact
     // routing of exceptions.  In particular this is needed for adding
@@ -821,7 +821,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   }
 
 #ifdef COMPILER1
-  if (t == nullptr && nm->is_compiled_by_c1()) {
+  if (t == nullptr && (nm->is_compiled_by_c1() || nm->is_compiled_by_direct_baseline())) {
     assert(nm->unwind_handler_begin() != nullptr, "");
     return nm->unwind_handler_begin();
   }

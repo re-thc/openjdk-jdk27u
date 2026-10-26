@@ -45,6 +45,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/oopMap.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -1012,6 +1013,13 @@ void ciEnv::register_method(ciMethod* target,
     MutexLocker ml(Compile_lock);
     NoSafepointVerifier nsv;
 
+    if (task()->is_direct_baseline() &&
+        (method->has_compiled_code() || method->queued_for_compilation() ||
+         method->highest_comp_level() != CompLevel_none ||
+         (method->is_old() || method->is_not_compilable(CompLevel_simple) || method->number_of_breakpoints() != 0))) {
+      record_failure("stale direct baseline install");
+    }
+
     // Change in Jvmti state may invalidate compilation.
     if (!failing() && jvmti_state_changed()) {
       record_failure("Jvmti state change invalidated dependencies");
@@ -1077,6 +1085,15 @@ void ciEnv::register_method(ciMethod* target,
 
     if (nm != nullptr) {
       assert(!method->is_synchronized() || nm->has_monitors(), "");
+      if (TraceDirectBaseline && task()->is_direct_baseline()) {
+        tty->print_cr("direct install %s%s mc=%d mdo=%d total=%d nmethod_bytes=%d inst_bytes=%d blob_bytes=%d auxiliary_bytes=%d",
+                      method->name()->as_C_string(), method->signature()->as_C_string(),
+                      method->method_counters()->invocation_counter()->count(),
+                      method->method_data() == nullptr ? 0 : method->method_data()->invocation_counter()->count(),
+                      method->invocation_count(), nm->total_size(), nm->insts_size(), nm->size(),
+                      nm->mutable_data_size() + nm->immutable_data_size() +
+                      (nm->oop_maps() == nullptr ? 0 : nm->oop_maps()->nr_of_bytes()));
+      }
 
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
@@ -1086,6 +1103,14 @@ void ciEnv::register_method(ciMethod* target,
             ResourceMark rm;
             char *method_name = method->name_and_sig_as_C_string();
             tty->print_cr("Replacing method %s", method_name);
+          }
+          if (TraceDirectBaseline && old != nullptr && old->is_compiled_by_direct_baseline()) {
+            tty->print_cr("direct handoff %s%s mc=%d mdo=%d total=%d entries=%d next=%s level=%d",
+                          method->name()->as_C_string(), method->signature()->as_C_string(),
+                          method->method_counters()->invocation_counter()->count(),
+                          method->method_data() == nullptr ? 0 : method->method_data()->invocation_counter()->count(),
+                          method->invocation_count(), method->method_counters()->direct_baseline_entries(),
+                          compiler->name(), task()->comp_level());
           }
           if (old != nullptr) {
             old->make_not_used();

@@ -101,6 +101,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   CompileTask* _first_stale;
 
   volatile int _size;
+  volatile int _direct_baseline_size;
   int _peak_size;
   uint _total_added;
   uint _total_removed;
@@ -112,6 +113,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
     _first = nullptr;
     _last = nullptr;
     _size = 0;
+    _direct_baseline_size = 0;
     _total_added = 0;
     _total_removed = 0;
     _peak_size = 0;
@@ -130,6 +132,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   bool         is_empty() const                  { return _first == nullptr; }
   int          size()     const                  { return _size;          }
+  int          ordinary_size() const { return MAX2(0, _size - _direct_baseline_size); }
 
   int         get_peak_size()     const          { return _peak_size; }
   uint        get_total_added()   const          { return _total_added; }
@@ -304,11 +307,14 @@ public:
   }
 
   static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level);
+  static void request_direct_baseline(const methodHandle& method, JavaThread* thread);
+
   static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
-    return q != nullptr ? q->size() : 0;
+    // Baseline backlog must not scale ordinary C1 admission thresholds.
+    return q != nullptr ? q->ordinary_size() : 0;
   }
   static void compilation_init(JavaThread* THREAD);
   static void init_compiler_thread_log();

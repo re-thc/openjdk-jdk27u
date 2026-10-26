@@ -163,6 +163,8 @@ private:
   // optional normalization of fingerprints to reduce the number of adapters
   static uint64_t normalize_fast_native_fingerprint(uint64_t fingerprint);
 
+  static void direct_baseline(JavaThread* current);
+
   // Interpreter's frequency counter overflow
   static nmethod* frequency_counter_overflow(JavaThread* current, address branch_bcp);
 
