@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
 import java.io.File;
 import java.io.IOException;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
@@ -321,9 +323,8 @@ public class BasicTest {
                 new Object[] { "HiddenEnum" },
                 // supertype of this class is a hidden class
                 new Object[] { "HiddenSuper" },
-                // a record class whose equals(HiddenRecord, Object) method
-                // refers to a hidden class in the parameter type and fails
-                // verification.  Perhaps this method signature should be reconsidered.
+                // The ObjectMethods call-site descriptor names the record's nominal
+                // type, which cannot be resolved when the class is defined as hidden.
                 new Object[] { "HiddenRecord" },
         };
     }
@@ -335,6 +336,21 @@ public class BasicTest {
     @MethodSource("cantBeHiddenClasses")
     public void failToDeriveAsHiddenClass(String name) throws Exception {
         byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve(name + ".class"));
+        if (name.equals("HiddenRecord")) {
+            var model = ClassFile.of().parse(bytes);
+            assertTrue(model.methods().stream()
+                    .filter(m -> m.methodName().equalsString("equals"))
+                    .flatMap(m -> m.code().stream())
+                    .flatMap(CodeModel::elementStream)
+                    .anyMatch(e -> e instanceof InvokeDynamicInstruction indy
+                            && indy.name().equalsString("equals")
+                            && indy.typeSymbol().parameterCount() == 2
+                            && indy.typeSymbol().parameterType(0).equals(model.thisClass().asSymbol())
+                            && indy.typeSymbol().parameterType(1).equals(CD_Object)
+                            && indy.invokedynamic().bootstrap().bootstrapMethod().asSymbol().owner()
+                                    .equals(ClassDesc.of("java.lang.runtime.ObjectMethods"))),
+                    "record fixture must retain a self-typed ObjectMethods call site");
+        }
         assertThrows(NoClassDefFoundError.class, () -> lookup().defineHiddenClass(bytes, false).lookupClass());
     }
 

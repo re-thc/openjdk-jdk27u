@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,6 +319,11 @@ public class Lower extends TreeTranslator {
 
     Map<TypeSymbol,EnumMapping> enumSwitchMap = new LinkedHashMap<>();
 
+    // Nonempty label lists identify their enum through their constant symbols.
+    // Keep these maps separate from ordinary maps and their shared initializer.
+    Map<List<VarSymbol>, EnumMapping> nullableEnumSwitchMap = new LinkedHashMap<>();
+    Set<ClassSymbol> isolatedEnumCacheClasses = new HashSet<>();
+
     EnumMapping mapForEnum(DiagnosticPosition pos, TypeSymbol enumClass) {
 
         // If enum class is part of this compilation, just switch on ordinal value
@@ -405,9 +411,18 @@ public class Lower extends TreeTranslator {
      *          }
      *  </pre>
      *  class EnumMapping provides mapping data and support methods for this translation.
+     *
+     *  <p>Nullable switch expressions use an isolated cache with retryable
+     *  initialization. A failed attempt during enum construction must not poison
+     *  the cache class. Labels are resolved by name so fields that replace
+     *  removed enum constants are ignored.
      */
     class RuntimeEnumMapping implements EnumMapping {
         RuntimeEnumMapping(DiagnosticPosition pos, TypeSymbol forEnum) {
+            this(pos, forEnum, false);
+        }
+
+        RuntimeEnumMapping(DiagnosticPosition pos, TypeSymbol forEnum, boolean isolated) {
             this.forEnum = forEnum;
             this.values = new LinkedHashMap<>();
             this.pos = pos;
@@ -418,12 +433,32 @@ public class Lower extends TreeTranslator {
                             ClassWriter.externalize(forEnum.type.tsym.flatName().toString())
                             .replace('/', '.')
                             .replace('.', target.syntheticNameChar()));
-            ClassSymbol outerCacheClass = outerCacheClass();
-            this.mapVar = new VarSymbol(STATIC | SYNTHETIC | FINAL,
+            ClassSymbol outerCacheClass;
+            if (isolated) {
+                outerCacheClass = makeEmptyClass(STATIC | SYNTHETIC, outermostClassDef.sym).sym;
+                isolatedEnumCacheClasses.add(outerCacheClass);
+            } else {
+                outerCacheClass = outerCacheClass();
+            }
+            this.mapVar = new VarSymbol(STATIC | SYNTHETIC | (isolated ? VOLATILE : FINAL),
                                         varName,
                                         new ArrayType(syms.intType, syms.arrayClass),
                                         outerCacheClass);
             enterSynthetic(pos, mapVar, outerCacheClass.members());
+            if (isolated) {
+                this.mapGetter = new MethodSymbol(PRIVATE | STATIC | SYNTHETIC,
+                        names.fromString(varName + "$get"),
+                        new MethodType(List.nil(), mapVar.type, List.nil(), syms.methodClass),
+                        outerCacheClass);
+                this.mapInitializer = new MethodSymbol(PRIVATE | STATIC | SYNTHETIC,
+                        names.fromString(varName + "$init"),
+                        mapGetter.type, outerCacheClass);
+                enterSynthetic(pos, mapGetter, outerCacheClass.members());
+                enterSynthetic(pos, mapInitializer, outerCacheClass.members());
+            } else {
+                this.mapGetter = null;
+                this.mapInitializer = null;
+            }
         }
 
         DiagnosticPosition pos = null;
@@ -437,12 +472,18 @@ public class Lower extends TreeTranslator {
         // the field containing the map
         final VarSymbol mapVar;
 
+        // Nullable switches must retry a failed map construction without poisoning
+        // a helper class, for example when invoked from an enum constructor.
+        final MethodSymbol mapGetter;
+        final MethodSymbol mapInitializer;
+
         // the mapped values
         final Map<VarSymbol,Integer> values;
 
         @Override
         public JCExpression switchValue(JCExpression ordinalExpr) {
-            return make.Indexed(mapVar, ordinalExpr);
+            return mapGetter == null ? make.Indexed(mapVar, ordinalExpr)
+                    : make.Indexed(make.App(make.QualIdent(mapGetter)), ordinalExpr).setType(syms.intType);
         }
 
         @Override
@@ -453,7 +494,7 @@ public class Lower extends TreeTranslator {
             return make.Literal(result);
         }
 
-        // generate the field initializer for the map
+        // Generate the map's initialization code.
         @Override
         public void translate() {
             boolean prevAllowProtectedAccess = attrEnv.info.allowProtectedAccess;
@@ -462,7 +503,7 @@ public class Lower extends TreeTranslator {
                 attrEnv.info.allowProtectedAccess = true;
                 JCClassDecl owner = classDef((ClassSymbol)mapVar.owner);
 
-                // synthetic static final int[] $SwitchMap$Color = new int[Color.values().length];
+                // Size the map using the run-time enum, including added constants.
                 MethodSymbol valuesMethod = lookupMethod(pos,
                                                          names.values,
                                                          forEnum.type,
@@ -474,24 +515,36 @@ public class Lower extends TreeTranslator {
                     .NewArray(make.Type(syms.intType), List.of(size), null)
                     .setType(new ArrayType(syms.intType, syms.arrayClass));
 
-                // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
+                VarSymbol mapping = mapGetter == null ? mapVar
+                        : new VarSymbol(0, names.fromString("map"), mapVar.type, mapInitializer);
+
+                // Skip labels removed since the caller was compiled.
                 ListBuffer<JCStatement> stmts = new ListBuffer<>();
                 Symbol ordinalMethod = lookupMethod(pos,
                                                     names.ordinal,
                                                     forEnum.type,
                                                     List.nil());
+                Symbol valueOfMethod = mapGetter == null ? null : lookupMethod(pos,
+                        names.valueOf, syms.enumSym.type, List.of(types.erasure(syms.classType), syms.stringType));
                 List<JCCatch> catcher = List.<JCCatch>nil()
                     .prepend(make.Catch(make.VarDef(new VarSymbol(PARAMETER, names.ex,
-                                                                  syms.noSuchFieldErrorType,
+                                                                  mapGetter == null ? syms.noSuchFieldErrorType
+                                                                          : syms.illegalArgumentExceptionType,
                                                                   syms.noSymbol),
                                                     null),
                                         make.Block(0, List.nil())));
                 for (Map.Entry<VarSymbol,Integer> e : values.entrySet()) {
                     VarSymbol enumerator = e.getKey();
                     Integer mappedValue = e.getValue();
+                    // Nullable enum switches resolve labels by constant name. A
+                    // removed constant may have been replaced by an alias field.
+                    JCExpression constant = mapGetter == null ? make.QualIdent(enumerator)
+                            : make.TypeCast(forEnum.type, make.App(make.QualIdent(valueOfMethod), List.of(
+                                    make.ClassLiteral(forEnum.type).setType(types.erasure(syms.classType)),
+                                    make.Literal(enumerator.name.toString()))));
                     JCExpression assign = make
-                        .Assign(make.Indexed(mapVar,
-                                             make.App(make.Select(make.QualIdent(enumerator),
+                        .Assign(make.Indexed(mapping,
+                                             make.App(make.Select(constant,
                                                                   ordinalMethod))),
                                 make.Literal(mappedValue))
                         .setType(syms.intType);
@@ -500,9 +553,27 @@ public class Lower extends TreeTranslator {
                     stmts.append(_try);
                 }
 
-                owner.defs = owner.defs
-                    .prepend(make.Block(STATIC, stmts.toList()))
-                    .prepend(make.VarDef(mapVar, mapVarInit));
+                if (mapGetter == null) {
+                    owner.defs = owner.defs
+                        .prepend(make.Block(STATIC, stmts.toList()))
+                        .prepend(make.VarDef(mapVar, mapVarInit));
+                } else {
+                    // Build without a monitor: an enum constructor may invoke another
+                    // switch while another thread waits for the enum to initialize.
+                    // Concurrent builds are equivalent; publish only complete maps.
+                    stmts.prepend(make.VarDef(mapping, mapVarInit));
+                    stmts.append(make.Exec(make.Assign(make.Ident(mapVar), make.Ident(mapping))
+                            .setType(mapVar.type)));
+                    stmts.append(make.Return(make.Ident(mapping)));
+                    JCMethodDecl initializer = make.MethodDef(mapInitializer, make.Block(0, stmts.toList()));
+                    VarSymbol current = new VarSymbol(0, names.fromString("map"), mapVar.type, mapGetter);
+                    JCExpression available = makeBinary(NE, make.Ident(current), makeNull());
+                    JCExpression value = make.Conditional(available, make.Ident(current),
+                            make.App(make.QualIdent(mapInitializer))).setType(mapVar.type);
+                    JCMethodDecl getter = make.MethodDef(mapGetter, make.Block(0, List.of(
+                            make.VarDef(current, make.Ident(mapVar)), make.Return(value))));
+                    owner.defs = owner.defs.prepend(initializer).prepend(getter).prepend(make.VarDef(mapVar, null));
+                }
             } finally {
                 attrEnv.info.allowProtectedAccess = prevAllowProtectedAccess;
             }
@@ -1831,7 +1902,8 @@ public class Lower extends TreeTranslator {
         for (Symbol sym : s.getSymbols(NON_RECURSIVE))
             if (sym.kind == TYP &&
                 sym.name == names.empty &&
-                (sym.flags() & INTERFACE) == 0) return (ClassSymbol) sym;
+                (sym.flags() & INTERFACE) == 0 &&
+                !isolatedEnumCacheClasses.contains(sym)) return (ClassSymbol) sym;
         return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
     }
 
@@ -2492,6 +2564,11 @@ public class Lower extends TreeTranslator {
                 isEquals ? List.of(syms.objectType) : List.nil());
         // compiler generated methods have the record flag set, user defined ones dont
         if ((msym.flags() & RECORD) != 0) {
+            // Bound the extra bytecode and constant pool entries. Larger records
+            // retain the compact ObjectMethods representation.
+            if (useSmallRecordMethods(tree, vars)) {
+                return generateSmallRecordMethod(tree, msym, vars);
+            }
             /* class java.lang.runtime.ObjectMethods provides a common bootstrap that provides a customized implementation
              * for methods: toString, hashCode and equals. Here we just need to generate and indy call to:
              * java.lang.runtime.ObjectMethods::bootstrap and provide: the record class, the record component names and
@@ -2535,6 +2612,104 @@ public class Lower extends TreeTranslator {
         } else {
             return make.Block(SYNTHETIC, List.nil());
         }
+    }
+
+    private boolean useSmallRecordMethods(JCClassDecl tree, List<VarSymbol> vars) {
+        // Older runtimes can implement reference equality differently (for
+        // example, with a component identity shortcut). Preserve their bootstrap
+        // implementation when emitting class files for older targets.
+        if (target.compareTo(Target.JDK1_27) < 0 || vars.size() > 4) {
+            return false;
+        }
+        // Bound the concat recipe as well as the number of components. A small
+        // record can still have very long names. Each UTF-16 code unit takes at
+        // most three modified UTF-8 bytes in a CONSTANT_Utf8 entry.
+        int recipeLength = tree.sym.name.toString().length() + 2;
+        for (VarSymbol var : vars) {
+            recipeLength += var.name.toString().length() + 4; // separator, '=', value marker
+        }
+        return recipeLength <= 16_384;
+    }
+
+    /** Generate ordinary method bodies for small records, using component fields. */
+    private JCMethodDecl generateSmallRecordMethod(JCClassDecl tree, MethodSymbol method,
+                                                  List<VarSymbol> vars) {
+        ListBuffer<JCStatement> stats = new ListBuffer<>();
+        if (method.name == names.equals) {
+            VarSymbol arg = method.params.head;
+            arg.adr = 0;
+            stats.append(make.If(makeBinary(EQ, make.This(tree.sym.type), make.Ident(arg)),
+                    make.Return(makeLit(syms.booleanType, 1)), null));
+            JCExpression isRecord = make.TypeTest(make.Ident(arg), make.Type(tree.sym.type))
+                    .setType(syms.booleanType);
+            stats.append(make.If(makeUnary(NOT, isRecord),
+                    make.Return(makeLit(syms.booleanType, 0)), null));
+            VarSymbol other = new VarSymbol(SYNTHETIC, names.fromString("$other"), tree.sym.type, method);
+            stats.append(make.VarDef(other, make.TypeCast(tree.sym.type, make.Ident(arg))));
+            JCExpression equal = makeLit(syms.booleanType, 1);
+            // ObjectMethods tests the last component first. Keep a separate
+            // invocation for each reference component, without an identity test.
+            for (VarSymbol var : vars.reverse()) {
+                JCExpression left = make.Select(make.This(tree.sym.type), var);
+                JCExpression right = make.Select(make.Ident(other), var);
+                JCExpression componentEqual;
+                if (var.type.hasTag(FLOAT) || var.type.hasTag(DOUBLE)) {
+                    JCExpression compare = makeCall(make.QualIdent(types.boxedClass(var.type)),
+                            names.fromString("compare"), List.of(left, right));
+                    componentEqual = makeBinary(EQ, compare, makeLit(syms.intType, 0));
+                } else if (var.type.isPrimitive()) {
+                    componentEqual = makeBinary(EQ, left, right);
+                } else {
+                    // Resolve Object.equals explicitly, avoiding component overloads.
+                    Symbol equals = lookupMethod(tree.pos(), names.equals, syms.objectType,
+                            List.of(syms.objectType));
+                    componentEqual = make.Conditional(makeBinary(EQ, left, makeNull()),
+                            makeBinary(EQ, right, makeNull()),
+                            make.App(make.Select(make.Select(make.This(tree.sym.type), var), equals),
+                                    List.of(make.Select(make.Ident(other), var))))
+                            .setType(syms.booleanType);
+                }
+                equal = makeBinary(AND, equal, componentEqual);
+            }
+            stats.append(make.Return(equal));
+        } else if (method.name == names.hashCode) {
+            JCExpression hash = makeLit(syms.intType, 0);
+            boolean first = true;
+            for (VarSymbol var : vars) {
+                JCExpression value = make.Select(make.This(tree.sym.type), var);
+                JCExpression componentHash;
+                if (var.type.isPrimitive()) {
+                    componentHash = makeCall(make.QualIdent(types.boxedClass(var.type)),
+                            names.hashCode, List.of(value));
+                } else {
+                    Symbol hashCode = lookupMethod(tree.pos(), names.hashCode, syms.objectType, List.nil());
+                    componentHash = make.Conditional(makeBinary(EQ, value, makeNull()),
+                            makeLit(syms.intType, 0),
+                            make.App(make.Select(make.Select(make.This(tree.sym.type), var), hashCode)))
+                            .setType(syms.intType);
+                }
+                hash = first ? componentHash
+                        : makeBinary(PLUS, makeBinary(MUL, hash, makeLit(syms.intType, 31)), componentHash);
+                first = false;
+            }
+            stats.append(make.Return(hash));
+        } else {
+            Assert.check(method.name == names.toString);
+            JCExpression text = makeLit(syms.stringType, tree.sym.name + "[");
+            boolean first = true;
+            for (VarSymbol var : vars) {
+                text = makeBinary(PLUS, text,
+                        makeLit(syms.stringType, (first ? "" : ", ") + var.name + "="));
+                text = makeBinary(PLUS, text, make.Select(make.This(tree.sym.type), var));
+                first = false;
+            }
+            // The empty case is a constant; nonempty cases use normal string
+            // concatenation lowering, including its remaining concat linkage.
+            text = vars.isEmpty() ? makeLit(syms.stringType, tree.sym.name + "[]")
+                    : makeBinary(PLUS, text, makeLit(syms.stringType, "]"));
+            stats.append(make.Return(text));
+        }
+        return make.MethodDef(method, make.Block(0, stats.toList()));
     }
 
     private String argsTypeSig(List<Type> typeList) {
@@ -3899,7 +4074,21 @@ public class Lower extends TreeTranslator {
 
     public JCTree visitEnumSwitch(JCTree tree, JCExpression selector, List<JCCase> cases) {
         TypeSymbol enumSym = selector.type.tsym;
-        EnumMapping map = mapForEnum(tree.pos(), enumSym);
+        // Nullable switches previously initialized only their own enum, and
+        // resolved labels by name even when enum source was available.
+        EnumMapping map;
+        if (tree instanceof JCSwitchExpression expression && expression.isolatedEnumMapping) {
+            List<VarSymbol> labels = cases.stream().flatMap(c -> c.labels.stream())
+                    .filter(label -> label instanceof JCConstantCaseLabel && !TreeInfo.isNullCaseLabel(label))
+                    .map(label -> (VarSymbol) TreeInfo.symbol(((JCConstantCaseLabel) label).expr))
+                    .collect(List.collector());
+            // Keep each initializer bounded by the labels of one eligible site.
+            // Zero-label switches need neither enum initialization nor a map.
+            map = labels.isEmpty() ? null : nullableEnumSwitchMap.computeIfAbsent(labels,
+                    key -> new RuntimeEnumMapping(tree.pos(), enumSym, true));
+        } else {
+            map = mapForEnum(tree.pos(), enumSym);
+        }
         make_at(tree.pos());
         Symbol ordinalMethod = lookupMethod(tree.pos(),
                                             names.ordinal,
@@ -3916,7 +4105,7 @@ public class Lower extends TreeTranslator {
                                                selector.type,
                                                currentMethodSym);
             JCStatement var = make.at(tree.pos()).VarDef(dollar_s, selector).setType(dollar_s.type);
-            newSelector = map.switchValue(
+            newSelector = map == null ? make.Literal(0).setType(syms.intType) : map.switchValue(
                     make.App(make.Select(make.Ident(dollar_s),
                             ordinalMethod)));
             newSelector =
@@ -4371,6 +4560,8 @@ public class Lower extends TreeTranslator {
                 makeAccessible(l.head);
             for (EnumMapping map : enumSwitchMap.values())
                 map.translate();
+            for (EnumMapping map : nullableEnumSwitchMap.values())
+                map.translate();
             checkConflicts(this.translated.toList());
             checkAccessConstructorTags();
             translated = this.translated;
@@ -4395,6 +4586,8 @@ public class Lower extends TreeTranslator {
             accessConstrTags = null;
             accessed = null;
             enumSwitchMap.clear();
+            nullableEnumSwitchMap.clear();
+            isolatedEnumCacheClasses.clear();
             assertionsDisabledClassCache = null;
         }
         return translated.toList();

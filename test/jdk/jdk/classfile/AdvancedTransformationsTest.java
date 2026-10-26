@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
 import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.lang.classfile.instruction.ReturnInstruction;
 import java.lang.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
@@ -153,11 +154,21 @@ class AdvancedTransformationsTest {
     };
     public static class Bar {};
 
+    // Keep ObjectMethods bootstrap remapping covered when small records use direct bodies.
     @FooAnno
-    public static record Rec(@FooAnno Foo foo) {
+    public static record Rec(@FooAnno Foo foo, int a, int b, int c, int d) {
         @FooAnno
         public Rec(Foo foo) {
+            this(foo, 0, 0, 0, 0);
+        }
+
+        @FooAnno
+        public Rec(Foo foo, int a, int b, int c, int d) {
             this.foo = new @FooAnno Foo();
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
             Foo local @FooAnno [] = new Foo @FooAnno [0];
             Foo.fooField = foo;
             Foo.fooMethod(foo);
@@ -191,12 +202,17 @@ class AdvancedTransformationsTest {
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
         var objectMethods = ClassDesc.ofDescriptor(ObjectMethods.class.descriptorString());
         var cc = ClassFile.of();
+        var original = cc.parse(Rec.class.getResourceAsStream(Rec.class.getName() + ".class").readAllBytes());
+        assertTrue(original.methods().stream()
+                .flatMap(m -> m.code().stream())
+                .flatMap(CodeModel::elementStream)
+                .anyMatch(e -> e instanceof InvokeDynamicInstruction indy
+                        && indy.invokedynamic().bootstrap().bootstrapMethod().asSymbol().owner().equals(objectMethods)
+                        && !indy.invokedynamic().bootstrap().arguments().isEmpty()),
+                "record fixture must exercise ObjectMethods bootstrap remapping");
         var remapped = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno, objectMethods, bar)).remapClass(
-                        cc,
-                        cc.parse(
-                                Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
-                                        .readAllBytes())));
+                        cc, original));
         var sb = new StringBuilder();
         ClassPrinter.toYaml(remapped, ClassPrinter.Verbosity.TRACE_ALL, sb::append);
         String out = sb.toString();
