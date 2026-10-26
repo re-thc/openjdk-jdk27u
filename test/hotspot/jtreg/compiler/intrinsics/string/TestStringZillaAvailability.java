@@ -63,13 +63,10 @@ public class TestStringZillaAvailability {
         if (wb.isIntrinsicAvailable(equals, 1) || !wb.isIntrinsicAvailable(equals, 4)) {
             throw new AssertionError("C1 must parse Java equality and retain its leaf intrinsic; C2 keeps string equality");
         }
-        Method checked = latin1.getDeclaredMethod("equals", byte[].class, byte[].class);
-        if (wb.isIntrinsicAvailable(checked, 1) || wb.isIntrinsicAvailable(checked, 4)) {
-            throw new AssertionError("The ordinary checked wrapper must remain Java");
-        }
     }
 
     private static void check(WhiteBox wb, Method method, boolean expected) {
+        // WhiteBox requires a registered intrinsic ID, even for unavailable intrinsics.
         for (int level : new int[]{1, 4}) {
             boolean actual = wb.isIntrinsicAvailable(method, level);
             if (actual != expected) throw new AssertionError(method + " level=" + level + " available=" + actual);
