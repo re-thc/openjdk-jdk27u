@@ -192,12 +192,6 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
       !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) {
     return nullptr;
   }
-  int mode = parse ? int(kind - Interpreter::java_lang_Integer_parseInt)
-                   : int(kind - Interpreter::jdk_internal_util_formatIntLatin1);
-  // Writer kinds enumerate int Latin1/UTF16, then long Latin1/UTF16.
-  if (!parse) {
-    mode = ((mode & 1) << 1) | (mode >> 1);
-  }
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
@@ -215,7 +209,7 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rax);
     __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
     __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    __ movl(c_rarg3, mode);
+    __ movl(c_rarg3, int(kind - Interpreter::java_lang_Integer_parseInt));
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, FastFloat::parse_integer),
                           c_rarg0, c_rarg1, c_rarg2, c_rarg3);
     __ movptr(rscratch1, (intptr_t)min_jlong);
@@ -225,21 +219,21 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     __ movptr(c_rarg0, Address(rsp, wordSize));
     __ testptr(c_rarg0, c_rarg0);
     __ jcc(Assembler::zero, slow_path);
-    __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
-    __ shlptr(c_rarg1, 32);
-    __ movl(rax, Address(rsp, 2 * wordSize));
-    __ orptr(c_rarg1, rax);
+    __ movl(c_rarg1, Address(rsp, 2 * wordSize));
     __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    if ((mode & 1) != 0) {
+    bool is_long = kind == Interpreter::jdk_internal_util_formatLongLatin1 ||
+                   kind == Interpreter::jdk_internal_util_formatLongUTF16;
+    bool utf16 = kind == Interpreter::jdk_internal_util_formatIntUTF16 ||
+                 kind == Interpreter::jdk_internal_util_formatLongUTF16;
+    if (is_long) {
       __ movptr(c_rarg2, Address(rsp, 3 * wordSize));
     } else {
       __ movl(c_rarg2, Address(rsp, 3 * wordSize));
     }
-    __ movl(c_rarg3, mode);
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ZmijInteger::format),
-                          c_rarg0, c_rarg1, c_rarg2, c_rarg3);
-    __ testl(rax, rax);
-    __ jcc(Assembler::negative, slow_path);
+    address target = is_long
+        ? (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_long_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_long_latin1))
+        : (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_int_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_int_latin1));
+    __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2);
   }
   __ pop(rdi);
   __ mov(rsp, r13);

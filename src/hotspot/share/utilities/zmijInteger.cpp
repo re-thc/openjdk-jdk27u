@@ -28,7 +28,18 @@
 #include "utilities/zmij/zmij-int-impl.hpp"
 #include "utilities/zmijInteger.inline.hpp"
 
-int ZmijInteger::format(void* output, uint64_t bounds, uint64_t bits, int format) {
-  return hotspot_zmij_integer(output, bounds, bits, format,
-                             zmij::detail::itoa_signed<int32_t>, zmij::detail::itoa_signed<int64_t>);
+int ZmijInteger::format_int_latin1(void* output, int index, int32_t value) {
+  return hotspot_zmij_integer<int32_t, false>(output, index, value);
+}
+
+int ZmijInteger::format_int_utf16(void* output, int index, int32_t value) {
+  return hotspot_zmij_integer<int32_t, true>(output, index, value);
+}
+
+int ZmijInteger::format_long_latin1(void* output, int index, int64_t value) {
+  return hotspot_zmij_integer<int64_t, false>(output, index, value);
+}
+
+int ZmijInteger::format_long_utf16(void* output, int index, int64_t value) {
+  return hotspot_zmij_integer<int64_t, true>(output, index, value);
 }

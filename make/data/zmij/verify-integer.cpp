@@ -45,44 +45,31 @@ static void check(uint64_t bits, bool wide) {
   int length = int(expected.ptr - text);
   for (int coder = 0; coder <= 1; ++coder) {
     for (int offset : {0, 1, 7}) {
-      // Exercise exact arrays and adjacent text, including unaligned Latin1.
-      for (int suffix : {0, 5}) {
-        std::array<uint16_t, 64> storage;
-        memset(storage.data(), 0xa5, sizeof(storage));
-        unsigned char* output = reinterpret_cast<unsigned char*>(storage.data()) + 16;
-        int index = offset + length;
-        uint32_t bytes = uint32_t((index + suffix) << coder);
-        uint64_t bounds = (uint64_t(bytes) << 32) | uint32_t(index);
-        int start = hotspot_zmij_integer(output, bounds, bits, int(wide) | (coder << 1),
-                                        zmij::detail::itoa_signed<int32_t>,
-                                        zmij::detail::itoa_signed<int64_t>);
-        if (start != offset) __builtin_abort();
-        for (int n = 0; n < length; ++n) {
-          if (coder == 0) {
-            if (output[offset + n] != uint8_t(text[n])) __builtin_abort();
-          } else {
-            uint16_t c;
-            memcpy(&c, output + (offset + n) * 2, 2);
-            if (c != uint8_t(text[n])) __builtin_abort();
-          }
+      std::array<uint16_t, 64> storage;
+      memset(storage.data(), 0xa5, sizeof(storage));
+      unsigned char* output = reinterpret_cast<unsigned char*>(storage.data()) + 16;
+      int index = offset + length;
+      int start = wide
+          ? (coder == 0 ? hotspot_zmij_integer<int64_t, false>(output, index, signed64)
+                        : hotspot_zmij_integer<int64_t, true>(output, index, signed64))
+          : (coder == 0 ? hotspot_zmij_integer<int32_t, false>(output, index, signed32)
+                        : hotspot_zmij_integer<int32_t, true>(output, index, signed32));
+      if (start != offset) __builtin_abort();
+      for (int n = 0; n < length; ++n) {
+        if (coder == 0) {
+          if (output[offset + n] != uint8_t(text[n])) __builtin_abort();
+        } else {
+          uint16_t c;
+          memcpy(&c, output + (offset + n) * 2, 2);
+          if (c != uint8_t(text[n])) __builtin_abort();
         }
-        auto* all = reinterpret_cast<unsigned char*>(storage.data());
-        int begin = 16 + (offset << coder);
-        int end = begin + (length << coder);
-        for (size_t n = 0; n < sizeof(storage); ++n) {
-          if ((int(n) < begin || int(n) >= end) && all[n] != 0xa5) __builtin_abort();
-        }
-        ++checks;
       }
-    }
-    for (uint32_t bad_index : {uint32_t(length - 1), uint32_t(65), UINT32_MAX}) {
-      std::array<uint16_t, 64> output;
-      memset(output.data(), 0xa5, sizeof(output));
-      uint64_t bounds = (uint64_t(64 << coder) << 32) | bad_index;
-      if (hotspot_zmij_integer(output.data(), bounds, bits, int(wide) | (coder << 1),
-                              zmij::detail::itoa_signed<int32_t>,
-                              zmij::detail::itoa_signed<int64_t>) != -1) __builtin_abort();
-      for (uint16_t c : output) if (c != 0xa5a5) __builtin_abort();
+      auto* all = reinterpret_cast<unsigned char*>(storage.data());
+      int begin = 16 + (offset << coder);
+      int end = begin + (length << coder);
+      for (size_t n = 0; n < sizeof(storage); ++n) {
+        if ((int(n) < begin || int(n) >= end) && all[n] != 0xa5) __builtin_abort();
+      }
       ++checks;
     }
   }

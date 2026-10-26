@@ -994,12 +994,6 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
       !(parse ? UseFastIntegerIntrinsics : UseZmijIntegerIntrinsics)) {
     return nullptr;
   }
-  int mode = parse ? int(kind - Interpreter::java_lang_Integer_parseInt)
-                   : int(kind - Interpreter::jdk_internal_util_formatIntLatin1);
-  // Writer kinds enumerate int Latin1/UTF16, then long Latin1/UTF16.
-  if (!parse) {
-    mode = ((mode & 1) << 1) | (mode >> 1);
-  }
   address entry = __ pc();
   Label slow_path;
   __ safepoint_poll(slow_path, false, false);
@@ -1018,37 +1012,42 @@ address TemplateInterpreterGenerator::generate_integer_entry(AbstractInterpreter
     __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rscratch1, rscratch2);
     __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
     __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ mov(c_rarg3, int(kind - Interpreter::java_lang_Integer_parseInt));
     target = CAST_FROM_FN_PTR(address, FastFloat::parse_integer);
   } else {
     __ ldr(c_rarg0, Address(esp));
     __ cbz(c_rarg0, slow_path);
-    __ ldrw(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
-    __ lsl(c_rarg1, c_rarg1, 32);
-    __ ldrw(rscratch1, Address(esp, wordSize));
-    __ orr(c_rarg1, c_rarg1, rscratch1);
+    __ ldrw(c_rarg1, Address(esp, wordSize));
     __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    if ((mode & 1) != 0) {
+    bool is_long = kind == Interpreter::jdk_internal_util_formatLongLatin1 ||
+                   kind == Interpreter::jdk_internal_util_formatLongUTF16;
+    bool utf16 = kind == Interpreter::jdk_internal_util_formatIntUTF16 ||
+                 kind == Interpreter::jdk_internal_util_formatLongUTF16;
+    if (is_long) {
       __ ldr(c_rarg2, Address(esp, 2 * wordSize));
     } else {
       __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
     }
-    target = CAST_FROM_FN_PTR(address, ZmijInteger::format);
+    target = is_long
+        ? (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_long_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_long_latin1))
+        : (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_int_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_int_latin1));
   }
-  __ mov(c_rarg3, mode);
   // Keep the original Java stack and link register for a rejected-input fallback.
   // super_call_VM_leaf preserves rmethod; esp and the sender SP are callee-saved.
   __ mov(rscratch2, sp);
   __ andr(sp, rscratch2, -16);
   __ stp(rscratch2, lr, Address(__ pre(sp, -2 * wordSize)));
-  __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  if (parse) {
+    __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  } else {
+    __ super_call_VM_leaf(target, c_rarg0, c_rarg1, c_rarg2);
+  }
   __ ldp(rscratch2, lr, Address(__ post(sp, 2 * wordSize)));
   __ mov(sp, rscratch2);
   if (parse) {
     __ mov(rscratch1, (uint64_t)min_jlong);
     __ cmp(r0, rscratch1);
     __ br(Assembler::EQ, slow_path);
-  } else {
-    __ tbnz(r0, 31, slow_path);
   }
   __ andr(sp, r19_sender_sp, -16);
   __ ret(lr);

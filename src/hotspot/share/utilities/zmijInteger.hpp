@@ -30,7 +30,10 @@
 
 class ZmijInteger : AllStatic {
  public:
-  static int format(void* output, uint64_t bounds, uint64_t bits, int format);
+  static int format_int_latin1(void* output, int index, int32_t value);
+  static int format_int_utf16(void* output, int index, int32_t value);
+  static int format_long_latin1(void* output, int index, int64_t value);
+  static int format_long_utf16(void* output, int index, int64_t value);
 };
 
 #endif // SHARE_UTILITIES_ZMIJINTEGER_HPP
