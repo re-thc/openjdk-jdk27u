@@ -56,7 +56,7 @@ with tarfile.open(args.archive) as archive:
                 or (path.parts[0] == 'arch' and path.suffix in ('.c', '.h', '.in'))
                 or (path.parts[0] == 'cmake' and
                     not path.name.startswith('toolchain-') and path.suffix in ('.c', '.cmake'))
-                or (path.parts[0] == 'utils' and path.suffix == '.c')
+                or (path.parts[0] == 'utils' and path.suffix in ('.c', '.h'))
                 or str(path) in ('CMakeLists.txt', 'utils/CMakeLists.txt',
                                  'zlib.pc.cmakein', 'zlib_name_mangling.h.empty',
                                  'tools/config.sub', 'test/Makefile.in')):
