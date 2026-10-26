@@ -62,7 +62,7 @@ int Zmij::format_float_utf16(void* output, uint64_t bits) {
   char* end = zmij::detail::write<float>(buffer, value);
   int length = int(end - buffer);
   uint16_t* utf16 = static_cast<uint16_t*>(output);
-  for (int i = 0; i < length; ++i) {
+  for (int i = 0; i < 15; ++i) {
     utf16[i] = uint8_t(buffer[i]);
   }
   return length;
