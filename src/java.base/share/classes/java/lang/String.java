@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1798,6 +1799,7 @@ public final class String
      * @return  the length of the sequence of characters represented by this
      *          object.
      */
+    @ForceInline
     public int length() {
         return value.length >> coder();
     }
@@ -1838,6 +1840,7 @@ public final class String
      *             argument is negative or not less than the length of this
      *             string.
      */
+    @ForceInline
     public char charAt(int index) {
         if (isLatin1()) {
             return StringLatin1.charAt(value, index);
