@@ -12,10 +12,12 @@ Three small allocation cleanups reduce its three-run median from 47.549 to
 cost result, not a startup or warmed application win. No new coverage,
 threshold, scheduling or C1/C2 promotion change is made.
 
-The clean production patch is ready, but final clean-image builds and full
-jtreg validation are **blocked by executor process/thread exhaustion**. Three
-javac diagnostic processes ran successfully with the instrumented reduced
-version before that exhaustion. They do not replace the pending semantic tests.
+At this checkpoint, final clean-image builds and full jtreg validation were
+**blocked by executor process/thread exhaustion**. Three javac diagnostic
+processes ran successfully with the instrumented reduced version before that
+exhaustion; they did not replace semantic tests. The subsequent
+[fresh-executor validation](direct-baseline-recovery.md) completes the clean
+release/fastdebug checks and records its bounded caller comparison.
 
 ## What the retained 86 ms actually contains
 
@@ -172,7 +174,11 @@ now. These allocation fixes are useful but do not establish application benefit
 or resolve the warmed criterion. The earlier 1492 startup timing remains a
 noisy historical comparator, not proof of a required regression or win here.
 
-## Validation blocker and retained evidence
+## Original validation blocker and retained evidence
+
+The pending commands below describe the original exhausted executor. They were
+subsequently completed in the [fresh recovery](direct-baseline-recovery.md);
+the old executor and its evidence were left untouched.
 
 The instrumented reduced release image completed all three fresh javac captures.
 Final clean release and fastdebug builds then failed with posix_spawn EAGAIN

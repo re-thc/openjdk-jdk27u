@@ -22,8 +22,10 @@ methods, and records its complete cost and mixed warmed comparison. Handler
 support and general dispatch remain excluded; no application win is established.
 The [compiler-cost attribution](direct-baseline-compile-cost.md) corrects the
 earlier logged-CPU interpretation and removes three unnecessary allocations.
-Its compile-cost improvement is measured; clean-image validation is pending
-executor process/thread-capacity recovery.
+Its compile-cost improvement is measured. The subsequent
+[fresh-executor validation](direct-baseline-recovery.md) completes clean release
+and fastdebug tests, then records a bounded matched caller comparison: improved
+against the enabled control, with startup still slower than baseline off.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 
