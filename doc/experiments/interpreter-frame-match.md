@@ -345,3 +345,8 @@ or the total cheap-tier budget, and the six retained pairs cannot predict its
 speedup. The opt-in itself is only a proposal: no source, flag default, test,
 policy, admission or image change is implemented in this analysis. No padding
 tuning or second optimization is proposed from these inconclusive timings.
+
+The subsequent [explicit test-hook opt-in cleanup](interpreter-frame-hook-optin.md)
+implements this proposal and qualifies release/fastdebug correctness and actual
+generated-code exclusion. It runs no new timings and preserves this report's
+images, adverse results and causal limits.
