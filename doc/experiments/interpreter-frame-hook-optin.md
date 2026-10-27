@@ -77,3 +77,8 @@ and 3.2 GiB is free. No admission, opcode coverage, C1/C2 policy, existing featu
 default or public action changes are included. The earlier adverse invocation
 results remain valid for their preserved image; this cleanup makes no measured
 claim about Long's regression or application benefit.
+
+The subsequent [normal-admission design](interpreter-frame-admission-plan.md)
+uses current source and retained application data to specify the next bounded
+runtime path and its coverage/cost gates. It performs no implementation or
+new timing.
