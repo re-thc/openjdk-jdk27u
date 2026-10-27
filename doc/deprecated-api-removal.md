@@ -73,6 +73,26 @@ blanket skips, disabled assertions or changes to the restored monitor tests.
   retained constructors and `getYear()` to prepare the fixture. Retire only the
   deleted setter triggers and `getDay`/`getTimezoneOffset`-specific expectations.
 
+* Fixture sweep: use six-argument `Date` construction with zero seconds for the
+  removed five-argument convenience constructor, and an explicit UTC `Instant`
+  for the fixed 1998 reference instant. Calendar/time-zone assertions are unchanged.
+* Loader fixtures use `defineClass(null, bytes, offset, length)`, preserving the
+  old overload's null name and default protection domain. The module-access
+  fixture reflects the retained named overload with the same protected access.
+  RMI provider fixtures
+  similarly use `loadClass((String) null, name)`, preserving SPI dispatch arguments.
+* Serialization/datagram fixtures use the retained four-argument high-byte String
+  constructor. DER-time diagnostics print the corresponding UTC Instant; all
+  decoded-Date equality assertions remain.
+* `java/lang/String/Exceptions.java`: retire only the two-argument high-byte
+  constructor group; existing four-argument success, null and bounds checks stay.
+* `java/security/Security/Nulls.java`: retire only the removed
+  `getAlgorithmProperty(null,null)` check; every other Security null check stays.
+* `java/net/Socket/NullHost.java`: retire only the boolean-stream constructor case;
+  retained null-host constructor cases stay. `java/net/Socket/UdpSocket.java` is
+  explicitly retired because it exclusively tests the two removed boolean-stream
+  constructors. There are no replacement exclusions or ProblemList entries.
+
 ## Removed public and protected members
 
 Signatures below identify the declaring class and parameter types. JVM return
