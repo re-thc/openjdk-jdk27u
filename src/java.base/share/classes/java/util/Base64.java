@@ -88,6 +88,10 @@ public final class Base64 {
 
     private Base64() {}
 
+    // The longest range given to the block intrinsics at once, a multiple of 3 for encoding
+    // and of 4 for decoding. Longer inputs are converted in several blocks.
+    private static final int BLOCK_MAX = 3 << 18;
+
     /**
      * Returns a {@link Encoder} that encodes using the
      * <a href="#basic">Basic</a> type base64 encoding scheme.
@@ -446,6 +450,8 @@ public final class Base64 {
             int sl = off + slen;
             if (linemax > 0 && slen  > linemax / 4 * 3)
                 slen = linemax / 4 * 3;
+            else if (linemax <= 0 && slen > BLOCK_MAX)
+                slen = BLOCK_MAX;       // blocks of a length that the intrinsic takes
             int dp = 0;
             while (sp < sl) {
                 int sl0 = Math.min(sp + slen, sl);
@@ -819,7 +825,7 @@ public final class Base64 {
 
             while (sp < sl) {
                 if (shiftto == 18 && sp < sl - 4) {       // fast path
-                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL, isMIME);
+                    int dl = decodeBlock(src, sp, Math.min(sl, sp + BLOCK_MAX), dst, dp, isURL, isMIME);
                     /*
                      * Calculate how many characters were processed by how many
                      * bytes of data were returned.

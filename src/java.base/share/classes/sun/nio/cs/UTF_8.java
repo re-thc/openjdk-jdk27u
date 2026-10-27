@@ -93,6 +93,31 @@ public final class UTF_8 extends Unicode {
     private static final int BULK_MAX = BufferStorage.BULK_MAX;
     private static final int BULK_TAIL = BufferStorage.BULK_TAIL;
 
+    /**
+     * Converts the valid complete prefix of the {@code n} bytes of UTF-8 at {@code srcAddress}
+     * into chars at {@code dstAddress}, with room for {@code room} chars, in calls of bounded
+     * length, for the Java loops of String. The storage is given as (object, address) pairs.
+     * The loops handle what follows the prefix, including malformed input.
+     *
+     * @return the consumed bytes in the high word and the produced chars in the low word
+     */
+    public static long decodeRun(Object src, long srcAddress, int n,
+                                 Object dst, long dstAddress, int room) {
+        return Decoder.decodeRun(src, srcAddress, n, dst, dstAddress, room);
+    }
+
+    /**
+     * Converts the valid complete prefix of the {@code n} chars at {@code srcAddress} into
+     * UTF-8 at {@code dstAddress}, with room for {@code room} bytes, in calls of bounded
+     * length, for the Java loops of String. An unpaired surrogate ends the prefix.
+     *
+     * @return the consumed chars in the high word and the produced bytes in the low word
+     */
+    public static long encodeRun(Object src, long srcAddress, int n,
+                                 Object dst, long dstAddress, int room) {
+        return Encoder.encodeRun(src, srcAddress, n, dst, dstAddress, room);
+    }
+
     private static class Decoder extends CharsetDecoder {
 
         private Decoder(Charset cs) {

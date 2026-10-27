@@ -1320,6 +1320,17 @@ public final class String
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
+        // The intrinsic takes ranges of a bounded length and declines at malformed input.
+        // Reaching here, convert the valid prefix in calls of bounded length, so that a long
+        // range or a late malformed byte still costs one pass of the library and the loop
+        // below only sees what follows the prefix.
+        if (sl - sp >= UTF8_BULK_MIN) {
+            long r = UTF_8.decodeRun(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, sl - sp,
+                                     dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) dp << 1),
+                                     (dst.length >> 1) - dp);
+            sp += (int) (r >>> 32);
+            dp += (int) r;
+        }
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -1625,6 +1636,14 @@ public final class String
                                                             byte[] dst, int dp,
                                                             Class<E> exClass) throws E {
         int sl = val.length >> 1;
+        // As in decodeUTF8_UTF16: the valid prefix, in calls of bounded length, before the
+        // loop that handles unpaired surrogates
+        if (sl - sp >= UTF8_BULK_MIN) {
+            long r = UTF_8.encodeRun(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) sp << 1), sl - sp,
+                                     dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dst.length - dp);
+            sp += (int) (r >>> 32);
+            dp += (int) r;
+        }
         while (sp < sl) {
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
