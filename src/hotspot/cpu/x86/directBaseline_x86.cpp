@@ -61,10 +61,10 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 
-// A deliberately bounded, category-1, forward-CFG subset. Every Java value has
+// A deliberately bounded, category-1 subset with verified block states. Every Java value has
 // a canonical full-word slot. Only rax/rbx/rcx/rdx/r8/r9/r10/r11 are scratch.
 // Reference identity is retained at every merge and every safepoint. No IR is
-// constructed: the worker pass stores categories and forward branch states. Operands are
+// constructed: the worker pass stores categories and branch states. Operands are
 // resolved only while emitting a structurally eligible body.
 namespace {
 BasicType kind(BasicType t) {
@@ -249,6 +249,9 @@ class Prepared : public ResourceObj {
     int nargs = sig->count() + (_method->is_static() ? 0 : 1);
     for (int i = 0; i < nargs; i++) start->locals[i] = kind(argument_type(sig, _method->is_static(), i));
     if (!read_frames(start,nargs) || !merge(0,start)) return false;
+    // Verified block entries can be decoded before their first predecessor
+    // in bytecode order. Backward predecessors must match these same states.
+    for (int i=1;i<_size;i++) if (_frames[i]!=nullptr) _states[i]=_frames[i];
     BytecodeStream bs(handle);
     Bytecodes::Code bc;
     while ((bc = bs.next()) != Bytecodes::_illegal) {
@@ -402,7 +405,8 @@ class Prepared : public ResourceObj {
             if (!pop(s, t) || !pop(s, t)) return false;
           } else if (bc != Bytecodes::_goto && !pop(s, bc >= Bytecodes::_ifnull ? T_OBJECT : T_INT)) return false;
           int target = bci + bs.get_offset_s2();
-          if (target <= bci) return fail("loop excluded (preserve interpreter OSR)");
+          if (target<0 || target>=_size) return fail("invalid branch target");
+          if (target <= bci && _states[target]==nullptr) return fail("loop without known entry state");
           if (!merge(target, s)) return false;
           fall = bc != Bytecodes::_goto;
           break;
@@ -583,6 +587,28 @@ class Emitter : StackObj {
       __ incrementl(Address(r10, in_bytes(MethodCounters::direct_baseline_entries_offset())));
     }
   }
+  void backedge(int bci, State* s) {
+    // Match the normal in-method poll instruction and its exact fault-PC map.
+    // Branch operands remain canonical so a deopt can reexecute this branch.
+    __ movptr(rscratch1,Address(r15_thread,JavaThread::polling_page_offset()));
+    safepoint(bci,s,-1,true);
+    __ relocate(relocInfo::poll_type);
+    __ testl(rax,Address(rscratch1,0));
+    Label done, overflow;
+    __ mov_metadata(rbx,_method->constant_encoding());
+    __ movptr(r10,Address(rbx,Method::method_counters_offset()));
+    increment_counter(Address(r10,in_bytes(MethodCounters::backedge_counter_offset())+in_bytes(InvocationCounter::counter_offset())),
+                      Address(r10,in_bytes(MethodCounters::backedge_mask_offset())),overflow);
+    __ jmp(done);
+    __ bind(overflow);
+    __ movl(Address(rsp,0),bci); __ movptr(Address(rsp,wordSize),rbx);
+    // The existing helper treats direct code as level none and deoptimizes
+    // this frame when an ordinary OSR nmethod becomes available. Interpreter
+    // reconstruction then supplies the standard OSR migration frame.
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
+    safepoint(bci,s,-1,true);
+    __ bind(done);
+  }
   Assembler::Condition condition(Bytecodes::Code bc) {
     switch (bc) {
       case Bytecodes::_ifeq: case Bytecodes::_if_icmpeq: case Bytecodes::_if_acmpeq: case Bytecodes::_ifnull: return Assembler::equal;
@@ -738,7 +764,7 @@ class Emitter : StackObj {
     }
   }
   void epilog() {
-    // A bounded loop-free body still needs a return poll for safepoint progress.
+    // Return polls complement backedge polls for short/loop-free activations.
     __ remove_frame(_frame_bytes);
     Label poll;
     int pc = __ offset();
@@ -946,7 +972,9 @@ class Emitter : StackObj {
             __ jmp(_labels[bci+sw.default_offset()]);
           }
           break;
-        case Bytecodes::_goto: __ jmp(_labels[bs.get_dest()]);
+        case Bytecodes::_goto:
+          if (bs.get_dest()<=bci) backedge(bci,s);
+          __ jmp(_labels[bs.get_dest()]);
           break;
         default:
           if (bc >= Bytecodes::_if_icmpeq && bc <= Bytecodes::_if_acmpne) {
@@ -957,7 +985,13 @@ class Emitter : StackObj {
             if (bc == Bytecodes::_ifnull || bc == Bytecodes::_ifnonnull) __ testptr(rax, rax);
             else __ testl(rax, rax);
           }
-          __ jcc(condition(bc), _labels[bs.get_dest()]);
+          if (bs.get_dest()<=bci) {
+            Label fallthrough;
+            __ jcc(Assembler::Condition(condition(bc)^1),fallthrough);
+            backedge(bci,s);
+            __ jmp(_labels[bs.get_dest()]);
+            __ bind(fallthrough);
+          } else __ jcc(condition(bc), _labels[bs.get_dest()]);
           break;
       }
       if (_failure != nullptr) return;

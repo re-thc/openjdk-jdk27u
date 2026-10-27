@@ -80,7 +80,7 @@ public class DirectBaselineTest {
     static void gc() { System.gc(); }
     static Object acrossGC(Object o) { gc(); return o; }
     static Object acrossYield(Object o) { Thread.yield(); return o; }
-    static int unsupportedLoop(int n) { int r = 0; for (int i = 0; i < n; i++) r += i; return r; }
+    static int loop(int n) { int r = 0; for (int i = 0; i < n; i++) r += i; return r; }
     static long unsupportedLong(long x) { return x * 13; }
     static Object allocation() { return new Object(); }
     static int unsupportedHandler(int divisor) { try { return 9 / divisor; } catch (ArithmeticException expected) { return -1; } }
@@ -164,7 +164,7 @@ public class DirectBaselineTest {
         check(staticAcquire() == 127 && coldStatic(1) == 91 && coldStaticInitializations == 1 && childInitializations == 0);
         for (int i = 0; i < 64; i++) {
             exercise(box, ref, i);
-            check(unsupportedLoop(20) == 190);
+            check(loop(20) == 190);
             check(unsupportedLong(i) == i*13L);
             check(allocation() != null && unsupportedHandler(i + 1) == 9 / (i + 1));
             check(unsupportedMonitor(i) == i+1);
@@ -199,7 +199,7 @@ public class DirectBaselineTest {
         virtual.join();
         for (int i = 0; i < 50_000; i++) {
             exercise(box, ref, i);
-            check(unsupportedLoop(20) == 190);
+            check(loop(20) == 190);
             check(unsupportedLong(i) == i*13L);
             check(unsupportedMonitor(i) == i+1);
         }
