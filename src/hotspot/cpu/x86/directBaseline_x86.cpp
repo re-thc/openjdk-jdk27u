@@ -24,6 +24,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
+#include "ci/ciKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
@@ -232,6 +233,12 @@ class Prepared : public ResourceObj {
           if (bc != Bytecodes::_putfield && !push(s, kind(type))) return false;
           break;
         }
+        case Bytecodes::_checkcast:
+          if (s->sp == 0 || s->stack[s->sp-1] != T_OBJECT) return fail("cast type");
+          break;
+        case Bytecodes::_instanceof:
+          if (!pop(s, T_OBJECT) || !push(s, T_INT)) return false;
+          break;
         case Bytecodes::_arraylength:
           if (!pop(s, T_OBJECT) || !push(s, T_INT)) return false;
           break;
@@ -241,7 +248,7 @@ class Prepared : public ResourceObj {
         case Bytecodes::_iastore:
           if (!pop(s, T_INT) || !pop(s, T_INT) || !pop(s, T_OBJECT)) return false;
           break;
-        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: {
+        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: case Bytecodes::_invokeinterface: {
           BasicSignature* declared = new BasicSignature(_method->constants()->signature_ref_at(bs.get_index_u2(), bc));
           if (!declared->valid()) return fail("unresolved/unsupported call");
           bool is_static = bc == Bytecodes::_invokestatic;
@@ -346,15 +353,40 @@ class Emitter : StackObj {
   }
 
 #define __ _masm->
-  void deopt_if(Assembler::Condition ok, int bci, State* s) {
-    Label good;
-    __ jcc(ok, good);
+  void deopt_at(int bci, State* s) {
     __ movl(Address(rsp, 0), Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
                                                              Deoptimization::Action_none));
     __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_deoptimize_id)));
     safepoint(bci, s, -1, true);
     __ should_not_reach_here();
+  }
+  void deopt_if(Assembler::Condition ok, int bci, State* s) {
+    Label good;
+    __ jcc(ok, good);
+    deopt_at(bci, s);
     __ bind(good);
+  }
+  bool type_check(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, State* s) {
+    bool will_link = false;
+    ciKlass* klass = bs.get_klass(will_link);
+    if (!will_link || !klass->is_loaded()) return fail("unresolved/inaccessible cast class");
+    // checkcast/instanceof resolve a type but do not initialize it. All values
+    // remain in canonical slots; only the normal subtype helper uses scratch.
+    Label success, done;
+    __ movptr(rax, stack(s->sp-1));
+    if (bc == Bytecodes::_instanceof) __ movl(stack(s->sp-1), 0);
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, done);
+    __ load_klass(rbx, rax, rscratch1);
+    __ mov_metadata(r8, klass->constant_encoding());
+    // The secondary-supers table helper reserves rcx as a shift-count temp.
+    __ check_klass_subtype(rbx, r8, rdx, success);
+    if (bc == Bytecodes::_checkcast) deopt_at(bci, s);
+    else __ jmp(done);
+    __ bind(success);
+    if (bc == Bytecodes::_instanceof) __ movl(stack(s->sp-1), 1);
+    __ bind(done);
+    return true;
   }
   void null_check(Register obj, int bci, State* s) {
     __ testptr(obj, obj); deopt_if(Assembler::notZero, bci, s);
@@ -414,10 +446,11 @@ class Emitter : StackObj {
     ciMethod* m=bs.get_method(link,nullptr);
     bool is_static=bc==Bytecodes::_invokestatic;
     BasicSignature* sig=_call_signatures[bci];
-    if (!link || !m->is_loaded() || m->is_static()!=is_static || m->is_abstract() ||
+    bool dynamic = bc == Bytecodes::_invokeinterface || bc == Bytecodes::_invokevirtual;
+    if (!link || !m->is_loaded() || m->is_static()!=is_static || (m->is_abstract() && !dynamic) ||
         m->is_object_initializer() || m->is_method_handle_intrinsic() || m->is_scoped() ||
         strcmp(m->holder()->name()->as_utf8(),"jdk/internal/vm/Continuation")==0 ||
-        !m->holder()->is_initialized()) return fail("unresolved/unsupported call");
+        (is_static && !m->holder()->is_initialized())) return fail("unresolved/unsupported call");
     // Ordinary linked methods have the declared descriptor. Signature-
     // polymorphic/appendix forms were rejected above. The Method metadata is
     // held by CI for this compilation; reading its immutable symbol needs no
@@ -425,13 +458,14 @@ class Emitter : StackObj {
     if (m->get_Method()->signature() != sig->symbol()) return fail("call signature changed");
     if (!is_static) {
       ciKlass* holder=bs.get_declared_method_holder();
-      if (!holder->is_loaded() || holder->is_interface() || m->holder()->is_interface() ||
-          (bc==Bytecodes::_invokespecial && _method->holder()->is_interface()) ||
-          (bc==Bytecodes::_invokevirtual && !m->can_be_statically_bound())) return fail("unbound/interface call");
+      if (!holder->is_loaded() ||
+          (bc==Bytecodes::_invokespecial &&
+           (holder->is_interface() || m->holder()->is_interface() || _method->holder()->is_interface())))
+        return fail("unsupported interface special call");
     }
     _callees[bci]=m; return true;
   }
-  void java_call(int bci, State* s) {
+  void java_call(Bytecodes::Code bc, int bci, State* s) {
     ciMethod* callee = _callees[bci];
     BasicSignature* sig = _call_signatures[bci];
     bool is_static = callee->is_static();
@@ -459,11 +493,18 @@ class Emitter : StackObj {
         if (oop) __ movptr(arg, rax); else __ movl(arg, rax);
       }
     }
-    __ align(wordSize, __ offset() + NativeCall::displacement_offset);
-    if (CompiledDirectCall::emit_to_interp_stub(_masm, _masm->pc()) == nullptr) { fail("call stub space"); return; }
-    __ call(AddressLiteral(is_static ? SharedRuntime::get_resolve_static_call_stub() :
-                                     SharedRuntime::get_resolve_opt_virtual_call_stub(),
-                           is_static ? relocInfo::static_call_type : relocInfo::opt_virtual_call_type));
+    bool dynamic = bc == Bytecodes::_invokeinterface ||
+                   (bc == Bytecodes::_invokevirtual && !callee->can_be_statically_bound());
+    if (dynamic) {
+      __ align(wordSize, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
+      __ ic_call(SharedRuntime::get_resolve_virtual_call_stub());
+    } else {
+      __ align(wordSize, __ offset() + NativeCall::displacement_offset);
+      if (CompiledDirectCall::emit_to_interp_stub(_masm, _masm->pc()) == nullptr) { fail("call stub space"); return; }
+      __ call(AddressLiteral(is_static ? SharedRuntime::get_resolve_static_call_stub() :
+                                       SharedRuntime::get_resolve_opt_virtual_call_stub(),
+                             is_static ? relocInfo::static_call_type : relocInfo::opt_virtual_call_type));
+    }
     safepoint(bci, s, s->sp - n, false, kind(sig->return_type()) == T_OBJECT);
     __ post_call_nop();
     if (kind(sig->return_type()) == T_OBJECT) __ movptr(stack(s->sp - n), rax);
@@ -632,13 +673,16 @@ class Emitter : StackObj {
           if (!resolve_field(bs,bc,bci)) return;
           field(bc, bci, s);
           break;
+        case Bytecodes::_checkcast: case Bytecodes::_instanceof:
+          if (!type_check(bs, bc, bci, s)) return;
+          break;
         case Bytecodes::_arraylength: case Bytecodes::_iaload: case Bytecodes::_iastore:
         case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:
           array(bc, bci, s);
           break;
-        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial:
+        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: case Bytecodes::_invokeinterface:
           if (!resolve_call(bs,bc,bci)) return;
-          java_call(bci, s);
+          java_call(bc, bci, s);
           break;
         case Bytecodes::_ireturn: case Bytecodes::_areturn:
           if (bc == Bytecodes::_areturn) __ movptr(rax, stack(sp-1));

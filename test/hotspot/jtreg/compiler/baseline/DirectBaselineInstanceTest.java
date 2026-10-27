@@ -156,12 +156,12 @@ public class DirectBaselineInstanceTest {
         check(WB.getMethodCompilationLevel(handler) == 0 && WB.isMethodCompilable(handler, 3));
         check(WB.enqueueMethodForCompilation(handler, 3)); await(handler, 3);
         check(base.withHandler(-1) == -1);
-        for (Method unsupported : new Method[]{
+        for (Method dynamic : new Method[]{
                 method(DirectBaselineInstanceTest.class, "unboundCall", Base.class, int.class),
                 method(DirectBaselineInstanceTest.class, "interfaceCall", Face.class, int.class),
                 method(DirectBaselineInstanceTest.class, "inheritedNonfinal", Inherited.class, int.class)}) {
-            check(WB.getMethodCompilationLevel(unsupported) == 0 && WB.isMethodCompilable(unsupported, 3));
-            check(WB.enqueueMethodForCompilation(unsupported, 3)); await(unsupported, 3);
+            await(dynamic, 1);
+            check(WB.enqueueMethodForCompilation(dynamic, 3)); await(dynamic, 3);
         }
         check(unboundCall(other, 4) == 18 && interfaceCall(face, 3) == 22);
         check(base.coldCall(1) == 73 && initializations == 1);
@@ -233,9 +233,9 @@ public class DirectBaselineInstanceTest {
                 .shouldContain("direct install nativeCall(")
                 .shouldContain("direct install inheritedFinal(")
                 .shouldNotContain("direct install withHandler(I)I")
-                .shouldNotContain("direct install unboundCall(")
-                .shouldNotContain("direct install interfaceCall(")
-                .shouldNotContain("direct install inheritedNonfinal(")
+                .shouldContain("direct install unboundCall(")
+                .shouldContain("direct install interfaceCall(")
+                .shouldContain("direct install inheritedNonfinal(")
                 .shouldNotContain("direct install coldCall(I)I")
                 .shouldNotContain("direct compile DirectBaselineInstanceTest$Base <init>");
         }
