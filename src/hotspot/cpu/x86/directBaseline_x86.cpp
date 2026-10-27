@@ -159,7 +159,7 @@ class Prepared : public ResourceObj {
     return bs.get_index();
   }
   bool prepass(const methodHandle& handle) {
-    if (_method->is_object_initializer() || _method->is_native() || _method->is_synchronized() ||
+    if (_method->is_native() || _method->is_synchronized() ||
         _method->has_exception_handler() || _method->has_monitor_bytecodes() ||
         _method->is_scoped() || _method->has_reserved_stack_access() ||
         _method->intrinsic_id() != vmIntrinsics::_none ||
@@ -448,7 +448,7 @@ class Emitter : StackObj {
     BasicSignature* sig=_call_signatures[bci];
     bool dynamic = bc == Bytecodes::_invokeinterface || bc == Bytecodes::_invokevirtual;
     if (!link || !m->is_loaded() || m->is_static()!=is_static || (m->is_abstract() && !dynamic) ||
-        m->is_object_initializer() || m->is_method_handle_intrinsic() || m->is_scoped() ||
+        (m->is_object_initializer() && bc != Bytecodes::_invokespecial) || m->is_method_handle_intrinsic() || m->is_scoped() ||
         strcmp(m->holder()->name()->as_utf8(),"jdk/internal/vm/Continuation")==0 ||
         (is_static && !m->holder()->is_initialized())) return fail("unresolved/unsupported call");
     // Ordinary linked methods have the declared descriptor. Signature-
@@ -698,7 +698,11 @@ class Emitter : StackObj {
           }
           epilog();
           break;
-        case Bytecodes::_return: epilog();
+        case Bytecodes::_return:
+          // A direct constructor performs stores in bytecode order. Preserve
+          // the normal constructor release, including final reference fields.
+          if (_method->is_object_initializer()) __ membar(Assembler::Membar_mask_bits(Assembler::StoreStore | Assembler::LoadStore));
+          epilog();
           break;
         case Bytecodes::_goto: __ jmp(_labels[bs.get_dest()]);
           break;
@@ -864,7 +868,7 @@ void DirectBaseline::request(const methodHandle& method, JavaThread* thread) {
   if (!UseDirectBaseline || !UseCompiler || !TieredCompilation || !ProfileInterpreter || TieredStopAtLevel < 3 ||
       !CompilationModeFlag::normal() || ReplayCompiles || TrainingData::have_data() || TrainingData::need_data() ||
       (!UseSerialGC && !UseG1GC) || JvmtiExport::can_post_interpreter_events() || method->method_data() != nullptr || method->is_native() ||
-      method->is_object_initializer() || method->is_synchronized() || method->is_method_handle_intrinsic() ||
+      method->is_synchronized() || method->is_method_handle_intrinsic() ||
       method->number_of_breakpoints() != 0 || (method->is_old() || method->is_not_compilable(CompLevel_simple))) {
     // Remember permanent exclusions too: the masked early notification recurs.
     MethodCounters* mc = method->method_counters();
