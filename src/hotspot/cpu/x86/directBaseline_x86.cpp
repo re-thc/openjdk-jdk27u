@@ -146,20 +146,38 @@ class BasicSignature : public ResourceObj {
   bool _valid;
   BasicType* _argument_types;
   VMRegPair* _argument_regs;
+  void parameter(BasicType type) {
+    _types.append(type);
+    if (type==T_LONG) _types.append(T_VOID);
+    if (!supported_type(type)) _valid=false;
+  }
  public:
-  explicit BasicSignature(Symbol* symbol) : _symbol(symbol), _types(8), _return_type(T_ILLEGAL), _valid(true),
+  explicit BasicSignature(Symbol* symbol, uint64_t fingerprint = 0) : _symbol(symbol), _types(8), _return_type(T_ILLEGAL), _valid(true),
     _argument_types(nullptr), _argument_regs(nullptr) {
-    for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
-      BasicType type=ss.type();
-      if (ss.at_return_type()) {
-        _return_type=type;
-        if (type!=T_VOID && !supported_type(type)) _valid=false;
-      } else {
-        _types.append(type);
-        if (type==T_LONG) _types.append(T_VOID);
-        if (!supported_type(type)) _valid=false;
+    if (SignatureIterator::fp_is_valid(fingerprint)) {
+      uint64_t parameters=SignatureIterator::fp_start_parameters(fingerprint);
+      for (BasicType type; (type=SignatureIterator::fp_next_parameter(parameters))!=0;) parameter(type);
+      _return_type=SignatureIterator::fp_return_type(fingerprint);
+#ifdef ASSERT
+      int slot=0;
+      for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
+        if (ss.at_return_type()) {
+          assert(_return_type==ss.type() || (is_reference_type(_return_type) && is_reference_type(ss.type())), "fingerprint result");
+        } else {
+          assert(slot<_types.length() && kind(_types.at(slot))==kind(ss.type()), "fingerprint parameter");
+          slot+=ss.type()==T_LONG?2:1;
+        }
+      }
+      assert(slot==_types.length(), "fingerprint parameter slots");
+#endif
+    } else {
+      // Unavailable and overflow fingerprints retain the descriptor path.
+      for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
+        if (ss.at_return_type()) _return_type=ss.type();
+        else parameter(ss.type());
       }
     }
+    if (_return_type!=T_VOID && !supported_type(_return_type)) _valid=false;
   }
   Symbol* symbol() const { return _symbol; }
   int count() const { return _types.length(); }
@@ -174,6 +192,24 @@ class BasicSignature : public ResourceObj {
 };
 BasicType argument_type(BasicSignature* sig, bool is_static, int i) {
   return !is_static && i==0 ? T_OBJECT : sig->type_at(i-(is_static?0:1));
+}
+
+uint64_t resolved_signature_fingerprint(ConstantPool* pool, int index, Bytecodes::Code bc, Symbol* signature) {
+  // Only reuse primitive/reference categories; linking remains an emission
+  // check. No metadata escapes this VM-state, no-safepoint read.
+  NoSafepointVerifier nsv;
+  if (pool->cache()==nullptr || index<0 || index>=pool->resolved_method_entries_length()) return 0;
+  ResolvedMethodEntry* entry=pool->resolved_method_entry_at(index);
+  if (!entry->is_resolved(bc) || entry->has_local_signature() || entry->has_appendix()) return 0;
+  Method* method=entry->method();
+  if (bc==Bytecodes::_invokevirtual && !entry->is_vfinal()) {
+    int holder_index=pool->klass_ref_index_at(index,bc);
+    if (!pool->tag_at(holder_index).is_klass()) return 0;
+    method=pool->resolved_klass_at(holder_index)->method_at_vtable(entry->table_index());
+  }
+  if (method==nullptr || method->signature()!=signature || method->is_static()!=(bc==Bytecodes::_invokestatic) ||
+      (method->intrinsic_id()>=vmIntrinsics::FIRST_MH_SIG_POLY && method->intrinsic_id()<=vmIntrinsics::LAST_MH_SIG_POLY)) return 0;
+  return method->constMethod()->fingerprint();
 }
 
 // Only categories, branch states and outgoing argument space are prepared here.
@@ -356,7 +392,7 @@ class Prepared : public ResourceObj {
     }
     _states = NEW_RESOURCE_ARRAY(State*, _size);
     _frames = NEW_RESOURCE_ARRAY(State*, _size);
-    _signature = new BasicSignature(_method->signature());
+    _signature = new BasicSignature(_method->signature(), _method->constMethod()->fingerprint());
     if (!_signature->valid()) return fail("method shape");
     _field_types = NEW_RESOURCE_ARRAY(BasicType, _size);
     _call_signatures = NEW_RESOURCE_ARRAY(BasicSignature*, _size);
@@ -481,7 +517,10 @@ class Prepared : public ResourceObj {
           if (!pop(s,bc==Bytecodes::_aastore ? T_OBJECT : bc==Bytecodes::_lastore ? T_LONG : T_INT) || !pop(s,T_INT) || !pop(s,T_OBJECT)) return false;
           break;
         case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: case Bytecodes::_invokeinterface: {
-          BasicSignature* declared = new BasicSignature(_method->constants()->signature_ref_at(bs.get_index_u2(), bc));
+          ConstantPool* pool=_method->constants();
+          int index=bs.get_index_u2();
+          Symbol* signature=pool->signature_ref_at(index,bc);
+          BasicSignature* declared = new BasicSignature(signature, resolved_signature_fingerprint(pool,index,bc,signature));
           if (!declared->valid()) return fail("unresolved/unsupported call");
           bool is_static = bc == Bytecodes::_invokestatic;
           _call_signatures[bci] = declared;
