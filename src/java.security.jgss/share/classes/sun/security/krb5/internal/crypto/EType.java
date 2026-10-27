@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.KrbCryptoException;
 import javax.crypto.*;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -49,17 +48,11 @@ import static sun.security.krb5.internal.Krb5.DEBUG;
 
 public abstract class EType {
 
-    // etypes supported by JDK, including weak ones
-    private static int[] supportedETypes;
-    // common default etypes if not defined in krb5.conf
-    private static int[] defaultETypes;
+    // etypes supported by JDK, also the default etypes if not defined
+    // in krb5.conf
+    private static final int[] supportedETypes;
 
     static {
-        initStatic();
-    }
-
-    public static void initStatic() {
-
         int maxKeyLength = 0;
         try {
             maxKeyLength = Cipher.getMaxAllowedKeyLength("AES");
@@ -67,7 +60,7 @@ public abstract class EType {
             // should not happen
         }
 
-        defaultETypes = maxKeyLength >= 256
+        supportedETypes = maxKeyLength >= 256
                 ? new int[] {
                         EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96,
                         EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
@@ -76,30 +69,6 @@ public abstract class EType {
                 : new int[] {
                         EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96,
                         EncryptedData.ETYPE_AES128_CTS_HMAC_SHA256_128, };
-
-        boolean allowWeakCrypto = false;
-        try {
-            Config cfg = Config.getInstance();
-            allowWeakCrypto = cfg.getBooleanObject("libdefaults", "allow_weak_crypto")
-                    == Boolean.TRUE;
-        } catch (Exception exc) {
-            if (DEBUG != null) {
-                DEBUG.println ("Exception in getting allow_weak_crypto, " +
-                                    "using default value: " +
-                                    exc.getMessage());
-            }
-        }
-
-        if (allowWeakCrypto) {
-            int[] result = Arrays.copyOf(defaultETypes, defaultETypes.length + 4);
-            result[defaultETypes.length] = EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD;
-            result[defaultETypes.length + 1] = EncryptedData.ETYPE_ARCFOUR_HMAC;
-            result[defaultETypes.length + 2] = EncryptedData.ETYPE_DES_CBC_CRC;
-            result[defaultETypes.length + 3] = EncryptedData.ETYPE_DES_CBC_MD5;
-            supportedETypes = result;
-        } else {
-            supportedETypes = defaultETypes;
-        }
     }
 
     public static EType getInstance  (int eTypeConst)
@@ -110,20 +79,6 @@ public abstract class EType {
         case EncryptedData.ETYPE_NULL:
             eType = new NullEType();
             eTypeName = "sun.security.krb5.internal.crypto.NullEType";
-            break;
-        case EncryptedData.ETYPE_DES_CBC_CRC:
-            eType = new DesCbcCrcEType();
-            eTypeName = "sun.security.krb5.internal.crypto.DesCbcCrcEType";
-            break;
-        case EncryptedData.ETYPE_DES_CBC_MD5:
-            eType = new DesCbcMd5EType();
-            eTypeName = "sun.security.krb5.internal.crypto.DesCbcMd5EType";
-            break;
-
-        case EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD:
-            eType = new Des3CbcHmacSha1KdEType();
-            eTypeName =
-                "sun.security.krb5.internal.crypto.Des3CbcHmacSha1KdEType";
             break;
 
         case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
@@ -148,11 +103,6 @@ public abstract class EType {
             eType = new Aes256CtsHmacSha2EType();
             eTypeName =
                     "sun.security.krb5.internal.crypto.Aes256CtsHmacSha2EType";
-            break;
-
-            case EncryptedData.ETYPE_ARCFOUR_HMAC:
-            eType = new ArcFourHmacEType();
-            eTypeName = "sun.security.krb5.internal.crypto.ArcFourHmacEType";
             break;
 
         default:
@@ -230,7 +180,7 @@ public abstract class EType {
 
     // used in Config
     public static int[] getBuiltInDefaults() {
-        return defaultETypes.clone();
+        return supportedETypes.clone();
     }
 
     /**
@@ -293,7 +243,7 @@ public abstract class EType {
         }
     }
 
-    public static boolean isSupported(int eTypeConst, int[] config) {
+    public static boolean isOneOf(int eTypeConst, int[] config) {
         for (int i = 0; i < config.length; i++) {
             if (eTypeConst == config[i]) {
                 return true;
@@ -303,7 +253,7 @@ public abstract class EType {
     }
 
     public static boolean isSupported(int eTypeConst) {
-        return isSupported(eTypeConst, supportedETypes);
+        return isOneOf(eTypeConst, supportedETypes);
     }
 
     /**

@@ -68,8 +68,6 @@ public class TestKeyPairGenerator extends PKCS11Test {
     }
 
     private static void test(PrivateKey privateKey, PublicKey publicKey) throws Exception {
-        testSignature("MD2withRSA", privateKey, publicKey);
-        testSignature("MD5withRSA", privateKey, publicKey);
         testSignature("SHA1withRSA", privateKey, publicKey);
         testSignature("SHA224withRSA", privateKey, publicKey);
         testSignature("SHA256withRSA", privateKey, publicKey);
@@ -84,7 +82,7 @@ public class TestKeyPairGenerator extends PKCS11Test {
     // regression test for 4865198
     private static void testInvalidSignature(KeyPair kp1, KeyPair kp2) throws Exception {
         System.out.println("Testing signature with incorrect key...");
-        Signature sig = Signature.getInstance("MD5withRSA", provider);
+        Signature sig = Signature.getInstance("SHA256withRSA", provider);
         sig.initSign(kp1.getPrivate());
         byte[] data = new byte[100];
         sig.update(data);

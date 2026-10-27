@@ -1,0 +1,795 @@
+{
+  "format": 1,
+  "description": "Independent mutations of synthetic medium-relocation evidence transcripts.",
+  "base_files": [
+    {
+      "id": "normal",
+      "file": "normal.txt",
+      "in_place": false,
+      "expected": "accept",
+      "heap_base": "0x40000000000",
+      "old_sequence": "1->1"
+    },
+    {
+      "id": "inplace",
+      "file": "inplace.txt",
+      "in_place": true,
+      "expected": "accept",
+      "heap_base": "0x100000000000",
+      "old_sequence": "1->3 for in-place source pages; 1->1 for normal source pages"
+    }
+  ],
+  "operation_contract": {
+    "regex_replace": "Java Pattern/Matcher syntax, with $N replacement group references. Replace all matches; require the stated exact 'matches' count.",
+    "insert_after_line": "Require exactly one line equal to anchor (excluding LF), insert text immediately after its LF.",
+    "remove_line": "Require exactly one line equal to line; remove that complete line and its LF.",
+    "move_line_after": "Require exactly one exact line and anchor; remove line including LF, then insert after anchor including its LF.",
+    "move_line_before": "As move_line_after, but insert before anchor.",
+    "move_regex_line_after": "Find exactly one complete line by Pattern.matcher(line without LF).matches(); move after the exact anchor.",
+    "ordering": "Start from the named unmodified base for every case. Apply operations sequentially. No mutation result is reused as another case's base.",
+    "encoding": "UTF-8 without BOM, LF endings, one final LF. Files are synthetic parser input, not captured test execution."
+  },
+  "mutations": [
+    {
+      "name": "late-timer-completion",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "accept",
+      "reason": "Counter advances before the final summary; no extra collection starts.",
+      "operations": [
+        {
+          "op": "move_line_after",
+          "line": "[2ms][info][gc] GC(1) Major Collection (Timer) 24M(18%)->16M(12%) 0.020s",
+          "anchor": "FIXTURE SMALL_PAGES count=3"
+        }
+      ]
+    },
+    {
+      "name": "extra-incomplete-timer-after-done",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "reason": "Extra start through EOF, even without a completion.",
+      "operations": [
+        {
+          "op": "insert_after_line",
+          "anchor": "FIXTURE DONE major=2 minor=1",
+          "text": "[9ms][info][gc] GC(3) Major Collection (Timer)\n"
+        }
+      ]
+    },
+    {
+      "name": "extra-complete-timer-after-done",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "insert_after_line",
+          "anchor": "FIXTURE DONE major=2 minor=1",
+          "text": "[9ms][info][gc] GC(3) Major Collection (Timer)\n[9ms][info][gc] GC(3) Major Collection (Timer) 10M(7%)->10M(7%) 0.001s\n"
+        }
+      ]
+    },
+    {
+      "name": "extra-incomplete-minor-before-done",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "insert_after_line",
+          "anchor": "FIXTURE YOUNG major=2 minor=0",
+          "text": "[3ms][info][gc] GC(3) Minor Collection (Timer)\n"
+        }
+      ]
+    },
+    {
+      "name": "missing-timer-completion",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(1\\) Major Collection \\(Timer\\) [^\\n]+s\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-verification-completion",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(2\\) Minor Collection \\(WhiteBox Initiated Young GC\\) [^\\n]+s\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-timer-start",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(1\\) Major Collection \\(Timer\\)\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "aborted-timer",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(.*GC\\(1\\) Major Collection \\(Timer\\)) [^\\n]+s\\n",
+          "replacement": "$1 Aborted\n",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "duplicate-timer-completion",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(.*GC\\(1\\) Major Collection \\(Timer\\) [^\\n]+s)\\n",
+          "replacement": "$1\n$1\n",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-dontinline-registration",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^CompileCommand: dontinline FourByteHeaderZGCMediumRemset\\$Fixture\\.inspectAfterMajor bool dontinline = true\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-all-remset-edges",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(1\\) O: Remember:[^\\n]*\\n",
+          "replacement": "",
+          "matches": 40
+        }
+      ]
+    },
+    {
+      "name": "wrong-remset-destination-slots",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(Remember: from: 0x[0-9a-f]+ to: )0x[0-9a-f]+",
+          "replacement": "$10x1",
+          "matches": 40
+        }
+      ]
+    },
+    {
+      "name": "wrong-remset-source-slots",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(Remember: from: )0x[0-9a-f]+",
+          "replacement": "$10x1",
+          "matches": 40
+        }
+      ]
+    },
+    {
+      "name": "wrong-remset-gc",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(1\\) O: Remember:",
+          "replacement": "GC(2) O: Remember:",
+          "matches": 40
+        }
+      ]
+    },
+    {
+      "name": "wrong-remset-generation-tag",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(1\\) O: Remember:",
+          "replacement": "GC(1) Y: Remember:",
+          "matches": 40
+        }
+      ]
+    },
+    {
+      "name": "missing-old-source-page-begins",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(1\\) O: Medium[^\\n]*\\(relocate page\\)\\n",
+          "replacement": "",
+          "matches": 4
+        }
+      ]
+    },
+    {
+      "name": "missing-old-source-page-completions",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(1\\) O: Medium[^\\n]*\\(relocate page done [^)]*\\)\\n",
+          "replacement": "",
+          "matches": 4
+        }
+      ]
+    },
+    {
+      "name": "wrong-old-source-page-gc",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(1\\) O: Medium",
+          "replacement": "GC(9) O: Medium",
+          "matches": 8
+        }
+      ]
+    },
+    {
+      "name": "wrong-old-source-page-tag",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(1\\) O: Medium",
+          "replacement": "GC(1) Y: Medium",
+          "matches": 8
+        }
+      ]
+    },
+    {
+      "name": "wrong-old-source-page-type",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(1\\) O: Medium",
+          "replacement": "GC(1) O: Large ",
+          "matches": 8
+        }
+      ]
+    },
+    {
+      "name": "wrong-old-source-page-extent",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(GC\\(1\\) O: Medium\\s+)0x[0-9a-f]+",
+          "replacement": "$10x8000000",
+          "matches": 8
+        }
+      ]
+    },
+    {
+      "name": "wrong-old-source-sequence-transition",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)(GC\\(1\\) O: Medium[^\\n]+O/)[0-9]+([^\\n]*\\(relocate page\\)\\n)",
+          "replacement": "$199$2",
+          "matches": 4
+        }
+      ]
+    },
+    {
+      "name": "wrong-inplace-page-completion",
+      "bases": [
+        "inplace"
+      ],
+      "expected": "reject",
+      "reason": "Exact grown-owner source pages no longer report in-place completion.",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "\\(relocate page done in-place\\)",
+          "replacement": "(relocate page done normal)",
+          "matches": 3
+        }
+      ]
+    },
+    {
+      "name": "duplicate-old-page-completion",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(.*GC\\(1\\) O: Medium\\s+0x0\\s+[^\\n]*\\(relocate page done [^)]*\\))\\n",
+          "replacement": "$1\n$1\n",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "wrong-owner-heap-base",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE OWNER id=1 src=)0x[0-9a-f]+",
+          "replacement": "$10x20000000",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "wrong-child-heap-base",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE SURVIVE id=1 firstBefore=)0x[0-9a-f]+",
+          "replacement": "$10x20000000",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "same-first-child-address-for-every-owner",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE SURVIVE id=[0-9]+ firstBefore=(0x[0-9a-f]+) firstAfter=)0x[0-9a-f]+",
+          "replacement": "$1$2",
+          "matches": 20
+        }
+      ]
+    },
+    {
+      "name": "wrong-initial-object-size",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*sizeBefore=)393216",
+          "replacement": "$1393208",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "wrong-grown-object-size",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*sizeAfter=)393224",
+          "replacement": "$1393232",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "wrong-owner-hash",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*hashAfter=)1001",
+          "replacement": "$1-1",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-owner-record",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^FIXTURE OWNER id=1 [^\\n]*\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "duplicate-owner-record",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE OWNER id=1 [^\\n]*)\\n",
+          "replacement": "$1\n$1\n",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-survival-record",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^FIXTURE SURVIVE id=1 [^\\n]*\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "duplicate-survival-record",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE SURVIVE id=1 [^\\n]*)\\n",
+          "replacement": "$1\n$1\n",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-major-observation-marker",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^FIXTURE MAJOR_DONE major=2 minor=0\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "duplicate-final-marker",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^(FIXTURE DONE major=2 minor=1)\\n",
+          "replacement": "$1\n$1\n",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "wrong-phase-order",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "move_line_before",
+          "line": "FIXTURE YOUNG major=2 minor=0",
+          "anchor": "FIXTURE ARM major=1 minor=0 base=8 scale=8 length=49151"
+        }
+      ]
+    },
+    {
+      "name": "owner-observed-after-young-marker",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "move_regex_line_after",
+          "pattern": "^FIXTURE OWNER id=1 [^\\n]*$",
+          "anchor": "FIXTURE YOUNG major=2 minor=0"
+        }
+      ]
+    },
+    {
+      "name": "missing-small-page-selection",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "remove_line",
+          "line": "[1ms][trace][gc,reloc] GC(2) y: Relocation Set (Small Pages): 3->1, 0 skipped, 40 forwarding entries"
+        }
+      ]
+    },
+    {
+      "name": "wrong-small-selection-gc",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(2\\) y: Relocation Set \\(Small Pages\\)",
+          "replacement": "GC(9) y: Relocation Set (Small Pages)",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "wrong-small-selection-tag",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(2\\) y: Relocation Set \\(Small Pages\\)",
+          "replacement": "GC(2) Y: Relocation Set (Small Pages)",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "unprofitable-small-page-selection",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(2\\) y: Relocation Set \\(Small Pages\\): 3->1",
+          "replacement": "GC(2) y: Relocation Set (Small Pages): 3->3",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "singleton-small-page-selection",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "GC\\(2\\) y: Relocation Set \\(Small Pages\\): 3->1",
+          "replacement": "GC(2) y: Relocation Set (Small Pages): 1->1",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "duplicate-small-page-selection",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "insert_after_line",
+          "anchor": "[1ms][trace][gc,reloc] GC(2) y: Relocation Set (Small Pages): 3->1, 0 skipped, 40 forwarding entries",
+          "text": "[1ms][trace][gc,reloc] GC(2) y: Relocation Set (Small Pages): 3->1, 0 skipped, 40 forwarding entries\n"
+        }
+      ]
+    },
+    {
+      "name": "wrong-layout-count",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "FIXTURE SMALL_PAGES count=3",
+          "replacement": "FIXTURE SMALL_PAGES count=1",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "missing-layout-record",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^FIXTURE SMALL_PAGES count=3\\n",
+          "replacement": "",
+          "matches": 1
+        }
+      ]
+    },
+    {
+      "name": "layout-observed-after-young-marker",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "operations": [
+        {
+          "op": "move_line_after",
+          "line": "FIXTURE SMALL_PAGES count=3",
+          "anchor": "FIXTURE YOUNG major=2 minor=0"
+        }
+      ]
+    },
+    {
+      "name": "missing-last-edge-for-every-owner",
+      "bases": [
+        "normal",
+        "inplace"
+      ],
+      "expected": "reject",
+      "reason": "First edges remain; every potential grown-owner candidate lacks its required last-slot edge.",
+      "operations": [
+        {
+          "op": "regex_replace",
+          "pattern": "(?m)^.*GC\\(1\\) O: Remember: from: (?:0x5fff8|0x11fff8|0x1dfff8|0x29fff8|0x35fff8|0x45fff8|0x51fff8|0x5dfff8|0x69fff8|0x75fff8|0x85fff8|0x91fff8|0x9dfff8|0xa9fff8|0xb5fff8|0xc5fff8|0xd1fff8|0xddfff8|0xe9fff8|0xf5fff8) to:[^\\n]*\\n",
+          "replacement": "",
+          "matches": 20
+        }
+      ]
+    }
+  ]
+}

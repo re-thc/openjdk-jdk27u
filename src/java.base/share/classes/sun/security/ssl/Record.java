@@ -48,12 +48,6 @@ interface Record {
                                        // 2^14 + 2048
 
     /*
-     * System property to enable/disable CBC protection in SSL3/TLS1.
-     */
-    boolean enableCBCProtection =
-            Utilities.getBooleanProperty("jsse.enableCBCProtection", true);
-
-    /*
      * The overflow values of integers of 8, 16 and 24 bits.
      */
     int OVERFLOW_OF_INT08 = (0x01 << 8);

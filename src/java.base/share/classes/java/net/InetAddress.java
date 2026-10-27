@@ -28,6 +28,7 @@ package java.net;
 import java.net.spi.InetAddressResolver;
 import java.net.spi.InetAddressResolverProvider;
 import java.net.spi.InetAddressResolver.LookupPolicy;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.ArrayList;
@@ -487,10 +488,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     private static InetAddressResolver loadResolver() {
-        return ServiceLoader.load(InetAddressResolverProvider.class)
-                .findFirst()
-                .map(nsp -> nsp.get(builtinConfiguration()))
-                .orElse(BUILTIN_RESOLVER);
+        // Avoid lambda linkage during provider discovery.
+        Iterator<InetAddressResolverProvider> providers =
+                ServiceLoader.load(InetAddressResolverProvider.class).iterator();
+        if (providers.hasNext()) {
+            InetAddressResolver provided = providers.next().get(builtinConfiguration());
+            if (provided != null) {
+                return provided;
+            }
+        }
+        return BUILTIN_RESOLVER;
     }
 
     private static InetAddressResolverProvider.Configuration builtinConfiguration() {
@@ -1125,17 +1132,20 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
         public Stream<InetAddress> lookupByName(String host, LookupPolicy policy)
                 throws UnknownHostException {
+            return Arrays.stream(lookupAll(host, policy));
+        }
+
+        InetAddress[] lookupAll(String host, LookupPolicy policy)
+                throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
             validate(host);
-            InetAddress[] addrs;
             boolean attempted = Blocker.begin();
             try {
-                addrs = impl.lookupAllHostAddr(host, policy);
+                return impl.lookupAllHostAddr(host, policy);
             } finally {
                 Blocker.end(attempted);
             }
-            return Arrays.stream(addrs);
         }
 
         public String lookupByAddress(byte[] addr) throws UnknownHostException {
@@ -1705,14 +1715,19 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     static InetAddress[] getAddressesFromNameService(String host)
             throws UnknownHostException {
         Stream<InetAddress> addresses = null;
+        InetAddress[] result = null;
         UnknownHostException ex = null;
 
         var resolver = resolver();
         try {
-            addresses = resolver.lookupByName(host, PLATFORM_LOOKUP_POLICY);
+            if (resolver instanceof PlatformResolver platformResolver) {
+                result = platformResolver.lookupAll(host, PLATFORM_LOOKUP_POLICY);
+            } else {
+                addresses = resolver.lookupByName(host, PLATFORM_LOOKUP_POLICY);
+            }
         } catch (RuntimeException | UnknownHostException x) {
             if (host.equalsIgnoreCase("localhost")) {
-                addresses = Stream.of(impl.loopbackAddress());
+                result = new InetAddress[] { impl.loopbackAddress() };
             } else if (x instanceof UnknownHostException uhe) {
                 ex = uhe;
             } else {
@@ -1720,8 +1735,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 ex.initCause(x);
             }
         }
-        InetAddress[] result = addresses == null ? null
-                : addresses.toArray(InetAddress[]::new);
+        if (addresses != null) {
+            result = addresses.toArray(InetAddress[]::new);
+        }
         if (result == null || result.length == 0) {
             throw ex == null ? new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)))
                              : ex;

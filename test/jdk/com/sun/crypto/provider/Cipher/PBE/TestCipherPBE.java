@@ -47,11 +47,10 @@ import javax.crypto.spec.PBEParameterSpec;
  */
 public class TestCipherPBE {
 
-    private static final String[] ALGORITHMS = {"PBEWithMD5AndDES",
-        "PBEWithMD5AndDES/CBC/PKCS5Padding", "PBEWithMD5AndTripleDES",
-        "PBEWithMD5AndTripleDES/CBC/PKCS5Padding"};
+    private static final String[] ALGORITHMS = {"PBEWithSHA1AndDESede",
+        "PBEWithSHA1AndDESede/CBC/PKCS5Padding"};
 
-    private static final String KEY_ALGO = "pbeWithMD5ANDdes";
+    private static final String KEY_ALGO = "PBEWithSHA1AndDESede";
     private final byte[] SALT;
     private final byte[] PLAIN_TEXT;
 

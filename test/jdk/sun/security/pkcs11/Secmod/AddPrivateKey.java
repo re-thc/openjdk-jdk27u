@@ -80,8 +80,8 @@ public class AddPrivateKey extends SecmodTest {
             ks.deleteEntry(alias);
         }
 
-        KeyStore jks = KeyStore.getInstance("JKS");
-        try (InputStream in = new FileInputStream(BASE + SEP + "keystore.jks")) {
+        KeyStore jks = KeyStore.getInstance("PKCS12");
+        try (InputStream in = new FileInputStream(BASE + SEP + "keystore.p12")) {
             char[] jkspass = "passphrase".toCharArray();
             jks.load(in, jkspass);
             for (String alias : Collections.list(jks.aliases())) {

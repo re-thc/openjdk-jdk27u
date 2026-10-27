@@ -21,11 +21,8 @@
  * questions.
  */
 import java.util.Arrays;
-import java.util.stream.Stream;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-
-import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
@@ -55,25 +52,15 @@ import jdk.test.lib.security.SecurityUtils;
  *      -Djdk.tls.server.cipherSuites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
  *      SystemPropCipherSuitesOrder TLSv1.2
  * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1.1
+ *      -Djdk.tls.client.cipherSuites=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+ *      -Djdk.tls.server.cipherSuites=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+ *      SystemPropCipherSuitesOrder TLSv1.2
  * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1.1
+ *      -Djdk.tls.client.cipherSuites=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+ *      SystemPropCipherSuitesOrder TLSv1.2
  * @run main/othervm
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1.1
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1
- * @run main/othervm
- *      -Djdk.tls.client.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1
- * @run main/othervm
- *      -Djdk.tls.server.cipherSuites=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA
- *      SystemPropCipherSuitesOrder TLSv1
+ *      -Djdk.tls.server.cipherSuites=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+ *      SystemPropCipherSuitesOrder TLSv1.2
  */
 public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
 
@@ -90,18 +77,6 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
                           Arrays.deepToString(servercipherSuites),
                           Arrays.deepToString(clientcipherSuites));
 
-        // Re-enable TLS_RSA_* cipher suites if needed since test depends on it.
-        if (Stream.concat(
-                        Arrays.stream(
-                                servercipherSuites == null
-                                        ? new String[0] : servercipherSuites),
-                        Arrays.stream(
-                                clientcipherSuites == null
-                                        ? new String[0] : clientcipherSuites))
-                .anyMatch(s -> s.startsWith("TLS_RSA_"))) {
-            SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
-        }
-
         try {
             new SystemPropCipherSuitesOrder(args[0]).run();
         } catch (Exception e) {
@@ -111,10 +86,6 @@ public class SystemPropCipherSuitesOrder extends SSLSocketTemplate {
 
     private SystemPropCipherSuitesOrder(String protocol) {
         this.protocol = protocol;
-        // Re-enable protocol if disabled.
-        if (protocol.equals("TLSv1") || protocol.equals("TLSv1.1")) {
-            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
-        }
     }
 
     // Servers are configured before clients, increment test case after.

@@ -31,10 +31,11 @@ include Modules.gmk
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
 
-JAVADOC_MODULES := $(DOCS_MODULES)
+JAVADOC_MODULES := $(sort $(filter-out $(MODULES_FILTER), $(DOCS_MODULES) \
+    $(call FindTransitiveIndirectDepsForModules, $(DOCS_MODULES))))
 
 # Get the complete module source path:
-JAVADOC_MODULESOURCEPATH := $(call GetModuleSrcPath)
+JAVADOC_MODULESOURCEPATH := $(call GetModuleSourcePathFlags)
 
 CT_DATA_DESCRIPTION += $(TOPDIR)/src/jdk.compiler/share/data/symbols/symbols
 

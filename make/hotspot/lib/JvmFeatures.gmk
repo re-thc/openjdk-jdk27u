@@ -33,6 +33,10 @@ ifeq ($(INCLUDE), true)
 # jvm features are selected for this jvm variant.
 ################################################################################
 
+ifeq ($(ENABLE_DESKTOP)+$(call isTargetOs, windows), false+true)
+  JVM_CFLAGS_FEATURES += -DHEADLESS
+endif
+
 ifeq ($(call check-jvm-feature, compiler1), true)
   JVM_CFLAGS_FEATURES += -DCOMPILER1
 else

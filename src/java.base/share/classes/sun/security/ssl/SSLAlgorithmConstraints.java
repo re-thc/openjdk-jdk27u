@@ -196,6 +196,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         return constraints == DEFAULT ? null : constraints;
     }
 
+    // Are there constraints set by the application?
+    boolean hasUserSpecifiedConstraints() {
+        return userSpecifiedConstraints != null;
+    }
+
     private static AlgorithmConstraints getUserSpecifiedConstraints(
             SSLEngine engine) {
         if (engine != null) {

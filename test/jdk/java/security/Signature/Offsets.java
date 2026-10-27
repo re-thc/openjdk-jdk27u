@@ -36,10 +36,6 @@ import jdk.test.lib.RandomFactory;
  *          and passing in different signature offset (0, 33, 66, 99).
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main Offsets SUN NONEwithDSA
- * @run main Offsets SUN SHA1withDSA
- * @run main Offsets SUN SHA224withDSA
- * @run main Offsets SUN SHA256withDSA
  * @run main Offsets SunRsaSign SHA224withRSA
  * @run main Offsets SunRsaSign SHA256withRSA
  * @run main Offsets SunRsaSign SHA384withRSA

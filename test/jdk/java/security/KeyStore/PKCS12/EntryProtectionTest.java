@@ -106,18 +106,10 @@ public class EntryProtectionTest {
         out.println("");
         PASSWORD_PROTECTION
                 .add(new KeyStore.PasswordProtection(PASSWORD,
-                                "PBEWithMD5AndDES", new PBEParameterSpec(SALT,
+                                "PBEWithSHA1AndDESede", new PBEParameterSpec(SALT,
                                         ITERATION_COUNT)));
         PASSWORD_PROTECTION.add(new KeyStore.PasswordProtection(PASSWORD,
                 "PBEWithSHA1AndDESede", null));
-        PASSWORD_PROTECTION.add(new KeyStore.PasswordProtection(PASSWORD,
-                "PBEWithSHA1AndRC2_40", null));
-        PASSWORD_PROTECTION.add(new KeyStore.PasswordProtection(PASSWORD,
-                "PBEWithSHA1AndRC2_128", null));
-        PASSWORD_PROTECTION.add(new KeyStore.PasswordProtection(PASSWORD,
-                "PBEWithSHA1AndRC4_40", null));
-        PASSWORD_PROTECTION.add(new KeyStore.PasswordProtection(PASSWORD,
-                "PBEWithSHA1AndRC4_128", null));
     }
 
     /**

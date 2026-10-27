@@ -40,12 +40,7 @@ import javax.crypto.interfaces.PBEKey;
 public class DecryptWithoutParameters {
 
     private static String[] PBES1ALGOS = {
-        "PBEWithMD5AndDES",
         "PBEWithSHA1AndDESede",
-        "PBEWithSHA1AndRC2_40",
-        "PBEWithSHA1AndRC2_128",
-        "PBEWithSHA1AndRC4_40",
-        "PBEWithSHA1AndRC4_128",
     };
 
     private static String[] PBES2ALGOS = {

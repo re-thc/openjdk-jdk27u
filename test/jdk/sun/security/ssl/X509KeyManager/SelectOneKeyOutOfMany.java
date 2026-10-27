@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4387949 4302197
- * @summary Verify X509KeyManager selects the correct RSA or DSA key
+ * @summary Verify X509KeyManager selects the correct RSA or EC key
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /test/lib
@@ -49,9 +49,9 @@ import java.util.Arrays;
 public class SelectOneKeyOutOfMany {
     private static final String NOTHING = "nothing";
     private static final String RSA = "RSA";
-    private static final String DSA = "DSA";
+    private static final String EC = "EC";
     private static final String RSA_ALIAS = "dummyrsa";
-    private static final String DSA_ALIAS = "dummydsa";
+    private static final String EC_ALIAS = "dummyec";
 
     public static void main(String[] args) throws Exception {
         X509KeyManager km = getKeyManager();
@@ -65,10 +65,10 @@ public class SelectOneKeyOutOfMany {
                 "getClientAliases should return RSA alias: " +
                         Arrays.toString(km.getClientAliases(RSA, null)));
 
-        Asserts.assertTrue(Arrays.stream(km.getClientAliases(DSA,
-                                null)).toList().contains(DSA_ALIAS),
-                "getClientAliases should return DSA alias: " +
-                        Arrays.toString(km.getClientAliases(DSA, null)));
+        Asserts.assertTrue(Arrays.stream(km.getClientAliases(EC,
+                                null)).toList().contains(EC_ALIAS),
+                "getClientAliases should return EC alias: " +
+                        Arrays.toString(km.getClientAliases(EC, null)));
 
 
         // String[] getServerAliases(String keyType, Principal[] issuers)
@@ -80,10 +80,10 @@ public class SelectOneKeyOutOfMany {
                 "getServerAliases should return RSA alias: " +
                         Arrays.toString(km.getServerAliases(RSA, null)));
 
-        Asserts.assertTrue(Arrays.stream(km.getServerAliases(DSA,
-                                null)).toList().contains(DSA_ALIAS),
-                "getServerAliases should return DSA alias: " +
-                        Arrays.toString(km.getServerAliases(DSA, null)));
+        Asserts.assertTrue(Arrays.stream(km.getServerAliases(EC,
+                                null)).toList().contains(EC_ALIAS),
+                "getServerAliases should return EC alias: " +
+                        Arrays.toString(km.getServerAliases(EC, null)));
 
 
         //  String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket)
@@ -98,19 +98,19 @@ public class SelectOneKeyOutOfMany {
                 "chooseClientAlias should return RSA alias");
 
         Asserts.assertEQ(
-                km.chooseClientAlias(new String[]{DSA}, null, null),
-                DSA_ALIAS,
-                "chooseClientAlias should return DSA alias");
+                km.chooseClientAlias(new String[]{EC}, null, null),
+                EC_ALIAS,
+                "chooseClientAlias should return EC alias");
 
         Asserts.assertEQ(
-                km.chooseClientAlias(new String[]{RSA, DSA}, null, null),
+                km.chooseClientAlias(new String[]{RSA, EC}, null, null),
                 RSA_ALIAS,
                 "chooseClientAlias should return RSA alias");
 
         Asserts.assertEQ(
-                km.chooseClientAlias(new String[]{DSA, RSA}, null, null),
-                DSA_ALIAS,
-                "chooseClientAlias should return DSA alias");
+                km.chooseClientAlias(new String[]{EC, RSA}, null, null),
+                EC_ALIAS,
+                "chooseClientAlias should return EC alias");
 
 
         //  String chooseServerAlias(String keyType, Principal[] issuers, Socket socket)
@@ -121,16 +121,16 @@ public class SelectOneKeyOutOfMany {
                 RSA_ALIAS,
                 "chooseServerAlias should return RSA alias");
 
-        Asserts.assertEQ(km.chooseServerAlias(DSA, null, null),
-                DSA_ALIAS,
-                "chooseServerAlias should return DSA alias");
+        Asserts.assertEQ(km.chooseServerAlias(EC, null, null),
+                EC_ALIAS,
+                "chooseServerAlias should return EC alias");
     }
 
     private static X509KeyManager getKeyManager() throws Exception {
         char[] passphrase = "passphrase".toCharArray();
 
         KeyPair rsaKey = KeyPairGenerator.getInstance(RSA).generateKeyPair();
-        KeyPair dsaKey = KeyPairGenerator.getInstance(DSA).generateKeyPair();
+        KeyPair ecKey = KeyPairGenerator.getInstance(EC).generateKeyPair();
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -141,11 +141,11 @@ public class SelectOneKeyOutOfMany {
                 passphrase,
                 new Certificate[]{createSelfSignedCert(rsaKey,
                         "SHA256withRSA")});
-        ks.setKeyEntry(DSA_ALIAS,
-                dsaKey.getPrivate(),
+        ks.setKeyEntry(EC_ALIAS,
+                ecKey.getPrivate(),
                 passphrase,
-                new Certificate[]{createSelfSignedCert(dsaKey,
-                        "SHA256withDSA")});
+                new Certificate[]{createSelfSignedCert(ecKey,
+                        "SHA256withECDSA")});
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

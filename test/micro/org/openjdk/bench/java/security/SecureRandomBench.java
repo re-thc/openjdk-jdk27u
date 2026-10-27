@@ -34,10 +34,83 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 3)
+@State(Scope.Thread)
 public class SecureRandomBench {
+
+    // Per-thread instances share NativePRNG state on Linux and macOS.
+    private SecureRandom random;
+    private byte[] bytes16;
+    private byte[] bytes1024;
+
+    @Setup
+    public void setup() {
+        random = new SecureRandom();
+        bytes16 = new byte[16];
+        bytes1024 = new byte[1024];
+    }
 
     @Benchmark
     public SecureRandom create() throws Exception {
         return new SecureRandom();
+    }
+
+    @Benchmark
+    public byte[] nextBytes16() {
+        random.nextBytes(bytes16);
+        return bytes16;
+    }
+
+    @Benchmark
+    public byte[] nextBytes1024() {
+        random.nextBytes(bytes1024);
+        return bytes1024;
+    }
+
+    @Benchmark
+    public int nextInt() {
+        return random.nextInt();
+    }
+
+    // Expire NativePRNG's 100 ms buffers before each request.
+    // Spin between requests to exclude CPU wake-up latency.
+
+    @State(Scope.Thread)
+    public static class Idle {
+        @Setup(Level.Invocation)
+        public void idle() {
+            long end = System.nanoTime() + 110_000_000L;
+            while (System.nanoTime() < end) {
+                Thread.onSpinWait();
+            }
+        }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SampleTime)
+    @Warmup(iterations = 1, time = 4)
+    @Measurement(iterations = 10, time = 4)
+    public byte[] nextBytes16Sparse(Idle idle) {
+        random.nextBytes(bytes16);
+        return bytes16;
+    }
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public byte[] nextBytes16Parallel() {
+        random.nextBytes(bytes16);
+        return bytes16;
+    }
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public byte[] nextBytes1024Parallel() {
+        random.nextBytes(bytes1024);
+        return bytes1024;
+    }
+
+    @Benchmark
+    @Threads(Threads.MAX)
+    public int nextIntParallel() {
+        return random.nextInt();
     }
 }

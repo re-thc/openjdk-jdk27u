@@ -30,9 +30,6 @@
  * @test
  * @bug 4403428 8190492
  * @summary Invalidating JSSE session on server causes SSLProtocolException
- * @run main/othervm InvalidateServerSessionRenegotiate SSLv3
- * @run main/othervm InvalidateServerSessionRenegotiate TLSv1
- * @run main/othervm InvalidateServerSessionRenegotiate TLSv1.1
  * @run main/othervm InvalidateServerSessionRenegotiate TLSv1.2
  * @author Brad Wetmore
  */
@@ -122,11 +119,6 @@ public class InvalidateServerSessionRenegotiate implements
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.addHandshakeCompletedListener(this);
-
-        // Enable all supported protocols on server side to test SSLv3
-        if ("SSLv3".equals(tlsProtocol)) {
-            sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
-        }
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();

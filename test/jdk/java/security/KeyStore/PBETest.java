@@ -48,8 +48,8 @@ public class PBETest {
         "PBEWithHmacSHA512AndAES_128"
     };
     private static final char[] PASSWORD = "passphrase".toCharArray();
-    private static final String KEYSTORE_TYPE = "JKS";
-    private static final String KEYSTORE = DIR + "/keystore.jks";
+    private static final String KEYSTORE_TYPE = "PKCS12";
+    private static final String KEYSTORE = DIR + "/keystore.p12";
     private static final String NEW_KEYSTORE_TYPE = "PKCS12";
     private static final String ALIAS = "vajra";
 

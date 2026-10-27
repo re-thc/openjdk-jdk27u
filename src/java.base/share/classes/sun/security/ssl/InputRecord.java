@@ -49,11 +49,6 @@ abstract class InputRecord implements Record, Closeable {
     final HandshakeHash handshakeHash;
     volatile boolean    isClosed;
 
-    // The ClientHello version to accept. If set to ProtocolVersion.SSL20Hello
-    // and the first message we read is a ClientHello in V2 format, we convert
-    // it to V3. Otherwise, we throw an exception when encountering a V2 hello.
-    ProtocolVersion     helloVersion;
-
     // fragment size
     int                 fragmentSize;
 
@@ -61,14 +56,9 @@ abstract class InputRecord implements Record, Closeable {
 
     InputRecord(HandshakeHash handshakeHash, SSLReadCipher readCipher) {
         this.readCipher = readCipher;
-        this.helloVersion = ProtocolVersion.TLS10;
         this.handshakeHash = handshakeHash;
         this.isClosed = false;
         this.fragmentSize = Record.maxDataSize;
-    }
-
-    void setHelloVersion(ProtocolVersion helloVersion) {
-        this.helloVersion = helloVersion;
     }
 
     boolean seqNumIsHuge() {
@@ -183,160 +173,6 @@ abstract class InputRecord implements Record, Closeable {
     //
 
     // Not apply to DTLS
-    static ByteBuffer convertToClientHello(ByteBuffer packet) {
-        int srcPos = packet.position();
-
-        byte firstByte = packet.get();
-        byte secondByte = packet.get();
-        int recordLen = (((firstByte & 0x7F) << 8) | (secondByte & 0xFF)) + 2;
-
-        packet.position(srcPos + 3);        // the V2ClientHello record header
-
-        byte majorVersion = packet.get();
-        byte minorVersion = packet.get();
-
-        int cipherSpecLen = ((packet.get() & 0xFF) << 8) +
-                             (packet.get() & 0xFF);
-        int sessionIdLen  = ((packet.get() & 0xFF) << 8) +
-                             (packet.get() & 0xFF);
-        int nonceLen      = ((packet.get() & 0xFF) << 8) +
-                             (packet.get() & 0xFF);
-
-        // Required space for the target SSLv3 ClientHello message.
-        //  5: record header size
-        //  4: handshake header size
-        //  2: ClientHello.client_version
-        // 32: ClientHello.random
-        //  1: length byte of ClientHello.session_id
-        //  2: length bytes of ClientHello.cipher_suites
-        //  2: empty ClientHello.compression_methods
-        int requiredSize = 48 + sessionIdLen + ((cipherSpecLen * 2 ) / 3);
-        byte[] converted = new byte[requiredSize];
-
-        /*
-         * Build the first part of the V3 record header from the V2 one
-         * that's now buffered up.  (Lengths are fixed up later).
-         */
-        // Note: need not set the header.
-        converted[0] = ContentType.HANDSHAKE.id;
-        converted[1] = majorVersion;
-        converted[2] = minorVersion;
-        // header [3..4] for handshake message length
-        // required size is 5;
-
-        /*
-         * Store the generic V3 handshake header:  4 bytes
-         */
-        converted[5] = 1;    // HandshakeMessage.ht_client_hello
-        // buf [6..8] for length of ClientHello (int24)
-        // required size += 4;
-
-        /*
-         * ClientHello header starts with SSL version
-         */
-        converted[9] = majorVersion;
-        converted[10] = minorVersion;
-        // required size += 2;
-        int pointer = 11;
-
-        /*
-         * Copy Random value/nonce ... if less than the 32 bytes of
-         * a V3 "Random", right justify and zero pad to the left.  Else
-         * just take the last 32 bytes.
-         */
-        int offset = srcPos + 11 + cipherSpecLen + sessionIdLen;
-
-        if (nonceLen < 32) {
-            for (int i = 0; i < (32 - nonceLen); i++) {
-                converted[pointer++] = 0;
-            }
-            packet.position(offset);
-            packet.get(converted, pointer, nonceLen);
-
-            pointer += nonceLen;
-        } else {
-            packet.position(offset + nonceLen - 32);
-            packet.get(converted, pointer, 32);
-
-            pointer += 32;
-        }
-
-        /*
-         * Copy session ID (only one byte length!)
-         */
-        offset -= sessionIdLen;
-        converted[pointer++] = (byte)(sessionIdLen & 0xFF);
-        packet.position(offset);
-        packet.get(converted, pointer, sessionIdLen);
-
-        /*
-         * Copy and translate cipher suites ... V2 specs with first byte zero
-         * are really V3 specs (in the last 2 bytes), just copy those and drop
-         * the other ones.  Preference order remains unchanged.
-         *
-         * Example:  Netscape Navigator 3.0 (exportable) says:
-         *
-         * 0/3,     SSL_RSA_EXPORT_WITH_RC4_40_MD5
-         * 0/6,     SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5
-         *
-         * Microsoft Internet Explorer 3.0 (exportable) supports only
-         *
-         * 0/3,     SSL_RSA_EXPORT_WITH_RC4_40_MD5
-         */
-        int j;
-
-        offset -= cipherSpecLen;
-        packet.position(offset);
-
-        j = pointer + 2;
-        for (int i = 0; i < cipherSpecLen; i += 3) {
-            if (packet.get() != 0) {
-                // Ignore version 2.0 specific cipher suite.  Clients
-                // should also include the version 3.0 equivalent in
-                // the V2ClientHello message.
-                packet.get();           // ignore the 2nd byte
-                packet.get();           // ignore the 3rd byte
-                continue;
-            }
-
-            converted[j++] = packet.get();
-            converted[j++] = packet.get();
-        }
-
-        j -= pointer + 2;
-        converted[pointer++] = (byte)((j >>> 8) & 0xFF);
-        converted[pointer++] = (byte)(j & 0xFF);
-        pointer += j;
-
-        /*
-         * Append compression methods (default/null only)
-         */
-        converted[pointer++] = 1;
-        converted[pointer++] = 0;      // Session.compression_null
-
-        /*
-         * Fill in lengths of the messages we synthesized (nested:
-         * V3 handshake message within V3 record).
-         */
-        // Note: need not set the header.
-        int fragLen = pointer - 5;                      // TLSPlaintext.length
-        converted[3] = (byte)((fragLen >>> 8) & 0xFF);
-        converted[4] = (byte)(fragLen & 0xFF);
-
-        /*
-         * Handshake.length, length of ClientHello message
-         */
-        fragLen = pointer - 9;                          // Handshake.length
-        converted[6] = (byte)((fragLen >>> 16) & 0xFF);
-        converted[7] = (byte)((fragLen >>> 8) & 0xFF);
-        converted[8] = (byte)(fragLen & 0xFF);
-
-        // consume the full record
-        packet.position(srcPos + recordLen);
-
-        // Need no header bytes.
-        return ByteBuffer.wrap(converted, 5, pointer - 5);  // 5: header size
-    }
 
     // Extract an SSL/(D)TLS record from the specified source buffers.
     static ByteBuffer extract(

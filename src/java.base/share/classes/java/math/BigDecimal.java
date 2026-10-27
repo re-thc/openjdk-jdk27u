@@ -5165,16 +5165,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
+     * {@code FIVE_TO_2_TO[n] == 5^(2^n)} once computed, else null.
      */
     @Stable
     private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[16 + 1];
-
-    static {
-        BigInteger pow = FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
-        for (int i = 1; i < FIVE_TO_2_TO.length; i++)
-            FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
-    }
 
     /**
      * @param n a non-negative integer
@@ -5183,6 +5177,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static BigInteger fiveToTwoToThe(int n) {
         int i = Math.min(n, FIVE_TO_2_TO.length - 1);
         BigInteger pow = FIVE_TO_2_TO[i];
+        if (pow == null) {
+            if (i == 0) {
+                pow = BigInteger.valueOf(5L);
+            } else {
+                BigInteger half = fiveToTwoToThe(i - 1);
+                pow = half.multiply(half);
+            }
+            FIVE_TO_2_TO[i] = pow;
+        }
         for (; i < n; i++)
             pow = pow.multiply(pow);
 

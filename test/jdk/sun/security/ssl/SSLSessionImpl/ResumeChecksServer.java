@@ -213,6 +213,13 @@ public class ResumeChecksServer extends SSLContextTemplate {
 
         Server() throws Exception {
             SSLContext sc = createServerSSLContext();
+            if (testMode == TestMode.LOCAL_CERTS) {
+                // Each certificate's signature algorithm must not prevent
+                // the use of the key of the other certificate.
+                sc = createSSLContext(TRUSTED_CERTS,
+                        new Cert[] {Cert.EE_ECDSA_SECP256R1, Cert.EE_RSA_2048},
+                        getServerContextParameters());
+            }
             ServerSocketFactory fac = sc.getServerSocketFactory();
             SSLServerSocket ssock = (SSLServerSocket) fac.createServerSocket(0);
             port = ssock.getLocalPort();

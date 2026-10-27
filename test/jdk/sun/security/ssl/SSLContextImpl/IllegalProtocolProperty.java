@@ -31,22 +31,19 @@
  * @library /test/lib
  * @run main/othervm -Djdk.tls.client.protocols="XSLv3,TLSv1"
  *      IllegalProtocolProperty
+ * @run main/othervm -Djdk.tls.client.protocols="SSLv3,TLSv1,TLSv1.1"
+ *      IllegalProtocolProperty RETIRED
  */
 
 import javax.net.ssl.*;
 import java.security.NoSuchAlgorithmException;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class IllegalProtocolProperty {
     static enum ContextVersion {
-        TLS_CV_01("SSL", "TLSv1", "TLSv1.2", true),
-        TLS_CV_02("TLS", "TLSv1", "TLSv1.2", true),
-        TLS_CV_03("SSLv3", "TLSv1", "TLSv1.2", false),
-        TLS_CV_04("TLSv1", "TLSv1", "TLSv1.2", false),
-        TLS_CV_05("TLSv1.1", "TLSv1.1", "TLSv1.2", false),
+        TLS_CV_01("SSL", "TLSv1.2", "TLSv1.2", true),
+        TLS_CV_02("TLS", "TLSv1.2", "TLSv1.2", true),
         TLS_CV_06("TLSv1.2", "TLSv1.2", "TLSv1.2", false),
-        TLS_CV_07("Default", "TLSv1", "TLSv1.2", true),
+        TLS_CV_07("Default", "TLSv1.2", "TLSv1.2", true),
         TLS_CV_08("TLSv1.3", "TLSv1.3", "TLSv1.3", false);
 
         final String contextVersion;
@@ -64,22 +61,24 @@ public class IllegalProtocolProperty {
     }
 
     public static void main(String[] args) throws Exception {
-        // Re-enable TLSv1 and TLSv1.1 since test depends on them.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
+        // Retired protocol names in the property are ignored, so the
+        // property is not illegal if it contains only retired names.
+        boolean retired = args.length > 0 && args[0].equals("RETIRED");
 
         for (ContextVersion cv : ContextVersion.values()) {
             System.out.println("Checking SSLContext of " + cv.contextVersion);
 
+            boolean impacted = cv.impacted && !retired;
             SSLContext context;
             try {
                 context = SSLContext.getInstance(cv.contextVersion);
-                if (cv.impacted) {
+                if (impacted) {
                     throw new Exception(
                         "illegal system property jdk.tls.client.protocols: " +
                         System.getProperty("jdk.tls.client.protocols"));
                 }
             } catch (NoSuchAlgorithmException nsae) {
-                if (cv.impacted) {
+                if (impacted) {
                     System.out.println(
                         "\tIgnore: illegal system property " +
                         "jdk.tls.client.protocols=" +

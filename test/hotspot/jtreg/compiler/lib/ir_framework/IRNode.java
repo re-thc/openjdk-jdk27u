@@ -482,6 +482,12 @@ public class IRNode {
         superWordNodes(AND_REDUCTION_V, "AndReductionV");
     }
 
+    public static final String ANY_LOOP = PREFIX + "ANY_LOOP" + POSTFIX;
+    static {
+        String regex = START + "(Counted|LongCounted|OuterStripMined)?Loop\\b" + MID + END;
+        fromBeforeCountedLoops(ANY_LOOP, regex);
+    }
+
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
     static {
         beforeMatchingNameRegex(CALL, "Call.*Java");
@@ -2845,6 +2851,16 @@ public class IRNode {
     public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
     static {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
+    }
+
+    public static final String X86_VMULUDQ_REG = PREFIX + "X86_VMULUDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULUDQ_REG, "vmuludq_reg");
+    }
+
+    public static final String X86_VMULDQ_REG = PREFIX + "X86_VMULDQ_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VMULDQ_REG, "vmuldq_reg");
     }
 
     public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;

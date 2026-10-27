@@ -28,7 +28,7 @@
  * @test
  * @bug 8237474
  * @summary Test jdk.tls.server.protocols with DTLS
- * @run main/othervm -Djdk.tls.server.protocols="DTLSv1.0"
+ * @run main/othervm -Djdk.tls.server.protocols="DTLSv1.0,DTLSv1.2"
  *      CustomizedDTLSServerDefaultProtocols
  */
 
@@ -50,15 +50,12 @@ import javax.net.ssl.SSLSocket;
 public class CustomizedDTLSServerDefaultProtocols {
 
     final static String[] supportedProtocols = new String[]{
-            "DTLSv1.0", "DTLSv1.2"};
+            "DTLSv1.2"};
 
     enum ContextVersion {
         TLS_CV_01("DTLS",
-                new String[]{"DTLSv1.0"},
+                new String[]{"DTLSv1.2"},
                 supportedProtocols),
-        TLS_CV_02("DTLSv1.0",
-                supportedProtocols,
-                new String[]{"DTLSv1.0"}),
         TLS_CV_03("DTLS1.2",
                 supportedProtocols,
                 supportedProtocols);

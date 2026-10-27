@@ -35,7 +35,7 @@ public class TestCipherDES extends TestCipher {
     }
 
     public static void main(String[] args) throws Exception {
-        new TestCipherDES(new String[]{ "CBC", "ECB", "PCBC",
+        new TestCipherDES(new String[]{ "CBC", "ECB",
             //CFBx
             "CFB", "CFB8", "CFB16", "CFB24", "CFB32", "CFB40",
             "CFB48", "CFB56", "CFB64",

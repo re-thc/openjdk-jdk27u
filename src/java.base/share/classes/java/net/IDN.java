@@ -242,21 +242,25 @@ public final class IDN {
 
     private static final int MAX_LABEL_LENGTH   = 63;
 
-    // single instance of nameprep
-    private static final StringPrep namePrep;
+    // single instance of nameprep, which reads its data the first time that
+    // a label with a character that is not ASCII needs it
+    private static final class NamePrep {
+        static final StringPrep INSTANCE;
 
-    static {
-        StringPrep stringPrep = null;
-        try {
-            final String IDN_PROFILE = "/sun/net/idn/uidna.spp";
-            InputStream stream = StringPrep.class.getResourceAsStream(IDN_PROFILE);
-            stringPrep = new StringPrep(stream);
-            stream.close();
-        } catch (IOException e) {
-            // should never reach here
-            assert false;
+        static {
+            StringPrep stringPrep = null;
+            try {
+                final String IDN_PROFILE = "/sun/net/idn/uidna.spp";
+                InputStream stream =
+                        StringPrep.class.getResourceAsStream(IDN_PROFILE);
+                stringPrep = new StringPrep(stream);
+                stream.close();
+            } catch (IOException e) {
+                // should never reach here
+                assert false;
+            }
+            INSTANCE = stringPrep;
         }
-        namePrep = stringPrep;
     }
 
 
@@ -283,7 +287,7 @@ public final class IDN {
         if (!isASCII) {
             UCharacterIterator iter = UCharacterIterator.getInstance(label);
             try {
-                dest = namePrep.prepare(iter, flag);
+                dest = NamePrep.INSTANCE.prepare(iter, flag);
             } catch (java.text.ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -373,7 +377,7 @@ public final class IDN {
             // perform the nameprep operation; flag ALLOW_UNASSIGNED is used here
             try {
                 UCharacterIterator iter = UCharacterIterator.getInstance(label);
-                dest = namePrep.prepare(iter, flag);
+                dest = NamePrep.INSTANCE.prepare(iter, flag);
             } catch (Exception e) {
                 // toUnicode never fails; if any step fails, return the input string
                 return label;

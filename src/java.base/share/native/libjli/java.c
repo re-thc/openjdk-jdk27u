@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +96,10 @@ static jboolean dumpSharedSpaces = JNI_FALSE; /* -Xshare:dump */
  * with these values. We need them in memory until UnsetEnv in
  * ShowSplashScreen, so they are made static global instead of auto local.
  */
+#ifndef HEADLESS
 static char* splash_file_entry = NULL;
 static char* splash_jar_entry = NULL;
+#endif
 
 /*
  * List of VM options to be specified when the VM is created.
@@ -119,7 +122,9 @@ static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
 static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
+#ifndef HEADLESS
 static void SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path);
+#endif
 static jclass GetApplicationClass(JNIEnv *env);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
@@ -1168,8 +1173,10 @@ ParseArguments(int *pargc, char ***pargv,
     char **argv = *pargv;
     int mode = LM_UNKNOWN;
     char *arg = NULL;
+#ifndef HEADLESS
     bool headless = false;
     char *splash_file_path = NULL; // value of "-splash:" option
+#endif
 
     *pret = 0;
 
@@ -1316,7 +1323,9 @@ ParseArguments(int *pargc, char ***pargv,
             snprintf(tmp, tmpSize, "-X%s", arg + 1); /* skip '-' */
             AddOption(tmp, NULL);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
+#ifndef HEADLESS
             splash_file_path = arg + 8;
+#endif
         } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
             ; /* Ignore --disable-@files option already handled */
         } else if (ProcessPlatformOption(arg)) {
@@ -1325,6 +1334,7 @@ ParseArguments(int *pargc, char ***pargv,
             /* java.class.path set on the command line */
             if (JLI_StrCCmp(arg, "-Djava.class.path=") == 0) {
                 _have_classpath = JNI_TRUE;
+#ifndef HEADLESS
             } else if (JLI_StrCmp(arg, "-Djava.awt.headless=true") == 0) {
                 /*
                  * Checking for headless toolkit option in the same way as AWT does:
@@ -1333,6 +1343,7 @@ ParseArguments(int *pargc, char ***pargv,
                 headless = true;
             } else if (JLI_StrCCmp(arg, "-Djava.awt.headless=") == 0) {
                 headless = false;
+#endif
             }
             AddOption(arg, NULL);
         }
@@ -1387,6 +1398,19 @@ ParseArguments(int *pargc, char ***pargv,
 
     *pmode = mode;
 
+#ifdef HEADLESS
+    // Archive validation is required even without splash-screen processing.
+    if (mode == LM_JAR) {
+        manifest_info info;
+        int res = JLI_ParseManifest(*pwhat, &info);
+        JLI_FreeManifest();
+        if (res != 0) {
+            JLI_ReportErrorMessage(res == -1 ? JAR_ERROR2 : JAR_ERROR3, *pwhat);
+            *pret = 1;
+            return JNI_FALSE;
+        }
+    }
+#else
     if (!headless) {
         char *jar_path = NULL;
         if (mode == LM_JAR) {
@@ -1396,6 +1420,7 @@ ParseArguments(int *pargc, char ***pargv,
         // will be used later by ShowSplashScreen().
         SetupSplashScreenEnvVars(splash_file_path, jar_path);
     }
+#endif
 
     return JNI_TRUE;
 }
@@ -1409,6 +1434,7 @@ ParseArguments(int *pargc, char ***pargv,
  * The jar_path is the value that was provided to the "-jar" option when launching java.
  * It too may be null, which implies the "-jar" option wasn't used.
  */
+#ifndef HEADLESS
 static void
 SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path) {
     // Command line specified "-splash:" takes priority over manifest one.
@@ -1462,6 +1488,7 @@ SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path) {
     putenv(splash_jar_entry);
     JLI_FreeManifest(); // cleanup the manifest structure
 }
+#endif
 
 /*
  * Initializes the Java Virtual Machine. Also frees options array when
@@ -2202,6 +2229,7 @@ FreeKnownVMs()
 void
 ShowSplashScreen()
 {
+#ifndef HEADLESS
     const char *jar_name = getenv(SPLASH_JAR_ENV_ENTRY);
     const char *file_name = getenv(SPLASH_FILE_ENV_ENTRY);
     int data_size;
@@ -2269,6 +2297,7 @@ ShowSplashScreen()
     splash_jar_entry = NULL;
     JLI_MemFree(splash_file_entry);
     splash_file_entry = NULL;
+#endif
 }
 
 static const char* GetFullVersion()

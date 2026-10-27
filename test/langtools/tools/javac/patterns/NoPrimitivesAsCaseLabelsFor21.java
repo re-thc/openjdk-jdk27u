@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +74,8 @@ public class NoPrimitivesAsCaseLabelsFor21 extends TestRunner {
         Path current = base.resolve(".");
         Path src = current.resolve("src");
 
+        // Keep five distinct outer types after factoring the record patterns,
+        // so the bootstrap argument checks still exercise an actual call site.
         tb.writeJavaFiles(src,
                           """
                           package test;
@@ -83,7 +86,10 @@ public class NoPrimitivesAsCaseLabelsFor21 extends TestRunner {
                                       case R1(String s1, String s2) -> 1;
                                       case R2(int i1, int i2) when i1 == 0 -> 2;
                                       case R2(int i1, int i2) -> 3;
-                                      default -> 4;
+                                      case String s -> 4;
+                                      case Number n -> 5;
+                                      case java.util.List<?> l -> 6;
+                                      default -> 7;
                                   };
                               }
                               record R1(String s1, String s2) {}

@@ -34,9 +34,13 @@ package sun.security.provider;
  */
 public final class NativePRNG {
 
-    // return whether the NativePRNG is available
     static boolean isAvailable() {
         return false;
+    }
+
+    // NativePRNG services are unavailable on Windows.
+    static java.security.SecureRandomSpi newInstance(String algorithm) {
+        return null;
     }
 
     public static final class NonBlocking {

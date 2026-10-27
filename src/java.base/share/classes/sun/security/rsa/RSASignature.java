@@ -39,7 +39,7 @@ import sun.security.x509.AlgorithmId;
  * PKCS#1 v1.5 RSA signatures with the various message digest algorithms.
  * This file contains an abstract base class with all the logic plus
  * a nested static class for each of the message digest algorithms
- * (see end of the file). We support MD2, MD5, SHA-1, SHA2 family (
+ * (see end of the file). We support SHA-1, SHA2 family (
  * SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, and SHA-512/256),
  * and SHA3 family (SHA3-224, SHA3-256, SHA3-384, SHA3-512) of digests.
  *
@@ -265,20 +265,6 @@ abstract class RSASignature extends SignatureSpi {
     @Override
     protected AlgorithmParameters engineGetParameters() {
         return null;
-    }
-
-    // Nested class for MD2withRSA signatures
-    public static final class MD2withRSA extends RSASignature {
-        public MD2withRSA() {
-            super("MD2", AlgorithmId.MD2_oid, 10);
-        }
-    }
-
-    // Nested class for MD5withRSA signatures
-    public static final class MD5withRSA extends RSASignature {
-        public MD5withRSA() {
-            super("MD5", AlgorithmId.MD5_oid, 10);
-        }
     }
 
     // Nested class for SHA1withRSA signatures
