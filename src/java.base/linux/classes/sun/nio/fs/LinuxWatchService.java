@@ -47,6 +47,10 @@ class LinuxWatchService
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
+    // readiness bits returned by poll
+    private static final int POLL_INOTIFY = 1;
+    private static final int POLL_WAKEUP = 2;
+
     // background thread to read change events
     private final Poller poller;
 
@@ -302,18 +306,18 @@ class LinuxWatchService
         public void run() {
             try {
                 for (;;) {
-                    int nReady, bytesRead;
-
                     // wait for close or inotify event
-                    nReady = poll(ifd, socketpair[0]);
+                    int ready = poll(ifd, socketpair[0]);
 
                     // read from inotify
-                    try {
-                        bytesRead = read(ifd, address, BUFFER_SIZE);
-                    } catch (UnixException x) {
-                        if (x.errno() != EAGAIN && x.errno() != EWOULDBLOCK)
-                            throw x;
-                        bytesRead = 0;
+                    int bytesRead = 0;
+                    if ((ready & POLL_INOTIFY) != 0) {
+                        try {
+                            bytesRead = read(ifd, address, BUFFER_SIZE);
+                        } catch (UnixException x) {
+                            if (x.errno() != EAGAIN && x.errno() != EWOULDBLOCK)
+                                throw x;
+                        }
                     }
 
                     // iterate over buffer to decode events
@@ -352,7 +356,7 @@ class LinuxWatchService
                     }
 
                     // process any pending requests
-                    if ((nReady > 1) || (nReady == 1 && bytesRead == 0)) {
+                    if ((ready & POLL_WAKEUP) != 0) {
                         try {
                             read(socketpair[0], address, BUFFER_SIZE);
                             boolean shutdown = processRequests();

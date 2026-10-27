@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,20 +134,24 @@ Java_sun_nio_fs_LinuxWatchService_poll
     (JNIEnv* env, jclass clazz, jint fd1, jint fd2)
 {
     struct pollfd ufds[2];
-    int n;
+    jint ready = 0;
 
     ufds[0].fd = fd1;
     ufds[0].events = POLLIN;
     ufds[1].fd = fd2;
     ufds[1].events = POLLIN;
 
-    n = poll(&ufds[0], 2, -1);
-    if (n == -1) {
-        if (errno == EINTR) {
-            n = 0;
-        } else {
-            throwUnixException(env, errno);
+    int n = poll(&ufds[0], 2, -1);
+    if (n > 0) {
+        // Include error conditions so the read reports the error to the poller.
+        if (ufds[0].revents != 0) {
+            ready |= sun_nio_fs_LinuxWatchService_POLL_INOTIFY;
         }
-     }
-    return (jint)n;
+        if (ufds[1].revents != 0) {
+            ready |= sun_nio_fs_LinuxWatchService_POLL_WAKEUP;
+        }
+    } else if (n == -1 && errno != EINTR) {
+        throwUnixException(env, errno);
+    }
+    return ready;
 }
