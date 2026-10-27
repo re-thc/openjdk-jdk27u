@@ -76,6 +76,15 @@ BasicType kind(BasicType t) {
 }
 bool supported_type(BasicType t) { return kind(t) == T_INT || kind(t) == T_LONG || kind(t) == T_OBJECT; }
 int value_slots(BasicType t) { return t == T_LONG ? 2 : 1; }
+bool ordinary_bytecode_root(vmIntrinsics::ID id) {
+  // The VM distinguishes bytecode intrinsics from library replacements whose
+  // semantics may differ from their Java bodies. Object.<init> additionally
+  // needs finalizer registration; MH/lambda markers have special entry rules.
+  return id == vmIntrinsics::_none ||
+      (id > vmIntrinsics::LAST_COMPILER_INLINE && id != vmIntrinsics::_Object_init &&
+       !(id >= vmIntrinsics::FIRST_MH_SIG_POLY && id <= vmIntrinsics::LAST_MH_SIG_POLY) &&
+       id != vmIntrinsics::_compiledLambdaForm);
+}
 
 struct State : ResourceObj {
   BasicType* locals;
@@ -332,7 +341,7 @@ class Prepared : public ResourceObj {
     if (_method->is_native() || _method->is_synchronized() ||
         _method->has_monitor_bytecodes() ||
         _method->is_scoped() || _method->has_reserved_stack_access() ||
-        _method->intrinsic_id() != vmIntrinsics::_none ||
+        !ordinary_bytecode_root(_method->intrinsic_id()) ||
         _nl > DirectBaseline::max_locals || _ns > DirectBaseline::max_stack ||
         _size > DirectBaseline::max_code_size || _size == 0) {
       return fail("method shape");
@@ -1298,7 +1307,8 @@ class Emitter : StackObj {
   }
   void compile(bool install) {
     assert(prepared_data!=nullptr,"worker preparation required");
-    if (!_method->can_be_compiled() || _method->needs_clinit_barrier()) {
+    if (!_method->can_be_compiled() || _method->needs_clinit_barrier() ||
+        !ordinary_bytecode_root(_method->intrinsic_id())) {
       _env->record_failure("method shape"); return;
     }
     _states=prepared_data->_states;
@@ -1408,7 +1418,7 @@ const char* DirectBaseline::preflight_failure(Method* method) {
   // Leave the bytecode/signature pass to the worker, before CI construction.
   if (method->has_monitor_bytecodes() ||
       method->is_scoped() || method->has_reserved_stack_access() ||
-      method->intrinsic_id() != vmIntrinsics::_none ||
+      !ordinary_bytecode_root(method->intrinsic_id()) ||
       method->max_locals() > max_locals || method->max_stack() > max_stack ||
       method->code_size() > max_code_size || method->code_size() == 0) return "method shape";
   if (method->result_type() != T_VOID && !supported_type(method->result_type())) return "result type";
