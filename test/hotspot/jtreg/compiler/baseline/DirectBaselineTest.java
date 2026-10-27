@@ -81,7 +81,7 @@ public class DirectBaselineTest {
     static Object acrossGC(Object o) { gc(); return o; }
     static Object acrossYield(Object o) { Thread.yield(); return o; }
     static int loop(int n) { int r = 0; for (int i = 0; i < n; i++) r += i; return r; }
-    static long unsupportedLong(long x) { return x * 13; }
+    static double unsupportedDouble(double x) { return x * 13; }
     static Object allocation() { return new Object(); }
     static int unsupportedHandler(int divisor) { try { return 9 / divisor; } catch (ArithmeticException expected) { return -1; } }
     static synchronized int unsupportedMonitor(int x) { return x + 1; }
@@ -165,7 +165,7 @@ public class DirectBaselineTest {
         for (int i = 0; i < 64; i++) {
             exercise(box, ref, i);
             check(loop(20) == 190);
-            check(unsupportedLong(i) == i*13L);
+            check(unsupportedDouble(i) == i*13L);
             check(allocation() != null && unsupportedHandler(i + 1) == 9 / (i + 1));
             check(unsupportedMonitor(i) == i+1);
         }
@@ -200,7 +200,7 @@ public class DirectBaselineTest {
         for (int i = 0; i < 50_000; i++) {
             exercise(box, ref, i);
             check(loop(20) == 190);
-            check(unsupportedLong(i) == i*13L);
+            check(unsupportedDouble(i) == i*13L);
             check(unsupportedMonitor(i) == i+1);
         }
         Thread thread = Thread.ofVirtual().start(() -> { for (int i=0; i<1000; i++) check(call(i) == leaf(i)+branch(i)); });
@@ -228,7 +228,7 @@ public class DirectBaselineTest {
                 .shouldContain("direct install inheritedStatic()I")
                 .shouldNotContain("direct install coldStatic(I)I")
                 .shouldNotContain("direct install coldThrowingStatic(I)I");
-            output.shouldContain("direct preflight DirectBaselineTest unsupportedLong(J)J")
+            output.shouldContain("direct preflight DirectBaselineTest unsupportedDouble(D)D")
                 .shouldContain("direct preflight DirectBaselineTest unsupportedHandler(I)I")
                 .shouldContain("direct install allocation()Ljava/lang/Object;");
             // PolicyTest controls a direct-to-C2 linked-call handoff explicitly.
