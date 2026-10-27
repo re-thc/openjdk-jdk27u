@@ -41,6 +41,24 @@ public interface GaugeMonitorMBean extends MonitorMBean {
     //--------------------
 
     /**
+     * Gets the derived gauge.
+     *
+     * @return The derived gauge.
+     * @deprecated As of JMX 1.2, replaced by {@link #getDerivedGauge(ObjectName)}
+     */
+    @Deprecated
+    public Number getDerivedGauge();
+
+    /**
+     * Gets the derived gauge timestamp.
+     *
+     * @return The derived gauge timestamp.
+     * @deprecated As of JMX 1.2, replaced by {@link #getDerivedGaugeTimeStamp(ObjectName)}
+     */
+    @Deprecated
+    public long getDerivedGaugeTimeStamp();
+
+    /**
      * Gets the derived gauge for the specified MBean.
      *
      * @param object the MBean for which the derived gauge is to be returned

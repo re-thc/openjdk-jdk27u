@@ -444,6 +444,48 @@ public abstract class Monitor
     //--------------------
 
     /**
+     * Returns the object name of the first object in the set of observed
+     * MBeans, or <code>null</code> if there is no such object.
+     *
+     * @return The object being observed.
+     *
+     * @see #setObservedObject(ObjectName)
+     *
+     * @deprecated As of JMX 1.2, replaced by {@link #getObservedObjects}
+     */
+    @Deprecated
+    public synchronized ObjectName getObservedObject() {
+        if (observedObjects.isEmpty()) {
+            return null;
+        } else {
+            return observedObjects.get(0).getObservedObject();
+        }
+    }
+
+    /**
+     * Removes all objects from the set of observed objects, and then adds the
+     * specified object.
+     *
+     * @param object The object to observe.
+     * @exception IllegalArgumentException The specified
+     * object is null.
+     *
+     * @see #getObservedObject()
+     *
+     * @deprecated As of JMX 1.2, replaced by {@link #addObservedObject}
+     */
+    @Deprecated
+    public synchronized void setObservedObject(ObjectName object)
+        throws IllegalArgumentException {
+        if (object == null)
+            throw new IllegalArgumentException("Null observed object");
+        if (observedObjects.size() == 1 && containsObservedObject(object))
+            return;
+        observedObjects.clear();
+        addObservedObject(object);
+    }
+
+    /**
      * Adds the specified object in the set of observed MBeans, if this object
      * is not already present.
      *

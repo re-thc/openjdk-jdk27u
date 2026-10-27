@@ -373,6 +373,75 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
     }
 
     /**
+     * Returns the derived gauge of the first object in the set of
+     * observed MBeans.
+     *
+     * @return The derived gauge.
+     *
+     * @deprecated As of JMX 1.2, replaced by
+     * {@link #getDerivedGauge(ObjectName)}
+     */
+    @Deprecated
+    public synchronized Number getDerivedGauge() {
+        if (observedObjects.isEmpty()) {
+            return null;
+        } else {
+            return (Number) observedObjects.get(0).getDerivedGauge();
+        }
+    }
+
+    /**
+     * Gets the derived gauge timestamp of the first object in the set
+     * of observed MBeans.
+     *
+     * @return The derived gauge timestamp.
+     *
+     * @deprecated As of JMX 1.2, replaced by
+     * {@link #getDerivedGaugeTimeStamp(ObjectName)}
+     */
+    @Deprecated
+    public synchronized long getDerivedGaugeTimeStamp() {
+        if (observedObjects.isEmpty()) {
+            return 0;
+        } else {
+            return observedObjects.get(0).getDerivedGaugeTimeStamp();
+        }
+    }
+
+    /**
+     * Gets the threshold value of the first object in the set of
+     * observed MBeans.
+     *
+     * @return The threshold value.
+     *
+     * @see #setThreshold
+     *
+     * @deprecated As of JMX 1.2, replaced by {@link #getThreshold(ObjectName)}
+     */
+    @Deprecated
+    public synchronized Number getThreshold() {
+        return getThreshold(getObservedObject());
+    }
+
+    /**
+     * Sets the initial threshold value.
+     *
+     * @param value The initial threshold value.
+     *
+     * @exception IllegalArgumentException The specified threshold is
+     * null or the threshold value is less than zero.
+     *
+     * @see #getThreshold()
+     *
+     * @deprecated As of JMX 1.2, replaced by {@link #setInitThreshold}
+     */
+    @Deprecated
+    public synchronized void setThreshold(Number value)
+        throws IllegalArgumentException {
+        setInitThreshold(value);
+    }
+
+    /**
      * Gets the offset value common to all observed MBeans.
      *
      * @return The offset value.

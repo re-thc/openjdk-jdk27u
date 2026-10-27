@@ -41,6 +41,48 @@ public interface CounterMonitorMBean extends MonitorMBean {
     //--------------------
 
     /**
+     * Gets the derived gauge.
+     *
+     * @return The derived gauge.
+     * @deprecated As of JMX 1.2, replaced by {@link #getDerivedGauge(ObjectName)}
+     */
+    @Deprecated
+    public Number getDerivedGauge();
+
+    /**
+     * Gets the derived gauge timestamp.
+     *
+     * @return The derived gauge timestamp.
+     * @deprecated As of JMX 1.2, replaced by {@link #getDerivedGaugeTimeStamp(ObjectName)}
+     */
+    @Deprecated
+    public long getDerivedGaugeTimeStamp();
+
+    /**
+     * Gets the threshold value.
+     *
+     * @return The threshold value.
+     *
+     * @see #setThreshold(Number)
+     *
+     * @deprecated As of JMX 1.2, replaced by {@link #getThreshold(ObjectName)}
+     */
+    @Deprecated
+    public Number getThreshold();
+
+    /**
+     * Sets the threshold value.
+     *
+     * @see #getThreshold()
+     *
+     * @param value The threshold value.
+     * @exception java.lang.IllegalArgumentException The specified threshold is null or the threshold value is less than zero.
+     * @deprecated As of JMX 1.2, replaced by {@link #setInitThreshold}
+     */
+    @Deprecated
+    public void setThreshold(Number value) throws java.lang.IllegalArgumentException;
+
+    /**
      * Gets the derived gauge for the specified MBean.
      *
      * @param object the MBean for which the derived gauge is to be returned
@@ -67,7 +109,7 @@ public interface CounterMonitorMBean extends MonitorMBean {
      * @return The threshold value for the specified MBean if this MBean
      *         is in the set of observed MBeans, or <code>null</code> otherwise.
      *
-     * @see #setInitThreshold
+     * @see #setThreshold
      *
      */
     public Number getThreshold(ObjectName object);
