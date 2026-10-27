@@ -90,24 +90,6 @@ public final class URLDecoder {
     private URLDecoder() {}
 
     /**
-     * Decodes a {@code x-www-form-urlencoded} string.
-     * The default charset is used to determine what characters
-     * are represented by any consecutive sequences of the form
-     * "<i>{@code %xy}</i>".
-     * @param s the {@code String} to decode
-     * @deprecated The resulting string may vary depending on the
-     *          default charset. Instead, use the decode(String,String) method
-     *          to specify the encoding.
-     * @return the newly decoded {@code String}
-     * @throws IllegalArgumentException if the implementation encounters malformed
-     * escape sequences
-     */
-    @Deprecated
-    public static String decode(String s) {
-        return decode(s, Charset.defaultCharset());
-    }
-
-    /**
      * Decodes an {@code application/x-www-form-urlencoded} string using
      * a specific encoding scheme.
      *

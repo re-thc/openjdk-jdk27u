@@ -85,30 +85,6 @@ public interface MonitorMBean {
     public ObjectName[] getObservedObjects();
 
     /**
-     * Gets the object name of the object being observed.
-     *
-     * @return The object being observed.
-     *
-     * @see #setObservedObject
-     *
-     * @deprecated As of JMX 1.2, replaced by {@link #getObservedObjects}
-     */
-    @Deprecated
-    public ObjectName getObservedObject();
-
-    /**
-     * Sets the object to observe identified by its object name.
-     *
-     * @param object The object to observe.
-     *
-     * @see #getObservedObject
-     *
-     * @deprecated As of JMX 1.2, replaced by {@link #addObservedObject}
-     */
-    @Deprecated
-    public void setObservedObject(ObjectName object);
-
-    /**
      * Gets the attribute being observed.
      *
      * @return The attribute being observed.

@@ -75,17 +75,6 @@ public final class VMID implements java.io.Serializable {
     }
 
     /**
-     * Return true if an accurate address can be determined for this
-     * host.  If false, reliable VMID cannot be generated from this host
-     * @return true if host address can be determined, false otherwise
-     * @deprecated
-     */
-    @Deprecated
-    public static boolean isUnique() {
-        return true;
-    }
-
-    /**
      * Compute hash code for this VMID.
      */
     public int hashCode() {

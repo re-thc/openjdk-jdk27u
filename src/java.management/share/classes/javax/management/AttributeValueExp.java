@@ -124,23 +124,6 @@ public class AttributeValueExp implements ValueExp  {
 
 
     /**
-     * Sets the MBean server on which the query is to be performed.
-     *
-     * @param s The MBean server on which the query is to be performed.
-     *
-     * @deprecated This method has no effect.  The MBean Server used to
-     * obtain an attribute value is {@link QueryEval#getMBeanServer()}.
-     */
-    /* There is no need for this method, because if a query is being
-       evaluated an AttributeValueExp can only appear inside a QueryExp,
-       and that QueryExp will itself have done setMBeanServer.  */
-    @Deprecated
-    @Override
-    public void setMBeanServer(MBeanServer s)  {
-    }
-
-
-    /**
      * <p>Return the value of the given attribute in the named MBean.
      * If the attempt to access the attribute generates an exception,
      * return null.</p>

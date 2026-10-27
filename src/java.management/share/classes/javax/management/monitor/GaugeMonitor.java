@@ -279,42 +279,6 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
     }
 
     /**
-     * Returns the derived gauge of the first object in the set of
-     * observed MBeans.
-     *
-     * @return The derived gauge.
-     *
-     * @deprecated As of JMX 1.2, replaced by
-     * {@link #getDerivedGauge(ObjectName)}
-     */
-    @Deprecated
-    public synchronized Number getDerivedGauge() {
-        if (observedObjects.isEmpty()) {
-            return null;
-        } else {
-            return (Number) observedObjects.get(0).getDerivedGauge();
-        }
-    }
-
-    /**
-     * Gets the derived gauge timestamp of the first object in the set
-     * of observed MBeans.
-     *
-     * @return The derived gauge timestamp.
-     *
-     * @deprecated As of JMX 1.2, replaced by
-     * {@link #getDerivedGaugeTimeStamp(ObjectName)}
-     */
-    @Deprecated
-    public synchronized long getDerivedGaugeTimeStamp() {
-        if (observedObjects.isEmpty()) {
-            return 0;
-        } else {
-            return observedObjects.get(0).getDerivedGaugeTimeStamp();
-        }
-    }
-
-    /**
      * Gets the high threshold value common to all observed MBeans.
      *
      * @return The high threshold value.
