@@ -5010,6 +5010,7 @@ void MacroAssembler::profile_receiver_type(Register recv, Register mdp, int mdp_
   assert_different_registers(rax, shifted_mdp, shifted_recv, offset);
 
   xorptr(rax, rax);
+  lock();
   cmpxchgptr(shifted_recv, Address(shifted_mdp, offset, Address::times_ptr));
 
   // Unshift registers.

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -230,6 +230,8 @@ ifeq ($(MEMORY_SIZE), )
   $(warn Could not find memory size, assuming 1024 MB)
   MEMORY_SIZE := 1024
 endif
+
+$(info Detected test resources: $(NUM_CORES) cores, $(MEMORY_SIZE) MB memory)
 
 ifneq ($(wildcard $(JDK_IMAGE_DIR)/template.xml), )
   TEST_OPTS_JCOV := true

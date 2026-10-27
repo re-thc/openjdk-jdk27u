@@ -78,8 +78,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @param password the password that should be used to compute the
      * key.
      * @param algorithm the name for the algorithm that this key will be
-     * used for. This parameter may be null in which case "DES" will be
-     * assumed.
+     * used for.
      */
     public KeyImpl(KerberosPrincipal principal,
                    char[] password,

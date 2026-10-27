@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,6 +59,26 @@ endif
 
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
+
+EXCLUDED_MODULE_TARGETS := $(filter $(MODULES_FILTER) \
+    $(addsuffix -%, $(MODULES_FILTER)), $(MAKECMDGOALS))
+ifneq ($(EXCLUDED_MODULE_TARGETS), )
+  $(error Module targets excluded by this configuration: $(EXCLUDED_MODULE_TARGETS))
+endif
+
+# Refuse stale product classes, generated sources or native outputs rather than
+# silently retaining them after reconfiguration or an imported-module change.
+ifeq ($(filter clean% dist-clean, $(MAKECMDGOALS)), )
+  EXCLUDED_MODULE_OUTPUTS := $(strip $(foreach d, $(JDK_OUTPUTDIR)/modules \
+      $(SUPPORT_OUTPUTDIR)/gensrc $(SUPPORT_OUTPUTDIR)/native \
+      $(SUPPORT_OUTPUTDIR)/headers $(wildcard $(SUPPORT_OUTPUTDIR)/modules_*) \
+      $(JDK_OUTPUTDIR)/jmods $(IMAGES_OUTPUTDIR)/jmods, \
+      $(wildcard $(addprefix $d/, $(MODULES_FILTER)) \
+          $(addprefix $d/, $(addsuffix .jmod, $(MODULES_FILTER))))))
+  ifneq ($(EXCLUDED_MODULE_OUTPUTS), )
+    $(error Stale excluded module outputs: $(EXCLUDED_MODULE_OUTPUTS). Run make clean for this configuration)
+  endif
+endif
 
 ################################################################################
 #

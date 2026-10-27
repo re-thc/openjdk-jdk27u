@@ -34,7 +34,8 @@
 StackMapFrame::StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* v) :
                       _offset(0), _locals_size(0), _stack_size(0),
                       _stack_mark(0), _max_locals(max_locals),
-                      _max_stack(max_stack), _flags(0), _verifier(v) {
+                      _max_stack(max_stack), _flags(0), _locals_version(1),
+                      _verifier(v) {
   Thread* thr = v->thread();
   _locals = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_locals);
   _stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, max_stack);
@@ -56,6 +57,7 @@ StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
 
 void StackMapFrame::initialize_object(
     VerificationType old_object, VerificationType new_object) {
+  _locals_version++;
   int32_t i;
   for (i = 0; i < _max_locals; i++) {
     if (_locals[i].equals(old_object)) {
@@ -100,18 +102,8 @@ VerificationType StackMapFrame::set_locals_from_arg(
   switch (ss.type()) {
     case T_OBJECT:
     case T_ARRAY:
-    {
-      Symbol* sig = ss.as_symbol();
-      if (!sig->is_permanent()) {
-        // Create another symbol to save as signature stream unreferences
-        // this symbol.
-        Symbol *sig_copy =
-          verifier()->create_temporary_symbol(sig);
-        assert(sig_copy == sig, "symbols don't match");
-        sig = sig_copy;
-      }
-      return VerificationType::reference_type(sig);
-    }
+      return VerificationType::reference_type(
+        verifier()->create_temporary_symbol(&ss));
     case T_INT:     return VerificationType::integer_type();
     case T_BYTE:    return VerificationType::byte_type();
     case T_CHAR:    return VerificationType::char_type();
@@ -128,6 +120,7 @@ VerificationType StackMapFrame::set_locals_from_arg(
 }
 
 void StackMapFrame::copy_locals(const StackMapFrame* src) {
+  _locals_version++;
   int32_t len = src->locals_size() < _locals_size ?
     src->locals_size() : _locals_size;
   for (int32_t i = 0; i < len; i++) {
@@ -277,6 +270,7 @@ void StackMapFrame::set_local(int32_t index, VerificationType type, TRAPS) {
         "Local variable table overflow");
     return;
   }
+  _locals_version++;
   // If type at index is double or long, set the next location to be unusable
   if (_locals[index].is_double() || _locals[index].is_long()) {
     assert((index + 1) < _locals_size, "Local variable table overflow");
@@ -309,6 +303,7 @@ void StackMapFrame::set_local_2(
         "Local variable table overflow");
     return;
   }
+  _locals_version++;
   // If type at index+1 is double or long, set the next location to be unusable
   if (_locals[index+1].is_double() || _locals[index+1].is_long()) {
     assert((index + 2) < _locals_size, "Local variable table overflow");

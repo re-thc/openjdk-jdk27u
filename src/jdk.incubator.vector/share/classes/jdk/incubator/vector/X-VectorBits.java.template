@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -654,6 +655,20 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     public $type$ lane(int i) {
+#if[byte]
+#if[!Max]
+#if[!32L]
+#if[!64L]
+        if (VectorSupport.isVariableByteLaneSupported(VLENGTH)) {
+            if (i < 0 || i >= VLENGTH) {
+                throw new IllegalArgumentException("Index " + i + " must be zero or positive, and less than " + VLENGTH);
+            }
+            return laneHelper(i & (VLENGTH - 1));
+        }
+#end[!64L]
+#end[!32L]
+#end[!Max]
+#end[byte]
 #if[!Max]
         switch(i) {
             case 0: return laneHelper(0);

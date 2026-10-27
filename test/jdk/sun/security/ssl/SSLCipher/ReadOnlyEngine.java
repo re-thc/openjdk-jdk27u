@@ -202,12 +202,10 @@ public class ReadOnlyEngine {
         new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"),
             "TLS_CHACHA20_POLY1305_SHA256");
         new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"),
-            "TLS_RSA_WITH_AES_128_GCM_SHA256");
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
         new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"),
             "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.1"),
-            "TLS_RSA_WITH_AES_128_CBC_SHA");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1"),
-            "TLS_RSA_WITH_AES_128_CBC_SHA");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"),
+            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
     }
 }

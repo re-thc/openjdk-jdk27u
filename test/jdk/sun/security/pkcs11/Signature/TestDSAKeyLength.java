@@ -32,12 +32,17 @@
  * @run main/othervm TestDSAKeyLength
  */
 
+import java.math.BigInteger;
+import java.security.AlgorithmParameterGenerator;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.security.spec.DSAParameterSpec;
+import java.security.spec.DSAPrivateKeySpec;
+import java.security.spec.DSAPublicKeySpec;
 
 public class TestDSAKeyLength extends PKCS11Test {
 
@@ -63,10 +68,23 @@ public class TestDSAKeyLength extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA",
-                System.getProperty("test.provider.name", "SUN"));
-        kpg.initialize(2048, new SecureRandom());
-        KeyPair pair = kpg.generateKeyPair();
+        // SUN has no DSA key pair generator, so make the key pair from
+        // generated parameters
+        String sun = System.getProperty("test.provider.name", "SUN");
+        AlgorithmParameterGenerator apg =
+                AlgorithmParameterGenerator.getInstance("DSA", sun);
+        apg.init(2048, new SecureRandom());
+        DSAParameterSpec params = apg.generateParameters()
+                .getParameterSpec(DSAParameterSpec.class);
+        BigInteger x = new BigInteger(params.getQ().bitLength() - 1,
+                new SecureRandom()).add(BigInteger.ONE);
+        BigInteger y = params.getG().modPow(x, params.getP());
+        KeyFactory kf = KeyFactory.getInstance("DSA", sun);
+        KeyPair pair = new KeyPair(
+                kf.generatePublic(new DSAPublicKeySpec(y, params.getP(),
+                        params.getQ(), params.getG())),
+                kf.generatePrivate(new DSAPrivateKeySpec(x, params.getP(),
+                        params.getQ(), params.getG())));
 
         boolean status = true;
         Signature sig = Signature.getInstance("SHA1withDSA", provider);

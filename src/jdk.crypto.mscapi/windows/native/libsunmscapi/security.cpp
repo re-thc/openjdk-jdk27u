@@ -209,8 +209,6 @@ ALG_ID MapHashAlgorithm(JNIEnv *env, jstring jHashAlgorithm) {
         algId = CALG_SHA_512;
     } else if (strcmp("MD5", pszHashAlgorithm) == 0) {
         algId = CALG_MD5;
-    } else if (strcmp("MD2", pszHashAlgorithm) == 0) {
-        algId = CALG_MD2;
     }
 
     if (pszHashAlgorithm)

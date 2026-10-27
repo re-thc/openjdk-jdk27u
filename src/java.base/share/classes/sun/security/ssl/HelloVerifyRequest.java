@@ -57,7 +57,7 @@ final class HelloVerifyRequest {
             ClientHelloMessage clientHello = (ClientHelloMessage)message;
 
             HelloCookieManager hcMgr =
-                shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS10);
+                shc.sslContext.getHelloCookieManager(ProtocolVersion.DTLS12);
             this.serverVersion = shc.clientHelloVersion;
             this.cookie = hcMgr.createCookie(shc, clientHello);
         }

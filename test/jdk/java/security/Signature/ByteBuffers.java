@@ -27,8 +27,8 @@
  * @summary Test the Signature.update(ByteBuffer) method
  * @author Andreas Sterbenz
  * @key randomness
- * @run main ByteBuffers DSA 512
- * @run main ByteBuffers SHA256withDSA 2048
+ * @run main ByteBuffers SHA256withECDSA 256
+ * @run main ByteBuffers SHA384withECDSA 384
  */
 
 import java.util.*;
@@ -40,13 +40,13 @@ public class ByteBuffers {
 
     public static void main(String[] args) throws Exception {
         Provider p = Security.getProvider(
-                            System.getProperty("test.provider.name", "SUN"));
+                            System.getProperty("test.provider.name", "SunEC"));
         Random random = new Random();
         int n = 10 * 1024;
         byte[] t = new byte[n];
         random.nextBytes(t);
 
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         int keySize = Integer.parseInt(args[1]);
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm, p);
         kpg.initialize(keySize);

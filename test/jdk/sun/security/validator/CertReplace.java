@@ -85,7 +85,7 @@ public class CertReplace {
 
         // 1. Generate 3 aliases in a keystore: ca, int, user
         SecurityTools.keytool(ktBaseParameters +
-                              "-genkeypair -alias ca -dname CN=CA -keyalg rsa -sigalg md2withrsa -ext bc");
+                              "-genkeypair -alias ca -dname CN=CA -keyalg rsa -sigalg sha1withrsa -ext bc");
         SecurityTools.keytool(ktBaseParameters +
                               "-genkeypair -alias int -dname CN=Int -keyalg rsa");
         SecurityTools.keytool(ktBaseParameters +
@@ -130,7 +130,7 @@ public class CertReplace {
                                                       "-export -rfc -alias ca").getOutput();
         Files.write(certPath, outputCa.getBytes(), StandardOpenOption.APPEND);
 
-        // 4. Upgrade ca from MD2withRSA to SHA256withRSA, remove other aliases and make this keystore the cacerts file
+        // 4. Upgrade ca from SHA1withRSA to SHA384withRSA, remove other aliases and make this keystore the cacerts file
         keyStore.deleteEntry("int");
         keyStore.deleteEntry("user");
         keyStore.store(new FileOutputStream(CERTREPLACE_JKS), PASSWORD_CHAR_ARR);
@@ -158,7 +158,7 @@ public class CertReplace {
         // is set to one year ago so that they are expired now
         SecurityTools.keytool(ktBaseParameters +
                               "-genkeypair -alias ca1 -dname CN=CA -keyalg rsa " +
-                              "-sigalg md5withrsa -ext bc -startdate -1y");
+                              "-sigalg sha256withrsa -ext bc -startdate -1y");
         SecurityTools.keytool(ktBaseParameters +
                               "-genkeypair -alias ca2 -dname CN=CA -keyalg rsa " +
                               "-sigalg sha1withrsa -ext bc -startdate -1y");
@@ -197,7 +197,7 @@ public class CertReplace {
             throw new RuntimeException("Not recognised test " + args[0]);
         }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (final FileInputStream certInputStream = new FileInputStream(args[0])) {
             ks.load(certInputStream, PASSWORD_CHAR_ARR);
         }

@@ -46,13 +46,13 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             HelloRequest.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             HelloRequest.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 
@@ -61,13 +61,13 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ClientHello.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_13
+                            ProtocolVersion.PROTOCOLS_12_13
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ClientHello.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_13
+                            ProtocolVersion.PROTOCOLS_12_13
                     )
             }),
 
@@ -76,13 +76,13 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ServerHello.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_13
+                            ProtocolVersion.PROTOCOLS_12_13
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ServerHello.t12HandshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     ),
                     new SimpleImmutableEntry<>(
                             ServerHello.t13HandshakeProducer,
@@ -100,7 +100,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                     new SimpleImmutableEntry<>(
                             // Use ServerHello consumer
                             ServerHello.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_13
+                            ProtocolVersion.PROTOCOLS_12_13
                     )
             },
             new Map.Entry[] {
@@ -115,13 +115,13 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             HelloVerifyRequest.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             HelloVerifyRequest.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 
@@ -130,7 +130,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             NewSessionTicket.handshake12Consumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     ),
                     new SimpleImmutableEntry<>(
                             NewSessionTicket.handshakeConsumer,
@@ -140,7 +140,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             NewSessionTicket.handshake12Producer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 
@@ -170,7 +170,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             CertificateMessage.t12HandshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     ),
                     new SimpleImmutableEntry<>(
                             CertificateMessage.t13HandshakeConsumer,
@@ -180,7 +180,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             CertificateMessage.t12HandshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     ),
                     new SimpleImmutableEntry<>(
                             CertificateMessage.t13HandshakeProducer,
@@ -193,23 +193,19 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ServerKeyExchange.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ServerKeyExchange.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE_REQUEST         ((byte)0x0D, "certificate_request",
             new Map.Entry[] {
-                    new SimpleImmutableEntry<>(
-                            CertificateRequest.t10HandshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_11
-                    ),
                     new SimpleImmutableEntry<>(
                             CertificateRequest.t12HandshakeConsumer,
                             ProtocolVersion.PROTOCOLS_OF_12
@@ -220,10 +216,6 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                     )
             },
             new Map.Entry[] {
-                    new SimpleImmutableEntry<>(
-                            CertificateRequest.t10HandshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_11
-                    ),
                     new SimpleImmutableEntry<>(
                             CertificateRequest.t12HandshakeProducer,
                             ProtocolVersion.PROTOCOLS_OF_12
@@ -239,27 +231,19 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ServerHelloDone.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ServerHelloDone.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE_VERIFY          ((byte)0x0F, "certificate_verify",
             new Map.Entry[] {
-                    new SimpleImmutableEntry<>(
-                            CertificateVerify.s30HandshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_OF_30
-                    ),
-                    new SimpleImmutableEntry<>(
-                            CertificateVerify.t10HandshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_10_11
-                    ),
                     new SimpleImmutableEntry<>(
                             CertificateVerify.t12HandshakeConsumer,
                             ProtocolVersion.PROTOCOLS_OF_12
@@ -270,14 +254,6 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                     )
             },
             new Map.Entry[] {
-                    new SimpleImmutableEntry<>(
-                            CertificateVerify.s30HandshakeProducer,
-                            ProtocolVersion.PROTOCOLS_OF_30
-                    ),
-                    new SimpleImmutableEntry<>(
-                            CertificateVerify.t10HandshakeProducer,
-                            ProtocolVersion.PROTOCOLS_10_11
-                    ),
                     new SimpleImmutableEntry<>(
                             CertificateVerify.t12HandshakeProducer,
                             ProtocolVersion.PROTOCOLS_OF_12
@@ -293,13 +269,13 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ClientKeyExchange.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             ClientKeyExchange.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 
@@ -311,7 +287,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             Finished.t12HandshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     ),
                     new SimpleImmutableEntry<>(
                             Finished.t13HandshakeConsumer,
@@ -321,7 +297,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             Finished.t12HandshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     ),
                     new SimpleImmutableEntry<>(
                             Finished.t13HandshakeProducer,
@@ -336,19 +312,19 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             CertificateStatus.handshakeConsumer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             CertificateStatus.handshakeProducer,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             },
             new Map.Entry[] {
                     new SimpleImmutableEntry<>(
                             CertificateStatus.handshakeAbsence,
-                            ProtocolVersion.PROTOCOLS_TO_12
+                            ProtocolVersion.PROTOCOLS_OF_12
                     )
             }),
 

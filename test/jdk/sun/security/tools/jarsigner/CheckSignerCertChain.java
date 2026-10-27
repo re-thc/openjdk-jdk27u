@@ -99,18 +99,18 @@ public class CheckSignerCertChain {
                 .shouldHaveExitValue(0);
 
         /*
-         * Generate a non-self-signed certificate using MD5withRSA as its signature
+         * Generate a non-self-signed certificate using SHA224withRSA as its signature
          * algorithm to sign a JAR file.
          */
         kt("-genkeypair -keyalg rsa -alias cacert -dname CN=CACERT -ext bc:c "
                 + keysizeOpt, "ks");
         kt("-genkeypair -keyalg rsa -alias ee -dname CN=EE -ext bc:c "
                 + keysizeOpt, "ks");
-        gencert("ee", "-alias cacert -ext san=dns:ee -sigalg MD5withRSA");
+        gencert("ee", "-alias cacert -ext san=dns:ee -sigalg SHA224withRSA");
 
         Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
                 "jdk.certpath.disabledAlgorithms=\n" +
-                "jdk.jar.disabledAlgorithms=MD5\n");
+                "jdk.jar.disabledAlgorithms=SHA224\n");
 
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
                 "-signedjar signeda.jar " +
@@ -118,14 +118,14 @@ public class CheckSignerCertChain {
                 "-J-Djava.security.properties=" +
                 JAVA_SECURITY_FILE +
                 " a.jar ee")
-                .shouldNotContain("Signature algorithm: MD5withRSA (disabled), 2048-bit RSA key")
+                .shouldNotContain("Signature algorithm: SHA224withRSA (disabled), 2048-bit RSA key")
                 .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit RSA key")
-                .shouldNotContain("Invalid certificate chain: Algorithm constraints check failed on signature algorithm: MD5withRSA")
+                .shouldNotContain("Invalid certificate chain: Algorithm constraints check failed on signature algorithm: SHA224withRSA")
                 .shouldHaveExitValue(0);
 
         Files.deleteIfExists(Paths.get(JAVA_SECURITY_FILE));
         Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
-                "jdk.certpath.disabledAlgorithms=MD5\n" +
+                "jdk.certpath.disabledAlgorithms=SHA224\n" +
                 "jdk.jar.disabledAlgorithms=\n");
 
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
@@ -134,19 +134,21 @@ public class CheckSignerCertChain {
                 "-J-Djava.security.properties=" +
                 JAVA_SECURITY_FILE +
                 " a.jar ee")
-                .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit RSA key")
+                .shouldContain("Signature algorithm: SHA224withRSA (disabled), 2048-bit RSA key")
                 .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit RSA key")
-                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
+                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: SHA224 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
 
         kt("-exportcert -alias cacert -rfc -file cacert", "ks");
         kt("-importcert -noprompt -file cacert", "caks1");
 
         SecurityTools.jarsigner("-verify -certs signeda.jar " +
-                "-keystore caks1 -storepass changeit -verbose -debug")
-                .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit RSA key")
+                "-keystore caks1 -storepass changeit -verbose -debug " +
+                "-J-Djava.security.properties=" +
+                JAVA_SECURITY_FILE)
+                .shouldContain("Signature algorithm: SHA224withRSA (disabled), 2048-bit RSA key")
                 .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit RSA key")
-                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
+                .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: SHA224 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
     }
 }

@@ -111,8 +111,6 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         this.writeCipher = writeCipher;
         this.writeEpoch++;
 
-        this.isFirstAppOutputRecord = true;
-
         // set the epoch number
         this.writeCipher.authenticator.setEpochNumber(this.writeEpoch);
     }

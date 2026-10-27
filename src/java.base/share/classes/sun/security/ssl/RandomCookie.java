@@ -76,24 +76,11 @@ final class RandomCookie {
         // server's random value.  TLS 1.3 servers which negotiate TLS 1.2
         // or below in response to a ClientHello MUST set the last eight
         // bytes of their Random value specially.
-        byte[] protection = null;
-        if (context.maximumActiveProtocol.useTLS13PlusSpec()) {
-            if (!context.negotiatedProtocol.useTLS13PlusSpec()) {
-                if (context.negotiatedProtocol.useTLS12PlusSpec()) {
-                    protection = t12Protection;
-                } else {
-                    protection = t11Protection;
-                }
-            }
-        } else if (context.maximumActiveProtocol.useTLS12PlusSpec()) {
-            if (!context.negotiatedProtocol.useTLS12PlusSpec()) {
-                protection = t11Protection;
-            }
-        }
-
-        if (protection != null) {
-            System.arraycopy(protection, 0, randomBytes,
-                    randomBytes.length - protection.length, protection.length);
+        if (context.maximumActiveProtocol.useTLS13PlusSpec() &&
+                !context.negotiatedProtocol.useTLS13PlusSpec()) {
+            System.arraycopy(t12Protection, 0, randomBytes,
+                    randomBytes.length - t12Protection.length,
+                    t12Protection.length);
         }
     }
 
@@ -116,14 +103,9 @@ final class RandomCookie {
 
     // Used for client random validation of version downgrade protection.
     boolean isVersionDowngrade(HandshakeContext context) {
-        if (context.maximumActiveProtocol.useTLS13PlusSpec()) {
-            if (!context.negotiatedProtocol.useTLS13PlusSpec()) {
-                return isT12Downgrade() || isT11Downgrade();
-            }
-        } else if (context.maximumActiveProtocol.useTLS12PlusSpec()) {
-            if (!context.negotiatedProtocol.useTLS12PlusSpec()) {
-                return isT11Downgrade();
-            }
+        if (context.maximumActiveProtocol.useTLS13PlusSpec() &&
+                !context.negotiatedProtocol.useTLS13PlusSpec()) {
+            return isT12Downgrade() || isT11Downgrade();
         }
 
         return false;

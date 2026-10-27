@@ -76,8 +76,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import jdk.test.lib.security.SecurityUtils;
-
 public class LengthCheckTest extends SSLEngineTemplate {
 
     /*
@@ -270,9 +268,6 @@ public class LengthCheckTest extends SSLEngineTemplate {
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
-        // Re-enable TLSv1 and TLS_RSA_* since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLS_RSA_*");
-
         List<LengthCheckTest> ccsTests = new ArrayList<>();
 
         if (debug) {
@@ -349,12 +344,10 @@ public class LengthCheckTest extends SSLEngineTemplate {
          */
         clientEngine.setUseClientMode(true);
 
-        // In order to make a test that will be backwards compatible
-        // going back to JDK 5, force the handshake to be TLS 1.0 and
-        // use one of the older cipher suites.
-        clientEngine.setEnabledProtocols(new String[]{"TLSv1"});
+        // Force the handshake to be TLS 1.2 and use a single cipher suite.
+        clientEngine.setEnabledProtocols(new String[]{"TLSv1.2"});
         clientEngine.setEnabledCipherSuites(
-                new String[]{"TLS_RSA_WITH_AES_128_CBC_SHA"});
+                new String[]{"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"});
     }
 
     /*
@@ -456,7 +449,7 @@ public class LengthCheckTest extends SSLEngineTemplate {
         newRecord.putShort((short)0);                   // Length place holder
 
         newRecord.putInt(TLS_HS_CLIENT_HELLO << 24);    // HS type and length
-        newRecord.putShort((short)0x0301);
+        newRecord.putShort((short)0x0303);              // TLS 1.2
         newRecord.putInt((int)(System.currentTimeMillis() / 1000));
         SecureRandom sr = new SecureRandom();
         byte[] randBuf = new byte[28];
@@ -469,7 +462,7 @@ public class LengthCheckTest extends SSLEngineTemplate {
             newRecord.put(sessId);                      // Session ID
         }
         newRecord.putShort((short)2);                   // 2 bytes of ciphers
-        newRecord.putShort((short)0x002F);              // TLS_RSA_AES_CBC_SHA
+        newRecord.putShort((short)0xC013);              // TLS_ECDHE_RSA_AES_CBC_SHA
         newRecord.putShort((short)0x0100);              // only null compression
         newRecord.putShort((short)5);                   // 5 bytes of extensions
         newRecord.putShort((short)0xFF01);              // Renegotiation info

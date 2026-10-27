@@ -416,6 +416,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(                &_late_inlines, dead);
     remove_useless_late_inlines(         &_string_late_inlines, dead);
     remove_useless_late_inlines(         &_boxing_late_inlines, dead);
+    remove_useless_late_inlines(         &_vector_late_inlines, dead);
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
 
     if (dead->is_CallStaticJava()) {
@@ -480,6 +481,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_late_inlines(                &_late_inlines, useful);
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
+  remove_useless_late_inlines(         &_vector_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
   DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
@@ -694,6 +696,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _string_late_inlines(comp_arena(), 2, 0, nullptr),
       _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
       _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
+      _vector_late_inlines(comp_arena(), 2, 0, nullptr),
       _late_inlines_pos(0),
       _has_mh_late_inlines(false),
       _oom(false),
@@ -2173,6 +2176,19 @@ void Compile::shuffle_late_inlines() {
   shuffle_array(*C, _late_inlines);
 }
 
+void Compile::process_vector_late_inlines() {
+  for (int i = 0; i < _vector_late_inlines.length(); i++) {
+    CallGenerator* cg = _vector_late_inlines.at(i);
+
+    // IGVN may retain the intrinsic retry generator on the call. Clear it
+    // before committing to the fallback so a later IGVN pass cannot enqueue
+    // both generators for the same call node.
+    cg->call_node()->as_CallJava()->set_generator(nullptr);
+    add_late_inline(cg);
+  }
+  _vector_late_inlines.clear();
+}
+
 // Perform incremental inlining until bound on number of live nodes is reached
 void Compile::inline_incrementally(PhaseIterGVN& igvn) {
   TracePhase tp(_t_incrInline);
@@ -2230,6 +2246,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
+
+    if (_late_inlines.length() == 0) {
+      process_vector_late_inlines();
+    }
   }
 
   igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -2677,7 +2697,8 @@ bool Compile::has_vbox_nodes() {
 
 static bool is_vector_unary_bitwise_op(Node* n) {
   return n->Opcode() == Op_XorV &&
-         VectorNode::is_vector_bitwise_not_pattern(n);
+         VectorNode::is_vector_bitwise_not_pattern(n) &&
+         !n->is_predicated_vector();
 }
 
 static bool is_vector_binary_bitwise_op(Node* n) {
@@ -2720,7 +2741,7 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
-    if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+    if (is_vector_unary_bitwise_op(n)) {
       for (uint i = 1; i < inp_cnt; i++) {
         Node* in = n->in(i);
         bool skip = VectorNode::is_all_ones_vector(in);
@@ -2883,7 +2904,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
         res = func1 & func2;
         break;
       case Op_XorV:
-        if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+        if (is_vector_unary_bitwise_op(n)) {
           assert(func2 == 0 && func3 == 0, "not unary");
           res = (~func1) & 0xFF;
         } else {
@@ -2943,7 +2964,7 @@ bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_No
 
   Node* parent_pred = parent_is_predicated ? n->in(n->req()-1) : nullptr;
   Node* left_child_pred = left_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : nullptr;
-  Node* right_child_pred = right_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : nullptr;
+  Node* right_child_pred = right_child_predicated ? n->in(2)->in(n->in(2)->req()-1) : nullptr;
 
   do {
     if (pack_left_child && left_child_LOP &&

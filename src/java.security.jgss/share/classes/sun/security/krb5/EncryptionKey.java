@@ -40,8 +40,6 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
-import javax.crypto.spec.DESKeySpec;
-import javax.crypto.spec.DESedeKeySpec;
 
 import static sun.security.krb5.internal.Krb5.DEBUG;
 
@@ -237,16 +235,6 @@ public class EncryptionKey
 
         try {
             switch (keyType) {
-                case EncryptedData.ETYPE_DES_CBC_CRC:
-                case EncryptedData.ETYPE_DES_CBC_MD5:
-                        return Des.string_to_key_bytes(pwsalt);
-
-                case EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD:
-                        return Des3.stringToKey(pwsalt);
-
-                case EncryptedData.ETYPE_ARCFOUR_HMAC:
-                        return ArcFourHmac.stringToKey(password);
-
                 case EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96:
                         return Aes128.stringToKey(password, salt, s2kparams);
 
@@ -278,20 +266,11 @@ public class EncryptionKey
                          String salt,
                          String algorithm) throws KrbCryptoException {
 
-        if (algorithm == null || algorithm.equalsIgnoreCase("DES")
-                || algorithm.equalsIgnoreCase("des-cbc-md5")) {
-            keyType = EncryptedData.ETYPE_DES_CBC_MD5;
-        } else if (algorithm.equalsIgnoreCase("des-cbc-crc")) {
-            keyType = EncryptedData.ETYPE_DES_CBC_CRC;
-        } else if (algorithm.equalsIgnoreCase("DESede")
-                || algorithm.equalsIgnoreCase("des3-cbc-sha1-kd")) {
-            keyType = EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD;
+        if (algorithm == null) {
+            throw new IllegalArgumentException("Algorithm not specified");
         } else if (algorithm.equalsIgnoreCase("AES128")
                 || algorithm.equalsIgnoreCase("aes128-cts-hmac-sha1-96")) {
             keyType = EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96;
-        } else if (algorithm.equalsIgnoreCase("ArcFourHmac")
-                || algorithm.equalsIgnoreCase("rc4-hmac")) {
-            keyType = EncryptedData.ETYPE_ARCFOUR_HMAC;
         } else if (algorithm.equalsIgnoreCase("AES256")
                 || algorithm.equalsIgnoreCase("aes256-cts-hmac-sha1-96")) {
             keyType = EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96;
@@ -324,48 +303,13 @@ public class EncryptionKey
      * Used in AcceptSecContextToken and KrbApReq by acceptor- and initiator-
      * side respectively.
      */
-    public EncryptionKey(EncryptionKey key) throws KrbCryptoException {
+    public EncryptionKey(EncryptionKey key) {
         // generate random sub-session key
         keyValue = Confounder.bytes(key.keyValue.length);
         for (int i = 0; i < keyValue.length; i++) {
           keyValue[i] ^= key.keyValue[i];
         }
         keyType = key.keyType;
-
-        // check for key parity and weak keys
-        try {
-            // check for DES key
-            if ((keyType == EncryptedData.ETYPE_DES_CBC_MD5) ||
-                (keyType == EncryptedData.ETYPE_DES_CBC_CRC)) {
-                // fix DES key parity
-                if (!DESKeySpec.isParityAdjusted(keyValue, 0)) {
-                    keyValue = Des.set_parity(keyValue);
-                }
-                // check for weak key
-                if (DESKeySpec.isWeak(keyValue, 0)) {
-                    keyValue[7] = (byte)(keyValue[7] ^ 0xF0);
-                }
-            }
-            // check for 3DES key
-            if (keyType == EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD) {
-                // fix 3DES key parity
-                if (!DESedeKeySpec.isParityAdjusted(keyValue, 0)) {
-                    keyValue = Des3.parityFix(keyValue);
-                }
-                // check for weak keys
-                byte[] oneKey = new byte[8];
-                for (int i=0; i<keyValue.length; i+=8) {
-                    System.arraycopy(keyValue, i, oneKey, 0, 8);
-                    if (DESKeySpec.isWeak(oneKey, 0)) {
-                        keyValue[i+7] = (byte)(keyValue[i+7] ^ 0xF0);
-                    }
-                }
-            }
-        } catch (GeneralSecurityException e) {
-            KrbCryptoException ke = new KrbCryptoException(e.getMessage());
-            ke.initCause(e);
-            throw ke;
-        }
     }
 
     /**
@@ -565,25 +509,6 @@ public class EncryptionKey
             }
         }
 
-        // Key not found.
-        // allow DES key to be used for the DES etypes
-        if ((etype == EncryptedData.ETYPE_DES_CBC_CRC ||
-            etype == EncryptedData.ETYPE_DES_CBC_MD5)) {
-            for (int i = 0; i < keys.length; i++) {
-                ktype = keys[i].getEType();
-                if (ktype == EncryptedData.ETYPE_DES_CBC_CRC ||
-                        ktype == EncryptedData.ETYPE_DES_CBC_MD5) {
-                    Integer kv = keys[i].getKeyVersionNumber();
-                    etypeFound = true;
-                    if (versionMatches(kvno, kv)) {
-                        return new EncryptionKey(etype, keys[i].getBytes());
-                    } else if (kv > kvno_found) {
-                        key_found = new EncryptionKey(etype, keys[i].getBytes());
-                        kvno_found = kv;
-                    }
-                }
-            }
-        }
         if (etypeFound) {
             return key_found;
             // For compatibility, will not fail here.

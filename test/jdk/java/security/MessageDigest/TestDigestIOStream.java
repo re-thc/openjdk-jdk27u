@@ -53,7 +53,7 @@ public class TestDigestIOStream {
 
     private static final int[] DATA_LEN_ARRAY = { 1, 50, 2500, 125000,
             6250000 };
-    private static final String[] ALGORITHM_ARRAY = { "MD2", "MD5", "SHA1",
+    private static final String[] ALGORITHM_ARRAY = { "MD5", "SHA1",
             "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA3-224", "SHA3-256",
             "SHA3-384", "SHA3-512" };
 

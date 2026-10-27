@@ -248,7 +248,7 @@ class X509KeySelector extends KeySelector {
         if (algURI.equalsIgnoreCase(SignatureMethod.DSA_SHA1)) {
             return "1.2.840.10040.4.1";
         } else if (algURI.equalsIgnoreCase(SignatureMethod.RSA_SHA1)) {
-            return "1.2.840.113549.1.1";
+            return "1.2.840.113549.1.1.1";
         } else {
             return null;
         }

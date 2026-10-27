@@ -166,6 +166,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
+        // Only insertion fallbacks participate in this late-inlining queue.
+        if (IncrementalInlineVector && allow_inline &&
+            callee->intrinsic_id() == vmIntrinsics::_VectorInsert) {
+          // Check fallback eligibility only after intrinsic retries are exhausted.
+          // A successful intrinsic must not reserve fallback inlining budget.
+          return CallGenerator::for_vector_late_inline(callee, cg, prof_factor);
+        }
+        // Don't try to inline fallback implementation.
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
@@ -493,7 +501,10 @@ bool Compile::should_delay_boxing_inlining(ciMethod* call_method, JVMState* jvms
 }
 
 bool Compile::should_delay_vector_inlining(ciMethod* call_method, JVMState* jvms) {
-  return EnableVectorSupport && call_method->is_vector_method();
+  // Resolve the scalar capability query before parsing the implementation
+  // branches. Unsupported targets retain their existing constant-lane path.
+  return EnableVectorSupport && call_method->is_vector_method() &&
+         call_method->intrinsic_id() != vmIntrinsics::_VectorExtractBSupported;
 }
 
 bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMState* jvms) {

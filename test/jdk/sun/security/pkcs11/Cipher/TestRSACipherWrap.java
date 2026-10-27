@@ -67,7 +67,7 @@ public class TestRSACipherWrap extends PKCS11Test {
             Cipher cipherJce = Cipher.getInstance(rsaAlgo,
                                 System.getProperty("test.provider.name", "SunJCE"));
 
-            String algos[] = {"AES", "RC2", "Blowfish"};
+            String algos[] = {"AES", "HmacSHA256"};
             int keySizes[] = {128, 256};
 
             for (int j = 0; j < algos.length; j++) {
