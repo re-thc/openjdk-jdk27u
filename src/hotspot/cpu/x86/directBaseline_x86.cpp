@@ -597,7 +597,7 @@ class Emitter : StackObj {
   const char* _failure;
   State** _states;
   Label* _labels;
-  ciField** _fields;
+  struct FieldAccess { ciField* linked; BasicType type; int offset; bool is_volatile; };
   BasicSignature** _call_signatures;
   int _nl, _ns, _size, _out_words, _frame_bytes, _frame_words, _last_scope_pc;
   CodeBuffer* _code;
@@ -820,7 +820,26 @@ class Emitter : StackObj {
       default: ShouldNotReachHere(); return Assembler::equal;
     }
   }
-  bool resolve_field(ciBytecodeStream& bs, Bytecodes::Code bc, int bci) {
+  bool cached_instance_field(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, FieldAccess& access) {
+    if (bc==Bytecodes::_getstatic) return false;
+    VM_ENTRY_MARK;
+    NoSafepointVerifier nsv;
+    ConstantPool* pool=_method->get_Method()->constants();
+    int index=bs.get_field_index();
+    if (pool->cache()==nullptr || index<0 || index>=pool->resolved_field_entries_length()) return false;
+    ResolvedFieldEntry* entry=pool->resolved_field_entry_at(index);
+    if (!entry->is_resolved(bc) || (bc==Bytecodes::_putfield && entry->is_final())) return false;
+    InstanceKlass* holder=entry->field_holder();
+    BasicType type=as_BasicType((TosState)entry->tos_state());
+    if (holder==nullptr || holder->name()->equals("java/lang/ref/Reference") ||
+        kind(type)!=prepared_data->_field_types[bci]) return false;
+    // Resolution is opcode-specific. Final stores retain the CI current-
+    // method check; no klass/entry/oop pointer escapes this snapshot.
+    access={nullptr,type,entry->field_offset(),entry->is_volatile()};
+    return true;
+  }
+  bool resolve_field(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, FieldAccess& access) {
+    if (cached_instance_field(bs,bc,bci,access)) return true;
     bool link=false; ciField* f=bs.get_field(link);
     bool is_static=bc==Bytecodes::_getstatic;
     if (!link || strcmp(f->holder()->name()->as_utf8(),"java/lang/ref/Reference")==0 ||
@@ -828,7 +847,8 @@ class Emitter : StackObj {
       return fail("unresolved/unsupported field");
     if (is_static && (!f->holder()->is_loaded() || !f->holder()->is_initialized()))
       return fail("uninitialized static field");
-    _fields[bci]=f; return true;
+    access={f,f->layout_type(),f->offset_in_bytes(),f->is_volatile()};
+    return true;
   }
   bool cached_call(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, bool& dynamic) {
     // Consume only resolution published for this invocation bytecode. A shared
@@ -932,25 +952,25 @@ class Emitter : StackObj {
     if (kind(sig->return_type())==T_OBJECT || sig->return_type()==T_LONG) __ movptr(stack(s->sp-n),rax);
     else if (sig->return_type() != T_VOID) __ movl(stack(s->sp - n), rax);
   }
-  void field(Bytecodes::Code bc, int bci, State* s) {
-    ciField* f = _fields[bci];
-    BasicType t = f->layout_type();
+  void field(Bytecodes::Code bc, int bci, State* s, const FieldAccess& access) {
+    BasicType t = access.type;
     bool is_static = bc == Bytecodes::_getstatic;
     bool load = bc != Bytecodes::_putfield;
     int obj=is_static ? s->sp : s->sp-(load ? 1 : 1+value_slots(kind(t)));
     if (is_static) {
-      __ movoop(rbx, f->holder()->java_mirror()->constant_encoding());
+      assert(access.linked!=nullptr,"static mirror retains CI rooting");
+      __ movoop(rbx, access.linked->holder()->java_mirror()->constant_encoding());
     } else {
       __ movptr(rbx, stack(obj)); null_check(rbx, bci, s);
     }
-    Address address(rbx, f->offset_in_bytes());
+    Address address(rbx, access.offset);
     if (load) {
-      __ access_load_at(t,IN_HEAP | (f->is_volatile() ? MO_SEQ_CST : MO_UNORDERED),t==T_LONG ? noreg : rax,address,r10);
+      __ access_load_at(t,IN_HEAP | (access.is_volatile ? MO_SEQ_CST : MO_UNORDERED),t==T_LONG ? noreg : rax,address,r10);
       __ movptr(stack(obj), rax);
     } else {
       __ movptr(rax,stack(s->sp-value_slots(kind(t))));
       __ access_store_at(t,IN_HEAP,address,t==T_LONG ? noreg : rax,r8,r9,r10);
-      if (f->is_volatile()) __ membar(Assembler::StoreLoad);
+      if (access.is_volatile) __ membar(Assembler::StoreLoad);
     }
   }
   void array(Bytecodes::Code bc, int bci, State* s) {
@@ -1189,10 +1209,12 @@ class Emitter : StackObj {
           else __ movswl(rax, rax);
           __ movl(stack(sp-1), rax);
           break;
-        case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic:
-          if (!resolve_field(bs,bc,bci)) return;
-          field(bc, bci, s);
+        case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic: {
+          FieldAccess access;
+          if (!resolve_field(bs,bc,bci,access)) return;
+          field(bc, bci, s, access);
           break;
+        }
         case Bytecodes::_new: case Bytecodes::_newarray: case Bytecodes::_anewarray:
           if (!allocate(bs, bc, bci, s)) return;
           break;
@@ -1363,7 +1385,6 @@ class Emitter : StackObj {
     _states=prepared_data->_states;
     _call_signatures=prepared_data->_call_signatures;
     _labels=NEW_RESOURCE_ARRAY(Label,_size);
-    _fields=NEW_RESOURCE_ARRAY(ciField*,_size);
     for (int i=0;i<_size;i++) new (&_labels[i]) Label();
     if (prepared_data->_handler_count!=0) {
       _exception_pcs=new GrowableArray<int>(8);_exception_bcis=new GrowableArray<int>(8);
