@@ -1,5 +1,9 @@
 # Direct baseline: one bounded later C1 admission
 
+This preserved diagnostic describes local commit `5f04dac31ad`. The subsequent
+[successor handoff correction](direct-baseline-successor-handoff.md) removes
+retirement solely for MDO presence and completes the less-interpreter design.
+
 The 512-invocation candidate gives direct code more time before ordinary C1
 admission, but does not demonstrate an application win. Median javac startup
 is 480.069 ms off, 485.315 ms with shared priority and unchanged promotion,
@@ -264,9 +268,11 @@ corrected table subtracts only the first snapshot from complete wait4 CPU and
 keeps the resulting remainder combined; it does not invent negative CPU or
 claim complete phase attribution. Raw rows remain preserved locally.
 
-The emitter and frame/metadata layout are unchanged. Direct nmethod section
-sizes sum to 74936/75608 bytes unchanged versus 74936/74224 delayed; this
-statistic excludes auxiliary metadata and allocator overhead. Earlier measured
+The emitter and frame/metadata layout are unchanged. Direct code-cache blob
+sizes from XML sum to 74936/75608 bytes unchanged versus 74936/74224 delayed;
+this statistic excludes auxiliary metadata and allocator overhead. The initial
+derived table mislabeled these as section bytes; its header is corrected and
+the underlying values are preserved. Earlier measured
 retained code/auxiliary cost near 101–103 KiB and the 72-byte MethodCounters
 layout remain relevant. No dedicated worker is added in any of these cases.
 

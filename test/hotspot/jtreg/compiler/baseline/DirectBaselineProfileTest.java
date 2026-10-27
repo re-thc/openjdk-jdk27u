@@ -19,7 +19,7 @@
  */
 
 /* @test
- * @summary Direct code retires when profiling starts, retaining ordinary admission counters
+ * @summary Direct code retains unprofiled counts while awaiting its profiling successor
  * @requires vm.compiler1.enabled & vm.compiler2.enabled & (os.arch == "amd64" | os.arch == "x86_64")
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -66,19 +66,26 @@ public class DirectBaselineProfileTest {
             check(WB.isMethodQueuedForCompilation(method));
             if (admission == 512) {
                 check(WB.getMethodData(method) != 0);
-                check(WB.getMethodCompilationLevel(method) == 0);
+                check(WB.getMethodCompilationLevel(method) == 1);
             }
             for (int total = admission + 1; total <= 8256; total++) check(target(b, total) == 2*total);
             check(WB.isMethodQueuedForCompilation(method));
             check(WB.getMethodData(method) != 0);
-            check(WB.getMethodCompilationLevel(method) == 0);
+            check(WB.getMethodCompilationLevel(method) == 1);
             check(b.calls == 8256); // deoptimization did not replay a completed body
+            // A real guard failure still resumes at its recorded bytecode;
+            // it must not backfill an MDO invocation or discard direct code.
+            try { target(null, -1); throw new AssertionError("missing null exception"); }
+            catch (NullPointerException expected) {}
+            check(WB.getMethodCompilationLevel(method) == 1);
+            check(target(b, -1) == b.value);
+            check(b.calls == 8257);
         } finally {
             WB.unlockCompilation();
         }
         long limit = System.nanoTime() + 10_000_000_000L;
         int level;
-        while ((level = WB.getMethodCompilationLevel(method)) == 0) {
+        while ((level = WB.getMethodCompilationLevel(method)) < 2) {
             if (System.nanoTime() > limit) throw new AssertionError("no ordinary C1 handoff");
             Thread.sleep(10);
         }
@@ -91,6 +98,7 @@ public class DirectBaselineProfileTest {
                 if ((++calls & 15) == 0) Thread.sleep(1);
                 if (System.nanoTime() > c2Limit) throw new AssertionError("no natural C2 progression");
             }
+            check(calls >= 5000); // 8256 unprofiled direct calls did not mature the MDO
             System.out.println("DIRECT_DELAYED_C2_OK calls=" + calls);
         }
         System.out.println("DIRECT_PROFILE_OK");

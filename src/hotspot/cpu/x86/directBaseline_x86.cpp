@@ -310,15 +310,11 @@ class Emitter : StackObj {
     __ jcc(Assembler::zero, overflow);
   }
   void counter() {
-    Label no_mdo, done, overflow, retire;
+    Label done, overflow;
     __ mov_metadata(rbx, _method->constant_encoding());
-    __ movptr(r10, Address(rbx, Method::method_data_offset()));
-    __ testptr(r10, r10);
-    __ jcc(Assembler::zero, no_mdo);
-    increment_counter(Address(r10, in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset())),
-                               Address(r10, in_bytes(MethodData::invoke_mask_offset())), overflow);
-    __ jmp(retire);
-    __ bind(no_mdo);
+    // Like counting-only C1, unprofiled direct code counts in MethodCounters
+    // even when an MDO exists. Do not age an MDO without collecting its
+    // profiles. Interpreted/C1 profiling, including inlinees, owns those counters.
     __ movptr(r10, Address(rbx, Method::method_counters_offset()));
     increment_counter(Address(r10, in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset())),
                                Address(r10, in_bytes(MethodCounters::invoke_mask_offset())), overflow);
@@ -328,22 +324,9 @@ class Emitter : StackObj {
     __ movptr(Address(rsp, wordSize), rbx);
     __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
     safepoint(SynchronizationEntryBCI, _states[0]);
-    __ movptr(r10, Address(rbx, Method::method_data_offset()));
-    __ testptr(r10, r10);
-    __ jcc(Assembler::zero, done);
-    __ bind(retire);
-    // The entry count is already accounted for. Continue this fresh activation
-    // at bytecode 0 in the interpreter, which records the MDO's actual profiles.
-    // No Java bytecode has executed; future calls resolve through the armed
-    // not-entrant barrier. Do not let counter-only entries age a profile.
-    __ movl(Address(rsp, 0), Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                             Deoptimization::Action_make_not_entrant));
-    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_deoptimize_id)));
-    safepoint(SynchronizationEntryBCI, _states[0]);
-    __ should_not_reach_here();
     __ bind(done);
     if (TraceDirectBaseline) {
-      // Count actual body entries, excluding entry-time profiling retirement.
+      // Count actual Java body entries.
       __ movptr(r10, Address(rbx, Method::method_counters_offset()));
       __ incrementl(Address(r10, in_bytes(MethodCounters::direct_baseline_entries_offset())));
     }

@@ -6,6 +6,8 @@ and [earlier results and retained evidence](direct-baseline-results.md).
 The [scheduling study](direct-baseline-scheduling.md) and
 [single delayed-C1 comparison](direct-baseline-delayed-c1.md) preserve the
 later architecture comparisons and their performance limitations.
+The current [successor handoff](direct-baseline-successor-handoff.md) keeps
+direct code executing until ordinary replacement without aging an empty MDO.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 
@@ -48,21 +50,19 @@ highest ordinary compilation level or satisfy a C1 completion query. C1/C2
 levels and their own compiler implementations are preserved. There is no new
 call dispatch after replacement by an ordinary compiler.
 
-Baseline entry increments the same MC or MDO counter the interpreter would
-increment, with that counter's existing notification mask. It does not create
-or reset a counter origin. Runtime1 overflow reports policy level 0, allowing
-ordinary profile creation and ordinary admission. Branch/type profiles are not
-collected in the baseline. Methods with an MDO fall back instead of installing
-direct code. When an MDO appears after installation, the direct entry counts
-the current invocation normally, retires its nmethod and deoptimizes before
-executing any bytecode. That activation continues in the interpreter and
-records its profiles. There can be an interpreted interval before
-ordinary C1 admission. The local shared-service candidate can hold a live,
-MDO-free direct activation's level 2/3 admission below 512 calls, after stock
-MDO policy has run. Earlier MDO creation, OSR history, pending ordinary work
-and simple/C2 bypasses end or skip that hold. It delays C1's own profiling
-opportunity; it does not extend unprofiled execution through an existing MDO.
-MC/MDO origins, notification masks, profile maturity and
+Baseline entry increments the real MC counter with its existing mask, following
+the counting-only C1 convention even after an MDO appears. It does not age an
+MDO without collecting profiles or reset either origin. Runtime1 overflow
+reports policy level 0, allowing ordinary MDO creation and admission.
+Branch/type profiles are not collected in direct code. Existing MDOs still
+disqualify new direct installation; an MDO created after installation does not
+force an interpreted bridge. Direct execution continues until ordinary code
+replaces it, while genuine interpreter/C1 inline profiling retains MDO credit.
+The local shared-service candidate can hold a live direct activation's level
+2/3 admission below 512 calls, after stock MDO policy has run. OSR history,
+pending ordinary work and simple/C2 decisions bypass the hold. C1's own
+profiling opportunity starts later; C2 can still bypass it when real profiles
+are ready. MC/MDO origins, notification masks, profile maturity and
 C2 profile scaling retain their ordinary meanings. Explicit C2 bypasses remain
 valid. Loops are
 excluded, retaining interpreter OSR rather than stranding a loop in baseline

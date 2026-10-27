@@ -1446,14 +1446,14 @@ void CompilationPolicy::method_invocation_event(const methodHandle& mh, const me
   }
   CompLevel next_level = call_event(mh, level, THREAD);
   // Local shared-worker experiment: extend only a live, unprofiled direct
-  // activation to 512 invocations. MDO creation above keeps its stock policy;
-  // an earlier profiling opportunity ends this delay immediately. Direct code
-  // retires when that MDO appears, so the interpreter/C1 collect real profiles.
+  // activation to 512 invocations. MDO creation above keeps its stock policy.
+  // Direct execution counts in MC, leaving MDO counters for genuine
+  // profiling; existing MDO allocation alone need not end direct execution.
   if (UseDirectBaseline && !DirectBaselineDedicatedWorker && level == CompLevel_none &&
       nm != nullptr && nm->is_compiled_by_direct_baseline() && mh->code() == nm && nm->is_in_use() &&
       (next_level == CompLevel_limited_profile || next_level == CompLevel_full_profile) &&
       mh->highest_osr_comp_level() == CompLevel_none && !mh->queued_for_compilation() &&
-      mh->method_data() == nullptr && mh->invocation_count() < 512) {
+      mh->invocation_count() < 512) {
     if (TraceDirectBaseline) {
       ResourceMark rm(THREAD);
       ttyLocker ttyl;
