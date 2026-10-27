@@ -60,7 +60,7 @@ public class InterpreterFramePilotTest {
         check(z==37,"fallback argument");System.gc();
         check(StackWalker.getInstance().walk(s -> s.anyMatch(f -> f.getMethodName().equals("keepAlive"))),"walked interpreter frame");
     }
-    static Object unsupported(Object keep) { return keep; }
+    static long unsupported(long keep) { return keep; }
     static synchronized int synchronizedRoot(int x) { return x+1; }
     static void check(boolean ok,String why) { if(!ok)throw new AssertionError(why); }
     static Method method(String name,Class<?>... args)throws Exception {
@@ -151,7 +151,7 @@ public class InterpreterFramePilotTest {
         check(call(2)==35 && calls==1,"once-only call and argument fallback");
         Method keep=method("keepAlive",Object.class,int.class,int.class);prepare(keep);
         Object token=new byte[1<<20];check(keepAlive(token,17,20)==token,"GC and frame identity");
-        check(WB.interpreterFramePilot(method("unsupported",Object.class),preparationAction)[0]==0,"unsupported first opcode");
+        check(WB.interpreterFramePilot(method("unsupported",long.class),preparationAction)[0]==0,"unsupported category-2 signature");
         check(WB.interpreterFramePilot(method("synchronizedRoot",int.class),preparationAction)[0]==0,"synchronized root");
         for(Method m:new Method[]{division,array,branch,call,keep})check(hits(m)>0 && !WB.isMethodCompiled(m),"used real interpreted codelet "+m);
         int[] accepted={6};ArrayList<WeakReference<Loader>> loaders=new ArrayList<>();

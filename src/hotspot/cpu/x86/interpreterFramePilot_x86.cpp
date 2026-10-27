@@ -24,6 +24,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/templateTable.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/methodCounters.hpp"
@@ -43,6 +44,7 @@ namespace {
 address arena=nullptr;
 int next_slot=0;
 Mutex* generation_lock=nullptr;
+NOT_PRODUCT(DbgStrings* arena_strings=nullptr;)
 jlong blob_cpu=0,blob_wall=0,blob_bytes=0,arena_cpu=0,arena_wall=0;
 
 template<bool Observe>
@@ -72,6 +74,11 @@ class BufferCleanup : public StackObj {
 };
 constexpr int slot_size=4096;
 constexpr int max_operations=64;
+constexpr int max_prefix_bytes=max_operations*5;
+// Every Stage A helper is bounded (TypeProfileWidth is limited to eight by
+// the VM). Reserve before emitting, including subtype/profile and GC helpers.
+constexpr int max_opcode_bytes=2048;
+constexpr int fallback_bytes=512;
 const Register rbcp=r13;
 const Register rlocals=r14;
 }
@@ -82,9 +89,16 @@ void InterpreterFramePilot::reserve() {
   generation_lock=new Mutex(Mutex::nosafepoint,"InterpreterFramePilot",true);
   InterpreterCodelet* c=(InterpreterCodelet*)Interpreter::code()->request_committed(arena_size);
   guarantee(c!=nullptr,"bounded interpreter pilot arena");
-  c->initialize("WhiteBox interpreter-frame integer prefixes",Bytecodes::_illegal);
+  c->initialize("WhiteBox interpreter-frame category-1 bodies",Bytecodes::_illegal);
   arena=c->code_begin();
   memset(arena,0xcc,arena_size);
+#ifndef PRODUCT
+  // Like CodeletMark, keep diagnostic addresses embedded by VerifyOops
+  // alive as long as their immutable code. Sharing one slot must not replace
+  // another slot's string collection. This storage is startup-only/bounded.
+  arena_strings=NEW_C_HEAP_ARRAY(DbgStrings,arena_size/slot_size,mtCode);
+  for(int i=0;i<arena_size/slot_size;i++)new (&arena_strings[i]) DbgStrings();
+#endif
   arena_cpu=os::current_thread_cpu_time()-cpu;arena_wall=os::javaTimeNanos()-wall;
 }
 
@@ -256,23 +270,24 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   CpuCut<Observe> analysis(Observe?&stats[analysis_cpu]:nullptr);
   if (!UseInterpreterFramePilot || arena==nullptr || next_slot+slot_size>arena_size) return false;
   Method* m=method();
-  if (!m->method_holder()->is_linked() || !m->method_holder()->is_rewritten() || !m->is_static() || m->is_native() || m->is_abstract() || m->is_synchronized() ||
+  if (!m->method_holder()->is_linked() || !m->method_holder()->is_rewritten() || m->is_native() || m->is_abstract() || m->is_synchronized() ||
+      m->is_object_initializer() || m->is_static_initializer() ||
       m->is_old() || m->is_obsolete() || m->has_monitor_bytecodes() ||
-      m->is_scoped() || m->has_reserved_stack_access() || m->intrinsic_id()!=vmIntrinsics::_none ||
+      m->is_scoped() || m->has_reserved_stack_access() ||
       m->max_locals()>64 || m->max_stack()>32 || m->code_size()==0 ||
-      Interpreter::method_kind(method)!=Interpreter::zerolocals) return false;
+      (!UseSerialGC && !UseG1GC)) return false;
+  Interpreter::MethodKind kind=Interpreter::method_kind(method);
+  if (kind!=Interpreter::zerolocals && kind!=Interpreter::getter &&
+      kind!=Interpreter::setter && kind!=Interpreter::empty) return false;
+  for(SignatureStream signature(m->signature());!signature.is_done();signature.next()) {
+    BasicType type=signature.type();
+    if(type!=T_VOID && !is_reference_type(type) && !is_subword_type(type) && type!=T_INT)return false;
+  }
   MethodCounters* counters=m->method_counters();
   if (counters==nullptr || counters->method()!=m || counters->interpreter_pilot_entry()!=nullptr) return false;
 #ifdef ASSERT
   if (TraceBytecodes || CountBytecodes || PrintBytecodeHistogram || PrintBytecodePairHistogram || StopInterpreterAt>0) return false;
 #endif
-  uint64_t int_locals=0;
-  int slot=0;
-  for (SignatureStream ss(m->signature());!ss.at_return_type();ss.next()) {
-    BasicType type=ss.type();
-    if (is_java_primitive(type) && type!=T_FLOAT && type!=T_DOUBLE && type!=T_LONG) int_locals|=uint64_t(1)<<slot;
-    slot+=type==T_LONG || type==T_DOUBLE?2:1;
-  }
   // A fixed private slice is never rewritten/recycled after publication. No
   // Method/klass/oop address is embedded; dead class versions leave dead bytes.
   analysis.stop();
@@ -288,21 +303,47 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   }
   assert(code.blob()==nullptr,"fixed interpreter slice, no per-method code cache allocation");
   CpuCut<Observe> emission(Observe?&stats[emission_cpu]:nullptr);
+  Label ordinary;
+  Label labels[max_prefix_bytes+1];
+  auto bind_exits = [&]() {
+    for(int i=0;i<=max_prefix_bytes;i++)
+      if(!labels[i].is_bound() && labels[i].is_linked())masm.bind(labels[i]);
+    masm.bind(ordinary);
+  };
   auto reject_unpublished = [&]() {
+    bind_exits();
     emission.stop();
     if constexpr (Observe) cleanup_start=os::current_thread_cpu_time();
     return false;
   };
-  int depth=0,operations=0,end_bci=0;
+  int operations=0,end_bci=0;
+  ConstantPool* pool=m->constants();
   BytecodeStream stream(method);
   for (Bytecodes::Code bc;(bc=stream.next())!=Bytecodes::_illegal && operations<max_operations;) {
+    if(stream.is_wide() || stream.bci()>max_prefix_bytes ||
+       code.insts_remaining()<max_opcode_bytes+fallback_bytes)break;
+    masm.bind(labels[stream.bci()]);
+    int instruction_begin=code.insts_size();
     int index=-1,value=0;
-    enum { stop, load, store, constant, binary, nop } action=stop;
+    enum { stop, load, store, aload, astore, constant, binary, nop, emitted } action=stop;
     TemplateTable::Operation op=TemplateTable::add;
+    // Preserve the original integer-prefix controls with handlers. The new
+    // semantic batch does not admit reference/control-flow handler bodies.
+    if(m->has_exception_handler() && !(bc>=Bytecodes::_iconst_m1 && bc<=Bytecodes::_iconst_5) &&
+       bc!=Bytecodes::_iload && !(bc>=Bytecodes::_iload_0 && bc<=Bytecodes::_iload_3) &&
+       bc!=Bytecodes::_istore && !(bc>=Bytecodes::_istore_0 && bc<=Bytecodes::_istore_3) &&
+       bc!=Bytecodes::_bipush && bc!=Bytecodes::_sipush && bc!=Bytecodes::_nop &&
+       bc!=Bytecodes::_iadd && bc!=Bytecodes::_isub && bc!=Bytecodes::_imul &&
+       bc!=Bytecodes::_iand && bc!=Bytecodes::_ior && bc!=Bytecodes::_ixor &&
+       bc!=Bytecodes::_ishl && bc!=Bytecodes::_ishr && bc!=Bytecodes::_iushr)break;
     if (bc>=Bytecodes::_iload_0 && bc<=Bytecodes::_iload_3) { action=load;index=bc-Bytecodes::_iload_0; }
     else if (bc==Bytecodes::_iload) { action=load;index=stream.get_index(); }
     else if (bc>=Bytecodes::_istore_0 && bc<=Bytecodes::_istore_3) { action=store;index=bc-Bytecodes::_istore_0; }
     else if (bc==Bytecodes::_istore) { action=store;index=stream.get_index(); }
+    else if (bc>=Bytecodes::_aload_0 && bc<=Bytecodes::_aload_3) { action=aload;index=bc-Bytecodes::_aload_0; }
+    else if (bc==Bytecodes::_aload) { action=aload;index=stream.get_index(); }
+    else if (bc>=Bytecodes::_astore_0 && bc<=Bytecodes::_astore_3) { action=astore;index=bc-Bytecodes::_astore_0; }
+    else if (bc==Bytecodes::_astore) { action=astore;index=stream.get_index(); }
     else if (bc>=Bytecodes::_iconst_m1 && bc<=Bytecodes::_iconst_5) { action=constant;value=bc-Bytecodes::_iconst_0; }
     else switch (bc) {
       case Bytecodes::_bipush: action=constant;value=(jbyte)stream.bcp()[1];break;
@@ -317,34 +358,171 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
       case Bytecodes::_ishr: action=binary;op=TemplateTable::shr;break;
       case Bytecodes::_iushr: action=binary;op=TemplateTable::ushr;break;
       case Bytecodes::_nop: action=nop;break;
+      case Bytecodes::_aconst_null:
+        masm.xorl(rax,rax);masm.push(atos);action=emitted;break;
+      case Bytecodes::_pop:
+        masm.addptr(rsp,wordSize);action=emitted;break;
+      case Bytecodes::_dup:
+        masm.movptr(rax,Address(rsp,0));masm.push_ptr(rax);action=emitted;break;
+      case Bytecodes::_swap:
+        masm.pop_ptr(rax);masm.pop_ptr(rdx);masm.push_ptr(rax);masm.push_ptr(rdx);action=emitted;break;
+      case Bytecodes::_ineg: case Bytecodes::_i2b: case Bytecodes::_i2c: case Bytecodes::_i2s:
+        masm.pop(itos);
+        if(bc==Bytecodes::_ineg)masm.negl(rax);
+        else if(bc==Bytecodes::_i2b)masm.movsbl(rax,rax);
+        else if(bc==Bytecodes::_i2c)masm.movzwl(rax,rax);
+        else masm.movswl(rax,rax);
+        masm.push(itos);action=emitted;break;
+      case Bytecodes::_iinc:
+        index=stream.get_index();
+        if(index>=m->max_locals())return reject_unpublished();
+        masm.addl(Address(rlocals,-index*wordSize),(jbyte)stream.bcp()[2]);action=emitted;break;
+      case Bytecodes::_ldc: case Bytecodes::_ldc_w: {
+        int cp_index=bc==Bytecodes::_ldc?stream.get_index_u1():stream.get_index_u2();
+        int ref_index=-1;
+        if(stream.raw_code()==Bytecodes::_fast_aldc || stream.raw_code()==Bytecodes::_fast_aldc_w) {
+          ref_index=cp_index;
+          if(pool->reference_map()==nullptr || ref_index>=pool->reference_map()->length())break;
+          cp_index=pool->object_to_cp_index(ref_index);
+        }
+        if(cp_index<=0 || cp_index>=pool->length())break;
+        constantTag tag=pool->tag_at(cp_index);
+        if(tag.is_int()) {action=constant;value=pool->int_at(cp_index);break;}
+        if(tag.is_klass() || tag.is_unresolved_klass()) {
+          // Class literals have no resolved-reference index. Read the klass
+          // cache and its rooted mirror, without initializing the class.
+          masm.get_cpool_and_tags(rcx,rdx);masm.movl(rbx,cp_index);
+          masm.cmpb(Address(rdx,rbx,Address::times_1,Array<u1>::base_offset_in_bytes()),JVM_CONSTANT_Class);
+          masm.jcc(Assembler::notEqual,ordinary);
+          masm.load_resolved_klass_at_index(rax,rcx,rbx);
+          masm.movptr(rax,Address(rax,in_bytes(Klass::java_mirror_offset())));
+          masm.resolve_oop_handle(rax,rscratch1);masm.push(atos);action=emitted;break;
+        }
+        if(!(tag.is_string() || tag.is_method_type() || tag.is_method_handle()) || pool->reference_map()==nullptr)break;
+        if(ref_index<0)ref_index=pool->cp_to_object_index(cp_index);
+        if(ref_index<0)break;
+        masm.movl(rbx,ref_index);masm.load_resolved_reference_at_index(rax,rbx);
+        masm.testptr(rax,rax);masm.jcc(Assembler::zero,ordinary);
+        masm.push(atos);action=emitted;break;
+      }
+      case Bytecodes::_getfield: case Bytecodes::_getstatic: {
+        int field_index=stream.get_index_u2();
+        if(pool->cache()==nullptr || field_index>=pool->resolved_field_entries_length())break;
+        ResolvedFieldEntry* field=pool->resolved_field_entry_at(field_index);
+        if(!field->is_resolved(bc) || field->field_holder()==nullptr ||
+           field->field_holder()->name()->equals("java/lang/ref/Reference"))break;
+        BasicType type=as_BasicType((TosState)field->tos_state());
+        if(type!=T_OBJECT && type!=T_ARRAY && type!=T_BOOLEAN && type!=T_BYTE && type!=T_CHAR && type!=T_SHORT && type!=T_INT)break;
+        int offset=field->field_offset();
+        if(bc==Bytecodes::_getfield) {
+          masm.movptr(rax,Address(rsp,0));masm.testptr(rax,rax);masm.jcc(Assembler::zero,ordinary);
+          masm.pop_ptr(rax);
+        } else {
+          masm.load_field_entry(rcx,rdx);
+          masm.movptr(rax,Address(rcx,in_bytes(ResolvedFieldEntry::field_holder_offset())));
+          masm.clinit_barrier(rax,nullptr,&ordinary);
+          masm.movptr(rax,Address(rax,in_bytes(Klass::java_mirror_offset())));
+          masm.resolve_oop_handle(rax,rscratch1);
+        }
+        if(is_reference_type(type)) {
+          masm.load_heap_oop(rax,Address(rax,offset),rdx);masm.push(atos);
+        } else {
+          masm.access_load_at(type,IN_HEAP,rax,Address(rax,offset),noreg);masm.push(itos);
+        }
+        action=emitted;break;
+      }
+      case Bytecodes::_checkcast: case Bytecodes::_instanceof: {
+        int cp_index=stream.get_index_u2();
+        if(cp_index<=0 || cp_index>=pool->length())break;
+        Label null_value,success,profile,done;
+        masm.movptr(rax,Address(rsp,0));masm.testptr(rax,rax);masm.jcc(Assembler::zero,null_value);
+        masm.get_cpool_and_tags(rcx,rdx);
+        masm.movl(rbx,cp_index);
+        masm.cmpb(Address(rdx,rbx,Address::times_1,Array<u1>::base_offset_in_bytes()),JVM_CONSTANT_Class);
+        masm.jcc(Assembler::notEqual,ordinary);
+        masm.load_resolved_klass_at_index(rax,rcx,rbx);
+        masm.movptr(rdx,Address(rsp,0));masm.load_klass(rdx,rdx,rscratch1);
+        // Pure predicate first. A failed checkcast must not advance MDP then
+        // replay/profiling the original bytecode a second time.
+        masm.check_klass_subtype(rdx,rax,rcx,success);
+        if(bc==Bytecodes::_checkcast)masm.jmp(ordinary);
+        else {
+          masm.xorl(r8,r8);masm.jmp(profile);
+        }
+        masm.bind(success);
+        if(bc==Bytecodes::_instanceof)masm.movl(r8,1);
+        masm.bind(profile);
+        masm.movptr(rdx,Address(rsp,0));masm.load_klass(rdx,rdx,rscratch1);masm.profile_typecheck(rcx,rdx);
+        // profile_typecheck(rcx,rdx) preserves r8, including its CAS path.
+        if(bc==Bytecodes::_instanceof) {masm.pop_ptr(rax);masm.movl(rax,r8);masm.push(itos);}
+        masm.jmp(done);
+        masm.bind(null_value);masm.profile_null_seen(rcx);
+        if(bc==Bytecodes::_instanceof) {masm.pop_ptr(rax);masm.xorl(rax,rax);masm.push(itos);}
+        masm.bind(done);action=emitted;break;
+      }
+      case Bytecodes::_ifeq: case Bytecodes::_ifne: case Bytecodes::_iflt: case Bytecodes::_ifge:
+      case Bytecodes::_ifgt: case Bytecodes::_ifle:
+      case Bytecodes::_if_icmpeq: case Bytecodes::_if_icmpne: case Bytecodes::_if_icmplt:
+      case Bytecodes::_if_icmpge: case Bytecodes::_if_icmpgt: case Bytecodes::_if_icmple:
+      case Bytecodes::_if_acmpeq: case Bytecodes::_if_acmpne:
+      case Bytecodes::_ifnull: case Bytecodes::_ifnonnull: case Bytecodes::_goto: case Bytecodes::_goto_w: {
+        int target=bc==Bytecodes::_goto_w?stream.dest_w():stream.dest();
+        if(target<=stream.bci() || target>=m->code_size())break;
+        Label not_taken;
+        if(bc!=Bytecodes::_goto && bc!=Bytecodes::_goto_w) {
+          Assembler::Condition condition=Assembler::equal;
+          if(bc==Bytecodes::_if_acmpeq || bc==Bytecodes::_if_acmpne) {
+            masm.pop_ptr(rax);masm.pop_ptr(rdx);masm.cmpoop(rdx,rax);
+            condition=bc==Bytecodes::_if_acmpeq?Assembler::equal:Assembler::notEqual;
+          } else if(bc==Bytecodes::_ifnull || bc==Bytecodes::_ifnonnull) {
+            masm.pop_ptr(rax);masm.testptr(rax,rax);condition=bc==Bytecodes::_ifnull?Assembler::equal:Assembler::notEqual;
+          } else {
+            bool pair=bc>=Bytecodes::_if_icmpeq && bc<=Bytecodes::_if_icmple;
+            int n=bc-(pair?Bytecodes::_if_icmpeq:Bytecodes::_ifeq);
+            const Assembler::Condition conditions[]={Assembler::equal,Assembler::notEqual,Assembler::less,Assembler::greaterEqual,Assembler::greater,Assembler::lessEqual};
+            condition=conditions[n];masm.pop(itos);
+            if(pair) {masm.pop_i(rdx);masm.cmpl(rdx,rax);}else masm.testl(rax,rax);
+          }
+          masm.jcc(MacroAssembler::negate_condition(condition),not_taken);
+        }
+        masm.profile_taken_branch(rax);masm.increment(rbcp,target-stream.bci());masm.save_bcp();
+        masm.jmp(target<=max_prefix_bytes?labels[target]:ordinary);
+        if(bc!=Bytecodes::_goto && bc!=Bytecodes::_goto_w) {
+          masm.bind(not_taken);masm.profile_not_taken_branch(rax);
+        }
+        action=emitted;break;
+      }
       default: break;
     }
-    if (action==stop || stream.is_wide()) break;
-    if (index>=m->max_locals() || (action==load && (int_locals&(uint64_t(1)<<index))==0) ||
-        (action==store && depth<1) || (action==binary && depth<2)) return reject_unpublished();
+    if (action==stop)break;
+    if (index>=m->max_locals())return reject_unpublished();
     switch(action) {
-      case load: TemplateTable::emit_iload(&masm,index);masm.push(itos);depth++;break;
-      case store: masm.pop(itos);TemplateTable::emit_istore(&masm,index);int_locals|=uint64_t(1)<<index;depth--;break;
-      case constant: TemplateTable::emit_iconst(&masm,value);masm.push(itos);depth++;break;
-      case binary: masm.pop(itos);TemplateTable::emit_iop2(&masm,op);masm.push(itos);depth--;break;
-      case nop: break;
+      case load: TemplateTable::emit_iload(&masm,index);masm.push(itos);break;
+      case store: masm.pop(itos);TemplateTable::emit_istore(&masm,index);break;
+      case aload: masm.movptr(rax,Address(rlocals,-index*wordSize));masm.push(atos);break;
+      case astore: masm.pop(atos);masm.movptr(Address(rlocals,-index*wordSize),rax);break;
+      case constant: TemplateTable::emit_iconst(&masm,value);masm.push(itos);break;
+      case binary: masm.pop(itos);TemplateTable::emit_iop2(&masm,op);masm.push(itos);break;
+      case nop: case emitted: break;
       default: ShouldNotReachHere();
     }
-    if (depth>m->max_stack()) return reject_unpublished();
     end_bci=stream.next_bci();operations++;
     masm.increment(rbcp,stream.instruction_size());
     masm.save_bcp();
+    guarantee(code.insts_size()-instruction_begin<max_opcode_bytes,"audited bounded Stage A opcode");
   }
   // Nothing throwing or safepointing runs inside the bounded prefix. All
   // expression values are canonical vtos at every bytecode boundary. Resume
   // the original opcode through the active interpreter table and its poll.
   if (operations==0 || end_bci>=m->code_size()) return reject_unpublished();
+  bind_exits();
   masm.dispatch_next(vtos,0,true);
   emission.stop();
   CpuCut<Observe> publication(Observe?&stats[publication_cpu]:nullptr);
   masm.flush();
   int bytes=code.insts_size();
   guarantee(bytes<slot_size,"bounded pilot code slice");
+  NOT_PRODUCT(arena_strings[next_slot/slot_size].share(code.dbg_strings());)
   ICache::invalidate_range(arena+next_slot,bytes);
   if constexpr (Observe) { stats[3]=bytes;stats[4]=end_bci;stats[5]=operations; }
   counters->publish_interpreter_pilot(arena+next_slot);
