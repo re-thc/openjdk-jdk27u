@@ -24,6 +24,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
+#include "ci/ciInstance.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
 #include "asm/codeBuffer.hpp"
@@ -191,14 +192,19 @@ class Emitter : StackObj {
         case Bytecodes::_ineg: case Bytecodes::_i2b: case Bytecodes::_i2c: case Bytecodes::_i2s:
           if (!pop(s, T_INT) || !push(s, T_INT)) return false;
           break;
-        case Bytecodes::_getfield: case Bytecodes::_putfield: {
+        case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic: {
           bool link = false; ciField* f = bs.get_field(link);
+          bool is_static = bc == Bytecodes::_getstatic;
           if (!link || !f->will_link(_method, bc) ||
-              strcmp(f->holder()->name()->as_utf8(), "java/lang/ref/Reference") == 0 || f->is_static() || !supported_type(f->type()->basic_type())) return fail("unresolved/unsupported field");
+              strcmp(f->holder()->name()->as_utf8(), "java/lang/ref/Reference") == 0 ||
+              f->is_static() != is_static || !supported_type(f->type()->basic_type())) return fail("unresolved/unsupported field");
+          // Initialization applies to the canonical declaring holder, including
+          // inherited fields. Leave unresolved/initializing classes interpreted.
+          if (is_static && (!f->holder()->is_loaded() || !f->holder()->is_initialized())) return fail("uninitialized static field");
           _fields[bci] = f;
           if (bc == Bytecodes::_putfield && !pop(s, kind(f->type()->basic_type()))) return false;
-          if (!pop(s, T_OBJECT)) return false;
-          if (bc == Bytecodes::_getfield && !push(s, kind(f->type()->basic_type()))) return false;
+          if (!is_static && !pop(s, T_OBJECT)) return false;
+          if (bc != Bytecodes::_putfield && !push(s, kind(f->type()->basic_type()))) return false;
           break;
         }
         case Bytecodes::_arraylength:
@@ -376,12 +382,17 @@ class Emitter : StackObj {
   void field(Bytecodes::Code bc, int bci, State* s) {
     ciField* f = _fields[bci];
     BasicType t = f->type()->basic_type();
-    bool load = bc == Bytecodes::_getfield;
-    int obj = s->sp - (load ? 1 : 2);
-    __ movptr(rbx, stack(obj)); null_check(rbx, bci, s);
+    bool is_static = bc == Bytecodes::_getstatic;
+    bool load = bc != Bytecodes::_putfield;
+    int obj = is_static ? s->sp : s->sp - (load ? 1 : 2);
+    if (is_static) {
+      __ movoop(rbx, f->holder()->java_mirror()->constant_encoding());
+    } else {
+      __ movptr(rbx, stack(obj)); null_check(rbx, bci, s);
+    }
     Address address(rbx, f->offset_in_bytes());
     if (load) {
-      __ access_load_at(t, IN_HEAP, rax, address, r10);
+      __ access_load_at(t, IN_HEAP | (f->is_volatile() ? MO_SEQ_CST : MO_UNORDERED), rax, address, r10);
       __ movptr(stack(obj), rax);
     } else {
       __ movptr(rax, stack(s->sp-1));
@@ -523,7 +534,7 @@ class Emitter : StackObj {
           else __ movswl(rax, rax);
           __ movl(stack(sp-1), rax);
           break;
-        case Bytecodes::_getfield: case Bytecodes::_putfield: field(bc, bci, s);
+        case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic: field(bc, bci, s);
           break;
         case Bytecodes::_arraylength: case Bytecodes::_iaload: case Bytecodes::_iastore:
         case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:

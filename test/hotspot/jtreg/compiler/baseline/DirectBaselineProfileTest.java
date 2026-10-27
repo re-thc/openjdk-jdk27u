@@ -33,6 +33,8 @@ import jdk.test.whitebox.WhiteBox;
 public class DirectBaselineProfileTest {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
     static class Box { int value; int calls; }
+    static class StaticState { static int payload; static volatile int ready; }
+    static int staticAcquire() { return StaticState.ready == 0 ? -1 : StaticState.payload; }
     static int target(Box b, int x) {
         b.calls = b.calls + 1;
         if (x < 0) return b.value;
@@ -43,15 +45,28 @@ public class DirectBaselineProfileTest {
     public static void main(String[] args) throws Exception {
         int admission = args.length == 0 ? 256 : Integer.parseInt(args[0]);
         Method method = DirectBaselineProfileTest.class.getDeclaredMethod("target", Box.class, int.class);
+        Method acquire = DirectBaselineProfileTest.class.getDeclaredMethod("staticAcquire");
+        StaticState.payload = 0; StaticState.ready = 0;
         Box b = new Box();
-        for (int i = 0; i < 64; i++) { check(target(b, i) == 2*i); Thread.sleep(1); }
+        for (int i = 0; i < 64; i++) { check(target(b, i) == 2*i && staticAcquire() == -1); Thread.sleep(1); }
         long installationLimit = System.nanoTime() + 20_000_000_000L;
-        while (WB.getMethodCompilationLevel(method) != 1) {
+        while (WB.getMethodCompilationLevel(method) != 1 || WB.getMethodCompilationLevel(acquire) != 1) {
             if (System.nanoTime() > installationLimit) throw new AssertionError("no early direct installation");
             Thread.sleep(10);
         }
         WB.lockCompilation();
         try {
+            // Keep the volatile reader demonstrably direct across publication.
+            check(WB.getMethodCompilationLevel(acquire) == 1);
+            Thread publisher = new Thread(() -> { StaticState.payload = 127; StaticState.ready = 1; });
+            publisher.start();
+            long publicationLimit = System.nanoTime() + 10_000_000_000L;
+            int published;
+            while ((published = staticAcquire()) == -1) {
+                if (System.nanoTime() > publicationLimit) throw new AssertionError("direct static acquire");
+            }
+            publisher.join();
+            check(published == 127 && WB.getMethodCompilationLevel(acquire) == 1);
             // Only this test disables load feedback. The shared candidate may
             // postpone ordinary C1, while stock MDO creation still runs first.
             for (int total = 65; total < admission; total++) {

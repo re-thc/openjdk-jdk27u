@@ -8,6 +8,8 @@ The [scheduling study](direct-baseline-scheduling.md) and
 later architecture comparisons and their performance limitations.
 The current [successor handoff](direct-baseline-successor-handoff.md) keeps
 direct code executing until ordinary replacement without aging an empty MDO.
+The subsequent [initialized static-field experiment](direct-baseline-static-fields.md)
+increases coverage but records an adverse warmed comparison.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 
@@ -80,7 +82,8 @@ instruction and branch merge; it emits no intermediate instruction IR.
 
 Supported operations include local loads/stores, integer constants and
 arithmetic, casts, forward integer/reference/null branches, resolved instance
-field reads/writes (including volatile and reference fields), array length,
+field reads/writes (including volatile and reference fields), initialized
+category-1 static-field reads using the declaring class's mirror, array length,
 byte/char/short/int/reference array reads, integer array stores, and resolved
 static Java calls including stack arguments. Reference.referent access and
 direct calls into Continuation internals are excluded. Unsupported operations

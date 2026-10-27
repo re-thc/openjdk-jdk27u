@@ -49,6 +49,34 @@ public class DirectBaselineTest {
     static int exceptionFromCall(Box b, int x) { b.value = b.value + 1; return mayThrow(x); }
     static class ColdTarget { static final int value = initialize(); static int initialize() { return 73; } static int read() { return value; } }
     static int coldCall(int x) { if (x == 0) return 0; return ColdTarget.read(); }
+    static class Statics {
+        static boolean bool;
+        static byte small;
+        static char character;
+        static short signed;
+        static int number;
+        static Object ref;
+        static Box published;
+        static volatile int ready;
+    }
+    static int staticNarrow() { return (Statics.bool ? 1 : 0) + Statics.small + Statics.character + Statics.signed + Statics.number; }
+    static Object staticReference() { return Statics.ref; }
+    static Object staticAcrossGC(int collect) { Object value = Statics.ref; if (collect != 0) clearStaticAndGC(); return value; }
+    static void clearStaticAndGC() { Statics.ref = null; System.gc(); }
+    static int staticAcquire() { return Statics.ready == 0 ? 0 : Statics.published.value; }
+    static int coldStaticInitializations;
+    static class ColdStatic { static int value = initialize(); static int initialize() { coldStaticInitializations++; return 91; } }
+    static int coldStatic(int use) { return use == 0 ? 0 : ColdStatic.value; }
+    static int throwingStaticInitializations;
+    static class ThrowingStatic {
+        static int value = initialize();
+        static int initialize() { throwingStaticInitializations++; throw new IllegalStateException("expected static initialization failure"); }
+    }
+    static int coldThrowingStatic(int use) { return use == 0 ? 0 : ThrowingStatic.value; }
+    static int childInitializations;
+    static class StaticParent { static int inherited = 73; }
+    static class StaticChild extends StaticParent { static int marker = initialize(); static int initialize() { childInitializations++; return 1; } }
+    static int inheritedStatic() { return StaticChild.inherited; }
     static void gc() { System.gc(); }
     static Object acrossGC(Object o) { gc(); return o; }
     static Object acrossYield(Object o) { Thread.yield(); return o; }
@@ -104,6 +132,34 @@ public class DirectBaselineTest {
     static void workload() throws Throwable {
         narrowReturns();
         Box box = new Box(); Object ref = new Object();
+        Statics.bool = true; Statics.small = -7; Statics.character = 65535; Statics.signed = -32768; Statics.number = 41;
+        Statics.ref = ref;
+        StaticParent.inherited = 73;
+        for (int i = 0; i < 64; i++) {
+            check(staticNarrow() == 32802 && staticReference() == ref && staticAcquire() == 0);
+            check(staticAcrossGC(0) == ref && coldStatic(0) == 0 && coldThrowingStatic(0) == 0 && inheritedStatic() == 73);
+        }
+        Thread.sleep(500);
+        check(coldStaticInitializations == 0 && throwingStaticInitializations == 0 && childInitializations == 0);
+        Statics.number = 42; Statics.ref = new byte[4096]; StaticParent.inherited = 89;
+        System.gc();
+        check(staticNarrow() == 32803 && staticReference() == Statics.ref && inheritedStatic() == 89);
+        Statics.ref = new byte[8192]; // fresh reference must survive the GC in the compiled activation
+        Object staticExpected = Statics.ref;
+        check(staticAcrossGC(1) == staticExpected && staticReference() == null);
+        try { coldThrowingStatic(1); throw new AssertionError("missing static initialization failure"); }
+        catch (ExceptionInInitializerError expected) { check(expected.getCause() instanceof IllegalStateException); }
+        try { coldThrowingStatic(1); throw new AssertionError("missing erroneous-class failure"); }
+        catch (NoClassDefFoundError expected) {}
+        check(throwingStaticInitializations == 1);
+        Thread publisher = new Thread(() -> { Box value = new Box(); value.value = 127; Statics.published = value; Statics.ready = 1; });
+        publisher.start();
+        long publicationLimit = System.nanoTime() + 10_000_000_000L;
+        while (staticAcquire() == 0) {
+            if (System.nanoTime() > publicationLimit) throw new AssertionError("static volatile publication");
+        }
+        publisher.join();
+        check(staticAcquire() == 127 && coldStatic(1) == 91 && coldStaticInitializations == 1 && childInitializations == 0);
         for (int i = 0; i < 64; i++) {
             exercise(box, ref, i);
             check(unsupportedLoop(20) == 190);
@@ -159,7 +215,14 @@ public class DirectBaselineTest {
                 .shouldContain("direct install fields(")
                 .shouldContain("direct install call(I)I")
                 .shouldContain("direct install acrossGC(")
-                .shouldContain("direct install exceptionFromCall(");
+                .shouldContain("direct install exceptionFromCall(")
+                .shouldContain("direct install staticNarrow()I")
+                .shouldContain("direct install staticReference()Ljava/lang/Object;")
+                .shouldContain("direct install staticAcrossGC(I)Ljava/lang/Object;")
+                .shouldContain("direct install staticAcquire()I")
+                .shouldContain("direct install inheritedStatic()I")
+                .shouldNotContain("direct install coldStatic(I)I")
+                .shouldNotContain("direct install coldThrowingStatic(I)I");
             // PolicyTest controls a direct-to-C2 linked-call handoff explicitly.
         }
     }
