@@ -31,6 +31,7 @@
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/compiledIC.hpp"
 #include "code/codeBlob.hpp"
@@ -40,6 +41,7 @@
 #include "code/debugInfo.hpp"
 #include "compiler/oopMap.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -537,7 +539,6 @@ class Emitter : StackObj {
   State** _states;
   Label* _labels;
   ciField** _fields;
-  ciMethod** _callees;
   BasicSignature** _call_signatures;
   int _nl, _ns, _size, _out_words, _frame_bytes, _frame_words, _last_scope_pc;
   CodeBuffer* _code;
@@ -770,13 +771,48 @@ class Emitter : StackObj {
       return fail("uninitialized static field");
     _fields[bci]=f; return true;
   }
-  bool resolve_call(ciBytecodeStream& bs, Bytecodes::Code bc, int bci) {
+  bool cached_call(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, bool& dynamic) {
+    // Consume only resolution published for this invocation bytecode. A shared
+    // CP entry can describe both invokespecial and invokevirtual. Keep no
+    // callee metadata: the emitted call still links through the original CP,
+    // and ciEnv validates redefinition/JVMTI state again before installation.
+    VM_ENTRY_MARK;
+    NoSafepointVerifier nsv;
+    ConstantPool* pool = _method->get_Method()->constants();
+    int index = bs.get_method_index();
+    if (pool->cache() == nullptr || index < 0 || index >= pool->resolved_method_entries_length()) return false;
+    ResolvedMethodEntry* entry = pool->resolved_method_entry_at(index);
+    if (!entry->is_resolved(bc) || entry->has_local_signature() || entry->has_appendix()) return false;
+    int holder_index = pool->klass_ref_index_at(index, bc);
+    if (!pool->tag_at(holder_index).is_klass()) return false;
+    Klass* declared = pool->resolved_klass_at(holder_index);
+    Method* method = bc == Bytecodes::_invokevirtual && !entry->is_vfinal() ?
+        declared->method_at_vtable(entry->table_index()) : entry->method();
+    bool is_static = bc == Bytecodes::_invokestatic;
+    bool virtual_call = bc == Bytecodes::_invokevirtual || bc == Bytecodes::_invokeinterface;
+    if (method == nullptr || method->is_old() || method->is_obsolete() ||
+        method->is_static() != is_static || (method->is_abstract() && !virtual_call) ||
+        (method->is_object_initializer() && bc != Bytecodes::_invokespecial) ||
+        method->is_method_handle_intrinsic() || method->is_scoped() ||
+        method->method_holder()->name()->equals("jdk/internal/vm/Continuation") ||
+        method->signature() != _call_signatures[bci]->symbol() ||
+        (is_static && !method->method_holder()->is_initialized()) ||
+        (bc == Bytecodes::_invokespecial && (declared->is_interface() ||
+         method->method_holder()->is_interface() || pool->pool_holder()->is_interface()))) return false;
+    // Match ciMethod's conservative linked-holder, private and abstract rules.
+    bool bound = ((method->method_holder()->is_linked() && method->can_be_statically_bound()) ||
+                  method->is_private()) && !method->is_abstract();
+    dynamic = bc == Bytecodes::_invokeinterface || (bc == Bytecodes::_invokevirtual && !bound);
+    return true;
+  }
+  bool resolve_call(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, bool& dynamic) {
+    if (cached_call(bs, bc, bci, dynamic)) return true;
     bool link=false;
     ciMethod* m=bs.get_method(link,nullptr);
     bool is_static=bc==Bytecodes::_invokestatic;
     BasicSignature* sig=_call_signatures[bci];
-    bool dynamic = bc == Bytecodes::_invokeinterface || bc == Bytecodes::_invokevirtual;
-    if (!link || !m->is_loaded() || m->is_static()!=is_static || (m->is_abstract() && !dynamic) ||
+    bool virtual_call = bc == Bytecodes::_invokeinterface || bc == Bytecodes::_invokevirtual;
+    if (!link || !m->is_loaded() || m->is_static()!=is_static || (m->is_abstract() && !virtual_call) ||
         (m->is_object_initializer() && bc != Bytecodes::_invokespecial) || m->is_method_handle_intrinsic() || m->is_scoped() ||
         strcmp(m->holder()->name()->as_utf8(),"jdk/internal/vm/Continuation")==0 ||
         (is_static && !m->holder()->is_initialized())) return fail("unresolved/unsupported call");
@@ -792,12 +828,12 @@ class Emitter : StackObj {
            (holder->is_interface() || m->holder()->is_interface() || _method->holder()->is_interface())))
         return fail("unsupported interface special call");
     }
-    _callees[bci]=m; return true;
+    dynamic = bc == Bytecodes::_invokeinterface || (bc == Bytecodes::_invokevirtual && !m->can_be_statically_bound());
+    return true;
   }
-  void java_call(Bytecodes::Code bc, int bci, State* s) {
-    ciMethod* callee = _callees[bci];
+  void java_call(Bytecodes::Code bc, int bci, State* s, bool dynamic) {
     BasicSignature* sig = _call_signatures[bci];
-    bool is_static = callee->is_static();
+    bool is_static = bc == Bytecodes::_invokestatic;
     int n = sig->count() + (is_static ? 0 : 1);
     if (!is_static) {
       __ movptr(rax, stack(s->sp - n));
@@ -823,8 +859,6 @@ class Emitter : StackObj {
         if (wide) __ movptr(arg, rax); else __ movl(arg, rax);
       }
     }
-    bool dynamic = bc == Bytecodes::_invokeinterface ||
-                   (bc == Bytecodes::_invokevirtual && !callee->can_be_statically_bound());
     if (dynamic) {
       __ align(wordSize, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
       __ ic_call(SharedRuntime::get_resolve_virtual_call_stub());
@@ -1113,10 +1147,12 @@ class Emitter : StackObj {
         case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:
           array(bc, bci, s);
           break;
-        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: case Bytecodes::_invokeinterface:
-          if (!resolve_call(bs,bc,bci)) return;
-          java_call(bc, bci, s);
+        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: case Bytecodes::_invokeinterface: {
+          bool dynamic;
+          if (!resolve_call(bs,bc,bci,dynamic)) return;
+          java_call(bc, bci, s, dynamic);
           break;
+        }
         case Bytecodes::_ireturn: case Bytecodes::_lreturn: case Bytecodes::_areturn:
           if (bc==Bytecodes::_lreturn) __ movptr(rax,stack(sp-2));
           else if (bc == Bytecodes::_areturn) __ movptr(rax, stack(sp-1));
@@ -1269,7 +1305,6 @@ class Emitter : StackObj {
     _call_signatures=prepared_data->_call_signatures;
     _labels=NEW_RESOURCE_ARRAY(Label,_size);
     _fields=NEW_RESOURCE_ARRAY(ciField*,_size);
-    _callees=NEW_RESOURCE_ARRAY(ciMethod*,_size);
     for (int i=0;i<_size;i++) new (&_labels[i]) Label();
     if (prepared_data->_handler_count!=0) {
       _exception_pcs=new GrowableArray<int>(8);_exception_bcis=new GrowableArray<int>(8);

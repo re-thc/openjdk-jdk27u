@@ -560,6 +560,30 @@ entry-coverage or application-speed claim for it.
 
 ## Shortest coherent path toward the gate
 
+Already resolved plain calls now have a scalar snapshot path inside the direct
+emitter. One VM/no-safepoint read checks publication for the actual invocation
+bytecode, the original descriptor, static initialization and existing restricted
+forms. It copies only the dispatch decision, avoiding unused callee CI wrappers
+and the per-bytecode callee pointer array. Unavailable snapshots retain the
+existing CI lookup, so loaded-but-uncached support is preserved. Normal original-CP
+call linking, Java conventions, maps and install-time JVMTI/redefinition checks
+are unchanged. This does not widen the unresolved-call population.
+
+Independent source review found no blocker. All fifteen tests pass on release
+and fastdebug. The extended instance fixture confirms a single Methodref/cache
+entry shared by invokespecial and invokevirtual, then checks virtual override
+dispatch after direct installation. Reading the cache's first method pointer
+without decoding the actual bytecode would be wrong for that case. No new CPU,
+entry-coverage or application-speed claim is made for the snapshot change.
+
+The next bounded semantic frontier is ordinary Java bytecode-intrinsic roots,
+using the VM's explicit category rather than a workload method allowlist.
+Object.<init>'s hidden finalizer hook, signature-polymorphic methods, compiled
+lambda forms and existing native/scoped/monitor restrictions still require
+exclusion. Separately, interface-caller invokespecial needs a receiver-constraint
+check before every call; the initial runtime resolution alone cannot prove later
+receivers valid. Those restrictions cannot simply be removed to raise coverage.
+
 1. **Completed first batch:** casts/instanceof and real virtual/interface ICs.
    This captures common erased-generic casts and polymorphic collection/compiler
    calls, rather than accumulating rare integer opcodes. Reference method

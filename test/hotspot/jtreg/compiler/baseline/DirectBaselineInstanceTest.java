@@ -75,6 +75,9 @@ public class DirectBaselineInstanceTest {
         Child(int value) { super(value); }
         @Override int pick(int x) { return value + x + 100; }
         int superCall(int x) { return super.pick(x) + 1; }
+        // Both invocation kinds share one Base.pick Methodref/cache entry.
+        // Its special target must not replace virtual receiver dispatch.
+        int sharedEntry(Base receiver, int x) { return super.pick(x) * 7 + receiver.pick(x); }
     }
     static class Other extends Base {
         Other(int value) { super(value); }
@@ -130,6 +133,7 @@ public class DirectBaselineInstanceTest {
             check(compiledCaller(base, i) == 9 + i*3);
             check(base.entry(token, -4, 2, 3, 4, 5, 6, 7, (byte)-7, (char)65535, (short)-32768) == 32892);
             check(base.privateCall(i) == 18 + i && sub.superCall(i) == 12 + i);
+            check(sub.sharedEntry(base, i) == 86 + i*8 && sub.sharedEntry(sub, i) == 188 + i*8);
             check(boundCall(side, base, i) == i+7 && base.throwingCall(side, i) == i+9);
             check(base.keepAfterGC(0) == token && base.manyReferences(base, token, 0) == token);
             check(nativeCall(base) == Base.class && base.coldCall(0) == 0);
@@ -143,6 +147,7 @@ public class DirectBaselineInstanceTest {
             method(Base.class, "entry", Object.class, int.class, int.class, int.class, int.class,
                    int.class, int.class, int.class, byte.class, char.class, short.class),
             method(Base.class, "privateCall", int.class), method(Child.class, "superCall", int.class),
+            method(Child.class, "sharedEntry", Base.class, int.class),
             method(DirectBaselineInstanceTest.class, "boundCall", Side.class, Base.class, int.class),
             method(Base.class, "throwingCall", Side.class, int.class), method(Base.class, "keepAfterGC", int.class),
             method(Base.class, "manyReferences", Object.class, Object.class, int.class),
@@ -150,6 +155,7 @@ public class DirectBaselineInstanceTest {
             method(DirectBaselineInstanceTest.class, "nativeCall", Object.class)
         };
         for (Method root : roots) await(root, 1);
+        check(sub.sharedEntry(other, 5) == 138 && sub.sharedEntry(sub, 5) == 228);
         check(initializations == 0);
         // Ordinary C1 must replace a direct method with handlers normally.
         Method handler = method(Base.class, "withHandler", int.class);
@@ -227,6 +233,7 @@ public class DirectBaselineInstanceTest {
                 .shouldContain("direct install entry(")
                 .shouldContain("direct install privateCall(I)I")
                 .shouldContain("direct install superCall(I)I")
+                .shouldContain("direct install sharedEntry(")
                 .shouldContain("direct install boundCall(")
                 .shouldContain("direct install throwingCall(")
                 .shouldContain("direct install keepAfterGC(")
