@@ -2308,6 +2308,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "simdutf_index_of") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "simdutf_count_positives") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "simdutf_encode_base64") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "simdutf_decode_base64") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decode_base64_mime") == 0 ||

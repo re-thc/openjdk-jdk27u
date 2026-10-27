@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -361,11 +362,32 @@ public class TestStringCodingTiers {
         }
     }
 
+    /**
+     * C2 calls the library for countPositives from 1024 bytes on, where that is faster than its own
+     * node, which at 64 KiB is by a factor of two: the time with the library must be clearly below
+     * the time with the node. The comparison is repeated, since another process can disturb a run.
+     */
+    private static void c2Replacement() throws Exception {
+        for (int attempt = 0; attempt < 4; attempt++) {
+            long library = nanos(run("c2count", "-Xbatch", "-XX:-TieredCompilation"), "countPositives");
+            long node = nanos(run("c2count", "-Xbatch", "-XX:-TieredCompilation", "-XX:SIMDUTFMinLength=2000000000"),
+                    "countPositives");
+            System.out.println("countPositives in C2: " + library + " ns with the library, " + node + " ns with the node");
+            if (library * 10 < node * 8) {
+                return;
+            }
+        }
+        throw new AssertionError("C2 does not call the library for countPositives");
+    }
+
     public static void main(String[] args) throws Throwable {
         List<String> options = List.of(args);
         exact = options.contains("exact");
         if (options.contains("activation")) {
             activation();
+            if (Platform.isX64()) {
+                c2Replacement();
+            }
         } else {
             differential(options.contains("light"));
         }
@@ -384,7 +406,22 @@ class StringCodingWork {
         byte[] latin1 = new byte[ascii.length];
         byte[] utf16 = new byte[2 * ascii.length];
         long sink = 0;
-        if (mode.equals("interpreter")) {
+        if (mode.equals("c2count")) {
+            // 64 KiB, which stays in the cache, so that the node and the library differ by a factor of two
+            int n = 1 << 16;
+            for (int i = 0; i < 20000; i++) {
+                sink += jla.countPositives(ascii, 0, n);
+            }
+            long best = Long.MAX_VALUE;
+            for (int i = 0; i < 15; i++) {
+                long t = System.nanoTime();
+                for (int j = 0; j < 500; j++) {
+                    sink += jla.countPositives(ascii, 0, n);
+                }
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("countPositives " + best);
+        } else if (mode.equals("interpreter")) {
             // Entry through the wrappers, as the callers do, once per timing: the bytecodes of the
             // loop being replaced run for a million elements in the slow case.
             Class<?> coding = Class.forName("java.lang.StringCoding");

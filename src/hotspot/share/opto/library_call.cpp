@@ -1172,6 +1172,13 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
 }
 
 
+int LibraryCallKit::stub_replacement_minimum(int floor) {
+  if (!SimdUTF::available() || !SimdUTF::replaces_c2_stubs()) {
+    return max_jint;
+  }
+  return (int)(FLAG_IS_DEFAULT(SIMDUTFMinLength) ? MAX2(SIMDUTFMinLength, (intx)floor) : SIMDUTFMinLength);
+}
+
 //------------------------------inline_countPositives------------------------------
 // int java.lang.StringCoding#countPositives0(byte[] ba, int off, int len)
 bool LibraryCallKit::inline_countPositives() {
@@ -1189,8 +1196,37 @@ bool LibraryCallKit::inline_countPositives() {
   }
 
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
-  Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
-  set_result(_gvn.transform(result));
+  const int minimum = stub_replacement_minimum(1024);
+  if (minimum < max_jint) {
+    // The library validates ASCII faster than the stock node beyond the length at which its
+    // call costs less than the difference
+    IdealKit ideal(this);
+    IdealVariable count(ideal);
+    ideal.declarations_done();
+    ideal.if_then(len, BoolTest::ge, intcon(minimum)); {
+      sync_kit(ideal);
+      const Type** fields = TypeTuple::fields(2);
+      fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+      fields[TypeFunc::Parms + 1] = TypeInt::INT;
+      const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+      fields = TypeTuple::fields(1);
+      fields[TypeFunc::Parms] = TypeInt::INT;
+      const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+      Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, SimdUTF::count_positives),
+          "simdutf_count_positives", TypePtr::BOTTOM, ba_start, len);
+      Node* found = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+      ideal.sync_kit(this);
+      ideal.set(count, found);
+    } ideal.else_(); {
+      sync_kit(ideal);
+      ideal.set(count, _gvn.transform(new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len)));
+    } ideal.end_if();
+    final_sync(ideal);
+    set_result(ideal.value(count));
+  } else {
+    Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
+    set_result(_gvn.transform(result));
+  }
   clear_upper_avx();
   return true;
 }
@@ -8477,7 +8513,7 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
 
   const int maximum = 1024 * 1024;
   intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
-      ? MAX2(SIMDUTFMinLength, intx(1024)) : SIMDUTFMinLength;
+      ? MAX2(SIMDUTFMinLength, intx(512)) : SIMDUTFMinLength;
   if (SimdUTF::available() && minimum <= maximum) {
     Node* length = _gvn.transform(new SubINode(len, offset));
     Node* eligible = _gvn.transform(new CmpU3Node(
@@ -8542,8 +8578,8 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
 
   const int maximum = 1024 * 1024;
   intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
-      ? MAX2(SIMDUTFMinLength, intx(1024)) : SIMDUTFMinLength;
-  if (SimdUTF::available() && !SimdUTF::stock_base64_decode_is_faster() && minimum <= maximum) {
+      ? MAX2(SIMDUTFMinLength, intx(2048)) : SIMDUTFMinLength;
+  if (SimdUTF::available() && minimum <= maximum) {
     Node* length = _gvn.transform(new SubINode(len, src_offset));
     Node* size_order = _gvn.transform(new CmpU3Node(
         _gvn.transform(new SubINode(length, intcon((int)minimum))),

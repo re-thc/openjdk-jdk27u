@@ -33,9 +33,9 @@ class SimdUTF : AllStatic {
  public:
   static void initialize();
   static bool available();
-  // Whether the stock Base64 decoding stub is the AVX-512 VBMI kernel, which on the same
-  // hardware decodes faster than the library. C2 then keeps the stub for decoding.
-  static bool stock_base64_decode_is_faster();
+  // Whether C2 calls the library, from a length on, where the platform has a stub or an
+  // instruction sequence for the same operation. Measured on x86, not yet on other platforms.
+  static bool replaces_c2_stubs();
   // The leaf behind a prefix or String coding intrinsic, and its name for runtime calls,
   // or nullptr for any other intrinsic.
   static address leaf_for(vmIntrinsics::ID id, const char** name = nullptr);
