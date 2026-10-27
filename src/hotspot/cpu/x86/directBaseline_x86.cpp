@@ -81,11 +81,12 @@ struct State : ResourceObj {
 };
 
 class BasicSignature : public ResourceObj {
+  Symbol* _symbol;
   GrowableArray<BasicType> _types;
   BasicType _return_type;
   bool _valid;
  public:
-  explicit BasicSignature(Symbol* symbol) : _types(8), _return_type(T_ILLEGAL), _valid(true) {
+  explicit BasicSignature(Symbol* symbol) : _symbol(symbol), _types(8), _return_type(T_ILLEGAL), _valid(true) {
     for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
       BasicType type=ss.type();
       if (ss.at_return_type()) {
@@ -97,6 +98,7 @@ class BasicSignature : public ResourceObj {
       }
     }
   }
+  Symbol* symbol() const { return _symbol; }
   int count() const { return _types.length(); }
   BasicType type_at(int i) const { return _types.at(i); }
   BasicType return_type() const { return _return_type; }
@@ -408,18 +410,19 @@ class Emitter : StackObj {
     _fields[bci]=f; return true;
   }
   bool resolve_call(ciBytecodeStream& bs, Bytecodes::Code bc, int bci) {
-    bool link=false; ciSignature* declared=nullptr;
-    ciMethod* m=bs.get_method(link,&declared);
+    bool link=false;
+    ciMethod* m=bs.get_method(link,nullptr);
     bool is_static=bc==Bytecodes::_invokestatic;
     BasicSignature* sig=_call_signatures[bci];
     if (!link || !m->is_loaded() || m->is_static()!=is_static || m->is_abstract() ||
         m->is_object_initializer() || m->is_method_handle_intrinsic() || m->is_scoped() ||
         strcmp(m->holder()->name()->as_utf8(),"jdk/internal/vm/Continuation")==0 ||
         !m->holder()->is_initialized()) return fail("unresolved/unsupported call");
-    if (declared->count()!=sig->count() || kind(declared->return_type()->basic_type())!=kind(sig->return_type()))
-      return fail("call signature changed");
-    for (int i=0;i<sig->count();i++)
-      if (kind(declared->type_at(i)->basic_type())!=kind(sig->type_at(i))) return fail("call signature changed");
+    // Ordinary linked methods have the declared descriptor. Signature-
+    // polymorphic/appendix forms were rejected above. The Method metadata is
+    // held by CI for this compilation; reading its immutable symbol needs no
+    // parameter-class queries.
+    if (m->get_Method()->signature() != sig->symbol()) return fail("call signature changed");
     if (!is_static) {
       ciKlass* holder=bs.get_declared_method_holder();
       if (!holder->is_loaded() || holder->is_interface() || m->holder()->is_interface() ||
@@ -776,7 +779,7 @@ class DirectCompiler : public AbstractCompiler {
     if (TraceDirectBaseline) {
       ttyLocker ttyl;
       tty->print_cr("direct compile %s %s%s bytes=%d elapsed_ns=" JLONG_FORMAT " cpu_ns=" JLONG_FORMAT " outcome=%s",
-                    target->holder()->name()->as_utf8(), target->name()->as_utf8(), target->signature()->as_symbol()->as_utf8(),
+                    target->holder()->name()->as_utf8(), target->name()->as_utf8(), prepared_data->_signature->symbol()->as_C_string(),
                     target->code_size(), os::javaTimeNanos() - begin, os::current_thread_cpu_time() - cpu,
                     env->failing() ? env->failure_reason() : "installed");
     }

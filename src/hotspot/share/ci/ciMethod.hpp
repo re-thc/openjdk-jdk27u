@@ -116,6 +116,7 @@ class ciMethod : public ciMetadata {
   void print_impl(outputStream* st);
 
   void load_code();
+  void load_signature();
 
   bool ensure_method_data(const methodHandle& h_m);
 
@@ -144,13 +145,16 @@ class ciMethod : public ciMetadata {
   ciMethodData* method_data_or_null();
 
   // Signature information.
-  ciSignature* signature() const                 { return _signature; }
-  ciType*      return_type() const               { return _signature->return_type(); }
-  int          arg_size_no_receiver() const      { return _signature->size(); }
+  ciSignature* signature() const {
+    if (_signature == nullptr) const_cast<ciMethod*>(this)->load_signature();
+    return _signature;
+  }
+  ciType*      return_type() const               { return signature()->return_type(); }
+  int          arg_size_no_receiver() const      { return signature()->size(); }
   // Can only be used on loaded ciMethods
   int          arg_size() const                  {
     check_is_loaded();
-    return _signature->size() + (_flags.is_static() ? 0 : 1);
+    return signature()->size() + (_flags.is_static() ? 0 : 1);
   }
   // Report the number of elements on stack when invoking the current method.
   // If the method is loaded, arg_size() gives precise information about the
@@ -164,7 +168,7 @@ class ciMethod : public ciMetadata {
     if (is_loaded()) {
       return arg_size();
     } else {
-      int arg_size = _signature->size();
+      int arg_size = signature()->size();
       if (code != Bytecodes::_invokestatic &&
           code != Bytecodes::_invokedynamic) {
         arg_size++;

@@ -137,12 +137,13 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   if (_can_be_statically_bound && h_m->is_abstract())
     _can_be_statically_bound = false;
 
-  // generating _signature may allow GC and therefore move m.
-  // These fields are always filled in.
   _name = env->get_symbol(h_m->name());
-  ciSymbol* sig_symbol = env->get_symbol(h_m->signature());
-  constantPoolHandle cpool(Thread::current(), h_m->constants());
-  _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
+  _signature = nullptr;
+  // Direct emission uses basic descriptors. Preserve the real CI signature
+  // on demand, including its accessing-loader semantics, for other clients.
+  if (env->task() == nullptr || !env->task()->is_direct_baseline()) {
+    load_signature();
+  }
   _method_data = nullptr;
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || CompilerConfig::is_c1_profiling()) {
@@ -193,6 +194,17 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _signature = new (CURRENT_ENV->arena()) ciSignature(accessor, constantPoolHandle(), signature);
 }
 
+
+void ciMethod::load_signature() {
+  GUARDED_VM_ENTRY(
+    assert(_signature == nullptr && is_loaded(), "loaded method needs a signature");
+    ciEnv* env = CURRENT_ENV;
+    methodHandle method(CompilerThread::current(), get_Method());
+    ciSymbol* symbol = env->get_symbol(method->signature());
+    constantPoolHandle cpool(CompilerThread::current(), method->constants());
+    _signature = new (env->arena()) ciSignature(_holder, cpool, symbol);
+  )
+}
 
 // ------------------------------------------------------------------
 // ciMethod::load_code

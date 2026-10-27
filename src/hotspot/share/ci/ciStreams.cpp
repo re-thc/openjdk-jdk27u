@@ -371,6 +371,16 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_s
   ciMethod* m = env->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
   will_link = m->is_loaded();
 
+  if (declared_signature_result == nullptr) {
+    // A basic-descriptor client accepts only ordinary Java call shapes.
+    // Link/access/loader checks above remain unchanged. Do not manufacture
+    // concrete CI parameter classes for this caller.
+    will_link = will_link &&
+        !ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index(), cur_bc()) &&
+        !ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index(), cur_bc());
+    return m;
+  }
+
   // Use the signature stored in the CP cache to create a signature
   // with correct types (in respect to class loaders).
   //
