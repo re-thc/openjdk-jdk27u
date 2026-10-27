@@ -120,12 +120,13 @@ class Prepared : public ResourceObj {
   Method* _method;
   const char* _failure;
   State** _states;
+  State** _frames;
   BasicType* _field_types;
   BasicSignature* _signature;
   BasicSignature** _call_signatures;
   int _nl, _ns, _size, _out_words;
   explicit Prepared(Method* method) : _method(method), _failure(nullptr),
-    _states(nullptr), _field_types(nullptr), _signature(nullptr), _call_signatures(nullptr),
+    _states(nullptr), _frames(nullptr), _field_types(nullptr), _signature(nullptr), _call_signatures(nullptr),
     _nl(method->max_locals()), _ns(method->max_stack()), _size(method->code_size()), _out_words(2) {}
   bool fail(const char* reason) { if (_failure==nullptr) _failure=reason; return false; }
   State* copy(State* s) {
@@ -136,6 +137,17 @@ class Prepared : public ResourceObj {
   }
   bool merge(int bci, State* s) {
     if (bci < 0 || bci >= _size) return fail("invalid branch target");
+    State* frame = _frames[bci];
+    if (frame != nullptr) {
+      if (frame->sp != s->sp) return fail("verified stack height");
+      for (int i=0;i<s->sp;i++) if (frame->stack[i]!=s->stack[i]) return fail("verified stack type");
+      // TOP locals are verifier-dead on entry to this block. They need no
+      // scope value or oop root, even if a predecessor used the slot.
+      for (int i=0;i<_nl;i++)
+        if (frame->locals[i]!=T_ILLEGAL && frame->locals[i]!=s->locals[i]) return fail("verified local type");
+      _states[bci]=frame;
+      return true;
+    }
     // Every instruction mutates a fresh copy. Published successor states are
     // immutable, including a conditional's shared branch/fallthrough result.
     if (_states[bci] == nullptr) { _states[bci] = s; return true; }
@@ -162,6 +174,60 @@ class Prepared : public ResourceObj {
     if (bc >= Bytecodes::_astore_0 && bc <= Bytecodes::_astore_3) return bc - Bytecodes::_astore_0;
     return bs.get_index();
   }
+  bool read_frames(State* initial, int initial_locals) {
+    Array<u1>* data=_method->stackmap_data();
+    if (data==nullptr) return true; // Old class files keep exact conservative merges.
+    int pos=0; bool valid=true;
+    auto u1 = [&]() -> int {
+      if (pos>=data->length()) { valid=false; return 0; }
+      return data->at(pos++);
+    };
+    auto u2 = [&]() -> int { int high=u1(); return (high<<8)|u1(); };
+    auto type = [&]() -> BasicType {
+      switch (u1()) {
+        case 0: return T_ILLEGAL; // TOP
+        case 1: return T_INT;
+        case 5: case 6: return T_OBJECT; // null / uninitialized this
+        case 7: case 8: u2(); return T_OBJECT; // class / uninitialized new
+        default: valid=false; return T_ILLEGAL; // category-2 / FP not yet supported
+      }
+    };
+    int count=u2(), previous=-1, locals=initial_locals;
+    State* current=copy(initial);
+    for (int i=0;i<count && valid;i++) {
+      int tag=u1(), delta=0;
+      current->sp=0;
+      if (tag<=63) delta=tag;
+      else if (tag<=127) { delta=tag-64; BasicType t=type(); if (!push(current,t)) return false; }
+      else if (tag==247) { delta=u2(); BasicType t=type(); if (!push(current,t)) return false; }
+      else if (tag>=248 && tag<=250) {
+        delta=u2(); locals-=251-tag;
+        if (locals<0) return fail("verified local chop");
+        for (int j=locals;j<_nl;j++) current->locals[j]=T_ILLEGAL;
+      } else if (tag==251) delta=u2();
+      else if (tag>=252 && tag<=254) {
+        delta=u2();
+        for (int j=0;j<tag-251;j++) {
+          BasicType t=type();
+          if (locals>=_nl) return fail("verified local append");
+          current->locals[locals++]=t;
+        }
+      } else if (tag==255) {
+        delta=u2(); locals=u2();
+        if (locals>_nl) return fail("verified locals size");
+        for (int j=0;j<locals;j++) current->locals[j]=type();
+        for (int j=locals;j<_nl;j++) current->locals[j]=T_ILLEGAL;
+        int stack=u2();
+        if (stack>_ns) return fail("verified stack size");
+        for (int j=0;j<stack;j++) { BasicType t=type(); if (!push(current,t)) return false; }
+      } else return fail("verified frame tag");
+      int bci=previous+delta+1;
+      if (bci<0 || bci>=_size || _frames[bci]!=nullptr) return fail("verified frame offset");
+      _frames[bci]=copy(current);previous=bci;
+    }
+    if (!valid || pos!=data->length()) return fail("unsupported/invalid verified frame");
+    return true;
+  }
   bool prepass(const methodHandle& handle) {
     if (_method->is_native() || _method->is_synchronized() ||
         _method->has_exception_handler() || _method->has_monitor_bytecodes() ||
@@ -172,21 +238,23 @@ class Prepared : public ResourceObj {
       return fail("method shape");
     }
     _states = NEW_RESOURCE_ARRAY(State*, _size);
+    _frames = NEW_RESOURCE_ARRAY(State*, _size);
     _signature = new BasicSignature(_method->signature());
     if (!_signature->valid()) return fail("method shape");
     _field_types = NEW_RESOURCE_ARRAY(BasicType, _size);
     _call_signatures = NEW_RESOURCE_ARRAY(BasicSignature*, _size);
-    for (int i = 0; i < _size; i++) _states[i] = nullptr;
+    for (int i = 0; i < _size; i++) { _states[i] = nullptr; _frames[i] = nullptr; }
     State* start = new State(_nl, _ns);
     BasicSignature* sig = _signature;
     int nargs = sig->count() + (_method->is_static() ? 0 : 1);
     for (int i = 0; i < nargs; i++) start->locals[i] = kind(argument_type(sig, _method->is_static(), i));
-    _states[0] = start;
+    if (!read_frames(start,nargs) || !merge(0,start)) return false;
     BytecodeStream bs(handle);
     Bytecodes::Code bc;
     while ((bc = bs.next()) != Bytecodes::_illegal) {
       int bci = bs.bci();
       if (_states[bci] == nullptr) return fail("unreachable bytecode");
+      if (!merge(bci,_states[bci])) return false;
       State* s = copy(_states[bci]);
       bool fall = true;
       if ((bc >= Bytecodes::_iload_0 && bc <= Bytecodes::_iload_3) || bc == Bytecodes::_iload ||
