@@ -5,10 +5,11 @@ comparison. Earlier low-coverage timings remain diagnostic observations about
 the partial prototype. They are not a verdict on the complete proposed tier.
 No new application timing comparison has been run after this requirement.
 
-The current local implementation, `0c9ae524ff5`, adds real checkcast/instanceof
-semantics and ordinary virtual/interface calls through HotSpot's normal inline
-cache path. All seven focused tests pass on release and fastdebug. Coverage
-increased substantially, but remains below 80%.
+The current local implementation, `7f639b1af47`, includes casts/instanceof,
+ordinary virtual/interface calls, ordinary constructors, and object/array
+allocation. All ten focused tests pass on release and fastdebug. The constructor/allocation census raises own-population method coverage to
+61.45% startup / 60.55% warm, still below 80%. Test qualification
+is not a coverage or performance claim.
 
 ## Fixed scope and denominators
 
@@ -65,6 +66,37 @@ methods, the extension reaches 44.08% startup / 38.00% warm. It credits
 remain uncredited rather than being removed. Both presentations remain below
 the gate. See [all counts](direct-baseline-data/coverage80-census.tsv) and the
 [frozen comparison](direct-baseline-data/coverage80-frozen-reference.tsv).
+
+The constructor/allocation batch (`7f639b1af47`) reports these additional
+coverage-only outcomes, with unchanged thresholds and policy:
+
+| Metric | Startup | Warm |
+|---|---:|---:|
+| Own eligible population | 3048 | 5693 |
+| Eligible methods installed / used | 1873 / 1696 | 3447 / 3384 |
+| Own-population method coverage | 61.45% | 60.55% |
+| Early Java entries / actual direct entries | 724496 / 351929 | 2769327 / 1605453 |
+| Execution-entry coverage | 48.58% | 57.97% |
+| Frozen reference methods credited | 1780 / 3056 | 3206 / 5697 |
+| Frozen method coverage | 58.25% | 56.28% |
+
+All 2,956/5,438 matchable named reference identities match in the new capture;
+100/259 hidden or ambiguous identities remain uncredited in the complete frozen
+divisor. The 80% method gate still requires another 665/1,352 credited reference
+methods. All counter identities balance and no ordinary admission is missing.
+These are entry counts, not workload CPU savings or a throughput verdict.
+Temporary census source was restored and the production release library rebuilt.
+
+The next batch is grounded in remaining first failures. Among 2,246 uninstalled
+warm eligible methods, 339 stop at reference constants, 520 at an unsupported
+opcode, 248 at backward branches and 177 at conservative local merges. Of the
+518 unsupported-opcode methods whose original class bytes are available, the
+first missing operation is athrow for 154, invokedynamic for 112, aastore for 49,
+forward switches for 82, dup_x1 for 38 and bastore for 22. Two unavailable class
+identities remain explicitly unclassified. These are first-reason method counts,
+not disjoint promises of successful installations: a method may contain more
+than one missing operation or encounter later linking restrictions. See the
+[opcode ledger](direct-baseline-data/coverage80-after-allocation-opcodes.tsv).
 
 The first 32 entries and short-lived methods constrain execution coverage.
 Perfect service after entry 32 could cover at most 81.37% of the reference
@@ -127,7 +159,7 @@ precise call maps. Non-statically-bound calls use the existing virtual-call
 relocation, IC and resolve stub. Abstract declarations are valid dynamic targets;
 actual method selection and errors remain with the normal runtime. Static
 initialization checks apply to static calls; instance/interface invocation does
-not initialize a declaring interface. Interface special calls, constructors,
+not initialize a declaring interface. Interface special calls and
 appendix/signature-polymorphic forms and scoped/Continuation restrictions remain
 explicit fallbacks. No C1 IR, inlining or register-allocation framework is used.
 
@@ -151,15 +183,65 @@ missing admission records. It pins Symbol strings for offline identity, not
 classes. Instrumented elapsed times are not performance results. The census
 patch/header is private and removed after each capture, with production rebuilt.
 
+## Constructor/allocation batch and independent review
+
+`423448c6ac4` adds ordinary constructor entry and invokespecial chaining. The
+normal linked Java call path retains receiver identity, GC roots, exceptions
+and subsequent C1/C2 replacement. Constructor returns retain the normal release
+ordering for final fields. Object.<init> remains outside direct compilation:
+its existing intrinsic/interpreter implementation performs finalizer registration.
+The constructor fixture passed on Serial/G1 in release and fastdebug, including
+GC in a mixed-tier callee and exceptions after visible constructor side effects.
+
+`7f639b1af47` adds new/newarray/anewarray using the existing Runtime1 allocation
+stubs. It has no allocation IR or custom TLAB framework. Allocation metadata
+requires resolved/access-checked classes; instance new also requires an
+initialized class. Unresolved sites and cold instance initialization retain
+whole-method fallback. Reference-array creation does not initialize its
+component. Primitive/reference array allocation errors use existing exception
+forwarding and the allocation BCI.
+
+At the allocation return PC, expressions describe old_sp for new and old_sp-1
+for arrays, with reexecute=false and return_oop=true. Maps retain every existing
+canonical oop (including uninitialized aliases), omit the unwritten result, and
+rax is spilled immediately after the call. The existing deoptimization machinery
+therefore continues after allocation and preserves the returned oop through GC.
+The independent read-only source review found no blocking issue in this state,
+the stub ABI, constructor ordering, finalizer registration or exception paths.
+It checked the actual patch and test fixtures against Runtime1/deoptimization.
+
+All ten focused tests pass on release and fastdebug. The new allocation fixture
+covers all primitive array factories, reference/array components without class
+initialization, mixed-tier constructor replacement, GC across aliases, throwing
+constructors, negative lengths, VM array-limit OOME and cold-instance fallback.
+Fastdebug forces reference-array return deoptimization with a live oop beneath
+the allocation operands, checks saved-oop trace evidence and bounds allocated
+bytes to detect duplicate allocation. Artificial return deoptimization of the
+distinct instance-new shape and primitive arrays remains a test limitation.
+
+Review also identified a saved class-resolution-error corner: CI may find a
+subsequently defined class by name even when the original CP entry retains an
+error. The direct cast path now rejects only the cached-error tag, preserving
+normal unresolved-but-loaded cast behavior. A custom-loader regression fixture
+first records NoClassDefFoundError, then defines the target class in that loader,
+and verifies repeated cast/instanceof still throw and never install directly.
+
+The initial release allocation run failed one test assertion, not VM semantics:
+WhiteBox exposes develop flags in product builds, and deoptimizing a live frame
+does not make its installed nmethod disappear. The corrected fixture uses the
+debug-build property and allocation-return trace evidence instead of compilation
+level. That failed run is preserved; the corrected ten-test suites pass on both
+builds. The census remains separate and its instrumented time is not performance.
+
 ## Shortest coherent path toward the gate
 
 1. **Completed first batch:** casts/instanceof and real virtual/interface ICs.
    This captures common erased-generic casts and polymorphic collection/compiler
    calls, rather than accumulating rare integer opcodes. Reference method
    coverage is now 44.08%/38.00%, still well below the target.
-2. **Constructors and allocation:** implement ordinary constructor entry/calls,
-   object and primitive/reference array creation using existing Runtime1/GC
-   contracts, and resolved object constants. Retain normal access, initialization,
+2. **Constructors and allocation:** ordinary constructor entry/calls and
+   object and primitive/reference array creation are implemented and qualified
+   using existing Runtime1/GC contracts. Resolved object constants remain next. Retain normal access, initialization,
    allocation exceptions, barriers and final-field publication. Constructors
    account for 1,021 warm reference methods, so keeping all of them excluded
    cannot be the route to 80%. Object.<init> finalizer semantics remain special.
