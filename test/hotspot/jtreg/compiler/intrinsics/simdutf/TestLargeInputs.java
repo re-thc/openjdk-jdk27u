@@ -30,6 +30,7 @@
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestLargeInputs
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestLargeInputs
  * @run main/othervm -Xint TestLargeInputs light
+ * @run main/othervm --add-opens java.base/java.util=ALL-UNNAMED TestLargeInputs blocks
  */
 
 import java.io.ByteArrayOutputStream;
@@ -229,7 +230,36 @@ public class TestLargeInputs {
         }
     }
 
-    public static void main(String[] args) {
+    /** The end of a block of Base64 input must not overflow for the last blocks of the largest arrays. */
+    private static void blockEnds() throws Exception {
+        var method = Base64.class.getDeclaredMethod("blockEnd", int.class, int.class);
+        method.setAccessible(true);
+        int block = 3 << 18;
+        int max = Integer.MAX_VALUE - 2;                     // the largest length that a byte array can have
+        for (int sl : new int[]{0, 5, block, block + 1, 2 * block, Integer.MAX_VALUE - 7, max}) {
+            long[] starts = {0, 1, block - 1, block, block + 1, 2L * block, sl - 2L * block - 1, sl - 2L * block,
+                             sl - block - 1, sl - block, sl - block + 1, sl - 4, sl - 1, sl,
+                             // the block starts of an array of 2^31 - 4 bytes that is decoded from its start
+                             2146959360L, 2146959360L - block};
+            for (long from : starts) {
+                if (from < 0 || from > sl) continue;
+                int sp = (int) from;
+                int got = (int) method.invoke(null, sp, sl);
+                int want = (int) Math.min((long) sl, (long) sp + block);
+                if (got != want) {
+                    throw new AssertionError("blockEnd(" + sp + ", " + sl + ") = " + got + ", expected " + want);
+                }
+                checks++;
+            }
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals("blocks")) {
+            blockEnds();
+            System.out.println("passed " + checks + " comparisons");
+            return;
+        }
         light = args.length > 0;
         Random random = new Random(0x4c1);
         // More than one call of the intrinsics takes, and a few lengths around its limits

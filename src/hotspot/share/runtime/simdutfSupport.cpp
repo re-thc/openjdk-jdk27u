@@ -316,9 +316,13 @@ JRT_LEAF(jlong, SimdUTF::encode_utf32_prefix(const jbyte* src, jint length, jbyt
   return pack(chunk, static_cast<jint>(result.count));
 JRT_END
 
+#ifdef VM_LITTLE_ENDIAN
 namespace {
-// The units are swapped in blocks of this many, in a buffer on the stack.
+// The units are swapped in blocks of up to this many, in a buffer on the stack.
 const jint SwapBlock = 512;
+// The first block is shorter, so that input that is malformed near its start is not swapped far
+// beyond it; each block that converts completely doubles the next one.
+const jint FirstSwapBlock = 32;
 
 // Copies n 32-bit units from src, which may be at any address, into dst with their bytes swapped.
 void swap_utf32(const jbyte* src, char32_t* dst, jint n) {
@@ -329,6 +333,7 @@ void swap_utf32(const jbyte* src, char32_t* dst, jint n) {
   }
 }
 }
+#endif
 
 // Big-endian UTF-32 to UTF-16, as decode_utf32_prefix, for hosts that are little-endian: the
 // library converts only the order of the host, so each block of units is swapped first. The
@@ -343,8 +348,9 @@ JRT_LEAF(jlong, SimdUTF::decode_utf32be_prefix(const jbyte* src, jint length, jb
   char32_t block[SwapBlock];
   jint consumed = 0;
   jint produced = 0;
+  jint next = FirstSwapBlock;
   for (;;) {
-    jint chunk = MIN3(length - consumed, (capacity - produced) / 2, SwapBlock);
+    jint chunk = MIN3(length - consumed, (capacity - produced) / 2, next);
     if (chunk < ConversionTail) {
       break;
     }
@@ -367,6 +373,7 @@ JRT_LEAF(jlong, SimdUTF::decode_utf32be_prefix(const jbyte* src, jint length, jb
     }
     consumed += chunk;
     produced += static_cast<jint>(result.count);
+    next = MIN2(2 * next, SwapBlock);
   }
   return pack(consumed, produced);
 #else
@@ -677,7 +684,9 @@ JRT_END
 // Latin-1 bytes to UTF-8. Every byte converts and yields one or two bytes. The library's
 // output-bounded conversion is several times slower than the unbounded one, so the chunk
 // is sized first from the input, which is cheap, and only a chunk that the output cannot
-// hold goes through the bounded one.
+// hold goes through the bounded one. Unlike the other prefix leaves this one relies on the
+// input not changing between the two passes, which holds for the one thing it is given, the
+// storage of a String.
 JRT_LEAF(jlong, SimdUTF::encode_latin1_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
   assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
   if (length < ConversionTail) {

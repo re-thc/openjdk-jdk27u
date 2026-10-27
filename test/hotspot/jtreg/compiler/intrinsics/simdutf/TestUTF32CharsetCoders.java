@@ -132,10 +132,11 @@ public class TestUTF32CharsetCoders {
     }
 
     public static void main(String[] args) {
+        boolean light = args.length > 0;
         Random random = new Random(0x32);
         int[] counts = {0, 1, 31, 32, 33, 64, 100, 255, 1000, 2049};
         // Both byte orders take the bulk step, the detecting charset after its mark
-        String[] names = {"UTF-32LE", "X-UTF-32LE-BOM", "UTF-32", "UTF-32BE"};
+        String[] names = {"UTF-32LE", "X-UTF-32LE-BOM", "UTF-32", "UTF-32BE", "X-UTF-32BE-BOM"};
         for (String name : names) {
             Charset charset = Charset.forName(name);
             boolean little = name.contains("LE");
@@ -164,30 +165,45 @@ public class TestUTF32CharsetCoders {
                 }
             }
         }
-        // Single-class text, and a range longer than one bulk call
+        // Single-class text, and a range longer than one bulk call, in both orders
         Charset le = Charset.forName("UTF-32LE");
-        for (String unit : new String[]{"a", "€", "😀"}) {
-            String text = unit.repeat(3000);
-            byte[] bytes = text.getBytes(le);
-            checkDecode(le, random, bytes);
-            checkEncode(le, random, text.toCharArray());
-        }
-        String big = "a€😀".repeat((1 << 20) / 3 + 5);
-        byte[] bytes = big.getBytes(le);
-        String expected = big.length() + ":" + big + "|";
-        for (var dst : CHAR_DESTINATIONS) {
-            if (!expected.equals(CoderTranscript.decode(le, bytes, CoderTranscript.Kind.DIRECT, dst, bytes.length, big.length() + 4))) {
-                throw new AssertionError("large decode " + dst);
+        Charset be = Charset.forName("UTF-32BE");
+        for (Charset order : new Charset[]{le, be}) {
+            for (String unit : new String[]{"a", "€", "😀"}) {
+                String text = unit.repeat(3000);
+                byte[] bytes = text.getBytes(order);
+                checkDecode(order, random, bytes);
+                checkEncode(order, random, text.toCharArray());
             }
-        }
-        StringBuilder hex = new StringBuilder();
-        for (byte b : bytes) {
-            hex.append(Character.forDigit((b >> 4) & 15, 16)).append(Character.forDigit(b & 15, 16));
-        }
-        for (var dst : BYTE_DESTINATIONS) {
-            if (!(hex + "|").equals(CoderTranscript.encode(le, big.toCharArray(), CoderTranscript.Kind.DIRECT, dst,
-                    big.length(), bytes.length + 8))) {
-                throw new AssertionError("large encode " + dst);
+            // A pair or a supplementary code point at, and either side of, the blocks of 512 and
+            // 1024 units in which the big-endian step swaps and converts
+            int[] edges = light ? new int[]{31, 511, 1023}
+                                : new int[]{29, 30, 31, 32, 33, 62, 63, 64, 65, 126, 127, 128, 129, 254, 255, 256, 257,
+                                            510, 511, 512, 513, 1022, 1023, 1024, 1025, 1534, 1535};
+            for (int at : edges) {
+                char[] chars = "a".repeat(1600).toCharArray();
+                chars[at] = '\ud83d';
+                chars[at + 1] = '\ude00';
+                checkEncode(order, random, chars);
+                checkDecode(order, random, new String(chars).getBytes(order));
+            }
+            String big = "a€😀".repeat((1 << 20) / 3 + 5);
+            byte[] bytes = big.getBytes(order);
+            String expected = big.length() + ":" + big + "|";
+            for (var dst : CHAR_DESTINATIONS) {
+                if (!expected.equals(CoderTranscript.decode(order, bytes, CoderTranscript.Kind.DIRECT, dst, bytes.length, big.length() + 4))) {
+                    throw new AssertionError("large decode " + order + " " + dst);
+                }
+            }
+            StringBuilder hex = new StringBuilder();
+            for (byte b : bytes) {
+                hex.append(Character.forDigit((b >> 4) & 15, 16)).append(Character.forDigit(b & 15, 16));
+            }
+            for (var dst : BYTE_DESTINATIONS) {
+                if (!(hex + "|").equals(CoderTranscript.encode(order, big.toCharArray(), CoderTranscript.Kind.DIRECT, dst,
+                        big.length(), bytes.length + 8))) {
+                    throw new AssertionError("large encode " + order + " " + dst);
+                }
             }
         }
         System.out.println("passed " + checks + " transcript comparisons");

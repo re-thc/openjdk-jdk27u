@@ -92,6 +92,12 @@ public final class Base64 {
     // and of 4 for decoding. Longer inputs are converted in several blocks.
     private static final int BLOCK_MAX = 3 << 18;
 
+    // The end of the block of src[sp, sl) that the block intrinsics are given: at most BLOCK_MAX
+    // bytes, which for the last blocks of an array of nearly 2^31 bytes must not overflow.
+    private static int blockEnd(int sp, int sl) {
+        return sl - sp > BLOCK_MAX ? sp + BLOCK_MAX : sl;
+    }
+
     // The longest MIME input that decode(byte[]) sizes by an upper bound and trims, instead of
     // scanning it for the exact length first.
     private static final int MIME_BOUND_MAX = 1 << 20;
@@ -836,7 +842,7 @@ public final class Base64 {
 
             while (sp < sl) {
                 if (shiftto == 18 && sp < sl - 4) {       // fast path
-                    int dl = decodeBlock(src, sp, Math.min(sl, sp + BLOCK_MAX), dst, dp, isURL, isMIME);
+                    int dl = decodeBlock(src, sp, blockEnd(sp, sl), dst, dp, isURL, isMIME);
                     /*
                      * Calculate how many characters were processed by how many
                      * bytes of data were returned.

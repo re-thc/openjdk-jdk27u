@@ -35,7 +35,13 @@
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 TestSingleByteCharsetCoders
  */
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
@@ -138,6 +144,100 @@ public class TestSingleByteCharsetCoders {
         return data;
     }
 
+    /**
+     * Whole conversions with replacement, compared with what plain loops written here give, so
+     * that the helpers that the array loops share with the new steps are not the only reference.
+     * The sizes and offenders surround the 2048-char blocks of the ASCII encoding step.
+     */
+    private static void checkReference(Random random, boolean light) {
+        int[] sizes = light ? new int[]{33, 2049, 4100} : new int[]{31, 32, 33, 2047, 2048, 2049, 4095, 4096, 4097, 5000};
+        for (int size : sizes) {
+            for (int bad : new int[]{-1, 0, 1, 15, 16, 31, 2046, 2047, 2048, 2049, 4095, 4096, size - 1}) {
+                if (bad >= size) continue;
+                // Decoding
+                byte[] bytes = new byte[size];
+                for (int i = 0; i < size; i++) bytes[i] = (byte) (' ' + random.nextInt(95));
+                if (bad >= 0) {
+                    bytes[bad] = (byte) (0x80 + random.nextInt(0x80));
+                    if (random.nextBoolean() && bad + 1 < size) bytes[size - 1] = (byte) 0xe9;
+                }
+                for (Charset charset : new Charset[]{StandardCharsets.ISO_8859_1, StandardCharsets.US_ASCII}) {
+                    boolean ascii = charset == StandardCharsets.US_ASCII;
+                    char[] expected = new char[size];
+                    for (int i = 0; i < size; i++) {
+                        expected[i] = bytes[i] >= 0 || !ascii ? (char) (bytes[i] & 0xff) : '\ufffd';
+                    }
+                    for (int k = 0; k < 3; k++) {
+                        ByteBuffer in = switch (k) {
+                            case 0 -> ByteBuffer.allocateDirect(size).put(bytes).flip();
+                            case 1 -> ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+                            default -> ByteBuffer.allocateDirect(size + 1).position(1).slice().put(bytes).flip();
+                        };
+                        for (CharBuffer out : new CharBuffer[]{CharBuffer.allocate(size),
+                                ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer()}) {
+                            CharsetDecoder decoder = charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)
+                                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                            if (!decoder.decode(in.duplicate(), out, true).isUnderflow()) throw new AssertionError("decode");
+                            out.flip();
+                            if (!new String(expected).contentEquals(out)) {
+                                throw new AssertionError(charset + " reference decode size=" + size + " bad=" + bad + " source " + k);
+                            }
+                            checks++;
+                        }
+                    }
+                }
+                // Encoding: one replacement for each char that does not map, and for a whole pair
+                for (Charset charset : new Charset[]{StandardCharsets.ISO_8859_1, StandardCharsets.US_ASCII}) {
+                    int limit = charset == StandardCharsets.US_ASCII ? 0x80 : 0x100;
+                    char[] chars = new char[size];
+                    for (int i = 0; i < size; i++) chars[i] = (char) (' ' + random.nextInt(95));
+                    if (bad >= 0) {
+                        char[] offenders = {(char) limit, '\u20ac', '\ud800', '\udc00', '\u00e9', '\uffff'};
+                        chars[bad] = offenders[random.nextInt(offenders.length)];
+                        if (bad + 1 < size && random.nextBoolean()) {
+                            chars[bad] = '\ud83d';
+                            chars[bad + 1] = '\ude00';
+                        }
+                        if (random.nextBoolean()) chars[size - 1] = '\ud83d';
+                    }
+                    byte[] expected = new byte[size];
+                    int n = 0;
+                    for (int i = 0; i < size; i++) {
+                        char c = chars[i];
+                        if (c < limit) {
+                            expected[n++] = (byte) c;
+                        } else {
+                            expected[n++] = '?';
+                            if (Character.isHighSurrogate(c) && i + 1 < size && Character.isLowSurrogate(chars[i + 1])) i++;
+                        }
+                    }
+                    for (int k = 0; k < 4; k++) {
+                        CharBuffer in = switch (k) {
+                            case 0 -> ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer().put(chars).flip();
+                            case 1 -> CharBuffer.wrap(chars).asReadOnlyBuffer();
+                            case 2 -> CharBuffer.wrap(new String(chars));
+                            default -> CharBuffer.wrap(chars);
+                        };
+                        for (ByteBuffer out : new ByteBuffer[]{ByteBuffer.allocate(size), ByteBuffer.allocateDirect(size)}) {
+                            CharsetEncoder encoder = charset.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
+                                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+                            var result = encoder.encode(in.duplicate(), out, true);
+                            if (!result.isUnderflow()) throw new AssertionError("encode " + result);
+                            out.flip();
+                            byte[] actual = new byte[out.remaining()];
+                            out.get(actual);
+                            if (!Arrays.equals(Arrays.copyOf(expected, n), actual)) {
+                                throw new AssertionError(charset + " reference encode size=" + size + " bad=" + bad + " source " + k
+                                        + " first difference at " + Arrays.mismatch(Arrays.copyOf(expected, n), actual));
+                            }
+                            checks++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) {
         boolean light = args.length > 0;
         Random random = new Random(0x8859);
@@ -201,6 +301,7 @@ public class TestSingleByteCharsetCoders {
                 }
             }
         }
-        System.out.println("passed " + checks + " transcript comparisons");
+        checkReference(random, light);
+        System.out.println("passed " + checks + " comparisons");
     }
 }

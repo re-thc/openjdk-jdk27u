@@ -37,6 +37,7 @@ import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,20 +95,61 @@ public class TestConcurrentModification {
         });
     }
 
-    private static void utf32Decoder() throws Exception {
-        ByteBuffer shared = ByteBuffer.allocate(4 * N).order(ByteOrder.LITTLE_ENDIAN);
+    private static void utf32Decoder(String name, ByteOrder order) throws Exception {
+        ByteBuffer shared = ByteBuffer.allocate(4 * N).order(order);
         for (int i = 0; i < N; i++) shared.putInt(4 * i, 'a');
         CharBuffer out = CharBuffer.allocate(N);
-        Charset utf32le = Charset.forName("UTF-32LE");
+        Charset utf32 = Charset.forName(name);
         race(() -> {
             for (int i = N - 2; i >= 0; i--) shared.putInt(4 * i, 0x1f600);
             for (int i = 0; i < N - 1; i++) shared.putInt(4 * i, 'a');
         }, () -> {
-            CharsetDecoder decoder = utf32le.newDecoder().onMalformedInput(CodingErrorAction.REPLACE);
-            ByteBuffer in = shared.duplicate().order(ByteOrder.LITTLE_ENDIAN);
+            CharsetDecoder decoder = utf32.newDecoder().onMalformedInput(CodingErrorAction.REPLACE);
+            ByteBuffer in = shared.duplicate().order(order);
             out.clear();
             decoder.decode(in, out, true);
             return out.position() <= N && in.position() <= 4 * N;
+        });
+    }
+
+    /**
+     * Single-byte charsets over a buffer in which the bytes that the decoder checks are changed
+     * before it converts them: whatever the result, it stays inside both buffers.
+     */
+    private static void singleByteDecoders() throws Exception {
+        ByteBuffer shared = ByteBuffer.allocateDirect(N);
+        for (int i = 0; i < N; i++) shared.put(i, (byte) 'a');
+        CharBuffer out = CharBuffer.allocate(N);
+        race(() -> {
+            for (int i = N - 2; i >= 0; i--) shared.put(i, (byte) 0xe9);
+            for (int i = 0; i < N - 1; i++) shared.put(i, (byte) 'a');
+        }, () -> {
+            for (Charset charset : new Charset[]{StandardCharsets.US_ASCII, StandardCharsets.ISO_8859_1}) {
+                CharsetDecoder decoder = charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE);
+                ByteBuffer in = shared.duplicate();
+                out.clear();
+                decoder.decode(in, out, true);
+                if (out.position() > N || in.position() > N) return false;
+            }
+            return true;
+        });
+    }
+
+    /** Chars changed between ASCII and not while the encoder checks and then converts them. */
+    private static void asciiEncoder() throws Exception {
+        char[] shared = new char[N];
+        java.util.Arrays.fill(shared, 'a');
+        ByteBuffer out = ByteBuffer.allocateDirect(N);
+        race(() -> {
+            for (int i = N - 2; i >= 0; i--) shared[i] = '\u20ac';
+            for (int i = 0; i < N - 1; i++) shared[i] = 'a';
+        }, () -> {
+            CharsetEncoder encoder = StandardCharsets.US_ASCII.newEncoder().onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            CharBuffer in = CharBuffer.wrap(shared).asReadOnlyBuffer();
+            out.clear();
+            encoder.encode(in, out, true);
+            return out.position() <= N && in.position() <= N;
         });
     }
 
@@ -134,7 +176,10 @@ public class TestConcurrentModification {
         budgetNanos = (args.length > 0 ? 1 : 2) * 1_000_000_000L;
         utf8Decoder(false);
         utf8Decoder(true);
-        utf32Decoder();
+        utf32Decoder("UTF-32LE", ByteOrder.LITTLE_ENDIAN);
+        utf32Decoder("UTF-32BE", ByteOrder.BIG_ENDIAN);
+        singleByteDecoders();
+        asciiEncoder();
         latin1String();
         System.out.println("passed");
     }
