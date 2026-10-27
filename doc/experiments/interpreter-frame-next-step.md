@@ -232,3 +232,7 @@ an explicit normal-entry/ownership design and a pre-C1 opportunity budget,
 rather than widen opcodes or choose a threshold from these quotients. This
 analysis proposes that implementation boundary; it does not launch another
 timing campaign or declare the early-stage goal complete.
+
+The subsequent [shared-guard implementation and qualification](interpreter-frame-shared-guards.md)
+completes steps 1 and 2 only. It retains this analysis and its original timing
+evidence, adds no admission hook, and runs no new performance campaign.
