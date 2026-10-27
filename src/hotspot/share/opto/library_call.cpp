@@ -6939,10 +6939,10 @@ bool LibraryCallKit::inline_parseFastFloatInteger() {
     if (generate_slow_guard(declined, slow_region) != nullptr) {
       slow_mem->add_req(native_mem);
     }
-    result_region->init_req(1, control());
-    result_value->init_req(1, is_long ? parsed : _gvn.transform(new ConvL2INode(parsed)));
-    result_io->init_req(1, i_o());
-    result_mem->init_req(1, native_mem);
+    result_region->set_req(1, control());
+    result_value->set_req(1, is_long ? parsed : _gvn.transform(new ConvL2INode(parsed)));
+    result_io->set_req(1, i_o());
+    result_mem->set_req(1, native_mem);
   }
 
   set_control(_gvn.transform(slow_region));
@@ -6953,10 +6953,10 @@ bool LibraryCallKit::inline_parseFastFloatInteger() {
     set_argument(1, radix);
     CallJavaNode* slow_call = generate_method_call(intrinsic_id(), false, true, false);
     Node* slow_result = set_results_for_java_call(slow_call);
-    result_region->init_req(2, control());
-    result_value->init_req(2, slow_result);
-    result_io->init_req(2, i_o());
-    result_mem->init_req(2, reset_memory());
+    result_region->set_req(2, control());
+    result_value->set_req(2, slow_result);
+    result_io->set_req(2, i_o());
+    result_mem->set_req(2, reset_memory());
   }
 
   set_i_o(_gvn.transform(result_io));
