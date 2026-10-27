@@ -120,7 +120,9 @@ imports:
 	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans
 	$(ECHO) 'package java.beans; public interface DesignMode {}' > $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans/DesignMode.java
 	$(ECHO) 'must not be imported' > $(TEST_SUPPORT_DIR)/headless-imports/java.desktop/MustNotImport.class
-	+($(CD) $(TOPDIR)/make && $(MAKE) -I$(TOPDIR)/make/common -f CompileJavaModules.gmk MODULE=java.desktop IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports java.desktop_BIN=$(TEST_SUPPORT_DIR)/headless-import-classes MODULEPATH=$(JDK_OUTPUTDIR)/modules MODULE_SRC_DIRS="$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources" MODULE_SOURCE_PATH_FLAGS="--module-source-path java.desktop=$(call PathList,$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources)" all)
+	# Use the interim compiler directly, as source-imports does below: a daemon
+	# from the preceding build can still delete the shared port during shutdown.
+	+($(CD) $(TOPDIR)/make && $(MAKE) -I$(TOPDIR)/make/common -f CompileJavaModules.gmk MODULE=java.desktop ENABLE_JAVAC_SERVER=false IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports java.desktop_BIN=$(TEST_SUPPORT_DIR)/headless-import-classes MODULEPATH=$(JDK_OUTPUTDIR)/modules MODULE_SRC_DIRS="$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources" MODULE_SOURCE_PATH_FLAGS="--module-source-path java.desktop=$(call PathList,$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources)" all)
 	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/MustNotImport.class
 	@test -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/java/beans/Introspector.class
 	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.base
