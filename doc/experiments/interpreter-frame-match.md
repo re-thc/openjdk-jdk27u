@@ -189,3 +189,159 @@ invocation pairs prevent calling this an overall win. Normal admission and
 actual interpreter time saved before C1 remain unmeasured here. This bounded
 comparison is complete; no threshold tuning or further timing campaign is
 included.
+
+## Retained-code follow-up: added work, layout and repayment
+
+This follow-up reads the existing six captures and exact source only. It runs
+no new JVM, build, profiler or benchmark. Runtime source and both qualified
+images remain unchanged. The private analysis script is
+`/workspace/interpreter-frame-match/analyze_retained.py`; normalized results
+are in [retained code analysis](direct-baseline-data/interpreter-match-retained-code-analysis.tsv)
+and [repayment arithmetic](direct-baseline-data/interpreter-match-retained-repayment.tsv).
+
+### Executed instructions and guards
+
+All nine paired semantic instruction regions are byte-for-byte identical:
+old slice offset 220 to its first dispatch, versus new slice offset zero to
+its dispatch. Their hashes also match across all three pairs per case. The
+continuation has the same polling dispatch instruction shape, with different
+absolute table addresses between JVMs. The old second fallback dispatch is
+unreachable on a successful prefix invocation.
+
+| Work in a successful, unarmed release entry | Old | New |
+|---|---:|---:|
+| Selector instructions, inferred from source | 14 | 14 |
+| Safety guards and hit increment | 34 | 34 |
+| Inactive WhiteBox forced-poll probe instructions | 0 | 2 |
+| Guard conditional branches, including the probe | 12 | 13 |
+| Taken guard conditional branches | 0 | 2 |
+| Body/continuation indirect jumps | 2 | 2 |
+
+The selector counts include its jump to the body. The indirect-jump row counts
+that jump and the continuation jump, rather than adding another two to the
+selector. Counts exclude common interpreter frame setup/counters/events, the
+caller, and subsequent ordinary return-bytecode execution. They describe the
+source-selected fast path, not measured retired instructions or cycles. The
+old body's 34 guard instructions and twelve branches are also verified from
+the retained disassembly; the shared startup entry itself was not captured.
+
+The proven added recurring work is the inactive test probe's memory compare
+and taken conditional branch. Its leaf arm function, register saves/restores
+and return marker do not execute in these unarmed windows. The normal poll
+test is still executed once at entry, but its clear-poll outcome changes from
+an untaken `jne fallback` to a taken `je not_armed`. This accounts for the
+second added taken branch without adding a second entry poll. All nine JVMTI
+flags, the per-method breakpoint count, interpreter-only check and hit update
+remain on every successful entry. The duplicate interpreter-only check in
+the selector and guards existed in both images.
+
+The shared encoding itself does not add a call or indirect jump. It moves
+guards from after the existing indirect jump to before it. The 258 bytes
+removed per slice consist of 220 bytes of relocated guards/hit increment and
+38 bytes of eliminated fallback dispatch. The relocated checks still execute;
+the eliminated fallback did not execute in successful old invocations.
+Removing producer clocks affects preparation, not the timed invocation path.
+See the [entry selector](../../src/hotspot/cpu/x86/templateInterpreterGenerator_x86.cpp),
+[shared guard emitter and prefix loop](../../src/hotspot/cpu/x86/interpreterFramePilot_x86.cpp)
+and [polling dispatch](../../src/hotspot/cpu/x86/interp_masm_x86.cpp).
+
+### BCP stores and stack traffic
+
+These counts are the same in every old/new body, excluding guards/dispatch:
+
+| Prefix | Semantic bytes / instructions | Stack pushes / loads / explicit SP adds | Local loads / stores | BCP advances / saved-BCP stores |
+|---|---:|---:|---:|---:|
+| Short | 84 / 28 | 5 / 4 / 4 | 2 / 0 | 5 / 5 |
+| Medium | 371 / 119 | 19 / 18 / 18 | 6 / 2 | 21 / 21 |
+| Long | 680 / 220 | 34 / 33 / 33 | 14 / 5 | 39 / 39 |
+
+Each bytecode still advances r13 and stores it to the interpreter frame's
+saved BCP. Every produced integer is materialized on the stack; consumers
+reload it and adjust SP. Long spends 78 of its 220 instructions on BCP
+advance/save and another 100 on stack push/load/explicit-SP-add operations.
+That is 178 instructions, about 81%, before counting local accesses. This is
+an instruction-count description, not a CPU attribution. No extra BCP store,
+operand spill or arithmetic instruction explains Long's new regression:
+these bytes are identical. The precise interpreter state/GC/tooling contract
+is retained; this analysis does not propose removing those stores or changing
+the canonical stack state.
+
+### What layout evidence can explain
+
+All old slice bases are 32 modulo 64; their semantic region starts 220 bytes
+later, at 60 modulo 64. All new slice bases and semantic starts are zero modulo
+64. Thus the same semantic instruction sequence has different placement:
+
+| Semantic region | Old / new 64-byte blocks spanned | Old / new instructions crossing a 64-byte boundary |
+|---|---:|---:|
+| Short | 3 / 2 | 1 / 1 |
+| Medium | 7 / 6 | 3 / 5 |
+| Long | 12 / 11 | 6 / 8 |
+
+Long also changes from 30 to 33 instruction crossings of 16-byte boundaries,
+and 14 to 17 at 32-byte boundaries. These are static address properties; they
+are not measured cache misses, decoder stalls, micro-ops or branch penalties.
+New code spans fewer blocks but has more straddling instructions, so an
+alignment heuristic alone does not establish which is faster. Shared guard
+branch sites, the position of the existing indirect jump, cold test-hook code
+and ordinary interpreter/template addresses also change. Higher address bits
+and caller placement were not controlled or captured for causal attribution.
+
+These low-bit alignments are identical across the three pairs while Long's
+on CPU changes by -0.65%, +2.17% and +6.18%. Alignment is therefore a possible
+contributor, not an established explanation for the variation. Long's disabled
+interpreter controls also change from 67.2–86.1 to 61.1–63.0 ns/call, although
+the disabled selector skips both the prefix and the new probe. That reinforces
+the limit on attributing the results to prefix execution alone. The data
+cannot apportion the adverse 0.637/1.719 ns per Long call between the proven
+new entry work, layout, predictor/cache effects and other timing variation.
+Neither regression is discarded or declared harmless.
+
+### Interpreter-relative savings and request repayment
+
+Only new-image action-5 full requests enter the following quotients. Its
+producer has no internal observation; the delivered request still includes
+the externally timed WhiteBox bridge, snapshot and result packaging. No old
+instrumented producer cost, subtracted query estimate or zeroed phase statistic
+is used as a production cost. CPU repayment is
+`ceil(full request CPU / (disabled CPU per call - on CPU per call))`.
+The wall quotient separately uses wall request and wall savings; CPU and wall
+are never mixed. Positions are one-based; position one retains first use.
+
+| Pair / prefix | Position | CPU saving ns/call (% of interpreter control) | Request CPU µs | CPU repayment calls | Wall repayment calls |
+|---|---:|---:|---:|---:|---:|
+| p0 Short | 1 | 1.392 (8.75%) | 12.678 | 9,109 | 8,204 |
+| p1 Short | 3 | -0.179 (-1.17%) | 2.424 | no saving | no saving |
+| p2 Short | 2 | 1.738 (11.69%) | 3.305 | 1,902 | 1,644 |
+| p0 Medium | 2 | 7.653 (26.16%) | 4.867 | 636 | 574 |
+| p1 Medium | 1 | 5.213 (18.55%) | 15.864 | 3,043 | 2,923 |
+| p2 Medium | 3 | 7.259 (25.20%) | 3.765 | 519 | 465 |
+| p0 Long | 3 | 30.004 (47.65%) | 5.668 | 189 | 175 |
+| p1 Long | 2 | 31.452 (51.14%) | 5.819 | 186 | 168 |
+| p2 Long | 1 | 31.637 (51.74%) | 18.948 | 599 | 571 |
+
+For example, the first Long quotient is ceil(18,948 / 31.637374)=599;
+its later counterparts are ceil(5,668 / 30.004378)=189 and
+ceil(5,819 / 31.452178)=186. All values exclude one-time arena/interpreter
+startup costs and any future normal-trigger work. They are scale calculations
+for methods deliberately excluded from C1/C2, not evidence that enough calls
+remain interpreted to repay the request before ordinary compilation. The
+negative Short pair has no finite repayment under its retained mean. No
+workload-weighted or application repayment is inferred from these three shapes.
+
+### One minimal proposal
+
+Separate emission of the forced-poll regression hooks from general WhiteBox
+enablement with an explicit startup-only test opt-in. The focused guard tests
+would request it; ordinary WhiteBox measurements would not. The unselected
+entry would emit the existing normal `test poll; jne fallback` path and no
+forced-poll compare/branch or leaf-call block. The actual poll, all tooling and
+breakpoint guards, hit accounting and polling fallback must remain intact;
+the post-poll test return marker would use the same test opt-in.
+
+This is one bounded separation of test machinery, justified by the proven
+extra recurring instructions. It is not a claim to fix Long's layout effect
+or the total cheap-tier budget, and the six retained pairs cannot predict its
+speedup. The opt-in itself is only a proposal: no source, flag default, test,
+policy, admission or image change is implemented in this analysis. No padding
+tuning or second optimization is proposed from these inconclusive timings.
