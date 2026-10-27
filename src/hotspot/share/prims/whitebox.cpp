@@ -960,16 +960,14 @@ class VM_InterpreterFramePilot : public VM_WhiteBoxOperation {
   VM_InterpreterFramePilot(const methodHandle& method,jlong* stats) : _method(method()),_stats(stats) {}
   void doit() override {
     ResourceMark rm;
-    jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
     methodHandle method(Thread::current(),_method);
     _stats[0]=InterpreterFramePilot::prepare(method,_stats);
-    _stats[1]=os::current_thread_cpu_time()-cpu;_stats[2]=os::javaTimeNanos()-wall;
   }
 };
 #endif
 
 WB_ENTRY(jlongArray, WB_InterpreterFramePilot(JNIEnv* env, jobject o, jobject method, jint action))
-  jlong data[11]={0};
+  jlong data[InterpreterFramePilot::stats_count]={0};
 #if defined(AMD64) && !defined(ZERO)
   jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
   jmethodID id=reflected_method_to_jmid(thread,env,method);
@@ -977,23 +975,29 @@ WB_ENTRY(jlongArray, WB_InterpreterFramePilot(JNIEnv* env, jobject o, jobject me
   methodHandle mh(THREAD,Method::checked_resolve_jmethod_id(id));
   if (UseInterpreterFramePilot) {
     MethodCounters* counters=mh->method_counters();
-    if(counters==nullptr)counters=Method::build_method_counters(THREAD,mh());
+    if(counters==nullptr) {
+      jlong allocation_cpu=os::current_thread_cpu_time();
+      counters=Method::build_method_counters(THREAD,mh());
+      data[InterpreterFramePilot::counter_allocation_cpu]=os::current_thread_cpu_time()-allocation_cpu;
+    }
     if (counters!=nullptr && counters->method()==mh()) {
       if (action==0) {
         VM_InterpreterFramePilot op(mh,data);VMThread::execute(&op);
+      } else if (action==4) {
+        data[0]=InterpreterFramePilot::prepare(mh,data);
       } else if (action==1 || action==2) {
-        bool enabled=action==1 && counters->interpreter_pilot_entry()!=nullptr;
-        counters->enable_interpreter_pilot(enabled);data[0]=1;
+        data[0]=InterpreterFramePilot::set_enabled(mh,action==1);
       } else if (action==3) data[0]=1;
-      data[8]=(jlong)counters->interpreter_pilot_entry();
-      data[9]=counters->interpreter_pilot_hits();
-      data[10]=counters->interpreter_pilot_enabled();
+      InterpreterFramePilot::snapshot(mh,data);
     }
   }
   data[6]=os::current_thread_cpu_time()-cpu;data[7]=os::javaTimeNanos()-wall;
+  data[InterpreterFramePilot::request_thread_id]=os::current_thread_id();
+  data[InterpreterFramePilot::preparation_action]=action;
+  InterpreterFramePilot::startup_costs(data);
 #endif
-  typeArrayOop result=oopFactory::new_longArray(11,CHECK_NULL);
-  for (int i=0;i<11;i++) result->long_at_put(i,data[i]);
+  typeArrayOop result=oopFactory::new_longArray(InterpreterFramePilot::stats_count,CHECK_NULL);
+  for (int i=0;i<InterpreterFramePilot::stats_count;i++) result->long_at_put(i,data[i]);
   return (jlongArray)JNIHandles::make_local(THREAD,result);
 WB_END
 

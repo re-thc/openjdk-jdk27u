@@ -29,8 +29,10 @@
 #include "oops/methodCounters.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/signature.hpp"
@@ -38,6 +40,22 @@
 namespace {
 address arena=nullptr;
 int next_slot=0;
+Mutex* generation_lock=nullptr;
+jlong blob_cpu=0,blob_wall=0,blob_bytes=0,arena_cpu=0,arena_wall=0;
+
+class CpuCut : public StackObj {
+  jlong* _value; jlong _start;
+ public:
+  CpuCut(jlong* value):_value(value),_start(os::current_thread_cpu_time()) {}
+  void stop() { if(_value!=nullptr){*_value+=os::current_thread_cpu_time()-_start;_value=nullptr;} }
+  ~CpuCut(){stop();}
+};
+class BufferCleanup : public StackObj {
+  jlong* _stats; jlong& _start;
+ public:
+  BufferCleanup(jlong* stats,jlong& start):_stats(stats),_start(start){}
+  ~BufferCleanup(){if(_start!=0)_stats[InterpreterFramePilot::buffer_cleanup_cpu]+=os::current_thread_cpu_time()-_start;}
+};
 constexpr int slot_size=4096;
 constexpr int max_operations=64;
 const Register rbcp=r13;
@@ -46,15 +64,73 @@ const Register rlocals=r14;
 
 void InterpreterFramePilot::reserve() {
   assert(arena==nullptr,"startup only");
+  jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
+  generation_lock=new Mutex(Mutex::nosafepoint,"InterpreterFramePilot",true);
   InterpreterCodelet* c=(InterpreterCodelet*)Interpreter::code()->request_committed(arena_size);
   guarantee(c!=nullptr,"bounded interpreter pilot arena");
   c->initialize("WhiteBox interpreter-frame integer prefixes",Bytecodes::_illegal);
   arena=c->code_begin();
   memset(arena,0xcc,arena_size);
+  arena_cpu=os::current_thread_cpu_time()-cpu;arena_wall=os::javaTimeNanos()-wall;
 }
 
-bool InterpreterFramePilot::prepare(const methodHandle& method, jlong* stats) {
-  assert(SafepointSynchronize::is_at_safepoint(),"WhiteBox VM operation");
+void InterpreterFramePilot::record_blob_allocation(jlong cpu,jlong wall,int bytes) {
+  blob_cpu=cpu;blob_wall=wall;blob_bytes=bytes;
+}
+void InterpreterFramePilot::startup_costs(jlong* stats) {
+  stats[blob_allocation_cpu]=blob_cpu;stats[blob_allocation_wall]=blob_wall;stats[blob_requested_bytes]=blob_bytes;
+  stats[arena_initialization_cpu]=arena_cpu;stats[arena_initialization_wall]=arena_wall;
+}
+void InterpreterFramePilot::snapshot(const methodHandle& method,jlong* stats) {
+  if(generation_lock==nullptr)return;
+  NoSafepointVerifier nsv;
+  MutexLocker locker(generation_lock,Mutex::_no_safepoint_check_flag);
+  MethodCounters* counters=method->method_counters();
+  if(counters==nullptr || counters->method()!=method())return;
+  stats[8]=(jlong)counters->interpreter_pilot_entry();stats[9]=counters->interpreter_pilot_hits();
+  stats[10]=counters->interpreter_pilot_enabled();
+}
+bool InterpreterFramePilot::set_enabled(const methodHandle& method,bool enabled) {
+  if(generation_lock==nullptr)return false;
+  NoSafepointVerifier nsv;
+  MutexLocker locker(generation_lock,Mutex::_no_safepoint_check_flag);
+  MethodCounters* counters=method->method_counters();
+  if(counters==nullptr || counters->method()!=method())return false;
+  counters->enable_interpreter_pilot(enabled && counters->interpreter_pilot_entry()!=nullptr);
+  return true;
+}
+bool InterpreterFramePilot::prepare(const methodHandle& method,jlong* stats) {
+  Thread* current=Thread::current();
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         (current->is_Java_thread() && JavaThread::cast(current)->thread_state()==_thread_in_vm),"VM-state producer");
+  jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
+  stats[producer_thread_id]=os::current_thread_id();
+  bool success=false;
+  if(generation_lock!=nullptr) {
+    NoSafepointVerifier nsv;
+    jlong cleanup=0;
+    {
+      ResourceMark rm;
+      size_t used=current->resource_area()->used(),capacity=current->resource_area()->size_in_bytes();
+      {
+        jlong lock_begin=os::current_thread_cpu_time(),lock_wall_begin=os::javaTimeNanos();
+        MutexLocker locker(generation_lock,Mutex::_no_safepoint_check_flag);
+        stats[lock_cpu]=os::current_thread_cpu_time()-lock_begin;
+        stats[lock_wall]=os::javaTimeNanos()-lock_wall_begin;
+        success=generate_locked(method,stats);
+        stats[resource_used_bytes]=current->resource_area()->used()-used;
+        stats[resource_chunk_bytes]=current->resource_area()->size_in_bytes()-capacity;
+      }
+      cleanup=os::current_thread_cpu_time();
+    }
+    stats[resource_cleanup_cpu]=os::current_thread_cpu_time()-cleanup;
+  }
+  stats[1]=os::current_thread_cpu_time()-cpu;stats[2]=os::javaTimeNanos()-wall;
+  return success;
+}
+bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* stats) {
+  assert(generation_lock->owned_by_self(),"serialized immutable slots and publication");
+  CpuCut analysis(&stats[analysis_cpu]);
   if (!UseInterpreterFramePilot || arena==nullptr || next_slot+slot_size>arena_size) return false;
   Method* m=method();
   if (!m->method_holder()->is_linked() || !m->method_holder()->is_rewritten() || !m->is_static() || m->is_native() || m->is_abstract() || m->is_synchronized() ||
@@ -76,10 +152,18 @@ bool InterpreterFramePilot::prepare(const methodHandle& method, jlong* stats) {
   }
   // A fixed private slice is never rewritten/recycled after publication. No
   // Method/klass/oop address is embedded; dead class versions leave dead bytes.
+  analysis.stop();
+  jlong cleanup_start=0;
+  BufferCleanup cleanup(stats,cleanup_start);
+  jlong allocation_begin=os::current_thread_cpu_time();
   CodeBuffer code(arena+next_slot,slot_size);
   InterpreterMacroAssembler masm(&code);
+  stats[buffer_setup_cpu]=os::current_thread_cpu_time()-allocation_begin;
+  stats[buffer_owns_blob]=code.blob()!=nullptr;
+  assert(code.blob()==nullptr,"fixed interpreter slice, no per-method code cache allocation");
+  CpuCut emission(&stats[emission_cpu]);
   Label ordinary;
-  auto reject_unpublished = [&]() { masm.bind(ordinary); return false; };
+  auto reject_unpublished = [&]() { masm.bind(ordinary);emission.stop();cleanup_start=os::current_thread_cpu_time();return false; };
   masm.testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
   masm.jcc(Assembler::notZero,ordinary);
   masm.cmpl(Address(r15_thread,JavaThread::interp_only_mode_offset()),0);
@@ -155,13 +239,16 @@ bool InterpreterFramePilot::prepare(const methodHandle& method, jlong* stats) {
   masm.dispatch_next(vtos,0,true);
   masm.bind(ordinary);
   masm.dispatch_next(vtos,0,true);
+  emission.stop();
+  CpuCut publication(&stats[publication_cpu]);
   masm.flush();
   int bytes=code.insts_size();
   guarantee(bytes<slot_size,"bounded pilot code slice");
   ICache::invalidate_range(arena+next_slot,bytes);
   stats[3]=bytes;stats[4]=end_bci;stats[5]=operations;
   counters->publish_interpreter_pilot(arena+next_slot);
-  next_slot+=slot_size;
+  next_slot+=slot_size;stats[assigned_slice_bytes]=slot_size;
+  publication.stop();cleanup_start=os::current_thread_cpu_time();
   return true;
 }
 #endif

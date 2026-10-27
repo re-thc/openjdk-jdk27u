@@ -20,7 +20,7 @@ public class InterpreterFramePilotBench {
     static int run(int which,int n) {return which==0?runShort(n):which==1?runMedium(n):runLong(n);}
     static void check(boolean good,String reason) { if(!good)throw new AssertionError(reason); }
     public static void main(String[] args)throws Exception {
-        boolean enabled=Boolean.parseBoolean(args[0]);int count=500_000;
+        boolean enabled=Boolean.parseBoolean(args[0]);int action=args.length>1?Integer.parseInt(args[1]):0;int count=500_000;
         ThreadMXBean cpu=ManagementFactory.getThreadMXBean();cpu.getCurrentThreadCpuTime();
         Method[] targets=new Method[3],callers=new Method[3];String[] cases={"Short","Medium","Long"};
         for(int i=0;i<3;i++) {
@@ -35,10 +35,11 @@ public class InterpreterFramePilotBench {
         }
         for(int i=0;i<3;i++) {
             long cpuStart=cpu.getCurrentThreadCpuTime(),wallStart=System.nanoTime();
-            long[] data=WB.interpreterFramePilot(targets[i],0);
+            long[] data=WB.interpreterFramePilot(targets[i],action);
             long wall=System.nanoTime()-wallStart,threadCpu=cpu.getCurrentThreadCpuTime()-cpuStart;
             check(!enabled || data[0]==1,"generation "+cases[i]+Arrays.toString(data));
             check(enabled || data[8]==0,"ordinary baseline has no generated code");
+            if(enabled && data.length>11)check((data[28]==data[29])==(action==4),"producer thread identity");
             System.out.println("GEN "+cases[i]+" "+Arrays.toString(data)+" "+threadCpu+" "+wall);
             WB.interpreterFramePilot(targets[i],2);
         }

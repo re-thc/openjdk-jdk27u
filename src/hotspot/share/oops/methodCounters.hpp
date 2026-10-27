@@ -139,10 +139,10 @@ class MethodCounters : public Metadata {
   static ByteSize direct_baseline_attempted_offset() { return byte_offset_of(MethodCounters, _direct_baseline_attempted); }
 
   bool interpreter_pilot_enabled() const { return AtomicAccess::load_acquire(&_interpreter_pilot_enabled); }
-  address interpreter_pilot_entry() const { return _interpreter_pilot_entry; }
+  address interpreter_pilot_entry() const { return AtomicAccess::load_acquire(&_interpreter_pilot_entry); }
   int interpreter_pilot_hits() const { return AtomicAccess::load(&_interpreter_pilot_hits); }
   void publish_interpreter_pilot(address entry) {
-    _interpreter_pilot_entry=entry; AtomicAccess::release_store(&_interpreter_pilot_enabled,true);
+    AtomicAccess::release_store(&_interpreter_pilot_entry,entry); AtomicAccess::release_store(&_interpreter_pilot_enabled,true);
   }
   void enable_interpreter_pilot(bool enabled) { AtomicAccess::release_store(&_interpreter_pilot_enabled,enabled); }
   static ByteSize interpreter_pilot_entry_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_entry); }

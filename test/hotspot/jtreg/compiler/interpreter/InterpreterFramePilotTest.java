@@ -33,6 +33,10 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import jdk.jfr.Recording;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
@@ -40,6 +44,7 @@ import jdk.test.whitebox.WhiteBox;
 public class InterpreterFramePilotTest {
     static WhiteBox WB;
     static int calls;
+    static int preparationAction;
     static int arithmetic(int x,int y) {
         int z=x*3+y-16384;
         z=((z^y)&x)|(z>>>5);
@@ -64,9 +69,11 @@ public class InterpreterFramePilotTest {
     static long[] stats(Method m) { return WB.interpreterFramePilot(m,3); }
     static long hits(Method m) { return stats(m)[9]; }
     static long[] prepare(Method m) {
-        long[] data=WB.interpreterFramePilot(m,0);
+        long[] data=WB.interpreterFramePilot(m,preparationAction);
         check(data[0]==1 && data[3]>0 && data[3]<4096 && data[4]>0 && data[5]>0 && data[5]<=64 && data[8]!=0,"prepare "+m+Arrays.toString(data));
         check(!WB.isMethodCompiled(m),"pilot creates no nmethod");
+        check((data[28]==data[29])==(preparationAction==4),"producer thread identity");
+        check(data[27]==0,"no per-method executable allocation");
         return data;
     }
     static class Loader extends ClassLoader {
@@ -80,7 +87,7 @@ public class InterpreterFramePilotTest {
             }));
         Loader loader=new Loader();Class<?> klass=loader.define(bytes);Method method=klass.getDeclaredMethod("body",int.class,int.class);
         check((int)method.invoke(null,17,20)==37+(bounded?32:0),"uncompiled ephemeral oracle");
-        long[] data=WB.interpreterFramePilot(method,0);
+        long[] data=WB.interpreterFramePilot(method,preparationAction);
         if(data[0]==1) {
             accepted[0]++;if(bounded)check(data[5]==64,"bounded prefix length");
             check((int)method.invoke(null,17,20)==37+(bounded?32:0),"ephemeral codelet semantics");
@@ -90,6 +97,9 @@ public class InterpreterFramePilotTest {
     }
     static void child(String mode)throws Exception {
         WB=WhiteBox.getWhiteBox();
+        preparationAction=mode.endsWith("-direct")?4:0;
+        mode=mode.replace("-direct","");
+        if(mode.equals("concurrent")){concurrent();return;}
         Method arithmetic=method("arithmetic",int.class,int.class);
         int[] xs={0,1,-1,Integer.MIN_VALUE,Integer.MAX_VALUE,0x76543210,-991};
         int[] ys={-97,32,63,-1,0,19,127};
@@ -122,7 +132,7 @@ public class InterpreterFramePilotTest {
         for(int i=0;i<100;i++)check(arithmetic(xs[0],ys[0])==expected[0],"disabled original interpreter");
         check(hits(arithmetic)==before,"disable publication");
         WB.interpreterFramePilot(arithmetic,1);arithmetic(0,0);check(hits(arithmetic)>before,"reenable publication");
-        check(WB.interpreterFramePilot(arithmetic,0)[0]==0,"no duplicate generation");
+        check(WB.interpreterFramePilot(arithmetic,preparationAction)[0]==0,"no duplicate generation");
         Method division=method("division",int.class,int.class);prepare(division);
         check(division(5,0)==-991 && division(5,3)==4,"exception and handler fallback");
         Method array=method("array",int[].class,int.class);prepare(array);
@@ -135,8 +145,8 @@ public class InterpreterFramePilotTest {
         check(call(2)==35 && calls==1,"once-only call and argument fallback");
         Method keep=method("keepAlive",Object.class,int.class,int.class);prepare(keep);
         Object token=new byte[1<<20];check(keepAlive(token,17,20)==token,"GC and frame identity");
-        check(WB.interpreterFramePilot(method("unsupported",Object.class),0)[0]==0,"unsupported first opcode");
-        check(WB.interpreterFramePilot(method("synchronizedRoot",int.class),0)[0]==0,"synchronized root");
+        check(WB.interpreterFramePilot(method("unsupported",Object.class),preparationAction)[0]==0,"unsupported first opcode");
+        check(WB.interpreterFramePilot(method("synchronizedRoot",int.class),preparationAction)[0]==0,"synchronized root");
         for(Method m:new Method[]{division,array,branch,call,keep})check(hits(m)>0 && !WB.isMethodCompiled(m),"used real interpreted codelet "+m);
         int[] accepted={6};ArrayList<WeakReference<Loader>> loaders=new ArrayList<>();
         loaders.add(ephemeral(0,true,accepted));
@@ -146,18 +156,56 @@ public class InterpreterFramePilotTest {
         check(loaders.stream().allMatch(w -> w.get()==null),"codelets do not pin class loaders");
         System.out.println("PILOT_SEMANTICS_OK");
     }
+    static void concurrent()throws Exception {
+        HashSet<Long> entries=new HashSet<>();long previousEntry=0;
+        for(int index=0;index<16;index++) {
+            byte[] bytes=ClassFile.of().build(ClassDesc.of("PilotConcurrent"+index),c ->
+                c.withFlags(ClassFile.ACC_PUBLIC).withMethodBody("body",MethodTypeDesc.ofDescriptor("(II)I"),ClassFile.ACC_PUBLIC|ClassFile.ACC_STATIC,
+                    code -> code.iload(0).iload(1).iadd().ireturn()));
+            Class<?> klass=new Loader().define(bytes);Method m=klass.getDeclaredMethod("body",int.class,int.class);
+            check((int)m.invoke(null,17,20)==37,"ordinary concurrency oracle");
+            CountDownLatch ready=new CountDownLatch(2),start=new CountDownLatch(1);
+            long[][] results=new long[2][];Throwable[] failures=new Throwable[3];
+            Thread[] workers=new Thread[2];
+            for(int i=0;i<2;i++){final int n=i;workers[i]=new Thread(() -> {
+                try {ready.countDown();start.await();results[n]=WB.interpreterFramePilot(m,4);
+                    for(int repeat=0;repeat<63;repeat++)check(WB.interpreterFramePilot(m,4)[0]==0,"duplicate remains rejected");}catch(Throwable t){failures[n]=t;}
+            });workers[i].start();}
+            ready.await();AtomicBoolean done=new AtomicBoolean();
+            CountDownLatch collectorReady=new CountDownLatch(1);AtomicInteger collections=new AtomicInteger();
+            Thread collector=new Thread(() -> {
+                try {collectorReady.countDown();start.await();do {System.gc();for(Thread t:workers)t.getStackTrace();collections.incrementAndGet();}while(!done.get());}catch(Throwable t){failures[2]=t;}
+            });collector.start();collectorReady.await();start.countDown();
+            for(Thread t:workers){t.join(20000);check(!t.isAlive(),"producer progress");}
+            done.set(true);collector.join(20000);check(!collector.isAlive(),"GC/walk progress");
+            check(collections.get()>0,"collector and stack-walker progressed");
+            for(Throwable t:failures)check(t==null,"concurrent producer failure "+t);
+            check(results[0][0]+results[1][0]==1,"one publication winner");
+            check(results[0][8]!=0 && results[0][8]==results[1][8],"one immutable body");
+            check(entries.add(results[0][8]),"distinct reserved slices");
+            if(previousEntry!=0)check(results[0][8]-previousEntry==4096,"fixed slice spacing");
+            previousEntry=results[0][8];
+            for(int n=0;n<64;n++)check((int)m.invoke(null,17,20)==37,"concurrent generated semantics");
+            check(hits(m)>0,"concurrent generated execution");
+        }
+        System.out.println("PILOT_CONCURRENCY_OK");
+    }
     public static void main(String[] args)throws Exception {
         if(args.length>0){child(args[0]);return;}
         String[] common={"-Xbootclasspath/a:.","-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-Xmx64m"};
+        for(String suffix:new String[]{"","-direct"}) {
         for(String gc:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
-            ProcessTools.executeTestJava(concat(common,"-Xint",gc,InterpreterFramePilotTest.class.getName(),"semantics"))
+            ProcessTools.executeTestJava(concat(common,"-Xint",gc,InterpreterFramePilotTest.class.getName(),"semantics"+suffix))
                     .shouldHaveExitValue(0).shouldContain("PILOT_SEMANTICS_OK");
         }
-        ProcessTools.executeTestJava(concat(common,"-Xint",InterpreterFramePilotTest.class.getName(),"tooling"))
+        ProcessTools.executeTestJava(concat(common,"-Xint",InterpreterFramePilotTest.class.getName(),"tooling"+suffix))
                 .shouldHaveExitValue(0).shouldContain("PILOT_TOOLING_OK");
-        ProcessTools.executeTestJava(concat(common,"-XX:CompileThresholdScaling=100","-XX:CompileCommand=dontinline,InterpreterFramePilotTest::*",InterpreterFramePilotTest.class.getName(),"handoff"))
+        ProcessTools.executeTestJava(concat(common,"-XX:CompileThresholdScaling=100","-XX:CompileCommand=dontinline,InterpreterFramePilotTest::*",InterpreterFramePilotTest.class.getName(),"handoff"+suffix))
                 .shouldHaveExitValue(0).shouldContain("PILOT_HANDOFF_OK");
+        }
+        ProcessTools.executeTestJava(concat(common,"-Xint",InterpreterFramePilotTest.class.getName(),"concurrent-direct"))
+                .shouldHaveExitValue(0).shouldContain("PILOT_CONCURRENCY_OK");
     }
     static String[] concat(String[] first,String... last) {
         String[] all=Arrays.copyOf(first,first.length+last.length);System.arraycopy(last,0,all,first.length,last.length);return all;

@@ -53,8 +53,12 @@ void TemplateInterpreter::initialize_stub() {
   // plus their code section is aligned to CodeEntryAlignement. So we need additional size due to alignment.
   int max_aligned_codelets = 280;
   int max_aligned_bytes = checked_cast<int>(max_aligned_codelets * (HeapWordSize + CodeEntryAlignment));
+  AMD64_ONLY(jlong allocation_cpu=UseInterpreterFramePilot?os::current_thread_cpu_time():0;)
+  AMD64_ONLY(jlong allocation_wall=UseInterpreterFramePilot?os::javaTimeNanos():0;)
   _code = new StubQueue(new InterpreterCodeletInterface, code_size + max_aligned_bytes, nullptr,
                         "Interpreter");
+  AMD64_ONLY(if(UseInterpreterFramePilot) InterpreterFramePilot::record_blob_allocation(os::current_thread_cpu_time()-allocation_cpu,
+              os::javaTimeNanos()-allocation_wall,code_size+max_aligned_bytes);)
 }
 
 void TemplateInterpreter::initialize_code() {

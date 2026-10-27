@@ -338,7 +338,7 @@ public class WhiteBox {
 
   public native boolean isC2Included();
 
-  // Experimental interpreter-frame pilot: 0 prepare, 1 enable, 2 disable, 3 query.
+  // Experimental interpreter-frame pilot: 0 safepoint prepare, 1 enable, 2 disable, 3 query, 4 prepare on the requesting VM-state Java thread.
   public native long[] interpreterFramePilot(Executable method, int action);
 
   public native int     matchesMethod(Executable method, String pattern);
