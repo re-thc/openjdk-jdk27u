@@ -69,6 +69,7 @@ class ThreadsList;
 class JvmtiExport : public AllStatic {
   friend class VMStructs;
   friend class CompileReplay;
+  friend class InterpreterFramePilot;
 
  private:
 

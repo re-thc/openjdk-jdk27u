@@ -256,10 +256,14 @@ void TemplateTable::aconst_null() {
 
 void TemplateTable::iconst(int value) {
   transition(vtos, itos);
+  emit_iconst(_masm, value);
+}
+
+void TemplateTable::emit_iconst(InterpreterMacroAssembler* masm, int value) {
   if (value == 0) {
-    __ xorl(rax, rax);
+    masm->xorl(rax, rax);
   } else {
-    __ movl(rax, value);
+    masm->movl(rax, value);
   }
 }
 
@@ -834,7 +838,11 @@ void TemplateTable::saload() {
 
 void TemplateTable::iload(int n) {
   transition(vtos, itos);
-  __ movl(rax, iaddress(n));
+  emit_iload(_masm, n);
+}
+
+void TemplateTable::emit_iload(InterpreterMacroAssembler* masm, int n) {
+  masm->movl(rax, iaddress(n));
 }
 
 void TemplateTable::lload(int n) {
@@ -1152,7 +1160,11 @@ void TemplateTable::sastore() {
 
 void TemplateTable::istore(int n) {
   transition(itos, vtos);
-  __ movl(iaddress(n), rax);
+  emit_istore(_masm, n);
+}
+
+void TemplateTable::emit_istore(InterpreterMacroAssembler* masm, int n) {
+  masm->movl(iaddress(n), rax);
 }
 
 void TemplateTable::lstore(int n) {
@@ -1280,16 +1292,20 @@ void TemplateTable::swap() {
 
 void TemplateTable::iop2(Operation op) {
   transition(itos, itos);
+  emit_iop2(_masm, op);
+}
+
+void TemplateTable::emit_iop2(InterpreterMacroAssembler* masm, Operation op) {
   switch (op) {
-  case add  :                    __ pop_i(rdx); __ addl (rax, rdx); break;
-  case sub  : __ movl(rdx, rax); __ pop_i(rax); __ subl (rax, rdx); break;
-  case mul  :                    __ pop_i(rdx); __ imull(rax, rdx); break;
-  case _and :                    __ pop_i(rdx); __ andl (rax, rdx); break;
-  case _or  :                    __ pop_i(rdx); __ orl  (rax, rdx); break;
-  case _xor :                    __ pop_i(rdx); __ xorl (rax, rdx); break;
-  case shl  : __ movl(rcx, rax); __ pop_i(rax); __ shll (rax);      break;
-  case shr  : __ movl(rcx, rax); __ pop_i(rax); __ sarl (rax);      break;
-  case ushr : __ movl(rcx, rax); __ pop_i(rax); __ shrl (rax);      break;
+  case add  :                    masm->pop_i(rdx); masm->addl (rax, rdx); break;
+  case sub  : masm->movl(rdx, rax); masm->pop_i(rax); masm->subl (rax, rdx); break;
+  case mul  :                    masm->pop_i(rdx); masm->imull(rax, rdx); break;
+  case _and :                    masm->pop_i(rdx); masm->andl (rax, rdx); break;
+  case _or  :                    masm->pop_i(rdx); masm->orl  (rax, rdx); break;
+  case _xor :                    masm->pop_i(rdx); masm->xorl (rax, rdx); break;
+  case shl  : masm->movl(rcx, rax); masm->pop_i(rax); masm->shll (rax);      break;
+  case shr  : masm->movl(rcx, rax); masm->pop_i(rax); masm->sarl (rax);      break;
+  case ushr : masm->movl(rcx, rax); masm->pop_i(rax); masm->shrl (rax);      break;
   default   : ShouldNotReachHere();
   }
 }

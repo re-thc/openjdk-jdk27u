@@ -338,6 +338,9 @@ public class WhiteBox {
 
   public native boolean isC2Included();
 
+  // Experimental interpreter-frame pilot: 0 prepare, 1 enable, 2 disable, 3 query.
+  public native long[] interpreterFramePilot(Executable method, int action);
+
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
   public native boolean shouldPrintAssembly(Executable method, int comp_level);

@@ -35,6 +35,7 @@
 #include "runtime/timerTrace.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
+#include "interpreter/interpreterFramePilot.hpp"
 
 # define __ _masm->
 
@@ -46,7 +47,8 @@ void TemplateInterpreter::initialize_stub() {
 
   // allocate interpreter
   int code_size = InterpreterCodeSize;
-  NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
+  NOT_PRODUCT(code_size *= 4;)
+  AMD64_ONLY(if (UseInterpreterFramePilot) code_size += InterpreterFramePilot::arena_size;)  // debug uses extra interpreter code space
   // 270+ interpreter codelets are generated and each of them is aligned to HeapWordSize,
   // plus their code section is aligned to CodeEntryAlignement. So we need additional size due to alignment.
   int max_aligned_codelets = 280;
@@ -64,6 +66,7 @@ void TemplateInterpreter::initialize_code() {
   { ResourceMark rm;
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
     TemplateInterpreterGenerator g;
+    AMD64_ONLY(if (UseInterpreterFramePilot) InterpreterFramePilot::reserve();)
     // Free the unused memory not occupied by the interpreter and the stubs
     _code->deallocate_unused_tail();
   }

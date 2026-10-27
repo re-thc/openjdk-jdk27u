@@ -22,6 +22,7 @@
  *
  */
 
+#include "interpreter/interpreterFramePilot.hpp"
 #include "cds.h"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -949,6 +950,50 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
     CompilerDirectiveMatcher default_directive(comp);
     return comp->is_intrinsic_available(mh, default_directive.directive_set());
   }
+WB_END
+
+#if defined(AMD64) && !defined(ZERO)
+class VM_InterpreterFramePilot : public VM_WhiteBoxOperation {
+  const methodHandle& _method;
+  jlong* _stats;
+ public:
+  VM_InterpreterFramePilot(const methodHandle& method,jlong* stats) : _method(method),_stats(stats) {}
+  void doit() override {
+    ResourceMark rm;
+    jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
+    _stats[0]=InterpreterFramePilot::prepare(_method,_stats);
+    _stats[1]=os::current_thread_cpu_time()-cpu;_stats[2]=os::javaTimeNanos()-wall;
+  }
+};
+#endif
+
+WB_ENTRY(jlongArray, WB_InterpreterFramePilot(JNIEnv* env, jobject o, jobject method, jint action))
+  jlong data[11]={0};
+#if defined(AMD64) && !defined(ZERO)
+  jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
+  jmethodID id=reflected_method_to_jmid(thread,env,method);
+  CHECK_JNI_EXCEPTION_(env,nullptr);
+  methodHandle mh(THREAD,Method::checked_resolve_jmethod_id(id));
+  if (UseInterpreterFramePilot) {
+    MethodCounters* counters=mh->method_counters();
+    if(counters==nullptr)counters=Method::build_method_counters(THREAD,mh());
+    if (counters!=nullptr && counters->method()==mh()) {
+      if (action==0) {
+        VM_InterpreterFramePilot op(mh,data);VMThread::execute(&op);
+      } else if (action==1 || action==2) {
+        bool enabled=action==1 && counters->interpreter_pilot_entry()!=nullptr;
+        counters->enable_interpreter_pilot(enabled);data[0]=1;
+      } else if (action==3) data[0]=1;
+      data[8]=(jlong)counters->interpreter_pilot_entry();
+      data[9]=counters->interpreter_pilot_hits();
+      data[10]=counters->interpreter_pilot_enabled();
+    }
+  }
+  data[6]=os::current_thread_cpu_time()-cpu;data[7]=os::javaTimeNanos()-wall;
+#endif
+  typeArrayOop result=oopFactory::new_longArray(11,CHECK_NULL);
+  for (int i=0;i<11;i++) result->long_at_put(i,data[i]);
+  return (jlongArray)JNIHandles::make_local(THREAD,result);
 WB_END
 
 WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -2796,6 +2841,7 @@ WB_END
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
+  {CC"interpreterFramePilot", CC"(Ljava/lang/reflect/Executable;I)[J", (void*)&WB_InterpreterFramePilot},
   {CC"getObjectAddress0",                CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
   {CC"getObjectSize0",                   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
   {CC"isObjectInOldGen0",                CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },

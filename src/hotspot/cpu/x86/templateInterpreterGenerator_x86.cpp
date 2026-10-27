@@ -1356,6 +1356,24 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // jvmti support
   __ notify_method_entry();
 
+#ifdef AMD64
+  if (UseInterpreterFramePilot && !synchronized) {
+    Label ordinary;
+    __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()),0);
+    __ jcc(Assembler::notEqual,ordinary);
+    __ get_method(rbx);
+    __ movptr(rdx,Address(rbx,Method::method_counters_offset()));
+    __ testptr(rdx,rdx); __ jcc(Assembler::zero,ordinary);
+    __ cmpptr(rbx,Address(rdx,in_bytes(MethodCounters::method_offset())));
+    __ jcc(Assembler::notEqual,ordinary);
+    __ cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_enabled_offset())),0);
+    __ jcc(Assembler::equal,ordinary);
+    __ movptr(rax,Address(rdx,in_bytes(MethodCounters::interpreter_pilot_entry_offset())));
+    __ testptr(rax,rax); __ jcc(Assembler::zero,ordinary);
+    __ jmp(rax);
+    __ bind(ordinary);
+  }
+#endif
   __ dispatch_next(vtos);
 
   // invocation counter overflow

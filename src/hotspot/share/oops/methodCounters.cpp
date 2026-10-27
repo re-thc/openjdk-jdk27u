@@ -40,7 +40,10 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
   _highest_comp_level(0),
   _highest_osr_comp_level(0),
   _direct_baseline_attempted(false),
-  _direct_baseline_entries(0)
+  _direct_baseline_entries(0),
+  _interpreter_pilot_entry(nullptr),
+  _interpreter_pilot_hits(0),
+  _interpreter_pilot_enabled(false)
 {
   set_interpreter_throwout_count(0);
   JVMTI_ONLY(clear_number_of_breakpoints());
@@ -91,6 +94,7 @@ void MethodCounters::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS
 void MethodCounters::remove_unshareable_info() {
+  _interpreter_pilot_entry=nullptr; _interpreter_pilot_enabled=false; _interpreter_pilot_hits=0;
 }
 void MethodCounters::restore_unshareable_info(TRAPS) {
   _method_training_data = method_training_data_sentinel();

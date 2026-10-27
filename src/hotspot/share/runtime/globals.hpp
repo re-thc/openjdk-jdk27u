@@ -1124,6 +1124,9 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(bool, RewriteFrequentPairs,                                    \
           "Rewrite frequently used bytecode pairs into a single bytecode")  \
                                                                             \
+  product(bool, UseInterpreterFramePilot, false, EXPERIMENTAL,              \
+          "WhiteBox-only bounded interpreter-frame codelet experiment")      \
+                                                                            \
   product(bool, PrintInterpreter, false, DIAGNOSTIC,                        \
           "Print the generated interpreter code")                           \
                                                                             \

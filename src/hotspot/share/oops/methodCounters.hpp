@@ -64,6 +64,9 @@ class MethodCounters : public Metadata {
 
   bool _direct_baseline_attempted; // One-way; queued attempts set under MethodCompileQueue_lock
   int _direct_baseline_entries; // Diagnostic, approximate under contention
+  address _interpreter_pilot_entry; // Immutable, no embedded metadata/oops
+  int _interpreter_pilot_hits; // Diagnostic, approximate under contention
+  bool _interpreter_pilot_enabled;
 
   MethodCounters(const methodHandle& mh);
   MethodCounters();
@@ -110,6 +113,7 @@ class MethodCounters : public Metadata {
 #endif // COMPILER2
 
 #if INCLUDE_JVMTI
+  static ByteSize number_of_breakpoints_offset() { return byte_offset_of(MethodCounters,_number_of_breakpoints); }
   u2   number_of_breakpoints() const   { return _number_of_breakpoints; }
   void incr_number_of_breakpoints()    { ++_number_of_breakpoints; }
   void decr_number_of_breakpoints()    { --_number_of_breakpoints; }
@@ -133,6 +137,18 @@ class MethodCounters : public Metadata {
   bool direct_baseline_attempted() const { return _direct_baseline_attempted; }
   void set_direct_baseline_attempted() { _direct_baseline_attempted = true; }
   static ByteSize direct_baseline_attempted_offset() { return byte_offset_of(MethodCounters, _direct_baseline_attempted); }
+
+  bool interpreter_pilot_enabled() const { return AtomicAccess::load_acquire(&_interpreter_pilot_enabled); }
+  address interpreter_pilot_entry() const { return _interpreter_pilot_entry; }
+  int interpreter_pilot_hits() const { return AtomicAccess::load(&_interpreter_pilot_hits); }
+  void publish_interpreter_pilot(address entry) {
+    _interpreter_pilot_entry=entry; AtomicAccess::release_store(&_interpreter_pilot_enabled,true);
+  }
+  void enable_interpreter_pilot(bool enabled) { AtomicAccess::release_store(&_interpreter_pilot_enabled,enabled); }
+  static ByteSize interpreter_pilot_entry_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_entry); }
+  static ByteSize interpreter_pilot_enabled_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_enabled); }
+  static ByteSize interpreter_pilot_hits_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_hits); }
+  static ByteSize method_offset() { return byte_offset_of(MethodCounters,_method); }
 
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }

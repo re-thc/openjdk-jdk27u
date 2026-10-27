@@ -32,6 +32,11 @@
                                    Register flags);
   static void volatile_barrier(Assembler::Membar_mask_bits order_constraint);
 
+  static void emit_iconst(InterpreterMacroAssembler* masm, int value);
+  static void emit_iload(InterpreterMacroAssembler* masm, int index);
+  static void emit_istore(InterpreterMacroAssembler* masm, int index);
+  static void emit_iop2(InterpreterMacroAssembler* masm, Operation op);
+
   // Helpers
   static void index_check(Register array, Register index);
   static void index_check_without_pop(Register array, Register index);
