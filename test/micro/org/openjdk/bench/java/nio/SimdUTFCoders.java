@@ -34,6 +34,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
@@ -76,6 +77,16 @@ public class SimdUTFCoders {
     private CharsetEncoder utf8Encoder, utf32Encoder;
     private char[] readBuffer;
     private String string;
+
+    // The distance between the malformed bytes or unmappable chars of the dense benchmarks
+    @Param({"24"})
+    public int gap;
+    // Text with a malformed byte or a char the charset cannot map every few elements, which
+    // the coders replace: the bulk steps stop at each one
+    private ByteBuffer denseUtf8Heap, denseUtf8Direct, denseAsciiDirect;
+    private CharBuffer denseTextHeap;
+    private CharsetDecoder replacingUtf8Decoder, replacingAsciiDecoder;
+    private CharsetEncoder replacingAsciiEncoder;
     // The single-byte charsets, over text that they map: the text is converted to the
     // charset and back
     private ByteBuffer latin1Heap, latin1Direct, asciiHeap, asciiDirect;
@@ -153,6 +164,22 @@ public class SimdUTFCoders {
         asciiTextHeap = CharBuffer.wrap(asciiChars);
         asciiTextDirect = ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer();
         asciiTextDirect.put(asciiChars).flip();
+        byte[] dense = utf8Bytes.clone();
+        for (int i = gap - 4; i < dense.length; i += gap) dense[i] = (byte) 0xff;
+        denseUtf8Heap = ByteBuffer.wrap(dense);
+        denseUtf8Direct = ByteBuffer.allocateDirect(dense.length).put(dense).flip();
+        byte[] denseAscii = ascii.clone();
+        for (int i = gap - 4; i < denseAscii.length; i += gap) denseAscii[i] = (byte) 0xe9;
+        denseAsciiDirect = ByteBuffer.allocateDirect(denseAscii.length).put(denseAscii).flip();
+        char[] denseChars = asciiChars.clone();
+        for (int i = gap - 4; i < denseChars.length; i += gap) denseChars[i] = '\u00e9';
+        denseTextHeap = CharBuffer.wrap(denseChars);
+        replacingUtf8Decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
+        replacingAsciiDecoder = StandardCharsets.US_ASCII.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
+        replacingAsciiEncoder = StandardCharsets.US_ASCII.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
         latin1Decoder = StandardCharsets.ISO_8859_1.newDecoder();
         latin1Encoder = StandardCharsets.ISO_8859_1.newEncoder();
         asciiDecoder = StandardCharsets.US_ASCII.newDecoder();
@@ -210,6 +237,12 @@ public class SimdUTFCoders {
     @Benchmark public int asciiEncodeHeap() { return encode(asciiEncoder, asciiTextHeap, bytesHeap); }
     @Benchmark public int asciiEncodeDirect() { return encode(asciiEncoder, asciiTextHeap, bytesDirect); }
     @Benchmark public int asciiEncodeDirectToDirect() { return encode(asciiEncoder, asciiTextDirect, bytesDirect); }
+
+    // Dense replacements: the same text through array-backed and direct buffers
+    @Benchmark public int utf8DecodeDenseHeap() { return decode(replacingUtf8Decoder, denseUtf8Heap, charsHeap); }
+    @Benchmark public int utf8DecodeDenseDirect() { return decode(replacingUtf8Decoder, denseUtf8Direct, charsHeap); }
+    @Benchmark public int asciiDecodeDenseDirect() { return decode(replacingAsciiDecoder, denseAsciiDirect, charsHeap); }
+    @Benchmark public int asciiEncodeDenseDirect() { return encode(replacingAsciiEncoder, denseTextHeap, bytesDirect); }
 
     // Convenience and stream callers, which allocate their buffers as they would in an application.
     @Benchmark public CharBuffer charsetDecode() { return StandardCharsets.UTF_8.decode(utf8Heap.rewind()); }
