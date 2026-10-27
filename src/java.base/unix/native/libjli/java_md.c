@@ -600,6 +600,7 @@ SetExecname(char **argv)
 }
 
 /* --- Splash Screen shared library support --- */
+#ifndef HEADLESS
 static const char* SPLASHSCREEN_SO = JNI_LIB_NAME("splashscreen");
 static void* hSplashLib = NULL;
 
@@ -638,6 +639,8 @@ void* SplashProcAddress(const char* name) {
         return NULL;
     }
 }
+
+#endif
 
 /*
  * Signature adapter for pthread_create() or thr_create().

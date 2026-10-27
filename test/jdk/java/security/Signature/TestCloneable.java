@@ -42,18 +42,14 @@ public class TestCloneable {
 
     @DataProvider
     public Object[][] testData() {
-        String dsaProviderName = System.getProperty("test.provider.name", "SUN");
         String ecProviderName  = System.getProperty("test.provider.name", "SunEC");
         String rsaProviderName = System.getProperty("test.provider.name", "SunRsaSign");
 
         return new Object[][] {
-            { "SHA1withDSA", dsaProviderName }, { "NONEwithDSA", dsaProviderName },
-            { "SHA224withDSA", dsaProviderName }, { "SHA256withDSA", dsaProviderName },
             { "EdDSA", ecProviderName }, { "Ed25519", ecProviderName }, { "Ed448", ecProviderName },
             { "SHA1withECDSA", ecProviderName }, { "SHA224withECDSA", ecProviderName },
             { "SHA256withECDSA", ecProviderName }, { "SHA384withECDSA", ecProviderName },
             { "SHA512withECDSA", ecProviderName }, { "NONEwithECDSA", ecProviderName },
-            { "MD2withRSA", rsaProviderName }, { "MD5withRSA", rsaProviderName },
             { "SHA1withRSA", rsaProviderName }, { "SHA224withRSA", rsaProviderName },
             { "SHA256withRSA", rsaProviderName },
             { "SHA384withRSA", rsaProviderName },
@@ -65,7 +61,6 @@ public class TestCloneable {
             { "SHA1withRSA", "SunMSCAPI" }, { "SHA256withRSA", "SunMSCAPI" },
             { "SHA384withRSA", "SunMSCAPI" }, { "SHA512withRSA", "SunMSCAPI" },
             { "RSASSA-PSS", "SunMSCAPI" },
-            { "MD5withRSA", "SunMSCAPI" }, { "MD2withRSA", "SunMSCAPI" },
             { "SHA1withECDSA", "SunMSCAPI" },
             { "SHA224withECDSA", "SunMSCAPI" },
             { "SHA256withECDSA", "SunMSCAPI" },

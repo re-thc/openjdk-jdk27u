@@ -85,7 +85,7 @@ public class ReadPKCS12 extends PKCS11Test {
 
         KeyStore ks2;
         if (COPY) {
-            ks2 = KeyStore.getInstance("JKS");
+            ks2 = KeyStore.getInstance("PKCS12");
             try (InputStream in = new FileInputStream("keystore.old")) {
                 ks2.load(in, "passphrase".toCharArray());
             }

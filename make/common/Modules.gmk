@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,7 +48,7 @@ include $(TOPDIR)/make/conf/build-module-sets.conf
 
 # Desktop APIs and their dependent modules are omitted before any build phase.
 ifeq ($(ENABLE_DESKTOP), false)
-  MODULES_FILTER += java.desktop java.datatransfer java.se \
+  override MODULES_FILTER += java.desktop java.datatransfer java.se \
       jdk.accessibility jdk.editpad jdk.hotspot.agent jdk.jconsole \
       jdk.jpackage jdk.unsupported.desktop
 endif
@@ -160,11 +161,11 @@ FindModuleManDirsForDocs = \
     $(strip $(wildcard \
         $(foreach sub, $(MAN_DOCS_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
-# Construct the complete module source path
-GetModuleSrcPath = \
-    $(call PathList, \
-        $(addsuffix /*, $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
-        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /*/$(sub), $(TOP_SRC_DIRS))))
+# Only expose included modules to javac/javadoc. -implicit:none alone does not
+# prevent javac from reading and attributing sources in other modules.
+GetModuleSourcePathFlags = \
+    $(foreach m, $(call FindAllModules), \
+        --module-source-path $(m)=$(call PathList, $(call FindModuleSrcDirs, $(m))))
 
 ################################################################################
 # Extract module dependencies from module-info.java files, both normal

@@ -334,8 +334,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         // Check the protocol version of the record.
         byte majorVersion = packet.get(pos + 1);
         byte minorVersion = packet.get(pos + 2);
-        if (!ProtocolVersion.isNegotiable(
-                majorVersion, minorVersion, true, false)) {
+        if (!ProtocolVersion.isRecordVersion(
+                majorVersion, minorVersion, true)) {
             throw new SSLException("Unrecognized record version " +
                     ProtocolVersion.nameOf(majorVersion, minorVersion) +
                     " , plaintext connection?");
@@ -889,7 +889,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     return truncateChFragment(hsf, fragmentData.position());
                 } else {
                     HelloCookieManager hcMgr = sslContext.
-                            getHelloCookieManager(ProtocolVersion.DTLS10);
+                            getHelloCookieManager(ProtocolVersion.DTLS12);
                     ByteBuffer msgFragBuf = ByteBuffer.wrap(hsf.fragment, 0,
                             fragmentData.position());
                     ClientHello.ClientHelloMessage chMsg =

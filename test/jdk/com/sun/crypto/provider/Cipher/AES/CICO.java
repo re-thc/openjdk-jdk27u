@@ -48,9 +48,9 @@ import javax.crypto.spec.IvParameterSpec;
  */
 public class CICO {
     private static final String ALGORITHM = "aEs";
-    private static final String[] MODES = { "PCBC", "ECb", "cbC", "cFB",
+    private static final String[] MODES = { "ECb", "cbC", "cFB",
         "cFB24", "cFB32", "Cfb40", "CFB72", "OfB", "OfB20", "OfB48",
-        "OfB56", "OFB64", "OFB112", "CFB112", "pCbC" };
+        "OfB56", "OFB64", "OFB112", "CFB112" };
     private static final String[] PADDING = { "noPadding", "pkcs5padding" };
     private static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
     private static final int NREADS = 3;

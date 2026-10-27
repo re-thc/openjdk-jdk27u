@@ -27,11 +27,10 @@
  * @summary New default -sigalg for keytool
  * @library /test/lib
  * @build java.base/sun.security.rsa.RSAKeyPairGenerator
- *        java.base/sun.security.provider.DSAKeyPairGenerator
  *        java.base/sun.security.ec.ECKeyPairGenerator
  * @run main DefaultSignatureAlgorithm
  *
- * This test uses RSA, DSA, and EC inside this test directory, not the providers
+ * This test uses RSA and EC inside this test directory, not the providers
  * from the jdk
  */
 
@@ -53,9 +52,6 @@ public class DefaultSignatureAlgorithm {
         check("RSA", 3073, null, "SHA384withRSA");
         check("RSA", 7680, null, "SHA384withRSA");
         check("RSA", 7681, null, "SHA512withRSA");
-
-        check("DSA", 1024, null, "SHA256withDSA");
-        check("DSA", 3072, null, "SHA256withDSA");
 
         check("EC", 384, null, "SHA384withECDSA");
 

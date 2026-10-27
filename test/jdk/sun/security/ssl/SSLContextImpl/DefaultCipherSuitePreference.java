@@ -43,8 +43,7 @@ import javax.net.ssl.TrustManager;
 
 public class DefaultCipherSuitePreference {
     private static final String[] contextAlgorithms = {
-            "Default", "SSL", "TLS", "SSLv3", "TLSv1",
-            "TLSv1.1", "TLSv1.2", "TLSv1.3"
+            "Default", "SSL", "TLS", "TLSv1.2", "TLSv1.3"
         };
 
     public static void main(String[] args) throws Exception {

@@ -12921,6 +12921,7 @@ instruct addHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
 %}
 
 instruct addF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  predicate(!is_float_roundtrip_reduction_accumulation(n));
   match(Set dst (AddF src1 src2));
 
   ins_cost(INSN_COST * 5);

@@ -128,7 +128,7 @@ public class NoTimestampTest extends Test {
     }
 
     private static Date getCertExpirationDate() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         try (InputStream in = new FileInputStream(KEYSTORE)) {
             ks.load(in, PASSWORD.toCharArray());
         }

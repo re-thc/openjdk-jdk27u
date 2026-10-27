@@ -55,18 +55,18 @@ public class WeakCrypto {
                 " des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5";
         test(null, strongAndWeak, 18, 17, 20, 19);
         test(false, strongAndWeak, 18, 17, 20, 19);
-        test(true, strongAndWeak, 18, 17, 20, 19, 16, 23, 1, 3);
+        test(true, strongAndWeak, 18, 17, 20, 19);
 
         String anotherOrder = "aes256-cts aes256-sha2 aes128-cts aes128-sha2" +
                 " des3-hmac-sha1 arcfour-hmac des-cbc-crc des-cbc-md5";
         test(null, anotherOrder, 18, 20, 17, 19);
         test(false, anotherOrder, 18, 20, 17, 19);
-        test(true, anotherOrder, 18, 20, 17, 19, 16, 23, 1, 3);
+        test(true, anotherOrder, 18, 20, 17, 19);
 
         String two = "aes256-cts arcfour-hmac";
         test(null, two, 18);
         test(false, two, 18);
-        test(true, two, 18, 23);
+        test(true, two, 18);
     }
 
     /**

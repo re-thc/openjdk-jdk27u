@@ -35,7 +35,7 @@ public class GetAlgName {
     private static String PASSWD = "password";
 
     private static final String[] ALGOS = {
-        "PBEWithMD5AndDES", "PBEWithSHA1AndDESede", "PBEWithSHA1AndRC2_40"
+        "PBEWithSHA1AndDESede"
     };
     private static final byte[] BYTES = new byte[20];
 

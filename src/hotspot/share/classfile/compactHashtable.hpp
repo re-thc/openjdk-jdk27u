@@ -303,6 +303,12 @@ public:
     return nullptr;
   }
 
+  // Looks up count keys like lookup(), setting values[i] to the value of key i
+  // or null, with the cache misses of the keys overlapped.
+  template <typename KEY>
+  inline void lookup_batch(const KEY* keys, const unsigned int* hashes, const int* lens,
+                           int count, V* values) const;
+
   // Iterate through the values in the table, stopping when do_value() returns false.
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }

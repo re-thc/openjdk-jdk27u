@@ -180,7 +180,7 @@ public class PEMDecoderTest {
         // PBE
         System.out.println("EncryptedPrivateKeyInfo.encrypt with PBE: ");
         ekpi = EncryptedPrivateKeyInfo.encrypt(privateKey,
-            "password".toCharArray(),"PBEWithMD5AndDES", null, null);
+            "password".toCharArray(),"PBEWithSHA1AndDESede", null, null);
         try {
             ekpi.getKey("password".toCharArray());
             System.out.println("PASS");

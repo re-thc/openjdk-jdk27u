@@ -29,22 +29,23 @@
 /*
  * @test
  * @bug 8202343 8256660
- * @summary Check that SSLv3, TLSv1, TLSv1.1, and DTLSv1.0 are disabled
- *          by default
+ * @summary Check that SSLv3, TLSv1, TLSv1.1, and DTLSv1.0 are neither
+ *          enabled nor supported
  * @run main/othervm SSLContextDefault
  */
 
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import javax.net.ssl.*;
 
 public class SSLContextDefault {
 
     private static final String[] tlsProtocols = {
-        "", "SSL", "TLS", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
+        "", "SSL", "TLS", "TLSv1.2", "TLSv1.3"
     };
 
     private static final String[] dtlsProtocols = {
-        "DTLS", "DTLSv1.0", "DTLSv1.2"
+        "DTLS", "DTLSv1.2"
     };
 
     private static final List<String> disabledTlsProtocols = List.<String>of(
@@ -61,6 +62,23 @@ public class SSLContextDefault {
         }
         for (String dtlsProtocol : dtlsProtocols) {
             testProtocol(dtlsProtocol, disabledDtlsProtocols);
+        }
+        for (String protocol : disabledTlsProtocols) {
+            checkNoContext(protocol);
+        }
+        for (String protocol : disabledDtlsProtocols) {
+            checkNoContext(protocol);
+        }
+    }
+
+    private static void checkNoContext(String protocol) throws Exception {
+        try {
+            SSLContext.getInstance(protocol);
+            throw new Exception(
+                    "SSLContext of " + protocol + " should not be available");
+        } catch (NoSuchAlgorithmException nsae) {
+            System.out.println("SSLContext of " + protocol +
+                    " is not available, as expected");
         }
     }
 
@@ -138,19 +156,11 @@ public class SSLContextDefault {
             throws Exception {
         showProtocols(protocols, title);
 
-        if (disabled) {
-            for (String protocol : protocols ) {
-                if (disabledProtocols.contains(protocol)) {
-                    throw new Exception(protocol +
-                                        " should not be enabled by default");
-                }
-            }
-        } else {
-            for (String disabledProtocol : disabledProtocols) {
-                if (!List.of(protocols).contains(disabledProtocol)) {
-                    throw new Exception(disabledProtocol +
-                                        " should be supported by default");
-                }
+        for (String protocol : protocols ) {
+            if (disabledProtocols.contains(protocol)) {
+                throw new Exception(protocol + (disabled ?
+                        " should not be enabled by default" :
+                        " should not be supported"));
             }
         }
     }

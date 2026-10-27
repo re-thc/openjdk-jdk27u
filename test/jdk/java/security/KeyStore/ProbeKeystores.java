@@ -64,76 +64,36 @@ public class ProbeKeystores {
 
         // Testing empty keystores
 
-        init("empty.jks", "JKS");
-        init("empty.jceks", "JCEKS");
         init("empty.p12", "PKCS12");
 
-        load("empty.jks", "JKS");
-        load("empty.jceks", "JCEKS");
         load("empty.p12", "PKCS12");
-        load("empty.jks", "PKCS12"); // test compatibility mode
-        load("empty.p12", "JKS"); // test compatibility mode
-        load("empty.jks", "PKCS12", true); // test without compatibility mode
-        load("empty.jks", "JKS", false); // test without compatibility mode
-        load("empty.p12", "JKS", true); // test without compatibility mode
-        load("empty.p12", "PKCS12", false); // test without compatibility mode
 
-        probe("empty.jks", "JKS");
-        probe("empty.jceks", "JCEKS");
         probe("empty.p12", "PKCS12");
 
-        build("empty.jks", "JKS", true);
-        build("empty.jks", "JKS", false);
-        build("empty.jceks", "JCEKS", true);
-        build("empty.jceks", "JCEKS", false);
         build("empty.p12", "PKCS12", true);
         build("empty.p12", "PKCS12", false);
 
         // Testing keystores containing an X.509 certificate
 
         X509Certificate cert = loadCertificate(CERT_FILE);
-        init("onecert.jks", "JKS", cert);
-        init("onecert.jceks", "JCEKS", cert);
         init("onecert.p12", "PKCS12", cert);
 
-        load("onecert.jks", "JKS");
-        load("onecert.jceks", "JCEKS");
         load("onecert.p12", "PKCS12");
-        load("onecert.jks", "PKCS12"); // test compatibility mode
-        load("onecert.p12", "JKS"); // test compatibility mode
-        load("onecert.jks", "PKCS12", true); // test without compatibility mode
-        load("onecert.jks", "JKS", false); // test without compatibility mode
-        load("onecert.p12", "JKS", true); // test without compatibility mode
-        load("onecert.p12", "PKCS12", false); // test without compatibility mode
 
-        probe("onecert.jks", "JKS");
-        probe("onecert.jceks", "JCEKS");
         probe("onecert.p12", "PKCS12");
 
-        build("onecert.jks", "JKS", true);
-        build("onecert.jks", "JKS", false);
-        build("onecert.jceks", "JCEKS", true);
-        build("onecert.jceks", "JCEKS", false);
         build("onecert.p12", "PKCS12", true);
         build("onecert.p12", "PKCS12", false);
 
         // Testing keystores containing a secret key
 
         SecretKey key = generateSecretKey("AES", 128);
-        init("onekey.jceks", "JCEKS", key);
         init("onekey.p12", "PKCS12", key);
 
-        load("onekey.jceks", "JCEKS");
         load("onekey.p12", "PKCS12");
-        load("onekey.p12", "JKS"); // test compatibility mode
-        load("onekey.p12", "JKS", true); // test without compatibility mode
-        load("onekey.p12", "PKCS12", false); // test without compatibility mode
 
-        probe("onekey.jceks", "JCEKS");
         probe("onekey.p12", "PKCS12");
 
-        build("onekey.jceks", "JCEKS", true);
-        build("onekey.jceks", "JCEKS", false);
         build("onekey.p12", "PKCS12", true);
         build("onekey.p12", "PKCS12", false);
 
@@ -246,26 +206,6 @@ public class ProbeKeystores {
                 "got a " + ks.getType() + " keystore instead");
         } else {
             System.out.println("Loaded a " + type + " keystore named '" + file + "'");
-        }
-    }
-
-    // Load the keystore entries (with compatibility mode disabled)
-    private static void load(String file, String type, boolean expectFailure)
-        throws Exception {
-        Security.setProperty("keystore.type.compat", "false");
-        try {
-            load(file, type);
-            if (expectFailure) {
-                throw new Exception("ERROR: expected load to fail but it didn't");
-            }
-        } catch (IOException e) {
-            if (expectFailure) {
-                System.out.println("Failed to load a " + type + " keystore named '" + file + "' (as expected)");
-            } else {
-                throw e;
-            }
-        } finally {
-            Security.setProperty("keystore.type.compat", "true");
         }
     }
 

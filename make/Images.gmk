@@ -40,7 +40,10 @@ JRE_TARGETS :=
 ################################################################################
 
 # All modules for the current target platform.
-ALL_MODULES := $(call FindAllModules) $(EXTRA_MODULES)
+ifneq ($(filter $(MODULES_FILTER), $(EXTRA_MODULES)), )
+  $(error Extra modules excluded by this configuration: $(filter $(MODULES_FILTER), $(EXTRA_MODULES)))
+endif
+ALL_MODULES := $(filter-out $(MODULES_FILTER), $(call FindAllModules) $(EXTRA_MODULES))
 
 $(eval $(call ReadImportMetaData))
 

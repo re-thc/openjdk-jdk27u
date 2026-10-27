@@ -37,8 +37,8 @@ public class Sealtest {
 
     public static void main(String[] args) throws Exception {
 
-        // create DSA keypair
-        String kpgAlgorithm = "DSA";
+        // create EC keypair
+        String kpgAlgorithm = "EC";
         KeyPairGenerator kpgen = KeyPairGenerator.getInstance(kpgAlgorithm);
         kpgen.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpgen.generateKeyPair();
@@ -51,7 +51,7 @@ public class Sealtest {
         Cipher c = Cipher.getInstance("DES/CFB16/PKCS5Padding", "SunJCE");
         c.init(Cipher.ENCRYPT_MODE, skey);
 
-        // seal the DSA private key
+        // seal the EC private key
         SealedObject sealed = new SealedObject(kp.getPrivate(), c);
 
         // serialize

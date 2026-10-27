@@ -28,7 +28,6 @@
  * @modules java.base/sun.security.tools.keytool
  * @compile -XDignore.symbol.file DupImport.java
  * @run main DupImport pkcs12
- * @run main DupImport jks
  */
 
 import java.io.File;
@@ -51,9 +50,9 @@ public class DupImport {
         Files.deleteIfExists(Paths.get("dup.ks"));
 
         // Create chain: root -> int -> me
-        run("-genkeypair -keyalg DSA -alias me -dname CN=Me");
-        run("-genkeypair -keyalg DSA -alias int -dname CN=Int");
-        run("-genkeypair -keyalg DSA -alias root -dname CN=Root");
+        run("-genkeypair -keyalg EC -alias me -dname CN=Me");
+        run("-genkeypair -keyalg EC -alias int -dname CN=Int");
+        run("-genkeypair -keyalg EC -alias root -dname CN=Root");
 
         run("-certreq -alias int -file int.req");
         run("-gencert -infile int.req -alias root -rfc -outfile int.resp");

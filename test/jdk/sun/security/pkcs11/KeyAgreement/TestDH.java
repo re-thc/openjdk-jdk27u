@@ -93,7 +93,6 @@ public class TestDH extends PKCS11Test {
         testAlgorithm(ka2, kp2, ka1, kp1, "DESede");
 //      testAlgorithm(ka2, kp2, ka1, kp1, "AES");
 //      testAlgorithm(ka2, kp2, ka1, kp1, "RC4");
-        testAlgorithm(ka2, kp2, ka1, kp1, "Blowfish");
         testAlgorithm(ka2, kp2, ka1, kp1, "TlsPremasterSecret");
     }
 

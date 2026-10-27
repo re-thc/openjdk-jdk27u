@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8349849
- * @summary Verify that SunTlsKeyMaterial doesn't crash on TLS 1.2 parameters
+ * @summary Verify that SunTls12KeyMaterial doesn't crash on TLS 1.0 parameters
  * @library /test/lib ..
  * @modules java.base/sun.security.internal.spec
  * @run main/othervm TestKeyMaterialMisuse
@@ -36,6 +36,7 @@ import sun.security.internal.spec.TlsKeyMaterialSpec;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.ProviderException;
 import java.util.Arrays;
@@ -57,12 +58,8 @@ public class TestKeyMaterialMisuse extends PKCS11Test {
         byte[] sr = "serverRandom".getBytes();
         for (int minor : List.of(1, 3)) {
             try {
-                // the algorithms below are deliberately reversed:
-                // - SunTls12KeyMaterial is used with TLS 1.0,
-                // - SunTlsKeyMaterial is used with TLS 1.2
-                String algorithm = minor != 3 ?
-                        "SunTls12KeyMaterial" :
-                        "SunTlsKeyMaterial";
+                // SunTls12KeyMaterial is deliberately used with TLS 1.0
+                String algorithm = "SunTls12KeyMaterial";
                 System.out.println("Generating key material for version: " +
                         minor + " using algorithm: " + algorithm);
 
@@ -70,13 +67,22 @@ public class TestKeyMaterialMisuse extends PKCS11Test {
                 TlsKeyMaterialParameterSpec spec =
                         new TlsKeyMaterialParameterSpec(
                                 master, 3, minor, cr, sr,
-                                "AES", 32, 0,
+                                "AES", 32,
                                 12, 32,
                                 "SHA-256", 32, 128);
                 g.init(spec);
-                // generateKey crashed the JVM:
+                if (minor != 3) {
+                    throw new RuntimeException(
+                            "TLS 1.0 parameters should be rejected");
+                }
                 TlsKeyMaterialSpec km = (TlsKeyMaterialSpec) g.generateKey();
                 System.out.println("Success!");
+            } catch (InvalidAlgorithmParameterException e) {
+                if (minor == 3) {
+                    throw e;
+                }
+                System.out.println("Got expected exception:");
+                e.printStackTrace();
             } catch (ProviderException e) {
                 System.out.println("Got exception, not crash:");
                 e.printStackTrace();

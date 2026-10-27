@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,10 +244,17 @@ public final class SplittableRandom implements RandomGenerator, SplittableGenera
         return seed += gamma;
     }
 
+    static {
+        // Preserve the secureRandomSeed property snapshot at class initialization.
+        RandomSupport.ensureInitialized();
+    }
+
     /**
      * The seed generator for default constructors.
      */
-    private static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
+    private static class DefaultGenHolder {
+        static final AtomicLong defaultGen = new AtomicLong(RandomSupport.initialSeed());
+    }
 
     /* ---------------- public methods ---------------- */
 
@@ -268,7 +276,7 @@ public final class SplittableRandom implements RandomGenerator, SplittableGenera
      * may, and typically does, vary across program invocations.
      */
     public SplittableRandom() { // emulate defaultGen.split()
-        long s = defaultGen.getAndAdd(2 * GOLDEN_GAMMA);
+        long s = DefaultGenHolder.defaultGen.getAndAdd(2 * GOLDEN_GAMMA);
         this.seed = mix64(s);
         this.gamma = mixGamma(s + GOLDEN_GAMMA);
         this.proxy = new AbstractSplittableGeneratorProxy();

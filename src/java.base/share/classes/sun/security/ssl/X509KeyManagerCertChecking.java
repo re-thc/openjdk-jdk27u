@@ -344,12 +344,6 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
                             break;
-                        case "DSA":
-                            // require signature bit
-                            if (!supportsDigitalSignature) {
-                                return CheckResult.EXTENSION_MISMATCH;
-                            }
-                            break;
                         case "DH":
                             // require key agreement bit
                             if (!getBit(ku, 4)) {
@@ -484,7 +478,7 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         // restricts the algorithm used to sign the certificate.
         //
         // However, because we don't support certificate type checking other
-        // than rsa_sign, dss_sign and ecdsa_sign, we don't have to check the
+        // than rsa_sign and ecdsa_sign, we don't have to check the
         // protocol version here.
         final String sigKeyAlgorithm;
 

@@ -45,8 +45,6 @@ public class SecretKeyAlgorithms {
                 "des", "DES",
                 "desede", "DESede",
                 "aes", "AES",
-                "blowfish", "Blowfish",
-                "rc2", "RC2",
                 "arcfour", "ARCFOUR");
         for (var alg : names.entrySet()) {
             KeyGenerator g = KeyGenerator.getInstance(alg.getKey());

@@ -78,7 +78,6 @@ public class Offsets {
     }
 
     public static void main(String[] args) throws Exception {
-        test("MD2", 0, 64, 0, 128);
         test("MD5", 0, 64, 0, 128);
         test("SHA1", 0, 64, 0, 128);
         test("SHA-224", 0, 64, 0, 128);

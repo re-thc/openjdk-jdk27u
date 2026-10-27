@@ -29,37 +29,19 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-options=(
-  --disable-desktop
-  --enable-headless-only
-  --enable-jvm-feature-serialgc
-  --enable-jvm-feature-g1gc
-  --enable-jvm-feature-zgc
-  --disable-jvm-feature-epsilongc
-  --disable-jvm-feature-parallelgc
-  --disable-jvm-feature-shenandoahgc
-)
+# Configure enforces product policy; this wrapper adds development defaults.
+options=()
 
 case "$(uname -s):$(uname -m)" in
-  Linux:x86_64)
-    cpu_flags='-march=x86-64-v3 -mtune=generic'
-    ;;
-  Linux:aarch64)
-    cpu_flags='-march=armv8.2-a -mtune=generic'
-    ;;
-  Darwin:arm64)
-    cpu_flags='-mcpu=apple-m1'
-    ;;
-  MINGW*:x86_64 | MSYS*:x86_64 | CYGWIN*:x86_64)
-    cpu_flags='-arch:AVX2'
+  Linux:x86_64 | Linux:aarch64 | Darwin:arm64 | MINGW*:x86_64 | MSYS*:x86_64 | CYGWIN*:x86_64)
     ;;
   *)
     echo 'Supported native targets: Linux x64/ARM64, macOS ARM64, Windows x64.' >&2
     exit 1
     ;;
 esac
-extra_cflags=$cpu_flags
-extra_cxxflags=$cpu_flags
+extra_cflags=''
+extra_cxxflags=''
 extra_ldflags=''
 
 if [[ $(uname -s) == Linux && ${CONFIGURE_DEV_NO_MOLD:-0} != 1 ]]; then
@@ -67,7 +49,7 @@ if [[ $(uname -s) == Linux && ${CONFIGURE_DEV_NO_MOLD:-0} != 1 ]]; then
   extra_ldflags='-fuse-ld=mold'
 fi
 
-# Append caller flags so an unrelated extra flag keeps the CPU/linker defaults.
+# CPU flags come from normal configure; collect optional caller flags here.
 caller_options=()
 for option in "$@"; do
   case "$option" in

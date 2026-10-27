@@ -857,6 +857,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorConvert:
   case vmIntrinsics::_VectorInsert:
   case vmIntrinsics::_VectorExtract:
+  case vmIntrinsics::_VectorExtractBSupported:
   case vmIntrinsics::_VectorMaskOp:
   case vmIntrinsics::_IndexVector:
   case vmIntrinsics::_IndexPartiallyInUpperRange:

@@ -211,14 +211,6 @@ public class KDC {
          */
         PREAUTH_REQUIRED,
         /**
-         * Only issue TGT in RC4
-         */
-        ONLY_RC4_TGT,
-        /**
-         * Use RC4 as the first in preauth
-         */
-        RC4_FIRST_PREAUTH,
-        /**
          * Use only one preauth, so that some keys are not easy to generate
          */
         ONLY_ONE_PREAUTH,
@@ -226,10 +218,6 @@ public class KDC {
          * Set all name-type to a value in response
          */
         RESP_NT,
-        /**
-         * Multiple ETYPE-INFO-ENTRY with same etype but different salt
-         */
-        DUP_ETYPE,
         /**
          * What backend server can be delegated to
          */
@@ -1141,20 +1129,6 @@ public class KDC {
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
             EncryptionKey skey = keyForUser(service, eType, true);
 
-            if (options.containsKey(KDC.Option.ONLY_RC4_TGT)) {
-                int tgtEType = EncryptedData.ETYPE_ARCFOUR_HMAC;
-                boolean found = false;
-                for (int i=0; i<eTypes.length; i++) {
-                    if (eTypes[i] == tgtEType) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
-                }
-                skey = keyForUser(service, tgtEType, true);
-            }
             if (ckey == null) {
                 throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
             }
@@ -1216,110 +1190,21 @@ public class KDC {
             }
 
             // Creating PA-DATA
-            DerValue[] pas2 = null, pas = null;
-            if (options.containsKey(KDC.Option.DUP_ETYPE)) {
-                int n = (Integer)options.get(KDC.Option.DUP_ETYPE);
-                switch (n) {
-                    case 1:     // customer's case in 7067974
-                        pas2 = new DerValue[] {
-                            new DerValue(new ETypeInfo2(1, null, null).asn1Encode()),
-                            new DerValue(new ETypeInfo2(1, "", null).asn1Encode()),
-                            new DerValue(new ETypeInfo2(
-                                    1, realm, new byte[]{1}).asn1Encode()),
-                        };
-                        pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
-                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
-                            new DerValue(new ETypeInfo(1, realm).asn1Encode()),
-                        };
-                        break;
-                    case 2:     // we still reject non-null s2kparams and prefer E2 over E
-                        pas2 = new DerValue[] {
-                            new DerValue(new ETypeInfo2(
-                                    1, realm, new byte[]{1}).asn1Encode()),
-                            new DerValue(new ETypeInfo2(1, null, null).asn1Encode()),
-                            new DerValue(new ETypeInfo2(1, "", null).asn1Encode()),
-                        };
-                        pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(1, realm).asn1Encode()),
-                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
-                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
-                        };
-                        break;
-                    case 3:     // but only E is wrong
-                        pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(1, realm).asn1Encode()),
-                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
-                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
-                        };
-                        break;
-                    case 4:     // we also ignore rc4-hmac
-                        pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(23, "ANYTHING").asn1Encode()),
-                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
-                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
-                        };
-                        break;
-                    case 5:     // "" should be wrong, but we accept it now
-                                // See s.s.k.internal.PAData$SaltAndParams
-                        pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
-                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
-                        };
-                        break;
-                }
-            } else {
-                int[] epas = eTypes;
-                if (options.containsKey(KDC.Option.RC4_FIRST_PREAUTH)) {
-                    for (int i=1; i<epas.length; i++) {
-                        if (epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC) {
-                            epas[i] = epas[0];
-                            epas[0] = EncryptedData.ETYPE_ARCFOUR_HMAC;
-                            break;
-                        }
-                    };
-                } else if (options.containsKey(KDC.Option.ONLY_ONE_PREAUTH)) {
-                    epas = new int[] { eTypes[0] };
-                }
-                pas2 = new DerValue[epas.length];
-                for (int i=0; i<epas.length; i++) {
-                    pas2[i] = new DerValue(new ETypeInfo2(
-                            epas[i],
-                            epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
-                                null : getSalt(body.cname),
-                            getParams(body.cname, epas[i])).asn1Encode());
-                }
-                boolean allOld = true;
-                for (int i: eTypes) {
-                    if (i >= EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 &&
-                            i != EncryptedData.ETYPE_ARCFOUR_HMAC) {
-                        allOld = false;
-                        break;
-                    }
-                }
-                if (allOld) {
-                    pas = new DerValue[epas.length];
-                    for (int i=0; i<epas.length; i++) {
-                        pas[i] = new DerValue(new ETypeInfo(
-                                epas[i],
-                                epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
-                                    null : getSalt(body.cname)
-                                ).asn1Encode());
-                    }
-                }
+            int[] epas = eTypes;
+            if (options.containsKey(KDC.Option.ONLY_ONE_PREAUTH)) {
+                epas = new int[] { eTypes[0] };
+            }
+            DerValue[] pas2 = new DerValue[epas.length];
+            for (int i=0; i<epas.length; i++) {
+                pas2[i] = new DerValue(new ETypeInfo2(
+                        epas[i],
+                        getSalt(body.cname),
+                        getParams(body.cname, epas[i])).asn1Encode());
             }
 
-            DerOutputStream eid;
-            if (pas2 != null) {
-                eid = new DerOutputStream();
-                eid.putSequence(pas2);
-                outPAs.add(new PAData(Krb5.PA_ETYPE_INFO2, eid.toByteArray()));
-            }
-            if (pas != null) {
-                eid = new DerOutputStream();
-                eid.putSequence(pas);
-                outPAs.add(new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray()));
-            }
+            DerOutputStream eid = new DerOutputStream();
+            eid.putSequence(pas2);
+            outPAs.add(new PAData(Krb5.PA_ETYPE_INFO2, eid.toByteArray()));
 
             PAData[] inPAs = asReq.pAData;
             List<PAData> enc_outPAs = new ArrayList<>();

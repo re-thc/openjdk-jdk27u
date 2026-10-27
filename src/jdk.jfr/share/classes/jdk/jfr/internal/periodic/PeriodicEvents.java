@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@ import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformEventType;
 
 /**
@@ -58,7 +60,11 @@ public final class PeriodicEvents {
     private static long lastTimeMillis;
 
     public static void addJavaEvent(Class<? extends Event> eventClass, Runnable runnable) {
-        taskRepository.add(new JavaEventTask(eventClass, runnable));
+        JavaEventTask task = new JavaEventTask(eventClass, runnable);
+        // Preserve the native-before-Java hook order, without holding the task
+        // repository lock while initializing the native hooks.
+        MetadataRepository.getInstance().ensureJVMEventTypes();
+        taskRepository.add(task);
     }
 
     public static void addJVMEvent(PlatformEventType eventType) {

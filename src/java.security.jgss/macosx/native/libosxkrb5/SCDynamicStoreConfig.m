@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,39 +24,46 @@
  * questions.
  */
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
+#import <dispatch/dispatch.h>
 #import "jni_util.h"
 
 #define KERBEROS_DEFAULT_REALMS @"Kerberos-Default-Realms"
 #define KERBEROS_DEFAULT_REALM_MAPPINGS @"Kerberos-Domain-Realm-Mappings"
 #define KERBEROS_REALM_INFO @"Kerberos:%@"
 
-JavaVM *localVM;
-
 void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, void *info) {
-    NSArray *keys = (NSArray *)changedKeys;
-    if ([keys count] == 0) return;
-    if (![keys containsObject:KERBEROS_DEFAULT_REALMS] && ![keys containsObject:KERBEROS_DEFAULT_REALM_MAPPINGS]) return;
+    @autoreleasepool {
+        NSArray *keys = (NSArray *)changedKeys;
+        if ([keys count] == 0) return;
+        if (![keys containsObject:KERBEROS_DEFAULT_REALMS] && ![keys containsObject:KERBEROS_DEFAULT_REALM_MAPPINGS]) return;
 
-    JNIEnv *env;
-    bool createdFromAttach = FALSE;
-    jint status = (*localVM)->GetEnv(localVM, (void**)&env, JNI_VERSION_1_2);
-    if (status == JNI_EDETACHED) {
-        status = (*localVM)->AttachCurrentThreadAsDaemon(localVM, (void**)&env, NULL);
-        createdFromAttach = TRUE;
-    }
-    if (status == 0) {
-        jclass jc_Config = (*env)->FindClass(env, "sun/security/krb5/Config");
-        CHECK_NULL(jc_Config);
-        jmethodID jm_Config_refresh = (*env)->GetStaticMethodID(env, jc_Config, "refresh", "()V");
-        CHECK_NULL(jm_Config_refresh);
-        (*env)->CallStaticVoidMethod(env, jc_Config, jm_Config_refresh);
+        JavaVM *vm = (JavaVM *)info;
+        JNIEnv *env = NULL;
+        bool attached = false;
+        jint status = (*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_2);
+        if (status == JNI_EDETACHED) {
+            status = (*vm)->AttachCurrentThreadAsDaemon(vm, (void**)&env, NULL);
+            attached = (status == JNI_OK);
+        }
+        if (status != JNI_OK) return;
+
+        jclass config = (*env)->FindClass(env, "sun/security/krb5/Config");
+        if (config != NULL) {
+            jmethodID refresh = (*env)->GetStaticMethodID(env, config, "refresh", "()V");
+            if (refresh != NULL) {
+                (*env)->CallStaticVoidMethod(env, config, refresh);
+            }
+        }
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
         }
-        if (createdFromAttach) {
-            (*localVM)->DetachCurrentThread(localVM);
+        if (config != NULL) {
+            (*env)->DeleteLocalRef(env, config);
+        }
+        if (attached) {
+            (*vm)->DetachCurrentThread(vm);
         }
     }
 }
@@ -65,27 +73,35 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
  * Method:    installNotificationCallback
  */
 JNIEXPORT void JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_installNotificationCallback(JNIEnv *env, jclass klass) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    SCDynamicStoreRef store = NULL;
+    dispatch_queue_t queue = NULL;
     @try {
-        (*env)->GetJavaVM(env, &localVM);
-        SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
+        JavaVM *vm;
+        if ((*env)->GetJavaVM(env, &vm) != JNI_OK) return;
+        SCDynamicStoreContext context = { 0, vm, NULL, NULL, NULL };
+        store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, &context);
         if (store == NULL) {
             return;
         }
 
         NSArray *keys = [NSArray arrayWithObjects:KERBEROS_DEFAULT_REALMS, KERBEROS_DEFAULT_REALM_MAPPINGS, nil];
-        SCDynamicStoreSetNotificationKeys(store, (CFArrayRef) keys, NULL);
-
-        CFRunLoopSourceRef rls = SCDynamicStoreCreateRunLoopSource(NULL, store, 0);
-        if (rls != NULL) {
-            CFRunLoopAddSource(CFRunLoopGetMain(), rls, kCFRunLoopDefaultMode);
-            CFRelease(rls);
+        if (!SCDynamicStoreSetNotificationKeys(store, (CFArrayRef) keys, NULL)) {
+            return;
         }
 
-        CFRelease(store);
+        // The headless launcher does not pump the main CFRunLoop. Deliver
+        // notifications serially on native workers instead. Successful
+        // scheduling retains the store and queue for the observer's lifetime.
+        queue = dispatch_queue_create("org.openjdk.kerberos.config", DISPATCH_QUEUE_SERIAL);
+        if (queue == NULL || !SCDynamicStoreSetDispatchQueue(store, queue)) {
+            return;
+        }
     } @catch (NSException *e) {
         NSLog(@"%@", [e callStackSymbols]);
     } @finally {
+        if (queue != NULL) dispatch_release(queue);
+        if (store != NULL) CFRelease(store);
         [pool drain];
     }
 }

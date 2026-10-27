@@ -31,11 +31,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import jdk.internal.event.VirtualThreadEndEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
 import jdk.internal.event.VirtualThreadSubmitFailedEvent;
@@ -227,7 +230,13 @@ final class VirtualThread extends BaseVirtualThread {
 
         this.scheduler = scheduler;
         this.cont = new VThreadContinuation(this, task);
-        this.runContinuation = this::runContinuation;
+        // Avoid lambda linkage when creating the first virtual thread.
+        this.runContinuation = new Runnable() {
+            @Hidden
+            public void run() {
+                runContinuation();
+            }
+        };
     }
 
     /**
@@ -575,7 +584,12 @@ final class VirtualThread extends BaseVirtualThread {
                 // schedule unpark
                 long timeout = this.timeout;
                 assert timeout > 0;
-                timeoutTask = schedule(this::parkTimeoutExpired, timeout, NANOSECONDS);
+                timeoutTask = schedule(new Runnable() {
+                    @Hidden
+                    public void run() {
+                        parkTimeoutExpired();
+                    }
+                }, timeout, NANOSECONDS);
                 setState(newState = TIMED_PARKED);
             }
 
@@ -633,7 +647,12 @@ final class VirtualThread extends BaseVirtualThread {
                 assert timeout > 0;
                 synchronized (timedWaitLock()) {
                     byte seqNo = ++timedWaitSeqNo;
-                    timeoutTask = schedule(() -> waitTimeoutExpired(seqNo), timeout, MILLISECONDS);
+                    timeoutTask = schedule(new Runnable() {
+                        @Hidden
+                        public void run() {
+                            waitTimeoutExpired(seqNo);
+                        }
+                    }, timeout, MILLISECONDS);
                     setState(newState = TIMED_WAIT);
                     // May have been notified while in transition. This must be done while
                     // holding the monitor to avoid changing the state of a new timed wait call.
@@ -1328,7 +1347,11 @@ final class VirtualThread extends BaseVirtualThread {
      * Creates the default ForkJoinPool scheduler.
      */
     private static ForkJoinPool createDefaultScheduler() {
-        ForkJoinWorkerThreadFactory factory = pool -> new CarrierThread(pool);
+        ForkJoinWorkerThreadFactory factory = new ForkJoinWorkerThreadFactory() {
+            public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+                return new CarrierThread(pool);
+            }
+        };
         int parallelism, maxPoolSize, minRunnable;
         String parallelismValue = System.getProperty("jdk.virtualThreadScheduler.parallelism");
         String maxPoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.maxPoolSize");
@@ -1349,10 +1372,17 @@ final class VirtualThread extends BaseVirtualThread {
         } else {
             minRunnable = Integer.max(parallelism / 2, 1);
         }
-        Thread.UncaughtExceptionHandler handler = (t, e) -> { };
+        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) { }
+        };
+        Predicate<ForkJoinPool> saturate = new Predicate<>() {
+            public boolean test(ForkJoinPool pool) {
+                return true;
+            }
+        };
         boolean asyncMode = true; // FIFO
         return new ForkJoinPool(parallelism, factory, handler, asyncMode,
-                     0, maxPoolSize, minRunnable, pool -> true, 30, SECONDS);
+                     0, maxPoolSize, minRunnable, saturate, 30, SECONDS);
     }
 
     /**
@@ -1396,10 +1426,12 @@ final class VirtualThread extends BaseVirtualThread {
             var schedulers = new ScheduledExecutorService[queueCount];
             for (int i = 0; i < queueCount; i++) {
                 ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor)
-                    Executors.newScheduledThreadPool(1, task -> {
-                        Thread t = InnocuousThread.newThread("VirtualThread-unparker", task);
-                        t.setDaemon(true);
-                        return t;
+                    Executors.newScheduledThreadPool(1, new ThreadFactory() {
+                        public Thread newThread(Runnable task) {
+                            Thread t = InnocuousThread.newThread("VirtualThread-unparker", task);
+                            t.setDaemon(true);
+                            return t;
+                        }
                     });
                 stpe.setRemoveOnCancelPolicy(true);
                 schedulers[i] = stpe;
@@ -1437,8 +1469,12 @@ final class VirtualThread extends BaseVirtualThread {
     private static native VirtualThread takeVirtualThreadListToUnblock();
 
     static {
-        var unblocker = InnocuousThread.newThread("VirtualThread-unblocker",
-                VirtualThread::unblockVirtualThreads);
+        var unblocker = InnocuousThread.newThread("VirtualThread-unblocker", new Runnable() {
+            @Hidden
+            public void run() {
+                unblockVirtualThreads();
+            }
+        });
         unblocker.setDaemon(true);
         unblocker.start();
     }

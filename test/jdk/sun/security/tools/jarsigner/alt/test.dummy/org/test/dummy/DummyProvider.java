@@ -40,20 +40,19 @@ public class DummyProvider extends Provider {
         //
         // KeyStore
         //
-        put("KeyStore.DummyKS", "sun.security.provider.JavaKeyStore$JKS");
+        put("KeyStore.DummyKS", "sun.security.pkcs12.PKCS12KeyStore");
 
         //
         // Signature engines
         //
-        put("Signature.SHA1withDSA",
-            "sun.security.provider.DSA$SHA1withDSA");
-        put("Alg.Alias.Signature.DSA", "SHA1withDSA");
+        put("Signature.SHA256withRSA",
+            "sun.security.rsa.RSASignature$SHA256withRSA");
 
         //
         // Key Pair Generator engines
         //
-        put("KeyPairGenerator.DSA",
-            "sun.security.provider.DSAKeyPairGenerator");
+        put("KeyPairGenerator.RSA",
+            "sun.security.rsa.RSAKeyPairGenerator$Legacy");
 
         //
         // Digest engines

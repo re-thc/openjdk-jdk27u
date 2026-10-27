@@ -31,17 +31,17 @@ import java.security.SignedObject;
  * @test
  * @bug 8050374
  * @summary Checks if a signed object is a copy of an original object
- * @run main Copy DSA 512
- * @run main Copy SHA256withDSA 2048
+ * @run main Copy SHA256withECDSA 256
+ * @run main Copy SHA384withECDSA 384
  */
 public class Copy {
 
-    private static final String DSA = "DSA";
+    private static final String EC = "EC";
     private static final int MAGIC = 123;
 
     public static void main(String args[]) throws Exception {
         int keySize = Integer.parseInt(args[1]);
-        KeyPairGenerator kg = KeyPairGenerator.getInstance(DSA);
+        KeyPairGenerator kg = KeyPairGenerator.getInstance(EC);
         kg.initialize(keySize);
         KeyPair kp = kg.genKeyPair();
 
@@ -53,12 +53,12 @@ public class Copy {
         System.out.println("Signature algorithm: " + so.getAlgorithm());
 
         signature = Signature.getInstance(signAlgo,
-                System.getProperty("test.provider.name", "SUN"));
+                System.getProperty("test.provider.name", "SunEC"));
         if (!so.verify(kp.getPublic(), signature)) {
             throw new RuntimeException("Verification failed");
         }
 
-        kg = KeyPairGenerator.getInstance(DSA);
+        kg = KeyPairGenerator.getInstance(EC);
         kg.initialize(keySize);
         kp = kg.genKeyPair();
 

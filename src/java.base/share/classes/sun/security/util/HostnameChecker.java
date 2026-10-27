@@ -86,13 +86,15 @@ public class HostnameChecker {
      *
      * @param expectedName the expected host name or ip address
      * @param cert the certificate to check against
-     * @param chainsToPublicCA true if the certificate chains to a public
-     *     root CA (as pre-installed in the cacerts file)
+     * @param root the root of the chain of the certificate, or null if it
+     *     is not known.  Whether it is a public root CA (as pre-installed
+     *     in the cacerts file) is only looked up if a wildcard in a name of
+     *     the certificate makes it matter.
      * @throws CertificateException if the name does not match any of
      *     the names specified in the certificate
      */
     public void match(String expectedName, X509Certificate cert,
-                      boolean chainsToPublicCA) throws CertificateException {
+                      X509Certificate root) throws CertificateException {
         if (expectedName == null) {
             throw new CertificateException("Hostname or IP address is " +
                     "undefined.");
@@ -100,13 +102,13 @@ public class HostnameChecker {
         if (isIpAddress(expectedName)) {
            matchIP(expectedName, cert);
         } else {
-           matchDNS(expectedName, cert, chainsToPublicCA);
+           matchDNS(expectedName, cert, root);
         }
     }
 
     public void match(String expectedName, X509Certificate cert)
             throws CertificateException {
-        match(expectedName, cert, false);
+        match(expectedName, cert, null);
     }
 
     /**
@@ -125,7 +127,7 @@ public class HostnameChecker {
 
     /**
      * Check if the certificate allows use of the given IP address.
-     *
+     * <p>
      * From RFC2818:
      * In some cases, the URI is specified as an IP address rather than a
      * hostname. In this case, the iPAddress subjectAltName must be present
@@ -140,26 +142,30 @@ public class HostnameChecker {
         }
         for (List<?> next : subjAltNames) {
             // For IP address, it needs to be exact match
-            if (((Integer)next.get(0)).intValue() == ALTNAME_IP) {
+            if ((int) next.get(0) == ALTNAME_IP) {
                 String ipAddress = (String)next.get(1);
+
                 if (expectedIP.equalsIgnoreCase(ipAddress)) {
                     return;
                 } else {
-                    // compare InetAddress objects in order to ensure
-                    // equality between a long IPv6 address and its
-                    // abbreviated form.
+                    // Compare InetAddress objects if literal check failed.
+                    // InetAddress.getByName() normalizes IP address, thus
+                    // the following is insured:
+                    //   - Equality between a long IPv6 address and its
+                    //     abbreviated form.
+                    //   - Equality between IPv4-Mapped IPv6 address and its
+                    //     regular IPv4 form.
                     try {
                         if (InetAddress.getByName(expectedIP).equals(
                                 InetAddress.getByName(ipAddress))) {
                             return;
                         }
-                    } catch (UnknownHostException e) {}
+                    } catch (UnknownHostException _) {}
                 }
             }
         }
         throw new CertificateException("No subject alternative " +
-                        "names matching " + "IP address " +
-                        expectedIP + " found");
+                        "names matching IP address " + expectedIP + " found");
     }
 
     /**
@@ -178,7 +184,7 @@ public class HostnameChecker {
      * of the set is considered acceptable.)
      */
     private void matchDNS(String expectedName, X509Certificate cert,
-                          boolean chainsToPublicCA)
+                          X509Certificate root)
             throws CertificateException {
         // Check that the expected name is a valid domain name.
         try {
@@ -196,7 +202,7 @@ public class HostnameChecker {
                 if (((Integer)next.get(0)).intValue() == ALTNAME_DNS) {
                     foundDNS = true;
                     String dnsName = (String)next.get(1);
-                    if (isMatched(expectedName, dnsName, chainsToPublicCA)) {
+                    if (isMatched(expectedName, dnsName, root)) {
                         return;
                     }
                 }
@@ -218,7 +224,7 @@ public class HostnameChecker {
                     throw new CertificateException("Not a formal name "
                             + cname);
                 }
-                if (isMatched(expectedName, cname, chainsToPublicCA)) {
+                if (isMatched(expectedName, cname, root)) {
                     return;
                 }
             } catch (IOException e) {
@@ -264,7 +270,7 @@ public class HostnameChecker {
      * <code>template</code> parameter may contain the wildcard character '*'.
      */
     public boolean isMatched(String name, String template,
-                              boolean chainsToPublicCA) {
+                              X509Certificate root) {
 
         // Normalize to Unicode, because PSL is in Unicode.
         try {
@@ -278,7 +284,7 @@ public class HostnameChecker {
             return false;
         }
 
-        if (hasIllegalWildcard(template, chainsToPublicCA)) {
+        if (hasIllegalWildcard(template, root)) {
             return false;
         }
 
@@ -305,7 +311,7 @@ public class HostnameChecker {
      * Returns true if the template contains an illegal wildcard character.
      */
     private static boolean hasIllegalWildcard(
-            String template, boolean chainsToPublicCA) {
+            String template, X509Certificate root) {
         // not ok if it is a single wildcard character or "*."
         if (template.equals("*") || template.equals("*.")) {
             if (SSLLogger.isOn()) {
@@ -336,8 +342,9 @@ public class HostnameChecker {
             return true;
         }
 
-        if (!chainsToPublicCA) {
-            return false; // skip check for non-public certificates
+        // skip check for non-public certificates
+        if (root == null || !AnchorCertificates.contains(root)) {
+            return false;
         }
 
         // If the wildcarded domain is a top-level domain under which names
