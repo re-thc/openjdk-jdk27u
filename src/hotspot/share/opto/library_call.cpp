@@ -8536,7 +8536,7 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   const int maximum = 1024 * 1024;
   intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
       ? MAX2(SIMDUTFMinLength, intx(1024)) : SIMDUTFMinLength;
-  if (SimdUTF::available() && minimum <= maximum) {
+  if (SimdUTF::available() && !SimdUTF::stock_base64_decode_is_faster() && minimum <= maximum) {
     Node* length = _gvn.transform(new SubINode(len, src_offset));
     Node* size_order = _gvn.transform(new CmpU3Node(
         _gvn.transform(new SubINode(length, intcon((int)minimum))),

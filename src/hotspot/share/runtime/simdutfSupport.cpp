@@ -74,6 +74,18 @@ bool SimdUTF::available() {
   return simdutf_implementation != nullptr;
 }
 
+bool SimdUTF::stock_base64_decode_is_faster() {
+#if defined(AMD64) && !defined(ZERO)
+  // The condition under which the stub generator selects its VBMI kernel. Measured with
+  // JMH on such a machine, the library takes 1.2 to 1.4 times as long for blocks of 4 KB
+  // to 600 KB; the stock AVX2 stub is slower than the library by about as much.
+  return VM_Version::supports_avx512_vbmi() && VM_Version::supports_avx512bw() &&
+         VM_Version::supports_bmi2();
+#else
+  return false;
+#endif
+}
+
 address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
 #define SIMDUTF_LEAF(ID, FN) \
   case vmIntrinsics::ID:     \
