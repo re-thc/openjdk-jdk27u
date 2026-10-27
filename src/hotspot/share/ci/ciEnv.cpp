@@ -127,7 +127,8 @@ ciEnv::ciEnv(CompileTask* task)
 
   _num_inlined_bytecodes = 0;
   assert(task == nullptr || thread->task() == task, "sanity");
-  if (task != nullptr) {
+  if (task != nullptr && !task->is_direct_baseline()) {
+    // Direct work starts in the worker's structural pass, before CI exists.
     task->mark_started(os::elapsed_counter());
   }
   _task = task;

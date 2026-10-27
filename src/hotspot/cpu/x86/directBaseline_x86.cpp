@@ -36,13 +36,15 @@
 #include "code/debugInfo.hpp"
 #include "compiler/oopMap.hpp"
 #include "oops/arrayOop.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "runtime/signature.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
@@ -57,7 +59,8 @@
 // A deliberately bounded, category-1, forward-CFG subset. Every Java value has
 // a canonical full-word slot. Only rax/rbx/rcx/rdx/r8/r9/r10/r11 are scratch.
 // Reference identity is retained at every merge and every safepoint. No IR is
-// constructed: the prepass stores types, branch labels and resolved operands.
+// constructed: the worker pass stores categories and forward branch states. Operands are
+// resolved only while emitting a structurally eligible body.
 namespace {
 BasicType kind(BasicType t) {
   if (is_reference_type(t)) return T_OBJECT;
@@ -77,24 +80,47 @@ struct State : ResourceObj {
   }
 };
 
-class Emitter : StackObj {
-  ciEnv* _env;
-  ciMethod* _method;
-  AbstractCompiler* _compiler;
+class BasicSignature : public ResourceObj {
+  GrowableArray<BasicType> _types;
+  BasicType _return_type;
+  bool _valid;
+ public:
+  explicit BasicSignature(Symbol* symbol) : _types(8), _return_type(T_ILLEGAL), _valid(true) {
+    for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
+      BasicType type=ss.type();
+      if (ss.at_return_type()) {
+        _return_type=type;
+        if (type!=T_VOID && !supported_type(type)) _valid=false;
+      } else {
+        _types.append(type);
+        if (!supported_type(type)) _valid=false;
+      }
+    }
+  }
+  int count() const { return _types.length(); }
+  BasicType type_at(int i) const { return _types.at(i); }
+  BasicType return_type() const { return _return_type; }
+  bool valid() const { return _valid; }
+};
+BasicType argument_type(BasicSignature* sig, bool is_static, int i) {
+  return !is_static && i==0 ? T_OBJECT : sig->type_at(i-(is_static?0:1));
+}
+
+// Only categories, branch states and outgoing argument space are prepared here.
+// No CI object, class lookup, field linking or Java call resolution is needed.
+class Prepared : public ResourceObj {
+ public:
+  Method* _method;
   const char* _failure;
   State** _states;
-  Label* _labels;
-  ciField** _fields;
-  ciMethod** _callees;
-  ciSignature** _call_signatures;
-  int _nl, _ns, _size, _out_words, _frame_bytes, _frame_words, _last_scope_pc;
-  CodeBuffer* _code;
-  C1_MacroAssembler* _masm;
-  CodeOffsets _offsets;
-  DebugInformationRecorder* _debug;
-  OopMapSet* _maps;
-
-  bool fail(const char* message) { if (_failure == nullptr) _failure = message; return false; }
+  BasicType* _field_types;
+  BasicSignature* _signature;
+  BasicSignature** _call_signatures;
+  int _nl, _ns, _size, _out_words;
+  explicit Prepared(Method* method) : _method(method), _failure(nullptr),
+    _states(nullptr), _field_types(nullptr), _signature(nullptr), _call_signatures(nullptr),
+    _nl(method->max_locals()), _ns(method->max_stack()), _size(method->code_size()), _out_words(2) {}
+  bool fail(const char* reason) { if (_failure==nullptr) _failure=reason; return false; }
   State* copy(State* s) {
     State* r = new State(_nl, _ns); r->sp = s->sp;
     for (int i = 0; i < _nl; i++) r->locals[i] = s->locals[i];
@@ -122,46 +148,37 @@ class Emitter : StackObj {
     if (s->sp >= _ns) return fail("stack overflow");
     s->stack[s->sp++] = t; return true;
   }
-  bool signature(ciSignature* sig) {
-    if (sig->return_type()->basic_type() != T_VOID && !supported_type(sig->return_type()->basic_type())) return false;
-    for (int i = 0; i < sig->count(); i++) if (!supported_type(sig->type_at(i)->basic_type())) return false;
-    return true;
-  }
-  BasicType argument_type(ciSignature* sig, bool is_static, int i) {
-    return !is_static && i == 0 ? T_OBJECT : sig->type_at(i - (is_static ? 0 : 1))->basic_type();
-  }
-  int local_index(ciBytecodeStream& bs, Bytecodes::Code bc) {
+  int local_index(BytecodeStream& bs, Bytecodes::Code bc) {
     if (bc >= Bytecodes::_iload_0 && bc <= Bytecodes::_iload_3) return bc - Bytecodes::_iload_0;
     if (bc >= Bytecodes::_aload_0 && bc <= Bytecodes::_aload_3) return bc - Bytecodes::_aload_0;
     if (bc >= Bytecodes::_istore_0 && bc <= Bytecodes::_istore_3) return bc - Bytecodes::_istore_0;
     if (bc >= Bytecodes::_astore_0 && bc <= Bytecodes::_astore_3) return bc - Bytecodes::_astore_0;
     return bs.get_index();
   }
-  bool prepass() {
+  bool prepass(const methodHandle& handle) {
     if (_method->is_object_initializer() || _method->is_native() || _method->is_synchronized() ||
-        _method->has_exception_handlers() || _method->has_monitor_bytecodes() ||
+        _method->has_exception_handler() || _method->has_monitor_bytecodes() ||
         _method->is_scoped() || _method->has_reserved_stack_access() ||
         _method->intrinsic_id() != vmIntrinsics::_none ||
-        !_method->can_be_compiled() || _method->needs_clinit_barrier() ||
-        !signature(_method->signature()) || _nl > DirectBaseline::max_locals || _ns > DirectBaseline::max_stack ||
+        _nl > DirectBaseline::max_locals || _ns > DirectBaseline::max_stack ||
         _size > DirectBaseline::max_code_size || _size == 0) {
       return fail("method shape");
     }
     _states = NEW_RESOURCE_ARRAY(State*, _size);
-    _labels = NEW_RESOURCE_ARRAY(Label, _size);
-    _fields = NEW_RESOURCE_ARRAY(ciField*, _size);
-    _callees = NEW_RESOURCE_ARRAY(ciMethod*, _size);
-    _call_signatures = NEW_RESOURCE_ARRAY(ciSignature*, _size);
-    for (int i = 0; i < _size; i++) { _states[i] = nullptr; new (&_labels[i]) Label(); }
+    _signature = new BasicSignature(_method->signature());
+    if (!_signature->valid()) return fail("method shape");
+    _field_types = NEW_RESOURCE_ARRAY(BasicType, _size);
+    _call_signatures = NEW_RESOURCE_ARRAY(BasicSignature*, _size);
+    for (int i = 0; i < _size; i++) _states[i] = nullptr;
     State* start = new State(_nl, _ns);
-    ciSignature* sig = _method->signature();
+    BasicSignature* sig = _signature;
     int nargs = sig->count() + (_method->is_static() ? 0 : 1);
     for (int i = 0; i < nargs; i++) start->locals[i] = kind(argument_type(sig, _method->is_static(), i));
     _states[0] = start;
-    ciBytecodeStream bs(_method);
+    BytecodeStream bs(handle);
     Bytecodes::Code bc;
-    while ((bc = bs.next()) != ciBytecodeStream::EOBC()) {
-      int bci = bs.cur_bci();
+    while ((bc = bs.next()) != Bytecodes::_illegal) {
+      int bci = bs.bci();
       if (_states[bci] == nullptr) return fail("unreachable bytecode");
       State* s = copy(_states[bci]);
       bool fall = true;
@@ -185,7 +202,7 @@ class Emitter : StackObj {
         case Bytecodes::_bipush: case Bytecodes::_sipush: if (!push(s, T_INT)) return false;
           break;
         case Bytecodes::_ldc: case Bytecodes::_ldc_w:
-          if (bs.get_constant().basic_type() != T_INT || !push(s, T_INT)) return fail("constant type");
+          if (Bytecode_loadconstant(handle,bci).result_type() != T_INT || !push(s, T_INT)) return fail("constant type");
           break;
         case Bytecodes::_iinc:
           if (bs.get_index() >= _nl || s->locals[bs.get_index()] != T_INT) return fail("iinc type");
@@ -204,18 +221,13 @@ class Emitter : StackObj {
           if (!pop(s, T_INT) || !push(s, T_INT)) return false;
           break;
         case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic: {
-          bool link = false; ciField* f = bs.get_field(link);
+          BasicType type = Signature::basic_type(_method->constants()->signature_ref_at(bs.get_index_u2(), bc));
+          if (!supported_type(type)) return fail("unresolved/unsupported field");
           bool is_static = bc == Bytecodes::_getstatic;
-          if (!link || !f->will_link(_method, bc) ||
-              strcmp(f->holder()->name()->as_utf8(), "java/lang/ref/Reference") == 0 ||
-              f->is_static() != is_static || !supported_type(f->type()->basic_type())) return fail("unresolved/unsupported field");
-          // Initialization applies to the canonical declaring holder, including
-          // inherited fields. Leave unresolved/initializing classes interpreted.
-          if (is_static && (!f->holder()->is_loaded() || !f->holder()->is_initialized())) return fail("uninitialized static field");
-          _fields[bci] = f;
-          if (bc == Bytecodes::_putfield && !pop(s, kind(f->type()->basic_type()))) return false;
+          _field_types[bci] = kind(type);
+          if (bc == Bytecodes::_putfield && !pop(s, kind(type))) return false;
           if (!is_static && !pop(s, T_OBJECT)) return false;
-          if (bc != Bytecodes::_putfield && !push(s, kind(f->type()->basic_type()))) return false;
+          if (bc != Bytecodes::_putfield && !push(s, kind(type))) return false;
           break;
         }
         case Bytecodes::_arraylength:
@@ -228,21 +240,9 @@ class Emitter : StackObj {
           if (!pop(s, T_INT) || !pop(s, T_INT) || !pop(s, T_OBJECT)) return false;
           break;
         case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: {
-          bool link = false; ciSignature* declared = nullptr;
-          ciMethod* m = bs.get_method(link, &declared);
+          BasicSignature* declared = new BasicSignature(_method->constants()->signature_ref_at(bs.get_index_u2(), bc));
+          if (!declared->valid()) return fail("unresolved/unsupported call");
           bool is_static = bc == Bytecodes::_invokestatic;
-          if (!link || !m->is_loaded() || m->is_static() != is_static || !signature(declared) ||
-              m->is_abstract() || m->is_object_initializer() ||
-              m->is_method_handle_intrinsic() || m->is_scoped() ||
-              strcmp(m->holder()->name()->as_utf8(), "jdk/internal/vm/Continuation") == 0 ||
-              !m->holder()->is_initialized()) return fail("unresolved/unsupported call");
-          if (!is_static) {
-            ciKlass* holder = bs.get_declared_method_holder();
-            if (!holder->is_loaded() || holder->is_interface() || m->holder()->is_interface() ||
-                (bc == Bytecodes::_invokespecial && _method->holder()->is_interface()) ||
-                (bc == Bytecodes::_invokevirtual && !m->can_be_statically_bound())) return fail("unbound/interface call");
-          }
-          _callees[bci] = m;
           _call_signatures[bci] = declared;
           int n = declared->count() + (is_static ? 0 : 1);
           BasicType* types = NEW_RESOURCE_ARRAY(BasicType, n);
@@ -251,7 +251,7 @@ class Emitter : StackObj {
           int slots = SharedRuntime::java_calling_convention(types, regs, n);
           _out_words = MAX2(_out_words, (slots + 1) / 2);
           for (int i = n-1; i >= 0; i--) if (!pop(s, kind(types[i]))) return false;
-          if (declared->return_type()->basic_type() != T_VOID && !push(s, kind(declared->return_type()->basic_type()))) return false;
+          if (declared->return_type() != T_VOID && !push(s, kind(declared->return_type()))) return false;
           break;
         }
         case Bytecodes::_ireturn: case Bytecodes::_areturn:
@@ -270,7 +270,7 @@ class Emitter : StackObj {
             BasicType t = bc >= Bytecodes::_if_acmpeq ? T_OBJECT : T_INT;
             if (!pop(s, t) || !pop(s, t)) return false;
           } else if (bc != Bytecodes::_goto && !pop(s, bc >= Bytecodes::_ifnull ? T_OBJECT : T_INT)) return false;
-          int target = bs.get_dest();
+          int target = bci + bs.get_offset_s2();
           if (target <= bci) return fail("loop excluded (preserve interpreter OSR)");
           if (!merge(target, s)) return false;
           fall = bc != Bytecodes::_goto;
@@ -281,6 +281,35 @@ class Emitter : StackObj {
       if (fall && !merge(bs.next_bci(), s)) return false;
     }
     return true;
+  }
+
+};
+static thread_local Prepared* prepared_data=nullptr;
+
+class Emitter : StackObj {
+  ciEnv* _env;
+  ciMethod* _method;
+  AbstractCompiler* _compiler;
+  const char* _failure;
+  State** _states;
+  Label* _labels;
+  ciField** _fields;
+  ciMethod** _callees;
+  BasicSignature** _call_signatures;
+  int _nl, _ns, _size, _out_words, _frame_bytes, _frame_words, _last_scope_pc;
+  CodeBuffer* _code;
+  C1_MacroAssembler* _masm;
+  CodeOffsets _offsets;
+  DebugInformationRecorder* _debug;
+  OopMapSet* _maps;
+
+  bool fail(const char* message) { if (_failure == nullptr) _failure = message; return false; }
+  int local_index(ciBytecodeStream& bs, Bytecodes::Code bc) {
+    if (bc >= Bytecodes::_iload_0 && bc <= Bytecodes::_iload_3) return bc - Bytecodes::_iload_0;
+    if (bc >= Bytecodes::_aload_0 && bc <= Bytecodes::_aload_3) return bc - Bytecodes::_aload_0;
+    if (bc >= Bytecodes::_istore_0 && bc <= Bytecodes::_istore_3) return bc - Bytecodes::_istore_0;
+    if (bc >= Bytecodes::_astore_0 && bc <= Bytecodes::_astore_3) return bc - Bytecodes::_astore_0;
+    return bs.get_index();
   }
 
   int local_offset(int i) { return (_out_words + i) * wordSize; }
@@ -368,9 +397,40 @@ class Emitter : StackObj {
       default: ShouldNotReachHere(); return Assembler::equal;
     }
   }
+  bool resolve_field(ciBytecodeStream& bs, Bytecodes::Code bc, int bci) {
+    bool link=false; ciField* f=bs.get_field(link);
+    bool is_static=bc==Bytecodes::_getstatic;
+    if (!link || strcmp(f->holder()->name()->as_utf8(),"java/lang/ref/Reference")==0 ||
+        f->is_static()!=is_static || kind(f->layout_type())!=prepared_data->_field_types[bci])
+      return fail("unresolved/unsupported field");
+    if (is_static && (!f->holder()->is_loaded() || !f->holder()->is_initialized()))
+      return fail("uninitialized static field");
+    _fields[bci]=f; return true;
+  }
+  bool resolve_call(ciBytecodeStream& bs, Bytecodes::Code bc, int bci) {
+    bool link=false; ciSignature* declared=nullptr;
+    ciMethod* m=bs.get_method(link,&declared);
+    bool is_static=bc==Bytecodes::_invokestatic;
+    BasicSignature* sig=_call_signatures[bci];
+    if (!link || !m->is_loaded() || m->is_static()!=is_static || m->is_abstract() ||
+        m->is_object_initializer() || m->is_method_handle_intrinsic() || m->is_scoped() ||
+        strcmp(m->holder()->name()->as_utf8(),"jdk/internal/vm/Continuation")==0 ||
+        !m->holder()->is_initialized()) return fail("unresolved/unsupported call");
+    if (declared->count()!=sig->count() || kind(declared->return_type()->basic_type())!=kind(sig->return_type()))
+      return fail("call signature changed");
+    for (int i=0;i<sig->count();i++)
+      if (kind(declared->type_at(i)->basic_type())!=kind(sig->type_at(i))) return fail("call signature changed");
+    if (!is_static) {
+      ciKlass* holder=bs.get_declared_method_holder();
+      if (!holder->is_loaded() || holder->is_interface() || m->holder()->is_interface() ||
+          (bc==Bytecodes::_invokespecial && _method->holder()->is_interface()) ||
+          (bc==Bytecodes::_invokevirtual && !m->can_be_statically_bound())) return fail("unbound/interface call");
+    }
+    _callees[bci]=m; return true;
+  }
   void java_call(int bci, State* s) {
     ciMethod* callee = _callees[bci];
-    ciSignature* sig = _call_signatures[bci];
+    BasicSignature* sig = _call_signatures[bci];
     bool is_static = callee->is_static();
     int n = sig->count() + (is_static ? 0 : 1);
     if (!is_static) {
@@ -401,14 +461,14 @@ class Emitter : StackObj {
     __ call(AddressLiteral(is_static ? SharedRuntime::get_resolve_static_call_stub() :
                                      SharedRuntime::get_resolve_opt_virtual_call_stub(),
                            is_static ? relocInfo::static_call_type : relocInfo::opt_virtual_call_type));
-    safepoint(bci, s, s->sp - n, false, kind(sig->return_type()->basic_type()) == T_OBJECT);
+    safepoint(bci, s, s->sp - n, false, kind(sig->return_type()) == T_OBJECT);
     __ post_call_nop();
-    if (kind(sig->return_type()->basic_type()) == T_OBJECT) __ movptr(stack(s->sp - n), rax);
-    else if (sig->return_type()->basic_type() != T_VOID) __ movl(stack(s->sp - n), rax);
+    if (kind(sig->return_type()) == T_OBJECT) __ movptr(stack(s->sp - n), rax);
+    else if (sig->return_type() != T_VOID) __ movl(stack(s->sp - n), rax);
   }
   void field(Bytecodes::Code bc, int bci, State* s) {
     ciField* f = _fields[bci];
-    BasicType t = f->type()->basic_type();
+    BasicType t = f->layout_type();
     bool is_static = bc == Bytecodes::_getstatic;
     bool load = bc != Bytecodes::_putfield;
     int obj = is_static ? s->sp : s->sp - (load ? 1 : 2);
@@ -475,7 +535,7 @@ class Emitter : StackObj {
     // larger than this frame. Reserve that space for a possible deopt.
     __ build_frame(_frame_bytes, _frame_bytes + os::vm_page_size() + os::extra_bang_size_in_bytes());
     _offsets.set_value(CodeOffsets::Frame_Complete, __ offset());
-    ciSignature* sig = _method->signature();
+    BasicSignature* sig = prepared_data->_signature;
     int n = sig->count() + (_method->is_static() ? 0 : 1);
     BasicType* types = NEW_RESOURCE_ARRAY(BasicType, n);
     VMRegPair* regs = NEW_RESOURCE_ARRAY(VMRegPair, n);
@@ -520,8 +580,12 @@ class Emitter : StackObj {
           break;
         case Bytecodes::_sipush: __ movl(stack(sp), (jshort)bs.get_constant_u2());
           break;
-        case Bytecodes::_ldc: case Bytecodes::_ldc_w: __ movl(stack(sp), bs.get_constant().as_int());
+        case Bytecodes::_ldc: case Bytecodes::_ldc_w: {
+          ciConstant value=bs.get_constant();
+          if (value.basic_type()!=T_INT) { fail("constant type"); return; }
+          __ movl(stack(sp),value.as_int());
           break;
+        }
         case Bytecodes::_iinc: __ addl(local(bs.get_index()), bs.get_iinc_con());
           break;
         case Bytecodes::_dup: __ movptr(rax, stack(sp-1)); __ movptr(stack(sp), rax);
@@ -561,19 +625,23 @@ class Emitter : StackObj {
           else __ movswl(rax, rax);
           __ movl(stack(sp-1), rax);
           break;
-        case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic: field(bc, bci, s);
+        case Bytecodes::_getfield: case Bytecodes::_putfield: case Bytecodes::_getstatic:
+          if (!resolve_field(bs,bc,bci)) return;
+          field(bc, bci, s);
           break;
         case Bytecodes::_arraylength: case Bytecodes::_iaload: case Bytecodes::_iastore:
         case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:
           array(bc, bci, s);
           break;
-        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: java_call(bci, s);
+        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial:
+          if (!resolve_call(bs,bc,bci)) return;
+          java_call(bci, s);
           break;
         case Bytecodes::_ireturn: case Bytecodes::_areturn:
           if (bc == Bytecodes::_areturn) __ movptr(rax, stack(sp-1));
           else __ movl(rax, stack(sp-1));
           if (bc == Bytecodes::_ireturn) {
-            switch (_method->signature()->return_type()->basic_type()) {
+            switch (prepared_data->_signature->return_type()) {
               case T_BOOLEAN: __ andl(rax, 1); break;
               case T_BYTE: __ movsbl(rax, rax); break;
               case T_CHAR: __ movzwl(rax, rax); break;
@@ -629,10 +697,19 @@ class Emitter : StackObj {
   Emitter(ciEnv* env, ciMethod* method, AbstractCompiler* compiler) :
     _env(env), _method(method), _compiler(compiler), _failure(nullptr),
     _nl(method->max_locals()), _ns(method->max_stack()), _size(method->code_size()),
-    _out_words(2), _frame_bytes(0), _frame_words(0), _last_scope_pc(-1), _code(nullptr), _masm(nullptr), _debug(nullptr), _maps(nullptr) {
+    _out_words(prepared_data->_out_words), _frame_bytes(0), _frame_words(0), _last_scope_pc(-1), _code(nullptr), _masm(nullptr), _debug(nullptr), _maps(nullptr) {
   }
   void compile(bool install) {
-    if (!prepass()) { _env->record_failure(_failure); return; }
+    assert(prepared_data!=nullptr,"worker preparation required");
+    if (!_method->can_be_compiled() || _method->needs_clinit_barrier()) {
+      _env->record_failure("method shape"); return;
+    }
+    _states=prepared_data->_states;
+    _call_signatures=prepared_data->_call_signatures;
+    _labels=NEW_RESOURCE_ARRAY(Label,_size);
+    _fields=NEW_RESOURCE_ARRAY(ciField*,_size);
+    _callees=NEW_RESOURCE_ARRAY(ciMethod*,_size);
+    for (int i=0;i<_size;i++) new (&_labels[i]) Label();
     OopRecorder* recorder = new OopRecorder(_env->arena());
     _env->set_oop_recorder(recorder);
     _debug = new DebugInformationRecorder(recorder);
@@ -707,10 +784,26 @@ class DirectCompiler : public AbstractCompiler {
 };
 } // anonymous namespace
 
+const char* DirectBaseline::prepare(const methodHandle& method) {
+  assert(CompilerThread::current()->thread_state() == _thread_in_vm, "prepare in VM state");
+  assert(prepared_data == nullptr, "previous preparation must be cleared");
+  prepared_data=new Prepared(method());
+  bool accepted=prepared_data->prepass(method);
+  const char* reason=accepted?nullptr:prepared_data->_failure;
+  if (TraceDirectBaseline) {
+    ttyLocker lock;
+    tty->print_cr("direct prepare %s %s%s outcome=%s",
+      method->method_holder()->name()->as_C_string(),method->name()->as_C_string(),
+      method->signature()->as_C_string(),accepted?"accepted":reason);
+  }
+  if (!accepted) prepared_data=nullptr;
+  return reason;
+}
+void DirectBaseline::clear_prepared() { prepared_data=nullptr; }
 AbstractCompiler* DirectBaseline::compiler() { static DirectCompiler* c = new DirectCompiler(); return c; }
 const char* DirectBaseline::preflight_failure(Method* method) {
-  // Cached metadata and one entry opcode only. Do not add a second bytecode or
-  // signature walk before the emitter's necessary type-state prepass.
+  // Called on the requesting Java thread under MethodCompileQueue_lock.
+  // Leave the bytecode/signature pass to the worker, before CI construction.
   if (method->has_exception_handler() || method->has_monitor_bytecodes() ||
       method->is_scoped() || method->has_reserved_stack_access() ||
       method->intrinsic_id() != vmIntrinsics::_none ||

@@ -1773,12 +1773,28 @@ void CompileBroker::compiler_thread_loop() {
       // occurs after fetching the compile task off the queue.
       CompileTaskWrapper ctw(task);
       methodHandle method(thread, task->method());
+      ResourceMark direct_preparation_resources(thread);
 
       // Never compile a method if breakpoints are present in it
       if (method()->number_of_breakpoints() == 0) {
         // Compile the method.
         if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
-          invoke_compiler_on_method(task);
+          const char* direct_refusal = nullptr;
+          if (task->is_direct_baseline()) {
+            task->mark_started(os::elapsed_counter());
+            direct_refusal = task->directive()->ExcludeOption ? "direct baseline excluded" : DirectBaseline::prepare(method);
+          }
+          if (direct_refusal == nullptr) {
+            invoke_compiler_on_method(task);
+          } else {
+            // Worker-side structural fallback needs no CI environment and
+            // must not mark the method non-compilable or own its queued bit.
+            task->set_failure_reason(direct_refusal);
+            task->mark_finished(os::elapsed_counter());
+          }
+          if (task->is_direct_baseline()) {
+            DirectBaseline::clear_prepared();
+          }
           thread->start_idle_timer();
         } else {
           // After compilation is disabled, remove remaining methods from queue

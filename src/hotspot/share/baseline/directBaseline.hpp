@@ -33,10 +33,14 @@ class DirectBaseline : AllStatic {
   enum { max_code_size = 512, max_locals = 64, max_stack = 32 };
 #if defined(AMD64) && defined(COMPILER1)
   static AbstractCompiler* compiler();
+  static const char* prepare(const methodHandle& method);
+  static void clear_prepared();
   static const char* preflight_failure(Method* method);
   static void request(const methodHandle& method, JavaThread* thread);
 #else
   static AbstractCompiler* compiler() { return nullptr; }
+  static const char* prepare(const methodHandle&) { return "direct baseline unavailable"; }
+  static void clear_prepared() {}
   static const char* preflight_failure(Method*) { return nullptr; }
   static void request(const methodHandle&, JavaThread*) {}
 #endif
