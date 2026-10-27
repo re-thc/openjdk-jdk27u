@@ -954,14 +954,15 @@ WB_END
 
 #if defined(AMD64) && !defined(ZERO)
 class VM_InterpreterFramePilot : public VM_WhiteBoxOperation {
-  const methodHandle& _method;
+  Method* _method; // Kept alive by the requesting thread's methodHandle
   jlong* _stats;
  public:
-  VM_InterpreterFramePilot(const methodHandle& method,jlong* stats) : _method(method),_stats(stats) {}
+  VM_InterpreterFramePilot(const methodHandle& method,jlong* stats) : _method(method()),_stats(stats) {}
   void doit() override {
     ResourceMark rm;
     jlong cpu=os::current_thread_cpu_time(),wall=os::javaTimeNanos();
-    _stats[0]=InterpreterFramePilot::prepare(_method,_stats);
+    methodHandle method(Thread::current(),_method);
+    _stats[0]=InterpreterFramePilot::prepare(method,_stats);
     _stats[1]=os::current_thread_cpu_time()-cpu;_stats[2]=os::javaTimeNanos()-wall;
   }
 };
