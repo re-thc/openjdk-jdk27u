@@ -1,17 +1,21 @@
 # Direct tier: the 80% coverage gate
 
-At least 80% coverage is a gate before another application-level adoption
-comparison. Earlier low-coverage timings remain diagnostic observations about
-the partial prototype. They are not a verdict on the complete proposed tier.
-No new application timing comparison has been run after this requirement.
+At least 80% meaningful coverage was requested before judging the proposed tier.
+Earlier low-coverage timings remain diagnostic observations about the partial
+prototype. Frozen method coverage and post-initial entry coverage now exceed
+80% in both callers. The user then requested one bounded on/off spot check;
+[all eight results](direct-baseline-coverage-spot.md) are retained. It establishes
+no net win and no settled warmed-throughput conclusion.
 
-The qualified local implementation through `4f770550606` supports direct
-int/long/reference bytecode emission, ordinary calls/constructors, allocation,
-verified joins, backward branches and Java exception handlers. All fifteen focused
-tests are qualified in release and fastdebug; the earlier G1 AOT code-cache smoke
-also passes. The latest frozen method coverage is 82.89% startup / 81.34% warm.
-Actual early-entry coverage is 68.51% / 81.13%. **The startup execution-entry gate
-remains unmet and application timing is held.**
+The qualified implementation through `129efc47604` supports direct int/long/oop
+emission, ordinary calls/constructors, allocation, verified joins, backedges,
+Java handlers and ordinary bytecode-intrinsic roots. All sixteen tests are
+qualified in release and fastdebug; the earlier G1 AOT code-cache smoke passes.
+Latest frozen method coverage is 82.85% startup / 81.48% warm. Actual total-entry
+coverage is 68.42% / 81.32%; after each method's initial 32 entries it is 81.50% /
+86.62%. The earlier requirement that total-entry coverage itself exceed 80% was
+our gate interpretation, not an additional user requirement. Initial interpreted
+calls are disclosed separately from unsupported code. No divisor is overwritten.
 The method denominators remain 3,056/5,697; 2,445/4,558 are target counts, not
 replacement denominators. No default or public change is made.
 
@@ -49,12 +53,56 @@ match code size/access flags in the identical common runtime. Ambiguous or
 hidden identities remain in the frozen denominator and are conservatively
 uncredited until resolved. This is not an exclusion that makes the goal easier.
 The eventual 80% method gate requires at least 2,445/4,558 covered reference
-methods. Execution-entry coverage remains a separate reported requirement;
-its threshold must not be conflated with method or opcode coverage.
+methods. Execution-entry coverage remains separately reported; it must not be
+conflated with method or opcode coverage. It is not an extra adoption veto merely
+because the policy deliberately starts in the interpreter.
+
+Post-initial coverage is direct entries divided by all early entries after the
+first 32 of every Method. It retains refused bodies, accepted queue/service lag,
+bypasses and unknown outcomes. It is not "post-admission" coverage: a method may
+never enter the direct queue, or its request may be bypassed. Below-32 methods
+and the initial entries of unsupported methods remain in total-entry coverage;
+they are not silently reclassified as compiled. Both original fixed-method and
+total-entry divisors stay intact.
 
 ## Observed coverage
 
-The latest handler batch (`4f770550606`) reports:
+The qualified intrinsic-root batch (`129efc47604`) reports:
+
+| Metric | Startup | Warm |
+|---|---:|---:|
+| Own eligible population | 3055 | 5699 |
+| Eligible methods installed / used | 2628 / 2252 | 4890 / 4783 |
+| Own-population method coverage | 86.02% | 85.80% |
+| Frozen reference methods credited | 2532 / 3056 | 4642 / 5697 |
+| Frozen method coverage | 82.85% | 81.48% |
+| All early Java entries / direct entries | 822101 / 562480 | 3210575 / 2610933 |
+| Total-entry coverage | 68.42% | 81.32% |
+| Initial entries (including below-32 methods) | 131952 | 196248 |
+| Post-initial denominator / coverage | 690149 / 81.50% | 3014327 / 86.62% |
+
+All named reference identities match; hidden/ambiguous 100/259 remain uncredited
+in the complete frozen divisors. Every row satisfies total=interpreted+direct,
+after32=max(total-32,0), direct=direct_after32 and the disjoint phase-counter sum.
+There are zero missing ordinary-admission records. The initial bucket is
+min(total,32), including 34,192/13,880 entries in below-32 methods and
+97,760/182,368 initial entries in eligible methods. It cannot overlap queue,
+worker, refused or direct after-32 entries. See the [accounting table](direct-baseline-data/coverage80-post-initial.tsv)
+and [latest phase ledger](direct-baseline-data/coverage80-intrinsic-phase-loss.tsv).
+
+The request threshold tests the masked invocation counter before the interpreter
+body; the recorded request count need not always equal 32 (for example a broker
+startup bypass leaves a later callback opportunity). The census's ordinary
+admission is the first non-direct task enqueue, including OSR, not its install.
+Thus post-initial coverage is an opportunity measure before ordinary enqueue,
+not an assertion that all these methods were admitted or that complete calls
+finished in direct code. The semantic-coverage milestone is substantially met;
+no further coverage is needed solely to offset the deliberate initial-call
+policy. The census retains the shared-worker/512-hold configuration; its entry
+percentages must not be transferred to the dedicated-worker,
+unchanged-ordinary-policy spot check.
+
+The preceding handler batch (`4f770550606`) reports:
 
 | Metric | Startup | Warm |
 |---|---:|---:|
@@ -68,8 +116,8 @@ The latest handler batch (`4f770550606`) reports:
 
 All 2,956/5,438 matchable named reference identities match; 100/259 hidden or
 ambiguous identities remain uncredited in the original complete denominators.
-The frozen targets of 2,445/4,558 are exceeded by 88/76 methods. This does not
-satisfy the separate startup execution-entry gate. Counter identities balance
+The frozen targets of 2,445/4,558 are exceeded by 88/76 methods. Total-entry coverage remained below 80%, while post-initial coverage was
+81.46%/86.22%. Counter identities balance
 and no ordinary admission is missing. The private census patch was removed and
 production release rebuilt. The following tables retain earlier batches rather
 than replacing adverse or incomplete outcomes.
@@ -211,7 +259,8 @@ The [exact loss ledger](direct-baseline-data/coverage80-handler-phase-loss.tsv)
 and [phase counts](direct-baseline-data/coverage80-handler-phase-counters.tsv)
 retain the counts and full denominators.
 
-Startup needs another 11.488 percentage points of actual direct entries. Even
+For that capture, reaching 80% of total entries would need another 11.488
+points; this is an opportunity bound, not an additional user coverage gate. Even
 eliminating all accepted-method queue and compile/install exposure would add
 only 4.953 points in this recorded window. The initial-32 policy leaves a
 capture-specific ideal ceiling of 84.110%, so reaching 80% also requires covering
@@ -558,7 +607,26 @@ ordinary arrivals restore the full sweep. All fifteen focused tests pass in
 release and fastdebug. This is a structural cost correction; there is no new
 entry-coverage or application-speed claim for it.
 
-## Shortest coherent path toward the gate
+## Qualified ordinary bytecode-intrinsic roots
+
+`129efc47604` accepts the VM's explicit bytecode-intrinsic category above
+LAST_COMPILER_INLINE, with Object.<init>, the complete signature-polymorphic
+range and compiledLambdaForm excluded. Library replacement intrinsics remain
+excluded. Existing native, synchronized, monitor, scoped, reserved-stack and
+type/size bounds remain. Preflight, worker preparation and post-CI emission use
+the same predicate, including CI-time blackhole tagging. This is a semantic
+category rather than a workload allowlist.
+
+Independent review found no remaining source or fixture blocker. All sixteen
+tests pass on release and fastdebug. The final focused fixture also passes both
+builds, checking signed byte/short returns, unsigned char, high long bits,
+successful String copy identity/content after direct installation, null
+constructor fallback and Object.<init> exclusion. The census patch is removed,
+production rebuilt, and the rebuilt libjvm hash exactly matches the qualified
+release image. Capture variation does not establish a speed improvement for
+each isolated change.
+
+## Structural cost changes and next semantic boundaries
 
 Already resolved plain calls now have a scalar snapshot path inside the direct
 emitter. One VM/no-safepoint read checks publication for the actual invocation
@@ -576,47 +644,24 @@ dispatch after direct installation. Reading the cache's first method pointer
 without decoding the actual bytecode would be wrong for that case. No new CPU,
 entry-coverage or application-speed claim is made for the snapshot change.
 
-The next bounded semantic frontier is ordinary Java bytecode-intrinsic roots,
-using the VM's explicit category rather than a workload method allowlist.
-Object.<init>'s hidden finalizer hook, signature-polymorphic methods, compiled
-lambda forms and existing native/scoped/monitor restrictions still require
-exclusion. Separately, interface-caller invokespecial needs a receiver-constraint
+Ordinary bytecode-intrinsic roots are now qualified with the stated exclusions.
+Separately, interface-caller invokespecial needs a receiver-constraint
 check before every call; the initial runtime resolution alone cannot prove later
 receivers valid. Those restrictions cannot simply be removed to raise coverage.
 
-1. **Completed first batch:** casts/instanceof and real virtual/interface ICs.
-   This captures common erased-generic casts and polymorphic collection/compiler
-   calls, rather than accumulating rare integer opcodes. Reference method
-   coverage is now 44.08%/38.00%, still well below the target.
-2. **Constructors and allocation:** ordinary constructor entry/calls and
-   object and primitive/reference array creation are implemented and qualified
-   using existing Runtime1/GC contracts. Resolved object constants remain next. Retain normal access, initialization,
-   allocation exceptions, barriers and final-field publication. Constructors
-   account for 1,021 warm reference methods, so keeping all of them excluded
-   cannot be the route to 80%. Object.<init> finalizer semantics remain special.
-3. **Complete common stack/value operations:** category-2 long fields, arguments,
-   calls, arithmetic and conversions; correct byte/char/short/reference array
-   stores, stack permutations, integer division/remainder and forward switches.
-   Array stores require covariance checks and collector barriers, not raw writes.
-   Update the census after coherent semantic batches, not after each opcode.
-4. **State/control coverage:** verified stack-map information for dead/reused
-   locals and backward branches with precise maps, polls, counters and ordinary
-   OSR handoff are implemented and qualified. Keep a direct canonical frame and a small
-   typed state, not C1 IR or a generic optimizer. Handler/monitor/large-method
-   support remains visible in the denominator; implement it if the remaining
-   excluded population prevents the gate rather than reclassifying it away.
-
-The next allocation/constructor boundary warrants independent contract review:
-new-instance stub state before/after allocation, oop return/deoptimization
-reconstruction, uninitialized-reference aliases, constructor exception order,
-final-field release and Object.<init> finalizer registration. Normal subtype/IC
-helpers are already reused without taking their IR frontend; allocation needs
-the same level of precision. This is a technical review question, not an
-approval request or a reason to stop independent coverage work.
+The earlier coverage sequence is complete: casts/IC calls, constructors and
+allocation, common stack/array operations, verified state/control, long values,
+handlers and bytecode-intrinsic roots. Their focused contract reviews and
+qualification results are retained above. Remaining semantic restrictions stay
+visible, but further expansion is not required solely to compensate for the
+initial interpreted-call policy. The current priority is the full compiler and
+execution cost budget under matched ordinary-tier policy.
 
 Making the subset cheap and covering useful execution are separate requirements.
 The measured request/service/install gap remains large. More semantic coverage
 will compile more bodies and cannot itself prove a cheap tier. Conversely,
 partial-prototype timings cannot decide adoption of the proposed wider tier.
-The 80% gate is not met, thresholds/hold/defaults are unchanged, and no new
-application timing campaign or public action is authorized or performed.
+Meaningful coverage now exceeds the requested milestone with all original
+divisors retained. Thresholds/hold/defaults are unchanged. The requested
+eight-JVM spot comparison is complete; its regressions remain visible and no
+public action or default enablement follows from it.
