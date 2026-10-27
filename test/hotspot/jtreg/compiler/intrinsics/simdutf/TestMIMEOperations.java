@@ -58,6 +58,19 @@ public class TestMIMEOperations {
                         catch (IllegalArgumentException e) { mark(digest, e.getMessage()); }
                         digest.update(output);
                     }
+                    // decode(byte[]) sizes MIME output by a bound and trims it, the other forms by a scan
+                    String bounded;
+                    try { bounded = Arrays.toString(decoder.decode(input)); }
+                    catch (IllegalArgumentException e) { bounded = e.getMessage(); }
+                    String exact;
+                    byte[] room = new byte[input.length];
+                    try { exact = Arrays.toString(Arrays.copyOf(room, decoder.decode(input, room))); }
+                    catch (IllegalArgumentException e) { exact = e.getMessage(); }
+                    if (!bounded.equals(exact)) {
+                        throw new AssertionError("decode(byte[]) of size " + size + " tail " + tail + ": "
+                                + bounded + " and " + exact);
+                    }
+                    mark(digest, bounded);
                     byte[] wrapped = new byte[input.length + 6];
                     System.arraycopy(input, 0, wrapped, 3, input.length);
                     ByteBuffer source = ByteBuffer.wrap(wrapped, 3, input.length);

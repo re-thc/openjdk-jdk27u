@@ -92,6 +92,10 @@ public final class Base64 {
     // and of 4 for decoding. Longer inputs are converted in several blocks.
     private static final int BLOCK_MAX = 3 << 18;
 
+    // The longest MIME input that decode(byte[]) sizes by an upper bound and trims, instead of
+    // scanning it for the exact length first.
+    private static final int MIME_BOUND_MAX = 1 << 20;
+
     /**
      * Returns a {@link Encoder} that encodes using the
      * <a href="#basic">Basic</a> type base64 encoding scheme.
@@ -575,7 +579,14 @@ public final class Base64 {
          *          if {@code src} is not in valid Base64 scheme
          */
         public byte[] decode(byte[] src) {
-            byte[] dst = new byte[decodedOutLength(src, 0, src.length)];
+            byte[] dst;
+            if (isMIME && src.length >= 2 && src.length <= MIME_BOUND_MAX) {
+                // The exact length of MIME output needs a scan of the whole input, which
+                // costs several times what the trim of an upper bound does at these lengths
+                dst = new byte[(int) (3 * ((src.length + 3L) / 4))];
+            } else {
+                dst = new byte[decodedOutLength(src, 0, src.length)];
+            }
             int ret = decode0(src, 0, src.length, dst);
             if (ret != dst.length) {
                 dst = Arrays.copyOf(dst, ret);
