@@ -140,3 +140,8 @@ The remaining early-stage question is whether an eventual safe normal trigger
 and these prefixes repay their actual cost in calls that would otherwise still
 interpret before ordinary optimization. The current source does not answer
 that question, and this correctness-only phase runs no timing campaign.
+
+The follow-up [forced-poll and late-breakpoint qualification](interpreter-frame-guard-qualification.md)
+tests the two concrete gaps stated above on release and fastdebug, retaining
+the startup-capability and disarm-poll scope limits. This report's original
+images and timing exclusions remain unchanged.
