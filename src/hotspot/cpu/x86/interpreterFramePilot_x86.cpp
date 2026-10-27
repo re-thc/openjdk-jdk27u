@@ -307,7 +307,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   Label labels[max_prefix_bytes+1];
   auto bind_exits = [&]() {
     for(int i=0;i<=max_prefix_bytes;i++)
-      if(!labels[i].is_bound() && labels[i].is_linked())masm.bind(labels[i]);
+      if(labels[i].is_unbound())masm.bind(labels[i]);
     masm.bind(ordinary);
   };
   auto reject_unpublished = [&]() {
@@ -318,6 +318,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   };
   int operations=0,end_bci=0;
   ConstantPool* pool=m->constants();
+  Array<u2>* reference_map=pool->cache()==nullptr?nullptr:pool->cache()->reference_map();
   BytecodeStream stream(method);
   for (Bytecodes::Code bc;(bc=stream.next())!=Bytecodes::_illegal && operations<max_operations;) {
     if(stream.is_wide() || stream.bci()>max_prefix_bytes ||
@@ -382,7 +383,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         int ref_index=-1;
         if(stream.raw_code()==Bytecodes::_fast_aldc || stream.raw_code()==Bytecodes::_fast_aldc_w) {
           ref_index=cp_index;
-          if(pool->reference_map()==nullptr || ref_index>=pool->reference_map()->length())break;
+          if(reference_map==nullptr || ref_index>=reference_map->length())break;
           cp_index=pool->object_to_cp_index(ref_index);
         }
         if(cp_index<=0 || cp_index>=pool->length())break;
@@ -398,7 +399,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
           masm.movptr(rax,Address(rax,in_bytes(Klass::java_mirror_offset())));
           masm.resolve_oop_handle(rax,rscratch1);masm.push(atos);action=emitted;break;
         }
-        if(!(tag.is_string() || tag.is_method_type() || tag.is_method_handle()) || pool->reference_map()==nullptr)break;
+        if(!(tag.is_string() || tag.is_method_type() || tag.is_method_handle()) || reference_map==nullptr)break;
         if(ref_index<0)ref_index=pool->cp_to_object_index(cp_index);
         if(ref_index<0)break;
         masm.movl(rbx,ref_index);masm.load_resolved_reference_at_index(rax,rbx);
