@@ -168,9 +168,13 @@ class Prepared : public ResourceObj {
   BasicType* _field_types;
   BasicSignature* _signature;
   BasicSignature** _call_signatures;
+  struct Handler { int start, end, bci; bool catch_all; };
+  Handler* _handlers;
+  int _handler_count;
   int _nl, _ns, _size, _out_words;
   explicit Prepared(Method* method) : _method(method), _failure(nullptr),
     _states(nullptr), _frames(nullptr), _field_types(nullptr), _signature(nullptr), _call_signatures(nullptr),
+    _handlers(nullptr), _handler_count(method->exception_table_length()),
     _nl(method->max_locals()), _ns(method->max_stack()), _size(method->code_size()), _out_words(2) {}
   bool fail(const char* reason) { if (_failure==nullptr) _failure=reason; return false; }
   State* copy(State* s) {
@@ -303,9 +307,28 @@ class Prepared : public ResourceObj {
     if (!valid || pos!=data->length()) return fail("unsupported/invalid verified frame");
     return true;
   }
+  bool prepare_handlers() {
+    if (_handler_count==0) return true;
+    // Verified frames provide exact dead/live local categories at catch entry.
+    // Keep old/no-map methods and unusually large tables as explicit fallbacks.
+    if (!_method->has_stackmap_table()) return fail("handler without verified frames");
+    if (_handler_count>64) return fail("handler table bound");
+    _handlers=NEW_RESOURCE_ARRAY(Handler,_handler_count);
+    ExceptionTable table(_method);
+    for (int i=0;i<_handler_count;i++) {
+      Handler& h=_handlers[i];
+      h.start=table.start_pc(i);h.end=table.end_pc(i);h.bci=table.handler_pc(i);
+      h.catch_all=table.catch_type_index(i)==0;
+      if (h.start<0 || h.start>=h.end || h.end>_size || h.bci<0 || h.bci>=_size)
+        return fail("invalid handler range");
+      State* frame=_frames[h.bci];
+      if (frame==nullptr || frame->sp!=1 || frame->stack[0]!=T_OBJECT) return fail("handler frame shape");
+    }
+    return true;
+  }
   bool prepass(const methodHandle& handle) {
     if (_method->is_native() || _method->is_synchronized() ||
-        _method->has_exception_handler() || _method->has_monitor_bytecodes() ||
+        _method->has_monitor_bytecodes() ||
         _method->is_scoped() || _method->has_reserved_stack_access() ||
         _method->intrinsic_id() != vmIntrinsics::_none ||
         _nl > DirectBaseline::max_locals || _ns > DirectBaseline::max_stack ||
@@ -323,7 +346,7 @@ class Prepared : public ResourceObj {
     BasicSignature* sig = _signature;
     int nargs = sig->count() + (_method->is_static() ? 0 : 1);
     for (int i = 0; i < nargs; i++) start->locals[i] = kind(argument_type(sig, _method->is_static(), i));
-    if (!read_frames(start,nargs) || !merge(0,start)) return false;
+    if (!read_frames(start,nargs) || !prepare_handlers() || !merge(0,start)) return false;
     // Verified block entries can be decoded before their first predecessor
     // in bytecode order. Backward predecessors must match these same states.
     for (int i=1;i<_size;i++) if (_frames[i]!=nullptr) _states[i]=_frames[i];
@@ -522,6 +545,9 @@ class Emitter : StackObj {
   CodeOffsets _offsets;
   DebugInformationRecorder* _debug;
   OopMapSet* _maps;
+  GrowableArray<int>* _exception_pcs;
+  GrowableArray<int>* _exception_bcis;
+  int* _handler_pcos;
 
   bool fail(const char* message) { if (_failure == nullptr) _failure = message; return false; }
   int local_index(ciBytecodeStream& bs, Bytecodes::Code bc) {
@@ -580,6 +606,9 @@ class Emitter : StackObj {
                            false, false, _debug->create_scope_values(&locals),
                            _debug->create_scope_values(&expressions));
     _debug->end_safepoint(pc);
+    if (_exception_pcs!=nullptr && bci>=0) {
+      _exception_pcs->append(pc);_exception_bcis->append(bci);
+    }
   }
 
 #define __ _masm->
@@ -1114,7 +1143,7 @@ class Emitter : StackObj {
           // The standard exception stub installs rdx as the throwing PC and
           // saves live registers before entering the VM, as for C1 athrow.
           int pc=__ offset();
-          safepoint(bci,s,-1,false,false,true);
+          safepoint(bci,s,-1,true,false,true);
           __ lea(rdx,InternalAddress(_code->insts_begin()+pc));
           __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_handle_exception_nofpu_id)));
           __ should_not_reach_here();
@@ -1160,6 +1189,19 @@ class Emitter : StackObj {
       }
       if (_failure != nullptr) return;
     }
+    // Runtime exception dispatch enters distinct pads, never ordinary CFG
+    // labels. Catch lookup can replace the exception while resolving a type,
+    // so extract the current TLS oop rather than trust a restored register.
+    for (int i=0;i<prepared_data->_handler_count;i++) {
+      int bci=prepared_data->_handlers[i].bci;
+      if (_handler_pcos[bci]>=0) continue;
+      _handler_pcos[bci]=__ offset();
+      __ movptr(rax,Address(r15_thread,JavaThread::exception_oop_offset()));
+      __ movptr(Address(r15_thread,JavaThread::exception_oop_offset()),NULL_WORD);
+      __ movptr(Address(r15_thread,JavaThread::exception_pc_offset()),NULL_WORD);
+      __ movptr(stack(0),rax);
+      __ jmp(_labels[bci]);
+    }
     // CodeOffsets::Exceptions and Deopt are relative to the stub section,
     // whereas UnwindHandler is relative to the instruction section.
     if (__ start_a_stub(256) == nullptr) { fail("direct exception stub space"); return; }
@@ -1184,11 +1226,39 @@ class Emitter : StackObj {
     if (!_code->finalize_stubs()) fail("direct stub finalization");
   }
 #undef __
+  bool build_handlers(ExceptionHandlerTable* table) {
+    if (_exception_pcs==nullptr) return true;
+    GrowableArray<intptr_t> bcis(8),pcos(8);
+    int entries=0;
+    for (int p=0;p<_exception_pcs->length();p++) {
+      int bci=_exception_bcis->at(p);
+      State* source=_states[bci];
+      bcis.trunc_to(0);pcos.trunc_to(0);
+      for (int i=0;i<prepared_data->_handler_count;i++) {
+        Prepared::Handler& h=prepared_data->_handlers[i];
+        if (bci<h.start || bci>=h.end) continue;
+        State* target=_states[h.bci];
+        // Handler operands replace the old expression stack. Only verifier-live
+        // locals are retained, including both slots of each long value.
+        for (int l=0;l<_nl;l++)
+          if (target->locals[l]!=T_ILLEGAL && target->locals[l]!=source->locals[l]) return fail("handler local state");
+        if (bcis.find(h.bci)<0) { bcis.append(h.bci);pcos.append(_handler_pcos[h.bci]); }
+        if (h.catch_all) break;
+      }
+      if (bcis.length()!=0) {
+        entries+=1+bcis.length();
+        if (entries>4096) return fail("handler metadata bound");
+        table->add_subtable(_exception_pcs->at(p),&bcis,nullptr,&pcos);
+      }
+    }
+    return true;
+  }
  public:
   Emitter(ciEnv* env, ciMethod* method, AbstractCompiler* compiler) :
     _env(env), _method(method), _compiler(compiler), _failure(nullptr),
     _nl(method->max_locals()), _ns(method->max_stack()), _size(method->code_size()),
-    _out_words(prepared_data->_out_words), _frame_bytes(0), _frame_words(0), _last_scope_pc(-1), _code(nullptr), _masm(nullptr), _debug(nullptr), _maps(nullptr) {
+    _out_words(prepared_data->_out_words), _frame_bytes(0), _frame_words(0), _last_scope_pc(-1), _code(nullptr), _masm(nullptr), _debug(nullptr), _maps(nullptr),
+    _exception_pcs(nullptr), _exception_bcis(nullptr), _handler_pcos(nullptr) {
   }
   void compile(bool install) {
     assert(prepared_data!=nullptr,"worker preparation required");
@@ -1201,6 +1271,11 @@ class Emitter : StackObj {
     _fields=NEW_RESOURCE_ARRAY(ciField*,_size);
     _callees=NEW_RESOURCE_ARRAY(ciMethod*,_size);
     for (int i=0;i<_size;i++) new (&_labels[i]) Label();
+    if (prepared_data->_handler_count!=0) {
+      _exception_pcs=new GrowableArray<int>(8);_exception_bcis=new GrowableArray<int>(8);
+      _handler_pcos=NEW_RESOURCE_ARRAY(int,_size);
+      for (int i=0;i<_size;i++) _handler_pcos[i]=-1;
+    }
     OopRecorder* recorder = new OopRecorder(_env->arena());
     _env->set_oop_recorder(recorder);
     _debug = new DebugInformationRecorder(recorder);
@@ -1228,6 +1303,7 @@ class Emitter : StackObj {
     emit();
     if (_failure != nullptr) { _env->record_failure(_failure); _code->free_blob(); return; }
     ExceptionHandlerTable handlers;
+    if (!build_handlers(&handlers)) { _env->record_failure(_failure);_code->free_blob();return; }
     ImplicitExceptionTable implicit;
     if (install) {
       _env->register_method(_method, InvocationEntryBci, &_offsets, _frame_bytes-wordSize,
@@ -1295,7 +1371,7 @@ AbstractCompiler* DirectBaseline::compiler() { static DirectCompiler* c = new Di
 const char* DirectBaseline::preflight_failure(Method* method) {
   // Called on the requesting Java thread under MethodCompileQueue_lock.
   // Leave the bytecode/signature pass to the worker, before CI construction.
-  if (method->has_exception_handler() || method->has_monitor_bytecodes() ||
+  if (method->has_monitor_bytecodes() ||
       method->is_scoped() || method->has_reserved_stack_access() ||
       method->intrinsic_id() != vmIntrinsics::_none ||
       method->max_locals() > max_locals || method->max_stack() > max_stack ||

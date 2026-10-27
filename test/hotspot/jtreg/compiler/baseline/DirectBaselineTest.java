@@ -83,7 +83,7 @@ public class DirectBaselineTest {
     static int loop(int n) { int r = 0; for (int i = 0; i < n; i++) r += i; return r; }
     static double unsupportedDouble(double x) { return x * 13; }
     static Object allocation() { return new Object(); }
-    static int unsupportedHandler(int divisor) { try { return 9 / divisor; } catch (ArithmeticException expected) { return -1; } }
+    static int handler(int divisor) { try { return 9 / divisor; } catch (ArithmeticException expected) { return -1; } }
     static synchronized int unsupportedMonitor(int x) { return x + 1; }
     static int manyArgs(int a, int b, int c, int d, int e, int f, int g, int h) { return a+b+c+d+e+f+g+h; }
     static int stackCall(int x) { return manyArgs(x, 2, 3, 4, 5, 6, 7, 8); }
@@ -166,12 +166,12 @@ public class DirectBaselineTest {
             exercise(box, ref, i);
             check(loop(20) == 190);
             check(unsupportedDouble(i) == i*13L);
-            check(allocation() != null && unsupportedHandler(i + 1) == 9 / (i + 1));
+            check(allocation() != null && handler(i + 1) == 9 / (i + 1));
             check(unsupportedMonitor(i) == i+1);
         }
         Thread.sleep(500); // let the early queue finish while below ordinary C1 admission
         for (int i = 0; i < 128; i++) check(allocation() != null); // cross the next early notification
-        check(unsupportedHandler(0) == -1);
+        check(handler(0) == -1);
         for (int i = 0; i < 32; i++) exercise(box, ref, i);
         int before = box.value;
         try { exceptionAfterStore(box, null); throw new AssertionError(); }
@@ -229,7 +229,7 @@ public class DirectBaselineTest {
                 .shouldNotContain("direct install coldStatic(I)I")
                 .shouldNotContain("direct install coldThrowingStatic(I)I");
             output.shouldContain("direct preflight DirectBaselineTest unsupportedDouble(D)D")
-                .shouldContain("direct preflight DirectBaselineTest unsupportedHandler(I)I")
+                .shouldContain("direct install handler(I)I")
                 .shouldContain("direct install allocation()Ljava/lang/Object;");
             // PolicyTest controls a direct-to-C2 linked-call handoff explicitly.
         }

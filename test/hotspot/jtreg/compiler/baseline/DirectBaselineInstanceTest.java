@@ -151,9 +151,10 @@ public class DirectBaselineInstanceTest {
         };
         for (Method root : roots) await(root, 1);
         check(initializations == 0);
-        // Ordinary C1 must remain able to compile unsupported handler methods.
+        // Ordinary C1 must replace a direct method with handlers normally.
         Method handler = method(Base.class, "withHandler", int.class);
-        check(WB.getMethodCompilationLevel(handler) == 0 && WB.isMethodCompilable(handler, 3));
+        await(handler, 1);
+        check(WB.isMethodCompilable(handler, 3));
         check(WB.enqueueMethodForCompilation(handler, 3)); await(handler, 3);
         check(base.withHandler(-1) == -1);
         for (Method dynamic : new Method[]{
@@ -232,7 +233,7 @@ public class DirectBaselineInstanceTest {
                 .shouldContain("direct install manyReferences(")
                 .shouldContain("direct install nativeCall(")
                 .shouldContain("direct install inheritedFinal(")
-                .shouldNotContain("direct install withHandler(I)I")
+                .shouldContain("direct install withHandler(I)I")
                 .shouldContain("direct install unboundCall(")
                 .shouldContain("direct install interfaceCall(")
                 .shouldContain("direct install inheritedNonfinal(")

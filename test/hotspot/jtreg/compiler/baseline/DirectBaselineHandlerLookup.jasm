@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+// Adapt the recursive catch-resolution case to an actual compiled athrow.
+public super class DirectBaselineHandlerLookup version 52:0 {
+  public static Method run:"(Ljava/lang/Throwable;LDirectBaselineHandlerTest$Side;I)I"
+  stack 3 locals 4 {
+    iload_2;
+    ifne THROW;
+    iconst_0;
+    ireturn;
+  THROW:
+    stack_frame_type full;
+    locals_map class java/lang/Throwable, class DirectBaselineHandlerTest$Side, int;
+    aload_1;
+    dup;
+    getfield Field DirectBaselineHandlerTest$Side.before:"I";
+    iconst_1;
+    iadd;
+    putfield Field DirectBaselineHandlerTest$Side.before:"I";
+    aload_0;
+    try t0;
+    athrow;
+    endtry t0;
+    catch t0 java/lang/IllegalAccessError;
+    catch t0 jdk/internal/agent/AgentConfigurationError;
+    stack_frame_type full;
+    locals_map class java/lang/Throwable, class DirectBaselineHandlerTest$Side, int;
+    stack_map class java/lang/Throwable;
+    try t1;
+    pop;
+    iconst_0;
+    ireturn;
+    endtry t1;
+    catch t1 java/lang/IllegalAccessError;
+    stack_frame_type full;
+    locals_map class java/lang/Throwable, class DirectBaselineHandlerTest$Side, int;
+    stack_map class java/lang/Throwable;
+    astore_3;
+    aload_1;
+    aload_3;
+    putfield Field DirectBaselineHandlerTest$Side.caught:"Ljava/lang/Throwable;";
+    aload_1;
+    dup;
+    getfield Field DirectBaselineHandlerTest$Side.catches:"I";
+    iconst_1;
+    iadd;
+    putfield Field DirectBaselineHandlerTest$Side.catches:"I";
+    iconst_1;
+    ireturn;
+  }
+  // A normal edge enters the same Java handler body with an existing oop.
+  // It must skip the exceptional TLS-extraction pad.
+  public static Method shared:"(Ljava/lang/Throwable;LDirectBaselineHandlerTest$Side;I)I"
+  stack 2 locals 4 {
+    iload_2;
+    ifne THROW_SHARED;
+    aload_0;
+    goto BODY;
+  THROW_SHARED:
+    stack_frame_type full;
+    locals_map class java/lang/Throwable, class DirectBaselineHandlerTest$Side, int;
+    aload_0;
+    try t2;
+    athrow;
+    endtry t2;
+    catch t2 java/lang/Throwable;
+  BODY:
+    stack_frame_type full;
+    locals_map class java/lang/Throwable, class DirectBaselineHandlerTest$Side, int;
+    stack_map class java/lang/Throwable;
+    astore_3;
+    aload_1;
+    aload_3;
+    putfield Field DirectBaselineHandlerTest$Side.caught:"Ljava/lang/Throwable;";
+    aload_3;
+    invokestatic Method DirectBaselineHandlerTest.pass:"(Ljava/lang/Object;)Ljava/lang/Object;";
+    pop;
+    bipush 37;
+    ireturn;
+  }
+
+}
