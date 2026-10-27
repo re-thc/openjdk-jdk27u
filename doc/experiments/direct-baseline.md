@@ -13,6 +13,9 @@ increases coverage but records an adverse warmed comparison.
 The [preflight and warm-history study](direct-baseline-preflight.md) removes
 some avoidable refused tasks and identifies ordinary-tier warm-state changes;
 it still does not establish an acceptable application win.
+The [instance coverage and tier-causality study](direct-baseline-instance-study.md)
+explains a queue-sensitive ordinary-tier difference and scopes the next useful
+instance-entry/call and exception boundary without speculative policy changes.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 
