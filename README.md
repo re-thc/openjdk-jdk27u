@@ -7,12 +7,13 @@ or either of these files:
 - [doc/building.html](doc/building.html) (html version)
 - [doc/building.md](doc/building.md) (markdown version)
 
-Use `bin/configure-dev` for this fork's reduced native build: no desktop or audio
-modules, Serial/G1/ZGC only, and the CPU baselines selected by the script. Linux
-uses mold; set `CONFIGURE_DEV_NO_MOLD=1` to use the default linker. Ordinary
-`bash configure` retains upstream defaults and is required for documentation
-targets. During upstream updates, review the `ENABLE_DESKTOP` build guards and
-module/collector requirements in retained tests.
+Normal configure uses this fork's reduced native build and CPU baselines:
+Linux x64 x86-64-v3, Windows x64 AVX2, Linux ARM64 ARMv8.2-A, and macOS
+ARM64 Apple M1. Below-baseline machines are unsupported. Use
+`bin/configure-dev` for optional ccache and Linux mold configuration; set
+`CONFIGURE_DEV_NO_MOLD=1` to use the default linker. During upstream updates,
+review the `ENABLE_DESKTOP` build guards and module/collector requirements
+in retained tests.
 
 On x64 and AArch64, this fork defaults to four-byte object headers with Serial,
 G1 and ZGC. `-XX:-UseFourByteObjectHeaders` selects eight-byte compact headers;
