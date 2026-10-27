@@ -2666,14 +2666,27 @@ void CompileBroker::request_direct_baseline(const methodHandle& method, JavaThre
   if (!_initialized || queue == nullptr || !should_compile_new_jobs()) return;
   MethodCounters* mc = method->method_counters();
   if (mc == nullptr) return;
-  MutexLocker locker(thread, MethodCompileQueue_lock);
-  if (mc->direct_baseline_attempted()) return;
-  mc->set_direct_baseline_attempted();
-  if (method->queued_for_compilation() || method->has_compiled_code() ||
-      method->highest_comp_level() != CompLevel_none || method->method_data() != nullptr) return;
-  int id = assign_compile_id(method, InvocationEntryBci);
-  if (id == 0) return;
-  create_compile_task(queue, id, method, InvocationEntryBci,
-                      CompLevel_simple, method->invocation_count(),
-                      CompileTask::Reason_DirectBaseline, false);
+  const char* refusal = nullptr;
+  {
+    MutexLocker locker(thread, MethodCompileQueue_lock);
+    if (mc->direct_baseline_attempted()) return;
+    mc->set_direct_baseline_attempted();
+    if (method->queued_for_compilation() || method->has_compiled_code() ||
+        method->highest_comp_level() != CompLevel_none || method->method_data() != nullptr) return;
+    refusal = DirectBaseline::preflight_failure(method());
+    if (refusal == nullptr) {
+      int id = assign_compile_id(method, InvocationEntryBci);
+      if (id == 0) return;
+      create_compile_task(queue, id, method, InvocationEntryBci,
+                          CompLevel_simple, method->invocation_count(),
+                          CompileTask::Reason_DirectBaseline, false);
+    }
+  }
+  if (refusal != nullptr && TraceDirectBaseline) {
+    ResourceMark rm(thread);
+    ttyLocker ttyl;
+    tty->print_cr("direct preflight %s %s%s count=%d reason=%s",
+                  method->method_holder()->name()->as_C_string(), method->name()->as_C_string(), method->signature()->as_C_string(),
+                  method->invocation_count(), refusal);
+  }
 }

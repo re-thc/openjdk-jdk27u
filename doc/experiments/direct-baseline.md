@@ -10,6 +10,9 @@ The current [successor handoff](direct-baseline-successor-handoff.md) keeps
 direct code executing until ordinary replacement without aging an empty MDO.
 The subsequent [initialized static-field experiment](direct-baseline-static-fields.md)
 increases coverage but records an adverse warmed comparison.
+The [preflight and warm-history study](direct-baseline-preflight.md) removes
+some avoidable refused tasks and identifies ordinary-tier warm-state changes;
+it still does not establish an acceptable application win.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 

@@ -82,6 +82,8 @@ public class DirectBaselineTest {
     static Object acrossYield(Object o) { Thread.yield(); return o; }
     static int unsupportedLoop(int n) { int r = 0; for (int i = 0; i < n; i++) r += i; return r; }
     static long unsupportedLong(long x) { return x * 13; }
+    static Object unsupportedAllocation() { return new Object(); }
+    static int unsupportedHandler(int divisor) { try { return 9 / divisor; } catch (ArithmeticException expected) { return -1; } }
     static synchronized int unsupportedMonitor(int x) { return x + 1; }
     static int manyArgs(int a, int b, int c, int d, int e, int f, int g, int h) { return a+b+c+d+e+f+g+h; }
     static int stackCall(int x) { return manyArgs(x, 2, 3, 4, 5, 6, 7, 8); }
@@ -164,9 +166,12 @@ public class DirectBaselineTest {
             exercise(box, ref, i);
             check(unsupportedLoop(20) == 190);
             check(unsupportedLong(i) == i*13L);
+            check(unsupportedAllocation() != null && unsupportedHandler(i + 1) == 9 / (i + 1));
             check(unsupportedMonitor(i) == i+1);
         }
         Thread.sleep(500); // let the early queue finish while below ordinary C1 admission
+        for (int i = 0; i < 128; i++) check(unsupportedAllocation() != null); // cross the next early notification
+        check(unsupportedHandler(0) == -1);
         for (int i = 0; i < 32; i++) exercise(box, ref, i);
         int before = box.value;
         try { exceptionAfterStore(box, null); throw new AssertionError(); }
@@ -223,6 +228,11 @@ public class DirectBaselineTest {
                 .shouldContain("direct install inheritedStatic()I")
                 .shouldNotContain("direct install coldStatic(I)I")
                 .shouldNotContain("direct install coldThrowingStatic(I)I");
+            output.shouldContain("direct preflight DirectBaselineTest unsupportedLong(J)J")
+                .shouldContain("direct preflight DirectBaselineTest unsupportedHandler(I)I")
+                .shouldContain("direct preflight DirectBaselineTest unsupportedAllocation()Ljava/lang/Object;");
+            check(output.asLines().stream().filter(line -> line.startsWith(
+                "direct preflight DirectBaselineTest unsupportedAllocation()Ljava/lang/Object;")).count() == 1);
             // PolicyTest controls a direct-to-C2 linked-call handoff explicitly.
         }
     }

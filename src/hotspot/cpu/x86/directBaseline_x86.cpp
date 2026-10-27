@@ -135,7 +135,8 @@ class Emitter : StackObj {
         _method->is_scoped() || _method->has_reserved_stack_access() ||
         _method->intrinsic_id() != vmIntrinsics::_none ||
         !_method->can_be_compiled() || _method->needs_clinit_barrier() ||
-        !signature(_method->signature()) || _nl > 64 || _ns > 32 || _size > 512 || _size == 0) {
+        !signature(_method->signature()) || _nl > DirectBaseline::max_locals || _ns > DirectBaseline::max_stack ||
+        _size > DirectBaseline::max_code_size || _size == 0) {
       return fail("method shape");
     }
     _states = NEW_RESOURCE_ARRAY(State*, _size);
@@ -667,6 +668,18 @@ class DirectCompiler : public AbstractCompiler {
 } // anonymous namespace
 
 AbstractCompiler* DirectBaseline::compiler() { static DirectCompiler* c = new DirectCompiler(); return c; }
+const char* DirectBaseline::preflight_failure(Method* method) {
+  // Cached metadata and one entry opcode only. Do not add a second bytecode or
+  // signature walk before the emitter's necessary type-state prepass.
+  if (method->has_exception_handler() || method->has_monitor_bytecodes() ||
+      method->is_scoped() || method->has_reserved_stack_access() ||
+      method->intrinsic_id() != vmIntrinsics::_none ||
+      method->max_locals() > max_locals || method->max_stack() > max_stack ||
+      method->code_size() > max_code_size || method->code_size() == 0) return "method shape";
+  if (method->result_type() != T_VOID && !supported_type(method->result_type())) return "result type";
+  if (Bytecodes::java_code_at(method, method->code_base()) == Bytecodes::_new) return "allocation at entry";
+  return nullptr;
+}
 void DirectBaseline::request(const methodHandle& method, JavaThread* thread) {
   if (!UseDirectBaseline || !UseCompiler || !TieredCompilation || !ProfileInterpreter || TieredStopAtLevel < 3 ||
       !CompilationModeFlag::normal() || ReplayCompiles || TrainingData::have_data() || TrainingData::need_data() ||

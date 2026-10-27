@@ -23,17 +23,21 @@
 #include "runtime/handles.hpp"
 class AbstractCompiler;
 class JavaThread;
+class Method;
 
 // This is a separate bytecode emitter with its own compiler worker/queue.
 // Shared-worker priority is retained as an experimental scheduling control.
 // It reuses assembler and Runtime1 stubs, but no C1 IR, LIR or allocation.
 class DirectBaseline : AllStatic {
  public:
+  enum { max_code_size = 512, max_locals = 64, max_stack = 32 };
 #if defined(AMD64) && defined(COMPILER1)
   static AbstractCompiler* compiler();
+  static const char* preflight_failure(Method* method);
   static void request(const methodHandle& method, JavaThread* thread);
 #else
   static AbstractCompiler* compiler() { return nullptr; }
+  static const char* preflight_failure(Method*) { return nullptr; }
   static void request(const methodHandle&, JavaThread*) {}
 #endif
 };
