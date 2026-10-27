@@ -92,6 +92,7 @@ public class DirectBaselineFieldSnapshotTest {
                 DirectBaselineFieldSnapshotTest.class.getDeclaredMethod("publish",Parent.class,Object.class),
                 DirectBaselineFieldSnapshotTest.class.getDeclaredMethod("acquire",Parent.class)}) await(wb,method);
         check(narrow(b,-123,value,token)==value+(byte)-240+(char)65658+(short)-30123+7);
+        check(narrow(b,0,value,token)==value-117+65535-30000+19);
         check(inherited(first)==23 && inherited(second)==91);
         System.gc(); check(reference(b)==token);
         b.ref=null; b.ready=false; Object expected=new byte[1<<20];

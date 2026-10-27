@@ -194,24 +194,6 @@ BasicType argument_type(BasicSignature* sig, bool is_static, int i) {
   return !is_static && i==0 ? T_OBJECT : sig->type_at(i-(is_static?0:1));
 }
 
-uint64_t resolved_signature_fingerprint(ConstantPool* pool, int index, Bytecodes::Code bc, Symbol* signature) {
-  // Only reuse primitive/reference categories; linking remains an emission
-  // check. No metadata escapes this VM-state, no-safepoint read.
-  NoSafepointVerifier nsv;
-  if (pool->cache()==nullptr || index<0 || index>=pool->resolved_method_entries_length()) return 0;
-  ResolvedMethodEntry* entry=pool->resolved_method_entry_at(index);
-  if (!entry->is_resolved(bc) || entry->has_local_signature() || entry->has_appendix()) return 0;
-  Method* method=entry->method();
-  if (bc==Bytecodes::_invokevirtual && !entry->is_vfinal()) {
-    int holder_index=pool->klass_ref_index_at(index,bc);
-    if (!pool->tag_at(holder_index).is_klass()) return 0;
-    method=pool->resolved_klass_at(holder_index)->method_at_vtable(entry->table_index());
-  }
-  if (method==nullptr || method->signature()!=signature || method->is_static()!=(bc==Bytecodes::_invokestatic) ||
-      (method->intrinsic_id()>=vmIntrinsics::FIRST_MH_SIG_POLY && method->intrinsic_id()<=vmIntrinsics::LAST_MH_SIG_POLY)) return 0;
-  return method->constMethod()->fingerprint();
-}
-
 // Only categories, branch states and outgoing argument space are prepared here.
 // No CI object, class lookup, field linking or Java call resolution is needed.
 class Prepared : public ResourceObj {
@@ -520,7 +502,9 @@ class Prepared : public ResourceObj {
           ConstantPool* pool=_method->constants();
           int index=bs.get_index_u2();
           Symbol* signature=pool->signature_ref_at(index,bc);
-          BasicSignature* declared = new BasicSignature(signature, resolved_signature_fingerprint(pool,index,bc,signature));
+          // The declared descriptor supplies call-site types without a
+          // resolved-target lookup. Emission checks linkage separately.
+          BasicSignature* declared = new BasicSignature(signature);
           if (!declared->valid()) return fail("unresolved/unsupported call");
           bool is_static = bc == Bytecodes::_invokestatic;
           _call_signatures[bci] = declared;
