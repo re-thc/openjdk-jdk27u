@@ -148,21 +148,29 @@ ciEnv::ciEnv(CompileTask* task)
 
   assert(Universe::is_fully_initialized(), "should be complete");
 
-  oop o = Universe::null_ptr_exception_instance();
-  assert(o != nullptr, "should have been initialized");
-  _NullPointerException_instance = get_object(o)->as_instance();
-  o = Universe::arithmetic_exception_instance();
-  assert(o != nullptr, "should have been initialized");
-  _ArithmeticException_instance = get_object(o)->as_instance();
-  o = Universe::array_index_out_of_bounds_exception_instance();
-  assert(o != nullptr, "should have been initialized");
-  _ArrayIndexOutOfBoundsException_instance = get_object(o)->as_instance();
-  o = Universe::array_store_exception_instance();
-  assert(o != nullptr, "should have been initialized");
-  _ArrayStoreException_instance = get_object(o)->as_instance();
-  o = Universe::class_cast_exception_instance();
-  assert(o != nullptr, "should have been initialized");
-  _ClassCastException_instance = get_object(o)->as_instance();
+  if (task != nullptr && task->is_direct_baseline()) {
+    // Direct guards deoptimize and calls use runtime exception propagation.
+    // The preallocated exception ciInstances are C2 IR inputs, unused here.
+    _NullPointerException_instance = _ArithmeticException_instance =
+        _ArrayIndexOutOfBoundsException_instance = _ArrayStoreException_instance =
+        _ClassCastException_instance = nullptr;
+  } else {
+    oop o = Universe::null_ptr_exception_instance();
+    assert(o != nullptr, "should have been initialized");
+    _NullPointerException_instance = get_object(o)->as_instance();
+    o = Universe::arithmetic_exception_instance();
+    assert(o != nullptr, "should have been initialized");
+    _ArithmeticException_instance = get_object(o)->as_instance();
+    o = Universe::array_index_out_of_bounds_exception_instance();
+    assert(o != nullptr, "should have been initialized");
+    _ArrayIndexOutOfBoundsException_instance = get_object(o)->as_instance();
+    o = Universe::array_store_exception_instance();
+    assert(o != nullptr, "should have been initialized");
+    _ArrayStoreException_instance = get_object(o)->as_instance();
+    o = Universe::class_cast_exception_instance();
+    assert(o != nullptr, "should have been initialized");
+    _ClassCastException_instance = get_object(o)->as_instance();
+  }
 
   _the_null_string = nullptr;
   _the_min_jint_string = nullptr;

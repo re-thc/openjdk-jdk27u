@@ -29,6 +29,7 @@
 #include "ci/ciStreams.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/compiledIC.hpp"
+#include "code/codeBlob.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/dependencies.hpp"
 #include "code/exceptionHandlerTable.hpp"
@@ -38,6 +39,7 @@
 #include "runtime/javaThread.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerThread.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -101,7 +103,9 @@ class Emitter : StackObj {
   }
   bool merge(int bci, State* s) {
     if (bci < 0 || bci >= _size) return fail("invalid branch target");
-    if (_states[bci] == nullptr) { _states[bci] = copy(s); return true; }
+    // Every instruction mutates a fresh copy. Published successor states are
+    // immutable, including a conditional's shared branch/fallthrough result.
+    if (_states[bci] == nullptr) { _states[bci] = s; return true; }
     State* t = _states[bci];
     if (t->sp != s->sp) return fail("stack height merge");
     for (int i = 0; i < s->sp; i++) if (s->stack[i] != t->stack[i]) return fail("stack type merge");
@@ -636,9 +640,23 @@ class Emitter : StackObj {
     _env->set_debug_info(_debug);
     _env->set_dependencies(new Dependencies(_env));
     if (_env->jvmti_can_hotswap_or_post_breakpoint()) _env->dependencies()->assert_evol_method(_method);
-    CodeBuffer code("direct baseline", 65536, 16384);
+    CompilerThread* thread = CompilerThread::current();
+    BufferBlob* buffer = thread->get_buffer_blob();
+    int capacity = 65536 + sizeof(jdouble) + CodeEntryAlignment + HeapWordSize +
+                   3 * CodeSection::end_slop();
+    if (buffer == nullptr) {
+      buffer = BufferBlob::create("direct baseline temporary CodeBuffer", capacity);
+      if (buffer != nullptr) thread->set_buffer_blob(buffer);
+    }
+    if (buffer == nullptr || buffer->content_size() < capacity) {
+      _env->record_failure("direct code buffer allocation/capacity"); return;
+    }
+    // Borrow only code storage, as C1 does. Relocations and metadata remain
+    // per-task; register_method/free_blob must not release the owner's buffer.
+    CodeBuffer code(buffer);
+    int relocations = 16384 / sizeof(relocInfo);
+    code.insts()->initialize_shared_locs(NEW_RESOURCE_ARRAY(relocInfo, relocations), relocations);
     _code = &code;
-    if (code.blob() == nullptr) { _env->record_failure("direct code buffer allocation"); return; }
     emit();
     if (_failure != nullptr) { _env->record_failure(_failure); _code->free_blob(); return; }
     ExceptionHandlerTable handlers;

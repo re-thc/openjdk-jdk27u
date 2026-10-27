@@ -20,6 +20,10 @@ The subsequent [instance-entry and bound-call implementation](direct-baseline-in
 qualifies the first two capabilities, expands measured javac coverage to 206
 methods, and records its complete cost and mixed warmed comparison. Handler
 support and general dispatch remain excluded; no application win is established.
+The [compiler-cost attribution](direct-baseline-compile-cost.md) corrects the
+earlier logged-CPU interpretation and removes three unnecessary allocations.
+Its compile-cost improvement is measured; clean-image validation is pending
+executor process/thread-capacity recovery.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 

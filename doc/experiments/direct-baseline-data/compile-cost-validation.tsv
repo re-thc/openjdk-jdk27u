@@ -1,0 +1,6 @@
+action	target	status	reason
+javac startup diagnostic	instrumented reduced image	passed	three fresh processes returned success before exhaustion
+clean release build	direct-release	blocked	posix_spawn EAGAIN; parallel, serial and subreaper attempts failed
+clean fastdebug build	direct-fastdebug	blocked	posix_spawn EAGAIN
+full jtreg suite	compiler/baseline	blocked	JVM initialization failed creating native thread before test main
+static diff check	two-file production patch	passed	git with parallel index scanning disabled
