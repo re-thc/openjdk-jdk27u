@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
+import jdk.internal.access.SharedSecrets;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
 
@@ -52,168 +54,55 @@ enum NamedGroup {
     // Elliptic Curves (RFC 4492)
     //
     // See sun.security.util.CurveDB for the OIDs
-    // NIST K-163
-
-    SECT163_K1(0x0001, "sect163k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect163k1")),
-    SECT163_R1(0x0002, "sect163r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect163r1")),
-
-    // NIST B-163
-    SECT163_R2(0x0003, "sect163r2",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect163r2")),
-    SECT193_R1(0x0004, "sect193r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect193r1")),
-    SECT193_R2(0x0005, "sect193r2",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect193r2")),
-
-    // NIST K-233
-    SECT233_K1(0x0006, "sect233k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect233k1")),
-
-    // NIST B-233
-    SECT233_R1(0x0007, "sect233r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect233r1")),
-    SECT239_K1(0x0008, "sect239k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect239k1")),
-
-    // NIST K-283
-    SECT283_K1(0x0009, "sect283k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect283k1")),
-
-    // NIST B-283
-    SECT283_R1(0x000A, "sect283r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect283r1")),
-
-    // NIST K-409
-    SECT409_K1(0x000B, "sect409k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect409k1")),
-
-    // NIST B-409
-    SECT409_R1(0x000C, "sect409r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect409r1")),
-
-    // NIST K-571
-    SECT571_K1(0x000D, "sect571k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect571k1")),
-
-    // NIST B-571
-    SECT571_R1(0x000E, "sect571r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("sect571r1")),
-    SECP160_K1(0x000F, "secp160k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp160k1")),
-    SECP160_R1(0x0010, "secp160r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp160r1")),
-    SECP160_R2(0x0011, "secp160r2",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp160r2")),
-    SECP192_K1(0x0012, "secp192k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp192k1")),
-
-    // NIST P-192
-    SECP192_R1(0x0013, "secp192r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp192r1")),
-    SECP224_K1(0x0014, "secp224k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp224k1")),
-
-    // NIST P-224
-    SECP224_R1(0x0015, "secp224r1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp224r1")),
-    SECP256_K1(0x0016, "secp256k1",
-            NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            CurveDB.lookup("secp256k1")),
-
     // NIST P-256
     SECP256_R1(0x0017, "secp256r1",
             NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             CurveDB.lookup("secp256r1")),
 
     // NIST P-384
     SECP384_R1(0x0018, "secp384r1",
             NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             CurveDB.lookup("secp384r1")),
 
     // NIST P-521
     SECP521_R1(0x0019, "secp521r1",
             NamedGroupSpec.NAMED_GROUP_ECDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             CurveDB.lookup("secp521r1")),
 
     // x25519 and x448 (RFC 8422/8446)
     X25519(0x001D, "x25519",
             NamedGroupSpec.NAMED_GROUP_XDH,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             NamedParameterSpec.X25519),
     X448(0x001E, "x448",
             NamedGroupSpec.NAMED_GROUP_XDH,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             NamedParameterSpec.X448),
 
     // Finite Field Diffie-Hellman Ephemeral Parameters (RFC 7919)
     FFDHE_2048(0x0100, "ffdhe2048",
             NamedGroupSpec.NAMED_GROUP_FFDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             PredefinedDHParameterSpecs.ffdheParams.get(2048)),
 
     FFDHE_3072(0x0101, "ffdhe3072",
             NamedGroupSpec.NAMED_GROUP_FFDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             PredefinedDHParameterSpecs.ffdheParams.get(3072)),
     FFDHE_4096(0x0102, "ffdhe4096",
             NamedGroupSpec.NAMED_GROUP_FFDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             PredefinedDHParameterSpecs.ffdheParams.get(4096)),
     FFDHE_6144(0x0103, "ffdhe6144",
             NamedGroupSpec.NAMED_GROUP_FFDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             PredefinedDHParameterSpecs.ffdheParams.get(6144)),
     FFDHE_8192(0x0104, "ffdhe8192",
             NamedGroupSpec.NAMED_GROUP_FFDHE,
-            ProtocolVersion.PROTOCOLS_TO_13,
+            ProtocolVersion.PROTOCOLS_12_13,
             PredefinedDHParameterSpecs.ffdheParams.get(8192)),
 
     ML_KEM_512(0x0200, "MLKEM512",
@@ -247,19 +136,7 @@ enum NamedGroup {
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             Hybrid.SECP384R1_MLKEM1024,
-            HybridProvider.PROVIDER),
-
-    // Elliptic Curves (RFC 4492)
-    //
-    // arbitrary prime and characteristic-2 curves
-    ARBITRARY_PRIME(0xFF01, "arbitrary_explicit_prime_curves",
-            NamedGroupSpec.NAMED_GROUP_ARBITRARY,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            null),
-    ARBITRARY_CHAR2(0xFF02, "arbitrary_explicit_char2_curves",
-            NamedGroupSpec.NAMED_GROUP_ARBITRARY,
-            ProtocolVersion.PROTOCOLS_TO_12,
-            null);
+            HybridProvider.PROVIDER);
 
     final int id;               // hash + signature
     final String name;          // literal name
@@ -310,7 +187,43 @@ enum NamedGroup {
         }
 
         // Check the specific algorithm parameters.
-        if (mediator) {
+        if (mediator && (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_XDH)) {
+            // Please remove the following code if the XDH/X25519/X448
+            // AlgorithmParameters algorithms are supported in JDK.
+            //
+            // Note: Please be careful if removing this block!
+            //
+            // The AlgorithmParameters are not supported in JDK, and looking
+            // up an unsupported algorithm loads all the providers.  So check
+            // the KeyAgreement impl first, and only look for the
+            // AlgorithmParameters if it is not available.  If it is, they
+            // are looked up when a constraint needs them, in getKeAlgParams().
+            try {
+                KeyAgreement.getInstance(name);
+
+                // The following service is also needed.  But for
+                // performance, check the KeyAgreement impl only.
+                //
+                // KeyFactory.getInstance(name);
+                // KeyPairGenerator.getInstance(name);
+                // AlgorithmParameters.getInstance(name);
+            } catch (NoSuchAlgorithmException nsae) {
+                try {
+                    algParams = AlgorithmParameters.getInstance(
+                            namedGroupSpec.algorithm);
+                    algParams.init(keAlgParamSpec);
+                } catch (InvalidParameterSpecException
+                        | NoSuchAlgorithmException exp) {
+                    algParams = null;
+                    mediator = false;
+                    if (SSLLogger.isOn() &&
+                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                        SSLLogger.warning(
+                            "No AlgorithmParameters for " + name, nsae);
+                    }
+                }
+            }
+        } else if (mediator) {
             try {
                 // Skip AlgorithmParameters for KEMs (not supported)
                 // Check KEM's availability via KeyFactory
@@ -328,37 +241,12 @@ enum NamedGroup {
                 }
             } catch (InvalidParameterSpecException
                     | NoSuchAlgorithmException exp) {
-                if (namedGroupSpec != NamedGroupSpec.NAMED_GROUP_XDH) {
-                    mediator = false;
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                        SSLLogger.warning(
-                            "No AlgorithmParameters or KeyFactory for " + name,
-                                exp);
-                    }
-                } else {
-                    // Please remove the following code if the XDH/X25519/X448
-                    // AlgorithmParameters algorithms are supported in JDK.
-                    //
-                    // Note: Please be careful if removing this block!
-                    algParams = null;
-                    try {
-                        KeyAgreement.getInstance(name);
-
-                        // The following service is also needed.  But for
-                        // performance, check the KeyAgreement impl only.
-                        //
-                        // KeyFactory.getInstance(name);
-                        // KeyPairGenerator.getInstance(name);
-                        // AlgorithmParameters.getInstance(name);
-                    } catch (NoSuchAlgorithmException nsae) {
-                        mediator = false;
-                        if (SSLLogger.isOn() &&
-                                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
-                            SSLLogger.warning(
-                                "No AlgorithmParameters for " + name, nsae);
-                        }
-                    }
+                mediator = false;
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                    SSLLogger.warning(
+                        "No AlgorithmParameters or KeyFactory for " + name,
+                            exp);
                 }
             }
         }
@@ -593,7 +481,37 @@ enum NamedGroup {
         return constraints.permits(KEY_AGREEMENT_PRIMITIVE_SET,
                         this.name, null) &&
                 constraints.permits(KEY_AGREEMENT_PRIMITIVE_SET,
-                        this.algorithm, this.keAlgParams);
+                        this.algorithm, getKeAlgParams(constraints));
+    }
+
+    // Look up XDH parameters only for application constraints. The JDK's
+    // constraints do not check them, while a custom provider's parameters
+    // may affect an application's decision. Use ordinary JCA discovery so
+    // that mutable and instrumented providers remain observable.
+    private AlgorithmParameters getKeAlgParams(
+            AlgorithmConstraints constraints) {
+        if (!isAvailable ||
+                spec != NamedGroupSpec.NAMED_GROUP_XDH ||
+                (constraints instanceof SSLAlgorithmConstraints sslConstraints
+                        && !sslConstraints.hasUserSpecifiedConstraints())) {
+            return keAlgParams;
+        }
+
+        // Providers and their services can change after group initialization.
+        // Do not retain either a failed lookup or parameters from an earlier
+        // provider selection. Each caller initializes its own parameters.
+        try {
+            AlgorithmParameters algParams =
+                    SharedSecrets.getJavaSecurityAlgorithmParametersAccess()
+                            .getInstanceOrNull(algorithm);
+            if (algParams != null) {
+                algParams.init(keAlgParamSpec);
+            }
+            return algParams;
+        } catch (InvalidParameterSpecException
+                | NoSuchAlgorithmException exp) {
+            return null;
+        }
     }
 
     byte[] encodePossessionPublicKey(
@@ -651,9 +569,6 @@ enum NamedGroup {
         // Post-Quantum Cryptography (PQC) KEM groups
         // Currently used for hybrid named groups
         NAMED_GROUP_KEM("KEM", KEMScheme.instance),
-
-        // arbitrary prime and curves (ECDHE)
-        NAMED_GROUP_ARBITRARY("EC", null),
 
         // Not predefined named group
         NAMED_GROUP_NONE("", null);
@@ -886,12 +801,7 @@ enum NamedGroup {
         // Filter default groups names against default constraints.
         // Those are the values being displayed to the user with
         // "java -XshowSettings:security:tls" command.
-        private static final String[] defaultNames = Arrays.stream(
-                        defaultGroups)
-                .filter(ng -> ng.isAvailable)
-                .filter(ng -> ng.isPermitted(SSLAlgorithmConstraints.DEFAULT))
-                .map(ng -> ng.name)
-                .toArray(String[]::new);
+        private static final String[] defaultNames = getDefaultNames();
 
         private static final NamedGroup[] customizedGroups =
                 getCustomizedNamedGroups();
@@ -917,6 +827,18 @@ enum NamedGroup {
                 }
                 namedGroups = defaultNames;
             }
+        }
+
+        private static String[] getDefaultNames() {
+            List<String> names = new ArrayList<>(defaultGroups.length);
+            for (NamedGroup ng : defaultGroups) {
+                if (ng.isAvailable &&
+                        ng.isPermitted(SSLAlgorithmConstraints.DEFAULT)) {
+                    names.add(ng.name);
+                }
+            }
+
+            return names.toArray(new String[0]);
         }
 
         // Avoid the group lookup for default and customized groups.

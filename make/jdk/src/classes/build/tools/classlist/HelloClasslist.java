@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,13 +154,17 @@ public class HelloClasslist {
 
         LOGGER.log(Level.FINE, "New Date: " + newDate + " - old: " + oldDate);
 
-        // Pull SwitchBootstraps and associated classes into the classlist
+        // Keep enough distinct labels to exercise the bootstrap even when javac
+        // lowers small reference switches directly.
         record A(int a) { }
         record B(int b) { }
         Object o = new A(4711);
         int value = switch (o) {
             case A a -> a.a;
             case B b -> b.b;
+            case String stringValue -> stringValue.length();
+            case Integer integerValue -> integerValue;
+            case Long longValue -> longValue.intValue();
             default -> 17;
         };
         // record run-time methods

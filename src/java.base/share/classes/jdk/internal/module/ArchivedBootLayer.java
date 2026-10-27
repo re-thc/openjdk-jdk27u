@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +36,27 @@ class ArchivedBootLayer {
     private static ArchivedBootLayer archivedBootLayer;
 
     private final ModuleLayer bootLayer;
+    private final boolean hasIncubatorModules;
 
-    private ArchivedBootLayer(ModuleLayer bootLayer) {
+    private ArchivedBootLayer(ModuleLayer bootLayer, boolean hasIncubatorModules) {
         this.bootLayer = bootLayer;
+        this.hasIncubatorModules = hasIncubatorModules;
     }
 
     ModuleLayer bootLayer() {
         return bootLayer;
     }
 
+    boolean hasIncubatorModules() {
+        return hasIncubatorModules;
+    }
+
     static ArchivedBootLayer get() {
         return archivedBootLayer;
     }
 
-    static void archive(ModuleLayer layer) {
-        archivedBootLayer = new ArchivedBootLayer(layer);
+    static void archive(ModuleLayer layer, boolean hasIncubatorModules) {
+        archivedBootLayer = new ArchivedBootLayer(layer, hasIncubatorModules);
     }
 
     static {

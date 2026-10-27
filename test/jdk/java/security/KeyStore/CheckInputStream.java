@@ -33,13 +33,13 @@ import java.security.*;
 public class CheckInputStream {
     private final static String DIR = System.getProperty("test.src", ".");
     private static final char[] PASSWORD = "passphrase".toCharArray();
-    private static final String KEYSTORE = DIR + "/keystore.jks";
+    private static final String KEYSTORE = DIR + "/keystore.p12";
 
     public static final void main(String[] args) throws Exception {
 
-        KeyStore keystore = KeyStore.getInstance("JKS");
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
         try (FileInputStream inStream = new FileInputStream(KEYSTORE)) {
-            System.out.println("Loading JKS keystore: " + KEYSTORE);
+            System.out.println("Loading PKCS12 keystore: " + KEYSTORE);
             keystore.load(inStream, PASSWORD);
             // check that the stream is still open
             inStream.available();

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +62,7 @@ import java.security.*;
 
 import java.security.Provider.Service;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 
 import sun.security.jca.*;
@@ -253,19 +255,8 @@ final class JceSecurity {
         return e == null;
     }
 
-    // dummy object to represent null
-    private static final URL NULL_URL;
-
-    static {
-        try {
-            @SuppressWarnings("deprecation")
-            var _unused = NULL_URL = new URL("http://null.oracle.com/");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // reference to a Map we use as a cache for codebases
+    // reference to a Map we use as a cache for codebases, a class without
+    // a codebase is mapped to null
     private static final Map<Class<?>, URL> codeBaseCacheRef =
             new WeakHashMap<>();
 
@@ -275,8 +266,7 @@ final class JceSecurity {
     static URL getCodeBase(final Class<?> clazz) {
         synchronized (codeBaseCacheRef) {
             URL url = codeBaseCacheRef.get(clazz);
-            if (url == null) {
-                url = NULL_URL;
+            if (url == null && !codeBaseCacheRef.containsKey(clazz)) {
                 ProtectionDomain pd = clazz.getProtectionDomain();
                 if (pd != null) {
                     CodeSource cs = pd.getCodeSource();
@@ -286,7 +276,7 @@ final class JceSecurity {
                 }
                 codeBaseCacheRef.put(clazz, url);
             }
-            return (url == NULL_URL) ? null : url;
+            return url;
         }
     }
 
@@ -344,11 +334,21 @@ final class JceSecurity {
                 cryptoPolicyProperty);
         }
 
+        // The files are read with java.io, which costs less to set up for
+        // them.
+        boolean ignoreCase = OperatingSystem.isWindows();
+        DirectoryStream.Filter<Path> policyFiles = new DirectoryStream.Filter<>() {
+            @Override
+            public boolean accept(Path entry) {
+                return isPolicyFileName(entry.getFileName().toString(),
+                        ignoreCase);
+            }
+        };
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(
-                cryptoPolicyPath, "{default,exempt}_*.policy")) {
+                cryptoPolicyPath, policyFiles)) {
             for (Path entry : stream) {
                 try (InputStream is = new BufferedInputStream(
-                        Files.newInputStream(entry))) {
+                        new FileInputStream(entry.toFile()))) {
                     String filename = entry.getFileName().toString();
 
                     CryptoPermissions tmpPerms = new CryptoPermissions();
@@ -394,6 +394,18 @@ final class JceSecurity {
         if ((exemptPolicy != null) && exemptPolicy.isEmpty()) {
             exemptPolicy = null;
         }
+    }
+
+    /*
+     * Returns whether the glob "{default,exempt}_*.policy" matches the name,
+     * ignoring case as the glob does on Windows. The glob is not used, as it
+     * is compiled to a regular expression.
+     */
+    static boolean isPolicyFileName(String name, boolean ignoreCase) {
+        return (name.regionMatches(ignoreCase, 0, "default_", 0, 8)
+                || name.regionMatches(ignoreCase, 0, "exempt_", 0, 7))
+                && name.regionMatches(ignoreCase, name.length() - 7,
+                        ".policy", 0, 7);
     }
 
     static CryptoPermissions getDefaultPolicy() {

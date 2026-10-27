@@ -159,7 +159,6 @@ public class Config {
             singleton = new Config();
         }
         KdcComm.initStatic();
-        EType.initStatic();
         KrbAsReqBuilder.ReferralsState.initStatic();
     }
 

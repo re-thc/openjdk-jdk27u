@@ -24,8 +24,6 @@ import java.util.Arrays;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
-import jdk.test.lib.security.SecurityUtils;
-
 /*
  * @test
  * @bug 8234728
@@ -42,14 +40,6 @@ import jdk.test.lib.security.SecurityUtils;
  * @run main/othervm TLSCipherSuitesOrder TLSv12 UNORDERED default
  * @run main/othervm TLSCipherSuitesOrder TLSv12 UNORDERED UNORDERED
  * @run main/othervm TLSCipherSuitesOrder TLSv12 ORDERED ORDERED
- * @run main/othervm TLSCipherSuitesOrder TLSv11 ORDERED default
- * @run main/othervm TLSCipherSuitesOrder TLSv11 UNORDERED default
- * @run main/othervm TLSCipherSuitesOrder TLSv11 UNORDERED UNORDERED
- * @run main/othervm TLSCipherSuitesOrder TLSv11 ORDERED ORDERED
- * @run main/othervm TLSCipherSuitesOrder TLSv1 ORDERED default
- * @run main/othervm TLSCipherSuitesOrder TLSv1 UNORDERED default
- * @run main/othervm TLSCipherSuitesOrder TLSv1 UNORDERED UNORDERED
- * @run main/othervm TLSCipherSuitesOrder TLSv1 ORDERED ORDERED
  */
 public class TLSCipherSuitesOrder extends SSLSocketTemplate {
 
@@ -58,8 +48,6 @@ public class TLSCipherSuitesOrder extends SSLSocketTemplate {
     private final String[] clientcipherSuites;
 
     public static void main(String[] args) {
-        // Re-enable TLS_RSA_* since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
         PROTOCOL protocol = PROTOCOL.valueOf(args[0]);
         try {
             new TLSCipherSuitesOrder(protocol.getProtocol(),
@@ -72,10 +60,6 @@ public class TLSCipherSuitesOrder extends SSLSocketTemplate {
 
     private TLSCipherSuitesOrder(String protocol, String[] clientcipherSuites,
             String[] servercipherSuites) {
-        // Re-enable protocol if it is disabled.
-        if (protocol.equals("TLSv1") || protocol.equals("TLSv1.1")) {
-            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
-        }
         this.protocol = protocol;
         this.clientcipherSuites = clientcipherSuites;
         this.servercipherSuites = servercipherSuites;
@@ -141,21 +125,7 @@ public class TLSCipherSuitesOrder extends SSLSocketTemplate {
                     "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
                 new String[]{
                     "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"}),
-        TLSv11("TLSv1.1",
-                new String[]{
-                    "TLS_RSA_WITH_AES_256_CBC_SHA",
-                    "TLS_RSA_WITH_AES_128_CBC_SHA"},
-                new String[]{
-                    "TLS_RSA_WITH_AES_128_CBC_SHA",
-                    "TLS_RSA_WITH_AES_256_CBC_SHA"}),
-        TLSv1("TLSv1",
-                new String[]{
-                    "TLS_RSA_WITH_AES_256_CBC_SHA",
-                    "TLS_RSA_WITH_AES_128_CBC_SHA"},
-                new String[]{
-                    "TLS_RSA_WITH_AES_128_CBC_SHA",
-                    "TLS_RSA_WITH_AES_256_CBC_SHA"});
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"});
 
         String protocol;
         String[] orderedCiphers;

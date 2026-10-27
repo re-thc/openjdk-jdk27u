@@ -88,8 +88,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             /*
              * Last sanity check that it's not a wild record
              */
-            if (!ProtocolVersion.isNegotiable(
-                    header[1], header[2], false, false)) {
+            if (!ProtocolVersion.isRecordVersion(
+                    header[1], header[2], false)) {
                 throw new SSLException("Unrecognized record version " +
                         ProtocolVersion.nameOf(header[1], header[2]) +
                         " , plaintext connection?");
@@ -118,8 +118,8 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             boolean isShort = ((byteZero & 0x80) != 0);
 
             if (isShort && ((header[2] == 1) || (header[2] == 4))) {
-                if (!ProtocolVersion.isNegotiable(
-                        header[3], header[4], false, false)) {
+                if (!ProtocolVersion.isRecordVersion(
+                        header[3], header[4], false)) {
                     throw new SSLException("Unrecognized record version " +
                             ProtocolVersion.nameOf(header[3], header[4]) +
                             " , plaintext connection?");
@@ -385,76 +385,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
 
         // Does it look like a Version 2 client hello (V2ClientHello)?
         if (((firstByte & 0x80) != 0) && (thirdByte == 1)) {
-            /*
-             * If SSLv2Hello is not enabled, throw an exception.
-             */
-            if (helloVersion != ProtocolVersion.SSL20Hello) {
-                throw new SSLHandshakeException("SSLv2Hello is not enabled");
-            }
-
-            byte majorVersion = header[3];
-            byte minorVersion = header[4];
-
-            if ((majorVersion == ProtocolVersion.SSL20Hello.major) &&
-                (minorVersion == ProtocolVersion.SSL20Hello.minor)) {
-
-                /*
-                 * Looks like a V2 client hello, but not one saying
-                 * "let's talk SSLv3".  So we need to send an SSLv2
-                 * error message, one that's treated as fatal by
-                 * clients (Otherwise we'll hang.)
-                 */
-                os.write(SSLRecord.v2NoCipher);      // SSLv2Hello
-
-                if (SSLLogger.isOn()) {
-                    if (SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
-                         SSLLogger.fine(
-                                "Requested to negotiate unsupported SSLv2!");
-                    }
-
-                    if (SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                        SSLLogger.fine("Raw write", SSLRecord.v2NoCipher);
-                    }
-                }
-
-                throw new SSLException("Unsupported SSL v2.0 ClientHello");
-            }
-
-            int msgLen = ((header[0] & 0x7F) << 8) | (header[1] & 0xFF);
-            if (recordBody.position() == 0) {
-                if (recordBody.capacity() < (headerSize + msgLen)) {
-                    recordBody = ByteBuffer.allocate(headerSize + msgLen);
-                }
-                recordBody.limit(headerSize + msgLen);
-                recordBody.put(header, 0, headerSize);
-            } else {
-                msgLen = recordBody.remaining();
-            }
-            msgLen -= 3;            // had read 3 bytes of content as header
-            readFully(msgLen);
-            recordBody.flip();
-
-            /*
-             * If we can map this into a V3 ClientHello, read and
-             * hash the rest of the V2 handshake, turn it into a
-             * V3 ClientHello message, and pass it up.
-             */
-            recordBody.position(2);     // exclude the header
-            handshakeHash.receive(recordBody);
-            recordBody.position(0);
-
-            ByteBuffer converted = convertToClientHello(recordBody);
-
-            if (SSLLogger.isOn() &&
-                    SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                SSLLogger.fine(
-                        "[Converted] ClientHello", converted);
-            }
-
-            return new Plaintext[] {
-                    new Plaintext(ContentType.HANDSHAKE.id,
-                    majorVersion, minorVersion, -1, -1L, converted)
-                };
+            throw new SSLHandshakeException("SSLv2Hello is not supported");
         } else {
             if (((firstByte & 0x80) != 0) && (thirdByte == 4)) {
                 throw new SSLException("SSL V2.0 servers are not supported.");

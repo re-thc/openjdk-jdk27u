@@ -40,33 +40,33 @@ import jdk.test.lib.security.SecurityUtils;
 public class Serial {
 
     // providers
-    private static final String SUN = System.getProperty("test.provider.name", "SUN");
+    private static final String EC = System.getProperty("test.provider.name", "SunEC");
     private static final String RSA = System.getProperty("test.provider.name", "SunRsaSign");
     private static final String JCE = System.getProperty("test.provider.name", "SunJCE");
 
     public static void main(String[] args) throws Exception {
 
-        // generate DSA key pair
-        String kpgAlgorithmDsa = "DSA";
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithmDsa, SUN);
-        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithmDsa));
-        KeyPair dsaKp = kpg.genKeyPair();
+        // generate EC key pair
+        String kpgAlgorithmEc = "EC";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithmEc, EC);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithmEc));
+        KeyPair ecKp = kpg.genKeyPair();
 
-        // serialize DSA key pair
+        // serialize EC key pair
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(dsaKp);
+        oos.writeObject(ecKp);
         oos.close();
 
-        // deserialize DSA key pair
+        // deserialize EC key pair
         ObjectInputStream ois = new ObjectInputStream
                         (new ByteArrayInputStream(baos.toByteArray()));
-        KeyPair dsaKp2 = (KeyPair)ois.readObject();
+        KeyPair ecKp2 = (KeyPair)ois.readObject();
         ois.close();
 
-        if (!dsaKp2.getPublic().equals(dsaKp.getPublic()) ||
-            !dsaKp2.getPrivate().equals(dsaKp.getPrivate())) {
-            throw new SecurityException("DSA test failed");
+        if (!ecKp2.getPublic().equals(ecKp.getPublic()) ||
+            !ecKp2.getPrivate().equals(ecKp.getPrivate())) {
+            throw new SecurityException("EC test failed");
         }
 
         // generate RSA key pair
@@ -151,7 +151,7 @@ public class Serial {
         char[] password = new char[] {'f', 'o', 'o'};
         PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
         SecretKeyFactory keyFac =
-                        SecretKeyFactory.getInstance("PBEWithMD5AndDES", JCE);
+                        SecretKeyFactory.getInstance("PBEWithSHA1AndDESede", JCE);
         SecretKey pbeKey = keyFac.generateSecret(pbeKeySpec);
 
         // serialize PBE key
@@ -171,7 +171,6 @@ public class Serial {
         }
 
         checkKey("AES", 128);
-        checkKey("Blowfish", -1);
         checkKey("DES", 56);
         checkKey("DESede", 168);
         checkKey("HmacMD5", -1);

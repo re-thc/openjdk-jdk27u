@@ -64,7 +64,6 @@ public class TestKeyMaterial extends Utils {
         String cipherAlgorithm = null;
         String hashAlgorithm = null; // TLS1.2+ only
         int keyLength = 0;
-        int expandedKeyLength = 0;
         int ivLength = 0;
         int macLength = 0;
         byte[] clientCipherBytes = null;
@@ -100,8 +99,6 @@ public class TestKeyMaterial extends Utils {
                 hashAlgorithm = data;
             } else if (line.startsWith("km-keylen:")) {
                 keyLength = Integer.parseInt(data);
-            } else if (line.startsWith("km-explen:")) {
-                expandedKeyLength = Integer.parseInt(data);
             } else if (line.startsWith("km-ivlen:")) {
                 ivLength = Integer.parseInt(data);
             } else if (line.startsWith("km-maclen:")) {
@@ -151,7 +148,7 @@ public class TestKeyMaterial extends Utils {
                 TlsKeyMaterialParameterSpec spec =
                     new TlsKeyMaterialParameterSpec(masterKey, major, minor,
                         clientRandom, serverRandom, cipherAlgorithm,
-                        keyLength, expandedKeyLength, ivLength, macLength,
+                        keyLength, ivLength, macLength,
                         hashAlgorithm, prfHashLength, prfBlockSize);
 
                 kg.init(spec);

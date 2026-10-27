@@ -26,7 +26,6 @@ import jdk.test.lib.Asserts;
 import javax.crypto.spec.DHParameterSpec;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.interfaces.DSAParams;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
@@ -40,7 +39,6 @@ import java.security.spec.NamedParameterSpec;
 
 public class GetParams {
     public static void main(String[] args) throws Exception {
-        test("DSA", DSAParams.class);
         test("RSA", AlgorithmParameterSpec.class);
         test("RSASSA-PSS", AlgorithmParameterSpec.class);
         test("EC", ECParameterSpec.class);

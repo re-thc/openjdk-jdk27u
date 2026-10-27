@@ -46,10 +46,10 @@ if [ ! -f root/finished ]; then
         -config openssl.cnf -reqexts cert_issuer -days 7650 -sha1 \
         -passin pass:passphrase -passout pass:passphrase
 
-    # MD2withRSA 2048
+    # SHA224withRSA 2048
     ${OPENSSL} req -x509 -newkey rsa:2048 -keyout root/root_key_2048.pem \
-        -out root/root_cert_md2_2048.pem -subj "/C=US/O=Example" \
-        -config openssl.cnf -reqexts cert_issuer -days 7650 -md2 \
+        -out root/root_cert_sha224_2048.pem -subj "/C=US/O=Example" \
+        -config openssl.cnf -reqexts cert_issuer -days 7650 -sha224 \
         -passin pass:passphrase -passout pass:passphrase
 
     openssl req -newkey rsa:1024 -keyout root/root_crlissuer_key.pem \
@@ -110,18 +110,18 @@ if [ ! -f subca/finished ]; then
         -CAcreateserial -sha1 \
         -CAserial root/root_cert.srl -days 7200 -passin pass:passphrase
 
-    # MD2withRSA 1024 signed with RSA 1024
+    # SHA224withRSA 1024 signed with RSA 1024
     ${OPENSSL} x509 -req -in subca/subca_req_1024.pem -extfile openssl.cnf \
         -extensions cert_issuer -CA root/root_cert_sha1_1024.pem \
-        -CAkey root/root_key_1024.pem -out subca/subca_cert_md2_1024_1024.pem \
-        -CAcreateserial -md2 \
+        -CAkey root/root_key_1024.pem -out subca/subca_cert_sha224_1024_1024.pem \
+        -CAcreateserial -sha224 \
         -CAserial root/root_cert.srl -days 7200 -passin pass:passphrase
 
-    # MD2withRSA 1024 signed with RSA 512
+    # SHA224withRSA 1024 signed with RSA 512
     ${OPENSSL} x509 -req -in subca/subca_req_1024.pem -extfile openssl.cnf \
         -extensions cert_issuer -CA root/root_cert_sha1_512.pem \
-        -CAkey root/root_key_512.pem -out subca/subca_cert_md2_1024_512.pem \
-        -CAcreateserial -md2 \
+        -CAkey root/root_key_512.pem -out subca/subca_cert_sha224_1024_512.pem \
+        -CAcreateserial -sha224 \
         -CAserial root/root_cert.srl -days 7200 -passin pass:passphrase
 
     openssl req -newkey rsa:1024 -keyout subca/subca_crlissuer_key.pem \
@@ -188,20 +188,20 @@ if [ ! -f subca/alice/finished ]; then
         -out subca/alice/alice_cert_sha1_512_512.pem -CAcreateserial -sha1 \
         -CAserial subca/subca_cert.srl -days 7200 -passin pass:passphrase
 
-    # MD2withRSA 1024 signed with RSA 1024
+    # SHA224withRSA 1024 signed with RSA 1024
     ${OPENSSL} x509 -req -in subca/alice/alice_req_1024.pem \
         -extfile openssl.cnf -extensions ee_of_subca \
         -CA subca/subca_cert_sha1_1024_1024.pem \
         -CAkey subca/subca_key_1024.pem \
-        -out subca/alice/alice_cert_md2_1024_1024.pem -CAcreateserial -md2 \
+        -out subca/alice/alice_cert_sha224_1024_1024.pem -CAcreateserial -sha224 \
         -CAserial subca/subca_cert.srl -days 7200 -passin pass:passphrase
 
-    # MD2withRSA 1024 signed with RSA 512
+    # SHA224withRSA 1024 signed with RSA 512
     ${OPENSSL} x509 -req -in subca/alice/alice_req_1024.pem \
         -extfile openssl.cnf -extensions ee_of_subca \
         -CA subca/subca_cert_sha1_512_1024.pem \
         -CAkey subca/subca_key_512.pem \
-        -out subca/alice/alice_cert_md2_1024_512.pem -CAcreateserial -md2 \
+        -out subca/alice/alice_cert_sha224_1024_512.pem -CAcreateserial -sha224 \
         -CAserial subca/subca_cert.srl -days 7200 -passin pass:passphrase
 
     touch subca/alice/finished
@@ -243,7 +243,7 @@ if [ ! -f subca/revoked ]; then
         -cert subca/subca_crlissuer_cert.pem -passin pass:passphrase
 
     openssl ca -gencrl -config openssl.cnf \
-        -name ca_subca -crldays 7000 -md md2 \
+        -name ca_subca -crldays 7000 -md sha224 \
         -crl_reason superseded -keyfile subca/subca_crlissuer_key.pem \
         -cert subca/subca_crlissuer_cert.pem \
         -out subca/subca_crl.pem \

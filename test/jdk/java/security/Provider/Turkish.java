@@ -47,9 +47,9 @@ public class Turkish {
             Provider p2 = new TProvider("T2");
             System.out.println(p2.getServices()); // trigger service parsing
 
-            System.out.println(Signature.getInstance("MD5withRSA"));
-            System.out.println(Signature.getInstance("md5withrsa"));
-            System.out.println(Signature.getInstance("MD5WITHRSA"));
+            System.out.println(Signature.getInstance("SHA1withRSA"));
+            System.out.println(Signature.getInstance("sha1withrsa"));
+            System.out.println(Signature.getInstance("SHA1WITHRSA"));
             Service s1, s2;
             s1 = p1.getService("Signature", "MD5withRSA");
             check(s1, null);

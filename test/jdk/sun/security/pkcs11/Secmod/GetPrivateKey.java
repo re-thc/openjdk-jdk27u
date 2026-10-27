@@ -66,7 +66,7 @@ public class GetPrivateKey extends SecmodTest {
         byte[] data = generateData(1024);
 
         System.out.println("Signing...");
-        Signature signature = Signature.getInstance("MD5withRSA");
+        Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(privateKey);
         signature.update(data);
         byte[] sig = signature.sign();

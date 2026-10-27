@@ -682,6 +682,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_REQUIRE_PROGS(OTOOL, otool)
     UTIL_REQUIRE_PROGS(INSTALL_NAME_TOOL, install_name_tool)
 
+  fi
+
+  # Metal compiles shaders for java.desktop only.
+  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$ENABLE_DESKTOP" = xtrue; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(METAL, metal)
     if test "x$METAL" = x; then
       AC_MSG_CHECKING([if metal can be run using xcrun])

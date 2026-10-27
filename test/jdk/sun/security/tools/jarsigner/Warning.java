@@ -78,12 +78,12 @@ public class Warning {
         run("jarsigner", "a.jar b -digestalg MD5 -strict")
                 .shouldHaveExitValue(4)
                 .shouldContain("-digestalg option is considered a security risk and is disabled.");
-        run("jarsigner", "a.jar b -sigalg MD5withRSA")
+        run("jarsigner", "a.jar b -sigalg SHA1withRSA")
                 .shouldContain("-sigalg option is considered a security risk and is disabled.");
 
-        issueCert("b", "-sigalg MD5withRSA");
+        issueCert("b", "-sigalg SHA1withRSA");
         run("jarsigner", "a.jar b")
-                .shouldMatch("chain is invalid. Reason:.*MD5.*");
+                .shouldMatch("chain is invalid. Reason:.*SHA1.*");
 
         recreateJar();
 
@@ -231,7 +231,7 @@ public class Warning {
             case "keytool":
                 for (String s: new String[] {
                         "-keystore", "ks", "-storepass", "changeit",
-                        "-storetype", "jks",
+                        "-storetype", "pkcs12",
                         "-keypass", "changeit", "-keyalg", "rsa", "-debug"}) {
                     launcher.addToolArg(s);
                 }
@@ -239,7 +239,7 @@ public class Warning {
             case "jarsigner":
                 for (String s: new String[] {
                         "-keystore", "ks", "-storepass", "changeit",
-                        "-storetype", "jks"}) {
+                        "-storetype", "pkcs12"}) {
                     launcher.addToolArg(s);
                 }
                 break;

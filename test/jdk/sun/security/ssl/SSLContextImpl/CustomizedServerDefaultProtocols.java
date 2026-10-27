@@ -28,7 +28,7 @@
  * @test
  * @bug 8196584 8190492
  * @summary Test jdk.tls.server.protocols with TLS
- * @run main/othervm -Djdk.tls.server.protocols="SSLv3,TLSv1,TLSv1.1"
+ * @run main/othervm -Djdk.tls.server.protocols="SSLv3,TLSv1,TLSv1.1,TLSv1.2"
  *      CustomizedServerDefaultProtocols
  */
 
@@ -48,35 +48,26 @@ import javax.net.ssl.SSLSocket;
 public class CustomizedServerDefaultProtocols {
 
     final static String[] supportedProtocols = new String[]{
-            "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+            "TLSv1.2", "TLSv1.3"};
     final static String[] serverDefaultProtocols = new String[] {
-            "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+            "TLSv1.2", "TLSv1.3"};
 
     enum ContextVersion {
         TLS_CV_01("SSL",
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1"},
-                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+                new String[]{"TLSv1.2"},
+                new String[]{"TLSv1.2", "TLSv1.3"}),
         TLS_CV_02("TLS",
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1"},
-                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
-        TLS_CV_03("SSLv3",
-                serverDefaultProtocols,
-                new String[]{"TLSv1"}),
-        TLS_CV_04("TLSv1",
-                serverDefaultProtocols,
-                new String[]{"TLSv1"}),
-        TLS_CV_05("TLSv1.1",
-                serverDefaultProtocols,
-                new String[]{"TLSv1", "TLSv1.1"}),
+                new String[]{"TLSv1.2"},
+                new String[]{"TLSv1.2", "TLSv1.3"}),
         TLS_CV_06("TLSv1.2",
                 serverDefaultProtocols,
-                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"}),
+                new String[]{"TLSv1.2"}),
         TLS_CV_07("TLSv1.3",
                 serverDefaultProtocols,
-                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+                new String[]{"TLSv1.2", "TLSv1.3"}),
         TLS_CV_08("Default",
-                new String[]{"SSLv3", "TLSv1", "TLSv1.1"},
-                new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"});
+                new String[]{"TLSv1.2"},
+                new String[]{"TLSv1.2", "TLSv1.3"});
 
         final String contextVersion;
         final String[] serverEnabledProtocols;

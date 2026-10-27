@@ -31,10 +31,10 @@ import javax.net.ssl.SSLSocket;
 
 public final class TestTLSHandshake extends SSLSocketTest {
 
-    public static final long CERT_ID = Integer.toUnsignedLong(-1057291798);
-    public static final long ANCHOR_CERT_ID = Integer.toUnsignedLong(1688661792);
-    public static final String CERT_SERIAL = "00:ed:be:c8:f7:05:af:25:14";
-    public static final String ANCHOR_CERT_SERIAL = "8e:19:17:78:b2:f3:31:be";
+    public static final long CERT_ID = Integer.toUnsignedLong(2098007022);
+    public static final long ANCHOR_CERT_ID = Integer.toUnsignedLong(-1121044455);
+    public static final String CERT_SERIAL = "00:f2:d8:f2:a6:63:80:d4:40";
+    public static final String ANCHOR_CERT_SERIAL = "8b:c5:1b:a1:9b:4e:ba:02";
 
     public String protocolVersion;
     public String peerHost;

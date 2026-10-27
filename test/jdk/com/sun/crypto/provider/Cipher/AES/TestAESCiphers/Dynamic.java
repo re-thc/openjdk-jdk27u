@@ -36,7 +36,7 @@ public class Dynamic {
 
     static final String ALGORITHM = "AES";
     static final String[] MODE = {
-        "ECb", "CbC", "CTR", "PCBC", "OFB", "OFB150", "cFB", "CFB7",
+        "ECb", "CbC", "CTR", "OFB", "OFB150", "cFB", "CFB7",
         "cFB8", "cFB16", "cFB24", "cFB32", "Cfb40", "cfB48", "cfB56",
         "cfB64", "cfB72", "cfB80", "cfB88", "cfB96", "cfb104", "cfB112",
         "cfB120", "cfB128", "OFB8", "OFB16", "OFB24", "OFB32", "OFB40",
@@ -76,7 +76,6 @@ public class Dynamic {
 
                 for (int j = 0; j < MODE.length; j++) {
                     if (MODE[j].equalsIgnoreCase("ECB")
-                            || MODE[j].equalsIgnoreCase("PCBC")
                             || MODE[j].equalsIgnoreCase("CBC")) {
                         padKinds = PADDING.length;
                     } else {

@@ -1007,7 +1007,7 @@ public class PKIXExtendedTM {
         Certificate trusedCert = pemDecoder.decode(trusedCertStr, X509Certificate.class);
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // import the trused cert

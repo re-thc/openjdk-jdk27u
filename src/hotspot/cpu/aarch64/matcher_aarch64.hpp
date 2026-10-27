@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,26 @@
 #define CPU_AARCH64_MATCHER_AARCH64_HPP
 
   // Defined within class Matcher
+
+private:
+  // Old-Ideal identities, owned by this compilation, enabled only for selection.
+  Node_List* _float_roundtrip_adds = nullptr;
+  Node_Array* _float_roundtrip_accumulations = nullptr;
+  void collect_float_roundtrip_add(Node* n);
+  void prepare_float_roundtrip_accumulations();
+  void clear_float_roundtrip_accumulations() {
+    _float_roundtrip_adds = nullptr;
+    _float_roundtrip_accumulations = nullptr;
+  }
+  class FloatRoundTripClassificationMark : public StackObj {
+    Matcher* const _matcher;
+  public:
+    explicit FloatRoundTripClassificationMark(Matcher* matcher) : _matcher(matcher) {}
+    ~FloatRoundTripClassificationMark() { _matcher->clear_float_roundtrip_accumulations(); }
+  };
+
+public:
+  bool is_float_roundtrip_reduction_accumulation(const Node* n) const;
 
   // false => size gets scaled to BytesPerLong, ok.
   static const bool init_array_count_is_in_bytes = false;
@@ -128,11 +149,6 @@
   // Does the CPU supports vector variable shift instructions?
   static constexpr bool supports_vector_variable_shifts(void) {
     return true;
-  }
-
-  // Does target support predicated operation emulation.
-  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
-    return false;
   }
 
   // Does the CPU supports vector variable rotate instructions?

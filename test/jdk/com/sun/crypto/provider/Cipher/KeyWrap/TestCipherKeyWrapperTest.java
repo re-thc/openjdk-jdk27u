@@ -62,19 +62,9 @@ import jdk.test.lib.security.SecurityUtils;
 public class TestCipherKeyWrapperTest {
     private static final String PROVIDER_NAME =
                                 System.getProperty("test.provider.name", "SunJCE");
-    // Blowfish Variable key length: 32 bits to 448 bits
-    private static final int BLOWFISH_MIN_KEYSIZE = 32;
-    private static final int BLOWFISH_MAX_KEYSIZE = 448;
     private static final int LINIMITED_KEYSIZE = 128;
-    private static final String NOPADDING = "NoPaDDing";
-    private static final String[] PBE_ALGORITHM_AR = { "pbeWithMD5ANDdes",
-            "PBEWithMD5AndDES/CBC/PKCS5Padding", "PBEWithMD5AndTripleDES",
-            "PBEWithMD5AndTripleDES/CBC/PKCS5Padding", "PBEwithSHA1AndDESede",
-            "PBEwithSHA1AndDESede/CBC/PKCS5Padding", "PBEwithSHA1AndRC2_40",
-            "PBEwithSHA1Andrc2_40/CBC/PKCS5Padding", "PBEWithSHA1AndRC2_128",
-            "PBEWithSHA1andRC2_128/CBC/PKCS5Padding", "PBEWithSHA1AndRC4_40",
-            "PBEWithsha1AndRC4_40/ECB/NoPadding", "PBEWithSHA1AndRC4_128",
-            "pbeWithSHA1AndRC4_128/ECB/NoPadding", "PBEWithHmacSHA1AndAES_128",
+    private static final String[] PBE_ALGORITHM_AR = { "PBEwithSHA1AndDESede",
+            "PBEwithSHA1AndDESede/CBC/PKCS5Padding", "PBEWithHmacSHA1AndAES_128",
             "PBEWithHmacSHA224AndAES_128", "PBEWithHmacSHA256AndAES_128",
             "PBEWithHmacSHA384AndAES_128", "PBEWithHmacSHA512AndAES_128",
             "PBEWithHmacSHA512/224AndAES_128",
@@ -85,9 +75,6 @@ public class TestCipherKeyWrapperTest {
             "PBEWithHmacSHA512/224AndAES_256",
             "PBEWithHmacSHA512/256AndAES_256",
     };
-    private static final String[] MODEL_AR = { "ECb", "pCbC", "cbC", "cFB",
-            "cFB24", "cFB40", "OfB48", "OFB64" };
-    private static final String[] PADDING_AR = { NOPADDING, "PKCS5Padding" };
 
     private enum AlgorithmWrapper {
         AESWrap("AES", "AESWrap", -1),
@@ -98,8 +85,7 @@ public class TestCipherKeyWrapperTest {
         AESWrapPad_128("AES", "AESWrapPad_128", 128),
         AESWrapPad_192("AES", "AESWrapPad_192", 192),
         AESWrapPad_256("AES", "AESWrapPad_256", 256),
-        DESedeWrap("desede", "DESedeWrap", -1),
-        NegtiveWrap("AES", "DESedeWrap", -1);
+        NegtiveWrap("DES", "AESWrap", -1);
 
         private final String algorithm;
         private final String wrapper;
@@ -128,7 +114,7 @@ public class TestCipherKeyWrapperTest {
     public static void main(String[] args) throws Exception {
 
         TestCipherKeyWrapperTest test = new TestCipherKeyWrapperTest();
-        // AESWrap and DESedeWrap test
+        // AESWrap test
         for (AlgorithmWrapper algoWrapper : AlgorithmWrapper.values()) {
             String algo = algoWrapper.getAlgorithm();
             String wrapper = algoWrapper.getWrapper();
@@ -156,9 +142,8 @@ public class TestCipherKeyWrapperTest {
                 }
             }
         }
-        test.wrapperBlowfishKeyTest();
         // PBE and public wrapper test.
-        String[] publicPrivateAlgos = new String[] { "DiffieHellman", "DSA",
+        String[] publicPrivateAlgos = new String[] { "DiffieHellman", "EC",
                 "RSA" };
         Provider provider = Security.getProvider(PROVIDER_NAME);
         if (provider == null) {
@@ -182,61 +167,6 @@ public class TestCipherKeyWrapperTest {
         }
         SecretKey key = kg.generateKey();
         wrapTest(algo, wrapAlgo, key, key, Cipher.SECRET_KEY, false);
-    }
-
-    private void wrapperBlowfishKeyTest() throws InvalidKeyException,
-            NoSuchAlgorithmException, NoSuchPaddingException,
-            IllegalBlockSizeException, InvalidAlgorithmParameterException {
-        // how many kinds of padding mode
-        int padKinds;
-        // Keysize should be multiple of 8 bytes.
-        int KeyCutter = 8;
-        int kSize = BLOWFISH_MIN_KEYSIZE;
-        String algorithm = "Blowfish";
-        int maxAllowKeyLength = Cipher.getMaxAllowedKeyLength(algorithm);
-        boolean unLimitPolicy = maxAllowKeyLength == Integer.MAX_VALUE;
-        SecretKey key = null;
-        while (kSize <= BLOWFISH_MAX_KEYSIZE) {
-            for (String mode : MODEL_AR) {
-                // PKCS5padding is meaningful only for ECB, CBC, PCBC
-                if (mode.equalsIgnoreCase(MODEL_AR[0])
-                        || mode.equalsIgnoreCase(MODEL_AR[1])
-                        || mode.equalsIgnoreCase(MODEL_AR[2])) {
-                    padKinds = PADDING_AR.length;
-                } else {
-                    padKinds = 1;
-                }
-                // Initialization
-                KeyGenerator kg = KeyGenerator.getInstance(algorithm);
-                for (int k = 0; k < padKinds; k++) {
-                    String transformation = algorithm + "/" + mode + "/"
-                            + PADDING_AR[k];
-                    if (NOPADDING.equals(PADDING_AR[k]) && kSize % 64 != 0) {
-                        out.println(transformation
-                                + " will not run if input length not multiple"
-                                + " of 8 bytes when padding is " + NOPADDING);
-                        continue;
-                    }
-                    kg.init(kSize);
-                    key = kg.generateKey();
-                    // only run the tests on longer key lengths if unlimited
-                    // version of JCE jurisdiction policy files are installed
-                    if (!unLimitPolicy && kSize > LINIMITED_KEYSIZE) {
-                        out.println("keyStrength > 128 within " + algorithm
-                                + " will not run under global policy");
-                    } else {
-                        wrapTest(transformation, transformation, key, key,
-                                Cipher.SECRET_KEY, false);
-                    }
-                }
-            }
-            if (kSize <= LINIMITED_KEYSIZE) {
-                KeyCutter = 8;
-            } else {
-                KeyCutter = 48;
-            }
-            kSize += KeyCutter;
-        }
     }
 
     private void wrapperPBEKeyTest(Provider p) throws InvalidKeySpecException,

@@ -696,8 +696,15 @@ public final class FloatingDecimal {
 
     }
 
+    // Not ThreadLocal.withInitial, so that the first use of FloatingDecimal,
+    // which can be early, does not link a method reference
     private static final ThreadLocal<BinaryToASCIIBuffer> threadLocalBinaryToASCIIBuffer =
-            ThreadLocal.withInitial(BinaryToASCIIBuffer::new);
+        new ThreadLocal<>() {
+            @Override
+            protected BinaryToASCIIBuffer initialValue() {
+                return new BinaryToASCIIBuffer();
+            }
+        };
 
     private static BinaryToASCIIBuffer getBinaryToASCIIBuffer() {
         return threadLocalBinaryToASCIIBuffer.get();

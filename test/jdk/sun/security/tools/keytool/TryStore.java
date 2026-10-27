@@ -36,7 +36,7 @@ public class TryStore {
         keytool("-genkeypair -alias a -dname CN=A -storepass changeit -keypass changeit");
         keytool("-genkeypair -alias b -dname CN=B -storepass changeit -keypass changeit");
 
-        // We use -protected for JKS keystore. This is illegal so the command should
+        // We use -protected for PKCS12 keystore. This is illegal so the command should
         // fail. Then we can check if the keystore is damaged.
 
         keytool("-genkeypair -protected -alias b -delete -debug")
@@ -48,6 +48,6 @@ public class TryStore {
 
     static OutputAnalyzer keytool(String s) throws Exception {
         return SecurityTools.keytool(
-                "-storetype jks -keystore trystore.jks -keyalg rsa " + s);
+                "-storetype pkcs12 -keystore trystore.p12 -keyalg rsa " + s);
     }
 }

@@ -46,7 +46,6 @@ public class ImportPassKeyAlg {
         // You can use other algorithms as well
         importpass("pbes2", "PBEWithHmacSHA1AndAES_128",
                 KnownOIDs.PBES2, KnownOIDs.HmacSHA1, KnownOIDs.AES_128$CBC$NoPadding);
-        importpass("des", "PBEwithMD5andDES", KnownOIDs.PBEWithMD5AndDES);
         importpass("3des", "PBEWithSHA1AndDESede", KnownOIDs.PBEWithSHA1AndDESede);
     }
 
