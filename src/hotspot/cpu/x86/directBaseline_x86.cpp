@@ -84,6 +84,7 @@ class Emitter : StackObj {
   Label* _labels;
   ciField** _fields;
   ciMethod** _callees;
+  ciSignature** _call_signatures;
   int _nl, _ns, _size, _out_words, _frame_bytes, _frame_words, _last_scope_pc;
   CodeBuffer* _code;
   C1_MacroAssembler* _masm;
@@ -122,6 +123,9 @@ class Emitter : StackObj {
     for (int i = 0; i < sig->count(); i++) if (!supported_type(sig->type_at(i)->basic_type())) return false;
     return true;
   }
+  BasicType argument_type(ciSignature* sig, bool is_static, int i) {
+    return !is_static && i == 0 ? T_OBJECT : sig->type_at(i - (is_static ? 0 : 1))->basic_type();
+  }
   int local_index(ciBytecodeStream& bs, Bytecodes::Code bc) {
     if (bc >= Bytecodes::_iload_0 && bc <= Bytecodes::_iload_3) return bc - Bytecodes::_iload_0;
     if (bc >= Bytecodes::_aload_0 && bc <= Bytecodes::_aload_3) return bc - Bytecodes::_aload_0;
@@ -130,7 +134,7 @@ class Emitter : StackObj {
     return bs.get_index();
   }
   bool prepass() {
-    if (!_method->is_static() || _method->is_native() || _method->is_synchronized() ||
+    if (_method->is_object_initializer() || _method->is_native() || _method->is_synchronized() ||
         _method->has_exception_handlers() || _method->has_monitor_bytecodes() ||
         _method->is_scoped() || _method->has_reserved_stack_access() ||
         _method->intrinsic_id() != vmIntrinsics::_none ||
@@ -143,10 +147,12 @@ class Emitter : StackObj {
     _labels = NEW_RESOURCE_ARRAY(Label, _size);
     _fields = NEW_RESOURCE_ARRAY(ciField*, _size);
     _callees = NEW_RESOURCE_ARRAY(ciMethod*, _size);
+    _call_signatures = NEW_RESOURCE_ARRAY(ciSignature*, _size);
     for (int i = 0; i < _size; i++) { _states[i] = nullptr; new (&_labels[i]) Label(); }
     State* start = new State(_nl, _ns);
     ciSignature* sig = _method->signature();
-    for (int i = 0; i < sig->count(); i++) start->locals[i] = kind(sig->type_at(i)->basic_type());
+    int nargs = sig->count() + (_method->is_static() ? 0 : 1);
+    for (int i = 0; i < nargs; i++) start->locals[i] = kind(argument_type(sig, _method->is_static(), i));
     _states[0] = start;
     ciBytecodeStream bs(_method);
     Bytecodes::Code bc;
@@ -217,18 +223,27 @@ class Emitter : StackObj {
         case Bytecodes::_iastore:
           if (!pop(s, T_INT) || !pop(s, T_INT) || !pop(s, T_OBJECT)) return false;
           break;
-        case Bytecodes::_invokestatic: {
+        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: {
           bool link = false; ciSignature* declared = nullptr;
           ciMethod* m = bs.get_method(link, &declared);
-          if (!link || !m->is_loaded() || !m->is_static() || !signature(declared) ||
+          bool is_static = bc == Bytecodes::_invokestatic;
+          if (!link || !m->is_loaded() || m->is_static() != is_static || !signature(declared) ||
+              m->is_abstract() || m->is_object_initializer() ||
               m->is_method_handle_intrinsic() || m->is_scoped() ||
               strcmp(m->holder()->name()->as_utf8(), "jdk/internal/vm/Continuation") == 0 ||
               !m->holder()->is_initialized()) return fail("unresolved/unsupported call");
+          if (!is_static) {
+            ciKlass* holder = bs.get_declared_method_holder();
+            if (!holder->is_loaded() || holder->is_interface() || m->holder()->is_interface() ||
+                (bc == Bytecodes::_invokespecial && _method->holder()->is_interface()) ||
+                (bc == Bytecodes::_invokevirtual && !m->can_be_statically_bound())) return fail("unbound/interface call");
+          }
           _callees[bci] = m;
-          int n = declared->count();
+          _call_signatures[bci] = declared;
+          int n = declared->count() + (is_static ? 0 : 1);
           BasicType* types = NEW_RESOURCE_ARRAY(BasicType, n);
           VMRegPair* regs = NEW_RESOURCE_ARRAY(VMRegPair, n);
-          for (int i = 0; i < n; i++) types[i] = declared->type_at(i)->basic_type();
+          for (int i = 0; i < n; i++) types[i] = argument_type(declared, is_static, i);
           int slots = SharedRuntime::java_calling_convention(types, regs, n);
           _out_words = MAX2(_out_words, (slots + 1) / 2);
           for (int i = n-1; i >= 0; i--) if (!pop(s, kind(types[i]))) return false;
@@ -351,11 +366,16 @@ class Emitter : StackObj {
   }
   void java_call(int bci, State* s) {
     ciMethod* callee = _callees[bci];
-    ciSignature* sig = callee->signature();
-    int n = sig->count();
+    ciSignature* sig = _call_signatures[bci];
+    bool is_static = callee->is_static();
+    int n = sig->count() + (is_static ? 0 : 1);
+    if (!is_static) {
+      __ movptr(rax, stack(s->sp - n));
+      null_check(rax, bci, s);
+    }
     BasicType* types = NEW_RESOURCE_ARRAY(BasicType, n);
     VMRegPair* regs = NEW_RESOURCE_ARRAY(VMRegPair, n);
-    for (int i = 0; i < n; i++) types[i] = sig->type_at(i)->basic_type();
+    for (int i = 0; i < n; i++) types[i] = argument_type(sig, is_static, i);
     SharedRuntime::java_calling_convention(types, regs, n);
     for (int i = 0; i < n; i++) {
       bool oop = kind(types[i]) == T_OBJECT;
@@ -374,7 +394,9 @@ class Emitter : StackObj {
     }
     __ align(wordSize, __ offset() + NativeCall::displacement_offset);
     if (CompiledDirectCall::emit_to_interp_stub(_masm, _masm->pc()) == nullptr) { fail("call stub space"); return; }
-    __ call(AddressLiteral(SharedRuntime::get_resolve_static_call_stub(), relocInfo::static_call_type));
+    __ call(AddressLiteral(is_static ? SharedRuntime::get_resolve_static_call_stub() :
+                                     SharedRuntime::get_resolve_opt_virtual_call_stub(),
+                           is_static ? relocInfo::static_call_type : relocInfo::opt_virtual_call_type));
     safepoint(bci, s, s->sp - n, false, kind(sig->return_type()->basic_type()) == T_OBJECT);
     __ post_call_nop();
     if (kind(sig->return_type()->basic_type()) == T_OBJECT) __ movptr(stack(s->sp - n), rax);
@@ -443,17 +465,17 @@ class Emitter : StackObj {
     _code->initialize_oop_recorder(_env->oop_recorder());
     _masm = new C1_MacroAssembler(_code);
     __ set_oop_recorder(_env->oop_recorder());
+    _offsets.set_value(CodeOffsets::Entry, _method->is_static() ? __ offset() : __ ic_check(CodeEntryAlignment));
     _offsets.set_value(CodeOffsets::Verified_Entry, __ offset());
-    _offsets.set_value(CodeOffsets::Entry, __ offset());
     // The bounded subset's interpreter activation is less than one page
     // larger than this frame. Reserve that space for a possible deopt.
     __ build_frame(_frame_bytes, _frame_bytes + os::vm_page_size() + os::extra_bang_size_in_bytes());
     _offsets.set_value(CodeOffsets::Frame_Complete, __ offset());
     ciSignature* sig = _method->signature();
-    int n = sig->count();
+    int n = sig->count() + (_method->is_static() ? 0 : 1);
     BasicType* types = NEW_RESOURCE_ARRAY(BasicType, n);
     VMRegPair* regs = NEW_RESOURCE_ARRAY(VMRegPair, n);
-    for (int i = 0; i < n; i++) types[i] = sig->type_at(i)->basic_type();
+    for (int i = 0; i < n; i++) types[i] = argument_type(sig, _method->is_static(), i);
     SharedRuntime::java_calling_convention(types, regs, n);
     for (int i = 0; i < n; i++) {
       bool oop = kind(types[i]) == T_OBJECT;
@@ -541,7 +563,7 @@ class Emitter : StackObj {
         case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:
           array(bc, bci, s);
           break;
-        case Bytecodes::_invokestatic: java_call(bci, s);
+        case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: java_call(bci, s);
           break;
         case Bytecodes::_ireturn: case Bytecodes::_areturn:
           if (bc == Bytecodes::_areturn) __ movptr(rax, stack(sp-1));
@@ -684,7 +706,7 @@ void DirectBaseline::request(const methodHandle& method, JavaThread* thread) {
   if (!UseDirectBaseline || !UseCompiler || !TieredCompilation || !ProfileInterpreter || TieredStopAtLevel < 3 ||
       !CompilationModeFlag::normal() || ReplayCompiles || TrainingData::have_data() || TrainingData::need_data() ||
       (!UseSerialGC && !UseG1GC) || JvmtiExport::can_post_interpreter_events() || method->method_data() != nullptr || method->is_native() ||
-      !method->is_static() || method->is_synchronized() || method->is_method_handle_intrinsic() ||
+      method->is_object_initializer() || method->is_synchronized() || method->is_method_handle_intrinsic() ||
       method->number_of_breakpoints() != 0 || (method->is_old() || method->is_not_compilable(CompLevel_simple))) {
     // Remember permanent exclusions too: the masked early notification recurs.
     MethodCounters* mc = method->method_counters();

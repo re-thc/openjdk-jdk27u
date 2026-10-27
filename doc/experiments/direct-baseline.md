@@ -16,6 +16,10 @@ it still does not establish an acceptable application win.
 The [instance coverage and tier-causality study](direct-baseline-instance-study.md)
 explains a queue-sensitive ordinary-tier difference and scopes the next useful
 instance-entry/call and exception boundary without speculative policy changes.
+The subsequent [instance-entry and bound-call implementation](direct-baseline-instance-bound.md)
+qualifies the first two capabilities, expands measured javac coverage to 206
+methods, and records its complete cost and mixed warmed comparison. Handler
+support and general dispatch remain excluded; no application win is established.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 
@@ -79,7 +83,7 @@ must be enabled; other profiling modes fall back to the ordinary policy.
 
 ## Initial executable subset
 
-Whole-method fallback applies to instance, native, synchronized, scoped,
+Whole-method fallback applies to constructors, native, synchronized, scoped,
 reserved-stack, intrinsic, handler-containing, uninitialized-holder and
 unsupported-signature methods. The implementation bounds bytecode size to
 512, locals to 64 and operand stack to 32. Only category-1 integer/reference
@@ -91,7 +95,10 @@ arithmetic, casts, forward integer/reference/null branches, resolved instance
 field reads/writes (including volatile and reference fields), initialized
 category-1 static-field reads using the declaring class's mirror, array length,
 byte/char/short/int/reference array reads, integer array stores, and resolved
-static Java calls including stack arguments. Reference.referent access and
+static Java calls including stack arguments. Normal instance entry and
+statically bound virtual/nonconstructor class-special calls use HotSpot's
+ordinary receiver/IC and Java call contracts. General virtual/interface calls
+remain unsupported. Reference.referent access and
 direct calls into Continuation internals are excluded. Unsupported operations
 reject the whole method and do not mark it globally non-compilable.
 

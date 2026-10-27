@@ -1301,9 +1301,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     Label no_baseline;
     __ cmpl(rcx, checked_cast<int>(DirectBaselineThreshold) << InvocationCounter::count_shift);
     __ jcc(Assembler::notEqual, no_baseline);
-    __ load_unsigned_short(rax, access_flags);
-    __ testl(rax, JVM_ACC_STATIC);
-    __ jcc(Assembler::zero, no_baseline);
     __ movptr(rax, Address(rbx, Method::method_counters_offset()));
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, no_baseline);
