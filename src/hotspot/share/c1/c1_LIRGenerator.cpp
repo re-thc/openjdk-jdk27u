@@ -3019,6 +3019,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_compressStringB:
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
+  case vmIntrinsics::_encodeAsciiArray:
     do_stringCoding(x);
     break;
   case vmIntrinsics::_decodeUTF8Bulk:

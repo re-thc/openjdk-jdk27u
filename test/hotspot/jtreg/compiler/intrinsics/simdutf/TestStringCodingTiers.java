@@ -64,7 +64,7 @@ public class TestStringCodingTiers {
     private static final char CHAR_SENTINEL = 0x5a5a;
 
     private static final MethodHandle COUNT, INFLATE_CHARS, INFLATE_BYTES, COMPRESS_CHARS, COMPRESS_BYTES,
-                                      ISO_CHARS, ISO_BYTES;
+                                      ISO_CHARS, ISO_BYTES, ASCII_CHARS;
     static {
         try {
             MethodHandles.Lookup coding = MethodHandles.privateLookupIn(Class.forName("java.lang.StringCoding"), MethodHandles.lookup());
@@ -83,6 +83,9 @@ public class TestStringCodingTiers {
             // The ISO-8859-1 encoders narrow like compress, and are lenient about their arguments
             ISO_BYTES = coding.findStatic(coding.lookupClass(), "encodeISOArray",
                     MethodType.methodType(int.class, byte[].class, int.class, byte[].class, int.class, int.class));
+            // The ASCII encoder stops at the first char above U+007F instead
+            ASCII_CHARS = coding.findStatic(coding.lookupClass(), "encodeAsciiArray0",
+                    MethodType.methodType(int.class, char[].class, int.class, byte[].class, int.class, int.class));
             Class<?> iso = Class.forName("sun.nio.cs.ISO_8859_1$Encoder");
             MethodHandles.Lookup isoLookup = MethodHandles.privateLookupIn(iso, MethodHandles.lookup());
             ISO_CHARS = isoLookup.findStatic(iso, "encodeISOArray",
@@ -124,6 +127,10 @@ public class TestStringCodingTiers {
 
     private static int isoBytes(byte[] s, int so, byte[] d, int dof, int len) throws Throwable {
         return (int) ISO_BYTES.invokeExact(s, so, d, dof, len);
+    }
+
+    private static int asciiChars(char[] s, int so, byte[] d, int dof, int len) throws Throwable {
+        return (int) ASCII_CHARS.invokeExact(s, so, d, dof, len);
     }
 
     /** The first negative byte of the range, relative to its start, or the length. */
@@ -197,6 +204,34 @@ public class TestStringCodingTiers {
         return c;
     }
 
+    /** Chars that are ASCII except for the one at firstBad, which is bad, and random chars after it. */
+    private static char[] asciiText(int size, int firstBad, char bad) {
+        char[] c = new char[size];
+        for (int i = 0; i < size; i++) c[i] = (char) RANDOM.nextInt(0x80);
+        if (firstBad >= 0 && firstBad < size) {
+            c[firstBad] = bad;
+            for (int i = firstBad + 1; i < size; i++) {
+                if (RANDOM.nextInt(3) == 0) c[i] = (char) RANDOM.nextInt(0x10000);
+            }
+        }
+        return c;
+    }
+
+    private static void checkAscii(int length, int srcOffset, int dstOffset, int bad) throws Throwable {
+        char[] badChars = {0x80, 0xff, 0x100, 0xd800, 0xdc00, 0x20ac, 0x8000};
+        char[] src = asciiText(srcOffset + length + 3, bad < 0 ? -1 : srcOffset + bad,
+                badChars[RANDOM.nextInt(badChars.length)]);
+        int want = length;
+        for (int i = 0; i < length; i++) {
+            if (src[srcOffset + i] >= 0x80) { want = i; break; }
+        }
+        byte[] dst = new byte[dstOffset + length + 5];
+        Arrays.fill(dst, SENTINEL);
+        int got = asciiChars(src, srcOffset, dst, dstOffset, length);
+        verifyCompress("ascii chars", length, srcOffset, dstOffset, bad, got, want, dst, i -> src[srcOffset + i]);
+        checks++;
+    }
+
     private static void checkCompress(int length, int srcOffset, int dstOffset, int bad) throws Throwable {
         char[] badChars = {0x100, 0xff00, 0xd800, 0xdc00, 0x20ac, 0x8000};
         char[] src = compressible(srcOffset + length + 3, bad < 0 ? -1 : srcOffset + bad,
@@ -253,6 +288,7 @@ public class TestStringCodingTiers {
                     int offset = RANDOM.nextInt(5);
                     checkCount(length, offset, bad);
                     checkCompress(length, RANDOM.nextInt(5), RANDOM.nextInt(5), bad);
+                    checkAscii(length, RANDOM.nextInt(5), RANDOM.nextInt(5), bad);
                 }
                 checkInflate(length, RANDOM.nextInt(5), RANDOM.nextInt(5));
             }
@@ -262,6 +298,13 @@ public class TestStringCodingTiers {
             for (int bad = 0; bad <= length; bad++) {
                 checkCount(length, 0, bad);
                 checkCompress(length, 0, 0, bad);
+                checkAscii(length, 0, 0, bad);
+            }
+        }
+        // Blocks of 2048 chars are checked as a whole: the offender at the block bounds
+        for (int length : new int[]{2047, 2048, 2049, 4095, 4096, 4097, 5000}) {
+            for (int bad : new int[]{-1, 0, 2046, 2047, 2048, 2049, 4095, 4096, length - 1}) {
+                if (bad < length) checkAscii(length, RANDOM.nextInt(3), RANDOM.nextInt(3), bad);
             }
         }
         System.out.println("passed " + checks + " checks");
@@ -295,7 +338,7 @@ public class TestStringCodingTiers {
         OutputAnalyzer on = run("interpreter", "-Xint");
         OutputAnalyzer off = run("interpreter", "-Xint", "-XX:-UseSIMDUTFIntrinsics");
         for (String op : List.of("countPositives", "inflateChars", "inflateBytes", "compressChars", "compressBytes",
-                "isoChars", "isoBytes")) {
+                "isoChars", "isoBytes", "asciiChars")) {
             long fast = nanos(on, op);
             long slow = nanos(off, op);
             System.out.println(op + ": " + fast + " ns with the leaf, " + slow + " ns without");
@@ -305,7 +348,8 @@ public class TestStringCodingTiers {
         }
         // C1 inlines each boundary as an intrinsic; C2 would also, with its stub, so it is not asked.
         String[] methods = {"StringCoding::countPositives0", "StringLatin1::inflate0", "StringUTF16::compress0",
-                            "StringCoding::encodeISOArray0", "ISO_8859_1$Encoder::encodeISOArray0"};
+                            "StringCoding::encodeISOArray0", "ISO_8859_1$Encoder::encodeISOArray0",
+                            "StringCoding::encodeAsciiArray0"};
         OutputAnalyzer c1 = run("compiled", "-Xbatch", "-XX:TieredStopAtLevel=1",
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining");
         OutputAnalyzer c1off = run("compiled", "-Xbatch", "-XX:TieredStopAtLevel=1", "-XX:-UseSIMDUTFIntrinsics",
@@ -359,6 +403,8 @@ class StringCodingWork {
                     MethodType.methodType(int.class, char[].class, int.class, byte[].class, int.class, int.class));
             var isoB = MethodHandles.privateLookupIn(coding, MethodHandles.lookup()).findStatic(coding, "encodeISOArray",
                     MethodType.methodType(int.class, byte[].class, int.class, byte[].class, int.class, int.class));
+            var asciiC = MethodHandles.privateLookupIn(coding, MethodHandles.lookup()).findStatic(coding, "encodeAsciiArray0",
+                    MethodType.methodType(int.class, char[].class, int.class, byte[].class, int.class, int.class));
             // The UTF-16 source of the byte[] variant
             for (int i = 0; i < ascii.length; i++) utf16[2 * i] = (byte) 'c';
             var compressB = MethodHandles.privateLookupIn(u16, MethodHandles.lookup()).findStatic(u16, "compress",
@@ -372,6 +418,7 @@ class StringCodingWork {
             sink += (int) compressB.invoke(utf16, 0, latin1, 0, 16);
             sink += (int) isoC.invoke(chars, 0, latin1, 0, 16);
             sink += (int) isoB.invoke(utf16, 0, latin1, 0, 16);
+            sink += (int) asciiC.invoke(chars, 0, latin1, 0, 16);
             int n = 1 << 18;
             char[] dc = new char[n];
             byte[] db = new byte[2 * n];
@@ -425,6 +472,13 @@ class StringCodingWork {
                 best = Math.min(best, System.nanoTime() - t);
             }
             System.out.println("isoBytes " + best);
+            best = Long.MAX_VALUE;
+            for (int i = 0; i < 5; i++) {
+                long t = System.nanoTime();
+                sink += (int) asciiC.invoke(chars, 0, latin1, 0, n);
+                best = Math.min(best, System.nanoTime() - t);
+            }
+            System.out.println("asciiChars " + best);
         } else {
             // Callers of each boundary, hot enough to be compiled and inlined
             String text = "héllo wide world ".repeat(16);
@@ -446,6 +500,10 @@ class StringCodingWork {
                 java.nio.charset.StandardCharsets.ISO_8859_1.newEncoder()
                         .encode(java.nio.CharBuffer.wrap(source), iso, true);             // encodeISOArray0(char[])
                 sink += iso.position();
+                java.nio.ByteBuffer us = java.nio.ByteBuffer.allocate(source.length + 8);
+                java.nio.charset.StandardCharsets.US_ASCII.newEncoder()
+                        .encode(java.nio.CharBuffer.wrap(source), us, true);              // encodeAsciiArray0
+                sink += us.position();
             }
         }
         System.out.println("done " + sink);

@@ -119,6 +119,7 @@ address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
   SIMDUTF_LEAF(_compressStringB, compress_utf16)
   SIMDUTF_LEAF(_encodeISOArray, compress_utf16)
   SIMDUTF_LEAF(_encodeByteISOArray, compress_utf16)
+  SIMDUTF_LEAF(_encodeAsciiArray, encode_ascii_array)
   default:
     return nullptr;
   }
@@ -625,40 +626,52 @@ JRT_LEAF(jlong, SimdUTF::decode_ascii_prefix(const jbyte* src, jint length, jbyt
   return pack(count, count);
 JRT_END
 
-// Chars to US-ASCII bytes, up to the first char above U+007F. The library has no
-// conversion that stops there, and one that stops at U+0100 would store the Latin-1 bytes
-// after the first non-ASCII char in the caller's buffer. Blocks are checked first and
-// converted only when all of them are ASCII; the block that is not is converted up to its
-// first non-ASCII char by the loop below.
+namespace {
+// The chars are checked, and converted, in blocks of this many.
+const jint AsciiBlock = 2048;
+
+// Copies the leading ASCII chars and returns their number. The library has no conversion that
+// stops at the first non-ASCII char of UTF-16 text, and one that stops at U+0100 would store the
+// Latin-1 bytes behind it in the caller's buffer, so a block is converted only when all of it is
+// ASCII, and the block that is not is copied up to its first non-ASCII char.
+jint ascii_prefix(const jchar* input, jbyte* dst, jint length) {
+  jint done = 0;
+  while (done < length) {
+    jint n = MIN2(length - done, AsciiBlock);
+    if (n >= ShortRange && simdutf::validate_utf16_as_ascii(reinterpret_cast<const char16_t*>(input + done), n)) {
+      size_t written = simdutf::convert_utf16_to_latin1(
+          reinterpret_cast<const char16_t*>(input + done), n, reinterpret_cast<char*>(dst + done));
+      if (written != static_cast<size_t>(n)) {
+        return done;     // the chars changed after they were checked
+      }
+    } else {
+      for (jint i = 0; i < n; i++) {
+        if (input[done + i] >= 0x80) {
+          return done + i;
+        }
+        dst[done + i] = static_cast<jbyte>(input[done + i]);
+      }
+    }
+    done += n;
+  }
+  return done;
+}
+}
+
+// Chars to US-ASCII bytes, up to the first char above U+007F.
 JRT_LEAF(jlong, SimdUTF::encode_ascii_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
   assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
-  const jchar* input = reinterpret_cast<const jchar*>(src);
   jint chunk = MIN2(length, capacity);
   if (chunk < ConversionTail || !aligned(src, sizeof(jchar))) {
     return 0;
   }
-  const jint block = 2048;
-  jint done = 0;
-  while (chunk - done >= ConversionTail) {
-    jint n = MIN2(chunk - done, block);
-    if (simdutf::validate_utf16_as_ascii(reinterpret_cast<const char16_t*>(input + done), n)) {
-      size_t written = simdutf::convert_utf16_to_latin1(
-          reinterpret_cast<const char16_t*>(input + done), n, reinterpret_cast<char*>(dst + done));
-      if (written != static_cast<size_t>(n)) {
-        break;     // the chars changed after they were checked
-      }
-      done += n;
-    } else {
-      jint i = 0;
-      while (i < n && input[done + i] < 0x80) {
-        dst[done + i] = static_cast<jbyte>(input[done + i]);
-        i++;
-      }
-      done += i;
-      break;
-    }
-  }
-  return pack(done, done);
+  jint count = ascii_prefix(reinterpret_cast<const jchar*>(src), dst, chunk);
+  return pack(count, count);
+JRT_END
+
+// StringCoding.encodeAsciiArray0: the number of leading ASCII chars, which are copied.
+JRT_LEAF(jint, SimdUTF::encode_ascii_array(const jbyte* src, jbyte* dst, jint length))
+  return ascii_prefix(reinterpret_cast<const jchar*>(src), dst, length);
 JRT_END
 
 // Latin-1 bytes to UTF-8. Every byte converts and yields one or two bytes. The library's

@@ -149,6 +149,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_compressStringB:
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
+  case vmIntrinsics::_encodeAsciiArray:
 #if defined(AMD64) || defined(AARCH64)
     return SimdUTF::available();
 #else

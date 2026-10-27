@@ -123,6 +123,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_StringUTF16_compressBytes,
     sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray,
     java_lang_StringCoding_encodeISOArray,
+    java_lang_StringCoding_encodeAsciiArray,
     java_lang_String_decodeUTF8UTF16OrThrow,
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,

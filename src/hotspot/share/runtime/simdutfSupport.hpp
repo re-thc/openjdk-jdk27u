@@ -78,6 +78,7 @@ class SimdUTF : AllStatic {
   // are exact for every length, so the interpreter and C1 call them unconditionally.
   static jint count_positives(const jbyte* src, jint length);
   static void inflate_latin1(const jbyte* src, jbyte* dst, jint length);
+  static jint encode_ascii_array(const jbyte* src, jbyte* dst, jint length);
   static jint compress_utf16(const jbyte* src, jbyte* dst, jint length);
   static void encode_base64(const jbyte* src, jint length, jbyte* dst, jboolean url);
   static jint decode_base64_mime(const jbyte* src, jint length, jbyte* dst, jint capacity);

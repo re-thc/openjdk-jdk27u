@@ -243,6 +243,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_StringUTF16_compressBytes)
   method_entry(sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray)
   method_entry(java_lang_StringCoding_encodeISOArray)
+  method_entry(java_lang_StringCoding_encodeAsciiArray)
   method_entry(java_lang_String_decodeUTF8UTF16OrThrow)
 
   method_entry(java_lang_Float_float16ToFloat);
@@ -558,6 +559,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::java_lang_StringUTF16_compressBytes:
   case Interpreter::sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray:
   case Interpreter::java_lang_StringCoding_encodeISOArray:
+  case Interpreter::java_lang_StringCoding_encodeAsciiArray:
 #if defined(AMD64) || defined(AARCH64)
     entry_point = generate_string_coding_entry(kind);
 #endif

@@ -369,6 +369,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SimdUTF::count_positives);
   FUNCTION_CASE(entry, SimdUTF::inflate_latin1);
   FUNCTION_CASE(entry, SimdUTF::compress_utf16);
+  FUNCTION_CASE(entry, SimdUTF::encode_ascii_array);
   FUNCTION_CASE(entry, SimdUTF::index_of_latin1);
   FUNCTION_CASE(entry, SimdUTF::index_of_utf16);
   FUNCTION_CASE(entry, SimdUTF::encode_base64);

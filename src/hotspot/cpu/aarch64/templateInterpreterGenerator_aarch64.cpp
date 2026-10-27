@@ -2230,7 +2230,8 @@ address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpr
 //   int  countPositives0(byte[] ba, int off, int len)
 //   void inflate0(byte[] src, int srcOff, char[] / byte[] dst, int dstOff, int len)
 //   int  compress0(char[] / byte[] src, int srcOff, byte[] dst, int dstOff, int len)
-// encodeISOArray0 has the arguments, the result and the semantics of compress0.
+// encodeISOArray0 has the arguments, the result and the semantics of compress0, and
+// encodeAsciiArray0 the same arguments and result, ending at the first char above U+007F.
 // The Java wrappers have checked the ranges and the leaves are exact for every
 // length. Offsets count UTF-16 elements for the char side of a conversion.
 address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInterpreter::MethodKind kind) {

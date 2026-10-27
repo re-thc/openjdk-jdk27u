@@ -163,6 +163,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_compressStringB: return java_lang_StringUTF16_compressBytes;
       case vmIntrinsics::_encodeISOArray: return sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray;
       case vmIntrinsics::_encodeByteISOArray: return java_lang_StringCoding_encodeISOArray;
+      case vmIntrinsics::_encodeAsciiArray: return java_lang_StringCoding_encodeAsciiArray;
       case vmIntrinsics::_decodeUTF8UTF16OrThrow: return java_lang_String_decodeUTF8UTF16OrThrow;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif // ZERO
@@ -285,6 +286,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_StringUTF16_compressBytes: return vmIntrinsics::_compressStringB;
   case sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray: return vmIntrinsics::_encodeISOArray;
   case java_lang_StringCoding_encodeISOArray: return vmIntrinsics::_encodeByteISOArray;
+  case java_lang_StringCoding_encodeAsciiArray: return vmIntrinsics::_encodeAsciiArray;
   case java_lang_String_decodeUTF8UTF16OrThrow: return vmIntrinsics::_decodeUTF8UTF16OrThrow;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;
