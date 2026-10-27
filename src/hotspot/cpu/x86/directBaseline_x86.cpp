@@ -26,6 +26,9 @@
 #include "ci/ciField.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciInstance.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"
 #include "asm/codeBuffer.hpp"
@@ -200,6 +203,12 @@ class Prepared : public ResourceObj {
         if (!push(s, T_INT)) return false;
       } else switch (bc) {
         case Bytecodes::_nop: break;
+        case Bytecodes::_new:
+          if (!push(s, T_OBJECT)) return false;
+          break;
+        case Bytecodes::_newarray: case Bytecodes::_anewarray:
+          if (!pop(s, T_INT) || !push(s, T_OBJECT)) return false;
+          break;
         case Bytecodes::_aconst_null: if (!push(s, T_OBJECT)) return false;
           break;
         case Bytecodes::_bipush: case Bytecodes::_sipush: if (!push(s, T_INT)) return false;
@@ -367,6 +376,10 @@ class Emitter : StackObj {
     __ bind(good);
   }
   bool type_check(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, State* s) {
+    // A saved CP resolution error must not be bypassed by a loaded class
+    // found separately by name. Ordinary unresolved loaded casts match C1.
+    if (bs.get_constant_pool_tag(bs.get_klass_index()).is_unresolved_klass_in_error())
+      return fail("cast resolution error");
     bool will_link = false;
     ciKlass* klass = bs.get_klass(will_link);
     if (!will_link || !klass->is_loaded()) return fail("unresolved/inaccessible cast class");
@@ -386,6 +399,42 @@ class Emitter : StackObj {
     __ bind(success);
     if (bc == Bytecodes::_instanceof) __ movl(stack(s->sp-1), 1);
     __ bind(done);
+    return true;
+  }
+  bool allocate(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, State* s) {
+    ciKlass* klass = nullptr;
+    StubId stub = StubId::c1_new_instance_id;
+    if (bc == Bytecodes::_newarray) {
+      BasicType type = (BasicType)bs.get_index();
+      if (type < T_BOOLEAN || type > T_LONG) return fail("invalid primitive array type");
+      klass = ciTypeArrayKlass::make(type);
+      stub = StubId::c1_new_type_array_id;
+    } else {
+      // A Klass* argument alone cannot resolve a CP entry or replay its saved
+      // error. Leave unresolved sites to the interpreter until patching exists.
+      if (bs.is_unresolved_klass()) return fail("unresolved allocation class");
+      bool will_link = false;
+      ciKlass* element = bs.get_klass(will_link);
+      if (!will_link || !element->is_loaded()) return fail("inaccessible allocation class");
+      if (bc == Bytecodes::_new) {
+        if (!element->is_instance_klass() || !element->as_instance_klass()->is_initialized())
+          return fail("uninitialized instance allocation class");
+        klass = element;
+      } else {
+        // Creating an array must not initialize its component class.
+        klass = ciObjArrayKlass::make(element);
+        stub = StubId::c1_new_object_array_id;
+      }
+    }
+    if (_env->failing() || !klass->is_loaded()) return fail("array klass allocation");
+    __ mov_metadata(rdx, klass->constant_encoding());
+    if (bc != Bytecodes::_new) __ movl(rbx, stack(s->sp-1));
+    __ call(RuntimeAddress(Runtime1::entry_for(stub)));
+    // The runtime has produced a parsable oop. Deoptimization at this return
+    // PC continues after the allocation and supplies rax as interpreter TOS.
+    // The result slot is still unwritten and consumed lengths are not in scope.
+    safepoint(bci, s, bc == Bytecodes::_new ? s->sp : s->sp-1, false, true);
+    __ movptr(stack(bc == Bytecodes::_new ? s->sp : s->sp-1), rax);
     return true;
   }
   void null_check(Register obj, int bci, State* s) {
@@ -673,6 +722,9 @@ class Emitter : StackObj {
           if (!resolve_field(bs,bc,bci)) return;
           field(bc, bci, s);
           break;
+        case Bytecodes::_new: case Bytecodes::_newarray: case Bytecodes::_anewarray:
+          if (!allocate(bs, bc, bci, s)) return;
+          break;
         case Bytecodes::_checkcast: case Bytecodes::_instanceof:
           if (!type_check(bs, bc, bci, s)) return;
           break;
@@ -861,7 +913,6 @@ const char* DirectBaseline::preflight_failure(Method* method) {
       method->max_locals() > max_locals || method->max_stack() > max_stack ||
       method->code_size() > max_code_size || method->code_size() == 0) return "method shape";
   if (method->result_type() != T_VOID && !supported_type(method->result_type())) return "result type";
-  if (Bytecodes::java_code_at(method, method->code_base()) == Bytecodes::_new) return "allocation at entry";
   return nullptr;
 }
 void DirectBaseline::request(const methodHandle& method, JavaThread* thread) {
