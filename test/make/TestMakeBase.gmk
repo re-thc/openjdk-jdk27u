@@ -91,6 +91,49 @@ test-execute-with-log:
 TEST_TARGETS += test-execute-with-log
 
 ################################################################################
+# Test that the special-test output writer finishes before its result is saved.
+
+SPECIAL_TEST_LOGGING_DIR := $(OUTPUT_DIR)/special-test-logging
+SPECIAL_TEST_LOGGING_ARGS := $(MAKE_ARGS) -f $(TOPDIR)/make/RunTests.gmk \
+    TEST=make:make-base \
+    TEE=$(call ShellQuote, $(BASH) $(TOPDIR)/test/make/special-test-logging-tee.sh $(TEE))
+
+test-special-test-logging:
+	$(RM) -r $(SPECIAL_TEST_LOGGING_DIR)
+	$(MKDIR) -p $(SPECIAL_TEST_LOGGING_DIR)
+	$(ECHO) special-test-stdout > $(SPECIAL_TEST_LOGGING_DIR)/expected
+	+$(MAKE) $(SPECIAL_TEST_LOGGING_ARGS) \
+	    OUTPUTDIR=$(SPECIAL_TEST_LOGGING_DIR)/success \
+	    TEST_SUPPORT_DIR=$(SPECIAL_TEST_LOGGING_DIR)/success/test-support \
+	    TEST_SUBTARGET=special-test-logging-success \
+	    > $(SPECIAL_TEST_LOGGING_DIR)/success.stdout 2> $(SPECIAL_TEST_LOGGING_DIR)/success.stderr
+	test -f $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/special_make_make_base/test-output.txt.done
+	test "`$(CAT) $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/special_make_make_base/exitcode.txt`" = 0
+	$(DIFF) $(SPECIAL_TEST_LOGGING_DIR)/expected $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/special_make_make_base/test-output.txt
+	$(GREP) -q '^special-test-stdout$$' $(SPECIAL_TEST_LOGGING_DIR)/success.stdout
+	$(GREP) -q '^special-test-stderr$$' $(SPECIAL_TEST_LOGGING_DIR)/success.stderr
+	$(GREP) -q 'TEST SUCCESS' $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/test-summary.txt
+	+$(MAKE) $(SPECIAL_TEST_LOGGING_ARGS) \
+	    OUTPUTDIR=$(SPECIAL_TEST_LOGGING_DIR)/failure \
+	    TEST_SUPPORT_DIR=$(SPECIAL_TEST_LOGGING_DIR)/failure/test-support \
+	    TEST_SUBTARGET=special-test-logging-failure \
+	    > $(SPECIAL_TEST_LOGGING_DIR)/failure.stdout 2> $(SPECIAL_TEST_LOGGING_DIR)/failure.stderr
+	test -f $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/special_make_make_base/test-output.txt.done
+	test "`$(CAT) $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/special_make_make_base/exitcode.txt`" = 2
+	$(DIFF) $(SPECIAL_TEST_LOGGING_DIR)/expected $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/special_make_make_base/test-output.txt
+	$(GREP) -q '^special-test-stdout$$' $(SPECIAL_TEST_LOGGING_DIR)/failure.stdout
+	$(GREP) -q '^special-test-stderr$$' $(SPECIAL_TEST_LOGGING_DIR)/failure.stderr
+	$(GREP) -q 'TEST FAILURE' $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/test-summary.txt
+	test -f $(SPECIAL_TEST_LOGGING_DIR)/failure/make-support/exit-with-error
+
+special-test-logging-success special-test-logging-failure:
+	@$(ECHO) special-test-stdout; $(ECHO) special-test-stderr >&2; \
+	    if test '$@' = special-test-logging-failure; then exit 37; fi
+
+TEST_TARGETS += test-special-test-logging
+.PHONY: test-special-test-logging special-test-logging-success special-test-logging-failure
+
+################################################################################
 # Test containing and not-containing
 
 CONT_LIST := foo bar baz foobar foobaz
