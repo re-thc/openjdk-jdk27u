@@ -24,6 +24,7 @@
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.inline.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "utilities/autoRestore.hpp"
 
 #include "unittest.hpp"
