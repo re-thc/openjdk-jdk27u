@@ -70,9 +70,15 @@ public class InterpreterFramePilotTest {
     static long hits(Method m) { return stats(m)[9]; }
     static long[] prepare(Method m) {
         long[] data=WB.interpreterFramePilot(m,preparationAction);
-        check(data[0]==1 && data[3]>0 && data[3]<4096 && data[4]>0 && data[5]>0 && data[5]<=64 && data[8]!=0,"prepare "+m+Arrays.toString(data));
+        check(data[0]==1 && data[8]!=0,"prepare "+m+Arrays.toString(data));
+        if(preparationAction==5) {
+            for(int field:new int[]{1,2,3,4,5,11,12,13,14,15,16,17,23,24,25,27,28,31})
+                check(data[field]==0,"unobserved producer leaves no statistics: "+field);
+        } else {
+            check(data[3]>0 && data[3]<4096 && data[4]>0 && data[5]>0 && data[5]<=64,"observed prefix bounds");
+            check((data[28]==data[29])==(preparationAction==4),"producer thread identity");
+        }
         check(!WB.isMethodCompiled(m),"pilot creates no nmethod");
-        check((data[28]==data[29])==(preparationAction==4),"producer thread identity");
         check(data[27]==0,"no per-method executable allocation");
         return data;
     }
@@ -89,7 +95,7 @@ public class InterpreterFramePilotTest {
         check((int)method.invoke(null,17,20)==37+(bounded?32:0),"uncompiled ephemeral oracle");
         long[] data=WB.interpreterFramePilot(method,preparationAction);
         if(data[0]==1) {
-            accepted[0]++;if(bounded)check(data[5]==64,"bounded prefix length");
+            accepted[0]++;if(bounded && preparationAction!=5)check(data[5]==64,"bounded prefix length");
             check((int)method.invoke(null,17,20)==37+(bounded?32:0),"ephemeral codelet semantics");
             check(hits(method)>0,"ephemeral execution");
         } else check(!bounded && data[8]==0,"arena capacity fallback");
@@ -97,8 +103,8 @@ public class InterpreterFramePilotTest {
     }
     static void child(String mode)throws Exception {
         WB=WhiteBox.getWhiteBox();
-        preparationAction=mode.endsWith("-direct")?4:0;
-        mode=mode.replace("-direct","");
+        preparationAction=mode.endsWith("-plain")?5:mode.endsWith("-direct")?4:0;
+        mode=mode.replace("-direct","").replace("-plain","");
         if(mode.equals("concurrent")){concurrent();return;}
         Method arithmetic=method("arithmetic",int.class,int.class);
         int[] xs={0,1,-1,Integer.MIN_VALUE,Integer.MAX_VALUE,0x76543210,-991};
@@ -168,8 +174,8 @@ public class InterpreterFramePilotTest {
             long[][] results=new long[2][];Throwable[] failures=new Throwable[3];
             Thread[] workers=new Thread[2];
             for(int i=0;i<2;i++){final int n=i;workers[i]=new Thread(() -> {
-                try {ready.countDown();start.await();results[n]=WB.interpreterFramePilot(m,4);
-                    for(int repeat=0;repeat<63;repeat++)check(WB.interpreterFramePilot(m,4)[0]==0,"duplicate remains rejected");}catch(Throwable t){failures[n]=t;}
+                try {ready.countDown();start.await();results[n]=WB.interpreterFramePilot(m,preparationAction);
+                    for(int repeat=0;repeat<63;repeat++)check(WB.interpreterFramePilot(m,preparationAction)[0]==0,"duplicate remains rejected");}catch(Throwable t){failures[n]=t;}
             });workers[i].start();}
             ready.await();AtomicBoolean done=new AtomicBoolean();
             CountDownLatch collectorReady=new CountDownLatch(1);AtomicInteger collections=new AtomicInteger();
@@ -194,7 +200,7 @@ public class InterpreterFramePilotTest {
         if(args.length>0){child(args[0]);return;}
         String[] common={"-Xbootclasspath/a:.","-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-Xmx64m"};
-        for(String suffix:new String[]{"","-direct"}) {
+        for(String suffix:new String[]{"","-direct","-plain"}) {
         for(String gc:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
             ProcessTools.executeTestJava(concat(common,"-Xint",gc,InterpreterFramePilotTest.class.getName(),"semantics"+suffix))
                     .shouldHaveExitValue(0).shouldContain("PILOT_SEMANTICS_OK");
@@ -204,7 +210,8 @@ public class InterpreterFramePilotTest {
         ProcessTools.executeTestJava(concat(common,"-XX:CompileThresholdScaling=100","-XX:CompileCommand=dontinline,InterpreterFramePilotTest::*",InterpreterFramePilotTest.class.getName(),"handoff"+suffix))
                 .shouldHaveExitValue(0).shouldContain("PILOT_HANDOFF_OK");
         }
-        ProcessTools.executeTestJava(concat(common,"-Xint",InterpreterFramePilotTest.class.getName(),"concurrent-direct"))
+        for(String suffix:new String[]{"-direct","-plain"})
+        ProcessTools.executeTestJava(concat(common,"-Xint",InterpreterFramePilotTest.class.getName(),"concurrent"+suffix))
                 .shouldHaveExitValue(0).shouldContain("PILOT_CONCURRENCY_OK");
     }
     static String[] concat(String[] first,String... last) {

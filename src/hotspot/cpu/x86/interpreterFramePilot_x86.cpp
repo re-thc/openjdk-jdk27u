@@ -43,18 +43,30 @@ int next_slot=0;
 Mutex* generation_lock=nullptr;
 jlong blob_cpu=0,blob_wall=0,blob_bytes=0,arena_cpu=0,arena_wall=0;
 
+template<bool Observe>
 class CpuCut : public StackObj {
   jlong* _value; jlong _start;
  public:
-  CpuCut(jlong* value):_value(value),_start(os::current_thread_cpu_time()) {}
-  void stop() { if(_value!=nullptr){*_value+=os::current_thread_cpu_time()-_start;_value=nullptr;} }
+  CpuCut(jlong* value):_value(value),_start(0) {
+    if constexpr (Observe) _start=os::current_thread_cpu_time();
+  }
+  void stop() {
+    if constexpr (Observe) {
+      if(_value!=nullptr){*_value+=os::current_thread_cpu_time()-_start;_value=nullptr;}
+    }
+  }
   ~CpuCut(){stop();}
 };
+template<bool Observe>
 class BufferCleanup : public StackObj {
   jlong* _stats; jlong& _start;
  public:
   BufferCleanup(jlong* stats,jlong& start):_stats(stats),_start(start){}
-  ~BufferCleanup(){if(_start!=0)_stats[InterpreterFramePilot::buffer_cleanup_cpu]+=os::current_thread_cpu_time()-_start;}
+  ~BufferCleanup(){
+    if constexpr (Observe) {
+      if(_start!=0)_stats[InterpreterFramePilot::buffer_cleanup_cpu]+=os::current_thread_cpu_time()-_start;
+    }
+  }
 };
 constexpr int slot_size=4096;
 constexpr int max_operations=64;
@@ -99,6 +111,16 @@ bool InterpreterFramePilot::set_enabled(const methodHandle& method,bool enabled)
   counters->enable_interpreter_pilot(enabled && counters->interpreter_pilot_entry()!=nullptr);
   return true;
 }
+bool InterpreterFramePilot::prepare(const methodHandle& method) {
+  Thread* current=Thread::current();
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         (current->is_Java_thread() && JavaThread::cast(current)->thread_state()==_thread_in_vm),"VM-state producer");
+  if(generation_lock==nullptr)return false;
+  NoSafepointVerifier nsv;
+  ResourceMark rm;
+  MutexLocker locker(generation_lock,Mutex::_no_safepoint_check_flag);
+  return generate_locked<false>(method,nullptr);
+}
 bool InterpreterFramePilot::prepare(const methodHandle& method,jlong* stats) {
   Thread* current=Thread::current();
   assert(SafepointSynchronize::is_at_safepoint() ||
@@ -117,7 +139,7 @@ bool InterpreterFramePilot::prepare(const methodHandle& method,jlong* stats) {
         MutexLocker locker(generation_lock,Mutex::_no_safepoint_check_flag);
         stats[lock_cpu]=os::current_thread_cpu_time()-lock_begin;
         stats[lock_wall]=os::javaTimeNanos()-lock_wall_begin;
-        success=generate_locked(method,stats);
+        success=generate_locked<true>(method,stats);
         stats[resource_used_bytes]=current->resource_area()->used()-used;
         stats[resource_chunk_bytes]=current->resource_area()->size_in_bytes()-capacity;
       }
@@ -128,9 +150,38 @@ bool InterpreterFramePilot::prepare(const methodHandle& method,jlong* stats) {
   stats[1]=os::current_thread_cpu_time()-cpu;stats[2]=os::javaTimeNanos()-wall;
   return success;
 }
+void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,Label& fallback) {
+  masm->testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
+  masm->jcc(Assembler::notZero,fallback);
+  masm->cmpl(Address(r15_thread,JavaThread::interp_only_mode_offset()),0);
+  masm->jcc(Assembler::notEqual,fallback);
+#if INCLUDE_JVMTI
+  bool* const flags[]={&JvmtiExport::_can_access_local_variables,&JvmtiExport::_can_walk_any_space,
+      &JvmtiExport::_can_get_owned_monitor_info,&JvmtiExport::_can_post_interpreter_events,
+      &JvmtiExport::_can_post_on_exceptions,&JvmtiExport::_should_post_single_step,
+      &JvmtiExport::_can_pop_frame,&JvmtiExport::_can_force_early_return,&JvmtiExport::_can_post_breakpoint};
+  for (bool* flag:flags) {
+    masm->movptr(rscratch1,(intptr_t)flag);
+    masm->cmpb(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
+  }
+  masm->cmpw(Address(rdx,in_bytes(MethodCounters::number_of_breakpoints_offset())),0);
+  masm->jcc(Assembler::notEqual,fallback);
+#endif
+#ifdef ASSERT
+  bool* const debug_flags[]={&TraceBytecodes,&CountBytecodes,&PrintBytecodeHistogram,&PrintBytecodePairHistogram};
+  for (bool* flag:debug_flags) {
+    masm->movptr(rscratch1,(intptr_t)flag);
+    masm->cmpb(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
+  }
+  masm->movptr(rscratch1,(intptr_t)&StopInterpreterAt);
+  masm->cmpq(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
+#endif
+  masm->incrementl(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_hits_offset())));
+}
+template<bool Observe>
 bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* stats) {
   assert(generation_lock->owned_by_self(),"serialized immutable slots and publication");
-  CpuCut analysis(&stats[analysis_cpu]);
+  CpuCut<Observe> analysis(Observe?&stats[analysis_cpu]:nullptr);
   if (!UseInterpreterFramePilot || arena==nullptr || next_slot+slot_size>arena_size) return false;
   Method* m=method();
   if (!m->method_holder()->is_linked() || !m->method_holder()->is_rewritten() || !m->is_static() || m->is_native() || m->is_abstract() || m->is_synchronized() ||
@@ -154,42 +205,22 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   // Method/klass/oop address is embedded; dead class versions leave dead bytes.
   analysis.stop();
   jlong cleanup_start=0;
-  BufferCleanup cleanup(stats,cleanup_start);
-  jlong allocation_begin=os::current_thread_cpu_time();
+  BufferCleanup<Observe> cleanup(stats,cleanup_start);
+  jlong allocation_begin=0;
+  if constexpr (Observe) allocation_begin=os::current_thread_cpu_time();
   CodeBuffer code(arena+next_slot,slot_size);
   InterpreterMacroAssembler masm(&code);
-  stats[buffer_setup_cpu]=os::current_thread_cpu_time()-allocation_begin;
-  stats[buffer_owns_blob]=code.blob()!=nullptr;
+  if constexpr (Observe) {
+    stats[buffer_setup_cpu]=os::current_thread_cpu_time()-allocation_begin;
+    stats[buffer_owns_blob]=code.blob()!=nullptr;
+  }
   assert(code.blob()==nullptr,"fixed interpreter slice, no per-method code cache allocation");
-  CpuCut emission(&stats[emission_cpu]);
-  Label ordinary;
-  auto reject_unpublished = [&]() { masm.bind(ordinary);emission.stop();cleanup_start=os::current_thread_cpu_time();return false; };
-  masm.testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
-  masm.jcc(Assembler::notZero,ordinary);
-  masm.cmpl(Address(r15_thread,JavaThread::interp_only_mode_offset()),0);
-  masm.jcc(Assembler::notEqual,ordinary);
-#if INCLUDE_JVMTI
-  bool* const flags[]={&JvmtiExport::_can_access_local_variables,&JvmtiExport::_can_walk_any_space,
-      &JvmtiExport::_can_get_owned_monitor_info,&JvmtiExport::_can_post_interpreter_events,
-      &JvmtiExport::_can_post_on_exceptions,&JvmtiExport::_should_post_single_step,
-      &JvmtiExport::_can_pop_frame,&JvmtiExport::_can_force_early_return,&JvmtiExport::_can_post_breakpoint};
-  for (bool* flag:flags) {
-    masm.movptr(rscratch1,(intptr_t)flag);
-    masm.cmpb(Address(rscratch1,0),0);masm.jcc(Assembler::notEqual,ordinary);
-  }
-  masm.cmpw(Address(rdx,in_bytes(MethodCounters::number_of_breakpoints_offset())),0);
-  masm.jcc(Assembler::notEqual,ordinary);
-#endif
-#ifdef ASSERT
-  bool* const debug_flags[]={&TraceBytecodes,&CountBytecodes,&PrintBytecodeHistogram,&PrintBytecodePairHistogram};
-  for (bool* flag:debug_flags) {
-    masm.movptr(rscratch1,(intptr_t)flag);
-    masm.cmpb(Address(rscratch1,0),0);masm.jcc(Assembler::notEqual,ordinary);
-  }
-  masm.movptr(rscratch1,(intptr_t)&StopInterpreterAt);
-  masm.cmpq(Address(rscratch1,0),0);masm.jcc(Assembler::notEqual,ordinary);
-#endif
-  masm.incrementl(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_hits_offset())));
+  CpuCut<Observe> emission(Observe?&stats[emission_cpu]:nullptr);
+  auto reject_unpublished = [&]() {
+    emission.stop();
+    if constexpr (Observe) cleanup_start=os::current_thread_cpu_time();
+    return false;
+  };
   int depth=0,operations=0,end_bci=0;
   BytecodeStream stream(method);
   for (Bytecodes::Code bc;(bc=stream.next())!=Bytecodes::_illegal && operations<max_operations;) {
@@ -237,18 +268,18 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   // the original opcode through the active interpreter table and its poll.
   if (operations==0 || end_bci>=m->code_size()) return reject_unpublished();
   masm.dispatch_next(vtos,0,true);
-  masm.bind(ordinary);
-  masm.dispatch_next(vtos,0,true);
   emission.stop();
-  CpuCut publication(&stats[publication_cpu]);
+  CpuCut<Observe> publication(Observe?&stats[publication_cpu]:nullptr);
   masm.flush();
   int bytes=code.insts_size();
   guarantee(bytes<slot_size,"bounded pilot code slice");
   ICache::invalidate_range(arena+next_slot,bytes);
-  stats[3]=bytes;stats[4]=end_bci;stats[5]=operations;
+  if constexpr (Observe) { stats[3]=bytes;stats[4]=end_bci;stats[5]=operations; }
   counters->publish_interpreter_pilot(arena+next_slot);
-  next_slot+=slot_size;stats[assigned_slice_bytes]=slot_size;
-  publication.stop();cleanup_start=os::current_thread_cpu_time();
+  next_slot+=slot_size;
+  if constexpr (Observe) stats[assigned_slice_bytes]=slot_size;
+  publication.stop();
+  if constexpr (Observe) cleanup_start=os::current_thread_cpu_time();
   return true;
 }
 #endif

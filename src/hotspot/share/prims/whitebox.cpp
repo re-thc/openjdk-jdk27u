@@ -985,6 +985,8 @@ WB_ENTRY(jlongArray, WB_InterpreterFramePilot(JNIEnv* env, jobject o, jobject me
         VM_InterpreterFramePilot op(mh,data);VMThread::execute(&op);
       } else if (action==4) {
         data[0]=InterpreterFramePilot::prepare(mh,data);
+      } else if (action==5) {
+        data[0]=InterpreterFramePilot::prepare(mh);
       } else if (action==1 || action==2) {
         data[0]=InterpreterFramePilot::set_enabled(mh,action==1);
       } else if (action==3) data[0]=1;

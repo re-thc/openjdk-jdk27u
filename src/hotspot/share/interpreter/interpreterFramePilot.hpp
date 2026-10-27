@@ -24,11 +24,15 @@
 #include "memory/allStatic.hpp"
 #include "runtime/handles.hpp"
 
+class InterpreterMacroAssembler;
+class Label;
+
 // Cost-isolation pilot, selected explicitly through WhiteBox. Bounded immutable
 // integer prefixes live inside the normal interpreter code arena. No nmethod,
 // compiled scopes/maps, persistent Method pointer or separate Java frame.
 class InterpreterFramePilot : AllStatic {
  private:
+  template<bool Observe>
   static bool generate_locked(const methodHandle& method, jlong* stats);
  public:
   enum { analysis_cpu=11, buffer_setup_cpu, emission_cpu, publication_cpu, buffer_cleanup_cpu,
@@ -42,6 +46,11 @@ class InterpreterFramePilot : AllStatic {
   static void startup_costs(jlong* stats);
   static bool set_enabled(const methodHandle& method,bool enabled);
   static void snapshot(const methodHandle& method,jlong* stats);
+  // Emit once in the interpreter entry; execute before every native prefix.
+  // Preserves rax (prefix entry) and rdx (owned MethodCounters).
+  static void emit_entry_guards(InterpreterMacroAssembler* masm, Label& fallback);
+  // Held-method core: no clocks, statistics, snapshot or Java result allocation.
+  static bool prepare(const methodHandle& method);
   static bool prepare(const methodHandle& method, jlong* stats);
 };
 #endif

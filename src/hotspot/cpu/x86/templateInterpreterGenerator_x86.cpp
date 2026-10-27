@@ -30,6 +30,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterFramePilot.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
@@ -1358,7 +1359,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
 #ifdef AMD64
   if (UseInterpreterFramePilot && !synchronized) {
-    Label ordinary;
+    Label ordinary, pilot_fallback;
     __ cmpl(Address(r15_thread, JavaThread::interp_only_mode_offset()),0);
     __ jcc(Assembler::notEqual,ordinary);
     __ get_method(rbx);
@@ -1370,7 +1371,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ jcc(Assembler::equal,ordinary);
     __ movptr(rax,Address(rdx,in_bytes(MethodCounters::interpreter_pilot_entry_offset())));
     __ testptr(rax,rax); __ jcc(Assembler::zero,ordinary);
+    InterpreterFramePilot::emit_entry_guards(_masm,pilot_fallback);
     __ jmp(rax);
+    __ bind(pilot_fallback);
+    // An armed poll or tooling guard must resume through the active table
+    // and its poll, rather than the ordinary entry's unpolled dispatch.
+    __ dispatch_next(vtos,0,true);
     __ bind(ordinary);
   }
 #endif
