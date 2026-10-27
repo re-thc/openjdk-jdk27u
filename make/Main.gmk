@@ -75,6 +75,17 @@ ifeq ($(filter clean% dist-clean, $(MAKECMDGOALS)), )
       $(JDK_OUTPUTDIR)/jmods $(IMAGES_OUTPUTDIR)/jmods, \
       $(wildcard $(addprefix $d/, $(MODULES_FILTER)) \
           $(addprefix $d/, $(addsuffix .jmod, $(MODULES_FILTER))))))
+  ifeq ($(ENABLE_DESKTOP), false)
+    # A previous full desktop build must not feed sources or binaries into the
+    # restricted Java-only module after reconfiguration.
+    EXCLUDED_MODULE_OUTPUTS += $(wildcard \
+        $(SUPPORT_OUTPUTDIR)/native/java.desktop \
+        $(SUPPORT_OUTPUTDIR)/headers/java.desktop \
+        $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/sun \
+        $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/javax \
+        $(JDK_OUTPUTDIR)/modules/java.desktop/sun \
+        $(JDK_OUTPUTDIR)/modules/java.desktop/javax)
+  endif
   ifneq ($(EXCLUDED_MODULE_OUTPUTS), )
     $(error Stale excluded module outputs: $(EXCLUDED_MODULE_OUTPUTS). Run make clean for this configuration)
   endif

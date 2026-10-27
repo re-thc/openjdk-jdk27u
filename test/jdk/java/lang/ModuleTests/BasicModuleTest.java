@@ -33,6 +33,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @summary Basic test of java.lang.Module
  * @modules java.desktop java.xml
  * @run testng/othervm BasicModuleTest

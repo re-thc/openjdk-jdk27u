@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.hasAWT
  * @bug 4406439 4925740
  * @summary ClassesByName2 verifies that all the classes in the loaded class list can be found with classesByName..
  * @author Tim Bell (based on ClassesByName by Robert Field)
