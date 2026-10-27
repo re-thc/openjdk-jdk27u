@@ -158,6 +158,7 @@ public abstract class PerfDataBufferImpl {
      * the sun.jvmstat.perfdata.aliasmap file indicates some other
      * file as the source.
      */
+    @SuppressWarnings("deprecation")
     private void buildAliasMap() {
         assert Thread.holdsLock(this);
 
@@ -167,7 +168,7 @@ public abstract class PerfDataBufferImpl {
         if (filename != null) {
             File f = new File(filename);
             try {
-                aliasURL = f.toURI().toURL();
+                aliasURL = f.toURL();
 
             } catch (MalformedURLException e) {
                 throw new IllegalArgumentException(e);
