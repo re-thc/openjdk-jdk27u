@@ -55,11 +55,24 @@ double parse_java_decimal(const C* first, const C* last) {
   return std::numeric_limits<double>::quiet_NaN();
 }
 
+// Keep Latin1 conversion separate from the shared coder and type dispatch.
+template <typename T>
+NOINLINE double parse_java_decimal_latin1(const char* first, const char* last) {
+  return parse_java_decimal<T>(first, last);
+}
+
 template <typename C>
 double parse_java_decimal(const void* value, int length, int ix) {
   const C* first = static_cast<const C*>(value);
   return ix == 1 ? parse_java_decimal<float>(first, first + length)
                  : parse_java_decimal<double>(first, first + length);
+}
+
+template <>
+double parse_java_decimal<char>(const void* value, int length, int ix) {
+  const char* first = static_cast<const char*>(value);
+  return ix == 1 ? parse_java_decimal_latin1<float>(first, first + length)
+                 : parse_java_decimal_latin1<double>(first, first + length);
 }
 
 template <typename T, typename C>

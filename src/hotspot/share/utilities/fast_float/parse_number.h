@@ -1,3 +1,6 @@
+// Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+// Local modifications are available under the upstream MIT license.
+
 #ifndef FASTFLOAT_PARSE_NUMBER_H
 #define FASTFLOAT_PARSE_NUMBER_H
 
@@ -320,13 +323,75 @@ from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
   return answer;
 }
 
-// Slow path: re-parse materializing the integer/fraction spans the hot no-span
-// parse skipped, then run the full algorithm. The two callers reach it only
-// through a fastfloat_unlikely branch, so the optimizer keeps this re-parse off
-// the hot path on its own (no function-level noinline needed).
-// from_chars_advanced already handles both the too_many_digits disambiguation
-// and the am.power2<0 digit_comp recompute, so both slow branches collapse to
-// one helper call.
+namespace detail {
+
+// The caller has already validated this mantissa and its exponent. Find its
+// spans and collect only the first 19 significant digits, without replaying
+// the grammar or exponent scan. No state is retained by the ordinary scanner.
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
+prepare_long_number(UC const *digits, UC const *lastmatch, int64_t exponent,
+                    bool negative, UC decimal_point) noexcept {
+  parsed_number_string_t<UC> pns;
+  pns.valid = true;
+  pns.too_many_digits = true;
+  pns.negative = negative;
+  pns.lastmatch = lastmatch;
+  uint64_t prefix = 0;
+  int64_t consumed = 0;
+  uint64_t const nineteen_digits{1000000000000000000};
+  auto part = [&](UC const *first) {
+    UC const *p = first;
+    if (prefix == 0) {
+      while (p != lastmatch && *p == UC('0')) {
+        ++p;
+      }
+    }
+    while (prefix < nineteen_digits && p != lastmatch && is_integer(*p)) {
+      prefix = prefix * 10 + uint64_t(*p - UC('0'));
+      ++p;
+    }
+    consumed += p - first;
+    // Reuse the bounded digit-block reader to find the span endpoint;
+    // the remaining digits do not contribute to the significant prefix.
+    uint64_t ignored = 0;
+    loop_parse_if_eight_digits(p, lastmatch, ignored);
+    while (p != lastmatch && is_integer(*p)) {
+      ++p;
+    }
+    return span<UC const>(first, size_t(p - first));
+  };
+  pns.integer = part(digits);
+  UC const *const integer_end = digits + pns.integer.len();
+  if (integer_end != lastmatch && *integer_end == decimal_point) {
+    pns.fraction = part(integer_end + 1);
+  }
+  pns.mantissa = prefix;
+  pns.exponent = exponent + int64_t(pns.integer.len() + pns.fraction.len()) - consumed;
+  return pns;
+}
+
+} // namespace detail
+
+template <typename T> struct long_number_result {
+  T value;
+  std::errc ec;
+};
+
+// The cold converter owns all prepared state and returns its value directly.
+// Ordinary callers pass only the scalar results they already need.
+template <typename T, typename UC>
+fastfloat_never_inline FASTFLOAT_CONSTEXPR20 long_number_result<T>
+parse_number_long_path(UC const *digits, UC const *lastmatch, int64_t exponent,
+                        bool negative, UC decimal_point) noexcept {
+  auto pns = detail::prepare_long_number(digits, lastmatch, exponent, negative,
+                                         decimal_point);
+  T value;
+  auto answer = from_chars_advanced(pns, value);
+  return {value, answer.ec};
+}
+
+// Re-parse only when a short mantissa needs spans for digit_comp.
 template <typename T, typename UC>
 FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
 parse_number_slow_path(UC const *first, UC const *last, T &value,
@@ -421,9 +486,7 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
     }
   }
 
-  // Slow path A (rare): > 19 significant digits. The no-span parse left the
-  // mantissa un-truncated and skipped the span-based recompute; the cold helper
-  // re-parses with spans and runs the full algorithm.
+  // Slow path A (rare): reuse the validated range and raw decimal exponent.
   //
 // We have to disable -Wc++20-extensions for the [[unlikely]] attribute
 // See comment for @jwakely at
@@ -436,7 +499,15 @@ from_chars_float_advanced(UC const *first, UC const *last, T &value,
 #endif
 #endif
   if fastfloat_unlikely (pns.too_many_digits) {
-    return parse_number_slow_path<T, UC>(first, last, value, options, bjf);
+    UC const *digits = first;
+    if (pns.negative || (uint64_t(fmt & chars_format::allow_leading_plus) &&
+                         !bjf && *digits == UC('+'))) {
+      ++digits;
+    }
+    auto converted = parse_number_long_path<T>(
+        digits, pns.lastmatch, pns.exponent, pns.negative, options.decimal_point);
+    value = converted.value;
+    return {pns.lastmatch, converted.ec};
   }
   answer.ec = std::errc(); // be optimistic
   answer.ptr = pns.lastmatch;

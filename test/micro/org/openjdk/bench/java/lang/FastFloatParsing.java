@@ -40,18 +40,21 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(3)
 public class FastFloatParsing {
     private static final int N = 1024;
-    private String[] shortInput, decimal, doubleRoundTrip, floatRoundTrip, longInput, hex, bigDecimalInput;
+    private String[] shortInput, decimal, doubleRoundTrip, floatRoundTrip, longInput, longInteger, mixedInput, hex, bigDecimalInput;
     private BigDecimal[] bigDecimal;
     private byte[][] digits, shortDigits, longDigits;
 
     @Setup
     public void setup() {
         Random r = new Random(0xFA57F10AL);
+        Random integerRandom = new Random(0x193839L);
         shortInput = new String[N];
         decimal = new String[N];
         doubleRoundTrip = new String[N];
         floatRoundTrip = new String[N];
         longInput = new String[N];
+        longInteger = new String[N];
+        mixedInput = new String[N];
         hex = new String[N];
         bigDecimalInput = new String[N];
         bigDecimal = new BigDecimal[N];
@@ -75,6 +78,17 @@ public class FastFloatParsing {
             longInput[i] = "0." + Long.toUnsignedString(r.nextLong())
                     + Long.toUnsignedString(r.nextLong()) + Long.toUnsignedString(r.nextLong())
                     + Long.toUnsignedString(r.nextLong()) + "e" + (r.nextInt(600) - 300);
+            char[] integer = new char[38];
+            integer[0] = (char) ('1' + integerRandom.nextInt(9));
+            for (int j = 1; j < integer.length; j++) {
+                integer[j] = (char) ('0' + integerRandom.nextInt(10));
+            }
+            longInteger[i] = (i % 2 == 0 ? "" : "-") + new String(integer);
+            mixedInput[i] = switch (i % 10) {
+                case 7, 8 -> longInteger[i];
+                case 9 -> longInput[i];
+                default -> i % 2 == 0 ? shortInput[i] : decimal[i];
+            };
             bigDecimalInput[i] = Long.toUnsignedString(r.nextLong()) + "."
                     + Long.toUnsignedString(r.nextLong()) + "e" + (r.nextInt(60) - 30);
             bigDecimal[i] = new BigDecimal(bigDecimalInput[i]);
@@ -120,6 +134,22 @@ public class FastFloatParsing {
 
     @Benchmark
     @OperationsPerInvocation(N)
+    public void parseDoubleLongInteger(Blackhole bh) {
+        for (String input : longInteger) {
+            bh.consume(Double.parseDouble(input));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void parseDoubleMixedInput(Blackhole bh) {
+        for (String input : mixedInput) {
+            bh.consume(Double.parseDouble(input));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
     public void parseDoubleHex(Blackhole bh) {
         for (String input : hex) {
             bh.consume(Double.parseDouble(input));
@@ -154,6 +184,22 @@ public class FastFloatParsing {
     @OperationsPerInvocation(N)
     public void parseFloatLongInput(Blackhole bh) {
         for (String input : longInput) {
+            bh.consume(Float.parseFloat(input));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void parseFloatLongInteger(Blackhole bh) {
+        for (String input : longInteger) {
+            bh.consume(Float.parseFloat(input));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(N)
+    public void parseFloatMixedInput(Blackhole bh) {
+        for (String input : mixedInput) {
             bh.consume(Float.parseFloat(input));
         }
     }

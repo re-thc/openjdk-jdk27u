@@ -73,6 +73,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -147,6 +148,70 @@ public class TestFastFloat {
         }
     }
 
+    private static void checkLongIntegers() throws Throwable {
+        for (int length : new int[] {19, 20, 24, 25, 26, 38, 39, 63, 64, 65, 1023, 1024, 1025}) {
+            for (String digits : new String[] {"0".repeat(length), "9".repeat(length),
+                    "0".repeat(length - 8) + "16777217"}) {
+                for (String sign : new String[] {"", "+", "-"}) {
+                    check(sign + digits);
+                    check("\t" + sign + digits + "D\r");
+                    check(sign + digits + "f");
+                }
+                for (String ending : new String[] {"x", " f", "ff", "df", "e", "e+",
+                        ".", ".e", ".e+", ".e-20", ".1e-20"}) {
+                    for (String sign : new String[] {"", "+", "-"}) {
+                        check(sign + digits + ending);
+                    }
+                }
+                for (String sign : new String[] {"++", "+-", "--", "-+"}) {
+                    check(sign + digits);
+                }
+            }
+        }
+        // Raw length dispatch must preserve normalization and malformed-input fallback.
+        for (int length : new int[] {24, 25, 26, 1023, 1024, 1025}) {
+            for (String token : new String[] {"", "+", "-", "f", "D", "1", "-0", "+1",
+                    "1 f", "1d ", "123.5e2", "0x1.8p3", "NaN", "Infinity", "+NaN", "+-1"}) {
+                String padding = " ".repeat(length - token.length());
+                check(padding + token);
+                check(token + padding);
+            }
+        }
+        // Integer halfway values and their neighbors must round once to the target type.
+        for (int precision : new int[] {24, 53}) {
+            for (int exponent = precision; exponent <= (precision == 24 ? 128 : 1024); exponent += 7) {
+                BigInteger halfway = BigInteger.ONE.shiftLeft(exponent)
+                        .add(BigInteger.ONE.shiftLeft(exponent - precision));
+                for (int offset = -1; offset <= 1; offset++) {
+                    String digits = halfway.add(BigInteger.valueOf(offset)).toString();
+                    check(digits);
+                    check("-" + digits);
+                    check("00000000000000000000" + digits);
+                }
+            }
+        }
+        // Validate full UTF16 code units before narrowing, at every scan lane.
+        for (int length : new int[] {20, 24, 25, 26, 38, 39, 64}) {
+            for (int index = 0; index < length; index++) {
+                for (char invalid : new char[] {'\u00b0', '\u00ff', '\u0130', '\u0139',
+                        '\uff10', '\uff19', '\ud800', '\udfff'}) {
+                    char[] digits = "9".repeat(length).toCharArray();
+                    digits[index] = invalid;
+                    check(new String(digits));
+                }
+            }
+        }
+        Random random = new Random(0x193839L);
+        for (int i = 0; i < 400; i++) {
+            char[] digits = new char[19 + random.nextInt(300)];
+            for (int j = 0; j < digits.length; j++) {
+                digits[j] = (char) ('0' + random.nextInt(10));
+            }
+            check(new String(digits));
+            check("-" + new String(digits));
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
         String[] edges = {
             null, "", " ", "+", "-", ".", "+.", "1e", "1e+", "1e-", "1..0", "1 2",
@@ -166,6 +231,7 @@ public class TestFastFloat {
         for (String s : edges) {
             check(s);
         }
+        checkLongIntegers();
         Random random = new Random(0xFA57F10AL);
         for (int i = 0; i < 20_000; i++) {
             check(Double.toString(Double.longBitsToDouble(random.nextLong())));
