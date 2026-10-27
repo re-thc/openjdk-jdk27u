@@ -102,6 +102,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   volatile int _size;
   volatile int _direct_baseline_size;
+  uint _direct_baseline_streak;
   int _peak_size;
   uint _total_added;
   uint _total_removed;
@@ -114,6 +115,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
     _last = nullptr;
     _size = 0;
     _direct_baseline_size = 0;
+    _direct_baseline_streak = 0;
     _total_added = 0;
     _total_removed = 0;
     _peak_size = 0;
@@ -133,6 +135,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   bool         is_empty() const                  { return _first == nullptr; }
   int          size()     const                  { return _size;          }
   int          ordinary_size() const { return MAX2(0, _size - _direct_baseline_size); }
+  bool         direct_baseline_burst_available() const { return _direct_baseline_streak < 8; }
 
   int         get_peak_size()     const          { return _peak_size; }
   uint        get_total_added()   const          { return _total_added; }

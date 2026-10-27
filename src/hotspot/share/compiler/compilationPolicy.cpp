@@ -718,8 +718,8 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
         task = next_task;
         continue;
       }
-      // Keep ordinary C1 selection and blocking-task priority unchanged.
-      // Only use spare compiler capacity for direct work.
+      // Keep FIFO order among direct requests. Blocking ordinary work still
+      // wins; otherwise a bounded direct burst precedes ordinary rate selection.
       if (direct_task == nullptr) direct_task = task;
       task = next_task;
       continue;
@@ -754,6 +754,11 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
   if (max_blocking_task != nullptr) {
     max_task = max_blocking_task;
     max_method = max_task->method();
+  }
+
+  if (direct_task != nullptr && max_blocking_task == nullptr &&
+      (max_task == nullptr || compile_queue->direct_baseline_burst_available())) {
+    return direct_task;
   }
 
   if (max_task != nullptr && max_method != nullptr) {
@@ -902,11 +907,11 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     }
     int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
     update_rate(nanos_to_millis(os::javaTimeNanos()), mh);
-    if (TraceDirectBaseline && mh->code() != nullptr && mh->code()->is_compiled_by_direct_baseline()) {
+    if (TraceDirectBaseline && mh->method_counters() != nullptr && mh->method_counters()->direct_baseline_entries() != 0) {
       ResourceMark rm(THREAD);
       ttyLocker ttyl;
-      tty->print_cr("direct admission %s%s mc=%d mdo=%d total=%d entries=%d level=%d",
-                    mh->name()->as_C_string(), mh->signature()->as_C_string(),
+      tty->print_cr("direct admission %s %s%s mc=%d mdo=%d total=%d entries=%d level=%d",
+                    mh->method_holder()->name()->as_C_string(), mh->name()->as_C_string(), mh->signature()->as_C_string(),
                     mh->method_counters()->invocation_counter()->count(),
                     mh->method_data() == nullptr ? 0 : mh->method_data()->invocation_counter()->count(),
                     mh->invocation_count(), mh->method_counters()->direct_baseline_entries(), level);

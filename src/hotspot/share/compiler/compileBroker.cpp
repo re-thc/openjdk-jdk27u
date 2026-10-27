@@ -192,6 +192,7 @@ CompilerStatistics CompileBroker::_stats_per_level[CompLevel_full_optimization];
 
 CompileQueue* CompileBroker::_c2_compile_queue     = nullptr;
 CompileQueue* CompileBroker::_c1_compile_queue     = nullptr;
+static CompileQueue* direct_baseline_compile_queue = nullptr;
 
 bool compileBroker_init() {
   if (LogEvents) {
@@ -262,6 +263,7 @@ bool CompileBroker::can_remove(CompilerThread *ct, bool do_it) {
   if (!ReduceNumberOfCompilerThreads) return false;
 
   AbstractCompiler *compiler = ct->compiler();
+  if (compiler->type() == compiler_direct_baseline) return false;
   int compiler_count = compiler->num_compiler_threads();
   bool c1 = compiler->is_c1();
 
@@ -417,6 +419,9 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
     NoSafepointVerifier nsv;
     task = CompilationPolicy::select_task(this, thread);
     if (task != nullptr) {
+      // Bound direct priority when ordinary work is waiting. The queue lock
+      // serializes this state across all workers sharing the queue.
+      _direct_baseline_streak = task->is_direct_baseline() ? MIN2(_direct_baseline_streak + 1, 8u) : 0;
       task = task->select_for_compilation();
     }
   }
@@ -529,6 +534,9 @@ void CompileBroker::print_compile_queues(outputStream* st) {
   }
   if (_c2_compile_queue != nullptr) {
     _c2_compile_queue->print(st);
+  }
+  if (direct_baseline_compile_queue != nullptr) {
+    direct_baseline_compile_queue->print(st);
   }
 }
 
@@ -938,8 +946,19 @@ void CompileBroker::init_compiler_threads() {
     }
   }
 
+  if (UseDirectBaseline && DirectBaselineDedicatedWorker && _c1_count > 0 &&
+      DirectBaseline::compiler() != nullptr) {
+    AbstractCompiler* direct = DirectBaseline::compiler();
+    direct_baseline_compile_queue = new CompileQueue("Direct baseline compile queue");
+    jobject thread_handle = create_compiler_thread(direct, 0, CHECK);
+    JavaThread* ct = make_thread(compiler_t, thread_handle, direct_baseline_compile_queue, direct, THREAD);
+    assert(ct != nullptr, "should have been handled for initial thread");
+    direct->set_num_compiler_threads(1);
+  }
+
   if (UsePerfData) {
-    PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes, _c1_count + _c2_count, CHECK);
+    PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes,
+                                   _c1_count + _c2_count + (direct_baseline_compile_queue != nullptr ? 1 : 0), CHECK);
   }
 
 #if defined(ASSERT) && defined(COMPILER2)
@@ -978,7 +997,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   }
   if (_c1_compile_queue != nullptr) {
     old_c1_count = get_c1_thread_count();
-    new_c1_count = MIN2(_c1_count, _c1_compile_queue->size() / c1_tasks_per_thread);
+    new_c1_count = MIN2(_c1_count, _c1_compile_queue->ordinary_size() / c1_tasks_per_thread);
   }
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
@@ -1020,7 +1039,7 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (_c1_compile_queue != nullptr) {
     old_c1_count = get_c1_thread_count();
     new_c1_count = MIN4(_c1_count,
-        _c1_compile_queue->size() / c1_tasks_per_thread,
+        _c1_compile_queue->ordinary_size() / c1_tasks_per_thread,
         (int)(free_memory / (100*M)),
         (int)(available_cc_p / (128*K)));
 
@@ -1057,6 +1076,9 @@ void CompileBroker::mark_on_stack() {
   }
   if (_c1_compile_queue != nullptr) {
     _c1_compile_queue->mark_on_stack();
+  }
+  if (direct_baseline_compile_queue != nullptr) {
+    direct_baseline_compile_queue->mark_on_stack();
   }
 }
 
@@ -1612,6 +1634,9 @@ void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerTh
     if (_c2_compile_queue != nullptr) {
       _c2_compile_queue->delete_all();
     }
+    if (direct_baseline_compile_queue != nullptr) {
+      direct_baseline_compile_queue->delete_all();
+    }
 
     // Set flags so that we continue execution with using interpreter only.
     UseCompiler    = false;
@@ -1630,6 +1655,11 @@ CompileLog* CompileBroker::get_log(CompilerThread* ct) {
   if (!LogCompilation) return nullptr;
 
   AbstractCompiler *compiler = ct->compiler();
+  if (compiler->type() == compiler_direct_baseline) {
+    // This single persistent worker is outside the C1/C2 object/log arrays.
+    init_compiler_thread_log();
+    return ct->log();
+  }
   bool c1 = compiler->is_c1();
   jobject* compiler_objects = c1 ? _compiler1_objects : _compiler2_objects;
   assert(compiler_objects != nullptr, "must be initialized at this point");
@@ -1759,7 +1789,7 @@ void CompileBroker::compiler_thread_loop() {
         task->set_failure_reason("breakpoints are present");
       }
 
-      if (UseDynamicNumberOfCompilerThreads) {
+      if (UseDynamicNumberOfCompilerThreads && thread->compiler()->type() != compiler_direct_baseline) {
         possibly_add_compiler_threads(thread);
         assert(!thread->has_pending_exception(), "should have been handled");
       }
@@ -2632,7 +2662,8 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
 }
 
 void CompileBroker::request_direct_baseline(const methodHandle& method, JavaThread* thread) {
-  if (!_initialized || _c1_compile_queue == nullptr || !should_compile_new_jobs()) return;
+  CompileQueue* queue = DirectBaselineDedicatedWorker ? direct_baseline_compile_queue : _c1_compile_queue;
+  if (!_initialized || queue == nullptr || !should_compile_new_jobs()) return;
   MethodCounters* mc = method->method_counters();
   if (mc == nullptr) return;
   MutexLocker locker(thread, MethodCompileQueue_lock);
@@ -2642,7 +2673,7 @@ void CompileBroker::request_direct_baseline(const methodHandle& method, JavaThre
       method->highest_comp_level() != CompLevel_none || method->method_data() != nullptr) return;
   int id = assign_compile_id(method, InvocationEntryBci);
   if (id == 0) return;
-  create_compile_task(_c1_compile_queue, id, method, InvocationEntryBci,
+  create_compile_task(queue, id, method, InvocationEntryBci,
                       CompLevel_simple, method->invocation_count(),
                       CompileTask::Reason_DirectBaseline, false);
 }

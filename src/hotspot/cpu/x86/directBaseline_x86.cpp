@@ -312,10 +312,6 @@ class Emitter : StackObj {
   void counter() {
     Label no_mdo, done, overflow, retire;
     __ mov_metadata(rbx, _method->constant_encoding());
-    if (TraceDirectBaseline) {
-      __ movptr(r10, Address(rbx, Method::method_counters_offset()));
-      __ incrementl(Address(r10, in_bytes(MethodCounters::direct_baseline_entries_offset())));
-    }
     __ movptr(r10, Address(rbx, Method::method_data_offset()));
     __ testptr(r10, r10);
     __ jcc(Assembler::zero, no_mdo);
@@ -346,6 +342,11 @@ class Emitter : StackObj {
     safepoint(SynchronizationEntryBCI, _states[0]);
     __ should_not_reach_here();
     __ bind(done);
+    if (TraceDirectBaseline) {
+      // Count actual body entries, excluding entry-time profiling retirement.
+      __ movptr(r10, Address(rbx, Method::method_counters_offset()));
+      __ incrementl(Address(r10, in_bytes(MethodCounters::direct_baseline_entries_offset())));
+    }
   }
   Assembler::Condition condition(Bytecodes::Code bc) {
     switch (bc) {
@@ -637,7 +638,20 @@ class DirectCompiler : public AbstractCompiler {
  public:
   DirectCompiler() : AbstractCompiler(compiler_direct_baseline) {}
   const char* name() override { return "direct"; }
-  void initialize() override {}
+  void initialize() override {
+    // Runtime1 stubs are initialized once by the ordinary C1 worker. Wait
+    // for that contract without allocating a C1 buffer or running its setup.
+    AbstractCompiler* c1 = CompileBroker::compiler(CompLevel_simple);
+    bool ready = false;
+    if (c1 != nullptr) {
+      MonitorLocker locker(CompileThread_lock);
+      while (!c1->is_initialized() && !c1->is_failed() && !CompileBroker::is_compilation_disabled_forever()) {
+        locker.wait();
+      }
+      ready = c1->is_initialized();
+    }
+    set_state(ready ? initialized : failed);
+  }
   void compile_method(ciEnv* env, ciMethod* target, int bci, bool install, DirectiveSet* directive) override {
     jlong begin = TraceDirectBaseline ? os::javaTimeNanos() : 0;
     jlong cpu = TraceDirectBaseline ? os::current_thread_cpu_time() : 0;

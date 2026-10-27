@@ -28,6 +28,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -345,6 +346,11 @@ void CompileTask::log_task_queued() {
 void CompileTask::log_task_start(CompileLog* log)   {
   log->begin_head("task");
   log_task(log);
+  if (TraceDirectBaseline) {
+    log->print(" created_ns='" JLONG_FORMAT "' queued_ns='" JLONG_FORMAT "'",
+               (jlong)(TimeHelper::counter_to_seconds(_time_created) * 1e9),
+               (jlong)(TimeHelper::counter_to_seconds(_time_queued) * 1e9));
+  }
   log->end_head();
 }
 
@@ -369,6 +375,12 @@ void CompileTask::log_task_done(CompileLog* log) {
   log->begin_elem("task_done success='%d' nmsize='%d' count='%d'",
                   _is_success, _nm_content_size,
                   method->invocation_count());
+  if (TraceDirectBaseline) {
+    // ciEnv records the start after log_task_start; it is available here.
+    log->print(" started_ns='" JLONG_FORMAT "' finished_ns='" JLONG_FORMAT "'",
+               (jlong)(TimeHelper::counter_to_seconds(_time_started) * 1e9),
+               (jlong)(TimeHelper::counter_to_seconds(_time_finished) * 1e9));
+  }
   int bec = method->backedge_count();
   if (bec != 0)  log->print(" backedge_count='%d'", bec);
   // Note:  "_is_complete" is about to be set, but is not.

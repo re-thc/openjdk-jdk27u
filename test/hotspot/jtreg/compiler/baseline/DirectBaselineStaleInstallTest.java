@@ -25,6 +25,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver DirectBaselineStaleInstallTest
+ * @run driver DirectBaselineStaleInstallTest shared
  */
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -77,17 +78,24 @@ public class DirectBaselineStaleInstallTest {
             String current = text.substring(text.indexOf("Current compiles:"), text.indexOf("C1 compile queue:"));
             boolean selected = current.contains(owner + "::target");
             boolean ready = stage.equals("PENDING") ? selected : !text.contains(owner);
-            if (stage.equals("QUIET")) ready &= text.contains("C1 compile queue:\nEmpty") && text.contains("C2 compile queue:\nEmpty");
+            if (stage.equals("QUIET")) {
+                ready &= current.trim().equals("Current compiles:") &&
+                         text.contains("C1 compile queue:\nEmpty") && text.contains("C2 compile queue:\nEmpty") &&
+                         (!text.contains("Direct baseline compile queue:") || text.contains("Direct baseline compile queue:\nEmpty"));
+            }
             if (ready) return;
             if (System.nanoTime() > limit) throw new AssertionError("compiler did not reach " + stage + "\n" + text);
             Thread.sleep(10);
         }
     }
     public static void main(String[] args) throws Exception {
-        if (args.length != 0) { Child.run(); return; }
+        if (args.length != 0 && args[0].equals("child")) { Child.run(); return; }
+        String workerFlag = args.length != 0 && args[0].equals("shared")
+                ? "-XX:-DirectBaselineDedicatedWorker" : "-XX:+DirectBaselineDedicatedWorker";
         Process child = ProcessTools.createTestJavaProcessBuilder("-Xshare:off", "-Xbootclasspath/a:.",
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
                 "-XX:CICompilerCount=2", "-XX:+UseSerialGC", "-XX:+UseDirectBaseline", "-XX:+TraceDirectBaseline",
+                workerFlag,
                 "-XX:CompileCommand=compileonly," + Child.class.getName() + "::target",
                 DirectBaselineStaleInstallTest.class.getName(), "child").redirectErrorStream(true).start();
         StringBuilder output = new StringBuilder();

@@ -24,8 +24,9 @@
 class AbstractCompiler;
 class JavaThread;
 
-// This is a separate bytecode emitter. It shares the broker's C1 worker queue,
-// assembler and Runtime1 stubs, but no C1 IR, LIR, parsing or register allocation.
+// This is a separate bytecode emitter with its own compiler worker/queue.
+// Shared-worker priority is retained as an experimental scheduling control.
+// It reuses assembler and Runtime1 stubs, but no C1 IR, LIR or allocation.
 class DirectBaseline : AllStatic {
  public:
 #if defined(AMD64) && defined(COMPILER1)

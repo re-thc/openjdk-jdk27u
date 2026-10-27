@@ -137,6 +137,9 @@
   product(bool, UseDirectBaseline, false, EXPERIMENTAL,                       \
           "Enable the x86-64 direct bytecode baseline prototype")            \
                                                                             \
+  product(bool, DirectBaselineDedicatedWorker, true, EXPERIMENTAL,            \
+          "Service direct baseline requests on a separate compiler worker")  \
+                                                                            \
   product(intx, DirectBaselineThreshold, 32, EXPERIMENTAL,                     \
           "MC invocation count for a single early baseline request")         \
           range(1, 127)                                                     \

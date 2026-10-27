@@ -8,6 +8,10 @@ the original warm window, and that queue latency is much larger than direct
 compilation latency. They do **not** completely attribute the approximately
 80 ms startup process-CPU difference.
 
+The subsequent [scheduling comparison](direct-baseline-scheduling.md) implements
+shared direct priority and independent baseline service, measures their early
+execution and CPU costs, and retains the negative caller results.
+
 All performance diagnostics here use `d414c1cec9a`, before the metadata fix
 described below. No admission threshold, profiling rule or generated method
 body changed during this attribution. There is no delayed-C1 experiment.

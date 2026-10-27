@@ -1107,8 +1107,8 @@ void ciEnv::register_method(ciMethod* target,
             tty->print_cr("Replacing method %s", method_name);
           }
           if (TraceDirectBaseline && old != nullptr && old->is_compiled_by_direct_baseline()) {
-            tty->print_cr("direct handoff %s%s mc=%d mdo=%d total=%d entries=%d next=%s level=%d",
-                          method->name()->as_C_string(), method->signature()->as_C_string(),
+            tty->print_cr("direct handoff %s %s%s mc=%d mdo=%d total=%d entries=%d next=%s level=%d",
+                          method->method_holder()->name()->as_C_string(), method->name()->as_C_string(), method->signature()->as_C_string(),
                           method->method_counters()->invocation_counter()->count(),
                           method->method_data() == nullptr ? 0 : method->method_data()->invocation_counter()->count(),
                           method->invocation_count(), method->method_counters()->direct_baseline_entries(),
