@@ -26,6 +26,7 @@
 
 class InterpreterMacroAssembler;
 class Label;
+class MethodCounters;
 
 // Cost-isolation pilot, selected explicitly through WhiteBox. Bounded immutable
 // integer prefixes live inside the normal interpreter code arena. No nmethod,
@@ -49,6 +50,15 @@ class InterpreterFramePilot : AllStatic {
   // Emit once in the interpreter entry; execute before every native prefix.
   // Preserves rax (prefix entry) and rdx (owned MethodCounters).
   static void emit_entry_guards(InterpreterMacroAssembler* masm, Label& fallback);
+  enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,
+                           test_poll_guard_seen, test_poll_processed, test_poll_wrong_bci };
+  // WhiteBox-only deterministic local-poll regression. Leaves allocate/block
+  // nowhere; the generated hooks are absent unless WhiteBoxAPI is enabled.
+  static bool request_poll_test(const methodHandle& method);
+  static int poll_test_state(const methodHandle& method);
+  static void arm_test_poll(MethodCounters* counters);
+  static void record_test_poll(Method* method, address bcp);
+  static void emit_test_poll_return(InterpreterMacroAssembler* masm);
   // Held-method core: no clocks, statistics, snapshot or Java result allocation.
   static bool prepare(const methodHandle& method);
   static bool prepare(const methodHandle& method, jlong* stats);

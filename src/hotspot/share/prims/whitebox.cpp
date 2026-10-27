@@ -987,6 +987,10 @@ WB_ENTRY(jlongArray, WB_InterpreterFramePilot(JNIEnv* env, jobject o, jobject me
         data[0]=InterpreterFramePilot::prepare(mh,data);
       } else if (action==5) {
         data[0]=InterpreterFramePilot::prepare(mh);
+      } else if (action==6) {
+        data[0]=InterpreterFramePilot::request_poll_test(mh);
+      } else if (action==7) {
+        data[0]=InterpreterFramePilot::poll_test_state(mh);
       } else if (action==1 || action==2) {
         data[0]=InterpreterFramePilot::set_enabled(mh,action==1);
       } else if (action==3) data[0]=1;

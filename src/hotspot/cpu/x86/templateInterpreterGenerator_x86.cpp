@@ -280,6 +280,11 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   __ call_VM(noreg, runtime_entry);
   __ pop_cont_fastpath();
 
+#ifdef AMD64
+  if (UseInterpreterFramePilot && WhiteBoxAPI && state == vtos) {
+    InterpreterFramePilot::emit_test_poll_return(_masm);
+  }
+#endif
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }

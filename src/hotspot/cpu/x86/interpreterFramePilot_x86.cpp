@@ -29,12 +29,14 @@
 #include "oops/methodCounters.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/signature.hpp"
 
 namespace {
@@ -150,9 +152,76 @@ bool InterpreterFramePilot::prepare(const methodHandle& method,jlong* stats) {
   stats[1]=os::current_thread_cpu_time()-cpu;stats[2]=os::javaTimeNanos()-wall;
   return success;
 }
+bool InterpreterFramePilot::request_poll_test(const methodHandle& method) {
+  if(!WhiteBoxAPI || !UseInterpreterFramePilot)return false;
+  MethodCounters* counters=method->method_counters();
+  if(counters==nullptr || counters->method()!=method() || !counters->interpreter_pilot_enabled() ||
+     counters->interpreter_pilot_entry()==nullptr)return false;
+  u1 state=counters->interpreter_pilot_poll_test();
+  if(state!=test_poll_none && state!=test_poll_processed)return false;
+  return counters->cas_interpreter_pilot_poll_test(state,test_poll_requested);
+}
+int InterpreterFramePilot::poll_test_state(const methodHandle& method) {
+  MethodCounters* counters=method->method_counters();
+  if(counters==nullptr || counters->method()!=method())return test_poll_none;
+  return counters->interpreter_pilot_poll_test();
+}
+JRT_LEAF(void, InterpreterFramePilot::arm_test_poll(MethodCounters* counters))
+  assert(WhiteBoxAPI && UseInterpreterFramePilot,"test-only entry");
+  if(counters->cas_interpreter_pilot_poll_test(test_poll_requested,test_poll_armed)) {
+    // Real word and page values, with no allocation, handshake enqueue, wait
+    // or Java/VM transition that could consume the poll before the guard.
+    SafepointMechanism::arm_local_poll_release(JavaThread::current());
+  }
+JRT_END
+JRT_LEAF(void, InterpreterFramePilot::record_test_poll(Method* method,address bcp))
+  assert(WhiteBoxAPI && UseInterpreterFramePilot,"test-only entry");
+  MethodCounters* counters=method->method_counters();
+  if(counters!=nullptr && counters->method()==method &&
+     counters->interpreter_pilot_poll_test()==test_poll_guard_seen) {
+    counters->set_interpreter_pilot_poll_test(bcp==method->code_base()?test_poll_processed:test_poll_wrong_bci);
+  }
+JRT_END
+void InterpreterFramePilot::emit_test_poll_return(InterpreterMacroAssembler* masm) {
+  assert(WhiteBoxAPI && UseInterpreterFramePilot,"test-only generation");
+  Label done;
+  masm->get_method(rbx);
+  masm->movptr(rdx,Address(rbx,Method::method_counters_offset()));
+  masm->testptr(rdx,rdx);masm->jcc(Assembler::zero,done);
+  masm->cmpptr(rbx,Address(rdx,in_bytes(MethodCounters::method_offset())));
+  masm->jcc(Assembler::notEqual,done);
+  masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_guard_seen);
+  masm->jcc(Assembler::notEqual,done);
+  masm->push(rax);masm->push(rdx);masm->push(rbx);
+  // call_VM has reset the JavaFrameAnchor. Pass the live interpreter Method
+  // and BCP registers rather than trying to recover a last Java frame in C++.
+  masm->call_VM_leaf(CAST_FROM_FN_PTR(address,record_test_poll),rbx,rbcp);
+  masm->pop(rbx);masm->pop(rdx);masm->pop(rax);
+  masm->bind(done);
+}
 void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,Label& fallback) {
+  if(WhiteBoxAPI) {
+    Label no_request;
+    masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_requested);
+    masm->jcc(Assembler::notEqual,no_request);
+    masm->push(rax);masm->push(rdx);masm->push(rbx);
+    masm->call_VM_leaf(CAST_FROM_FN_PTR(address,arm_test_poll),rdx);
+    masm->pop(rbx);masm->pop(rdx);masm->pop(rax);
+    masm->bind(no_request);
+  }
   masm->testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
-  masm->jcc(Assembler::notZero,fallback);
+  if(WhiteBoxAPI) {
+    Label not_armed,not_requested;
+    masm->jcc(Assembler::zero,not_armed);
+    masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_armed);
+    masm->jcc(Assembler::notEqual,not_requested);
+    masm->movb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_guard_seen);
+    masm->bind(not_requested);
+    masm->jmp(fallback);
+    masm->bind(not_armed);
+  } else {
+    masm->jcc(Assembler::notZero,fallback);
+  }
   masm->cmpl(Address(r15_thread,JavaThread::interp_only_mode_offset()),0);
   masm->jcc(Assembler::notEqual,fallback);
 #if INCLUDE_JVMTI

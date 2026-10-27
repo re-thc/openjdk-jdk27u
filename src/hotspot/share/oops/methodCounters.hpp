@@ -67,6 +67,7 @@ class MethodCounters : public Metadata {
   address _interpreter_pilot_entry; // Immutable, no embedded metadata/oops
   int _interpreter_pilot_hits; // Diagnostic, approximate under contention
   bool _interpreter_pilot_enabled;
+  u1 _interpreter_pilot_poll_test; // WhiteBox-only one-shot guard regression state
 
   MethodCounters(const methodHandle& mh);
   MethodCounters();
@@ -148,6 +149,12 @@ class MethodCounters : public Metadata {
   static ByteSize interpreter_pilot_entry_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_entry); }
   static ByteSize interpreter_pilot_enabled_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_enabled); }
   static ByteSize interpreter_pilot_hits_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_hits); }
+  u1 interpreter_pilot_poll_test() const { return AtomicAccess::load_acquire(&_interpreter_pilot_poll_test); }
+  void set_interpreter_pilot_poll_test(u1 value) { AtomicAccess::release_store(&_interpreter_pilot_poll_test,value); }
+  bool cas_interpreter_pilot_poll_test(u1 expected,u1 value) {
+    return AtomicAccess::cmpxchg(&_interpreter_pilot_poll_test,expected,value)==expected;
+  }
+  static ByteSize interpreter_pilot_poll_test_offset() { return byte_offset_of(MethodCounters,_interpreter_pilot_poll_test); }
   static ByteSize method_offset() { return byte_offset_of(MethodCounters,_method); }
 
   // invocation counter
