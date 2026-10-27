@@ -144,8 +144,11 @@ class BasicSignature : public ResourceObj {
   GrowableArray<BasicType> _types;
   BasicType _return_type;
   bool _valid;
+  BasicType* _argument_types;
+  VMRegPair* _argument_regs;
  public:
-  explicit BasicSignature(Symbol* symbol) : _symbol(symbol), _types(8), _return_type(T_ILLEGAL), _valid(true) {
+  explicit BasicSignature(Symbol* symbol) : _symbol(symbol), _types(8), _return_type(T_ILLEGAL), _valid(true),
+    _argument_types(nullptr), _argument_regs(nullptr) {
     for (SignatureStream ss(symbol); !ss.is_done(); ss.next()) {
       BasicType type=ss.type();
       if (ss.at_return_type()) {
@@ -163,6 +166,11 @@ class BasicSignature : public ResourceObj {
   BasicType type_at(int i) const { return _types.at(i); }
   BasicType return_type() const { return _return_type; }
   bool valid() const { return _valid; }
+  void set_call_arguments(BasicType* types, VMRegPair* regs) {
+    _argument_types=types; _argument_regs=regs;
+  }
+  BasicType* argument_types() const { return _argument_types; }
+  VMRegPair* argument_regs() const { return _argument_regs; }
 };
 BasicType argument_type(BasicSignature* sig, bool is_static, int i) {
   return !is_static && i==0 ? T_OBJECT : sig->type_at(i-(is_static?0:1));
@@ -482,6 +490,9 @@ class Prepared : public ResourceObj {
           VMRegPair* regs = NEW_RESOURCE_ARRAY(VMRegPair, n);
           for (int i = 0; i < n; i++) types[i] = argument_type(declared, is_static, i);
           int slots = SharedRuntime::java_calling_convention(types, regs, n);
+          // The outer worker ResourceMark keeps this layout alive through CI
+          // and emission. The accepted call retains the declared descriptor.
+          declared->set_call_arguments(types, regs);
           _out_words = MAX2(_out_words, (slots + 1) / 2);
           for (int i=n-1;i>=0;i--) if (types[i]!=T_VOID && !pop(s,kind(types[i]))) return false;
           if (declared->return_type() != T_VOID && !push(s, kind(declared->return_type()))) return false;
@@ -848,10 +859,9 @@ class Emitter : StackObj {
       __ movptr(rax, stack(s->sp - n));
       null_check(rax, bci, s);
     }
-    BasicType* types = NEW_RESOURCE_ARRAY(BasicType, n);
-    VMRegPair* regs = NEW_RESOURCE_ARRAY(VMRegPair, n);
-    for (int i = 0; i < n; i++) types[i] = argument_type(sig, is_static, i);
-    SharedRuntime::java_calling_convention(types, regs, n);
+    BasicType* types = sig->argument_types();
+    VMRegPair* regs = sig->argument_regs();
+    assert(n == 0 || (types != nullptr && regs != nullptr), "prepared call layout");
     for (int i = 0; i < n; i++) {
       if (types[i]==T_VOID) continue;
       bool wide=kind(types[i])==T_OBJECT || types[i]==T_LONG;
