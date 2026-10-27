@@ -1,0 +1,13 @@
+cohort	method	observed_entries	required_features	qualification
+startup_stock_off	com.sun.tools.javac.file.PathFileObject.toBinaryName(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;	1023	call_direct,call_dynamic,reference_constant,refs	whole_caller_syntax_only
+startup_stock_off	com.sun.tools.javac.file.PathFileObject.removeExtension(Ljava/lang/String;)Ljava/lang/String;	1023	branch,call_dynamic,reference_constant,refs	whole_caller_syntax_only
+startup_stock_off	com.sun.tools.javac.util.Assert.checkNonNull(Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object;	895	branch,call_direct,call_dynamic,cast,refs	whole_caller_syntax_only
+startup_stock_off	com.sun.tools.javac.file.JavacFileManager.getLocationAsPaths(Ljavax/tools/JavaFileManager$Location;)Ljava/util/Collection;	895	call_direct,call_dynamic,getfield,refs	whole_caller_syntax_only
+startup_stock_off	com.sun.tools.javac.code.ClassFinder$1.next()Ljava/lang/Object;	895	call_dynamic,refs	whole_caller_syntax_only
+startup_stock_off	com.sun.tools.javac.code.Scope.findFirst(Lcom/sun/tools/javac/util/Name;)Lcom/sun/tools/javac/code/Symbol;	895	call_dynamic,getstatic,refs	whole_caller_syntax_only
+warm_shared_hold_on	com.sun.tools.javac.jvm.Items$AssignItem.drop()V	1791	call_dynamic,getfield,refs	whole_caller_syntax_only
+warm_shared_hold_on	com.sun.tools.javac.jvm.Code.emitInvokestatic(Lcom/sun/tools/javac/code/Symbol;Lcom/sun/tools/javac/code/Type;)V	1791	branch,call_direct,call_dynamic,getfield,refs	whole_caller_syntax_only
+warm_shared_hold_on	com.sun.tools.javac.code.Types$6.visitType(Lcom/sun/tools/javac/code/Type;Ljava/lang/Object;)Ljava/lang/Object;	1791	call_dynamic,cast,refs	whole_caller_syntax_only
+warm_shared_hold_on	com.sun.tools.javac.code.Types$6.visitType(Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/code/Type;)Ljava/lang/Boolean;	1791	branch,call_direct,call_dynamic,getfield,refs	whole_caller_syntax_only
+warm_shared_hold_on	com.sun.tools.javac.jvm.PoolWriter.putSignature(Lcom/sun/tools/javac/code/Symbol;)I	1791	branch,call_dynamic,getfield,getstatic,refs	whole_caller_syntax_only
+warm_shared_hold_on	com.sun.tools.javac.jvm.ClassWriter.writeNestHostIfNeeded(Lcom/sun/tools/javac/code/Symbol$ClassSymbol;)I	1791	branch,call_dynamic,getfield,getstatic,refs	whole_caller_syntax_only

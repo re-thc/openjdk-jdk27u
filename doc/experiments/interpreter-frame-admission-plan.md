@@ -1,5 +1,10 @@
 # Normal interpreter admission: next-stage design and opportunity limit
 
+Sequencing update: [the semantic expansion proposal](interpreter-frame-semantic-plan.md)
+supersedes automatic admission as the next implementation. Admission for the
+current narrow subset is deferred; this earlier design is retained as context,
+not authorization to implement or measure it.
+
 This plan starts from qualified runtime source `452b85eef42` and evidence
 checkpoint `5618c527475`. It changes no runtime source, opcode support, tier
 policy or existing default, and runs no JVM, benchmark, build or profiler.
