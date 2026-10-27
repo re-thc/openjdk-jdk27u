@@ -447,8 +447,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      */
     public void close() throws IOException {
         if (!closed) {
-            super.close();
-            closed = true;
+            try {
+                super.close();
+            } finally {
+                closed = true;
+            }
         }
     }
 
