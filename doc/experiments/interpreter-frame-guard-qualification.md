@@ -133,3 +133,8 @@ The new WhiteBox-only hook encoding changes the test-enabled interpreter
 image; old timing cohorts remain separate. No new CPU, wall, repayment or
 throughput estimate is inferred from these correctness tests. The early-tier
 admission and application-payoff questions remain open.
+
+A subsequent [six-JVM matched comparison](interpreter-frame-match.md) measures
+the preserved observed reference against the observation-free route, rotates
+first preparation, and retains all request/setup/execution outcomes. It changes
+only the measurement harness and makes no application-adoption claim.
