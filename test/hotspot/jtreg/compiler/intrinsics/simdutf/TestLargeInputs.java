@@ -127,6 +127,25 @@ public class TestLargeInputs {
             same(name + " bad at char " + c, text.substring(0, c) + "\ufffd" + text.substring(c),
                     new String(bad, StandardCharsets.UTF_8));
         }
+        // Isolated malformed bytes, a short and a long stretch apart, and a dense stretch
+        // that the loops handle between long ones
+        for (int gap : new int[]{97, 997, 20011}) {
+            StringBuilder expected = new StringBuilder(text.length() + chars / gap + 2);
+            ByteArrayOutputStream bad = new ByteArrayOutputStream(bytes.length + chars / gap + 2);
+            int from = 0;
+            for (int c = gap; c < chars; c += gap) {
+                if (Character.isLowSurrogate(text.charAt(c))) c--;
+                byte[] piece = referenceEncode(text.substring(from, c));
+                bad.write(piece, 0, piece.length);
+                bad.write(0xff);
+                expected.append(text, from, c).append('\ufffd');
+                from = c;
+            }
+            byte[] tail = referenceEncode(text.substring(from));
+            bad.write(tail, 0, tail.length);
+            expected.append(text, from, chars);
+            same(name + " bad every " + gap, expected.toString(), new String(bad.toByteArray(), StandardCharsets.UTF_8));
+        }
         byte[] cut = Arrays.copyOf(bytes, bytes.length + 1);
         cut[bytes.length] = (byte) 0xe4;                    // the start of a three-byte sequence
         same(name + " cut", text + "�", new String(cut, StandardCharsets.UTF_8));
@@ -145,6 +164,22 @@ public class TestLargeInputs {
                 same(name + " lone " + Integer.toHexString(lone) + " at " + at, referenceEncode(s),
                         s.getBytes(StandardCharsets.UTF_8));
             }
+        }
+    }
+
+    private static void encodeSparse(Random random, int chars, int kind) {
+        String text = text(random, chars, kind);
+        for (int gap : new int[]{97, 997, 20011}) {
+            StringBuilder sb = new StringBuilder(text);
+            for (int c = gap; c < chars; c += gap) {
+                // Replace a whole character, or the halves of a pair, so that the pairs around stay whole
+                if (Character.isLowSurrogate(sb.charAt(c))) c--;
+                if (Character.isHighSurrogate(sb.charAt(c))) sb.setCharAt(c + 1, 'z');
+                sb.setCharAt(c, (c & 1) == 0 ? '\ud800' : '\udc00');
+            }
+            String s = sb.toString();
+            same("encode kind=" + kind + " chars=" + chars + " lone every " + gap, referenceEncode(s),
+                    s.getBytes(StandardCharsets.UTF_8));
         }
     }
 
@@ -204,6 +239,7 @@ public class TestLargeInputs {
             for (int kind = 0; kind < 3; kind++) {
                 decode(random, chars, kind);
                 encode(random, chars, kind);
+                encodeSparse(random, chars, kind);
             }
         }
         for (int length : light ? new int[]{3 * (1 << 18) + 1, 2_000_003}

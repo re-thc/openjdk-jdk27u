@@ -1264,6 +1264,9 @@ public final class String
     // most UTF8_BULK_MAX source bytes per call.
     private static final int UTF8_BULK_MIN = 32;
     private static final int UTF8_BULK_MAX = 1 << 20;
+    // The bytes or chars the loops convert before they offer a range to the intrinsic again
+    // after a call that stopped near its start
+    private static final int UTF8_BULK_BACKOFF = 256;
 
     // Converts the longest prefix of complete, valid UTF-8 whose characters are all
     // Latin-1, reading and writing the given storage as (object, address) pairs, and
@@ -1322,16 +1325,25 @@ public final class String
             throws E {
         // The intrinsic takes ranges of a bounded length and declines at malformed input.
         // Reaching here, convert the valid prefix in calls of bounded length, so that a long
-        // range or a late malformed byte still costs one pass of the library and the loop
-        // below only sees what follows the prefix.
-        if (sl - sp >= UTF8_BULK_MIN) {
-            long r = UTF_8.decodeRun(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, sl - sp,
-                                     dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) dp << 1),
-                                     (dst.length >> 1) - dp);
-            sp += (int) (r >>> 32);
-            dp += (int) r;
-        }
+        // range or a late malformed byte still costs one pass of the library, and again after
+        // each malformed sequence that follows a long prefix. The loop below only sees the
+        // sequences the library does not convert, and everything while it is not worth a call.
+        int retry = sp;
         while (sp < sl) {
+            if (sp >= retry && sl - sp >= UTF8_BULK_MIN) {
+                long r = UTF_8.decodeRun(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, sl - sp,
+                                         dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) dp << 1),
+                                         (dst.length >> 1) - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                // After a long prefix, a malformed sequence is likely isolated; after a short
+                // one, leave a stretch to the loop before trying again
+                retry = sp + (consumed >= UTF8_BULK_MIN ? 1 : UTF8_BULK_BACKOFF);
+                if (sp >= sl) {
+                    break;
+                }
+            }
             int b1 = src[sp++];
             if (b1 >= 0) {
                 StringUTF16.putChar(dst, dp++, (char) b1);
@@ -1636,15 +1648,21 @@ public final class String
                                                             byte[] dst, int dp,
                                                             Class<E> exClass) throws E {
         int sl = val.length >> 1;
-        // As in decodeUTF8_UTF16: the valid prefix, in calls of bounded length, before the
-        // loop that handles unpaired surrogates
-        if (sl - sp >= UTF8_BULK_MIN) {
-            long r = UTF_8.encodeRun(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) sp << 1), sl - sp,
-                                     dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dst.length - dp);
-            sp += (int) (r >>> 32);
-            dp += (int) r;
-        }
+        // As in decodeUTF8_UTF16: the valid prefix, in calls of bounded length, before and
+        // between the unpaired surrogates that the loop handles
+        int retry = sp;
         while (sp < sl) {
+            if (sp >= retry && sl - sp >= UTF8_BULK_MIN) {
+                long r = UTF_8.encodeRun(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) sp << 1), sl - sp,
+                                         dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dst.length - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                retry = sp + (consumed >= UTF8_BULK_MIN ? 1 : UTF8_BULK_BACKOFF);
+                if (sp >= sl) {
+                    break;
+                }
+            }
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;
