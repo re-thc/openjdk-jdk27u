@@ -1,5 +1,9 @@
 # Direct baseline: fresh-executor validation of the allocation correction
 
+The subsequent [whole-path budget and worker-preparation study](direct-baseline-budget.md)
+records the measured request/install/execution gap, the isolated structural
+correction and its adverse application results.
+
 The clean `89a916a84d61d78fc2c454817797f5cefc9495d5` compiler now builds and
 passes all five direct-baseline tests on release and fastdebug. A bounded
 comparison favors it over the clean `92c064da3d25f2e96d234e3b2964ef4c9a345f7e`

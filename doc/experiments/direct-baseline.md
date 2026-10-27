@@ -1,5 +1,9 @@
 # Direct bytecode baseline compiler prototype
 
+The subsequent [whole-path budget and worker-preparation study](direct-baseline-budget.md)
+records the measured request/install/execution gap, the isolated structural
+correction and its adverse application results.
+
 The independent audit found and fixed entry-barrier, queue-priority and
 profile-accounting defects. See [causal diagnosis](direct-baseline-diagnosis.md)
 and [earlier results and retained evidence](direct-baseline-results.md).
