@@ -5,14 +5,14 @@ comparison. Earlier low-coverage timings remain diagnostic observations about
 the partial prototype. They are not a verdict on the complete proposed tier.
 No new application timing comparison has been run after this requirement.
 
-The qualified local implementation through `f04c489ef3a` includes casts,
-ordinary dynamic calls, constructors, allocation, reference constants, explicit
-throws, common array/stack/value operations, switches, verified block states,
-backward branches, safepoint polls and ordinary OSR handoff. All thirteen focused
-tests pass in release and fastdebug. The last census reaches 73.22% startup /
-72.41% warm on its own eligible populations, and 70.09% / 68.12% on the complete
-frozen reference populations. The 80% gate remains unmet; application timing
-remains held. Test qualification is not a performance claim.
+The qualified local implementation through `5d1c9676077` supports direct
+int/long/reference bytecode emission, ordinary calls/constructors, allocation,
+verified joins and backward branches. All fourteen focused tests pass in release
+and fastdebug; the G1 AOT code-cache smoke also passes. The latest frozen method
+coverage is 80.73% startup / 78.41% warm. Actual early-entry coverage is 68.30% /
+78.34%. **The combined 80% gate remains unmet and application timing is held.**
+The method denominators remain 3,056/5,697; 2,445/4,558 are target counts, not
+replacement denominators. No default or public change is made.
 
 ## Fixed scope and denominators
 
@@ -138,6 +138,57 @@ balance, no ordinary admission is missing, and census instrumentation has been
 removed with production release rebuilt. Larger own-population entry windows
 include changes in ordinary admission timing and are not exclusive interpreter
 execution saved. No timed application comparison has been made.
+
+The lazy allocation-resolution and long batches report:
+
+| Metric | Lazy startup | Long startup | Lazy warm | Long warm |
+|---|---:|---:|---:|---:|
+| Own eligible population | 3052 | 3054 | 5701 | 5698 |
+| Eligible methods installed / used | 2416 / 2160 | 2563 / 2309 | 4402 / 4287 | 4714 / 4621 |
+| Own-population method coverage | 79.16% | 83.92% | 77.21% | 82.73% |
+| Early Java entries | 804315 | 819849 | 3067326 | 3120612 |
+| Actual direct entries | 509249 | 559960 | 2232803 | 2444622 |
+| Execution-entry coverage | 63.31% | 68.30% | 72.79% | 78.34% |
+| Frozen reference methods credited | 2319 / 3056 | 2467 / 3056 | 4155 / 5697 | 4467 / 5697 |
+| Frozen method coverage | 75.88% | 80.73% | 72.93% | 78.41% |
+
+Sources are `7c2dd4b026f` (lazy resolution) and `5d1c9676077` (long values).
+The long capture matches all 2,956/5,438 named reference identities; 100/259
+hidden or ambiguous identities remain uncredited in the complete frozen divisor.
+Startup exceeds its 2,445-method target by 22, while warm remains 91 methods
+short of 4,558. Own-population percentages above 80% do not satisfy the frozen
+warm target or the separate actual early-entry requirement. All counter
+identities balance with zero missing admissions. Both census patches have been
+removed and production release rebuilt.
+
+## What still executes in the interpreter
+
+The retained long census provides this disjoint entry ledger. Percentages use
+each capture's full early Java-entry denominator, including below-threshold
+methods. It measures entry locations, not CPU, completed invocations or exclusive
+interpreter work saved.
+
+| Entry share | Startup | Warm |
+|---|---:|---:|
+| Actual direct entries | 68.30% | 78.34% |
+| First 32 entries, including short-lived methods | 16.10% | 6.29% |
+| Interpreted after 32 in methods eventually installed | 4.23% | 1.25% |
+| Handler-bearing methods after 32 | 3.36% | 5.10% |
+| Unresolved/unsupported calls after 32 | 2.08% | 1.85% |
+| Intrinsic-marked roots after 32 | 1.97% | 1.15% |
+| Remaining refusals/restrictions/admission after 32 | 3.96% | 6.03% |
+
+No direct entry occurs within the first 32. The installed-method interpreter
+bucket combines possible service/install lag, deoptimization/reentry and late
+installation relative to ordinary admission; these aggregate counters cannot
+assign one cause to all of it. Handler entries are the next largest missing
+semantic group in warm execution. Covering them is a useful next batch, not a
+promise that every such method becomes compilable or that its entries save CPU.
+Startup also needs attention to unresolved calls and installation/use timing;
+method-count tuning alone cannot close its 11.70-point actual-entry shortfall.
+The [complete ledger](direct-baseline-data/coverage80-entry-loss-long.tsv)
+retains smaller categories and exact entry counts. Thresholds and the inherited
+ordinary-tier hold remain unchanged.
 
 The first 32 entries and short-lived methods constrain execution coverage.
 Perfect service after entry 32 could cover at most 81.37% of the reference
@@ -335,6 +386,64 @@ stub ID on AMD64. This is a concrete next allocation boundary, not permission to
 substitute unconditional deopts for missing semantics. Truly unloaded constructor
 calls may still fail separately; no coverage gain is assumed before qualification
 and a frozen-population census.
+
+## Qualified lazy resolution and category-2 values
+
+`7c2dd4b026f` resolves cold new/anewarray operands through the original Method
+and bytecode BCI in one focused AMD64 Runtime1 helper. It holds Method/CP/class
+metadata across GC, calls the real CP resolver (including saved failures and
+loader/access checks), checks instance validity before initialization, and never
+initializes array components. Already resolved/initialized sites retain existing
+Klass-based stubs. Return maps and immediate oop spilling are unchanged. A
+reviewed AMD64 stub declaration and AOT external-address registration preserve
+stub enumeration and archive relocation. This removes eager refusal at cold
+allocation sites; it does not widen unrelated constructor/call restrictions.
+
+All thirteen direct tests pass in release and fastdebug. Coverage includes cold
+successful/failing initialization exactly once, unresolved reference arrays,
+cached class-resolution and access errors, GC aliases, and allocation-return
+deoptimization. Fastdebug now forces the distinct instance-new return shape,
+checks constructor/init effects and exact thread allocation bytes, and retains
+the reference-array return stress. This closes the earlier instance-return test
+gap. A fixture initially shadowed a local variable; that Java compilation failure
+is retained separately and corrected. The existing AOTCodeTest#g1 passed with
+the new Runtime1 stub/helper, including serialization and loading of C1 blobs.
+
+`5d1c9676077` represents a long as [T_LONG,T_VOID] Java slots, with its64-bit
+payload in the first canonical8-byte cell. The companion is never read as a
+value or mapped as an oop. Signatures, arguments, stack depths and local indices
+count Java slots; the ordinary x86 Java convention assigns each long one64-bit
+ABI location and skips synthetic VOID moves/pops. Scope data encodes constant0
+then Location::lng, preserving interpreter reconstruction. Verified frame
+append/full/chop operations count logical entries and expand/remove complete
+long pairs. Stores invalidate overlapping long heads/tails as the verifier does.
+
+Emission includes long loads/stores/constants, fields/arrays, arithmetic,
+conversions, comparisons, shifts, division/remainder and returns. Long access
+helpers use their implicit rax/noreg contract. Zero divisors preserve canonical
+operands before fallback; the existing corrected x86 sequence handles MIN/-1.
+A bounded stack-operation helper checks whole-value boundaries and emits all
+JVMS category-1/category-2 shuffle forms directly. No C1 IR, inlining framework
+or register allocator is added.
+
+Independent source review checked these exact contracts and the implementation.
+It caught the implicit long-access register requirement before application and
+improved the fixture: arithmetic no longer cancels its bitwise terms; shuffle
+folds distinguish operand order; arithmetic/comparison oracles remain interpreted;
+caller deoptimization requires a live direct method and positive invalidation;
+long OSR is observed in an active loop. The revised raw bytecode fixture also
+passed the stock JDK interpreter independently of this compiler. All fourteen
+focused tests pass on both builds, including mixed long/reference/int arguments
+beyond the register limit, C1/C2 callees and replacement, GC and long return TOS,
+a retained long below call arguments, local overlap, exceptions, and long OSR.
+
+The next coherent coverage boundary is handler entry and normal exception-table
+lookup through the existing Runtime1/SharedRuntime machinery, with verifier
+frames and precise canonical roots. This needs separate handler landing pads,
+correct TLS exception extraction/clearing, throwing-PC maps and nmethod handler
+metadata; simply dropping the current refusal guard is insufficient. Intrinsic
+roots, remaining call forms, size/runtime restrictions and installation-use lag
+stay visible. Broader own-population method coverage is not the adoption gate.
 
 ## Shortest coherent path toward the gate
 
