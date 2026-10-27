@@ -40,6 +40,7 @@
 #include "code/debugInfo.hpp"
 #include "compiler/oopMap.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
@@ -213,17 +214,40 @@ class Prepared : public ResourceObj {
           break;
         case Bytecodes::_bipush: case Bytecodes::_sipush: if (!push(s, T_INT)) return false;
           break;
-        case Bytecodes::_ldc: case Bytecodes::_ldc_w:
-          if (Bytecode_loadconstant(handle,bci).result_type() != T_INT || !push(s, T_INT)) return fail("constant type");
+        case Bytecodes::_ldc: case Bytecodes::_ldc_w: {
+          BasicType t = kind(Bytecode_loadconstant(handle,bci).result_type());
+          if (!supported_type(t) || !push(s, t)) return fail("constant type");
           break;
+        }
         case Bytecodes::_iinc:
           if (bs.get_index() >= _nl || s->locals[bs.get_index()] != T_INT) return fail("iinc type");
           break;
         case Bytecodes::_pop: if (!pop(s, T_ILLEGAL)) return false;
           break;
+        case Bytecodes::_pop2:
+          if (!pop(s, T_ILLEGAL) || !pop(s, T_ILLEGAL)) return false;
+          break;
+        case Bytecodes::_dup_x1: case Bytecodes::_dup_x2: case Bytecodes::_dup2: case Bytecodes::_swap: {
+          // This subset contains only category-1 values. Category-2 forms
+          // remain excluded by signature/opcode checks until supported.
+          int n = bc == Bytecodes::_dup_x2 ? 3 : 2;
+          if (s->sp < n) return fail("stack permutation");
+          BasicType a=s->stack[s->sp-1], b=s->stack[s->sp-2];
+          BasicType c=n==3 ? s->stack[s->sp-3] : T_ILLEGAL;
+          s->sp -= n;
+          if (bc == Bytecodes::_dup2) {
+            if (!push(s,b) || !push(s,a) || !push(s,b) || !push(s,a)) return false;
+          } else if (bc == Bytecodes::_swap) {
+            if (!push(s,a) || !push(s,b)) return false;
+          } else {
+            if (!push(s,a) || (n==3 && !push(s,c)) || !push(s,b) || !push(s,a)) return false;
+          }
+          break;
+        }
         case Bytecodes::_dup:
           if (s->sp == 0 || !push(s, s->stack[s->sp-1])) return fail("dup type");
           break;
+        case Bytecodes::_idiv: case Bytecodes::_irem:
         case Bytecodes::_iadd: case Bytecodes::_isub: case Bytecodes::_imul:
         case Bytecodes::_iand: case Bytecodes::_ior: case Bytecodes::_ixor:
         case Bytecodes::_ishl: case Bytecodes::_ishr: case Bytecodes::_iushr:
@@ -254,8 +278,9 @@ class Prepared : public ResourceObj {
         case Bytecodes::_iaload: case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:
           if (!pop(s, T_INT) || !pop(s, T_OBJECT) || !push(s, bc == Bytecodes::_aaload ? T_OBJECT : T_INT)) return false;
           break;
-        case Bytecodes::_iastore:
-          if (!pop(s, T_INT) || !pop(s, T_INT) || !pop(s, T_OBJECT)) return false;
+        case Bytecodes::_iastore: case Bytecodes::_bastore: case Bytecodes::_castore: case Bytecodes::_sastore:
+        case Bytecodes::_aastore:
+          if (!pop(s, bc == Bytecodes::_aastore ? T_OBJECT : T_INT) || !pop(s, T_INT) || !pop(s, T_OBJECT)) return false;
           break;
         case Bytecodes::_invokestatic: case Bytecodes::_invokevirtual: case Bytecodes::_invokespecial: case Bytecodes::_invokeinterface: {
           BasicSignature* declared = new BasicSignature(_method->constants()->signature_ref_at(bs.get_index_u2(), bc));
@@ -276,8 +301,28 @@ class Prepared : public ResourceObj {
           if (!pop(s, bc == Bytecodes::_ireturn ? T_INT : T_OBJECT)) return false;
           fall = false;
           break;
+        case Bytecodes::_athrow:
+          if (!pop(s,T_OBJECT)) return false;
+          fall = false;
+          break;
         case Bytecodes::_return: fall = false;
           break;
+        case Bytecodes::_tableswitch: case Bytecodes::_lookupswitch: {
+          if (!pop(s,T_INT)) return false;
+          if (bc == Bytecodes::_tableswitch) {
+            Bytecode_tableswitch sw(_method,_method->bcp_from(bci));
+            if (sw.default_offset() <= 0 || !merge(bci+sw.default_offset(),s)) return fail("backward/invalid switch");
+            for (int i=0;i<sw.length();i++)
+              if (sw.dest_offset_at(i) <= 0 || !merge(bci+sw.dest_offset_at(i),s)) return fail("backward/invalid switch");
+          } else {
+            Bytecode_lookupswitch sw(_method,_method->bcp_from(bci));
+            if (sw.default_offset() <= 0 || !merge(bci+sw.default_offset(),s)) return fail("backward/invalid switch");
+            for (int i=0;i<sw.number_of_pairs();i++)
+              if (sw.pair_at(i).offset() <= 0 || !merge(bci+sw.pair_at(i).offset(),s)) return fail("backward/invalid switch");
+          }
+          fall = false;
+          break;
+        }
         case Bytecodes::_ifeq: case Bytecodes::_ifne: case Bytecodes::_iflt:
         case Bytecodes::_ifge: case Bytecodes::_ifgt: case Bytecodes::_ifle:
         case Bytecodes::_ifnull: case Bytecodes::_ifnonnull:
@@ -335,7 +380,7 @@ class Emitter : StackObj {
   Address local(int i) { return Address(rsp, local_offset(i)); }
   Address stack(int i) { return Address(rsp, stack_offset(i)); }
 
-  void safepoint(int bci, State* s, int expression_sp = -1, bool reexecute = false, bool return_oop = false) {
+  void safepoint(int bci, State* s, int expression_sp = -1, bool reexecute = false, bool return_oop = false, bool exception_oop = false) {
     int pc = _masm->offset();
     _last_scope_pc = pc;
     OopMap* map = new OopMap(_frame_words * VMRegImpl::slots_per_word, 0);
@@ -354,6 +399,7 @@ class Emitter : StackObj {
       if (i < (expression_sp < 0 ? s->sp : expression_sp))
         expressions.append(new LocationValue(Location::new_stk_loc(t == T_OBJECT ? Location::oop : Location::normal, stack_offset(i))));
     }
+    if (exception_oop) map->set_oop(rax->as_VMReg());
     _debug->add_safepoint(pc, map);
     _debug->describe_scope(pc, methodHandle(), _method, bci, reexecute, false, return_oop,
                            false, false, _debug->create_scope_values(&locals),
@@ -581,7 +627,7 @@ class Emitter : StackObj {
     }
   }
   void array(Bytecodes::Code bc, int bci, State* s) {
-    bool store = bc == Bytecodes::_iastore;
+    bool store = bc >= Bytecodes::_iastore && bc <= Bytecodes::_sastore;
     int base = s->sp - (store ? 3 : 2);
     if (bc == Bytecodes::_arraylength) base = s->sp - 1;
     __ movptr(rbx, stack(base)); null_check(rbx, bci, s);
@@ -589,14 +635,36 @@ class Emitter : StackObj {
     if (bc == Bytecodes::_arraylength) { __ movl(stack(base), rdx); return; }
     __ movl(rcx, stack(base+1));
     __ cmpl(rcx, rdx); deopt_if(Assembler::below, bci, s);
-    BasicType t = bc == Bytecodes::_aaload ? T_OBJECT :
-                  bc == Bytecodes::_baload ? T_BYTE : bc == Bytecodes::_caload ? T_CHAR :
-                  bc == Bytecodes::_saload ? T_SHORT : T_INT;
-    Address address(rbx, rcx, Address::times( type2aelembytes(t) ), arrayOopDesc::base_offset_in_bytes(t));
+    BasicType t = bc == Bytecodes::_aaload || bc == Bytecodes::_aastore ? T_OBJECT :
+                  bc == Bytecodes::_baload || bc == Bytecodes::_bastore ? T_BYTE :
+                  bc == Bytecodes::_caload || bc == Bytecodes::_castore ? T_CHAR :
+                  bc == Bytecodes::_saload || bc == Bytecodes::_sastore ? T_SHORT : T_INT;
     if (store) {
-      __ movl(rax, stack(base+2));
+      __ movptr(rax, stack(base+2));
+      if (t == T_OBJECT) {
+        Label good;
+        __ testptr(rax,rax); __ jcc(Assembler::zero,good);
+        __ load_klass(rdx,rax,rscratch1);
+        __ load_klass(r8,rbx,rscratch1);
+        __ movptr(r8,Address(r8,ObjArrayKlass::element_klass_offset()));
+        // rcx is reserved by the secondary-super helper. Reload all store
+        // operands from canonical slots after the subtype check.
+        __ check_klass_subtype(rdx,r8,r9,good);
+        deopt_at(bci,s);
+        __ bind(good);
+        __ movptr(rbx,stack(base)); __ movl(rcx,stack(base+1)); __ movptr(rax,stack(base+2));
+      } else if (t == T_BYTE) {
+        Label byte_array;
+        __ load_klass(rdx,rbx,rscratch1);
+        __ testl(Address(rdx,Klass::layout_helper_offset()),Klass::layout_helper_boolean_diffbit());
+        __ jcc(Assembler::zero,byte_array);
+        __ andl(rax,1);
+        __ bind(byte_array);
+      }
+      Address address(rbx,rcx,Address::times(type2aelembytes(t)),arrayOopDesc::base_offset_in_bytes(t));
       __ access_store_at(t, IN_HEAP | IS_ARRAY, address, rax, r8, r9, r10);
     } else {
+      Address address(rbx,rcx,Address::times(type2aelembytes(t)),arrayOopDesc::base_offset_in_bytes(t));
       __ access_load_at(t, IN_HEAP | IS_ARRAY, rax, address, r10);
       __ movptr(stack(base), rax);
     }
@@ -666,7 +734,7 @@ class Emitter : StackObj {
       } else if (bc >= Bytecodes::_iconst_m1 && bc <= Bytecodes::_iconst_5) {
         __ movl(stack(sp), bc - Bytecodes::_iconst_0);
       } else switch (bc) {
-        case Bytecodes::_nop: case Bytecodes::_pop: break;
+        case Bytecodes::_nop: case Bytecodes::_pop: case Bytecodes::_pop2: break;
         case Bytecodes::_aconst_null: __ movptr(stack(sp), NULL_WORD);
           break;
         case Bytecodes::_bipush: __ movl(stack(sp), (jbyte)bs.get_constant_u1());
@@ -675,13 +743,39 @@ class Emitter : StackObj {
           break;
         case Bytecodes::_ldc: case Bytecodes::_ldc_w: {
           ciConstant value=bs.get_constant();
-          if (value.basic_type()!=T_INT) { fail("constant type"); return; }
-          __ movl(stack(sp),value.as_int());
+          if (_env->failing() || !value.is_valid() || kind(value.basic_type()) != _states[bs.next_bci()]->stack[sp]) {
+            fail("unresolved constant"); return;
+          }
+          if (kind(value.basic_type()) == T_INT) __ movl(stack(sp),value.as_int());
+          else {
+            ciObject* object=value.as_object();
+            if (!object->is_loaded()) { fail("unresolved object constant"); return; }
+            if (object->is_null_object()) __ movptr(stack(sp),NULL_WORD);
+            else { __ movoop(rax,object->constant_encoding()); __ movptr(stack(sp),rax); }
+          }
           break;
         }
         case Bytecodes::_iinc: __ addl(local(bs.get_index()), bs.get_iinc_con());
           break;
         case Bytecodes::_dup: __ movptr(rax, stack(sp-1)); __ movptr(stack(sp), rax);
+          break;
+        case Bytecodes::_dup_x1: case Bytecodes::_dup_x2: case Bytecodes::_dup2: case Bytecodes::_swap:
+          __ movptr(rax,stack(sp-1)); __ movptr(rbx,stack(sp-2));
+          if (bc == Bytecodes::_dup2) {
+            __ movptr(stack(sp),rbx); __ movptr(stack(sp+1),rax);
+          } else if (bc == Bytecodes::_swap) {
+            __ movptr(stack(sp-2),rax); __ movptr(stack(sp-1),rbx);
+          } else if (bc == Bytecodes::_dup_x1) {
+            __ movptr(stack(sp-2),rax); __ movptr(stack(sp-1),rbx); __ movptr(stack(sp),rax);
+          } else {
+            __ movptr(rcx,stack(sp-3));
+            __ movptr(stack(sp-3),rax); __ movptr(stack(sp-2),rcx); __ movptr(stack(sp-1),rbx); __ movptr(stack(sp),rax);
+          }
+          break;
+        case Bytecodes::_idiv: case Bytecodes::_irem:
+          __ movl(rcx,stack(sp-1)); __ testl(rcx,rcx); deopt_if(Assembler::notZero,bci,s);
+          __ movl(rax,stack(sp-2)); __ corrected_idivl(rcx);
+          __ movl(stack(sp-2),bc == Bytecodes::_idiv ? rax : rdx);
           break;
         case Bytecodes::_iadd: case Bytecodes::_isub: case Bytecodes::_imul:
         case Bytecodes::_iand: case Bytecodes::_ior: case Bytecodes::_ixor:
@@ -728,6 +822,7 @@ class Emitter : StackObj {
         case Bytecodes::_checkcast: case Bytecodes::_instanceof:
           if (!type_check(bs, bc, bci, s)) return;
           break;
+        case Bytecodes::_bastore: case Bytecodes::_castore: case Bytecodes::_sastore: case Bytecodes::_aastore:
         case Bytecodes::_arraylength: case Bytecodes::_iaload: case Bytecodes::_iastore:
         case Bytecodes::_baload: case Bytecodes::_caload: case Bytecodes::_saload: case Bytecodes::_aaload:
           array(bc, bci, s);
@@ -755,6 +850,33 @@ class Emitter : StackObj {
           // the normal constructor release, including final reference fields.
           if (_method->is_object_initializer()) __ membar(Assembler::Membar_mask_bits(Assembler::StoreStore | Assembler::LoadStore));
           epilog();
+          break;
+        case Bytecodes::_athrow: {
+          __ movptr(rax,stack(sp-1)); null_check(rax,bci,s);
+          // The standard exception stub installs rdx as the throwing PC and
+          // saves live registers before entering the VM, as for C1 athrow.
+          int pc=__ offset();
+          safepoint(bci,s,-1,false,false,true);
+          __ lea(rdx,InternalAddress(_code->insts_begin()+pc));
+          __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_handle_exception_nofpu_id)));
+          __ should_not_reach_here();
+          break;
+        }
+        case Bytecodes::_tableswitch: case Bytecodes::_lookupswitch:
+          __ movl(rax,stack(sp-1));
+          if (bc == Bytecodes::_tableswitch) {
+            Bytecode_tableswitch sw(&bs);
+            for (int i=0;i<sw.length();i++) {
+              __ cmpl(rax,sw.low_key()+i); __ jcc(Assembler::equal,_labels[bci+sw.dest_offset_at(i)]);
+            }
+            __ jmp(_labels[bci+sw.default_offset()]);
+          } else {
+            Bytecode_lookupswitch sw(&bs);
+            for (int i=0;i<sw.number_of_pairs();i++) {
+              __ cmpl(rax,sw.pair_at(i).match()); __ jcc(Assembler::equal,_labels[bci+sw.pair_at(i).offset()]);
+            }
+            __ jmp(_labels[bci+sw.default_offset()]);
+          }
           break;
         case Bytecodes::_goto: __ jmp(_labels[bs.get_dest()]);
           break;

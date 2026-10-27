@@ -35,8 +35,8 @@ public class DirectBaselinePreparationTest {
     static class Box { int value = 17; Object reference = new Object(); }
     static final class Targets {
         static int leaf(int x) { return x + 5; }
-        static int fieldThenDivision(Box box, int x) { return box.value + x / 3; }
-        static int callThenDivision(int x) { return leaf(x) + x / 3; }
+        static int fieldThenFloatDivision(Box box, int x) { return box.value + (int)(x / 3.0); }
+        static int callThenFloatDivision(int x) { return leaf(x) + (int)(x / 3.0); }
         static Object supported(Box box) { return box.reference; }
     }
     static void check(boolean condition) { if (!condition) throw new AssertionError(); }
@@ -51,8 +51,8 @@ public class DirectBaselinePreparationTest {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Box box = new Box();
         for (int i = 0; i < 64; i++) {
-            check(Targets.fieldThenDivision(box, i) == 17 + i / 3);
-            check(Targets.callThenDivision(i) == i + 5 + i / 3);
+            check(Targets.fieldThenFloatDivision(box, i) == 17 + i / 3);
+            check(Targets.callThenFloatDivision(i) == i + 5 + i / 3);
             Thread.sleep(1);
         }
         // This later direct task establishes that the earlier FIFO requests
@@ -62,16 +62,16 @@ public class DirectBaselinePreparationTest {
             Thread.sleep(1);
         }
         await(wb, Targets.class.getDeclaredMethod("supported", Box.class), 1);
-        Method field = Targets.class.getDeclaredMethod("fieldThenDivision", Box.class, int.class);
-        Method call = Targets.class.getDeclaredMethod("callThenDivision", int.class);
+        Method field = Targets.class.getDeclaredMethod("fieldThenFloatDivision", Box.class, int.class);
+        Method call = Targets.class.getDeclaredMethod("callThenFloatDivision", int.class);
         for (Method method : new Method[]{field, call}) {
             check(wb.getMethodCompilationLevel(method) == 0);
             check(wb.isMethodCompilable(method, 3));
             check(wb.enqueueMethodForCompilation(method, 3));
             await(wb, method, 3);
         }
-        check(Targets.fieldThenDivision(box, -7) == 15 && Targets.callThenDivision(-7) == -4);
-        try { Targets.fieldThenDivision(null, 0); throw new AssertionError(); }
+        check(Targets.fieldThenFloatDivision(box, -7) == 15 && Targets.callThenFloatDivision(-7) == -4);
+        try { Targets.fieldThenFloatDivision(null, 0); throw new AssertionError(); }
         catch (NullPointerException expected) {}
         System.out.println("DIRECT_PREPARATION_OK");
     }
@@ -84,10 +84,10 @@ public class DirectBaselinePreparationTest {
             "-XX:CompileCommand=dontinline,DirectBaselinePreparationTest$Targets::*",
             DirectBaselinePreparationTest.class.getName(), "child");
         out.shouldHaveExitValue(0).shouldContain("DIRECT_PREPARATION_OK")
-            .shouldContain("direct prepare DirectBaselinePreparationTest$Targets fieldThenDivision(LDirectBaselinePreparationTest$Box;I)I outcome=unsupported bytecode")
-            .shouldContain("direct prepare DirectBaselinePreparationTest$Targets callThenDivision(I)I outcome=unsupported bytecode")
+            .shouldContain("direct prepare DirectBaselinePreparationTest$Targets fieldThenFloatDivision(LDirectBaselinePreparationTest$Box;I)I outcome=unsupported bytecode")
+            .shouldContain("direct prepare DirectBaselinePreparationTest$Targets callThenFloatDivision(I)I outcome=unsupported bytecode")
             .shouldContain("direct install supported(")
-            .shouldNotContain("direct compile DirectBaselinePreparationTest$Targets fieldThenDivision")
-            .shouldNotContain("direct compile DirectBaselinePreparationTest$Targets callThenDivision");
+            .shouldNotContain("direct compile DirectBaselinePreparationTest$Targets fieldThenFloatDivision")
+            .shouldNotContain("direct compile DirectBaselinePreparationTest$Targets callThenFloatDivision");
     }
 }
