@@ -5,7 +5,9 @@ an application win in this experiment. Median javac startup is 486.418 ms off,
 494.301 ms with shared direct priority and 524.251 ms with a dedicated worker.
 Warm measurements remain variable and do not establish neutrality. The direct
 emitter stays opt-in; ordinary C1/C2 code generation and promotion thresholds
-are unchanged. No delayed-C1 promotion experiment follows these results.
+are unchanged in this comparison. The subsequent single bounded
+[delayed-C1 comparison](direct-baseline-delayed-c1.md) uses shared priority;
+these dedicated-worker results remain preserved.
 
 ## Implementation and controls
 

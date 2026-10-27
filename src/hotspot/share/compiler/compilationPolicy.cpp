@@ -1445,6 +1445,24 @@ void CompilationPolicy::method_invocation_event(const methodHandle& mh, const me
     create_mdo(mh, THREAD);
   }
   CompLevel next_level = call_event(mh, level, THREAD);
+  // Local shared-worker experiment: extend only a live, unprofiled direct
+  // activation to 512 invocations. MDO creation above keeps its stock policy;
+  // an earlier profiling opportunity ends this delay immediately. Direct code
+  // retires when that MDO appears, so the interpreter/C1 collect real profiles.
+  if (UseDirectBaseline && !DirectBaselineDedicatedWorker && level == CompLevel_none &&
+      nm != nullptr && nm->is_compiled_by_direct_baseline() && mh->code() == nm && nm->is_in_use() &&
+      (next_level == CompLevel_limited_profile || next_level == CompLevel_full_profile) &&
+      mh->highest_osr_comp_level() == CompLevel_none && !mh->queued_for_compilation() &&
+      mh->method_data() == nullptr && mh->invocation_count() < 512) {
+    if (TraceDirectBaseline) {
+      ResourceMark rm(THREAD);
+      ttyLocker ttyl;
+      tty->print_cr("direct defer %s %s%s total=%d entries=%d until=512",
+                    mh->method_holder()->name()->as_C_string(), mh->name()->as_C_string(), mh->signature()->as_C_string(),
+                    mh->invocation_count(), mh->method_counters()->direct_baseline_entries());
+    }
+    return;
+  }
   if (next_level != level) {
     if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
       compile(mh, InvocationEntryBci, next_level, THREAD);

@@ -805,6 +805,16 @@ JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* current, jint trap_request))
   Deoptimization::DeoptAction action = Deoptimization::trap_request_action(trap_request);
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
 
+  if (TraceDirectBaseline && nm->is_compiled_by_direct_baseline() &&
+      reason == Deoptimization::Reason_unhandled && action == Deoptimization::Action_make_not_entrant) {
+    ResourceMark rm(current);
+    ttyLocker ttyl;
+    tty->print_cr("direct retirement %s %s%s total=%d entries=%d mdo_present=%d queued=%d",
+                  method->method_holder()->name()->as_C_string(), method->name()->as_C_string(), method->signature()->as_C_string(),
+                  method->invocation_count(), method->method_counters()->direct_baseline_entries(),
+                  method->method_data() != nullptr, method->queued_for_compilation());
+  }
+
   if (action == Deoptimization::Action_make_not_entrant) {
     if (nm->make_not_entrant(nmethod::InvalidationReason::C1_DEOPTIMIZE)) {
       if (reason == Deoptimization::Reason_tenured) {

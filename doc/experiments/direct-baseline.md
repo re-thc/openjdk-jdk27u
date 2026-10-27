@@ -3,6 +3,9 @@
 The independent audit found and fixed entry-barrier, queue-priority and
 profile-accounting defects. See [causal diagnosis](direct-baseline-diagnosis.md)
 and [earlier results and retained evidence](direct-baseline-results.md).
+The [scheduling study](direct-baseline-scheduling.md) and
+[single delayed-C1 comparison](direct-baseline-delayed-c1.md) preserve the
+later architecture comparisons and their performance limitations.
 The prototype remains off; application benefit and warmed neutrality are
 required before any adoption claim.
 
@@ -29,12 +32,15 @@ trivial methods, profile creation, OSR, and method-specific scaling matter.
 The separate early interpreter hook defaults to 32 (`DirectBaselineThreshold`).
 It does not modify the ordinary masks or counters. An attempted bit prevents
 repeated requests for the same Method. The new compile reason and compiler
-identity share the C1 worker queue; baseline tasks do not own or clear the
+identity use either shared-priority C1 service or a dedicated direct queue;
+baseline tasks do not own or clear the
 ordinary queued-for-compilation bit. An ordinary request may bypass a pending
 baseline. Queue selection drops stale baseline work, and installation checks
 again under MethodCompileQueue_lock and Compile_lock. An ordinary installed
 method or outstanding ordinary request wins. Ordinary tasks retain their
-blocking/rate selection priority; direct work uses an otherwise available worker.
+blocking/rate selection contracts. Shared service gives direct work priority
+with a bound of eight consecutive selections while ordinary work waits;
+dedicated service adds one worker and never runs ordinary tasks there.
 
 For code-cache storage the nmethod has level 1, with compiler type
 `compiler_direct_baseline`. Policy treats it as level 0 and it does not update
@@ -50,8 +56,13 @@ collected in the baseline. Methods with an MDO fall back instead of installing
 direct code. When an MDO appears after installation, the direct entry counts
 the current invocation normally, retires its nmethod and deoptimizes before
 executing any bytecode. That activation continues in the interpreter and
-records its profiles. There can be an interpreted interval before unchanged
-ordinary C1 admission. MC/MDO origins, notification masks, profile maturity and
+records its profiles. There can be an interpreted interval before
+ordinary C1 admission. The local shared-service candidate can hold a live,
+MDO-free direct activation's level 2/3 admission below 512 calls, after stock
+MDO policy has run. Earlier MDO creation, OSR history, pending ordinary work
+and simple/C2 bypasses end or skip that hold. It delays C1's own profiling
+opportunity; it does not extend unprofiled execution through an existing MDO.
+MC/MDO origins, notification masks, profile maturity and
 C2 profile scaling retain their ordinary meanings. Explicit C2 bypasses remain
 valid. Loops are
 excluded, retaining interpreter OSR rather than stranding a loop in baseline

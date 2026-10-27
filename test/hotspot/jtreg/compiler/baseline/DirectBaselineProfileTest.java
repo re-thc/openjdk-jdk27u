@@ -25,6 +25,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CICompilerCount=2 -XX:Tier3LoadFeedback=0 -XX:+UseDirectBaseline -XX:+TraceDirectBaseline -XX:CompileCommand=dontinline,DirectBaselineProfileTest::* DirectBaselineProfileTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CICompilerCount=2 -XX:Tier3LoadFeedback=0 -XX:+UseDirectBaseline -XX:-DirectBaselineDedicatedWorker -XX:+TraceDirectBaseline -XX:CompileCommand=dontinline,DirectBaselineProfileTest::* DirectBaselineProfileTest 512
  */
 import java.lang.reflect.Method;
 import jdk.test.whitebox.WhiteBox;
@@ -40,6 +41,7 @@ public class DirectBaselineProfileTest {
     }
     static void check(boolean condition) { if (!condition) throw new AssertionError(); }
     public static void main(String[] args) throws Exception {
+        int admission = args.length == 0 ? 256 : Integer.parseInt(args[0]);
         Method method = DirectBaselineProfileTest.class.getDeclaredMethod("target", Box.class, int.class);
         Box b = new Box();
         for (int i = 0; i < 64; i++) { check(target(b, i) == 2*i); Thread.sleep(1); }
@@ -50,14 +52,23 @@ public class DirectBaselineProfileTest {
         }
         WB.lockCompilation();
         try {
-            // Counter notifications must still admit ordinary C1 at the same
-            // boundary, even while compilation is blocked. This test alone
-            // disables load feedback so unrelated queued work cannot move it.
-            for (int i = 0; i < 191; i++) check(target(b, i) == 2*i);
-            check(!WB.isMethodQueuedForCompilation(method)); // total 255
-            check(target(b, 191) == 382);
-            check(WB.isMethodQueuedForCompilation(method));  // total 256
-            for (int i = 192; i < 8192; i++) check(target(b, i) == 2*i);
+            // Only this test disables load feedback. The shared candidate may
+            // postpone ordinary C1, while stock MDO creation still runs first.
+            for (int total = 65; total < admission; total++) {
+                check(target(b, total) == 2*total);
+                check(!WB.isMethodQueuedForCompilation(method));
+                if (admission == 512 && (total == 256 || total == 384)) {
+                    check(WB.getMethodData(method) == 0);
+                    check(WB.getMethodCompilationLevel(method) == 1);
+                }
+            }
+            check(target(b, admission) == 2*admission);
+            check(WB.isMethodQueuedForCompilation(method));
+            if (admission == 512) {
+                check(WB.getMethodData(method) != 0);
+                check(WB.getMethodCompilationLevel(method) == 0);
+            }
+            for (int total = admission + 1; total <= 8256; total++) check(target(b, total) == 2*total);
             check(WB.isMethodQueuedForCompilation(method));
             check(WB.getMethodData(method) != 0);
             check(WB.getMethodCompilationLevel(method) == 0);
@@ -72,6 +83,16 @@ public class DirectBaselineProfileTest {
             Thread.sleep(10);
         }
         check(level == 2 || level == 3);
+        if (admission == 512) {
+            long c2Limit = System.nanoTime() + 20_000_000_000L;
+            int calls = 0;
+            while (WB.getMethodCompilationLevel(method) != 4) {
+                check(target(b, calls) == 2*calls);
+                if ((++calls & 15) == 0) Thread.sleep(1);
+                if (System.nanoTime() > c2Limit) throw new AssertionError("no natural C2 progression");
+            }
+            System.out.println("DIRECT_DELAYED_C2_OK calls=" + calls);
+        }
         System.out.println("DIRECT_PROFILE_OK");
     }
 }
