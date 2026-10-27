@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +105,6 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
   static Handle create_from_symbol(const Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
-
-  static void set_compact_strings(bool value);
 
   static int value_offset() { CHECK_INIT(_value_offset); }
   static int coder_offset() { CHECK_INIT(_coder_offset); }

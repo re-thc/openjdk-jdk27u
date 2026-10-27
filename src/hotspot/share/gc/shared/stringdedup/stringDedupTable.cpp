@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,8 +544,6 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
     }
     // That didn't work.  Try as compact latin1.
   }
-  // If not using compact strings then don't need to check further.
-  if (!CompactStrings) return false;
   // Treat value as compact latin1 and try to deduplicate against that.
   // This works even if java_string is not latin1, but has a byte array with
   // the same sequence of bytes as a compact latin1 shared string.

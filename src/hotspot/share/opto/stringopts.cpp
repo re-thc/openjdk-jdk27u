@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1640,20 +1641,15 @@ Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, No
     Node* size = kit.load_array_length(src_array);
     __ set(count, size);
     // Non-constant source string
-    if (CompactStrings) {
-      // Emit runtime check for coder
-      Node* coder = kit.load_String_coder(str, true);
-      __ if_then(coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1)); {
-        // Source is Latin1
-        copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
-      } __ else_();
-    }
+    // Emit runtime check for coder
+    Node* coder = kit.load_String_coder(str, true);
+    __ if_then(coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1)); {
+      // Source is Latin1
+      copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
+    } __ else_();
     // Source is UTF16 (destination too). Simply emit a char arraycopy.
     arraycopy(kit, ideal, src_array, dst_array, T_CHAR, start, __ value(count));
-
-    if (CompactStrings) {
-      __ end_if();
-    }
+    __ end_if();
   }
 
   // Finally sync IdealKit and GraphKit.
@@ -1812,12 +1808,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   Node* length = __ intcon(0);
   // If at least one argument is UTF16 encoded, we can fix the encoding.
   bool coder_fixed = false;
-
-  if (!CompactStrings) {
-    // Fix encoding of result string to UTF16
-    coder_fixed = true;
-    coder = __ intcon(java_lang_String::CODER_UTF16);
-  }
 
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
