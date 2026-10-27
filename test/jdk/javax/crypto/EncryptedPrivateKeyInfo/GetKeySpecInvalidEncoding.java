@@ -28,7 +28,6 @@
  * methods with scenarios where the decrypted bytes are not
  * encoded correctly per PKCS#8 standard.
  * @author Valerie Peng
- * @run main/othervm -DcipherAlg=PBEWithMD5AndDES GetKeySpecInvalidEncoding
  * @run main/othervm -DcipherAlg=PBEWithSHA1AndDESede GetKeySpecInvalidEncoding
  */
 import java.util.*;

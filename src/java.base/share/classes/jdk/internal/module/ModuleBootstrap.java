@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +166,11 @@ public final class ModuleBootstrap {
             // assume boot layer has at least one module providing a service
             // that is mapped to the application class loader.
             JLA.bindToLoader(bootLayer, ClassLoaders.appClassLoader());
+
+            // Emit the same warning as boot2 after restoring the boot layer.
+            if (archivedBootLayer.hasIncubatorModules()) {
+                checkIncubatingStatus(bootLayer.configuration());
+            }
         } else {
             bootLayer = boot2();
         }
@@ -477,8 +483,8 @@ public final class ModuleBootstrap {
                                         clf,
                                         mainModule,
                                         addModules);
-            if (!hasSplitPackages && !hasIncubatorModules) {
-                ArchivedBootLayer.archive(bootLayer);
+            if (!hasSplitPackages) {
+                ArchivedBootLayer.archive(bootLayer, hasIncubatorModules);
             }
         }
 

@@ -90,7 +90,7 @@ public class Compatibility {
             "javaSecurityFile", TEST_SRC + "/java.security");
 
     private static final String PASSWORD = "testpass";
-    private static final String KEYSTORE = "testKeystore.jks";
+    private static final String KEYSTORE = "testKeystore.p12";
 
     private static final String RSA = "RSA";
     private static final String DSA = "DSA";
@@ -322,7 +322,7 @@ public class Compatibility {
             execTool(jdkInfo.jdkPath + "/bin/keytool", new String[] {
                     "-v",
                     "-storetype",
-                    "jks",
+                    "pkcs12",
                     "-storepass",
                     PASSWORD,
                     "-keystore",
@@ -342,7 +342,7 @@ public class Compatibility {
         arguments.add("-v");
         arguments.add("-debug");
         arguments.add("-storetype");
-        arguments.add("jks");
+        arguments.add("pkcs12");
         arguments.add("-keystore");
         arguments.add(KEYSTORE);
         arguments.add("-storepass");
@@ -922,6 +922,8 @@ public class Compatibility {
         arguments.add("-certs");
         arguments.add("-keystore");
         arguments.add(KEYSTORE);
+        arguments.add("-storepass");
+        arguments.add(PASSWORD);
         arguments.add("-verify");
         if (STRICT) arguments.add("-strict");
         arguments.add(signedJar + ".jar");

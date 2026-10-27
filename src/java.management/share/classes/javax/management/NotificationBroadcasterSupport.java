@@ -237,8 +237,8 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
                 enabled = li.filter == null ||
                     li.filter.isNotificationEnabled(notification);
             } catch (Exception e) {
-                if (logger.debugOn()) {
-                    logger.debug("sendNotification", e);
+                if (LoggerHolder.logger.debugOn()) {
+                    LoggerHolder.logger.debug("sendNotification", e);
                 }
 
                 continue;
@@ -351,8 +351,8 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
                 handleNotification(listenerInfo.listener,
                                    notif, listenerInfo.handback);
             } catch (Exception e) {
-                if (logger.debugOn()) {
-                    logger.debug("SendNotifJob-run", e);
+                if (LoggerHolder.logger.debugOn()) {
+                    LoggerHolder.logger.debug("SendNotifJob-run", e);
                 }
             }
         }
@@ -361,6 +361,9 @@ public class NotificationBroadcasterSupport implements NotificationEmitter {
         private final ListenerInfo listenerInfo;
     }
 
-    private static final ClassLogger logger =
-        new ClassLogger("javax.management", "NotificationBroadcasterSupport");
+    // Lazy so System.Logger is only set up if a listener or filter throws.
+    private static class LoggerHolder {
+        static final ClassLogger logger =
+            new ClassLogger("javax.management", "NotificationBroadcasterSupport");
+    }
 }

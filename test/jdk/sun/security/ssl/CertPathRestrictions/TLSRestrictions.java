@@ -134,7 +134,7 @@ public class TLSRestrictions {
         TrustManagerFactory tmf = null;
         if (trustNames != null && trustNames.length > 0
                 && !trustNames[0].equals(NONE_CERT)) {
-            KeyStore trustStore = KeyStore.getInstance("JKS");
+            KeyStore trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(null, null);
             for (int i = 0; i < trustNames.length; i++) {
                 try (InputStream is = new ByteArrayInputStream(
@@ -162,7 +162,7 @@ public class TLSRestrictions {
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         PrivateKey privKey = keyFactory.generatePrivate(privKeySpec);
 
-        KeyStore keyStore = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(null, null);
         keyStore.setKeyEntry("keyCert", privKey, PASSWORD, certChain);
 

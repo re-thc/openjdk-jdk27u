@@ -53,7 +53,7 @@ public class ProbingFailure {
     public static void main(String[] args) throws Exception {
 
         // genkeypair
-        kt("-genkeypair -keystore mks -alias a -dname CN=A -keyalg DSA -storetype MYKS")
+        kt("-genkeypair -keystore mks -alias a -dname CN=A -keyalg EC -storetype MYKS")
                 .shouldHaveExitValue(0);
 
         // list

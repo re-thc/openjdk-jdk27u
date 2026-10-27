@@ -36,8 +36,6 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import sun.security.rsa.RSAKeyFactory;
-import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
-import sun.security.util.KeyUtil;
 
 /**
  * Cipher implementation using the Microsoft Crypto API.
@@ -102,14 +100,6 @@ public final class CRSACipher extends CipherSpi {
     // the private key, if we were initialized using a private key
     private CKey privateKey;
 
-    // cipher parameter for TLS RSA premaster secret
-    private AlgorithmParameterSpec spec = null;
-
-    private boolean forTlsPremasterSecret = false;
-
-    // the source of randomness
-    private SecureRandom random;
-
     public CRSACipher() {
         paddingType = PAD_PKCS1;
     }
@@ -165,21 +155,13 @@ public final class CRSACipher extends CipherSpi {
     }
 
     // see JCE spec
-    @SuppressWarnings("deprecation")
     protected void engineInit(int opmode, Key key,
             AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
 
         if (params != null) {
-            if (!(params instanceof TlsRsaPremasterSecretParameterSpec)) {
-                throw new InvalidAlgorithmParameterException(
-                        "Parameters not supported");
-            }
-            spec = params;
-            this.random = random;   // for TLS RSA premaster secret
-            this.forTlsPremasterSecret = true;
-        } else {
-            this.forTlsPremasterSecret = false;
+            throw new InvalidAlgorithmParameterException(
+                    "Parameters not supported");
         }
         init(opmode, key);
     }
@@ -375,7 +357,6 @@ public final class CRSACipher extends CipherSpi {
     }
 
     // see JCE spec
-    @SuppressWarnings("deprecation")
     protected java.security.Key engineUnwrap(byte[] wrappedKey,
             String algorithm,
             int type) throws InvalidKeyException, NoSuchAlgorithmException {
@@ -384,9 +365,6 @@ public final class CRSACipher extends CipherSpi {
             throw new InvalidKeyException("Key is too long for unwrapping");
         }
 
-        boolean isTlsRsaPremasterSecret =
-                algorithm.equals("TlsRsaPremasterSecret");
-        Exception failover = null;
         byte[] encoded = null;
 
         update(wrappedKey, 0, wrappedKey.length);
@@ -398,19 +376,6 @@ public final class CRSACipher extends CipherSpi {
         }
 
         try {
-            if (isTlsRsaPremasterSecret) {
-                if (!forTlsPremasterSecret) {
-                    throw new IllegalStateException(
-                            "No TlsRsaPremasterSecretParameterSpec specified");
-                }
-
-                // polish the TLS premaster secret
-                encoded = KeyUtil.checkTlsPreMasterSecretKey(
-                        ((TlsRsaPremasterSecretParameterSpec) spec).getClientVersion(),
-                        ((TlsRsaPremasterSecretParameterSpec) spec).getServerVersion(),
-                        random, encoded, encoded == null);
-            }
-
             return constructKey(encoded, algorithm, type);
         } finally {
             if (encoded != null) {
@@ -510,11 +475,7 @@ public final class CRSACipher extends CipherSpi {
             result = cngEncryptDecrypt(returnStatus, data, dataSize, key.getHCryptProvider(), doEncrypt);
         }
         if ((returnStatus[0] == ERROR_INVALID_PARAMETER) || (returnStatus[0] == NTE_INVALID_PARAMETER)) {
-            if (forTlsPremasterSecret) {
-                result = null;
-            } else {
-                throw new BadPaddingException("Error " + returnStatus[0] + " returned by MSCAPI");
-            }
+            throw new BadPaddingException("Error " + returnStatus[0] + " returned by MSCAPI");
         } else if (returnStatus[0] != 0) {
             throw new KeyException("Error " + returnStatus[0] + " returned by MSCAPI");
         }

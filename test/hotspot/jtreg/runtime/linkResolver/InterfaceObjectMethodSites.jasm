@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+// Object-typed parameters let invokeinterface sites receive objects that do not
+// implement the referenced interface. Additional classes test an Object-method
+// default, a non-public override, and a concrete class missing an abstract override,
+// which javac would reject. Abstract redeclarations themselves are legal Java.
+
+super public class InterfaceObjectMethodSites version 60:0 {
+
+    public static Method hashCodeOf:"(Ljava/lang/Object;)I" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/lang/Runnable.hashCode:"()I",  1;
+        ireturn;
+    }
+
+    public static Method toStringOf:"(Ljava/lang/Object;)Ljava/lang/String;" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/lang/Runnable.toString:"()Ljava/lang/String;",  1;
+        areturn;
+    }
+
+    public static Method equalsOf:"(Ljava/lang/Object;Ljava/lang/Object;)Z" stack 2 locals 2 {
+        aload_0;
+        aload_1;
+        invokeinterface    InterfaceMethod java/lang/Runnable.equals:"(Ljava/lang/Object;)Z",  2;
+        ireturn;
+    }
+
+    public static Method getClassOf:"(Ljava/lang/Object;)Ljava/lang/Class;" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/lang/Runnable.getClass:"()Ljava/lang/Class;",  1;
+        areturn;
+    }
+
+    public static Method firstHashCodeOf:"(Ljava/lang/Object;)I" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod java/util/function/Supplier.hashCode:"()I",  1;
+        ireturn;
+    }
+
+    public static Method namedToStringOf:"(Ljava/lang/Object;)Ljava/lang/String;" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod InterfaceObjectMethodNamed.toString:"()Ljava/lang/String;",  1;
+        areturn;
+    }
+
+    public static Method defaultHashCodeOf:"(Ljava/lang/Object;)I" stack 1 locals 1 {
+        aload_0;
+        invokeinterface    InterfaceMethod InterfaceObjectMethodDefaultHash.hashCode:"()I",  1;
+        ireturn;
+    }
+
+} // end Class InterfaceObjectMethodSites
+
+
+interface InterfaceObjectMethodNamed version 60:0 {
+
+    public abstract Method toString:"()Ljava/lang/String;";
+
+} // end Class InterfaceObjectMethodNamed
+
+
+interface InterfaceObjectMethodDefaultHash version 60:0 {
+
+    public Method hashCode:"()I" stack 1 locals 1 {
+        bipush  42;
+        ireturn;
+    }
+
+} // end Class InterfaceObjectMethodDefaultHash
+
+
+super public class InterfaceObjectMethodDefaultHashImpl implements InterfaceObjectMethodDefaultHash version 60:0 {
+
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+} // end Class InterfaceObjectMethodDefaultHashImpl
+
+
+super public class InterfaceObjectMethodBadHash implements java/lang/Runnable version 60:0 {
+
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    public Method run:"()V" stack 0 locals 1 {
+        return;
+    }
+
+    Method hashCode:"()I" stack 1 locals 1 {
+        iconst_0;
+        ireturn;
+    }
+
+} // end Class InterfaceObjectMethodBadHash
+
+
+super public abstract class InterfaceObjectMethodReabstracted implements java/lang/Runnable version 60:0 {
+
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    public Method run:"()V" stack 0 locals 1 {
+        return;
+    }
+
+    public abstract Method hashCode:"()I";
+
+} // end Class InterfaceObjectMethodReabstracted
+
+
+super public class InterfaceObjectMethodMissingHash extends InterfaceObjectMethodReabstracted version 60:0 {
+
+    public Method "<init>":"()V" stack 1 locals 1 {
+        aload_0;
+        invokespecial    Method InterfaceObjectMethodReabstracted."<init>":"()V";
+        return;
+    }
+
+} // end Class InterfaceObjectMethodMissingHash

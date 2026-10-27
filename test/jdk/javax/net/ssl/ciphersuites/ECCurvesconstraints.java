@@ -74,22 +74,23 @@ public class ECCurvesconstraints {
      */
     // Certificates and key used in the test.
     //
-    // EC curve: secp224k1
+    // EC curve: secp224r1
     static String trustedCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIIBCzCBugIEVz2lcjAKBggqhkjOPQQDAjAaMRgwFgYDVQQDDA93d3cuZXhhbXBs\n" +
-        "ZS5vcmcwHhcNMTYwNTE5MTEzNzM5WhcNMTcwNTE5MTEzNzM5WjAaMRgwFgYDVQQD\n" +
-        "DA93d3cuZXhhbXBsZS5vcmcwTjAQBgcqhkjOPQIBBgUrgQQAIAM6AAT68uovMZ8f\n" +
-        "KARn5NOjvieJaq6h8zHYkM9w5DuN0kkOo4KBhke06EkQj0nvQQcSvppTV6RoDLY4\n" +
-        "djAKBggqhkjOPQQDAgNAADA9AhwMNIujM0R0llpPH6d89d1S3VRGH/78ovc+zw51\n" +
-        "Ah0AuZ1YlQkUbrJIzkuPSICxz5UfCWPe+7w4as+wiA==\n" +
+        "MIIBHTCBzAIUGY5XnPeXzboT3lOW19Rqbt7RnEswCgYIKoZIzj0EAwIwGjEYMBYG\n" +
+        "A1UEAwwPd3d3LmV4YW1wbGUub3JnMCAXDTI2MTAxNDE5MzQ1N1oYDzIxMjYwOTIw\n" +
+        "MTkzNDU3WjAaMRgwFgYDVQQDDA93d3cuZXhhbXBsZS5vcmcwTjAQBgcqhkjOPQIB\n" +
+        "BgUrgQQAIQM6AARYGN3JNO2Gi40y+O3Ym+S8ROudgk2swFOUoP+4PgZ9qYUw5E0e\n" +
+        "89gq93Ow7Ne8SmlOJMCI9Cts+TAKBggqhkjOPQQDAgNAADA9Ahx7cPtqn2p+i/pH\n" +
+        "sbXNQNa/5kml0QwI5TBvaw/LAh0AqZx2sWyu/exHx2s13S1wLIM0QfF2SstpC/nT\n" +
+        "6A==\n" +
         "-----END CERTIFICATE-----";
 
     // Private key in the format of PKCS#8
     static String targetPrivateKey =
-        "MIGCAgEAMBAGByqGSM49AgEGBSuBBAAgBGswaQIBAQQdAPbckc86mgW/zexB1Ajq\n" +
-        "38HntWOjdxL6XSoiAsWgBwYFK4EEACChPAM6AAT68uovMZ8fKARn5NOjvieJaq6h\n" +
-        "8zHYkM9w5DuN0kkOo4KBhke06EkQj0nvQQcSvppTV6RoDLY4dg==";
+        "MHgCAQAwEAYHKoZIzj0CAQYFK4EEACEEYTBfAgEBBBy8ciAxAcBDz3eTRRAQH04V\n" +
+        "UqFAl8lrdVhpB4KIoTwDOgAEWBjdyTTthouNMvjt2JvkvETrnYJNrMBTlKD/uD4G\n" +
+        "famFMORNHvPYKvdzsOzXvEppTiTAiPQrbPk=";
 
     static String[] serverCerts = {trustedCertStr};
     static String[] serverKeys  = {targetPrivateKey};
@@ -138,7 +139,7 @@ public class ECCurvesconstraints {
             sslOS.write('A');
             sslOS.flush();
 
-            throw new Exception("EC curve secp224k1 should be disabled");
+            throw new Exception("EC curve secp224r1 should be disabled");
         } catch (IOException she) {
             // expected exception: no cipher suites in common
             System.out.println("Expected exception: " + she);
@@ -180,7 +181,7 @@ public class ECCurvesconstraints {
             sslOS.flush();
             sslIS.read();
 
-            throw new Exception("EC curve secp224k1 should be disabled");
+            throw new Exception("EC curve secp224r1 should be disabled");
         } catch (IOException she) {
             // expected exception: Received fatal alert
             System.out.println("Expected exception: " + she);
@@ -206,7 +207,7 @@ public class ECCurvesconstraints {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // import the trused cert
@@ -242,9 +243,8 @@ public class ECCurvesconstraints {
             Certificate keyCert = cf.generateCertificate(is);
             is.close();
 
-            Certificate[] chain = new Certificate[2];
+            Certificate[] chain = new Certificate[1];
             chain[0] = keyCert;
-            chain[1] = trusedCert;
 
             // import the key entry.
             ks.setKeyEntry("key-entry-" + i, priKey, passphrase, chain);

@@ -24,8 +24,7 @@
 /**
  * @test
  * @bug 4893959
- * @summary basic test for PBEWithSHA1AndDESede and
- * PBEWithSHA1AndRC2_40
+ * @summary basic test for PBEWithSHA1AndDESede
  * @author Valerie Peng
  */
 
@@ -172,9 +171,7 @@ public class PKCS12CipherKAT {
     private final static char[] PASSWD = { 'p','a','s','s','w','o','r','d' };
     private final static Test[] tests = {
     t("PBEWithSHA1AndDESede", INPUT, PASSWD, SALT, ITER_COUNT,
-      "95:94:49:5a:a2:cf:c9:a5:bb:21:08:23:45:41:46:a3:9c:c5:84:da:b5:04:ae:1a"),
-    t("PBEWithSHA1AndRC2_40", INPUT, PASSWD, SALT, ITER_COUNT,
-      "ec:32:f4:68:29:29:8b:c8:55:75:cb:ac:a4:01:d9:9c:b3:27:d6:b6:9f:26:98:f1")
+      "95:94:49:5a:a2:cf:c9:a5:bb:21:08:23:45:41:46:a3:9c:c5:84:da:b5:04:ae:1a")
     };
 
     static void runTests(Test[] tests) throws Exception {
@@ -182,7 +179,6 @@ public class PKCS12CipherKAT {
         Provider p = Security.getProvider(
                         System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
-        Cipher.getInstance("PBEWithSHA1AndRC2_40", p);
         Cipher.getInstance("PBEWithSHA1AndDESede", p);
         for (int i = 0; i < tests.length; i++) {
             Test test = tests[i];

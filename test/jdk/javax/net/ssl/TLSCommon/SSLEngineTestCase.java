@@ -131,7 +131,7 @@ abstract public class SSLEngineTestCase {
     }
     /**
      * Security protocol to be tested: "TLS" or "DTLS" or their versions,
-     * e.g. "TLSv1", "TLSv1.1", "TLSv1.2", "DTLSv1.0", "DTLSv1.2".
+     * e.g. "TLSv1.2", "TLSv1.3", "DTLSv1.2".
      */
     public static final String TESTED_SECURITY_PROTOCOL
             = System.getProperty("test.security.protocol");
@@ -800,8 +800,8 @@ abstract public class SSLEngineTestCase {
                     "jdk.tls.disabledAlgorithms", "");
             java.security.Security.setProperty(
                     "jdk.certpath.disabledAlgorithms", "");
-            KeyStore ks = KeyStore.getInstance("JKS");
-            KeyStore ts = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            KeyStore ts = KeyStore.getInstance("PKCS12");
             char[] passphrase = PASSWD.toCharArray();
             try (FileInputStream keyFileStream =
                     new FileInputStream(KEY_FILE_NAME)) {

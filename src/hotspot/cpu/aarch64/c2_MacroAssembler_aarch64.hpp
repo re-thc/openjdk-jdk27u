@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +174,11 @@
                                 Register isrc, FloatRegister vsrc,
                                 unsigned vector_length_in_bytes,
                                 FloatRegister vtmp1, FloatRegister vtmp2);
+
+  void sve_reduce_mul_integral(Register dst, BasicType bt,
+                               Register isrc, FloatRegister vsrc,
+                               unsigned vector_length_in_bytes,
+                               FloatRegister vtmp1, FloatRegister vtmp2);
 
   void neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
                           FloatRegister fsrc, FloatRegister vsrc,

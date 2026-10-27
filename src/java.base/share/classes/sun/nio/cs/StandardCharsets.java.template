@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -141,7 +142,17 @@ public class StandardCharsets extends CharsetProvider {
         } else if (charsetName.equals("ISO-8859-1")) {
             return ISO_8859_1.INSTANCE;
         } else {
-            csn = canonicalize(toLower(charsetName));
+            csn = toLower(charsetName);
+            Charset canonical = switch (csn.length()) {
+                case 5 -> csn.equals("utf-8") ? UTF_8.INSTANCE : null;
+                case 8 -> csn.equals("us-ascii") ? US_ASCII.INSTANCE : null;
+                case 10 -> csn.equals("iso-8859-1") ? ISO_8859_1.INSTANCE : null;
+                default -> null;
+            };
+            if (canonical != null) {
+                return canonical;
+            }
+            csn = canonicalize(csn);
         }
 
         // Check cache first

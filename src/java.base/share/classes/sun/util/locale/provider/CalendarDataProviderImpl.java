@@ -64,6 +64,12 @@ public class CalendarDataProviderImpl extends CalendarDataProvider implements Av
     }
 
     @Override
+    public boolean isSupportedLocale(Locale locale) {
+        return LocaleProviderAdapter.isAvailableLocale(locale, langtags)
+                || super.isSupportedLocale(locale);
+    }
+
+    @Override
     public Set<String> getAvailableLanguageTags() {
         return langtags;
     }

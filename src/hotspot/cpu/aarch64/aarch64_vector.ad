@@ -1,6 +1,8 @@
 //
 // Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2026, Arm Limited. All rights reserved.
+// Copyright (c) 2026, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -84,11 +86,158 @@ source_hpp %{
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n);
 
+  bool is_float_roundtrip_reduction_accumulation(const Node* n);
+
   Assembler::SIMD_Arrangement get_arrangement(const Node* n);
   Assembler::SIMD_RegVariant get_reg_variant(const Node* n);
 %}
 
 source %{
+
+#include "opto/loopnode.hpp"
+
+  // Match only a single-use F2I -> I2F -> unordered four-float reduction.
+  // The AddF is kept separate in Ideal IR: its loop-carried order is strict.
+  static Node* float_roundtrip_reduction_input(const Node* n) {
+    if (n->Opcode() != Op_AddF) {
+      return nullptr;
+    }
+    for (uint input = 1; input <= 2; input++) {
+      const Node* reduction = n->in(input);
+      if (reduction->Opcode() != Op_AddReductionVF || reduction->req() != 3 ||
+          reduction->outcnt() != 1 ||
+          reduction->as_Reduction()->requires_strict_order()) {
+        continue;
+      }
+      const TypeF* seed = reduction->in(1)->bottom_type()->isa_float_constant();
+      if (seed == nullptr || jint_cast(seed->getf()) != 0) {
+        continue;
+      }
+      const Node* to_float = reduction->in(2);
+      if (to_float->Opcode() != Op_VectorCastI2X || to_float->outcnt() != 1) {
+        continue;
+      }
+      const Node* to_int = to_float->in(1);
+      if (to_int->Opcode() != Op_VectorCastF2X || to_int->outcnt() != 1) {
+        continue;
+      }
+      const TypeVect* result_type = to_float->bottom_type()->isa_vect();
+      const TypeVect* int_type = to_int->bottom_type()->isa_vect();
+      const TypeVect* source_type = to_int->in(1)->bottom_type()->isa_vect();
+      if (result_type != nullptr && int_type != nullptr && source_type != nullptr &&
+          result_type->element_basic_type() == T_FLOAT && result_type->length() == 4 &&
+          int_type->element_basic_type() == T_INT && int_type->length() == 4 &&
+          source_type->element_basic_type() == T_FLOAT && source_type->length() == 4) {
+        return n->in(3 - input);
+      }
+    }
+    return nullptr;
+  }
+
+  void Matcher::collect_float_roundtrip_add(Node* n) {
+    if (C->is_osr_compilation() ||
+        (UseSVE > 0 && MaxVectorSize != 16) ||
+        !VM_Version::use_neon_for_vector(16)) {
+      return;
+    }
+    // Allocate classification state only for candidate chains. find_shared
+    // preserves this unmasked chain; preparation rechecks its shape.
+    if (float_roundtrip_reduction_input(n) == nullptr) {
+      return;
+    }
+    if (_float_roundtrip_adds == nullptr) {
+      _float_roundtrip_adds = new (C->comp_arena()) Node_List(C->comp_arena());
+    }
+    _float_roundtrip_adds->push(n);
+  }
+
+  // Classify old-Ideal recurrences after find_shared, before node indices reset.
+  // Memoize accepted and rejected paths and scan each loop's Phi uses once.
+  // Preparation is linear in visited nodes, node-index span and loop uses;
+  // instruction selection then uses constant-time identity lookups.
+  void Matcher::prepare_float_roundtrip_accumulations() {
+    if (_float_roundtrip_adds == nullptr) {
+      return;
+    }
+    assert(_float_roundtrip_accumulations == nullptr, "prepare once");
+    ResourceMark rm;
+    Node_Array terminal;
+    Node_List path;
+    VectorSet resolved;
+    VectorSet checked_phis;
+    VectorSet checked_loops;
+    VectorSet single_float_phi_loops;
+
+    for (uint i = 0; i < _float_roundtrip_adds->size(); i++) {
+      Node* cursor = _float_roundtrip_adds->at(i);
+      assert(path.size() == 0, "previous path resolved");
+      while (cursor != nullptr && cursor->Opcode() == Op_AddF && !resolved.test(cursor->_idx)) {
+        // A repeated node in the current path has a null terminal: a non-Phi
+        // cycle cannot describe the required counted-loop recurrence.
+        resolved.set(cursor->_idx);
+        path.push(cursor);
+        cursor = float_roundtrip_reduction_input(cursor);
+      }
+      Node* phi = nullptr;
+      if (cursor != nullptr) {
+        phi = cursor->is_Phi() ? cursor : terminal[cursor->_idx];
+      }
+      while (path.size() != 0) {
+        Node* node = path.pop();
+        if (phi != nullptr) {
+          terminal.map(node->_idx, phi);
+        }
+      }
+    }
+
+    for (uint i = 0; i < _float_roundtrip_adds->size(); i++) {
+      Node* phi = terminal[_float_roundtrip_adds->at(i)->_idx];
+      if (phi == nullptr || checked_phis.test_set(phi->_idx)) {
+        continue;
+      }
+      if (phi->req() != 3 || phi->in(0) == nullptr || !phi->in(0)->is_CountedLoop() ||
+          phi->in(2) == nullptr || terminal[phi->in(2)->_idx] != phi) {
+        continue;
+      }
+      Node* loop = phi->in(0);
+      if (!checked_loops.test_set(loop->_idx)) {
+        uint float_phis = 0;
+        for (DUIterator_Fast imax, j = loop->fast_outs(imax); j < imax; j++) {
+          Node* out = loop->fast_out(j);
+          if (out->is_Phi() && out->in(0) == loop &&
+              out->bottom_type()->basic_type() == T_FLOAT) {
+            float_phis++;
+          }
+        }
+        if (float_phis == 1) {
+          single_float_phi_loops.set(loop->_idx);
+        }
+      }
+      // Independent accumulators can exploit ILP; keep their rules unchanged.
+      if (!single_float_phi_loops.test(loop->_idx)) {
+        continue;
+      }
+      if (_float_roundtrip_accumulations == nullptr) {
+        _float_roundtrip_accumulations = new (C->comp_arena()) Node_Array(C->comp_arena());
+      }
+      // Distinct valid Phi cycles are disjoint: every node has one terminal.
+      for (Node* cursor = phi->in(2); cursor != phi; cursor = float_roundtrip_reduction_input(cursor)) {
+        assert(cursor != nullptr && terminal[cursor->_idx] == phi, "resolved cycle");
+        _float_roundtrip_accumulations->map(cursor->_idx, cursor);
+      }
+    }
+  }
+
+  bool Matcher::is_float_roundtrip_reduction_accumulation(const Node* n) const {
+    // New Mach indices start at zero: compare exact old-node identity. The
+    // cache is immutable during selection and disabled before old storage dies.
+    return _float_roundtrip_accumulations != nullptr &&
+           (*_float_roundtrip_accumulations)[n->_idx] == n;
+  }
+
+  bool is_float_roundtrip_reduction_accumulation(const Node* n) {
+    return Compile::current()->matcher()->is_float_roundtrip_reduction_accumulation(n);
+  }
 
   typedef void (C2_MacroAssembler::* sve_mem_insn_predicate)(FloatRegister Rt, Assembler::SIMD_RegVariant T,
                                                              PRegister Pg, const Address &adr);
@@ -123,6 +272,30 @@ source %{
     } else {
       assert(false, "unimplemented");
       ShouldNotReachHere();
+    }
+  }
+
+  // Narrowing stores select the low bytes of each 64-bit lane. Their
+  // effective addresses are byte offsets, unlike SVE's scaled immediates.
+  static void store_narrow_sve(C2_MacroAssembler* masm, FloatRegister src,
+                               BasicType bt, Register base, int index, int scale, int disp) {
+    Address adr(base);
+    if (index != -1) {
+      if (disp != 0) {
+        masm->lea(rscratch1, Address(base, disp));
+        base = rscratch1;
+      }
+      masm->lea(rscratch1, Address(base, as_Register(index), Address::lsl(scale)));
+      adr = Address(rscratch1);
+    } else if (disp != 0) {
+      masm->lea(rscratch1, Address(base, disp));
+      adr = Address(rscratch1);
+    }
+    switch (bt) {
+      case T_BYTE:  masm->sve_st1b(src, Assembler::D, ptrue, adr); break;
+      case T_SHORT: masm->sve_st1h(src, Assembler::D, ptrue, adr); break;
+      case T_FLOAT: masm->sve_st1w(src, Assembler::D, ptrue, adr); break;
+      default: ShouldNotReachHere();
     }
   }
 
@@ -168,6 +341,11 @@ source %{
     // Check whether specific Op is supported.
     // Fail fast, otherwise fall through to common vector_size_supported() check.
     switch (opcode) {
+      case Op_ExtractBVar:
+        if (bt != T_BYTE || !VM_Version::use_neon_for_vector(length_in_bytes)) {
+          return false;
+        }
+        break;
       case Op_AndVMask:
       case Op_OrVMask:
       case Op_XorVMask:
@@ -211,11 +389,23 @@ source %{
         break;
       case Op_MulReductionVD:
       case Op_MulReductionVF:
-      case Op_MulReductionVI:
-      case Op_MulReductionVL:
         // No vector multiply reduction instructions, but we do
         // emit scalar instructions for 64/128-bit vectors.
         if (length_in_bytes != 8 && length_in_bytes != 16) {
+          return false;
+        }
+        break;
+      case Op_MulReductionVI:
+        // Keep the NEON reductions for short vectors. SVE folds require
+        // int lanes filling the configured vector register.
+        if (length_in_bytes != 8 && length_in_bytes != 16 &&
+            (bt != T_INT || UseSVE == 0 || length_in_bytes != MaxVectorSize)) {
+          return false;
+        }
+        break;
+      case Op_MulReductionVL:
+        if (length_in_bytes != 16 &&
+            (UseSVE == 0 || length_in_bytes != MaxVectorSize)) {
           return false;
         }
         break;
@@ -565,6 +755,79 @@ instruct storeV16(vReg src, vmem16 mem) %{
   match(Set mem (StoreVector mem src));
   format %{ "storeV16 $mem, $src\t# vector (128 bits)" %}
   ins_encode( aarch64_enc_strvQ(src, mem) );
+  ins_pipe(pipe_slow);
+%}
+
+instruct storeV_vcastDtoS_sve8(vmem8 mem, vReg src, vReg tmp) %{
+  predicate(UseSVE > 0 &&
+            MaxVectorSize == 32 &&
+            n->as_StoreVector()->memory_size() == 8 &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_SHORT &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_DOUBLE &&
+            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  match(Set mem (StoreVector mem (VectorCastD2X src)));
+  effect(TEMP_DEF tmp);
+  format %{ "storeV_vcastDtoS_sve8 $mem, $src\t# KILL $tmp" %}
+  ins_encode %{
+    __ sve_fcvtzs($tmp$$FloatRegister, __ S, ptrue, $src$$FloatRegister, __ D);
+
+    store_narrow_sve(masm, $tmp$$FloatRegister, T_SHORT,
+                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct storeV_vcastDtoF_sve16(vmem16 mem, vReg src, vReg tmp) %{
+  predicate(UseSVE > 0 &&
+            MaxVectorSize == 32 &&
+            n->as_StoreVector()->memory_size() == 16 &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_FLOAT &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_DOUBLE &&
+            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  match(Set mem (StoreVector mem (VectorCastD2X src)));
+  effect(TEMP_DEF tmp);
+  format %{ "storeV_vcastDtoF_sve16 $mem, $src\t# KILL $tmp" %}
+  ins_encode %{
+    __ sve_fcvt($tmp$$FloatRegister, __ S, ptrue, $src$$FloatRegister, __ D);
+
+    store_narrow_sve(masm, $tmp$$FloatRegister, T_FLOAT,
+                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct storeV_vcastLtoF_sve16(vmem16 mem, vReg src, vReg tmp) %{
+  predicate(UseSVE > 0 &&
+            MaxVectorSize == 32 &&
+            n->as_StoreVector()->memory_size() == 16 &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_FLOAT &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_LONG &&
+            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  match(Set mem (StoreVector mem (VectorCastL2X src)));
+  effect(TEMP_DEF tmp);
+  format %{ "storeV_vcastLtoF_sve16 $mem, $src\t# KILL $tmp" %}
+  ins_encode %{
+    __ sve_scvtf($tmp$$FloatRegister, __ S, ptrue, $src$$FloatRegister, __ D);
+
+    store_narrow_sve(masm, $tmp$$FloatRegister, T_FLOAT,
+                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct storeV_vcastLtoB_sve4(vmem4 mem, vReg src) %{
+  predicate(UseSVE > 0 &&
+            MaxVectorSize == 32 &&
+            n->as_StoreVector()->memory_size() == 4 &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)) == T_BYTE &&
+            Matcher::vector_element_basic_type(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == T_LONG &&
+            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  match(Set mem (StoreVector mem (VectorCastL2X src)));
+  format %{ "storeV_vcastLtoB_sve4 $mem, $src" %}
+  ins_encode %{
+    store_narrow_sve(masm, $src$$FloatRegister, T_BYTE,
+                     $mem$$base$$Register, $mem$$index, $mem$$scale, $mem$$disp);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -3560,31 +3823,51 @@ instruct reduce_addL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vRegD tmp) %{
 
 // reduction addF
 
-instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
-  // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
-  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_non_strict_order_add2F_neon $dst, $fsrc, $vsrc" %}
+// Keep this exact conversion/reduction chain next to its strict scalar
+// recurrence. One temporary is sufficient regardless of the unroll factor.
+instruct convF2I2F_reduce_acc4F_neon(vRegF dst, vRegF acc, immF0 zero,
+                                   vReg src, vReg tmp) %{
+  predicate(is_float_roundtrip_reduction_accumulation(n));
+  match(Set dst (AddF acc (AddReductionVF zero (VectorCastI2X (VectorCastF2X src)))));
+  match(Set dst (AddF (AddReductionVF zero (VectorCastI2X (VectorCastF2X src))) acc));
+  effect(TEMP tmp);
+  // Sum of the existing matcher costs: two casts, reduction, scalar AddF.
+  ins_cost(INSN_COST * 8);
+  format %{ "convF2I2F_reduce_acc4F_neon $dst, $acc, $src\t# KILL $tmp" %}
   ins_encode %{
-    __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
+    __ fcvtzs($tmp$$FloatRegister, __ T4S, $src$$FloatRegister);
+    __ scvtfv(__ T4S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ faddp($tmp$$FloatRegister, __ T4S, $tmp$$FloatRegister, $tmp$$FloatRegister);
+    __ faddp($tmp$$FloatRegister, $tmp$$FloatRegister, __ S);
+    __ fadds($dst$$FloatRegister, $acc$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+instruct reduce_non_strict_order_add2F_neon(vRegF dst, immF0 zero, vReg vsrc) %{
+  // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
+  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (AddReductionVF zero vsrc));
+  format %{ "reduce_non_strict_order_add2F_neon $dst, $zero, $vsrc" %}
+  ins_encode %{
+    __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_non_strict_order_add4F_neon(vRegF dst, immF0 zero, vReg vsrc, vReg tmp) %{
   // Non-strictly ordered floating-point add reduction for 128-bits-long vector. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
   predicate(Matcher::vector_length(n->in(2)) == 4 && !n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVF fsrc vsrc));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_non_strict_order_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
+  match(Set dst (AddReductionVF zero vsrc));
+  effect(TEMP tmp);
+  format %{ "reduce_non_strict_order_add4F_neon $dst, $zero, $vsrc\t# KILL $tmp" %}
   ins_encode %{
     __ faddp($tmp$$FloatRegister, __ T4S, $vsrc$$FloatRegister, $vsrc$$FloatRegister);
     __ faddp($dst$$FloatRegister, $tmp$$FloatRegister, __ S);
-    __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3651,16 +3934,15 @@ instruct reduce_addF_sve(vRegF dst_src1, vReg src2) %{
 
 // reduction addD
 
-instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
+instruct reduce_non_strict_order_add2D_neon(vRegD dst, immD0 zero, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for doubles. This rule is
-  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
-  predicate(!n->as_Reduction()->requires_strict_order());
-  match(Set dst (AddReductionVD dsrc vsrc));
-  effect(TEMP_DEF dst);
-  format %{ "reduce_non_strict_order_add2D_neon $dst, $dsrc, $vsrc\t# 2D" %}
+  // intended for the Vector API (which allows for non-strictly ordered add reduction).
+  // The immediate $zero contains the identity scalar.
+  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
+  match(Set dst (AddReductionVD zero vsrc));
+  format %{ "reduce_non_strict_order_add2D_neon $dst, $zero, $vsrc\t# 2D" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
-    __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3760,6 +4042,23 @@ instruct reduce_mulI(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
+instruct reduce_mulI_sve(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE > 0 &&
+            Matcher::vector_element_basic_type(n->in(2)) == T_INT &&
+            Matcher::vector_length_in_bytes(n->in(2)) == MaxVectorSize &&
+            Matcher::vector_length_in_bytes(n->in(2)) > 16);
+  match(Set dst (MulReductionVI isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulI_sve $dst, $isrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ sve_reduce_mul_integral($dst$$Register, T_INT, $isrc$$Register,
+                               $vsrc$$FloatRegister, length_in_bytes,
+                               $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   predicate(Matcher::vector_length_in_bytes(n->in(2)) == 16);
   match(Set dst (MulReductionVL isrc vsrc));
@@ -3768,6 +4067,23 @@ instruct reduce_mulL(iRegLNoSp dst, iRegL isrc, vReg vsrc) %{
   ins_encode %{
     __ neon_reduce_mul_integral($dst$$Register, T_LONG, $isrc$$Register,
                                 $vsrc$$FloatRegister, 16, fnoreg, fnoreg);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE > 0 &&
+            Matcher::vector_element_basic_type(n->in(2)) == T_LONG &&
+            Matcher::vector_length_in_bytes(n->in(2)) == MaxVectorSize &&
+            Matcher::vector_length_in_bytes(n->in(2)) > 16);
+  match(Set dst (MulReductionVL isrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulL_sve $dst, $isrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    __ sve_reduce_mul_integral($dst$$Register, T_LONG, $isrc$$Register,
+                               $vsrc$$FloatRegister, length_in_bytes,
+                               $tmp1$$FloatRegister, $tmp2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5616,14 +5932,15 @@ instruct insertD_gt128b(vReg dst, vReg src, vRegD val, immI idx,
 
 // BOOLEAN
 
-instruct extractUB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
+instruct extractB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
   match(Set dst (ExtractUB src idx));
+  match(Set dst (ExtractBVar src idx));
   effect(TEMP tmp);
-  format %{ "extractUB_ireg $dst, $src, $idx\t# variable index. KILL $tmp" %}
+  format %{ "extractB_ireg $dst, $src, $idx\t# variable byte index. KILL $tmp" %}
   ins_encode %{
-    // Input "src" is a vector of boolean represented as
-    // bytes with 0x00/0x01 as element values.
-    // "idx" is expected to be in range.
+    // Signed data bytes and boolean bytes (0x00/0x01) use the same
+    // lookup. SMOV preserves the signed-byte result in either case.
+    // The caller proves that "idx" is in range.
 
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
     __ mov($tmp$$FloatRegister, __ B, 0, $idx$$Register);

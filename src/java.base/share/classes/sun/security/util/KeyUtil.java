@@ -43,7 +43,6 @@ import javax.security.auth.DestroyFailedException;
 import jdk.internal.access.SharedSecrets;
 
 import com.sun.crypto.provider.PBKDF2KeyImpl;
-import sun.security.jca.JCAUtil;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
@@ -258,102 +257,6 @@ public final class KeyUtil {
                 (providerName.equals("SunJCE") ||
                     providerName.equals("SunMSCAPI") ||
                     providerName.startsWith("SunPKCS11"));
-    }
-
-    /**
-     * Check the format of TLS PreMasterSecret.
-     * <P>
-     * To avoid vulnerabilities described by section 7.4.7.1, RFC 5246,
-     * treating incorrectly formatted message blocks and/or mismatched
-     * version numbers in a manner indistinguishable from correctly
-     * formatted RSA blocks.
-     *
-     * RFC 5246 describes the approach as:
-     * <pre>{@literal
-     *
-     *  1. Generate a string R of 48 random bytes
-     *
-     *  2. Decrypt the message to recover the plaintext M
-     *
-     *  3. If the PKCS#1 padding is not correct, or the length of message
-     *     M is not exactly 48 bytes:
-     *        pre_master_secret = R
-     *     else If ClientHello.client_version <= TLS 1.0, and version
-     *     number check is explicitly disabled:
-     *        premaster secret = M
-     *     else If M[0..1] != ClientHello.client_version:
-     *        premaster secret = R
-     *     else:
-     *        premaster secret = M
-     *
-     * Note that #2 should have completed before the call to this method.
-     * }</pre>
-     *
-     * @param  clientVersion the version of the TLS protocol by which the
-     *         client wishes to communicate during this session
-     * @param  serverVersion the negotiated version of the TLS protocol which
-     *         contains the lower of that suggested by the client in the client
-     *         hello and the highest supported by the server.
-     * @param  encoded the encoded key in its "RAW" encoding format
-     * @param  failure true if encoded is incorrect according to previous checks
-     * @return the polished PreMasterSecret key in its "RAW" encoding format
-     */
-    public static byte[] checkTlsPreMasterSecretKey(
-            int clientVersion, int serverVersion, SecureRandom random,
-            byte[] encoded, boolean failure) {
-
-        byte[] tmp;
-
-        if (random == null) {
-            random = JCAUtil.getSecureRandom();
-        }
-        byte[] replacer = new byte[48];
-        random.nextBytes(replacer);
-
-        if (failure) {
-            tmp = replacer;
-        } else {
-            tmp = encoded;
-        }
-
-        if (tmp == null) {
-            encoded = replacer;
-        } else {
-            encoded = tmp;
-        }
-        // check the length
-        if (encoded.length != 48) {
-            // private, don't need to clone the byte array.
-            tmp = replacer;
-        } else {
-            tmp = encoded;
-        }
-
-        // At this point tmp.length is 48
-        int encodedVersion =
-                ((tmp[0] & 0xFF) << 8) | (tmp[1] & 0xFF);
-
-        // The following code is a time-constant version of
-        // if ((clientVersion != encodedVersion) ||
-        //    ((clientVersion > 0x301) && (serverVersion != encodedVersion))) {
-        //        return replacer;
-        // } else { return tmp; }
-        int check1 = (clientVersion - encodedVersion) |
-                (encodedVersion - clientVersion);
-        int check2 = 0x0301 - clientVersion;
-        int check3 = (serverVersion - encodedVersion) |
-                (encodedVersion - serverVersion);
-
-        check1 = (check1 & (check2 | check3)) >> 24;
-
-        // Now check1 is either 0 or -1
-        check2 = ~check1;
-
-        for (int i = 0; i < 48; i++) {
-            tmp[i] = (byte) ((tmp[i] & check2) | (replacer[i] & check1));
-        }
-
-        return tmp;
     }
 
     /**

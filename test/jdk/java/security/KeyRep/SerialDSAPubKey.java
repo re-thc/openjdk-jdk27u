@@ -32,6 +32,7 @@
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -46,9 +47,21 @@ public class SerialDSAPubKey {
         // (not sun.security.DSAPublicKeyImpl, as Serial.java does)
 
         // generate DSA key pair
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", SUN);
-        kpg.initialize(512);
-        KeyPair dsaKp = kpg.genKeyPair();
+        AlgorithmParameterGenerator apg =
+                AlgorithmParameterGenerator.getInstance("DSA", SUN);
+        apg.init(1024);
+        DSAParameterSpec params = apg.generateParameters()
+                .getParameterSpec(DSAParameterSpec.class);
+        BigInteger p = params.getP();
+        BigInteger q = params.getQ();
+        BigInteger g = params.getG();
+        BigInteger x = new BigInteger(q.bitLength() - 1, new SecureRandom())
+                .add(BigInteger.ONE);
+        BigInteger y = g.modPow(x, p);
+        KeyFactory kf = KeyFactory.getInstance("DSA", SUN);
+        KeyPair dsaKp = new KeyPair(
+                kf.generatePublic(new DSAPublicKeySpec(y, p, q, g)),
+                kf.generatePrivate(new DSAPrivateKeySpec(x, p, q, g)));
 
         // serialize DSA key pair
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

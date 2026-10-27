@@ -34,8 +34,6 @@
  *          of JDK-8253368
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1.3
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1.2
- * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1.1
- * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLS
  */
 

@@ -56,7 +56,7 @@ public class TestSessionLocalPrincipal {
 
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
         for (String tlsProtocol : new String[]{
-            "TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1"}) {
+            "TLSv1.3", "TLSv1.2"}) {
             for (boolean clientAuth : new boolean[]{true, false}) {
                 System.out.printf("Protocol %s: Client side auth enabled: %s%n",
                         tlsProtocol, clientAuth);

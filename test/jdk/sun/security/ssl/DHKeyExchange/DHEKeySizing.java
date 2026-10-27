@@ -32,32 +32,14 @@
  * @summary make ephemeral DH key match the length of the certificate key
  * @library /javax/net/ssl/templates
  * @run main/othervm -Dtest.debug=true -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1643 267 TLSv1
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1645 267 TLSv1.2
  * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=matched
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.2
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1645 267 TLSv1.2
  * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=legacy
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=1024
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA 1259 75 TLSv1.1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA 233 75 TLSv1.2
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1643 267 TLSv1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1323 107 TLSv1.1
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1325 107 TLSv1.2
  * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=matched
  *      -Djdk.tls.client.enableSessionTicketExtension=false
@@ -65,22 +47,7 @@
  * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
  *      -Djdk.tls.ephemeralDHKeySize=1024
  *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1387 139 TLSv1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 617 267 TLSv1.1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      -Djdk.tls.ephemeralDHKeySize=legacy
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 297 107 TLSv1.2
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      -Djdk.tls.ephemeralDHKeySize=matched
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 617 267 TLSv1
- * @run main/othervm -Dtest.debug=true -Djsse.enableFFDHE=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false
- *      -Djdk.tls.ephemeralDHKeySize=1024
- *      DHEKeySizing SSL_DH_anon_WITH_RC4_128_MD5 361 139 TLSv1.1
+ *      DHEKeySizing TLS_DHE_RSA_WITH_AES_128_CBC_SHA 1389 139 TLSv1.2
  */
 
 /*
@@ -111,11 +78,10 @@
  *
  * Here is a summary of the record length in the test case.
  *
- *            |  ServerHello Series  |  ClientKeyExchange | ServerHello Anon
- *   512-bit  |          1259 bytes  |           75 bytes |        233 bytes
- *   768-bit  |          1323 bytes  |          107 bytes |        297 bytes
- *  1024-bit  |          1387 bytes  |          139 bytes |        361 bytes
- *  2048-bit  |          1643 bytes  |          267 bytes |        617 bytes
+ *            |  ServerHello Series  |  ClientKeyExchange
+ *   768-bit  |          1325 bytes  |          107 bytes
+ *  1024-bit  |          1389 bytes  |          139 bytes
+ *  2048-bit  |          1645 bytes  |          267 bytes
  */
 
 import javax.net.ssl.*;

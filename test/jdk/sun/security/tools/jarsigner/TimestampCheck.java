@@ -84,8 +84,6 @@ public class TimestampCheck {
     private static String host = null;
     private static final String getDefaultSigAlg(String keyAlg) {
         switch(keyAlg) {
-            case "DSA":
-                return "SHA256withDSA";
             case "RSA":
                 return "SHA384withRSA";
             case "EC":
@@ -339,12 +337,12 @@ public class TimestampCheck {
                         .shouldMatch("Timestamp.*digest.*SHA-1.*(disabled)");
 
                 sign("tsdisabled", "-digestalg", "MD5",
-                                "-sigalg", "MD5withRSA", "-tsadigestalg", "MD5")
+                                "-sigalg", "SHA1withRSA", "-tsadigestalg", "MD5")
                         .shouldHaveExitValue(68)
                         .shouldContain("TSA certificate chain is invalid")
                         .shouldMatch("MD5.*-digestalg.*is disabled")
                         .shouldMatch("MD5.*-tsadigestalg.*is disabled")
-                        .shouldMatch("MD5withRSA.*-sigalg.*is disabled");
+                        .shouldMatch("SHA1withRSA.*-sigalg.*is disabled");
                 checkDisabled("tsdisabled.jar");
 
                 signVerbose("tsdisabled", "unsigned.jar", "tsdisabled2.jar", "signer")
@@ -365,8 +363,8 @@ public class TimestampCheck {
                         .shouldHaveExitValue(4);
                 checkHalfDisabled("halfDisabled.jar");
 
-                // sign with DSA key
-                signVerbose("normal", "unsigned.jar", "sign1.jar", "dsakey")
+                // sign with EC key
+                signVerbose("normal", "unsigned.jar", "sign1.jar", "eckey")
                         .shouldHaveExitValue(0);
 
                 // sign with RSAkeysize < 1024
@@ -381,8 +379,6 @@ public class TimestampCheck {
                 signVerbose("normal", "unsigned.jar", "signall.jar", "signer",
                         "-sigalg", "SHA3-256withRSA")
                         .shouldHaveExitValue(0);
-                signVerbose("normal", "signall.jar", "signall.jar", "dsakey")
-                        .shouldHaveExitValue(0);
                 signVerbose("normal", "signall.jar", "signall.jar", "eckey")
                         .shouldHaveExitValue(0);
                 signVerbose("normal", "signall.jar", "signall.jar", "psskey")
@@ -395,9 +391,7 @@ public class TimestampCheck {
                         .shouldContain("Signature algorithm: RSASSA-PSS")
                         .shouldContain("Signature algorithm: " +
                                 getDefaultSigAlg("EC"))
-                        .shouldContain("Signature algorithm: Ed25519")
-                        .shouldContain("Signature algorithm: " +
-                                getDefaultSigAlg("DSA"));
+                        .shouldContain("Signature algorithm: Ed25519");
 
                 // Disabled algorithms
                 sign("tsweak", "-digestalg", "SHA1",
@@ -432,8 +426,8 @@ public class TimestampCheck {
                         .shouldContain("treated as unsigned")
                         .shouldMatch("Digest algorithm: .*(disabled)");
 
-                // sign with DSA key
-                signVerbose("normal", "unsigned.jar", "sign1.jar", "dsakey")
+                // sign with EC key
+                signVerbose("normal", "unsigned.jar", "sign1.jar", "eckey")
                         .shouldHaveExitValue(0);
 
                 // sign with RSAkeysize < 2048
@@ -746,9 +740,9 @@ public class TimestampCheck {
         verify(file, "-verbose", "-certs")
                 .shouldHaveExitValue(0)
                 .shouldContain("jar verified")
-                .shouldMatch("X.509.*CN=dsakey")
+                .shouldMatch("X.509.*CN=eckey")
                 .shouldNotMatch("X.509.*CN=disabledkeysize")
-                .shouldMatch("Signed by .*CN=dsakey")
+                .shouldMatch("Signed by .*CN=eckey")
                 .shouldMatch("Signed by .*CN=disabledkeysize")
                 .shouldMatch("Signature algorithm: .*key.*(disabled)");
     }
@@ -760,9 +754,9 @@ public class TimestampCheck {
         verify(file, "-verbose", "-certs")
                 .shouldHaveExitValue(0)
                 .shouldContain("jar verified")
-                .shouldMatch("X.509.*CN=dsakey")
+                .shouldMatch("X.509.*CN=eckey")
                 .shouldMatch("X.509.*CN=weakkeysize")
-                .shouldMatch("Signed by .*CN=dsakey")
+                .shouldMatch("Signed by .*CN=eckey")
                 .shouldMatch("Signed by .*CN=weakkeysize")
                 .shouldMatch("Signature algorithm: .*key.*(weak)");
     }
@@ -835,7 +829,6 @@ public class TimestampCheck {
         keytool("-alias signer -genkeypair -ext bc -dname CN=signer");
         keytool("-alias oldsigner -genkeypair -dname CN=oldsigner");
         keytool("-alias pre2019signer -genkeypair -dname CN=pre2019signer");
-        keytool("-alias dsakey -genkeypair -keyalg DSA -dname CN=dsakey");
         keytool("-alias eckey -genkeypair -keyalg EC -dname CN=eckey");
         keytool("-alias psskey -genkeypair -keyalg RSASSA-PSS -dname CN=psskey");
         keytool("-alias edkey -genkeypair -keyalg Ed25519 -dname CN=edkey");
@@ -869,7 +862,6 @@ public class TimestampCheck {
         gencert("signer");
         gencert("oldsigner", "-startdate -30d -validity 20");
         gencert("pre2019signer", "-startdate 2018/06/01 -validity 365");
-        gencert("dsakey");
         gencert("eckey");
         gencert("psskey");
         gencert("edkey");

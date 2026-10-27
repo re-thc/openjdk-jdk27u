@@ -98,6 +98,10 @@ public class EdDSASignature extends SignatureSpi {
     private byte[] publicKeyBytes;
     private EdDSAOperations ops;
     private EdDSAParameters lockedParams = null;
+    // Looking up the parameters initializes EdDSAParameters, which is not
+    // needed to find out that a provider has this signature, so it is done
+    // when the parameters are first checked.
+    private NamedParameterSpec lockedParamSpec = null;
     private MessageAccumulator message = null;
     private EdDSAParameterSpec sigParams = new EdDSAParameterSpec(false);
 
@@ -106,7 +110,7 @@ public class EdDSASignature extends SignatureSpi {
     }
 
     EdDSASignature(NamedParameterSpec paramSpec) {
-        lockedParams = EdDSAParameters.get(ProviderException::new, paramSpec);
+        lockedParamSpec = paramSpec;
     }
 
     @Override
@@ -157,6 +161,10 @@ public class EdDSASignature extends SignatureSpi {
     <T extends Throwable>
     void checkLockedParams(Function<String, T> exception,
                            EdDSAParameters params) throws T {
+        if (lockedParams == null && lockedParamSpec != null) {
+            lockedParams = EdDSAParameters.get(ProviderException::new,
+                lockedParamSpec);
+        }
         if (lockedParams != null && lockedParams != params) {
             throw exception.apply("Parameters must be " +
             lockedParams.getName());

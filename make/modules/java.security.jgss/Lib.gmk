@@ -82,13 +82,15 @@ ifneq ($(BUILD_CRYPTO), false)
 
     # libosxkrb5 needs to call deprecated krb5 APIs so that java
     # can use the native credentials cache.
+    # Foundation supplies the Objective-C collections used for configuration;
+    # Kerberos and SystemConfiguration retain the native OS services.
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
         EXTRA_HEADER_DIRS := java.base:libjava, \
         DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
         LIBS_macosx := \
-            -framework Cocoa \
+            -framework Foundation \
             -framework Kerberos \
             -framework SystemConfiguration, \
     ))

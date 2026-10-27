@@ -65,10 +65,15 @@ public final class ModuleLink implements Comparable<ModuleLink> {
      * Links are ordered with preview versions first, which permits early
      * exit when processing preview entries (it's reversed because the default
      * order for a boolean is {@code false < true}).
+     *
+     * <p>Only image writers sort links; the holder avoids linking these
+     * lambdas when reading an image.
      */
-    private static final Comparator<ModuleLink> PREVIEW_FIRST =
-            Comparator.comparing(ModuleLink::hasPreviewVersion).reversed()
-                    .thenComparing(ModuleLink::name);
+    private static final class PreviewFirstOrder {
+        static final Comparator<ModuleLink> INSTANCE =
+                Comparator.comparing(ModuleLink::hasPreviewVersion).reversed()
+                        .thenComparing(ModuleLink::name);
+    }
 
     /**
      * Returns a link for non-empty packages (those with resources) in a
@@ -151,7 +156,7 @@ public final class ModuleLink implements Comparable<ModuleLink> {
 
     @Override
     public int compareTo(ModuleLink rhs) {
-        return PREVIEW_FIRST.compare(this, rhs);
+        return PreviewFirstOrder.INSTANCE.compare(this, rhs);
     }
 
     @Override
@@ -201,6 +206,15 @@ public final class ModuleLink implements Comparable<ModuleLink> {
      */
     public static Iterator<Integer> readNameOffsets(
             IntBuffer buffer, boolean includeNormal, boolean includePreview) {
+        return nameOffsets(buffer, includeNormal, includePreview);
+    }
+
+    /**
+     * Same as {@link #readNameOffsets}, but the returned iterator also
+     * provides the offsets without boxing them.
+     */
+    static NameOffsetIterator nameOffsets(
+            IntBuffer buffer, boolean includeNormal, boolean includePreview) {
         int bufferSize = buffer.capacity();
         if (bufferSize == 0 || (bufferSize & 0x1) != 0) {
             throw new IllegalArgumentException("Invalid buffer size");
@@ -210,40 +224,58 @@ public final class ModuleLink implements Comparable<ModuleLink> {
         if (includeMask == 0) {
             throw new IllegalArgumentException("Invalid flags");
         }
+        return new NameOffsetIterator(buffer, bufferSize, includeMask, includeNormal);
+    }
 
-        return new Iterator<Integer>() {
-            private int idx = nextIdx(0);
+    static final class NameOffsetIterator implements Iterator<Integer> {
+        private final IntBuffer buffer;
+        private final int bufferSize;
+        private final int includeMask;
+        private final boolean includeNormal;
+        private int idx;
 
-            int nextIdx(int idx) {
-                for (; idx < bufferSize; idx += 2) {
-                    // If any of the test flags are set, include this entry.
-                    if ((buffer.get(idx) & includeMask) != 0) {
-                        return idx;
-                    } else if (!includeNormal) {
-                        // Preview entries are first in the offset buffer, so we
-                        // can exit early (by returning the end index) if we are
-                        // only iterating preview entries, and have run out.
-                        break;
-                    }
+        private NameOffsetIterator(
+                IntBuffer buffer, int bufferSize, int includeMask, boolean includeNormal) {
+            this.buffer = buffer;
+            this.bufferSize = bufferSize;
+            this.includeMask = includeMask;
+            this.includeNormal = includeNormal;
+            this.idx = nextIdx(0);
+        }
+
+        private int nextIdx(int idx) {
+            for (; idx < bufferSize; idx += 2) {
+                // If any of the test flags are set, include this entry.
+                if ((buffer.get(idx) & includeMask) != 0) {
+                    return idx;
+                } else if (!includeNormal) {
+                    // Preview entries are first in the offset buffer, so we
+                    // can exit early (by returning the end index) if we are
+                    // only iterating preview entries, and have run out.
+                    break;
                 }
-                return bufferSize;
             }
+            return bufferSize;
+        }
 
-            @Override
-            public boolean hasNext() {
-                return idx < bufferSize;
-            }
+        @Override
+        public boolean hasNext() {
+            return idx < bufferSize;
+        }
 
-            @Override
-            public Integer next() {
-                if (idx < bufferSize) {
-                    int nameOffset = buffer.get(idx + 1);
-                    idx = nextIdx(idx + 2);
-                    return nameOffset;
-                }
-                throw new NoSuchElementException();
+        int nextOffset() {
+            if (idx < bufferSize) {
+                int nameOffset = buffer.get(idx + 1);
+                idx = nextIdx(idx + 2);
+                return nameOffset;
             }
-        };
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public Integer next() {
+            return nextOffset();
+        }
     }
 
     /**

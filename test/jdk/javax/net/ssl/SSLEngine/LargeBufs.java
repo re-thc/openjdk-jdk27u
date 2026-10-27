@@ -188,10 +188,10 @@ public class LargeBufs {
         LargeBufs test;
 
         test = new LargeBufs();
-        test.runTest("SSL_RSA_WITH_RC4_128_MD5");
+        test.runTest("TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
 
         test = new LargeBufs();
-        test.runTest("SSL_RSA_WITH_3DES_EDE_CBC_SHA");
+        test.runTest("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
 
         System.out.println("Test Passed.");
     }
@@ -212,8 +212,8 @@ public class LargeBufs {
     private SSLContext getSSLContext(String keyFile, String trustFile)
             throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         char[] passphrase = "passphrase".toCharArray();
 

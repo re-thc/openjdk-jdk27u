@@ -64,8 +64,7 @@ public class SigTestUtil {
         "SHA3-224",
         "SHA-224",
         "SHA-512/224",
-        "SHA-1",
-        "MD2", "MD5" // these aren't supported by RSA PSS
+        "SHA-1"
     };
 
     // indice for message digest algorithms lookup
@@ -77,7 +76,7 @@ public class SigTestUtil {
     private static final int PSS_INDEX_1024 = 2; // 384-bit digests
     private static final int PSS_INDEX_768 = 4; // 256-bit digests
     private static final int PSS_INDEX_512 = 7; // 224-bit digests
-    private static final int PSS_INDEX_END = DIGEST_ALGS.length - 2;
+    private static final int PSS_INDEX_END = DIGEST_ALGS.length;
 
     public static Iterable<String> getDigestAlgorithms(SignatureType type,
             int keysize) throws RuntimeException {

@@ -262,7 +262,7 @@ public class ValidatePathWithParams {
         CertPath certPath = (CertPath) cf.generateCertPath(certs);
 
         // Set cacerts as anchor
-        KeyStore cacerts = KeyStore.getInstance("JKS");
+        KeyStore cacerts = KeyStore.getInstance("PKCS12");
         try (FileInputStream fis = new FileInputStream(CACERTS_STORE)) {
             cacerts.load(fis, "changeit".toCharArray());
         } catch (IOException | NoSuchAlgorithmException | CertificateException ex) {
