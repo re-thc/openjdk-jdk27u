@@ -248,6 +248,10 @@ profiler and built-in JFR followups also fail the check requiring broad direct
 installation. Their record sets were not written before that assertion, so the
 exact reduced/absent installation counts in those followups are uncertain.
 Removing the profiler's heap-tag request alone did not establish compatibility.
+The subsequent [reuse fixes and short reproducer](direct-baseline-reuse-fixes.md)
+recover exact counts in a new run: the global can_walk_any_space flag activates
+the existing compiler exclusion before emission. This diagnoses the tooling
+interference without recovering the missing original followup records.
 All failures/raw captures remain private and are not treated as enabled-tier
 samples; runtime correctness gates were not weakened to obtain a profile. The JFR file identifies ordinary interpreted/native
 work, but cannot quantify accepted-direct execution or rejected-versus-accepted
