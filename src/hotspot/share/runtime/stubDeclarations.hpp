@@ -131,6 +131,7 @@
   do_blob(throw_null_pointer_exception)                                \
   do_blob(register_finalizer)                                          \
   do_blob(new_instance)                                                \
+  AMD64_ONLY(do_blob(direct_allocate))                                 \
   do_blob(fast_new_instance)                                           \
   do_blob(fast_new_instance_init_check)                                \
   do_blob(new_type_array)                                              \

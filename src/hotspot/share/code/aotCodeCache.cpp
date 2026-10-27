@@ -2031,6 +2031,9 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::exception_handler_for_pc);
     ADD_EXTERNAL_ADDRESS(Runtime1::check_abort_on_vm_exception);
     ADD_EXTERNAL_ADDRESS(Runtime1::new_instance);
+#ifdef AMD64
+    ADD_EXTERNAL_ADDRESS(Runtime1::direct_allocate);
+#endif
     ADD_EXTERNAL_ADDRESS(Runtime1::counter_overflow);
     ADD_EXTERNAL_ADDRESS(Runtime1::new_type_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::new_object_array);

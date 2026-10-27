@@ -48,7 +48,14 @@ public class DirectBaselineAllocationTest {
     }
     static int initialized;
     static class Cold { static int value = ++initialized; }
-    static class Never { static int value = ++initialized; }
+    static int neverCalls, failures;
+    static class Never { static int value = ++initialized; Never() { neverCalls++; } }
+    static class Unloaded { static int value = ++initialized; }
+    static class InitFailure { static int value = failInit(); }
+    static int failInit() { failures++;throw new IllegalStateException("expected init failure"); }
+    static boolean resolveFailure(Object value) { return value instanceof InitFailure; }
+    static Object failingPath(int use) { if(use==0)return null;return new InitFailure(); }
+    static Object coldArray(int use,int n) { if(use==0)return null;return new Unloaded[n]; }
     static Product make(Side side, Object token, int value, int mode) {
         side.before++;
         return new Product(side, token, value, mode);
@@ -117,9 +124,22 @@ public class DirectBaselineAllocationTest {
         // Resolve without initializing, then ensure cold instance allocation falls back.
         check(!resolveNever(token) && initialized == 0);
         Method cold = DirectBaselineAllocationTest.class.getDeclaredMethod("coldPath",int.class);
-        for(int i=0;i<64;i++) { check(coldPath(0) == null); Thread.sleep(1); }
-        check(wb.getMethodCompilationLevel(cold) == 0 && initialized == 0);
-        check(coldPath(1) instanceof Never && initialized == 1);
+        check(!resolveFailure(token));
+        for(int i=0;i<64;i++) {
+            check(coldPath(0)==null && coldArray(0,3)==null && failingPath(0)==null);
+            Thread.sleep(1);
+        }
+        await(wb,cold,1);
+        await(wb,DirectBaselineAllocationTest.class.getDeclaredMethod("coldArray",int.class,int.class),1);
+        await(wb,DirectBaselineAllocationTest.class.getDeclaredMethod("failingPath",int.class),1);
+        check(initialized==0 && failures==0);
+        check(coldPath(1) instanceof Never && initialized==1 && neverCalls==1);
+        Object coldResult=coldArray(1,3);
+        check(java.lang.reflect.Array.getLength(coldResult)==3 && initialized==1);
+        try { coldArray(1,-1);throw new AssertionError(); } catch(NegativeArraySizeException expected) {}
+        try { failingPath(1);throw new AssertionError(); } catch(ExceptionInInitializerError expected) {}
+        try { failingPath(1);throw new AssertionError(); } catch(NoClassDefFoundError expected) {}
+        check(failures==1);
         // Runtime1 explicitly deoptimizes array-allocation returns under this debug flag.
         if (jdk.test.lib.Platform.isDebugBuild()) {
             com.sun.management.ThreadMXBean bean = (com.sun.management.ThreadMXBean)ManagementFactory.getThreadMXBean();
@@ -127,6 +147,15 @@ public class DirectBaselineAllocationTest {
             long tid = Thread.currentThread().threadId();
             for (int i=0;i<20;i++) bean.getThreadAllocatedBytes(tid);
             wb.setBooleanVMFlag("TraceDeoptimization",true);
+            wb.setBooleanVMFlag("DeoptimizeALot",true);
+            try {
+                long beforeAllocation=bean.getThreadAllocatedBytes(tid);
+                Object instance=coldPath(1);
+                long bytes=bean.getThreadAllocatedBytes(tid)-beforeAllocation;
+                check(instance instanceof Never && initialized==1 && neverCalls==2);
+                check(bytes==wb.getObjectSize(instance));
+            } finally { wb.setBooleanVMFlag("DeoptimizeALot",false); }
+            System.out.println("DIRECT_INSTANCE_RETURN_DEOPT_OK");
             long allocatedBefore = bean.getThreadAllocatedBytes(tid);
             Object[] array;
             wb.setBooleanVMFlag("DeoptimizeALot",true);
@@ -154,9 +183,10 @@ public class DirectBaselineAllocationTest {
                 DirectBaselineAllocationTest.class.getName(), "child");
             out.shouldHaveExitValue(0).shouldContain("DIRECT_ALLOCATION_OK")
                 .shouldContain("direct install make(").shouldContain("direct install nested(")
-                .shouldNotContain("direct install coldPath(");
+                .shouldContain("direct install coldPath(").shouldContain("direct install coldArray(")
+                .shouldContain("direct install failingPath(");
             if (jdk.test.lib.Platform.isDebugBuild()) {
-                out.shouldContain("DIRECT_ALLOCATION_RETURN_DEOPT_OK")
+                out.shouldContain("DIRECT_ALLOCATION_RETURN_DEOPT_OK").shouldContain("DIRECT_INSTANCE_RETURN_DEOPT_OK")
                     .shouldContain("SAVED OOP RESULT");
             }
         }

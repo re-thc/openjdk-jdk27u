@@ -371,6 +371,35 @@ const char* Runtime1::name_for_address(address entry) {
 }
 
 
+#ifdef AMD64
+// A direct allocation site can precede the first execution of its CP operand.
+// Resolve that original entry on the Java thread, preserving cached errors and
+// access/loader checks, rather than resolving an unused class while compiling.
+JRT_ENTRY(void, Runtime1::direct_allocate(JavaThread* current, Method* m, jint bci, jint length))
+  methodHandle method(current,m);
+  constantPoolHandle pool(current,method->constants());
+  Bytecodes::Code bc=Bytecodes::java_code_at(method(),method->bcp_from(bci));
+  assert(bc==Bytecodes::_new || bc==Bytecodes::_anewarray,"direct allocation bytecode");
+  int index=bc==Bytecodes::_new ? Bytecode_new(method(),method->bcp_from(bci)).index() :
+                                Bytecode_anewarray(method(),method->bcp_from(bci)).index();
+  Klass* klass=pool->klass_at(index,CHECK);
+  Handle holder(current,klass->klass_holder());
+  oop obj;
+  if (bc==Bytecodes::_new) {
+    InstanceKlass* instance=InstanceKlass::cast(klass);
+    instance->check_valid_for_instantiation(true,CHECK);
+    instance->initialize(CHECK);
+    obj=instance->allocate_instance(CHECK);
+  } else {
+    // Resolution precedes length validation; component initialization is not
+    // part of anewarray, including when the component has a failing <clinit>.
+    obj=oopFactory::new_objArray(klass,length,CHECK);
+  }
+  current->set_vm_result_oop(obj);
+  if (DeoptimizeALot) deopt_caller(current);
+JRT_END
+#endif
+
 JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
 #ifndef PRODUCT
   if (PrintC1Statistics) {

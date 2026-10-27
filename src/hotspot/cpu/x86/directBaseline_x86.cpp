@@ -521,6 +521,7 @@ class Emitter : StackObj {
   }
   bool allocate(ciBytecodeStream& bs, Bytecodes::Code bc, int bci, State* s) {
     ciKlass* klass = nullptr;
+    bool lazy = false;
     StubId stub = StubId::c1_new_instance_id;
     if (bc == Bytecodes::_newarray) {
       BasicType type = (BasicType)bs.get_index();
@@ -528,25 +529,32 @@ class Emitter : StackObj {
       klass = ciTypeArrayKlass::make(type);
       stub = StubId::c1_new_type_array_id;
     } else {
-      // A Klass* argument alone cannot resolve a CP entry or replay its saved
-      // error. Leave unresolved sites to the interpreter until patching exists.
-      if (bs.is_unresolved_klass()) return fail("unresolved allocation class");
-      bool will_link = false;
-      ciKlass* element = bs.get_klass(will_link);
-      if (!will_link || !element->is_loaded()) return fail("inaccessible allocation class");
-      if (bc == Bytecodes::_new) {
-        if (!element->is_instance_klass() || !element->as_instance_klass()->is_initialized())
-          return fail("uninitialized instance allocation class");
-        klass = element;
-      } else {
-        // Creating an array must not initialize its component class.
-        klass = ciObjArrayKlass::make(element);
-        stub = StubId::c1_new_object_array_id;
+      lazy=bs.is_unresolved_klass();
+      if (!lazy) {
+        bool will_link = false;
+        ciKlass* element = bs.get_klass(will_link);
+        if (!will_link || !element->is_loaded()) return fail("inaccessible allocation class");
+        if (bc == Bytecodes::_new) {
+          if (!element->is_instance_klass()) return fail("instance allocation class");
+          lazy=!element->as_instance_klass()->is_initialized();
+          klass=element;
+        } else {
+          klass=ciObjArrayKlass::make(element);
+          stub=StubId::c1_new_object_array_id;
+        }
       }
     }
-    if (_env->failing() || !klass->is_loaded()) return fail("array klass allocation");
-    __ mov_metadata(rdx, klass->constant_encoding());
-    if (bc != Bytecodes::_new) __ movl(rbx, stack(s->sp-1));
+    if (_env->failing() || (!lazy && !klass->is_loaded())) return fail("array klass allocation");
+    if (lazy) {
+      __ mov_metadata(rdx,_method->constant_encoding());
+      __ movl(rcx,bci);
+      if (bc==Bytecodes::_new) __ xorl(rbx,rbx);
+      else __ movl(rbx,stack(s->sp-1));
+      stub=StubId::c1_direct_allocate_id;
+    } else {
+      __ mov_metadata(rdx,klass->constant_encoding());
+      if (bc!=Bytecodes::_new) __ movl(rbx,stack(s->sp-1));
+    }
     __ call(RuntimeAddress(Runtime1::entry_for(stub)));
     // The runtime has produced a parsable oop. Deoptimization at this return
     // PC continues after the allocation and supplies rax as interpreter TOS.

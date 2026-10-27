@@ -831,6 +831,23 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
+#ifdef AMD64
+    case StubId::c1_direct_allocate_id:
+      {
+        // Method metadata and scalar operands; Java roots stay canonical in
+        // the caller. call_RT handles ABI argument-register overlaps.
+        __ set_info("direct_allocate",dont_gc_arguments);
+        __ enter();
+        OopMap* map=save_live_registers(sasm,4);
+        int call_offset=__ call_RT(rax,noreg,CAST_FROM_FN_PTR(address,direct_allocate),rdx,rcx,rbx);
+        oop_maps=new OopMapSet();
+        oop_maps->add_gc_map(call_offset,map);
+        restore_live_registers_except_rax(sasm);
+        __ verify_oop(rax);
+        __ leave(); __ ret(0);
+      }
+      break;
+#endif
     case StubId::c1_new_instance_id:
     case StubId::c1_fast_new_instance_id:
     case StubId::c1_fast_new_instance_init_check_id:

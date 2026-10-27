@@ -89,6 +89,9 @@ public:
 
   // runtime entry points
   static void new_instance    (JavaThread* current, Klass* klass);
+#ifdef AMD64
+  static void direct_allocate(JavaThread* current, Method* method, jint bci, jint length);
+#endif
   static void new_type_array  (JavaThread* current, Klass* klass, jint length);
   static void new_object_array(JavaThread* current, Klass* klass, jint length);
   static void new_multi_array (JavaThread* current, Klass* klass, int rank, jint* dims);

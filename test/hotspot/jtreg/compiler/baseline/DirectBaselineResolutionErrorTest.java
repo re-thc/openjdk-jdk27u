@@ -34,9 +34,12 @@ import jdk.test.whitebox.WhiteBox;
 
 public class DirectBaselineResolutionErrorTest {
     public static class Target { public Target() {} }
+    static class Hidden {}
     public static class Site {
         public static Object cast(Object x) { return (Target)x; }
         public static boolean test(Object x) { return x instanceof Target; }
+        public static Object array() { return new Target[1]; }
+        public static Object hiddenArray() { return new Hidden[1]; }
     }
     static class Loader extends ClassLoader {
         boolean allowTarget;
@@ -53,20 +56,30 @@ public class DirectBaselineResolutionErrorTest {
         }
     }
     static void failure(Method method, Object target) throws Exception {
-        try { method.invoke(null,target); throw new AssertionError("cached failure bypassed: "+method); }
-        catch(InvocationTargetException e) {
-            if (!(e.getCause() instanceof NoClassDefFoundError)) throw e;
-        }
+        failure(method,target,NoClassDefFoundError.class);
+    }
+    static void failure(Method method,Object target,Class<?> expected) throws Exception {
+        try {
+            if(method.getParameterCount()==0) method.invoke(null);else method.invoke(null,target);
+            throw new AssertionError("cached failure bypassed: "+method);
+        } catch(InvocationTargetException e) { if(!expected.isInstance(e.getCause())) throw e; }
     }
     static void child() throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
         Loader loader = new Loader();
         Class<?> site = loader.loadClass(Site.class.getName());
         Method cast = site.getMethod("cast",Object.class), test = site.getMethod("test",Object.class);
-        failure(cast,new Object()); failure(test,new Object());
+        Method array=site.getMethod("array"),hidden=site.getMethod("hiddenArray");
+        failure(cast,new Object()); failure(test,new Object());failure(array,null);
+        failure(hidden,null,IllegalAccessError.class);
         loader.allowTarget = true;
         Object target = loader.loadClass(Target.class.getName()).getConstructor().newInstance();
-        for(int i=0;i<64;i++) { failure(cast,target); failure(test,target); Thread.sleep(1); }
+        for(int i=0;i<64;i++) {
+            failure(cast,target);failure(test,target);failure(array,null);
+            failure(hidden,null,IllegalAccessError.class);Thread.sleep(1);
+        }
+        if(wb.getMethodCompilationLevel(array)!=1 || wb.getMethodCompilationLevel(hidden)!=1)
+            throw new AssertionError("lazy array sites did not compile");
         if(wb.getMethodCompilationLevel(cast) != 0 || wb.getMethodCompilationLevel(test) != 0) throw new AssertionError("error site compiled");
         System.out.println("DIRECT_RESOLUTION_ERROR_OK");
     }
@@ -78,6 +91,7 @@ public class DirectBaselineResolutionErrorTest {
             "-XX:CompileCommand=dontinline,DirectBaselineResolutionErrorTest*::*",
             DirectBaselineResolutionErrorTest.class.getName(),"child")
             .shouldHaveExitValue(0).shouldContain("DIRECT_RESOLUTION_ERROR_OK")
-            .shouldContain("cast resolution error");
+            .shouldContain("cast resolution error").shouldContain("direct install array()Ljava/lang/Object;")
+            .shouldContain("direct install hiddenArray()Ljava/lang/Object;");
     }
 }
