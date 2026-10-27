@@ -13,6 +13,11 @@ The local prototype branch is `wip/interpreter-frame-pilot`; source commits are
 `bcda30bbe19` and ownership correction `d42a8db4f2c`. No public/default/policy
 change accompanies this experiment.
 
+The subsequent [preparation/publication experiment](interpreter-frame-publication.md)
+keeps this pilot intact and tests a requesting-thread producer without an
+explicit synchronous VM operation. Its matched measurements are a separate
+cohort with additional phase instrumentation.
+
 ## What was implemented
 
 `UseInterpreterFramePilot` is off by default. WhiteBox explicitly prepares a
