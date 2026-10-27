@@ -34,6 +34,9 @@
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 TestUTF8CharsetCoders
  */
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
@@ -99,6 +102,61 @@ public class TestUTF8CharsetCoders {
         }
     }
 
+    /** Chars that a compact string holds: ASCII and Latin-1, in mixed runs. */
+    private static char[] latin1Chars(Random random, int length) {
+        char[] chars = new char[length];
+        for (int i = 0; i < length; ) {
+            int run = 1 + random.nextInt(40);
+            boolean high = random.nextBoolean();
+            for (int j = 0; j < run && i < length; j++, i++) {
+                chars[i] = high ? (char) (0x80 + random.nextInt(0x80)) : (char) (' ' + random.nextInt(95));
+            }
+        }
+        return chars;
+    }
+
+    /**
+     * Buffers made by wrapping a string read the string's storage from an offset: wrapping a
+     * range, a slice, a duplicate and a subsequence of one, for compact strings and others.
+     */
+    private static void checkStringBuffers(Random random, String s) {
+        int length = s.length();
+        for (int round = 0; round < 6; round++) {
+            int from = random.nextInt(length / 2 + 1);
+            int to = length - random.nextInt(length / 4 + 1);
+            CharBuffer wrapped = CharBuffer.wrap(s, from, to);              // position from, limit to
+            CharBuffer slice = CharBuffer.wrap(s, from, to).slice();        // offset from
+            CharBuffer inner = slice.subSequence(random.nextInt(4), slice.remaining() - random.nextInt(4));
+            CharBuffer copy = wrapped.duplicate();
+            int skip = random.nextInt(8);
+            copy.position(Math.min(copy.limit(), copy.position() + skip));
+            CharBuffer[] buffers = {wrapped, slice, inner, copy};
+            for (CharBuffer in : buffers) {
+                String want = in.toString();
+                byte[] expected = want.getBytes(StandardCharsets.UTF_8);
+                for (ByteBuffer out : new ByteBuffer[]{ByteBuffer.allocate(3 * length + 16),
+                                                       ByteBuffer.allocateDirect(3 * length + 16)}) {
+                    CharBuffer source = in.duplicate();
+                    var result = StandardCharsets.UTF_8.newEncoder()
+                            .onMalformedInput(CodingErrorAction.REPLACE)
+                            .onUnmappableCharacter(CodingErrorAction.REPLACE)
+                            .encode(source, out, true);
+                    if (!result.isUnderflow() || source.hasRemaining()) {
+                        throw new AssertionError("string buffer " + result + " remaining " + source.remaining());
+                    }
+                    out.flip();
+                    byte[] actual = new byte[out.remaining()];
+                    out.get(actual);
+                    if (!Arrays.equals(expected, actual)) {
+                        throw new AssertionError("string buffer from=" + from + " to=" + to + " length=" + length
+                                + " first difference at " + Arrays.mismatch(expected, actual));
+                    }
+                    checks++;
+                }
+            }
+        }
+    }
+
     private static byte[] corrupt(Random random, byte[] valid) {
         byte[] data = valid.clone();
         int[][] shapes = {{0xc0, 0x80}, {0xed, 0xa0, 0x80}, {0xe0, 0x80, 0x80}, {0xf4, 0x90, 0x80, 0x80},
@@ -133,6 +191,12 @@ public class TestUTF8CharsetCoders {
                     checkDecode(random, Arrays.copyOf(valid, valid.length - 1)); // may end inside a sequence
                 }
                 checkEncode(random, chars);
+                char[] compact = latin1Chars(random, length);
+                checkEncode(random, compact);
+                if (length >= 64) {
+                    checkStringBuffers(random, new String(compact));
+                    checkStringBuffers(random, new String(chars));
+                }
                 if (length > 0) {
                     checkEncode(random, CoderTranscript.randomChars(random, length, true));
                     checkEncode(random, Arrays.copyOf(chars, length - 1)); // may end after a high surrogate

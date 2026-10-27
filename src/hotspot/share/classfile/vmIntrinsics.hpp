@@ -462,6 +462,8 @@ class methodHandle;
   do_intrinsic(_encodeLatin1Bulk, sun_nio_cs_iso8859_1_Encoder, encodeBulk_name, bulkConvert_signature, F_S)            \
   do_intrinsic(_decodeAsciiBulk,  sun_nio_cs_us_ascii_Decoder,  decodeBulk_name, bulkConvert_signature, F_S)            \
   do_intrinsic(_encodeAsciiBulk,  sun_nio_cs_us_ascii_Encoder,  encodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_encodeLatin1UTF8Bulk, sun_nio_cs_utf8_Encoder, encodeLatin1Bulk_name, bulkConvert_signature, F_S)       \
+   do_name(     encodeLatin1Bulk_name,                   "encodeLatin1Bulk")                                              \
                                                                                                                         \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \

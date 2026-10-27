@@ -71,6 +71,7 @@ public class SimdUTFCoders {
     private CharsetDecoder utf8Decoder, utf32Decoder;
     private CharsetEncoder utf8Encoder, utf32Encoder;
     private char[] readBuffer;
+    private String string;
     // The single-byte charsets, over text that they map: the text is converted to the
     // charset and back
     private ByteBuffer latin1Heap, latin1Direct, asciiHeap, asciiDirect;
@@ -101,6 +102,7 @@ public class SimdUTFCoders {
         }
         String s = text.toString();
         chars = s.toCharArray();
+        string = s;
         utf8Bytes = s.getBytes(StandardCharsets.UTF_8);
         utf32Bytes = s.getBytes(UTF_32LE);
         utf16leBytes = s.getBytes(UTF_16LE);
@@ -198,6 +200,9 @@ public class SimdUTFCoders {
     // Convenience and stream callers, which allocate their buffers as they would in an application.
     @Benchmark public CharBuffer charsetDecode() { return StandardCharsets.UTF_8.decode(utf8Heap.rewind()); }
     @Benchmark public ByteBuffer charsetEncode() { return StandardCharsets.UTF_8.encode(textHeap.rewind()); }
+    // A string is read through a char buffer without an array
+    @Benchmark public ByteBuffer charsetEncodeString() { return StandardCharsets.UTF_8.encode(string); }
+    @Benchmark public int utf8EncodeString() { return encode(utf8Encoder, CharBuffer.wrap(string), bytesHeap); }
 
     @Benchmark
     public int readerRead() throws IOException {

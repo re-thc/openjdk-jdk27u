@@ -3034,6 +3034,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_encodeLatin1Bulk:
   case vmIntrinsics::_decodeAsciiBulk:
   case vmIntrinsics::_encodeAsciiBulk:
+  case vmIntrinsics::_encodeLatin1UTF8Bulk:
     do_convertPrefix(x);
     break;
   case vmIntrinsics::_indexOfL_char:

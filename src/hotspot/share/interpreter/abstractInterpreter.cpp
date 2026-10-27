@@ -153,6 +153,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_encodeLatin1Bulk: return sun_nio_cs_ISO_8859_1_Encoder_encodeBulk;
       case vmIntrinsics::_decodeAsciiBulk: return sun_nio_cs_US_ASCII_Decoder_decodeBulk;
       case vmIntrinsics::_encodeAsciiBulk: return sun_nio_cs_US_ASCII_Encoder_encodeBulk;
+      case vmIntrinsics::_encodeLatin1UTF8Bulk: return sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk;
       case vmIntrinsics::_countPositives: return java_lang_StringCoding_countPositives;
       case vmIntrinsics::_inflateStringC: return java_lang_StringLatin1_inflateChars;
       case vmIntrinsics::_inflateStringB: return java_lang_StringLatin1_inflateBytes;
@@ -272,6 +273,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case sun_nio_cs_ISO_8859_1_Encoder_encodeBulk: return vmIntrinsics::_encodeLatin1Bulk;
   case sun_nio_cs_US_ASCII_Decoder_decodeBulk: return vmIntrinsics::_decodeAsciiBulk;
   case sun_nio_cs_US_ASCII_Encoder_encodeBulk: return vmIntrinsics::_encodeAsciiBulk;
+  case sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk: return vmIntrinsics::_encodeLatin1UTF8Bulk;
   case java_lang_StringCoding_countPositives: return vmIntrinsics::_countPositives;
   case java_lang_StringLatin1_inflateChars: return vmIntrinsics::_inflateStringC;
   case java_lang_StringLatin1_inflateBytes: return vmIntrinsics::_inflateStringB;

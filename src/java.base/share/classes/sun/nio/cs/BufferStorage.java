@@ -97,6 +97,19 @@ final class BufferStorage {
         }
     }
 
+    /**
+     * {@return the string that the char buffer reads, if it was made by wrapping a string}
+     * Such a buffer has no storage of its own, and {@link #stringOffset} is the index of its
+     * element 0 in the string.
+     */
+    static String string(CharBuffer buffer) {
+        return NIO.stringOf(buffer);
+    }
+
+    static int stringOffset(CharBuffer buffer) {
+        return NIO.stringOffset(buffer);
+    }
+
     static Object base(Buffer buffer) {
         return NIO.getBufferBase(buffer);
     }

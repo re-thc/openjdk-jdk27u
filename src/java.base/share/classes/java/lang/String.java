@@ -1268,6 +1268,18 @@ public final class String
     // after a call that stopped near its start
     private static final int UTF8_BULK_BACKOFF = 256;
 
+    /**
+     * Converts the valid complete prefix of the {@code n} chars from index {@code from} to
+     * UTF-8 in calls of bounded length, for the char buffer of a string. See
+     * {@code JavaLangAccess.encodeUTF8Run}.
+     */
+    long encodeUTF8Run(int from, int n, Object dst, long dstAddress, int room) {
+        Objects.checkFromIndexSize(from, n, length());
+        return isLatin1()
+                ? UTF_8.encodeLatin1Run(value, Unsafe.ARRAY_BYTE_BASE_OFFSET + from, n, dst, dstAddress, room)
+                : UTF_8.encodeRun(value, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) from << 1), n, dst, dstAddress, room);
+    }
+
     // Converts the longest prefix of complete, valid UTF-8 whose characters are all
     // Latin-1, reading and writing the given storage as (object, address) pairs, and
     // returns the consumed bytes in the high word and the produced bytes in the low

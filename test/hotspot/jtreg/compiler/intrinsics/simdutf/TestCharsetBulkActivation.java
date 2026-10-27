@@ -116,6 +116,10 @@ public class TestCharsetBulkActivation {
         String asciiText = "hello world, plain text ".repeat(8);
         byte[] ascii = asciiText.getBytes(StandardCharsets.US_ASCII);
         char[] asciiChars = asciiText.toCharArray();
+        // A compact string is Latin-1 bytes that become one or two bytes of UTF-8
+        list.add(new Bulk("Latin-1 to UTF-8", method("sun.nio.cs.UTF_8$Encoder", "encodeLatin1Bulk"),
+                latin1, bytes, latin1.length, new byte[latin1Utf8.length + 16], bytes, latin1Utf8.length + 16,
+                latin1.length, latin1Utf8.length));
         list.add(new Bulk("ISO-8859-1 decode", method("sun.nio.cs.ISO_8859_1$Decoder", "decodeBulk"),
                 latin1, bytes, latin1.length, new char[latin1.length], chr, latin1.length,
                 latin1.length, latin1.length));
@@ -166,7 +170,8 @@ public class TestCharsetBulkActivation {
                                               "UnicodeDecoder::decodeBulkLE", "UnicodeDecoder::decodeBulkBE",
                                               "UnicodeEncoder::encodeBulkLE", "UnicodeEncoder::encodeBulkBE",
                                               "ISO_8859_1$Decoder::decodeBulk", "ISO_8859_1$Encoder::encodeBulk",
-                                              "US_ASCII$Decoder::decodeBulk", "US_ASCII$Encoder::encodeBulk"}) {
+                                              "US_ASCII$Decoder::decodeBulk", "US_ASCII$Encoder::encodeBulk",
+                                              "UTF_8$Encoder::encodeLatin1Bulk"}) {
                 output.shouldMatch(Pattern.quote(method) + " \\(\\d+ bytes\\)\\s+\\(?intrinsic\\)?");
             }
         }
@@ -251,6 +256,11 @@ class CharsetBulkWork {
             singleOut.clear();
             isoEncoder.reset().encode(CharBuffer.wrap(latin1Text.toCharArray()), singleOut, true);
             sum += singleOut.position();
+            // A buffer made by wrapping a string has no array: its compact string is
+            // converted from the bytes of the string itself
+            bytes.clear();
+            utf8Encoder.reset().encode(CharBuffer.wrap(latin1Text), bytes, true);
+            sum += bytes.position();
             singleOut.clear();
             asciiEncoder.reset().encode(CharBuffer.wrap(asciiText.toCharArray()), singleOut, true);
             sum += singleOut.position();

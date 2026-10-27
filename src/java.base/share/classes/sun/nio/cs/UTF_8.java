@@ -118,6 +118,18 @@ public final class UTF_8 extends Unicode {
         return Encoder.encodeRun(src, srcAddress, n, dst, dstAddress, room);
     }
 
+    /**
+     * Converts the Latin-1 bytes of a compact string, {@code n} at {@code srcAddress}, into
+     * UTF-8 at {@code dstAddress}, with room for {@code room} bytes, in calls of bounded
+     * length, for the char buffer of a string. A char that does not fit ends the conversion.
+     *
+     * @return the consumed chars in the high word and the produced bytes in the low word
+     */
+    public static long encodeLatin1Run(Object src, long srcAddress, int n,
+                                       Object dst, long dstAddress, int room) {
+        return Encoder.encodeLatin1Run(src, srcAddress, n, dst, dstAddress, room);
+    }
+
     private static class Decoder extends CharsetDecoder {
 
         private Decoder(Charset cs) {
@@ -563,6 +575,34 @@ public final class UTF_8 extends Unicode {
             return 0L;
         }
 
+        // Converts the leading Latin-1 bytes that fit, as UTF-8, reading and writing the
+        // given storage as (object, address) pairs, and returns the consumed bytes in the
+        // high word and the produced bytes in the low word. Every byte converts; the output
+        // bounds the prefix. The Java body declines by consuming nothing.
+        @IntrinsicCandidate
+        private static long encodeLatin1Bulk(Object src, long srcAddress, int srcLength,
+                                             Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // Converts prefixes of the n Latin-1 bytes at srcAddress until one makes no progress.
+        private static long encodeLatin1Run(Object src, long srcAddress, int n,
+                                            Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = encodeLatin1Bulk(src, srcAddress + sp, chunk, dst, dstAddress + dp, room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
         // Whether converting in bulk would make progress at a char, which is so unless it is
         // a surrogate that does not begin a pair. Such chars are left to the loops, which
         // report them without a call that fails at its first char.
@@ -596,7 +636,15 @@ public final class UTF_8 extends Unicode {
             int room = dst.remaining();
             if (n < BULK_MIN || room < BULK_MIN
                     || !mayStart(src.get(src.position()), src.get(src.position() + 1))
-                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                    || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            String str = BufferStorage.string(src);
+            if (str != null) {
+                encodeString(str, src, dst, n, room);
+                return;
+            }
+            if (!BufferStorage.accessible(src, false)) {
                 return;
             }
             Object srcBase = BufferStorage.base(src);
@@ -609,6 +657,22 @@ public final class UTF_8 extends Unicode {
             BufferStorage.acquire(src, dst);
             try {
                 long r = encodeRun(srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + (int) (r >>> 32));
+                dst.position(dst.position() + (int) r);
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
+        // A buffer made by wrapping a string reads the string's own storage, which neither
+        // changes nor overlaps the destination.
+        private static void encodeString(String str, CharBuffer src, ByteBuffer dst, int n, int room) {
+            Object dstBase = BufferStorage.base(dst);
+            long dstAddress = BufferStorage.address(dst, 0);
+            BufferStorage.acquire(src, dst);
+            try {
+                long r = JLA.encodeUTF8Run(str, BufferStorage.stringOffset(src) + src.position(), n,
+                                           dstBase, dstAddress, room);
                 src.position(src.position() + (int) (r >>> 32));
                 dst.position(dst.position() + (int) r);
             } finally {

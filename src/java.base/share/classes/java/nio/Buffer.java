@@ -864,6 +864,16 @@ public abstract sealed class Buffer
                 }
 
                 @Override
+                public String stringOf(CharBuffer buffer) {
+                    return buffer instanceof StringCharBuffer s && s.str instanceof String str ? str : null;
+                }
+
+                @Override
+                public int stringOffset(CharBuffer buffer) {
+                    return buffer.offset;
+                }
+
+                @Override
                 public UnmapperProxy unmapper(Buffer buffer) {
                     if (buffer instanceof MappedByteBuffer mbb) {
                         return mbb.unmapper();

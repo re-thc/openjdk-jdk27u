@@ -233,6 +233,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(sun_nio_cs_ISO_8859_1_Encoder_encodeBulk)
   method_entry(sun_nio_cs_US_ASCII_Decoder_decodeBulk)
   method_entry(sun_nio_cs_US_ASCII_Encoder_encodeBulk)
+  method_entry(sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk)
   method_entry(java_lang_StringCoding_countPositives)
   method_entry(java_lang_StringLatin1_inflateChars)
   method_entry(java_lang_StringLatin1_inflateBytes)
@@ -541,6 +542,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::sun_nio_cs_ISO_8859_1_Encoder_encodeBulk:
   case Interpreter::sun_nio_cs_US_ASCII_Decoder_decodeBulk:
   case Interpreter::sun_nio_cs_US_ASCII_Encoder_encodeBulk:
+  case Interpreter::sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk:
 #if defined(AMD64) || defined(AARCH64)
     entry_point = generate_convert_prefix_entry(kind);
 #endif

@@ -2213,6 +2213,10 @@ public final class System {
                 return str.coder();
             }
 
+            public long encodeUTF8Run(String s, int from, int n, Object dst, long dstAddress, int room) {
+                return s.encodeUTF8Run(from, n, dst, dstAddress, room);
+            }
+
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
