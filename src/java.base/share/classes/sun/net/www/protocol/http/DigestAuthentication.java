@@ -124,9 +124,8 @@ final class DigestAuthentication extends AuthenticationInfo {
     // There don't appear to be any blocking IO calls performed from
     // within the synchronized code blocks in the Parameters class, so there don't
     // seem to be any need to migrate it to using java.util.concurrent.locks
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class Parameters implements java.io.Serializable {
-        private static final long serialVersionUID = -3584543755194526252L;
-
         private boolean serverQop; // server proposed qop=auth
         private String opaque;
         private String cnonce;

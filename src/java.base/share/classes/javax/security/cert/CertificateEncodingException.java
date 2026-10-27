@@ -40,12 +40,10 @@ package javax.security.cert;
  * @author Hemma Prafullchandra
  * @deprecated Use the classes in {@code java.security.cert} instead.
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since="9", forRemoval=true)
 public class CertificateEncodingException extends CertificateException {
 
-    @java.io.Serial
-    private static final long serialVersionUID = -8187642723048403470L;
     /**
      * Constructs a CertificateEncodingException with no detail message. A
      * detail message is a String that describes this particular

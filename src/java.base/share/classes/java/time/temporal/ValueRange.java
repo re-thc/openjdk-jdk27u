@@ -87,13 +87,8 @@ import java.time.DateTimeException;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ValueRange implements Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -7317881728594519368L;
 
     /**
      * @serial The smallest minimum value.

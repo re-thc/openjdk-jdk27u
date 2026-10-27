@@ -75,10 +75,8 @@ import static sun.security.util.SecurityProviderConstants.*;
  * - HKDF-SHA256, HKDF-SHA384, and HKDF-SHA512
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunJCE extends Provider {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6812507587804302833L;
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, ARCFOUR, PBE, "

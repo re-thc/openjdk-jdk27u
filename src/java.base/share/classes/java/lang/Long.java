@@ -69,6 +69,7 @@ import static java.lang.String.COMPACT_STRINGS;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
@@ -1988,7 +1989,4 @@ public final class Long extends Number
         return this;
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    @Native private static final long serialVersionUID = 4290774380558885855L;
 }

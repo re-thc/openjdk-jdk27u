@@ -34,10 +34,8 @@ import java.io.IOException;
  * @since   1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ZipException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = 8000196834066748623L;
-
     /**
      * Constructs a {@code ZipException} with {@code null}
      * as its error detail message.

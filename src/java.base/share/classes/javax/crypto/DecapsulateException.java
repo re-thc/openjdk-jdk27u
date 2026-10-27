@@ -33,10 +33,8 @@ import java.security.GeneralSecurityException;
  *
  * @since 21
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DecapsulateException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 21L;
 
     /**
      * Creates a {@code DecapsulateException} with the specified

@@ -171,6 +171,7 @@ import jdk.internal.vm.annotation.Stable;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
@@ -4951,10 +4952,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
         return nz;
     }
-
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -8287574255936472291L;
 
     /**
      * Serializable fields for BigInteger.

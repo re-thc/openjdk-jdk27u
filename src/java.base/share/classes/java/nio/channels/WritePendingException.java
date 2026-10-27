@@ -32,12 +32,10 @@ package java.nio.channels;
  * @since 1.7
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class WritePendingException
     extends IllegalStateException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7031871839266032276L;
 
     /**
      * Constructs an instance of this class.

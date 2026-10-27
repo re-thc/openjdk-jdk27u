@@ -43,9 +43,8 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CancellationException extends IllegalStateException {
-    private static final long serialVersionUID = -9202173006928992231L;
-
     /**
      * Constructs a {@code CancellationException} with no detail message.
      */

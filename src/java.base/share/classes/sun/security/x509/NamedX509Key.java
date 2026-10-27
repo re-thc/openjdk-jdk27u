@@ -48,10 +48,8 @@ import java.security.spec.NamedParameterSpec;
 /// from the parameter set name.
 ///
 /// @see sun.security.provider.NamedKeyPairGenerator
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NamedX509Key extends X509Key {
-    @Serial
-    private static final long serialVersionUID = 1L;
-
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
     private final byte[] rawBytes;

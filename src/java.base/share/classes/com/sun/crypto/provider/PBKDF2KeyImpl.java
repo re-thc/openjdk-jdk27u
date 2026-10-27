@@ -55,10 +55,8 @@ import sun.security.util.PBEUtil;
  * @author Valerie Peng
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2234868909660948157L;
 
     private final char[] passwd;
     private final byte[] salt;
@@ -133,8 +131,6 @@ public final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             String algName = prf.getAlgorithm();
             // SecretKeySpec cannot be used, since password can be empty here.
             SecretKey macKey = new SecretKey() {
-                @java.io.Serial
-                private static final long serialVersionUID = 7874493593505141603L;
                 @Override
                 public String getAlgorithm() {
                     return algName;

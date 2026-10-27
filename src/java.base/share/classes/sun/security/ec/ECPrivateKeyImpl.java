@@ -65,10 +65,8 @@ import sun.security.x509.X509Key;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 88695385615075129L;
 
     private BigInteger s;       // private value
     private byte[] arrayS;      // private value as a little-endian array

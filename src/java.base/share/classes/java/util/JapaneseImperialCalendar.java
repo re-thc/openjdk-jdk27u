@@ -94,6 +94,7 @@ import sun.util.calendar.ZoneInfo;
  * @author Masayoshi Okutsu
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class JapaneseImperialCalendar extends Calendar {
     /*
      * Implementation Notes
@@ -250,10 +251,6 @@ class JapaneseImperialCalendar extends Calendar {
     };
 
     // Proclaim serialization compatibility with JDK 1.6
-    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
-    @java.io.Serial
-    private static final long serialVersionUID = -3364572813905467929L;
-
     static {
         Era[] es = jcal.getEras();
         int length = es.length + 1;

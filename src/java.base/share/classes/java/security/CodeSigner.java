@@ -37,10 +37,8 @@ import java.util.Objects;
  * @author Vincent Ryan
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class CodeSigner implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6819288105193937581L;
 
     /**
      * The signer's certificate path.

@@ -48,13 +48,8 @@ package java.lang.reflect;
  * @see java.lang.reflect.Executable#getParameters
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MalformedParametersException extends RuntimeException {
-
-    /**
-     * Version for serialization.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 20130919L;
 
     /**
      * Create a {@code MalformedParametersException} with an empty

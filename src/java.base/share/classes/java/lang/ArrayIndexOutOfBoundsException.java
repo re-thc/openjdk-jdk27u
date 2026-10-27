@@ -31,10 +31,8 @@ package java.lang;
  *
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ArrayIndexOutOfBoundsException extends IndexOutOfBoundsException {
-    @java.io.Serial
-    private static final long serialVersionUID = -5116101128118950844L;
-
     /**
      * Constructs an {@code ArrayIndexOutOfBoundsException} with no detail
      * message.

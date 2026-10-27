@@ -76,10 +76,8 @@ package java.lang;
  *
  * @since 21
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class MatchException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 0L;
-
     /**
      * Constructs an {@code MatchException} with the specified detail message and
      * cause.

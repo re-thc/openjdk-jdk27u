@@ -44,10 +44,8 @@ import java.util.List;
  * @author Vincent Ryan
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Timestamp implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5502683707821851294L;
 
     /**
      * The timestamp's date and time

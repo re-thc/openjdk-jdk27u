@@ -43,10 +43,8 @@ import java.security.InvalidKeyException;
  *
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DSAPublicKeyImpl extends DSAPublicKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7819830118247182730L;
 
     /**
      * Make a DSA public key out of a public key and three parameters.

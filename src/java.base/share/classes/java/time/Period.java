@@ -130,6 +130,7 @@ import java.util.regex.Pattern;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Period
         implements ChronoPeriod, Serializable {
@@ -138,11 +139,6 @@ public final class Period
      * A constant for a period of zero.
      */
     public static final Period ZERO = new Period(0, 0, 0);
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -3587258372562876L;
     /**
      * The pattern for parsing.
      */

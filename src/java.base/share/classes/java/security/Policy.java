@@ -477,11 +477,9 @@ public abstract class Policy {
      * methods in the {@code Policy} class when those operations are not
      * supported by the Policy implementation.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnsupportedEmptyCollection
         extends PermissionCollection {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -8492269157353014774L;
 
         private Permissions perms;
 

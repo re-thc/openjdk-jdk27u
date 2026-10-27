@@ -53,11 +53,9 @@ import sun.security.util.ResourcesMgr;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class PrivateCredentialPermission extends Permission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5284372143517237068L;
 
     private static final CredOwner[] EMPTY_PRINCIPALS = new CredOwner[0];
 
@@ -428,10 +426,8 @@ public final class PrivateCredentialPermission extends Permission {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CredOwner implements java.io.Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -5607449830436408266L;
 
         /**
          * @serial

@@ -42,9 +42,8 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RejectedExecutionException extends RuntimeException {
-    private static final long serialVersionUID = -375805702767069545L;
-
     /**
      * Constructs a {@code RejectedExecutionException} with no detail message.
      * The cause is not initialized, and may subsequently be

@@ -37,10 +37,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ArithmeticException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 2256477558314496007L;
-
     /**
      * Constructs an {@code ArithmeticException} with no detail
      * message.

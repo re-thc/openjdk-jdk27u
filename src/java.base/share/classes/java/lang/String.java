@@ -170,6 +170,7 @@ import sun.nio.cs.UTF_8;
  * @jls     15.18.1 String Concatenation Operator +
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence,
                Constable, ConstantDesc {
@@ -212,10 +213,6 @@ public final class String
      * is the default zero value, is not trusted.
      */
     private boolean hashIsZero; // Default to false;
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -6849794470754667710L;
 
     /**
      * If String compaction is disabled, the bytes in {@code value} are
@@ -2431,12 +2428,10 @@ public final class String
     /**
      * CaseInsensitiveComparator for Strings.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class CaseInsensitiveComparator
             implements Comparator<String>, java.io.Serializable {
         // use serialVersionUID from JDK 1.2.2 for interoperability
-        @java.io.Serial
-        private static final long serialVersionUID = 8575799808933029326L;
-
         public int compare(String s1, String s2) {
             byte[] v1 = s1.value;
             byte[] v2 = s2.value;

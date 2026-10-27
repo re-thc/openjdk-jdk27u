@@ -31,10 +31,8 @@ package java.security;
  * @author Benjamin Renaud
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DigestException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5821450303093652515L;
 
     /**
      * Constructs a {@code DigestException} with no detail message.  (A

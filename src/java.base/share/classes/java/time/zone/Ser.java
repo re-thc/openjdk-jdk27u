@@ -81,12 +81,8 @@ import java.time.ZoneOffset;
  * @serial include
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class Ser implements Externalizable {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -8885321777449118786L;
 
     /** Type for ZoneRules. */
     static final byte ZRULES = 1;

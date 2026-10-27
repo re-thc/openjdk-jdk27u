@@ -38,12 +38,10 @@ package java.lang.reflect;
  *
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final
 class ReflectPermission extends java.security.BasicPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7412737110241507485L;
 
     /**
      * Constructs a ReflectPermission with the specified name.
