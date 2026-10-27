@@ -694,7 +694,11 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
   CompileTask *direct_task = nullptr;
   Method* max_method = nullptr;
 
-  int64_t t = nanos_to_millis(os::javaTimeNanos());
+  // With no ordinary work, FIFO needs only the first live direct task. The
+  // queue lock keeps this count stable through selection. Mixed queues still
+  // inspect every ordinary task for blocking priority, rate and stale updates.
+  const bool direct_fifo = compile_queue->ordinary_size() == 0;
+  int64_t t = direct_fifo ? 0 : nanos_to_millis(os::javaTimeNanos());
   // Iterate through the queue and find a method with a maximum rate.
   for (CompileTask* task = compile_queue->first(); task != nullptr;) {
     CompileTask* next_task = task->next();
@@ -718,6 +722,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
         task = next_task;
         continue;
       }
+      if (direct_fifo) return task;
       // Keep FIFO order among direct requests. Blocking ordinary work still
       // wins; otherwise a bounded direct burst precedes ordinary rate selection.
       if (direct_task == nullptr) direct_task = task;

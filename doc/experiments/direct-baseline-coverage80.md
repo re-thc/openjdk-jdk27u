@@ -546,6 +546,18 @@ restored. No master CPU-baseline integration is mixed into this series; the
 reported `3eec12422fcf2fff86206a0f7411fbfdf81d0638` integration requires a separate
 base update and qualification.
 
+## Queue selection cost
+
+An independently reviewed FIFO fast path avoids the full linked-list scan and
+clock query when the locked compile queue contains only direct tasks. It removes
+unloaded/stale prefixes and selects the first live request. Mixed queues retain
+their complete scan, blocking priority, rate/stale updates and bounded direct
+burst; queue counters, worker notifications, thresholds and the ordinary-tier
+hold are unchanged. Deferred stale tails remain reachable in FIFO order and
+ordinary arrivals restore the full sweep. All fifteen focused tests pass in
+release and fastdebug. This is a structural cost correction; there is no new
+entry-coverage or application-speed claim for it.
+
 ## Shortest coherent path toward the gate
 
 1. **Completed first batch:** casts/instanceof and real virtual/interface ICs.
