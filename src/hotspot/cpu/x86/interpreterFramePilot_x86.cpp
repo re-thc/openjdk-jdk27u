@@ -152,8 +152,11 @@ bool InterpreterFramePilot::prepare(const methodHandle& method,jlong* stats) {
   stats[1]=os::current_thread_cpu_time()-cpu;stats[2]=os::javaTimeNanos()-wall;
   return success;
 }
+bool InterpreterFramePilot::test_poll_enabled() {
+  return UseInterpreterFramePilot && WhiteBoxAPI && InterpreterFramePilotTestPoll;
+}
 bool InterpreterFramePilot::request_poll_test(const methodHandle& method) {
-  if(!WhiteBoxAPI || !UseInterpreterFramePilot)return false;
+  if(!test_poll_enabled())return false;
   MethodCounters* counters=method->method_counters();
   if(counters==nullptr || counters->method()!=method() || !counters->interpreter_pilot_enabled() ||
      counters->interpreter_pilot_entry()==nullptr)return false;
@@ -167,7 +170,7 @@ int InterpreterFramePilot::poll_test_state(const methodHandle& method) {
   return counters->interpreter_pilot_poll_test();
 }
 JRT_LEAF(void, InterpreterFramePilot::arm_test_poll(MethodCounters* counters))
-  assert(WhiteBoxAPI && UseInterpreterFramePilot,"test-only entry");
+  assert(test_poll_enabled(),"test-only entry");
   if(counters->cas_interpreter_pilot_poll_test(test_poll_requested,test_poll_armed)) {
     // Real word and page values, with no allocation, handshake enqueue, wait
     // or Java/VM transition that could consume the poll before the guard.
@@ -175,7 +178,7 @@ JRT_LEAF(void, InterpreterFramePilot::arm_test_poll(MethodCounters* counters))
   }
 JRT_END
 JRT_LEAF(void, InterpreterFramePilot::record_test_poll(Method* method,address bcp))
-  assert(WhiteBoxAPI && UseInterpreterFramePilot,"test-only entry");
+  assert(test_poll_enabled(),"test-only entry");
   MethodCounters* counters=method->method_counters();
   if(counters!=nullptr && counters->method()==method &&
      counters->interpreter_pilot_poll_test()==test_poll_guard_seen) {
@@ -183,7 +186,7 @@ JRT_LEAF(void, InterpreterFramePilot::record_test_poll(Method* method,address bc
   }
 JRT_END
 void InterpreterFramePilot::emit_test_poll_return(InterpreterMacroAssembler* masm) {
-  assert(WhiteBoxAPI && UseInterpreterFramePilot,"test-only generation");
+  assert(test_poll_enabled(),"test-only generation");
   Label done;
   masm->get_method(rbx);
   masm->movptr(rdx,Address(rbx,Method::method_counters_offset()));
@@ -200,7 +203,7 @@ void InterpreterFramePilot::emit_test_poll_return(InterpreterMacroAssembler* mas
   masm->bind(done);
 }
 void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,Label& fallback) {
-  if(WhiteBoxAPI) {
+  if(test_poll_enabled()) {
     Label no_request;
     masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_requested);
     masm->jcc(Assembler::notEqual,no_request);
@@ -210,7 +213,7 @@ void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,La
     masm->bind(no_request);
   }
   masm->testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
-  if(WhiteBoxAPI) {
+  if(test_poll_enabled()) {
     Label not_armed,not_requested;
     masm->jcc(Assembler::zero,not_armed);
     masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_armed);

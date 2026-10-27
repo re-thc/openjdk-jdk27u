@@ -53,7 +53,9 @@ class InterpreterFramePilot : AllStatic {
   enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,
                            test_poll_guard_seen, test_poll_processed, test_poll_wrong_bci };
   // WhiteBox-only deterministic local-poll regression. Leaves allocate/block
-  // nowhere; the generated hooks are absent unless WhiteBoxAPI is enabled.
+  // nowhere. Generation requires UseInterpreterFramePilot, WhiteBoxAPI and
+  // the explicit startup-only InterpreterFramePilotTestPoll test opt-in.
+  static bool test_poll_enabled();
   static bool request_poll_test(const methodHandle& method);
   static int poll_test_state(const methodHandle& method);
   static void arm_test_poll(MethodCounters* counters);

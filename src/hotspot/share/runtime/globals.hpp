@@ -1127,6 +1127,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseInterpreterFramePilot, false, EXPERIMENTAL,              \
           "WhiteBox-only bounded interpreter-frame codelet experiment")      \
                                                                             \
+  product(bool, InterpreterFramePilotTestPoll, false, DIAGNOSTIC,            \
+          "Generate forced-poll regression hooks for WhiteBox pilot tests")  \
+                                                                            \
   product(bool, PrintInterpreter, false, DIAGNOSTIC,                        \
           "Print the generated interpreter code")                           \
                                                                             \

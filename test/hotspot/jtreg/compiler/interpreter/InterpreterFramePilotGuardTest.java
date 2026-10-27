@@ -19,7 +19,7 @@
  */
 
 /* @test
- * @summary Prepared interpreter prefixes respect forced local polls and late breakpoints
+ * @summary Prepared prefixes keep poll hooks opt-in and respect forced polls and late breakpoints
  * @requires (os.arch == "amd64" | os.arch == "x86_64") & vm.compiler1.enabled & vm.jvmti
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -59,6 +59,20 @@ public class InterpreterFramePilotGuardTest {
         long entry = prepared[8];
         long before = query(method, 3)[9];
         check(!wb.isMethodCompiled(method), "prefix is not an nmethod");
+        check(wb.getBooleanVMFlag("InterpreterFramePilotTestPoll") == mode.equals("poll"),
+                "only forced-poll children opt in at generation time");
+
+        if (mode.equals("plain")) {
+            check(query(method, 6)[0] == 0 && query(method, 7)[0] == 0,
+                    "normal pilot rejects forced-poll requests");
+            for (int i = 1; i <= 2; i++) {
+                check(lateTarget(17, 20) == 54 && query(method, 3)[9] == before + i,
+                        "normal prefix executes without test hooks");
+            }
+            check(query(method, 3)[8] == entry, "normal entry stays immutable");
+            System.out.println("PILOT_PLAIN_ENTRY_OK action=" + action);
+            return;
+        }
 
         if (mode.equals("poll")) {
             check(lateTarget(17, 20) == 54 && query(method, 3)[9] == before + 1, "native prefix control");
@@ -103,16 +117,21 @@ public class InterpreterFramePilotGuardTest {
         String library = Path.of(Utils.TEST_NATIVE_PATH, System.mapLibraryName("InterpreterFramePilotGuards"))
                 .toAbsolutePath().toString();
         for (int action : new int[]{0, 4, 5}) {
-            for (String mode : new String[]{"poll", "breakpoint"}) {
+            for (String mode : new String[]{"plain", "poll", "breakpoint"}) {
                 ArrayList<String> command = new ArrayList<>();
                 command.addAll(java.util.List.of("-Xint", "-Xmx64m", "-Xbootclasspath/a:.",
                         "-XX:+UnlockExperimentalVMOptions", "-XX:+UnlockDiagnosticVMOptions",
                         "-XX:+WhiteBoxAPI", "-XX:+UseInterpreterFramePilot", "-XX:GuaranteedSafepointInterval=0"));
                 if (mode.equals("breakpoint")) command.add("-agentpath:" + library);
+                if (mode.equals("poll")) command.add("-XX:+InterpreterFramePilotTestPoll");
                 command.addAll(java.util.List.of(InterpreterFramePilotGuardTest.class.getName(), mode,
                         Integer.toString(action), library));
-                ProcessTools.executeTestJava(command).shouldHaveExitValue(0)
-                        .shouldContain(mode.equals("poll") ? "PILOT_FORCED_POLL_OK" : "PILOT_LATE_BREAKPOINT_OK");
+                String marker = switch (mode) {
+                    case "plain" -> "PILOT_PLAIN_ENTRY_OK";
+                    case "poll" -> "PILOT_FORCED_POLL_OK";
+                    default -> "PILOT_LATE_BREAKPOINT_OK";
+                };
+                ProcessTools.executeTestJava(command).shouldHaveExitValue(0).shouldContain(marker);
             }
         }
     }

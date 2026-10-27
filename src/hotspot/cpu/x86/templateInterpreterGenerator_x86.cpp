@@ -281,7 +281,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   __ pop_cont_fastpath();
 
 #ifdef AMD64
-  if (UseInterpreterFramePilot && WhiteBoxAPI && state == vtos) {
+  if (InterpreterFramePilot::test_poll_enabled() && state == vtos) {
     InterpreterFramePilot::emit_test_poll_return(_masm);
   }
 #endif
