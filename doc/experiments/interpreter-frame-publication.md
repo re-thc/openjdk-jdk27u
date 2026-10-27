@@ -222,3 +222,8 @@ explicit admission/ownership and contention design; it is not implemented here.
 The present sample cannot select its threshold or establish an application
 win. Preserve the current controls and images rather than converting this
 cost-isolation result into broad native-tier or policy changes.
+
+The [remaining-cost analysis and next proposal](interpreter-frame-next-step.md)
+separate the retained request boundaries, first-use ambiguity and recurring
+entry-guard emission, and check the repayment assumptions against existing
+ordinary-tier evidence. It adds no measurements or implementation changes.
