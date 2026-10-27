@@ -5,11 +5,14 @@ comparison. Earlier low-coverage timings remain diagnostic observations about
 the partial prototype. They are not a verdict on the complete proposed tier.
 No new application timing comparison has been run after this requirement.
 
-The current local implementation, `7f639b1af47`, includes casts/instanceof,
-ordinary virtual/interface calls, ordinary constructors, and object/array
-allocation. All ten focused tests pass on release and fastdebug. The constructor/allocation census raises own-population method coverage to
-61.45% startup / 60.55% warm, still below 80%. Test qualification
-is not a coverage or performance claim.
+The qualified local implementation through `f04c489ef3a` includes casts,
+ordinary dynamic calls, constructors, allocation, reference constants, explicit
+throws, common array/stack/value operations, switches, verified block states,
+backward branches, safepoint polls and ordinary OSR handoff. All thirteen focused
+tests pass in release and fastdebug. The last census reaches 73.22% startup /
+72.41% warm on its own eligible populations, and 70.09% / 68.12% on the complete
+frozen reference populations. The 80% gate remains unmet; application timing
+remains held. Test qualification is not a performance claim.
 
 ## Fixed scope and denominators
 
@@ -97,6 +100,44 @@ identities remain explicitly unclassified. These are first-reason method counts,
 not disjoint promises of successful installations: a method may contain more
 than one missing operation or encounter later linking restrictions. See the
 [opcode ledger](direct-baseline-data/coverage80-after-allocation-opcodes.tsv).
+
+The common-operations batch (`c3451896985`) reports:
+
+| Metric | Startup | Warm |
+|---|---:|---:|
+| Own eligible population | 3047 | 5696 |
+| Eligible methods installed / used | 2012 / 1820 | 3683 / 3605 |
+| Own-population method coverage | 66.03% | 64.66% |
+| Early Java entries / actual direct entries | 732659 / 386306 | 2893729 / 1793494 |
+| Execution-entry coverage | 52.73% | 61.98% |
+| Frozen reference methods credited | 1918 / 3056 | 3438 / 5697 |
+| Frozen method coverage | 62.76% | 60.35% |
+
+All matchable named reference identities match; the complete frozen divisor
+still retains 100/259 uncredited hidden or ambiguous identities. Counter totals
+balance and ordinary admission records are complete. Source instrumentation is
+removed and production release rebuilt. The 80% method gate still needs another
+527/1,120 credited reference methods; new populations do not replace that target.
+
+The verified-join/backward-branch batch (`f04c489ef3a`) reports:
+
+| Metric | Startup | Warm |
+|---|---:|---:|
+| Own eligible population | 3054 | 5694 |
+| Eligible methods installed / used | 2236 / 1972 | 4123 / 4039 |
+| Own-population method coverage | 73.22% | 72.41% |
+| Early Java entries / actual direct entries | 839527 / 488552 | 3029527 / 2098140 |
+| Execution-entry coverage | 58.19% | 69.26% |
+| Frozen reference methods credited | 2142 / 3056 | 3881 / 5697 |
+| Frozen method coverage | 70.09% | 68.12% |
+
+All named reference identities match; 100/259 hidden or ambiguous identities
+remain uncredited in the complete frozen divisor. The fixed 80% method targets
+remain 2445/4558, another 303/677 credited methods away. All counter identities
+balance, no ordinary admission is missing, and census instrumentation has been
+removed with production release rebuilt. Larger own-population entry windows
+include changes in ordinary admission timing and are not exclusive interpreter
+execution saved. No timed application comparison has been made.
 
 The first 32 entries and short-lived methods constrain execution coverage.
 Perfect service after entry 32 could cover at most 81.37% of the reference
@@ -233,6 +274,68 @@ debug-build property and allocation-return trace evidence instead of compilation
 level. That failed run is preserved; the corrected ten-test suites pass on both
 builds. The census remains separate and its instrumented time is not performance.
 
+## Common semantics and verified block state
+
+`c3451896985` embeds loaded CI reference constants with the existing oop recorder;
+unresolved constants remain refusals. Class constants do not initialize their
+class. Explicit athrow uses the normal Runtime1 exception stub, throwing-PC
+scope and register/canonical oop maps. Reference stores perform null/bounds
+checks before covariance checking, reload operands after the subtype helper,
+and use the collector's array-store barrier. Byte/boolean stores retain the
+runtime element-type mask; character/short stores preserve truncation. Integer
+division uses the standard corrected x86 sequence, including MIN_VALUE/-1;
+zero divisors reexecute at the exact bytecode after earlier side effects.
+Forward table/lookup switches emit signed key comparisons and real destinations.
+Only supported category-1 stack-permutation forms are admitted.
+
+The focused common fixture covers reference identity and roots across GC,
+throw/null behavior, once-only side effects, covariance and exception precedence,
+old-array/young-reference stores, raw boolean stores, stack permutations,
+division/remainder extrema and dense/sparse switch destinations. All eleven
+focused tests passed on release and fastdebug. The new test initially referenced
+an internal ASM package absent from this JDK; it was corrected to the standard
+Class-File API. The failed fixture compilation is retained separately.
+
+`fcaf43e141d` reads already verified StackMapTable block entries with raw
+int/object categories, without resolving classes or constructing an IR. At a
+join, live locals/stack must match, while verifier TOP locals are dropped from
+scope/root state. Null/uninitialized references retain oop categories and their
+physical aliases. Old class files without maps retain exact conservative merges.
+Unsupported category-2/FP frame types still refuse. The fixture exercises reused
+int/object local slots, live roots through a caller deoptimization and GC, and
+uninitialized allocation aliases across a conditional constructor argument.
+All twelve focused tests pass on release and fastdebug. Its initial driver
+initialized WhiteBox before child flags were active; moving initialization to
+the child fixed that fixture failure without production changes.
+
+Backward-branch work uses these same typed block states, precise in-method
+fault-PC polls and MethodCounters backedge notifications through the existing
+Runtime1 helper. The helper already treats direct code as level none and
+deoptimizes when ordinary OSR code is available, allowing normal interpreter
+migration. No promotion threshold/hold changes are part of this work. The
+qualification trace shows direct-to-C1 OSR then C2 OSR; C2 subsequently retired
+on an exit uncommon trap. The original post-return OSR-presence assertion was
+therefore replaced by observing an active loop. All thirteen focused tests now
+pass on release and fastdebug. A separate fixture pins an already installed
+direct method during concurrent full GC, exercising backedge-poll root updates
+and progress. C1 shares its OSR and normal refusal flag, so the test applies that
+pin after direct installation rather than inadvertently suppressing admission.
+These fixtures do not change production promotion thresholds or the inherited
+hold. Backward switches remain excluded because the existing notification helper
+only decodes ordinary branch destinations.
+
+After common operations, 252 warm own-population candidates first refuse at
+unresolved allocation classes and 334 at loops. A separate independent review
+found a focused lazy allocation resolver viable: an AMD64 Runtime1 stub passes
+the original Method/BCI, resolves its actual constant-pool entry (preserving saved
+errors and access/loader checks), and performs normal instance initialization or
+reference-array creation. Existing allocation-return maps remain unchanged.
+It also requires registering the new helper for AOT relocation and guarding the
+stub ID on AMD64. This is a concrete next allocation boundary, not permission to
+substitute unconditional deopts for missing semantics. Truly unloaded constructor
+calls may still fail separately; no coverage gain is assumed before qualification
+and a frozen-population census.
+
 ## Shortest coherent path toward the gate
 
 1. **Completed first batch:** casts/instanceof and real virtual/interface ICs.
@@ -250,9 +353,9 @@ builds. The census remains separate and its instrumented time is not performance
    stores, stack permutations, integer division/remainder and forward switches.
    Array stores require covariance checks and collector barriers, not raw writes.
    Update the census after coherent semantic batches, not after each opcode.
-4. **State/control coverage:** use verified stack-map information for dead/reused
-   locals at joins; add backward branches with precise maps, progress polls,
-   counters and ordinary OSR handoff. Keep a direct canonical frame and a small
+4. **State/control coverage:** verified stack-map information for dead/reused
+   locals and backward branches with precise maps, polls, counters and ordinary
+   OSR handoff are implemented and qualified. Keep a direct canonical frame and a small
    typed state, not C1 IR or a generic optimizer. Handler/monitor/large-method
    support remains visible in the denominator; implement it if the remaining
    excluded population prevents the gate rather than reclassifying it away.
