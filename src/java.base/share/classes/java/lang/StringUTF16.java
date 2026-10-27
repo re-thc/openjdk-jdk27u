@@ -182,9 +182,10 @@ final class StringUTF16 {
     private static final int CODE_POINT_BULK_MIN = 128;
     private static final int CODE_POINT_BULK_MAX = 1 << 20;
 
-    // Returns the number of code points of the {@code length} chars from {@code offset}, if
-    // they are well-formed UTF-16, and -1 if they are not or the intrinsic is not used. The
-    // loop below counts each unpaired surrogate as a code point, which only it does.
+    // Returns the Java code-point count of the length chars from offset when the library
+    // can establish it, and -1 otherwise or when the intrinsic is not used. Text without
+    // low surrogates needs no validation: each char, including an unpaired high surrogate,
+    // is one code point. The loop handles other malformed text.
     @IntrinsicCandidate
     private static int countCodePoints(byte[] value, int offset, int length) {
         return -1;

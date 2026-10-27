@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @summary Charset coders keep the semantics of their element loops for buffers whose memory
- *          the bulk conversion must not touch: overlapping views, read-only destinations and
+ * @summary Charset coders preserve buffer views, sessions, overlap, read-only destinations and
  *          mapped files that are truncated
  * @run main/othervm -Xint TestCharsetCoderStorage
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestCharsetCoderStorage
@@ -32,6 +31,7 @@
  */
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -49,6 +49,81 @@ import java.util.Arrays;
 
 public class TestCharsetCoderStorage {
     private static final int SIZE = 4096;
+
+    private static ByteBuffer bytes(Arena arena, int size, int shift) {
+        return arena == null ? ByteBuffer.allocate(size + shift).position(shift).slice()
+                : arena.allocate(size + shift, 8).asSlice(shift).asByteBuffer();
+    }
+
+    // Heap byte-buffer char views share a byte[] base. Segment-backed slices also carry
+    // a session through views. Exercise aligned and unaligned views and read-only input.
+    private static void storageViews(Charset charset) {
+        String text = "plain ASCII ".repeat(300);
+        byte[] data = text.getBytes(charset);
+        for (int variant = 0; variant < 4; variant++) {
+            int shift = variant & 1;
+            boolean heap = variant >= 2;
+            try (Arena input = Arena.ofConfined(); Arena output = Arena.ofConfined()) {
+                ByteBuffer src = bytes(heap ? null : input, data.length, shift).put(data).flip().asReadOnlyBuffer();
+                CharBuffer dst = bytes(heap ? null : output, 2 * text.length(), shift)
+                        .order(ByteOrder.nativeOrder()).asCharBuffer();
+                CoderResult result = charset.newDecoder().decode(src, dst, true);
+                if (!result.isUnderflow() || src.hasRemaining() || !dst.flip().toString().equals(text)) {
+                    throw new AssertionError(charset + " view decode: heap=" + heap + " shift=" + shift);
+                }
+                CharBuffer chars = bytes(heap ? null : input, 2 * text.length(), shift)
+                        .order(ByteOrder.nativeOrder()).asCharBuffer().put(text).flip().asReadOnlyBuffer();
+                ByteBuffer encoded = bytes(heap ? null : output, data.length, shift);
+                result = charset.newEncoder().encode(chars, encoded, true);
+                byte[] actual = new byte[encoded.position()];
+                encoded.flip().get(actual);
+                if (!result.isUnderflow() || chars.hasRemaining() || !Arrays.equals(actual, data)) {
+                    throw new AssertionError(charset + " view encode: heap=" + heap + " shift=" + shift);
+                }
+            }
+        }
+    }
+
+    private static void accessFails(Charset charset, ByteBuffer bytes, CharBuffer chars,
+                                    boolean decode, Class<? extends Throwable> cause) {
+        try {
+            if (decode) charset.newDecoder().decode(bytes, chars, true);
+            else charset.newEncoder().encode(chars, bytes, true);
+            throw new AssertionError("segment access must fail: " + charset);
+        } catch (CoderMalfunctionError expected) {
+            if (!cause.isInstance(expected.getCause())) throw expected;
+        }
+    }
+
+    // If acquiring the second buffer fails, the first session must be released. Closing
+    // its arena below detects a leaked acquire. A confined view also retains its owner.
+    private static void segmentAccess(Charset charset) throws InterruptedException {
+        for (boolean decode : new boolean[]{true, false}) {
+            try (Arena live = Arena.ofConfined()) {
+                Arena closed = Arena.ofConfined();
+                ByteBuffer data = bytes(decode ? live : closed, SIZE, 0);
+                CharBuffer chars = bytes(decode ? closed : live, 2 * SIZE, 0)
+                        .order(ByteOrder.nativeOrder()).asCharBuffer();
+                closed.close();
+                accessFails(charset, data, chars, decode, IllegalStateException.class);
+            }
+            try (Arena arena = Arena.ofConfined()) {
+                ByteBuffer data = bytes(arena, SIZE, 0);
+                CharBuffer chars = bytes(arena, 2 * SIZE, 0).order(ByteOrder.nativeOrder()).asCharBuffer();
+                var failure = new java.util.concurrent.atomic.AtomicReference<Throwable>();
+                Thread thread = new Thread(() -> {
+                    try {
+                        accessFails(charset, data, chars, decode, WrongThreadException.class);
+                    } catch (Throwable t) {
+                        failure.set(t);
+                    }
+                });
+                thread.start();
+                thread.join();
+                if (failure.get() != null) throw new AssertionError(failure.get());
+            }
+        }
+    }
 
     /** Reference for decoding ASCII with a char view that overlays the input. */
     private static byte[] simulateDecode(byte[] memory, int[] positions) {
@@ -190,6 +265,12 @@ public class TestCharsetCoderStorage {
 
     public static void main(String[] args) throws Exception {
         Charset utf32le = Charset.forName("UTF-32LE");
+        for (Charset charset : new Charset[]{StandardCharsets.UTF_8, StandardCharsets.UTF_16LE,
+                StandardCharsets.UTF_16BE, utf32le, Charset.forName("UTF-32BE"),
+                StandardCharsets.ISO_8859_1, StandardCharsets.US_ASCII}) {
+            storageViews(charset);
+            segmentAccess(charset);
+        }
         for (Charset charset : new Charset[]{StandardCharsets.UTF_8, utf32le}) {
             readOnlyDestination(charset);
         }

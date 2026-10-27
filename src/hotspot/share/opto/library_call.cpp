@@ -8560,9 +8560,8 @@ bool LibraryCallKit::inline_base64_encodeBlock() {
   assert(dest_start, "destination array is null");
 
   const int maximum = 1024 * 1024;
-  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
-      ? MAX2(SIMDUTFMinLength, intx(512)) : SIMDUTFMinLength;
-  if (SimdUTF::available() && minimum <= maximum) {
+  const int minimum = stub_replacement_minimum(512);
+  if (minimum <= maximum) {
     Node* length = _gvn.transform(new SubINode(len, offset));
     Node* eligible = _gvn.transform(new CmpU3Node(
         _gvn.transform(new SubINode(length, intcon((int)minimum))),
@@ -8625,9 +8624,17 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   assert(dest_start, "destination array is null");
 
   const int maximum = 1024 * 1024;
-  intx minimum = FLAG_IS_DEFAULT(SIMDUTFMinLength)
-      ? MAX2(SIMDUTFMinLength, intx(2048)) : SIMDUTFMinLength;
-  if (SimdUTF::available() && minimum <= maximum) {
+  int minimum = stub_replacement_minimum(2048);
+#ifdef AMD64
+  // On Zen 4 the stock VBMI decoder wins on short and medium blocks, with no
+  // consistent library gain on larger ones. Match the stub generator's ISA predicate.
+  // An explicit threshold can still select the library for measurements.
+  if (FLAG_IS_DEFAULT(SIMDUTFMinLength) && VM_Version::supports_avx512_vbmi() &&
+      VM_Version::supports_avx512bw() && VM_Version::supports_bmi2()) {
+    minimum = max_jint;
+  }
+#endif
+  if (minimum <= maximum) {
     Node* length = _gvn.transform(new SubINode(len, src_offset));
     Node* size_order = _gvn.transform(new CmpU3Node(
         _gvn.transform(new SubINode(length, intcon((int)minimum))),

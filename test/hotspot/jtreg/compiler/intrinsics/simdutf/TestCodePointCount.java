@@ -165,19 +165,34 @@ public class TestCodePointCount {
             output.shouldHaveExitValue(0);
             output.shouldMatch(Pattern.quote("StringUTF16::countCodePoints") + " \\(\\d+ bytes\\)\\s+\\(?intrinsic\\)?");
         }
-        // The intrinsic is what makes a long count fast: the loop of the same work with it disabled
-        // takes several times as long in the interpreter
-        long on = Long.parseLong(ProcessTools.executeTestJava("-Xint", "-cp", System.getProperty("test.classes"),
-                "CodePointWork", "time").shouldHaveExitValue(0).getStdout().trim());
-        long off = Long.parseLong(ProcessTools.executeTestJava("-Xint", "-XX:-UseSIMDUTFIntrinsics", "-cp",
-                System.getProperty("test.classes"), "CodePointWork", "time").shouldHaveExitValue(0).getStdout().trim());
-        System.out.println("-Xint: " + on + " ns with the leaf, " + off + " ns without");
-        if (off < 10 * on) {
-            throw new AssertionError("codePointCount does not reach its interpreter leaf: " + on + " ns against " + off + " ns");
+        // Its Java body always declines, so a returned count proves interpreter activation
+        // directly, without assuming a timing ratio on a particular CPU.
+        for (boolean enabled : new boolean[]{true, false}) {
+            ProcessTools.executeTestJava("-Xint", "-XX:" + (enabled ? "+" : "-") + "UseSIMDUTFIntrinsics",
+                    "--add-opens=java.base/java.lang=ALL-UNNAMED", "-cp", System.getProperty("test.classes"),
+                    "TestCodePointCount", "probe", Boolean.toString(enabled)).shouldHaveExitValue(0);
         }
     }
 
     public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("probe")) {
+            try {
+                var method = Class.forName("java.lang.StringUTF16").getDeclaredMethod(
+                        "countCodePoints", byte[].class, int.class, int.class);
+                method.setAccessible(true);
+                var order = java.nio.ByteOrder.nativeOrder() == java.nio.ByteOrder.LITTLE_ENDIAN
+                        ? java.nio.charset.StandardCharsets.UTF_16LE : java.nio.charset.StandardCharsets.UTF_16BE;
+                byte[] bytes = "\u20ac".repeat(4096).getBytes(order);
+                int expected = Boolean.parseBoolean(args[1]) ? 4096 : -1;
+                int actual = (int) method.invoke(null, bytes, 0, 4096);
+                if (actual != expected) {
+                    throw new AssertionError("interpreter count: " + actual + ", expected " + expected);
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+            return;
+        }
         if (args.length > 0 && args[0].equals("inlined")) {
             try {
                 inlined();
@@ -190,7 +205,7 @@ public class TestCodePointCount {
     }
 }
 
-/** Callers of codePointCount that are hot enough to be compiled and inlined, or timed. */
+/** Callers of codePointCount that are hot enough to be compiled and inlined. */
 class CodePointWork {
     public static void main(String[] args) {
         char[] chars = new char[4096];
@@ -200,19 +215,6 @@ class CodePointWork {
         chars[101] = '\ude00';
         String text = new String(chars);
         long sink = 0;
-        if (args.length > 0) {
-            long best = Long.MAX_VALUE;
-            for (int i = 0; i < 7; i++) {
-                long t = System.nanoTime();
-                for (int j = 0; j < 20; j++) {
-                    sink += text.codePointCount(0, text.length());
-                }
-                best = Math.min(best, System.nanoTime() - t);
-            }
-            System.out.println(best);
-            if (sink == 42) System.out.println(sink);
-            return;
-        }
         StringBuilder sb = new StringBuilder(text);
         for (int i = 0; i < 40000; i++) {
             sink += text.codePointCount(0, text.length());
