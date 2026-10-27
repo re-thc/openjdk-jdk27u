@@ -56,6 +56,9 @@ class SimdUTF : AllStatic {
   static jlong encode_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong decode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong encode_utf32_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  // UTF-32 in big-endian byte order, on little-endian hosts, which swap the units in blocks.
+  static jlong decode_utf32be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong encode_utf32be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong utf8_to_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   // The UTF-16 leaves count 16-bit units, in the order of the name for the bytes and in
   // the order of the host for the chars.

@@ -3025,6 +3025,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_encodeUTF8Bulk:
   case vmIntrinsics::_decodeUTF32Bulk:
   case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_decodeUTF32BEBulk:
+  case vmIntrinsics::_encodeUTF32BEBulk:
   case vmIntrinsics::_utf8ToLatin1Bulk:
   case vmIntrinsics::_decodeUTF16LEBulk:
   case vmIntrinsics::_decodeUTF16BEBulk:

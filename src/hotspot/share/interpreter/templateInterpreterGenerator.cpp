@@ -224,6 +224,8 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(sun_nio_cs_UTF_8_encodeBulk)
   method_entry(sun_nio_cs_UTF_32Coder_decodeBulk)
   method_entry(sun_nio_cs_UTF_32Coder_encodeBulk)
+  method_entry(sun_nio_cs_UTF_32Coder_decodeBulkBE)
+  method_entry(sun_nio_cs_UTF_32Coder_encodeBulkBE)
   method_entry(java_lang_String_utf8ToLatin1Bulk)
   method_entry(sun_nio_cs_UnicodeDecoder_decodeBulkLE)
   method_entry(sun_nio_cs_UnicodeDecoder_decodeBulkBE)
@@ -533,6 +535,8 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   case Interpreter::sun_nio_cs_UTF_8_encodeBulk:
   case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulk:
   case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulk:
+  case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulkBE:
+  case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulkBE:
   case Interpreter::java_lang_String_utf8ToLatin1Bulk:
   case Interpreter::sun_nio_cs_UnicodeDecoder_decodeBulkLE:
   case Interpreter::sun_nio_cs_UnicodeDecoder_decodeBulkBE:

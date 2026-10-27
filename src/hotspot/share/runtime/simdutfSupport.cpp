@@ -27,6 +27,7 @@
 #include "runtime/simdutfSupport.hpp"
 #include "runtime/vm_version.hpp"
 #include "simdutf.h"
+#include "utilities/byteswap.hpp"
 
 static const simdutf::implementation* simdutf_implementation = nullptr;
 
@@ -98,6 +99,8 @@ address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
   SIMDUTF_LEAF(_encodeUTF8Bulk, encode_utf8_prefix)
   SIMDUTF_LEAF(_decodeUTF32Bulk, decode_utf32_prefix)
   SIMDUTF_LEAF(_encodeUTF32Bulk, encode_utf32_prefix)
+  SIMDUTF_LEAF(_decodeUTF32BEBulk, decode_utf32be_prefix)
+  SIMDUTF_LEAF(_encodeUTF32BEBulk, encode_utf32be_prefix)
   SIMDUTF_LEAF(_utf8ToLatin1Bulk, utf8_to_latin1_prefix)
   SIMDUTF_LEAF(_decodeUTF16LEBulk, decode_utf16le_prefix)
   SIMDUTF_LEAF(_decodeUTF16BEBulk, decode_utf16be_prefix)
@@ -310,6 +313,115 @@ JRT_LEAF(jlong, SimdUTF::encode_utf32_prefix(const jbyte* src, jint length, jbyt
     return written > 0 && within(written, valid) ? pack(valid, static_cast<jint>(written)) : 0;
   }
   return pack(chunk, static_cast<jint>(result.count));
+JRT_END
+
+namespace {
+// The units are swapped in blocks of this many, in a buffer on the stack.
+const jint SwapBlock = 512;
+
+// Copies n 32-bit units from src, which may be at any address, into dst with their bytes swapped.
+void swap_utf32(const jbyte* src, char32_t* dst, jint n) {
+  for (jint i = 0; i < n; i++) {
+    juint unit;
+    memcpy(&unit, src + static_cast<size_t>(i) * sizeof(juint), sizeof(juint));
+    dst[i] = static_cast<char32_t>(byteswap(unit));
+  }
+}
+}
+
+// Big-endian UTF-32 to UTF-16, as decode_utf32_prefix, for hosts that are little-endian: the
+// library converts only the order of the host, so each block of units is swapped first. The
+// swapped units are validated where they are converted, so a count describes the units as read.
+JRT_LEAF(jlong, SimdUTF::decode_utf32be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+#ifdef VM_LITTLE_ENDIAN
+  char16_t* output = reinterpret_cast<char16_t*>(dst);
+  if (!aligned(output, sizeof(char16_t))) {
+    return 0;
+  }
+  char32_t block[SwapBlock];
+  jint consumed = 0;
+  jint produced = 0;
+  for (;;) {
+    jint chunk = MIN3(length - consumed, (capacity - produced) / 2, SwapBlock);
+    if (chunk < ConversionTail) {
+      break;
+    }
+    swap_utf32(src + static_cast<size_t>(consumed) * sizeof(juint), block, chunk);
+    simdutf::result result = simdutf::convert_utf32_to_utf16_with_errors(block, chunk, output + produced);
+    if (result.error != simdutf::SUCCESS) {
+      if (!within(result.count, chunk)) {
+        break;
+      }
+      jint valid = static_cast<jint>(result.count);
+      size_t written = simdutf::convert_utf32_to_utf16(block, valid, output + produced);
+      if (written > 0 && within(written, 2 * valid)) {
+        consumed += valid;
+        produced += static_cast<jint>(written);
+      }
+      break;
+    }
+    if (!within(result.count, 2 * chunk)) {
+      break;
+    }
+    consumed += chunk;
+    produced += static_cast<jint>(result.count);
+  }
+  return pack(consumed, produced);
+#else
+  return 0;
+#endif
+JRT_END
+
+// UTF-16 to big-endian UTF-32, as encode_utf32_prefix. A pair that a block would cut is left to
+// the next block.
+JRT_LEAF(jlong, SimdUTF::encode_utf32be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+#ifdef VM_LITTLE_ENDIAN
+  const char16_t* input = reinterpret_cast<const char16_t*>(src);
+  if (!aligned(input, sizeof(char16_t))) {
+    return 0;
+  }
+  char32_t block[SwapBlock];
+  jint consumed = 0;
+  jint produced = 0;
+  for (;;) {
+    jint chunk = MIN3(length - consumed, capacity - produced, SwapBlock);
+    if (chunk < ConversionTail) {
+      break;
+    }
+    if (chunk < length - consumed && (input[consumed + chunk - 1] & 0xfc00) == 0xd800) {
+      chunk--;
+    }
+    simdutf::result result = simdutf::convert_utf16_to_utf32_with_errors(input + consumed, chunk, block);
+    jint valid = chunk;
+    size_t units = result.count;
+    bool stop = false;
+    if (result.error != simdutf::SUCCESS) {
+      if (!within(result.count, chunk)) {
+        break;
+      }
+      valid = static_cast<jint>(result.count);
+      units = simdutf::convert_utf16_to_utf32(input + consumed, valid, block);
+      stop = true;
+    }
+    if (units == 0 || !within(units, valid)) {
+      break;
+    }
+    for (size_t i = 0; i < units; i++) {
+      juint unit = byteswap(static_cast<juint>(block[i]));
+      memcpy(dst + (static_cast<size_t>(produced) + i) * sizeof(juint), &unit, sizeof(juint));
+    }
+    consumed += valid;
+    produced += static_cast<jint>(units);
+    if (stop) {
+      break;
+    }
+  }
+  return pack(consumed, produced);
+#else
+  return 0;
+#endif
 JRT_END
 
 // UTF-8 bytes to Latin-1, for the String decoder that tries a compact string first. A

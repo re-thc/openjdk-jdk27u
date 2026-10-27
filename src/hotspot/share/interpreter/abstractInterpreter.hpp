@@ -104,6 +104,8 @@ class AbstractInterpreter: AllStatic {
     sun_nio_cs_UTF_8_encodeBulk,
     sun_nio_cs_UTF_32Coder_decodeBulk,
     sun_nio_cs_UTF_32Coder_encodeBulk,
+    sun_nio_cs_UTF_32Coder_decodeBulkBE,
+    sun_nio_cs_UTF_32Coder_encodeBulkBE,
     java_lang_String_utf8ToLatin1Bulk,
     sun_nio_cs_UnicodeDecoder_decodeBulkLE,
     sun_nio_cs_UnicodeDecoder_decodeBulkBE,

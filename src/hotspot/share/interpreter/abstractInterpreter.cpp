@@ -144,6 +144,8 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_encodeUTF8Bulk: return sun_nio_cs_UTF_8_encodeBulk;
       case vmIntrinsics::_decodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_decodeBulk;
       case vmIntrinsics::_encodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_encodeBulk;
+      case vmIntrinsics::_decodeUTF32BEBulk: return sun_nio_cs_UTF_32Coder_decodeBulkBE;
+      case vmIntrinsics::_encodeUTF32BEBulk: return sun_nio_cs_UTF_32Coder_encodeBulkBE;
       case vmIntrinsics::_utf8ToLatin1Bulk: return java_lang_String_utf8ToLatin1Bulk;
       case vmIntrinsics::_decodeUTF16LEBulk: return sun_nio_cs_UnicodeDecoder_decodeBulkLE;
       case vmIntrinsics::_decodeUTF16BEBulk: return sun_nio_cs_UnicodeDecoder_decodeBulkBE;
@@ -264,6 +266,8 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case sun_nio_cs_UTF_8_encodeBulk: return vmIntrinsics::_encodeUTF8Bulk;
   case sun_nio_cs_UTF_32Coder_decodeBulk: return vmIntrinsics::_decodeUTF32Bulk;
   case sun_nio_cs_UTF_32Coder_encodeBulk: return vmIntrinsics::_encodeUTF32Bulk;
+  case sun_nio_cs_UTF_32Coder_decodeBulkBE: return vmIntrinsics::_decodeUTF32BEBulk;
+  case sun_nio_cs_UTF_32Coder_encodeBulkBE: return vmIntrinsics::_encodeUTF32BEBulk;
   case java_lang_String_utf8ToLatin1Bulk: return vmIntrinsics::_utf8ToLatin1Bulk;
   case sun_nio_cs_UnicodeDecoder_decodeBulkLE: return vmIntrinsics::_decodeUTF16LEBulk;
   case sun_nio_cs_UnicodeDecoder_decodeBulkBE: return vmIntrinsics::_decodeUTF16BEBulk;

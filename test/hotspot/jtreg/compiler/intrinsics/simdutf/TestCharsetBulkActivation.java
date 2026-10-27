@@ -96,6 +96,12 @@ public class TestCharsetBulkActivation {
                 utf32, bytes, codePoints, new char[2 * codePoints], chr, 2 * codePoints, codePoints, chars.length));
         list.add(new Bulk("UTF-32 encode", method("sun.nio.cs.UTF_32Coder$Encoder", "encodeBulk"),
                 chars, chr, chars.length, new byte[utf32.length + 16], bytes, chars.length, chars.length, codePoints));
+        Charset be = Charset.forName("UTF-32BE");
+        byte[] utf32be = TEXT.getBytes(be);
+        list.add(new Bulk("UTF-32BE decode", method("sun.nio.cs.UTF_32Coder$Decoder", "decodeBulkBE"),
+                utf32be, bytes, codePoints, new char[2 * codePoints], chr, 2 * codePoints, codePoints, chars.length));
+        list.add(new Bulk("UTF-32BE encode", method("sun.nio.cs.UTF_32Coder$Encoder", "encodeBulkBE"),
+                chars, chr, chars.length, new byte[utf32be.length + 16], bytes, chars.length, chars.length, codePoints));
         String latin1Text = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8);
         byte[] latin1Utf8 = latin1Text.getBytes(StandardCharsets.UTF_8);
         // UTF-16 counts 16-bit units, and the bytes are in the order of the method
@@ -166,6 +172,7 @@ public class TestCharsetBulkActivation {
             output.shouldHaveExitValue(0);
             for (String method : new String[]{"UTF_8$Decoder::decodeBulk", "UTF_8$Encoder::encodeBulk",
                                               "UTF_32Coder$Decoder::decodeBulk", "UTF_32Coder$Encoder::encodeBulk",
+                                              "UTF_32Coder$Decoder::decodeBulkBE", "UTF_32Coder$Encoder::encodeBulkBE",
                                               "String::utf8ToLatin1Bulk",
                                               "UnicodeDecoder::decodeBulkLE", "UnicodeDecoder::decodeBulkBE",
                                               "UnicodeEncoder::encodeBulkLE", "UnicodeEncoder::encodeBulkBE",
@@ -200,6 +207,10 @@ class CharsetBulkWork {
         CharsetEncoder utf8Encoder = StandardCharsets.UTF_8.newEncoder();
         CharsetDecoder utf32Decoder = le.newDecoder();
         CharsetEncoder utf32Encoder = le.newEncoder();
+        Charset be = Charset.forName("UTF-32BE");
+        byte[] utf32be = TEXT.getBytes(be);
+        CharsetDecoder utf32beDecoder = be.newDecoder();
+        CharsetEncoder utf32beEncoder = be.newEncoder();
         Charset u16le = Charset.forName("UTF-16LE");
         Charset u16be = Charset.forName("UTF-16BE");
         byte[] utf16le = TEXT.getBytes(u16le);
@@ -234,6 +245,12 @@ class CharsetBulkWork {
             sum += bytes.position();
             bytes.clear();
             utf32Encoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
+            sum += bytes.position();
+            out.clear();
+            utf32beDecoder.reset().decode(ByteBuffer.wrap(utf32be), out, true);
+            sum += out.position();
+            bytes.clear();
+            utf32beEncoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
             sum += bytes.position();
             out.clear();
             utf16leDecoder.reset().decode(ByteBuffer.wrap(utf16le), out, true);

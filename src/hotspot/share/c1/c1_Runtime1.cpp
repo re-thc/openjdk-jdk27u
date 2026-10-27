@@ -354,6 +354,8 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SimdUTF::encode_utf8_prefix);
   FUNCTION_CASE(entry, SimdUTF::decode_utf32_prefix);
   FUNCTION_CASE(entry, SimdUTF::encode_utf32_prefix);
+  FUNCTION_CASE(entry, SimdUTF::decode_utf32be_prefix);
+  FUNCTION_CASE(entry, SimdUTF::encode_utf32be_prefix);
   FUNCTION_CASE(entry, SimdUTF::utf8_to_latin1_prefix);
   FUNCTION_CASE(entry, SimdUTF::decode_utf16le_prefix);
   FUNCTION_CASE(entry, SimdUTF::decode_utf16be_prefix);

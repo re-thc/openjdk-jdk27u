@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
 /**
- * UTF-8, UTF-16, UTF-32LE, ISO-8859-1 and US-ASCII Charset coders over array-backed and direct buffers, and the stream
+ * UTF-8, UTF-16, UTF-32, ISO-8859-1 and US-ASCII Charset coders over array-backed and direct buffers, and the stream
  * classes built on them. The coder loops convert ranges of 64 elements or more in bulk.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -56,11 +56,15 @@ public class SimdUTFCoders {
     public String content;
 
     private static final Charset UTF_32LE = Charset.forName("UTF-32LE");
+    private static final Charset UTF_32BE = Charset.forName("UTF-32BE");
 
     private static final Charset UTF_16LE = StandardCharsets.UTF_16LE;
     private static final Charset UTF_16BE = StandardCharsets.UTF_16BE;
 
     private byte[] utf8Bytes, utf32Bytes, utf16leBytes, utf16beBytes;
+    private ByteBuffer utf32beHeap, utf32beDirect;
+    private CharsetDecoder utf32beDecoder;
+    private CharsetEncoder utf32beEncoder;
     private ByteBuffer utf16leHeap, utf16leDirect, utf16beHeap;
     private CharsetDecoder utf16leDecoder, utf16beDecoder;
     private CharsetEncoder utf16leEncoder, utf16beEncoder;
@@ -118,6 +122,11 @@ public class SimdUTFCoders {
         utf8Direct = ByteBuffer.allocateDirect(utf8Bytes.length).put(utf8Bytes).flip();
         utf32Heap = ByteBuffer.wrap(utf32Bytes);
         utf32Direct = ByteBuffer.allocateDirect(utf32Bytes.length).put(utf32Bytes).flip();
+        byte[] utf32be = s.getBytes(UTF_32BE);
+        utf32beHeap = ByteBuffer.wrap(utf32be);
+        utf32beDirect = ByteBuffer.allocateDirect(utf32be.length).put(utf32be).flip();
+        utf32beDecoder = UTF_32BE.newDecoder();
+        utf32beEncoder = UTF_32BE.newEncoder();
         bytesHeap = ByteBuffer.allocate(4 * size + 16);
         bytesDirect = ByteBuffer.allocateDirect(4 * size + 16);
         charsHeap = CharBuffer.allocate(size + 16);
@@ -182,6 +191,11 @@ public class SimdUTFCoders {
     @Benchmark public int utf32DecodeDirect() { return decode(utf32Decoder, utf32Direct, charsHeap); }
     @Benchmark public int utf32EncodeHeap() { return encode(utf32Encoder, textHeap, bytesHeap); }
     @Benchmark public int utf32EncodeDirect() { return encode(utf32Encoder, textHeap, bytesDirect); }
+
+    @Benchmark public int utf32BEDecodeHeap() { return decode(utf32beDecoder, utf32beHeap, charsHeap); }
+    @Benchmark public int utf32BEDecodeDirect() { return decode(utf32beDecoder, utf32beDirect, charsHeap); }
+    @Benchmark public int utf32BEEncodeHeap() { return encode(utf32beEncoder, textHeap, bytesHeap); }
+    @Benchmark public int utf32BEEncodeDirect() { return encode(utf32beEncoder, textHeap, bytesDirect); }
 
     // ISO-8859-1 and US-ASCII: the array-backed routes are unchanged and are the reference
     @Benchmark public int latin1DecodeHeap() { return decode(latin1Decoder, latin1Heap, charsHeap); }

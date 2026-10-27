@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @summary The UTF-32 Charset decoders and encoders convert little-endian data in bulk
- *          with the byte order, BOM handling, positions and incremental behavior of
+ * @summary The UTF-32 Charset decoders and encoders convert data of either byte order in
+ *          bulk with the byte order, BOM handling, positions and incremental behavior of
  *          their element loops
  * @build CoderTranscript
  * @run main/othervm -Xint TestUTF32CharsetCoders light
@@ -134,8 +134,7 @@ public class TestUTF32CharsetCoders {
     public static void main(String[] args) {
         Random random = new Random(0x32);
         int[] counts = {0, 1, 31, 32, 33, 64, 100, 255, 1000, 2049};
-        // UTF-32LE and the little-endian BOM variants take the bulk step; the big-endian
-        // charsets and the BOM-detecting UTF-32 keep their loops and must be unchanged.
+        // Both byte orders take the bulk step, the detecting charset after its mark
         String[] names = {"UTF-32LE", "X-UTF-32LE-BOM", "UTF-32", "UTF-32BE"};
         for (String name : names) {
             Charset charset = Charset.forName(name);

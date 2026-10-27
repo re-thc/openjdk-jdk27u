@@ -702,6 +702,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_encodeUTF8Bulk:
   case vmIntrinsics::_decodeUTF32Bulk:
   case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_decodeUTF32BEBulk:
+  case vmIntrinsics::_encodeUTF32BEBulk:
   case vmIntrinsics::_utf8ToLatin1Bulk:
   case vmIntrinsics::_decodeUTF16LEBulk:
   case vmIntrinsics::_decodeUTF16BEBulk:

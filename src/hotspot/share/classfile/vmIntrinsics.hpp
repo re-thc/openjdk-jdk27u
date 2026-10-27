@@ -443,6 +443,8 @@ class methodHandle;
    do_name(     encodeBulk_name,                         "encodeBulk")                                                    \
   do_intrinsic(_decodeUTF32Bulk, sun_nio_cs_utf32_Decoder, decodeBulk_name, bulkConvert_signature, F_S)                  \
   do_intrinsic(_encodeUTF32Bulk, sun_nio_cs_utf32_Encoder, encodeBulk_name, bulkConvert_signature, F_S)                  \
+  do_intrinsic(_decodeUTF32BEBulk, sun_nio_cs_utf32_Decoder, decodeBulkBE_name, bulkConvert_signature, F_S)             \
+  do_intrinsic(_encodeUTF32BEBulk, sun_nio_cs_utf32_Encoder, encodeBulkBE_name, bulkConvert_signature, F_S)             \
   do_intrinsic(_utf8ToLatin1Bulk, java_lang_String,        utf8ToLatin1Bulk_name, bulkConvert_signature, F_S)             \
    do_name(     utf8ToLatin1Bulk_name,                   "utf8ToLatin1Bulk")                                              \
   do_class(sun_nio_cs_UnicodeDecoder, "sun/nio/cs/UnicodeDecoder")                                                      \
