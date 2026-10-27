@@ -5,12 +5,13 @@ comparison. Earlier low-coverage timings remain diagnostic observations about
 the partial prototype. They are not a verdict on the complete proposed tier.
 No new application timing comparison has been run after this requirement.
 
-The qualified local implementation through `5d1c9676077` supports direct
+The qualified local implementation through `4f770550606` supports direct
 int/long/reference bytecode emission, ordinary calls/constructors, allocation,
-verified joins and backward branches. All fourteen focused tests pass in release
-and fastdebug; the G1 AOT code-cache smoke also passes. The latest frozen method
-coverage is 80.73% startup / 78.41% warm. Actual early-entry coverage is 68.30% /
-78.34%. **The combined 80% gate remains unmet and application timing is held.**
+verified joins, backward branches and Java exception handlers. All fifteen focused
+tests are qualified in release and fastdebug; the earlier G1 AOT code-cache smoke
+also passes. The latest frozen method coverage is 82.89% startup / 81.34% warm.
+Actual early-entry coverage is 68.51% / 81.13%. **The startup execution-entry gate
+remains unmet and application timing is held.**
 The method denominators remain 3,056/5,697; 2,445/4,558 are target counts, not
 replacement denominators. No default or public change is made.
 
@@ -52,6 +53,26 @@ methods. Execution-entry coverage remains a separate reported requirement;
 its threshold must not be conflated with method or opcode coverage.
 
 ## Observed coverage
+
+The latest handler batch (`4f770550606`) reports:
+
+| Metric | Startup | Warm |
+|---|---:|---:|
+| Own eligible population | 3053 | 5700 |
+| Eligible methods installed / used | 2628 / 2324 | 4882 / 4776 |
+| Own-population method coverage | 86.08% | 85.65% |
+| Early Java entries / actual direct entries | 830224 / 568804 | 3326119 / 2698402 |
+| Execution-entry coverage | 68.51% | 81.13% |
+| Frozen reference methods credited | 2533 / 3056 | 4634 / 5697 |
+| Frozen method coverage | 82.89% | 81.34% |
+
+All 2,956/5,438 matchable named reference identities match; 100/259 hidden or
+ambiguous identities remain uncredited in the original complete denominators.
+The frozen targets of 2,445/4,558 are exceeded by 88/76 methods. This does not
+satisfy the separate startup execution-entry gate. Counter identities balance
+and no ordinary admission is missing. The private census patch was removed and
+production release rebuilt. The following tables retain earlier batches rather
+than replacing adverse or incomplete outcomes.
 
 | Coverage-only capture | Reference startup | Extended startup | Reference warm | Extended warm |
 |---|---:|---:|---:|---:|
@@ -162,6 +183,56 @@ identities balance with zero missing admissions. Both census patches have been
 removed and production release rebuilt.
 
 ## What still executes in the interpreter
+
+The handler capture adds no-print phase counters to distinguish accepted-method
+queue exposure from unsupported code. The following disjoint ledger uses all
+830,224/3,326,119 early Java entries, including short-lived methods:
+
+| Entry share | Startup | Warm |
+|---|---:|---:|
+| Actual direct entries | 68.512% | 81.128% |
+| Initial 32 interpreted entries | 15.890% | 5.901% |
+| Accepted method before enqueue or after a bypassed notification | 0.245% | 0.065% |
+| Accepted method waiting in queue | 4.745% | 1.440% |
+| Accepted method compiling/installing | 0.208% | 0.059% |
+| Interpreter body entered after installation | 0.020% | 0.008% |
+| Refused unsupported/unresolved/restricted body after 32 | 8.620% | 10.060% |
+| Not queued: runtime policy or unknown bypass | 1.043% | 0.998% |
+| Queued/selected/discarded without a final install outcome | 0.716% | 0.341% |
+
+"Accepted" means eventually installed by the snapshot. Phase counters observe
+the interpreter body-entry point; they measure invocation exposure, not elapsed
+time or CPU. In particular, the tiny post-install bucket can contain activations
+already entering the interpreter and cannot all be called deoptimization.
+Likewise zero body entries during a request callback does not mean zero request
+CPU: the callback runs before that body entry. The undecided/outcome and bypass
+buckets remain separate rather than being relabeled as unsupported code.
+The [exact loss ledger](direct-baseline-data/coverage80-handler-phase-loss.tsv)
+and [phase counts](direct-baseline-data/coverage80-handler-phase-counters.tsv)
+retain the counts and full denominators.
+
+Startup needs another 11.488 percentage points of actual direct entries. Even
+eliminating all accepted-method queue and compile/install exposure would add
+only 4.953 points in this recorded window. The initial-32 policy leaves a
+capture-specific ideal ceiling of 84.110%, so reaching 80% also requires covering
+most remaining useful execution and reducing service lag. Thresholds and the
+inherited ordinary-tier hold are unchanged. Counter overhead and changed
+ordinary-admission windows prevent treating these differences as exclusive
+interpreter work saved or a performance result.
+
+The remaining startup after-32 body refusals include 24,422 entries at
+unresolved/unsupported calls (2.942% of all entries), 16,811 intrinsic-root
+entries (2.025%), 8,552 unsupported-opcode entries (1.030%), 5,279 field entries
+(0.636%) and 4,911 cast entries (0.592%). Size, method shape, interface-special,
+synchronization, MDO/admission and unresolved outcomes remain visible in the
+[remaining-category ledger](direct-baseline-data/coverage80-handler-remaining.tsv).
+These are first-failure categories, not guaranteed gains from removing one test.
+Intrinsic bodies need semantic review, including finalizer/reachability duties.
+The next structural questions are FIFO selection cost and avoiding rich CI
+wrappers for already resolved plain calls. Neither justifies widening unresolved
+appendix/signature-polymorphic forms or changing admission policy blindly.
+
+The following long-only ledger is historical, before handler support:
 
 The retained long census provides this disjoint entry ledger. Percentages use
 each capture's full early Java-entry denominator, including below-threshold
@@ -437,13 +508,43 @@ focused tests pass on both builds, including mixed long/reference/int arguments
 beyond the register limit, C1/C2 callees and replacement, GC and long return TOS,
 a retained long below call arguments, local overlap, exceptions, and long OSR.
 
-The next coherent coverage boundary is handler entry and normal exception-table
-lookup through the existing Runtime1/SharedRuntime machinery, with verifier
-frames and precise canonical roots. This needs separate handler landing pads,
-correct TLS exception extraction/clearing, throwing-PC maps and nmethod handler
-metadata; simply dropping the current refusal guard is insufficient. Intrinsic
-roots, remaining call forms, size/runtime restrictions and installation-use lag
-stay visible. Broader own-population method coverage is not the adoption gate.
+## Qualified Java exception handlers
+
+`4f770550606` retains original exception-table order and covered bytecode ranges,
+uses verified single-oop handler stack frames and checks live locals at each
+throwing BCI. Each handler has a distinct landing pad: extract and clear the TLS
+exception, spill it into canonical stack slot zero, then enter the normal handler
+label. This also permits a normal control-flow edge into a shared handler body.
+Throwing-PC metadata covers Java/allocation calls, polls and explicit athrow;
+explicit throw scopes reexecute the bytecode when deoptimization requires it.
+
+Catch-type resolution and recursive lookup errors remain with the original
+Method and existing Runtime1/SharedRuntime lookup. Unknown recursive destinations
+use missing-handler deoptimization rather than entering with invalid locals.
+The compiler adds no eager catch-class CI resolution. Methods without usable
+handler verifier frames, more than 64 handler rows, or more than 4,096 emitted
+handler metadata entries fall back explicitly and remain in the denominator.
+Normal unwind, GC roots, deoptimization and ordered finally effects are retained.
+
+Independent read-only review checked the concrete implementation and final
+fixtures. All fifteen tests are qualified on release and fastdebug. Handler tests
+exercise ordered catches, finally/rethrow once, long locals through GC, mixed-tier
+callee throws, null/bounds/division fallback, escaped constructors, multi-catch,
+normal and exceptional entry into a shared body, and a real inaccessible catch
+type causing recursive lookup failure and deoptimization. Explicit post-warmup
+identity/count assertions exercise the installed handler body. Existing long
+tests separately force long-state reconstruction; a forced deoptimization with
+long state inside a catch remains an untested combination.
+
+The initial full release run passed fourteen tests and failed the obsolete
+InstanceTest assertion that handler methods must refuse compilation. That
+expectation was corrected and the test passed; the full fastdebug run passed
+fifteen. Focused final handler fixtures passed both builds. A private census
+probe initially failed a formatting warning under Werror, then was corrected;
+both failures and all captures remain private. Production instrumentation is
+restored. No master CPU-baseline integration is mixed into this series; the
+reported `3eec12422fcf2fff86206a0f7411fbfdf81d0638` integration requires a separate
+base update and qualification.
 
 ## Shortest coherent path toward the gate
 
