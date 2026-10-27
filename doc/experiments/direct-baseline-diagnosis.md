@@ -17,6 +17,10 @@ current HotSpot implementations and reproduced before correction. The direct
 bytecode emitter remains separate from C1 parsing, HIR, LIR and register
 allocation. Ordinary C1/C2 implementations and thresholds are preserved.
 
+The follow-up [remaining-cost attribution](direct-baseline-attribution.md)
+retains these adverse results and reports bounded native sampling, accounting
+inside the original warm workload, and a separate stale-install metadata fix.
+
 ## Concrete defects and corrections
 
 1. **Entry barriers and invalidation.** `C1_MacroAssembler::build_frame` emits

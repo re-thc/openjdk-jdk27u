@@ -1017,6 +1017,8 @@ void ciEnv::register_method(ciMethod* target,
         (method->has_compiled_code() || method->queued_for_compilation() ||
          method->highest_comp_level() != CompLevel_none || method->method_data() != nullptr ||
          (method->is_old() || method->is_not_compilable(CompLevel_simple) || method->number_of_breakpoints() != 0))) {
+      // Discarding uninstalled baseline work must not consume C2's decompile history.
+      _inc_decompile_count_on_failure = false;
       record_failure("stale direct baseline install");
     }
 
