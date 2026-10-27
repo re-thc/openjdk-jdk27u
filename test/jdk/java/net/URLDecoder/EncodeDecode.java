@@ -33,6 +33,6 @@ public class EncodeDecode {
     public static void main(String[] args) {
         String str = "fds@$";
         String encStr = URLEncoder.encode(str, Charset.defaultCharset());
-        String decStr = URLDecoder.decode(encStr, Charset.defaultCharset());
+        String decStr = URLDecoder.decode(encStr);
     }
 }

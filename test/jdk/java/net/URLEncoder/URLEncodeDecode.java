@@ -87,7 +87,7 @@ public class URLEncodeDecode {
         String decoded = null;
 
         if (enc == null)
-            decoded = URLDecoder.decode(encoded, Charset.defaultCharset());
+            decoded = URLDecoder.decode(encoded);
         else
             decoded = URLDecoder.decode(encoded, enc);
 

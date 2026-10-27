@@ -1,13 +1,14 @@
 # Experimental removal of pre-Java-8 deprecated APIs
 
-This branch deliberately removes the 45 public or protected members listed below.
+This branch deliberately removes the 44 public or protected members listed below.
 This is a fork-specific compatibility choice. Old compiled callers may fail to
 link, source callers may stop compiling, reflective lookups may fail, and custom
 subclasses may need to migrate removed overrides. The list is not a promise that
 all external software has migrated.
 
 The six deprecated JDBC interface contracts, `String.getBytes(int,int,byte[],int)`,
-all 13 SQL Date/Time throwing guards, `Date.parse`, and all monitor management
+the four-argument high-byte `String` constructor, all 13 SQL Date/Time throwing
+guards, `Date.parse`, and all monitor management
 attributes remain. The latter include `ObservedObject`, `Threshold`, `DerivedGauge`
 and `DerivedGaugeTimeStamp`. `QueryExp`/`QueryEval` retain the real JMX query context
 handling; the removed `ValueExp` setters were a declaration and two no-ops.
@@ -19,6 +20,15 @@ when those methods were absent. PostgreSQL JDBC 42.7.14, MySQL Connector/J 26.10
 and MariaDB Connector/J 4.0.0 were checked separately; their observed legacy JDBC
 and String dependencies remain. These bounded checks do not establish universal
 framework or driver compatibility.
+
+`URLDecoder.decode(String)` remains because Logback 1.5.37, as bundled by a
+current Micronaut sample, invokes it when watching a file-backed logging
+configuration. Enabling `scan="true"` on the sample XML reproduced a startup
+`NoSuchMethodError` before this method was restored. The default packaged
+configuration did not reach that branch. Gradle 9.8.2 also bundles an older
+jcifs caller of this decoder. The retained four-argument high-byte `String`
+constructor is used by the sample's current Netty 4.2.18.Final and Jackson 3.2.2
+dependencies.
 
 The three obsolete `MBeanServer.deserialize` overloads are removed together with
 their matching implementations in `JmxMBeanServer` and
@@ -38,10 +48,11 @@ blanket skips, disabled assertions or changes to the restored monitor tests.
   branch and its helper; preserve every limited-Reader read-ahead assertion.
 * `java/io/StreamTokenizer/Reset.java`: use a resettable `StringReader` fixture;
   preserve the token/reset assertions.
-* `java/net/URLDecoder/EncodeDecode.java`,
-  `java/net/URLEncoder/DecodeNonEncoded.java`, and
-  `java/net/URLEncoder/URLEncodeDecode.java`: use retained explicit-charset overloads
-  with `Charset.defaultCharset()`, preserving all inputs and existing assertions.
+* `java/net/URLDecoder/EncodeDecode.java` and
+  `java/net/URLEncoder/URLEncodeDecode.java`: use the retained explicit-charset
+  encoder overload with `Charset.defaultCharset()`, preserving all inputs and
+  existing assertions. Existing one-argument decoder calls remain tested;
+  `java/net/URLEncoder/DecodeNonEncoded.java` is unchanged.
 * `java/sql/test/sql/DriverManagerTests.java`: retire only `tests17`, which tests
   the removed PrintStream logging pair. Keep `tests18`'s PrintWriter enable/disable
   and identity assertions and every other driver test. DateTests, TimeTests and
@@ -78,7 +89,6 @@ and parameter descriptors are included to make the compatibility cut exact.
 * `java.net.Socket(java.net.InetAddress, int, boolean)` — `(Ljava/net/InetAddress;IZ)V`
 * `java.net.URLConnection.getDefaultRequestProperty(java.lang.String)` — `(Ljava/lang/String;)Ljava/lang/String;`
 * `java.net.URLConnection.setDefaultRequestProperty(java.lang.String, java.lang.String)` — `(Ljava/lang/String;Ljava/lang/String;)V`
-* `java.net.URLDecoder.decode(java.lang.String)` — `(Ljava/lang/String;)Ljava/lang/String;`
 * `java.net.URLEncoder.encode(java.lang.String)` — `(Ljava/lang/String;)Ljava/lang/String;`
 * `java.net.URLStreamHandler.setURL(java.net.URL, java.lang.String, java.lang.String, int, java.lang.String, java.lang.String)` — `(Ljava/net/URL;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)V`
 * `java.rmi.dgc.VMID.isUnique()` — `()Z`

@@ -31,7 +31,6 @@
  *
  */
 
-import java.nio.charset.Charset;
 import java.net.URLDecoder;
 
 public class DecodeNonEncoded {
@@ -44,7 +43,7 @@ public class DecodeNonEncoded {
 
         for (int i = 0; i < errorStrings.length; i++) {
             try {
-                URLDecoder.decode(errorStrings[i], Charset.defaultCharset());
+                URLDecoder.decode(errorStrings[i]);
                 throw new Exception("String \"" + errorStrings[i]
                     + "\" should have failed in URLDecoder.decode!");
             } catch (IllegalArgumentException e) {
@@ -57,7 +56,7 @@ public class DecodeNonEncoded {
 
         String temp;
         for (int i = 0; i < ignoreStrings.length; i++) {
-            temp = URLDecoder.decode(ignoreStrings[i], Charset.defaultCharset());
+            temp = URLDecoder.decode(ignoreStrings[i]);
             if (!temp.equals(ignoreStrings[i]))
                 throw new Exception("String \"" + ignoreStrings[i]
                         + "\" was converted to " + temp
