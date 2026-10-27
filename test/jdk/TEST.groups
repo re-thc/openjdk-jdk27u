@@ -55,6 +55,7 @@ tier1_part3 = \
     :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
+    java/nio/file/WatchService \
     jdk/classfile \
     sun/nio/cs/ISO8859x.java
 
@@ -70,12 +71,14 @@ tier2_part1 = \
     -com/sun/crypto/provider/Cipher
 
 # sun/nio/cs/ISO8859x.java and java/nio/Buffer are in tier1 because of JDK-8132854
+# WatchService covers file-event handling and request/close races in tier1.
 tier2_part2 = \
     :core_tools \
     :jdk_io \
     :jdk_nio \
     -java/nio/Buffer \
     -sun/nio/cs/ISO8859x.java \
+    -java/nio/file/WatchService \
     :jdk_other \
     :jdk_text \
     :jdk_time
