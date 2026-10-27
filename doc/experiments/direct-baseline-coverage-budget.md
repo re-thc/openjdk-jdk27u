@@ -1,5 +1,9 @@
 # Why the queued methods still reject
 
+The [80% coverage work](direct-baseline-coverage80.md) supersedes the earlier
+checkcast-only sequencing, defines the full eligibility/entry denominators and
+records the qualified polymorphic-call/type-check extension.
+
 The 1,107 pre-CI refusals are distinct methods in each retained capture, not
 1,107 repeated attempts at a few methods. The first capture has 3,063 runtime
 request calls and 2,253 serviced worker tasks, each with a distinct qualified

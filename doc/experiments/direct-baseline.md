@@ -1,5 +1,9 @@
 # Direct bytecode baseline compiler prototype
 
+The [80% coverage work](direct-baseline-coverage80.md) supersedes the earlier
+checkcast-only sequencing, defines the full eligibility/entry denominators and
+records the qualified polymorphic-call/type-check extension.
+
 The subsequent [whole-path budget and worker-preparation study](direct-baseline-budget.md)
 records the measured request/install/execution gap, the isolated structural
 correction and its adverse application results.
