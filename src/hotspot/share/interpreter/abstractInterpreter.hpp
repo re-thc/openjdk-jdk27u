@@ -117,6 +117,7 @@ class AbstractInterpreter: AllStatic {
     sun_nio_cs_US_ASCII_Encoder_encodeBulk,
     sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk,
     java_lang_StringCoding_countPositives,
+    java_lang_StringUTF16_countCodePoints,
     java_lang_StringLatin1_inflateChars,
     java_lang_StringLatin1_inflateBytes,
     java_lang_StringUTF16_compressChars,

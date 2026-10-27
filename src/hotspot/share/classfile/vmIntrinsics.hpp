@@ -430,6 +430,8 @@ class methodHandle;
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \
    do_signature(countPositives_signature,                  "([BII)I")                                                   \
+  do_intrinsic(_countCodePoints,    java_lang_StringUTF16,  countCodePoints_name, countPositives_signature, F_S)        \
+   do_name(     countCodePoints_name,                      "countCodePoints")                                           \
                                                                                                                         \
   /* support for the UTF-8 and UTF-32 Charset coders */                                                                 \
   do_class(sun_nio_cs_utf8_Decoder,  "sun/nio/cs/UTF_8$Decoder")                                                        \

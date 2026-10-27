@@ -108,6 +108,7 @@ address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
   SIMDUTF_LEAF(_encodeAsciiBulk, encode_ascii_prefix)
   SIMDUTF_LEAF(_encodeLatin1UTF8Bulk, encode_latin1_utf8_prefix)
   SIMDUTF_LEAF(_countPositives, count_positives)
+  SIMDUTF_LEAF(_countCodePoints, count_code_points)
   SIMDUTF_LEAF(_inflateStringC, inflate_latin1)
   SIMDUTF_LEAF(_inflateStringB, inflate_latin1)
   // The ISO-8859-1 encoders narrow like the UTF-16 compression does
@@ -577,6 +578,30 @@ jint compress(const jbyte* src, jbyte* dst, jint length) {
 // poll for safepoints inside the range.
 JRT_LEAF(jint, SimdUTF::count_positives(const jbyte* src, jint length))
   return positives(src, length);
+JRT_END
+
+// StringUTF16.countCodePoints: the number of code points of the chars if the loop that counts
+// each unpaired surrogate as one counts the same as the library does, and -1 if it may not. The
+// library counts the chars that are not low surrogates; that is the count of the loop unless a
+// low surrogate has no high one before it. Chars without a low surrogate are counted at once,
+// which is the case of text without supplementary characters; otherwise they must be well-formed
+// as a whole, which is more than the count needs but is the check the library has. The count
+// of the first pass is the result of the second: chars that changed meanwhile give the count
+// of some such text, within the range.
+JRT_LEAF(jint, SimdUTF::count_code_points(const jbyte* src, jint length))
+  assert(length >= 0 && length <= 1024 * 1024, "bounded count");
+  if (!aligned(src, sizeof(jchar))) {
+    return -1;
+  }
+  const char16_t* input = reinterpret_cast<const char16_t*>(src);
+  size_t count = simdutf::count_utf16(input, length);
+  if (!within(count, length)) {
+    return -1;
+  }
+  if (count == static_cast<size_t>(length) || simdutf::validate_utf16(input, length)) {
+    return static_cast<jint>(count);
+  }
+  return -1;
 JRT_END
 
 // StringLatin1.inflate0: Latin-1 bytes to UTF-16 units in native byte order, the order

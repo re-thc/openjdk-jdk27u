@@ -2238,10 +2238,12 @@ address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInter
   if (!SimdUTF::available()) {
     return nullptr;
   }
-  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives;
+  // countCodePoints has the arguments of countPositives, with the offset in chars
+  const bool chars = kind == Interpreter::java_lang_StringUTF16_countCodePoints;
+  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives || chars;
   const bool inflate = kind == Interpreter::java_lang_StringLatin1_inflateChars ||
                        kind == Interpreter::java_lang_StringLatin1_inflateBytes;
-  const int src_shift = (!count && !inflate) ? 1 : 0;
+  const int src_shift = ((!count && !inflate) || chars) ? 1 : 0;
   const int dst_shift = inflate ? 1 : 0;
   address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
   assert(leaf != nullptr, "every string coding kind has a leaf");

@@ -237,6 +237,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(sun_nio_cs_US_ASCII_Encoder_encodeBulk)
   method_entry(sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk)
   method_entry(java_lang_StringCoding_countPositives)
+  method_entry(java_lang_StringUTF16_countCodePoints)
   method_entry(java_lang_StringLatin1_inflateChars)
   method_entry(java_lang_StringLatin1_inflateBytes)
   method_entry(java_lang_StringUTF16_compressChars)
@@ -553,6 +554,7 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
 #endif
     break;
   case Interpreter::java_lang_StringCoding_countPositives:
+  case Interpreter::java_lang_StringUTF16_countCodePoints:
   case Interpreter::java_lang_StringLatin1_inflateChars:
   case Interpreter::java_lang_StringLatin1_inflateBytes:
   case Interpreter::java_lang_StringUTF16_compressChars:

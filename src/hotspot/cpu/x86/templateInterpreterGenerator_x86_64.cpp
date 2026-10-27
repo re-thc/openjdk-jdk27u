@@ -695,10 +695,12 @@ address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInter
   if (!SimdUTF::available()) {
     return nullptr;
   }
-  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives;
+  // countCodePoints has the arguments of countPositives, with the offset in chars
+  const bool chars = kind == Interpreter::java_lang_StringUTF16_countCodePoints;
+  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives || chars;
   const bool inflate = kind == Interpreter::java_lang_StringLatin1_inflateChars ||
                        kind == Interpreter::java_lang_StringLatin1_inflateBytes;
-  const Address::ScaleFactor src_scale = (!count && !inflate) ? Address::times_2 : Address::times_1;
+  const Address::ScaleFactor src_scale = ((!count && !inflate) || chars) ? Address::times_2 : Address::times_1;
   const Address::ScaleFactor dst_scale = inflate ? Address::times_2 : Address::times_1;
   address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
   assert(leaf != nullptr, "every string coding kind has a leaf");

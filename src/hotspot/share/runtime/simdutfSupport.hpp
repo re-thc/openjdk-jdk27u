@@ -77,6 +77,8 @@ class SimdUTF : AllStatic {
   // Leaves for the String coding boundaries that only C2 implements with stubs. They
   // are exact for every length, so the interpreter and C1 call them unconditionally.
   static jint count_positives(const jbyte* src, jint length);
+  // The number of code points of well-formed UTF-16 chars, or -1 for chars that are not
+  static jint count_code_points(const jbyte* src, jint length);
   static void inflate_latin1(const jbyte* src, jbyte* dst, jint length);
   static jint encode_ascii_array(const jbyte* src, jbyte* dst, jint length);
   static jint compress_utf16(const jbyte* src, jbyte* dst, jint length);

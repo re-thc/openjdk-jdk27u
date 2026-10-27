@@ -722,6 +722,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_decodeUTF8UTF16: return inline_decodeUTF8UTF16();
   case vmIntrinsics::_countPositives:
     return inline_countPositives();
+  case vmIntrinsics::_countCodePoints:
+    return inline_countCodePoints();
 
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
@@ -1177,6 +1179,41 @@ int LibraryCallKit::stub_replacement_minimum(int floor) {
     return max_jint;
   }
   return (int)(FLAG_IS_DEFAULT(SIMDUTFMinLength) ? MAX2(SIMDUTFMinLength, (intx)floor) : SIMDUTFMinLength);
+}
+
+//------------------------------inline_countCodePoints-----------------------------
+// int java.lang.StringUTF16#countCodePoints(byte[] value, int offset, int length)
+// The number of code points of well-formed UTF-16 chars, or -1; the caller of the Java
+// method makes the call only for ranges long enough to repay it.
+bool LibraryCallKit::inline_countCodePoints() {
+  assert(callee()->signature()->size() == 3, "countCodePoints has 3 parameters");
+  if (!SimdUTF::available()) {
+    return false;
+  }
+  Node* value  = argument(0);
+  Node* offset = argument(1);
+  Node* length = argument(2);
+
+  value = must_be_not_null(value, true);
+  RegionNode* bailout = create_bailout();
+  generate_string_range_check(value, offset, length, true, bailout);
+  if (check_bailout(bailout)) {
+    return true;
+  }
+
+  Node* start = array_element_address(value, offset, T_CHAR);
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeFunc* type = TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
+  Node* call = make_runtime_call(RC_LEAF, type, CAST_FROM_FN_PTR(address, SimdUTF::count_code_points),
+      "simdutf_count_code_points", TypePtr::BOTTOM, start, length);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  clear_upper_avx();
+  return true;
 }
 
 //------------------------------inline_countPositives------------------------------

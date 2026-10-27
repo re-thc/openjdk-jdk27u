@@ -143,6 +143,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_encodeLatin1UTF8Bulk:
   // C2 implements these with stubs; C1 would otherwise run their Java loops.
   case vmIntrinsics::_countPositives:
+  case vmIntrinsics::_countCodePoints:
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:
   case vmIntrinsics::_compressStringC:

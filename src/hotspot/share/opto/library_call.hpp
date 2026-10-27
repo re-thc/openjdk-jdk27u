@@ -355,6 +355,7 @@ class LibraryCallKit : public GraphKit {
   Node* get_block_size_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);
+  bool inline_countCodePoints();
   // The length from which an operation that C2 implements with a stub or a node of its own
   // calls the library, or max_jint if it never does
   static int stub_replacement_minimum(int floor);

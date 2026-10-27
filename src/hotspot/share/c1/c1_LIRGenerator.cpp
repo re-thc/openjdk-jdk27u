@@ -2954,7 +2954,9 @@ void LIRGenerator::do_convertPrefix(Intrinsic* x) {
 // The Java wrappers have checked the ranges, and the leaves are exact for every length,
 // so the call needs no HIR edges. An offset counts UTF-16 elements on the char side.
 void LIRGenerator::do_stringCoding(Intrinsic* x) {
-  const bool count = x->id() == vmIntrinsics::_countPositives;
+  // countCodePoints has the arguments of countPositives, with the offset and the length in chars
+  const bool chars = x->id() == vmIntrinsics::_countCodePoints;
+  const bool count = x->id() == vmIntrinsics::_countPositives || chars;
   const bool inflate = x->id() == vmIntrinsics::_inflateStringC ||
                        x->id() == vmIntrinsics::_inflateStringB;
   // (array, offset[, array, offset], length)
@@ -2964,7 +2966,7 @@ void LIRGenerator::do_stringCoding(Intrinsic* x) {
   src_start.load_item();
   LIR_Opr src_offset = new_register(T_LONG);
   __ convert(Bytecodes::_i2l, src_start.result(), src_offset);
-  if (!count && !inflate) {
+  if ((!count && !inflate) || chars) {
     __ shift_left(src_offset, 1, src_offset);
   }
   LIR_Opr src_address = new_register(T_ADDRESS);
@@ -3013,6 +3015,7 @@ void LIRGenerator::do_stringCoding(Intrinsic* x) {
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
   case vmIntrinsics::_countPositives:
+  case vmIntrinsics::_countCodePoints:
   case vmIntrinsics::_inflateStringC:
   case vmIntrinsics::_inflateStringB:
   case vmIntrinsics::_compressStringC:
