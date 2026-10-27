@@ -110,6 +110,24 @@ public class TestCharsetBulkActivation {
                     chars, chr, chars.length, new byte[2 * chars.length + 16], bytes, chars.length + 8,
                     chars.length, chars.length));
         }
+        // The single-byte charsets convert one char per byte
+        byte[] latin1 = latin1Text.getBytes(StandardCharsets.ISO_8859_1);
+        char[] latin1Chars = latin1Text.toCharArray();
+        String asciiText = "hello world, plain text ".repeat(8);
+        byte[] ascii = asciiText.getBytes(StandardCharsets.US_ASCII);
+        char[] asciiChars = asciiText.toCharArray();
+        list.add(new Bulk("ISO-8859-1 decode", method("sun.nio.cs.ISO_8859_1$Decoder", "decodeBulk"),
+                latin1, bytes, latin1.length, new char[latin1.length], chr, latin1.length,
+                latin1.length, latin1.length));
+        list.add(new Bulk("ISO-8859-1 encode", method("sun.nio.cs.ISO_8859_1$Encoder", "encodeBulk"),
+                latin1Chars, chr, latin1Chars.length, new byte[latin1Chars.length], bytes, latin1Chars.length,
+                latin1Chars.length, latin1Chars.length));
+        list.add(new Bulk("US-ASCII decode", method("sun.nio.cs.US_ASCII$Decoder", "decodeBulk"),
+                ascii, bytes, ascii.length, new char[ascii.length], chr, ascii.length,
+                ascii.length, ascii.length));
+        list.add(new Bulk("US-ASCII encode", method("sun.nio.cs.US_ASCII$Encoder", "encodeBulk"),
+                asciiChars, chr, asciiChars.length, new byte[asciiChars.length], bytes, asciiChars.length,
+                asciiChars.length, asciiChars.length));
         list.add(new Bulk("UTF-8 to Latin-1", method("java.lang.String", "utf8ToLatin1Bulk"),
                 latin1Utf8, bytes, latin1Utf8.length, new byte[latin1Utf8.length], bytes, latin1Utf8.length,
                 latin1Utf8.length, latin1Text.length()));
@@ -146,7 +164,9 @@ public class TestCharsetBulkActivation {
                                               "UTF_32Coder$Decoder::decodeBulk", "UTF_32Coder$Encoder::encodeBulk",
                                               "String::utf8ToLatin1Bulk",
                                               "UnicodeDecoder::decodeBulkLE", "UnicodeDecoder::decodeBulkBE",
-                                              "UnicodeEncoder::encodeBulkLE", "UnicodeEncoder::encodeBulkBE"}) {
+                                              "UnicodeEncoder::encodeBulkLE", "UnicodeEncoder::encodeBulkBE",
+                                              "ISO_8859_1$Decoder::decodeBulk", "ISO_8859_1$Encoder::encodeBulk",
+                                              "US_ASCII$Decoder::decodeBulk", "US_ASCII$Encoder::encodeBulk"}) {
                 output.shouldMatch(Pattern.quote(method) + " \\(\\d+ bytes\\)\\s+\\(?intrinsic\\)?");
             }
         }
@@ -184,6 +204,17 @@ class CharsetBulkWork {
         CharsetEncoder utf16leEncoder = u16le.newEncoder();
         CharsetEncoder utf16beEncoder = u16be.newEncoder();
         byte[] latin1Utf8 = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8).getBytes(StandardCharsets.UTF_8);
+        // Array-backed buffers take the array loops of the single-byte charsets, which have
+        // their own intrinsics; the bulk steps serve direct buffers
+        String latin1Text = "h\u00e9llo w\u00f6rld \u00fcber ".repeat(8);
+        String asciiText = "hello world, plain text ".repeat(8);
+        CharsetDecoder isoDecoder = StandardCharsets.ISO_8859_1.newDecoder();
+        CharsetEncoder isoEncoder = StandardCharsets.ISO_8859_1.newEncoder();
+        CharsetDecoder asciiDecoder = StandardCharsets.US_ASCII.newDecoder();
+        CharsetEncoder asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
+        ByteBuffer isoBytes = direct(latin1Text.getBytes(StandardCharsets.ISO_8859_1));
+        ByteBuffer asciiBytes = direct(asciiText.getBytes(StandardCharsets.US_ASCII));
+        ByteBuffer singleOut = ByteBuffer.allocateDirect(latin1Text.length() + 8);
         long sum = 0;
         for (int i = 0; i < 20000; i++) {
             sum += new String(latin1Utf8, StandardCharsets.UTF_8).length();
@@ -211,7 +242,25 @@ class CharsetBulkWork {
             bytes.clear();
             utf16beEncoder.reset().encode(CharBuffer.wrap(chars), bytes, true);
             sum += bytes.position();
+            out.clear();
+            isoDecoder.reset().decode(isoBytes.duplicate(), out, true);
+            sum += out.position();
+            out.clear();
+            asciiDecoder.reset().decode(asciiBytes.duplicate(), out, true);
+            sum += out.position();
+            singleOut.clear();
+            isoEncoder.reset().encode(CharBuffer.wrap(latin1Text.toCharArray()), singleOut, true);
+            sum += singleOut.position();
+            singleOut.clear();
+            asciiEncoder.reset().encode(CharBuffer.wrap(asciiText.toCharArray()), singleOut, true);
+            sum += singleOut.position();
         }
         System.out.println(sum);
+    }
+
+    private static ByteBuffer direct(byte[] data) {
+        ByteBuffer b = ByteBuffer.allocateDirect(data.length);
+        b.put(data).flip();
+        return b;
     }
 }

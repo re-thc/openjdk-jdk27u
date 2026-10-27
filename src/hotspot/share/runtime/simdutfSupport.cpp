@@ -103,6 +103,10 @@ address SimdUTF::leaf_for(vmIntrinsics::ID id, const char** name) {
   SIMDUTF_LEAF(_decodeUTF16BEBulk, decode_utf16be_prefix)
   SIMDUTF_LEAF(_encodeUTF16LEBulk, encode_utf16le_prefix)
   SIMDUTF_LEAF(_encodeUTF16BEBulk, encode_utf16be_prefix)
+  SIMDUTF_LEAF(_decodeLatin1Bulk, decode_latin1_prefix)
+  SIMDUTF_LEAF(_encodeLatin1Bulk, encode_latin1_prefix)
+  SIMDUTF_LEAF(_decodeAsciiBulk, decode_ascii_prefix)
+  SIMDUTF_LEAF(_encodeAsciiBulk, encode_ascii_prefix)
   SIMDUTF_LEAF(_countPositives, count_positives)
   SIMDUTF_LEAF(_inflateStringC, inflate_latin1)
   SIMDUTF_LEAF(_inflateStringB, inflate_latin1)
@@ -394,12 +398,9 @@ JRT_END
 namespace {
 // The library call is not worth its dispatch below this many elements.
 const jint ShortRange = 16;
-}
 
-// StringCoding.countPositives0: the index of the first negative byte, or the length.
-// The range is bounds-checked by the Java caller; like the C2 stub, this leaf does not
-// poll for safepoints inside the range.
-JRT_LEAF(jint, SimdUTF::count_positives(const jbyte* src, jint length))
+// The index of the first negative byte, or the length.
+jint positives(const jbyte* src, jint length) {
   if (length < ShortRange) {
     for (jint i = 0; i < length; i++) {
       if (src[i] < 0) {
@@ -412,11 +413,10 @@ JRT_LEAF(jint, SimdUTF::count_positives(const jbyte* src, jint length))
   // changed meanwhile; a count may be short of the first negative byte but not past the end
   simdutf::result result = simdutf::validate_ascii_with_errors(reinterpret_cast<const char*>(src), length);
   return within(result.count, length) ? static_cast<jint>(result.count) : length;
-JRT_END
+}
 
-// StringLatin1.inflate0: Latin-1 bytes to UTF-16 units in native byte order, the order
-// of both char[] and String's UTF-16 byte[].
-JRT_LEAF(void, SimdUTF::inflate_latin1(const jbyte* src, jbyte* dst, jint length))
+// Latin-1 bytes to UTF-16 units in native byte order.
+void inflate(const jbyte* src, jbyte* dst, jint length) {
   if (length < ShortRange) {
     jchar* output = reinterpret_cast<jchar*>(dst);
     for (jint i = 0; i < length; i++) {
@@ -428,13 +428,12 @@ JRT_LEAF(void, SimdUTF::inflate_latin1(const jbyte* src, jbyte* dst, jint length
                                                     reinterpret_cast<char16_t*>(dst));
   assert(written == static_cast<size_t>(length), "every byte is converted");
   (void)written;
-JRT_END
+}
 
-// StringUTF16.compress0 and the ISO-8859-1 encodeISOArray0, which have the same contract:
-// copy the leading Latin-1 units and return their number. The callers keep the copied
+// Copies the leading Latin-1 units and returns their number. The callers keep the copied
 // prefix, so it is written again after an error rather than relying on how much of the
 // failing block the library stored.
-JRT_LEAF(jint, SimdUTF::compress_utf16(const jbyte* src, jbyte* dst, jint length))
+jint compress(const jbyte* src, jbyte* dst, jint length) {
   const jchar* input = reinterpret_cast<const jchar*>(src);
   if (length < ShortRange) {
     for (jint i = 0; i < length; i++) {
@@ -453,6 +452,100 @@ JRT_LEAF(jint, SimdUTF::compress_utf16(const jbyte* src, jbyte* dst, jint length
   jint valid = within(result.count, length) ? static_cast<jint>(result.count) : length;
   return static_cast<jint>(simdutf::convert_utf16_to_latin1(
       reinterpret_cast<const char16_t*>(src), valid, reinterpret_cast<char*>(dst)));
+}
+}
+
+// StringCoding.countPositives0: the index of the first negative byte, or the length.
+// The range is bounds-checked by the Java caller; like the C2 stub, this leaf does not
+// poll for safepoints inside the range.
+JRT_LEAF(jint, SimdUTF::count_positives(const jbyte* src, jint length))
+  return positives(src, length);
+JRT_END
+
+// StringLatin1.inflate0: Latin-1 bytes to UTF-16 units in native byte order, the order
+// of both char[] and String's UTF-16 byte[].
+JRT_LEAF(void, SimdUTF::inflate_latin1(const jbyte* src, jbyte* dst, jint length))
+  inflate(src, dst, length);
+JRT_END
+
+// StringUTF16.compress0 and the ISO-8859-1 encodeISOArray0, which have the same contract:
+// copy the leading Latin-1 units and return their number.
+JRT_LEAF(jint, SimdUTF::compress_utf16(const jbyte* src, jbyte* dst, jint length))
+  return compress(src, dst, length);
+JRT_END
+
+// ISO-8859-1 bytes to chars: every byte converts, so min(input, room) bytes do.
+JRT_LEAF(jlong, SimdUTF::decode_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail || !aligned(dst, sizeof(jchar))) {
+    return 0;
+  }
+  inflate(src, dst, chunk);
+  return pack(chunk, chunk);
+JRT_END
+
+// Chars to ISO-8859-1 bytes, up to the first char above U+00FF.
+JRT_LEAF(jlong, SimdUTF::encode_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail || !aligned(src, sizeof(jchar))) {
+    return 0;
+  }
+  jint count = compress(src, dst, chunk);
+  return pack(count, count);
+JRT_END
+
+// US-ASCII bytes to chars, up to the first byte with the high bit set. The bytes are
+// counted where they are read, and then converted, so the count is of bytes that were
+// ASCII when they were read.
+JRT_LEAF(jlong, SimdUTF::decode_ascii_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail || !aligned(dst, sizeof(jchar))) {
+    return 0;
+  }
+  jint count = positives(src, chunk);
+  if (count > 0) {
+    inflate(src, dst, count);
+  }
+  return pack(count, count);
+JRT_END
+
+// Chars to US-ASCII bytes, up to the first char above U+007F. The library has no
+// conversion that stops there, and one that stops at U+0100 would store the Latin-1 bytes
+// after the first non-ASCII char in the caller's buffer. Blocks are checked first and
+// converted only when all of them are ASCII; the block that is not is converted up to its
+// first non-ASCII char by the loop below.
+JRT_LEAF(jlong, SimdUTF::encode_ascii_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
+  assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
+  const jchar* input = reinterpret_cast<const jchar*>(src);
+  jint chunk = MIN2(length, capacity);
+  if (chunk < ConversionTail || !aligned(src, sizeof(jchar))) {
+    return 0;
+  }
+  const jint block = 2048;
+  jint done = 0;
+  while (chunk - done >= ConversionTail) {
+    jint n = MIN2(chunk - done, block);
+    if (simdutf::validate_utf16_as_ascii(reinterpret_cast<const char16_t*>(input + done), n)) {
+      size_t written = simdutf::convert_utf16_to_latin1(
+          reinterpret_cast<const char16_t*>(input + done), n, reinterpret_cast<char*>(dst + done));
+      if (written != static_cast<size_t>(n)) {
+        break;     // the chars changed after they were checked
+      }
+      done += n;
+    } else {
+      jint i = 0;
+      while (i < n && input[done + i] < 0x80) {
+        dst[done + i] = static_cast<jbyte>(input[done + i]);
+        i++;
+      }
+      done += i;
+      break;
+    }
+  }
+  return pack(done, done);
 JRT_END
 
 // encodeBlock supplies complete three-byte groups. Java owns padding and MIME

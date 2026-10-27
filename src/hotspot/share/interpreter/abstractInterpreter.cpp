@@ -149,6 +149,10 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_decodeUTF16BEBulk: return sun_nio_cs_UnicodeDecoder_decodeBulkBE;
       case vmIntrinsics::_encodeUTF16LEBulk: return sun_nio_cs_UnicodeEncoder_encodeBulkLE;
       case vmIntrinsics::_encodeUTF16BEBulk: return sun_nio_cs_UnicodeEncoder_encodeBulkBE;
+      case vmIntrinsics::_decodeLatin1Bulk: return sun_nio_cs_ISO_8859_1_Decoder_decodeBulk;
+      case vmIntrinsics::_encodeLatin1Bulk: return sun_nio_cs_ISO_8859_1_Encoder_encodeBulk;
+      case vmIntrinsics::_decodeAsciiBulk: return sun_nio_cs_US_ASCII_Decoder_decodeBulk;
+      case vmIntrinsics::_encodeAsciiBulk: return sun_nio_cs_US_ASCII_Encoder_encodeBulk;
       case vmIntrinsics::_countPositives: return java_lang_StringCoding_countPositives;
       case vmIntrinsics::_inflateStringC: return java_lang_StringLatin1_inflateChars;
       case vmIntrinsics::_inflateStringB: return java_lang_StringLatin1_inflateBytes;
@@ -264,6 +268,10 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case sun_nio_cs_UnicodeDecoder_decodeBulkBE: return vmIntrinsics::_decodeUTF16BEBulk;
   case sun_nio_cs_UnicodeEncoder_encodeBulkLE: return vmIntrinsics::_encodeUTF16LEBulk;
   case sun_nio_cs_UnicodeEncoder_encodeBulkBE: return vmIntrinsics::_encodeUTF16BEBulk;
+  case sun_nio_cs_ISO_8859_1_Decoder_decodeBulk: return vmIntrinsics::_decodeLatin1Bulk;
+  case sun_nio_cs_ISO_8859_1_Encoder_encodeBulk: return vmIntrinsics::_encodeLatin1Bulk;
+  case sun_nio_cs_US_ASCII_Decoder_decodeBulk: return vmIntrinsics::_decodeAsciiBulk;
+  case sun_nio_cs_US_ASCII_Encoder_encodeBulk: return vmIntrinsics::_encodeAsciiBulk;
   case java_lang_StringCoding_countPositives: return vmIntrinsics::_countPositives;
   case java_lang_StringLatin1_inflateChars: return vmIntrinsics::_inflateStringC;
   case java_lang_StringLatin1_inflateBytes: return vmIntrinsics::_inflateStringB;

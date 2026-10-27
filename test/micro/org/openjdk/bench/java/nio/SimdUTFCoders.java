@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
 /**
- * UTF-8, UTF-16 and UTF-32LE Charset coders over array-backed and direct buffers, and the stream
+ * UTF-8, UTF-16, UTF-32LE, ISO-8859-1 and US-ASCII Charset coders over array-backed and direct buffers, and the stream
  * classes built on them. The coder loops convert ranges of 64 elements or more in bulk.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -71,6 +71,12 @@ public class SimdUTFCoders {
     private CharsetDecoder utf8Decoder, utf32Decoder;
     private CharsetEncoder utf8Encoder, utf32Encoder;
     private char[] readBuffer;
+    // The single-byte charsets, over text that they map: the text is converted to the
+    // charset and back
+    private ByteBuffer latin1Heap, latin1Direct, asciiHeap, asciiDirect;
+    private CharBuffer latin1TextHeap, latin1TextDirect, asciiTextHeap, asciiTextDirect;
+    private CharsetDecoder latin1Decoder, asciiDecoder;
+    private CharsetEncoder latin1Encoder, asciiEncoder;
 
     @Setup
     public void setup() {
@@ -122,6 +128,24 @@ public class SimdUTFCoders {
         utf32Decoder = UTF_32LE.newDecoder();
         utf32Encoder = UTF_32LE.newEncoder();
         readBuffer = new char[size + 16];
+        byte[] latin1 = s.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] ascii = s.getBytes(StandardCharsets.US_ASCII);
+        latin1Heap = ByteBuffer.wrap(latin1);
+        latin1Direct = ByteBuffer.allocateDirect(latin1.length).put(latin1).flip();
+        asciiHeap = ByteBuffer.wrap(ascii);
+        asciiDirect = ByteBuffer.allocateDirect(ascii.length).put(ascii).flip();
+        char[] latin1Chars = new String(latin1, StandardCharsets.ISO_8859_1).toCharArray();
+        char[] asciiChars = new String(ascii, StandardCharsets.US_ASCII).toCharArray();
+        latin1TextHeap = CharBuffer.wrap(latin1Chars);
+        latin1TextDirect = ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer();
+        latin1TextDirect.put(latin1Chars).flip();
+        asciiTextHeap = CharBuffer.wrap(asciiChars);
+        asciiTextDirect = ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer();
+        asciiTextDirect.put(asciiChars).flip();
+        latin1Decoder = StandardCharsets.ISO_8859_1.newDecoder();
+        latin1Encoder = StandardCharsets.ISO_8859_1.newEncoder();
+        asciiDecoder = StandardCharsets.US_ASCII.newDecoder();
+        asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
     }
 
     private static int decode(CharsetDecoder decoder, ByteBuffer in, CharBuffer out) {
@@ -156,6 +180,20 @@ public class SimdUTFCoders {
     @Benchmark public int utf32DecodeDirect() { return decode(utf32Decoder, utf32Direct, charsHeap); }
     @Benchmark public int utf32EncodeHeap() { return encode(utf32Encoder, textHeap, bytesHeap); }
     @Benchmark public int utf32EncodeDirect() { return encode(utf32Encoder, textHeap, bytesDirect); }
+
+    // ISO-8859-1 and US-ASCII: the array-backed routes are unchanged and are the reference
+    @Benchmark public int latin1DecodeHeap() { return decode(latin1Decoder, latin1Heap, charsHeap); }
+    @Benchmark public int latin1DecodeDirect() { return decode(latin1Decoder, latin1Direct, charsHeap); }
+    @Benchmark public int latin1DecodeDirectToDirect() { return decode(latin1Decoder, latin1Direct, charsDirect); }
+    @Benchmark public int latin1EncodeHeap() { return encode(latin1Encoder, latin1TextHeap, bytesHeap); }
+    @Benchmark public int latin1EncodeDirect() { return encode(latin1Encoder, latin1TextHeap, bytesDirect); }
+    @Benchmark public int latin1EncodeDirectToDirect() { return encode(latin1Encoder, latin1TextDirect, bytesDirect); }
+    @Benchmark public int asciiDecodeHeap() { return decode(asciiDecoder, asciiHeap, charsHeap); }
+    @Benchmark public int asciiDecodeDirect() { return decode(asciiDecoder, asciiDirect, charsHeap); }
+    @Benchmark public int asciiDecodeDirectToDirect() { return decode(asciiDecoder, asciiDirect, charsDirect); }
+    @Benchmark public int asciiEncodeHeap() { return encode(asciiEncoder, asciiTextHeap, bytesHeap); }
+    @Benchmark public int asciiEncodeDirect() { return encode(asciiEncoder, asciiTextHeap, bytesDirect); }
+    @Benchmark public int asciiEncodeDirectToDirect() { return encode(asciiEncoder, asciiTextDirect, bytesDirect); }
 
     // Convenience and stream callers, which allocate their buffers as they would in an application.
     @Benchmark public CharBuffer charsetDecode() { return StandardCharsets.UTF_8.decode(utf8Heap.rewind()); }

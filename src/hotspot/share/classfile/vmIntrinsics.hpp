@@ -455,6 +455,13 @@ class methodHandle;
    do_name(     encodeBulkLE_name,                           "encodeBulkLE")                                            \
   do_intrinsic(_encodeUTF16BEBulk, sun_nio_cs_UnicodeEncoder, encodeBulkBE_name, bulkConvert_signature, F_S)            \
    do_name(     encodeBulkBE_name,                           "encodeBulkBE")                                            \
+  do_class(sun_nio_cs_iso8859_1_Decoder, "sun/nio/cs/ISO_8859_1$Decoder")                                               \
+  do_class(sun_nio_cs_us_ascii_Decoder,  "sun/nio/cs/US_ASCII$Decoder")                                                 \
+  do_class(sun_nio_cs_us_ascii_Encoder,  "sun/nio/cs/US_ASCII$Encoder")                                                 \
+  do_intrinsic(_decodeLatin1Bulk, sun_nio_cs_iso8859_1_Decoder, decodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_encodeLatin1Bulk, sun_nio_cs_iso8859_1_Encoder, encodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_decodeAsciiBulk,  sun_nio_cs_us_ascii_Decoder,  decodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_encodeAsciiBulk,  sun_nio_cs_us_ascii_Encoder,  encodeBulk_name, bulkConvert_signature, F_S)            \
                                                                                                                         \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \

@@ -63,6 +63,12 @@ class SimdUTF : AllStatic {
   static jlong decode_utf16be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong encode_utf16le_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   static jlong encode_utf16be_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  // The ISO-8859-1 and US-ASCII leaves convert one char per byte, and stop at the first
+  // byte or char that the charset does not map, so the counts of both halves are equal.
+  static jlong decode_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong encode_latin1_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong decode_ascii_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
+  static jlong encode_ascii_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity);
   // Leaves for the String coding boundaries that only C2 implements with stubs. They
   // are exact for every length, so the interpreter and C1 call them unconditionally.
   static jint count_positives(const jbyte* src, jint length);

@@ -832,6 +832,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_decodeUTF16BEBulk:
   case vmIntrinsics::_encodeUTF16LEBulk:
   case vmIntrinsics::_encodeUTF16BEBulk:
+  case vmIntrinsics::_decodeLatin1Bulk:
+  case vmIntrinsics::_encodeLatin1Bulk:
+  case vmIntrinsics::_decodeAsciiBulk:
+  case vmIntrinsics::_encodeAsciiBulk:
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decode0:
   case vmIntrinsics::_base64_decodeBlock:
