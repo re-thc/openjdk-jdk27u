@@ -89,3 +89,12 @@ HEADLESS_BEANS_FILES := \
     com/sun/beans/editors/ShortEditor.java \
     com/sun/beans/editors/StringEditor.java \
     #
+
+HEADLESS_DESKTOP_FILES := $(HEADLESS_BEANS_FILES) module-info.java \
+    java/awt/Component.java java/awt/Graphics.java java/awt/Image.java java/awt/Rectangle.java
+
+# GenericBeanInfo is the second top-level class in Introspector.java.
+HEADLESS_DESKTOP_CLASS_STEMS := $(patsubst %.java,%,$(HEADLESS_DESKTOP_FILES)) \
+    java/beans/GenericBeanInfo
+HEADLESS_DESKTOP_CLASS_PATTERNS := $(addsuffix .class,$(HEADLESS_DESKTOP_CLASS_STEMS)) \
+    $(addsuffix $(DOLLAR)%.class,$(HEADLESS_DESKTOP_CLASS_STEMS))

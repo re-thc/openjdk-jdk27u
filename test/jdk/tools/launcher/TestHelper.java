@@ -158,7 +158,8 @@ public class TestHelper {
                     "> must exist and should be executable");
         }
 
-        if (isWindows && java.lang.module.ModuleFinder.ofSystem().find("java.desktop").isPresent()) {
+        if (isWindows && java.lang.module.ModuleFinder.ofSystem().find("java.desktop")
+                .map(m -> m.descriptor().packages().contains("java.awt.event")).orElse(false)) {
             File javawCmdFile = new File(binDir, "javaw.exe");
             javawCmd = javawCmdFile.getAbsolutePath();
             if (!javawCmdFile.canExecute()) {

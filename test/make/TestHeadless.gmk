@@ -117,11 +117,33 @@ direct-targets:
 imports:
 	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-imports/java.desktop $(TEST_SUPPORT_DIR)/headless-imports/jdk.jconsole $(TEST_SUPPORT_DIR)/headless-imports/server.extra
 	+$(MAKE) -f TestHeadless.gmk TEST_HEADLESS_IMPORTS=true IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports verify-graph
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans
+	$(ECHO) 'package java.beans; public interface DesignMode {}' > $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans/DesignMode.java
 	$(ECHO) 'must not be imported' > $(TEST_SUPPORT_DIR)/headless-imports/java.desktop/MustNotImport.class
-	+($(CD) $(TOPDIR)/make && $(MAKE) -I$(TOPDIR)/make/common -f CompileJavaModules.gmk MODULE=java.desktop IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports java.desktop_BIN=$(TEST_SUPPORT_DIR)/headless-import-classes MODULEPATH=$(JDK_OUTPUTDIR)/modules MODULE_SOURCE_PATH_FLAGS="--module-source-path java.desktop=$(call PathList,$(call FindModuleSrcDirs,java.desktop))" all)
+	+($(CD) $(TOPDIR)/make && $(MAKE) -I$(TOPDIR)/make/common -f CompileJavaModules.gmk MODULE=java.desktop IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports java.desktop_BIN=$(TEST_SUPPORT_DIR)/headless-import-classes MODULEPATH=$(JDK_OUTPUTDIR)/modules MODULE_SRC_DIRS="$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources" MODULE_SOURCE_PATH_FLAGS="--module-source-path java.desktop=$(call PathList,$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources)" all)
 	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/MustNotImport.class
 	@test -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/java/beans/Introspector.class
 	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.base
+	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/java/beans/DesignMode.class
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-import-payloads/java.desktop
+	$(ECHO) 'must not be packaged' > $(TEST_SUPPORT_DIR)/headless-import-payloads/java.desktop/MustNotImport
+	@for payload in LIBS CMDS CONF INCLUDE_HEADERS MAN; do \
+	  if $(MAKE) -C $(TOPDIR)/make -I$(TOPDIR)/make/common -f CreateJmods.gmk MODULE=java.desktop IMPORT_MODULES_$$payload=$(TEST_SUPPORT_DIR)/headless-import-payloads -n all > $(TEST_SUPPORT_DIR)/headless-payload.log 2>&1; then exit 1; fi; \
+	  $(GREP) -q 'Headless java.desktop cannot package' $(TEST_SUPPORT_DIR)/headless-payload.log || exit 1; \
+	done
+
+# Print-only invocations must reject orphan generated sources and output classes
+# before an incremental build can admit an obsolete source-list member.
+orphans:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-orphan/support/gensrc/java.desktop/java/beans $(TEST_SUPPORT_DIR)/headless-orphan/jdk/modules/java.desktop/java/beans
+	$(CP) $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans/DesignMode.java $(TEST_SUPPORT_DIR)/headless-orphan/support/gensrc/java.desktop/java/beans/
+	$(ECHO) 'stale class' > $(TEST_SUPPORT_DIR)/headless-orphan/jdk/modules/java.desktop/java/beans/DesignMode.class
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SUPPORT_OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-orphan/support print-modules > $(TEST_SUPPORT_DIR)/headless-orphan-source.log 2>&1; then exit 1; fi
+	$(GREP) -q 'Stale excluded module outputs.*DesignMode.java' $(TEST_SUPPORT_DIR)/headless-orphan-source.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JDK_OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-orphan/jdk print-modules > $(TEST_SUPPORT_DIR)/headless-orphan-class.log 2>&1; then exit 1; fi
+	$(GREP) -q 'Stale excluded module outputs.*DesignMode.class' $(TEST_SUPPORT_DIR)/headless-orphan-class.log
+
+orphans: imports
 
 module-info:
 	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-module-info
@@ -199,6 +221,6 @@ ifeq ($(call isBuildOs, macosx)+$(call isTargetOs, macosx), true+true)
   all: kerberos-notifications
 endif
 
-all: matrix probes direct-targets imports source-imports native-diagnostics launcher-errors prebuilt
-.PHONY: verify-graph matrix probes direct-targets imports module-info source-imports native-diagnostics launcher-errors kerberos-notifications prebuilt
+all: matrix probes direct-targets imports orphans source-imports native-diagnostics launcher-errors prebuilt
+.PHONY: verify-graph matrix probes direct-targets imports orphans module-info source-imports native-diagnostics launcher-errors kerberos-notifications prebuilt
 include MakeFileEnd.gmk
