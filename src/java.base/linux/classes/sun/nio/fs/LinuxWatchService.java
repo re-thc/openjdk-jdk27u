@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,9 +281,10 @@ class LinuxWatchService
         // close watch service
         @Override
         void implCloseAll() {
-            // invalidate all keys
+            // Invalidate all keys. Closing the inotify descriptor below removes
+            // all watches, so there is no need to remove them individually.
             for (Map.Entry<Integer,LinuxWatchKey> entry: wdToKey.entrySet()) {
-                entry.getValue().invalidate(true);
+                entry.getValue().invalidate(false);
             }
             wdToKey.clear();
 
