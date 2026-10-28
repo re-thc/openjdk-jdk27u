@@ -34,6 +34,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 import jdk.jfr.Recording;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
@@ -53,6 +54,7 @@ public class InterpreterFramePilotCallTest {
     static int helper(int x) { effects++;return x*3; }
     static int direct(int x) { return helper(x)+7; }
     static int twice(int x) { return helper(helper(x))+13; }
+    static int recursive(int x) { return x==0?1:recursive(x-1)+3; }
     static int stacked(Object token,int x) { return x+gcNumber(token); }
     static int nativeCall(Object token) { return System.identityHashCode(token)+3; }
     static Object gcRef(Object token) { effects++;WB.fullGC();return token; }
@@ -78,6 +80,19 @@ public class InterpreterFramePilotCallTest {
     static int initEffects;
     static class Lazy { static {initEffects++;}static int value(int x){return x+1;} }
     static int initialize(int x) { return Lazy.value(x)+29; }
+    static final Object monitor=new Object();
+    static volatile boolean entered,released;
+    static void await(Holder holder) {
+        holder.value=null;entered=true;
+        synchronized(monitor) {
+            while(!released)try{monitor.wait();}catch(InterruptedException failure){throw new AssertionError(failure);}
+        }
+    }
+    static Object blocked(Holder holder) { Object keep=holder.value;await(holder);return keep==null?null:keep; }
+    static Method activeMethod;static boolean deoptActive;
+    static void deoptPoint() { if(deoptActive)WB.deoptimizeMethod(activeMethod); }
+    static int activeCallee(int x) { deoptPoint();return x*5; }
+    static int throughActiveDeopt(int x) { return activeCallee(x)+7; }
     static class Loader extends ClassLoader { Class<?> define(byte[] bytes){return defineClass(null,bytes,0,bytes.length);} }
     static native void redefine(Class<?> klass,byte[] bytes);
     static Class<?> redefinedClass;static byte[] redefinedBytes;static boolean redefineNow;
@@ -112,9 +127,11 @@ public class InterpreterFramePilotCallTest {
             roots=method("roots",Holder.class),throwing=method("throwing",int.class),guarded=method("guarded",int.class),initialize=method("initialize",int.class);
         Caller caller=new Caller();Method special=Caller.class.getDeclaredMethod("special",int.class);
         Method nativeCall=method("nativeCall",Object.class),returnRef=method("returnRef",Object.class),voidCall=method("voidCall",Object.class);
+        Method recursive=method("recursive",int.class),blocked=method("blocked",Holder.class);
         direct(2);twice(2);stacked(new Token(),4);roots(new Holder(new Token()));throwing(1);caller.special(2);guarded(0);
         nativeCall(new Token());returnRef(new Token());voidCall(new Token());
-        for(Method m:new Method[]{direct,twice,stacked,roots,throwing,guarded,initialize,special,nativeCall,returnRef,voidCall})prepare(m,action);
+        recursive(2);released=true;blocked(new Holder(new Token()));released=false;entered=false;
+        for(Method m:new Method[]{direct,twice,stacked,roots,throwing,guarded,initialize,special,nativeCall,returnRef,voidCall,recursive,blocked})prepare(m,action);
         effects=0;
         for(int i=0;i<20;i++)check(direct(i)==i*3+7 && twice(i)==i*9+13 && caller.special(i)==i*3+11,"static/special nested call results");
         check(effects==80,"calls execute exactly once");
@@ -126,6 +143,22 @@ public class InterpreterFramePilotCallTest {
         check(nativeCall(returned)==identity+3 && resumes(nativeCall)>0,"native callee resumes native caller");
         check(returnRef(returned)==returned && resumes(returnRef)>0,"oop result across returning GC callee");
         check(voidCall(returned)==37 && resumes(voidCall)>0,"void callee restores stack and resumes");
+        check(recursive(16)==49 && resumes(recursive)>=16,"recursive interpreter frames resume independently");
+        AtomicReference<Object> blockedResult=new AtomicReference<>();AtomicReference<Throwable> blockedFailure=new AtomicReference<>();
+        Thread worker=new Thread(() -> {
+            try{blockedResult.set(blocked(new Holder(new Token())));}catch(Throwable failure){blockedFailure.set(failure);}
+        });
+        worker.setDaemon(true);worker.start();
+        try {
+            long end=System.nanoTime()+20_000_000_000L;
+            while(!entered){check(System.nanoTime()<end,"callee reached wait");Thread.sleep(1);}
+            WB.fullGC();
+            check(Arrays.stream(worker.getStackTrace()).anyMatch(f -> f.getMethodName().equals("blocked")),"blocked suspended caller walk");
+        } finally {
+            synchronized(monitor){released=true;monitor.notifyAll();}worker.join(20_000);
+        }
+        check(!worker.isAlive() && blockedFailure.get()==null && blockedResult.get() instanceof Token &&
+            ((Token)blockedResult.get()).value==379 && resumes(blocked)>0,"sole local oop survives blocked callee GC and resumes");
         long before=resumes(throwing);effects=0;
         try{throwing(-1);throw new AssertionError("callee exception");}catch(IllegalArgumentException expected){}
         check(effects==1 && resumes(throwing)==before,"exception unwinds invoke without normal continuation");
@@ -150,6 +183,13 @@ public class InterpreterFramePilotCallTest {
                 WB.deoptimizeMethod(helper);
             }
             before=resumes(direct);check(direct(8)==31 && resumes(direct)>before,"interpreted callee after deoptimization");
+            throughActiveDeopt(1);Method through=method("throughActiveDeopt",int.class);prepare(through,action);
+            activeMethod=method("activeCallee",int.class);WB.markMethodProfiled(activeMethod);deoptActive=true;
+            for(int level:new int[]{1,4}) {
+                compile(activeMethod,level);before=resumes(through);
+                check(throughActiveDeopt(3)==22 && !WB.isMethodCompiled(activeMethod) && resumes(through)>before,
+                    "active compiled callee deoptimizes with suspended interpreter caller level "+level);
+            }
         }
         if(mode.equals("redefine")) {
             redefinedClass=new Loader().define(redefineBytes(7));redefinedBytes=redefineBytes(13);
