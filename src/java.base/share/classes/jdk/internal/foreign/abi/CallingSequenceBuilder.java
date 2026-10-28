@@ -49,6 +49,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -226,21 +227,16 @@ public class CallingSequenceBuilder {
     }
 
     static boolean isUnbox(Binding binding) {
-        return switch (binding) {
-            case VMStore       unused -> true;
-            case BufferLoad    unused -> true;
-            case Copy          unused -> true;
-            case Dup           unused -> true;
-            case SegmentBase   unused -> true;
-            case SegmentOffset unused -> true;
-            case ShiftLeft     unused -> true;
-            case ShiftRight    unused -> true;
-            case Cast          unused -> true;
-            case VMLoad        unused -> false;
-            case BufferStore   unused -> false;
-            case Allocate      unused -> false;
-            case BoxAddress    unused -> false;
-        };
+        Objects.requireNonNull(binding);
+        return binding instanceof VMStore
+                || binding instanceof BufferLoad
+                || binding instanceof Copy
+                || binding instanceof Dup
+                || binding instanceof SegmentBase
+                || binding instanceof SegmentOffset
+                || binding instanceof ShiftLeft
+                || binding instanceof ShiftRight
+                || binding instanceof Cast;
     }
 
     private static void verifyBoxBindings(Class<?> expectedOutType, List<Binding> bindings) {
@@ -261,22 +257,16 @@ public class CallingSequenceBuilder {
     }
 
     static boolean isBox(Binding binding) {
-        return switch (binding) {
-            case VMLoad        unused -> true;
-            case BufferStore   unused -> true;
-            case Copy          unused -> true;
-            case Allocate      unused -> true;
-            case BoxAddress    unused -> true;
-            case Dup           unused -> true;
-            case ShiftLeft     unused -> true;
-            case ShiftRight    unused -> true;
-            case Cast          unused -> true;
-
-            case VMStore       unused -> false;
-            case BufferLoad    unused -> false;
-            case SegmentBase   unused -> false;
-            case SegmentOffset unused -> false;
-        };
+        Objects.requireNonNull(binding);
+        return binding instanceof VMLoad
+                || binding instanceof BufferStore
+                || binding instanceof Copy
+                || binding instanceof Allocate
+                || binding instanceof BoxAddress
+                || binding instanceof Dup
+                || binding instanceof ShiftLeft
+                || binding instanceof ShiftRight
+                || binding instanceof Cast;
     }
 
 }
