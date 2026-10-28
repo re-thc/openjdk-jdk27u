@@ -268,12 +268,14 @@ void TemplateInterpreterGenerator::generate_all() {
     int available=Interpreter::code()->available_space();
     {
       CodeletMark cm(_masm,"interpreter-frame pilot direct-call returns");
-      for(TosState state:{itos,atos,vtos})
+      const TosState states[]={itos,atos,vtos};
+      for(TosState state:states)
         InterpreterFramePilot::set_return_entry(false,state,generate_pilot_return_entry_for(state,3));
       for(int i=btos;i<itos;i++)
         InterpreterFramePilot::set_return_entry(false,(TosState)i,InterpreterFramePilot::invoke_return_table(false)[itos]);
     }
-    for(Bytecodes::Code code:{Bytecodes::_invokestatic,Bytecodes::_invokespecial}) {
+    const Bytecodes::Code codes[]={Bytecodes::_invokestatic,Bytecodes::_invokespecial};
+    for(Bytecodes::Code code:codes) {
       CodeletMark cm(_masm,"interpreter-frame pilot direct invoke",code);
       InterpreterFramePilot::set_call_entry(code,__ pc());
       Label fallback;
