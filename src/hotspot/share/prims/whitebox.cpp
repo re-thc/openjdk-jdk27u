@@ -987,6 +987,13 @@ WB_ENTRY(jlongArray, WB_InterpreterFramePilot(JNIEnv* env, jobject o, jobject me
         data[0]=InterpreterFramePilot::prepare(mh,data);
       } else if (action==5) {
         data[0]=InterpreterFramePilot::prepare(mh);
+      } else if (action==8) {
+        // Coarse test-only boundary around the unchanged observation-free core.
+        // Excludes reflected-method/counter setup, snapshot and Java result array.
+        jlong producer_cpu=os::current_thread_cpu_time(),producer_wall=os::javaTimeNanos();
+        data[0]=InterpreterFramePilot::prepare(mh);
+        data[1]=os::current_thread_cpu_time()-producer_cpu;
+        data[2]=os::javaTimeNanos()-producer_wall;
       } else if (action==6) {
         data[0]=InterpreterFramePilot::request_poll_test(mh);
       } else if (action==7) {

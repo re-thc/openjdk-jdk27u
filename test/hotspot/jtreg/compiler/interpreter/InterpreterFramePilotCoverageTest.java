@@ -109,7 +109,12 @@ public class InterpreterFramePilotCoverageTest {
         long[] entries=new long[reads.length];
         for(int i=0;i<reads.length;i++) {
             long[] data=prepare(reads[i],action);entries[i]=data[8];
-            if(action!=5)check(data[4]>3,"generation extends past cold getfield and first return "+reads[i]);
+            if(action==8) {
+                check(data[1]>0 && data[2]>0 && data[28]==0,"coarse elapsed boundary on requesting thread");
+                for(int slot:new int[]{3,4,5,11,12,13,14,15,16,17,23,24,25,27,31})
+                    check(data[slot]==0,"silent core has no internal observation at "+slot);
+            }
+            if(action!=5 && action!=8)check(data[4]>3,"generation extends past cold getfield and first return "+reads[i]);
         }
         check(initializations==0,"preparation does not initialize field holder");
         effects=0;check(readInt(h)==52 && effects==1 && resumes(reads[0])==0,"first cold access resolves and falls back once");
@@ -158,7 +163,7 @@ public class InterpreterFramePilotCoverageTest {
     }
     public static void main(String[] args)throws Exception {
         if(args.length>0){if(args[0].equals("lambda"))lambdaControl();else child(Integer.parseInt(args[0]),args.length>1);return;}
-        for(int action:new int[]{0,4,5})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"})
+        for(int action:new int[]{0,4,5,8})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"})
             ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI",
                 "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
