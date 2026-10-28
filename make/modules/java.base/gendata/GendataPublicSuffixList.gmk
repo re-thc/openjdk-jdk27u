@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,15 @@ ifeq ($(INCLUDE), true)
 
 ################################################################################
 
-GENDATA_PUBLICSUFFIXLIST_SRC += $(MODULE_SRC)/share/data/publicsuffixlist/public_suffix_list.dat
+GENDATA_PUBLICSUFFIXLIST_SRC := $(MODULE_SRC)/share/data/publicsuffixlist/public_suffix_list.dat
+GENDATA_PUBLICSUFFIXLIST_VERSION := $(MODULE_SRC)/share/data/publicsuffixlist/VERSION
 GENDATA_PUBLICSUFFIXLIST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)/security/public_suffix_list.dat
 
-$(GENDATA_PUBLICSUFFIXLIST): $(GENDATA_PUBLICSUFFIXLIST_SRC) $(BUILD_TOOLS_JDK)
-	$(call LogInfo, Generating public suffix list)
+$(GENDATA_PUBLICSUFFIXLIST): $(GENDATA_PUBLICSUFFIXLIST_SRC) $(GENDATA_PUBLICSUFFIXLIST_VERSION) $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Generating indexed public suffix list)
 	$(call MakeDir, $(@D))
 	$(RM) $@
-	$(TOOL_PUBLICSUFFIXLIST) $< $@
+	$(TOOL_PUBLICSUFFIXLIST) --indexed $< $@ $(GENDATA_PUBLICSUFFIXLIST_VERSION)
 	$(CHMOD) 444 $@
 
 TARGETS += $(GENDATA_PUBLICSUFFIXLIST)

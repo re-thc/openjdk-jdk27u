@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package build.tools.publicsuffixlist;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -32,7 +34,15 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.TreeMap;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,9 +58,11 @@ import java.util.zip.ZipOutputStream;
  * and slices it into a set of files, one for each top-level domain.
  * Each file contains only the rules for that domain. Lines containing comments
  * or only whitespace are not copied. Each of these files are then combined
- * into the target zipfile.
+ * into the target zipfile. The --indexed mode emits a self-describing indexed
+ * image. Rules unsupported by the indexed matcher retain the legacy Zip format.
  *
- * Usage: java GeneratePublicSuffixList mozilla_file destination_zipfile
+ * Usage: java GeneratePublicSuffixList source destination
+ *    or: java GeneratePublicSuffixList --indexed source destination VERSION
  */
 public final class GeneratePublicSuffixList {
     // patterns
@@ -59,6 +71,9 @@ public final class GeneratePublicSuffixList {
     private static final Pattern WHITESPACE = Pattern.compile("\\s*");
     private static final byte ICANN = 0x00;
     private static final byte PRIVATE = 0x01;
+    private static final int HEADER_LENGTH = 84;
+    private static final int MAX_DIRECTORY_LENGTH = 1024 * 1024;
+    private static final int MAX_SHARD_LENGTH = 8 * 1024 * 1024;
 
     private static class Domain {
         final String name;
@@ -70,8 +85,18 @@ public final class GeneratePublicSuffixList {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 4 && args[0].equals("--indexed")) {
+            try {
+                writeIndexed(Path.of(args[1]), Path.of(args[2]),
+                             Files.readAllBytes(Path.of(args[3])));
+            } catch (UnsupportedIndexedRules e) {
+                // Preserve the legacy matcher for future/nonstandard rules.
+                main(new String[] { args[1], args[2] });
+            }
+            return;
+        }
         if (args.length != 2) {
-            throw new Exception("2 args required: input_file output_file");
+            throw new Exception("source destination or --indexed source destination VERSION required");
         }
         try (FileInputStream fis = new FileInputStream(args[0]);
              ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(args[1])))
@@ -144,6 +169,184 @@ public final class GeneratePublicSuffixList {
                 bw.newLine();
             }
             bw.flush();
+        }
+    }
+
+    /*
+     * Indexed format (all integers big endian): PSL1, version 2, image length,
+     * directory length, source SHA-256, VERSION metadata SHA-256, TLD count.
+     * The 84-byte header is followed by a UTF-8 name and offset/compressed/raw
+     * length per TLD. Digests record provenance; runtime uses structural checks.
+     * Each independently zlib-compressed shard contains a node count followed
+     * by BFS nodes: UTF-8 label, first child, child count and terminal flags.
+     * UTF-8 byte lengths and child counts are unsigned shorts.
+     * Child ranges are sorted by String.compareTo, independent of locale.
+     */
+    private static final class Node {
+        final String label;
+        final Map<String, Node> children = new TreeMap<>();
+        int flags;
+        int first;
+        Node(String label) {
+            this.label = label;
+        }
+    }
+
+    private static void writeString(DataOutputStream out, String value)
+            throws IOException {
+        byte[] bytes = value.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (bytes.length > 65535) {
+            throw new UnsupportedIndexedRules("Public suffix label too long");
+        }
+        out.writeShort(bytes.length);
+        out.write(bytes);
+    }
+
+    private static byte[] digest(byte[] bytes) throws Exception {
+        return MessageDigest.getInstance("SHA-256").digest(bytes);
+    }
+
+    private static void writeIndexed(Path source, Path destination,
+                                     byte[] versionBytes)
+            throws Exception {
+        byte[] sourceBytes = Files.readAllBytes(source);
+        Map<String, Node> roots = new TreeMap<>();
+        byte auth = ICANN;
+        try (BufferedReader reader = new BufferedReader(new StringReader(
+                new String(sourceBytes, java.nio.charset.StandardCharsets.UTF_8)))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith(COMMENT)) {
+                    if (line.startsWith(BEGIN_PRIVATE)) {
+                        auth = PRIVATE;
+                    }
+                    continue;
+                }
+                if (WHITESPACE.matcher(line).matches()) {
+                    continue;
+                }
+                int kind = 0; // normal, wildcard, exception: two bits each
+                String name = line;
+                if (name.startsWith("!")) {
+                    kind = 2;
+                    name = name.substring(1);
+                } else if (name.startsWith("*.")) {
+                    kind = 1;
+                    name = name.substring(2);
+                }
+                if ((kind == 2 && name.indexOf('.') < 0) ||
+                        name.indexOf('*') >= 0 || name.isEmpty() ||
+                        name.startsWith(".") || name.endsWith(".") ||
+                        name.contains("..")) {
+                    throw new UnsupportedIndexedRules("Unsupported indexed rule: " + line);
+                }
+                String[] labels = name.split("\\.");
+                Node node = roots.computeIfAbsent(labels[labels.length - 1],
+                                                  k -> new Node(k));
+                for (int i = labels.length - 2; i >= 0; i--) {
+                    node = node.children.computeIfAbsent(labels[i], Node::new);
+                }
+                int shift = kind * 2;
+                int value = auth + 1;
+                int previous = (node.flags >>> shift) & 3;
+                if (previous != 0 && previous != value) {
+                    throw new UnsupportedIndexedRules("Conflicting indexed rule: " + line);
+                }
+                node.flags |= value << shift;
+            }
+        }
+        List<byte[]> shards = new ArrayList<>();
+        List<Integer> lengths = new ArrayList<>();
+        int directoryLength = HEADER_LENGTH;
+        for (Map.Entry<String, Node> entry : roots.entrySet()) {
+            directoryLength = Math.addExact(directoryLength,
+                                            2 + entry.getKey().getBytes(
+                                                java.nio.charset.StandardCharsets.UTF_8).length + 12);
+            if (directoryLength > MAX_DIRECTORY_LENGTH) {
+                throw new UnsupportedIndexedRules("Public suffix directory too large");
+            }
+            List<Node> nodes = new ArrayList<>();
+            nodes.add(entry.getValue());
+            for (int i = 0; i < nodes.size(); i++) {
+                Node node = nodes.get(i);
+                if (((node.flags >>> 2) & 3) != 0) {
+                    for (Node child : node.children.values()) {
+                        if ((child.flags & 3) != 0) {
+                            throw new UnsupportedIndexedRules("Overlapping normal/wildcard rules");
+                        }
+                    }
+                }
+                node.first = nodes.size();
+                nodes.addAll(node.children.values());
+            }
+            ByteArrayOutputStream raw = new ByteArrayOutputStream();
+            try (DataOutputStream out = new DataOutputStream(raw)) {
+                out.writeInt(nodes.size());
+                for (Node node : nodes) {
+                    writeString(out, node.label);
+                    out.writeInt(node.first);
+                    if (node.children.size() > 65535) {
+                        throw new UnsupportedIndexedRules("Too many trie children");
+                    }
+                    out.writeShort(node.children.size());
+                    out.writeByte(node.flags);
+                }
+            }
+            if (raw.size() > MAX_SHARD_LENGTH) {
+                throw new UnsupportedIndexedRules("Public suffix shard too large");
+            }
+            lengths.add(raw.size());
+            ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+            Deflater deflater = new Deflater(1);
+            try (DeflaterOutputStream out =
+                     new DeflaterOutputStream(compressed, deflater)) {
+                raw.writeTo(out);
+            } finally {
+                deflater.end();
+            }
+            if (compressed.size() > MAX_SHARD_LENGTH) {
+                throw new UnsupportedIndexedRules("Compressed public suffix shard too large");
+            }
+            shards.add(compressed.toByteArray());
+        }
+        long imageLength = directoryLength;
+        for (byte[] shard : shards) {
+            imageLength += shard.length;
+        }
+        if (imageLength > Integer.MAX_VALUE) {
+            throw new UnsupportedIndexedRules("Public suffix image too large");
+        }
+        ByteArrayOutputStream image = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(image)) {
+            out.writeInt(0x50534c31); // PSL1
+            out.writeInt(2);
+            out.writeInt((int) imageLength);
+            out.writeInt(directoryLength);
+            byte[] sourceDigest = digest(sourceBytes);
+            out.write(sourceDigest);
+            out.write(digest(versionBytes));
+            out.writeInt(roots.size());
+            int offset = directoryLength;
+            int i = 0;
+            for (String tld : roots.keySet()) {
+                writeString(out, tld);
+                byte[] shard = shards.get(i);
+                out.writeInt(offset);
+                out.writeInt(shard.length);
+                out.writeInt(lengths.get(i++));
+                offset = Math.addExact(offset, shard.length);
+            }
+            for (byte[] shard : shards) {
+                out.write(shard);
+            }
+        }
+        byte[] bytes = image.toByteArray();
+        Files.write(destination, bytes);
+    }
+
+    private static final class UnsupportedIndexedRules extends IOException {
+        UnsupportedIndexedRules(String message) {
+            super(message);
         }
     }
 
