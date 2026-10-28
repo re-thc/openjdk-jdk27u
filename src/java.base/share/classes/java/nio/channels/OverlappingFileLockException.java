@@ -34,12 +34,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class OverlappingFileLockException
     extends IllegalStateException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2047812138163068433L;
 
     /**
      * Constructs an instance of this class.

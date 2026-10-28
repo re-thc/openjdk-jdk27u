@@ -103,16 +103,11 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class MinguoDate
         extends ChronoLocalDateImpl<MinguoDate>
         implements ChronoLocalDate, Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 1300372329181994526L;
 
     /**
      * The underlying date.

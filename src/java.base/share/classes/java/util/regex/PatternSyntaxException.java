@@ -32,12 +32,10 @@ package java.util.regex;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PatternSyntaxException
     extends IllegalArgumentException
 {
-    @java.io.Serial
-    private static final long serialVersionUID = -3864639126226059218L;
-
     /** @serial */
     private final String desc;
     /** @serial */

@@ -33,10 +33,8 @@ package java.net;
  * @since   1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BindException extends SocketException {
-    @java.io.Serial
-    private static final long serialVersionUID = -5945005768251722951L;
-
     /**
      * Constructs a new BindException with the specified detail
      * message as to why the bind error occurred.

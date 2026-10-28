@@ -33,10 +33,8 @@ package java.net;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConnectException extends SocketException {
-    @java.io.Serial
-    private static final long serialVersionUID = 3831404271622369215L;
-
     /**
      * Constructs a new ConnectException with the specified detail
      * message as to why the connect error occurred.

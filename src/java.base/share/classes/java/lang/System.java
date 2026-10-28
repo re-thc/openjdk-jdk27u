@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2202,10 +2203,6 @@ public final class System {
 
             public Object uncheckedStringConcat1(String[] constants) {
                 return new StringConcatHelper.Concat1(constants);
-            }
-
-            public byte stringInitCoder() {
-                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
             }
 
             public byte stringCoder(String str) {

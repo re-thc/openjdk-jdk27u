@@ -60,10 +60,8 @@ import sun.security.x509.X509CertImpl;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Certificate implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3585440601605666277L;
 
     /** The certificate type. */
     private final transient String type;
@@ -240,10 +238,8 @@ public abstract class Certificate implements java.io.Serializable {
      * Alternate {@code Certificate} class for serialization.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected static class CertificateRep implements java.io.Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -8563758940495660020L;
 
         /** @serial The standard name of the certificate type. */
         private final String type;

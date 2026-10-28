@@ -112,11 +112,9 @@ import jdk.internal.util.ArraysSupport;
  * @author Doug Lea
  * @param <E> the type of elements held in this queue
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "serial"})
 public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     implements BlockingQueue<E>, java.io.Serializable {
-    private static final long serialVersionUID = 5595510919245408276L;
-
     /*
      * The implementation uses an array-based binary heap, with public
      * operations protected with a single lock. However, allocation

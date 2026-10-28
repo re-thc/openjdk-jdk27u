@@ -37,10 +37,8 @@ package javax.security.auth.login;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AccountExpiredException extends AccountException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -6064064890162661560L;
 
     /**
      * Constructs a AccountExpiredException with no detail message. A detail

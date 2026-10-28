@@ -48,42 +48,39 @@ public class GeneratedConcatCodeLimits {
         }
 
         ClassFile analyzer = ClassFile.of(ClassFile.StackMapsOption.GENERATE_STACK_MAPS);
-        for (boolean compact : new boolean[] { true, false }) {
-            // The default is an instance cache. Two forces static generation;
-            // sixteen also exercises the cache and inline threshold boundaries.
-            for (int threshold : new int[] { 256, 2, 16 }) {
-                Path directory = Path.of("concat-" + compact + "-" + threshold).toAbsolutePath();
-                Files.createDirectories(directory);
-                var process = ProcessTools.createTestJavaProcessBuilder(
-                        "-Xverify:all",
-                        "-XX:+UnlockDiagnosticVMOptions",
-                        "-XX:+BytecodeVerificationLocal",
-                        compact ? "-XX:+CompactStrings" : "-XX:-CompactStrings",
-                        "-Djava.lang.invoke.StringConcatFactory.dump=true",
-                        "-Djava.lang.invoke.StringConcat.cacheThreshold=" + threshold,
-                        "-Djava.lang.invoke.StringConcat.inlineThreshold=" + (threshold == 2 ? 0 : 16),
-                        GeneratedConcatCodeLimits.class.getName(), "generate");
-                process.directory(directory.toFile());
-                ProcessTools.executeProcess(process).shouldHaveExitValue(0);
+        // The default is an instance cache. Two forces static generation;
+        // sixteen also exercises the cache and inline threshold boundaries.
+        for (int threshold : new int[] { 256, 2, 16 }) {
+            Path directory = Path.of("concat-" + threshold).toAbsolutePath();
+            Files.createDirectories(directory);
+            var process = ProcessTools.createTestJavaProcessBuilder(
+                    "-Xverify:all",
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+BytecodeVerificationLocal",
+                    "-Djava.lang.invoke.StringConcatFactory.dump=true",
+                    "-Djava.lang.invoke.StringConcat.cacheThreshold=" + threshold,
+                    "-Djava.lang.invoke.StringConcat.inlineThreshold=" + (threshold == 2 ? 0 : 16),
+                    GeneratedConcatCodeLimits.class.getName(), "generate");
+            process.directory(directory.toFile());
+            ProcessTools.executeProcess(process).shouldHaveExitValue(0);
 
-                int count = 0;
-                try (var files = Files.walk(directory.resolve("stringConcatClasses"))) {
-                    for (Path file : files.filter(p -> p.toString().endsWith(".class")).toList()) {
-                        byte[] original = Files.readAllBytes(file);
-                        // Force the standard analyzer to recompute every method's limits and frames.
-                        // Exact equality also guards against inflated limits and unnecessary frames.
-                        byte[] analyzed = analyzer.transformClass(analyzer.parse(original),
-                                ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
-                        if (!Arrays.equals(original, analyzed)) {
-                            throw new AssertionError("Classfile analysis changed " + file
-                                    + " at byte " + Arrays.mismatch(original, analyzed));
-                        }
-                        count++;
+            int count = 0;
+            try (var files = Files.walk(directory.resolve("stringConcatClasses"))) {
+                for (Path file : files.filter(p -> p.toString().endsWith(".class")).toList()) {
+                    byte[] original = Files.readAllBytes(file);
+                    // Force the standard analyzer to recompute every method's limits and frames.
+                    // Exact equality also guards against inflated limits and unnecessary frames.
+                    byte[] analyzed = analyzer.transformClass(analyzer.parse(original),
+                            ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
+                    if (!Arrays.equals(original, analyzed)) {
+                        throw new AssertionError("Classfile analysis changed " + file
+                                + " at byte " + Arrays.mismatch(original, analyzed));
                     }
+                    count++;
                 }
-                if (count < 10) {
-                    throw new AssertionError("Too few generated shapes: " + count);
-                }
+            }
+            if (count < 10) {
+                throw new AssertionError("Too few generated shapes: " + count);
             }
         }
     }

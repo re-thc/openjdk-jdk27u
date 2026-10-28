@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +27,7 @@
  * @bug 8356152
  * @summary Check that huge concatenations throw OutOfMemoryError
  * @requires os.maxMemory > 8G
- * @run junit/othervm -Xmx8G -XX:+CompactStrings -Dcompact=true HugeConcatTest
- * @run junit/othervm -Xmx8G -XX:-CompactStrings -Dcompact=false HugeConcatTest
+ * @run junit/othervm -Xmx8G -XX:+CompactStrings HugeConcatTest
  */
 
 import org.junit.jupiter.api.BeforeAll;
@@ -44,11 +44,7 @@ public class HugeConcatTest {
 
     @BeforeAll
     public static void initHugeLatin1() {
-        String compact = System.getProperty("compact", "true");
-        int hugeLatin1Length = Boolean.parseBoolean(compact)
-                ? Integer.MAX_VALUE - 2
-                : HUGE_LENGTH_UTF16;
-        hugeLatin1 = "a".repeat(hugeLatin1Length);
+        hugeLatin1 = "a".repeat(Integer.MAX_VALUE - 2);
     }
 
     @Test

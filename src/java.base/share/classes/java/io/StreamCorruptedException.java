@@ -31,10 +31,8 @@ package java.io;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StreamCorruptedException extends ObjectStreamException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8983558202217591746L;
 
     /**
      * Create a StreamCorruptedException and list a reason why thrown.

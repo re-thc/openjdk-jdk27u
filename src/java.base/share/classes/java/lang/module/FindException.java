@@ -35,10 +35,8 @@ package java.lang.module;
  * @since 9
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FindException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -5817081036963388391L;
-
     /**
      * Constructs a {@code FindException} with no detail message.
      */

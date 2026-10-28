@@ -43,11 +43,9 @@ import sun.security.util.*;
  * @see DHPublicKey
  * @see javax.crypto.KeyAgreement
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class DHPrivateKey implements PrivateKey,
         javax.crypto.interfaces.DHPrivateKey, Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7565477590005668886L;
 
     // only supported version of PKCS#8 PrivateKeyInfo
     private static final BigInteger PKCS8_VERSION = BigInteger.ZERO;

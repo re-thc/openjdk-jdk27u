@@ -315,10 +315,8 @@ class PKIX {
      * A CertStoreException with additional information about the type of
      * CertStore that generated the exception.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CertStoreTypeException extends CertStoreException {
-        @java.io.Serial
-        private static final long serialVersionUID = 7463352639238322556L;
-
         private final String type;
 
         CertStoreTypeException(String type, CertStoreException cse) {

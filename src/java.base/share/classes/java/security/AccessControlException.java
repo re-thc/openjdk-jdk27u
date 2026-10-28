@@ -38,11 +38,9 @@ package java.security;
  *       or this class.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="17", forRemoval=true)
 public class AccessControlException extends SecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5138225684096988535L;
 
     /**
      * @serial The permission that caused the exception to be thrown.

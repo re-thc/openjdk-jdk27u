@@ -111,6 +111,10 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.hasJFR is "true" if JFR is included in the build of the VM and
         // so tests can be executed.
         map.put("vm.hasJFR", this::vmHasJFR);
+        // java.desktop may contain only JavaBeans in a server image.
+        map.put("vm.hasAWT", () -> Boolean.toString(java.lang.module.ModuleFinder.ofSystem()
+                .find("java.desktop").map(m -> m.descriptor().packages().contains("java.awt.event"))
+                .orElse(false)));
         map.put("vm.hasDTrace", this::vmHasDTrace);
         map.put("vm.jvmti", this::vmHasJVMTI);
         map.put("vm.cpu.features", this::cpuFeatures);

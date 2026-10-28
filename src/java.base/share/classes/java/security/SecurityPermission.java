@@ -47,11 +47,9 @@ package java.security;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class SecurityPermission extends BasicPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5236109936224050470L;
 
     /**
      * Creates a new {@code SecurityPermission} with the specified name.

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 8210495
  * @modules java.desktop
  * @summary compiler crashes because of illegal signature in otherwise legal code

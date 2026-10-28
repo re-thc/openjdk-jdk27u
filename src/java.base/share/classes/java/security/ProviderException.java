@@ -34,10 +34,8 @@ package java.security;
  * @author Benjamin Renaud
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ProviderException extends RuntimeException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5256023526693665674L;
 
     /**
      * Constructs a {@code ProviderException} with no detail message. A

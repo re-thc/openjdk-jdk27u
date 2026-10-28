@@ -345,10 +345,8 @@ public abstract class AbstractClassLoaderValue<CLV extends AbstractClassLoaderVa
             }
         }
 
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         static class RecursiveInvocationException extends IllegalStateException {
-            @java.io.Serial
-            private static final long serialVersionUID = 1L;
-
             RecursiveInvocationException() {
                 super("Recursive call");
             }

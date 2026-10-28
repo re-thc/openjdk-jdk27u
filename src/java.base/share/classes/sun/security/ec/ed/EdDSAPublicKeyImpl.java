@@ -40,10 +40,8 @@ import sun.security.util.BitArray;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class EdDSAPublicKeyImpl extends X509Key implements EdECPublicKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final EdECPoint point;

@@ -33,10 +33,8 @@ package java.lang.classfile.constantpool;
  *
  * @since 24
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConstantPoolException extends IllegalArgumentException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7245472922409094120L;
 
     /**
      * Constructs a {@code ConstantPoolException} with no detail message.

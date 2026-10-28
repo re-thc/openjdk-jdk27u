@@ -127,13 +127,11 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * @serial exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since = "26", forRemoval = true)
 public final class SocketPermission extends Permission
     implements java.io.Serializable
 {
-    @java.io.Serial
-    private static final long serialVersionUID = -7204263841984476862L;
-
     /**
      * Connect to host:port
      */
@@ -1307,7 +1305,7 @@ else its the cname?
  * @serial include
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 final class SocketPermissionCollection extends PermissionCollection
     implements Serializable
 {
@@ -1417,9 +1415,6 @@ final class SocketPermissionCollection extends PermissionCollection
     public Enumeration<Permission> elements() {
         return (Enumeration)Collections.enumeration(perms.values());
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2787186408602843674L;
 
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:

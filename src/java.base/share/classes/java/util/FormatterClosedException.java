@@ -34,10 +34,8 @@ package java.util;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FormatterClosedException extends IllegalStateException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 18111216L;
 
     /**
      * Constructs an instance of this class.

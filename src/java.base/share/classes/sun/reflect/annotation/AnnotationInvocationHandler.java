@@ -40,9 +40,8 @@ import jdk.internal.misc.Unsafe;
  * @author  Josh Bloch
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class AnnotationInvocationHandler implements InvocationHandler, Serializable {
-    @java.io.Serial
-    private static final long serialVersionUID = 6182022883658399397L;
     private final Class<? extends Annotation> type;
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Map<String, Object> memberValues;

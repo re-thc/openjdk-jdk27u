@@ -30,12 +30,10 @@ package java.io;
  * @author  Asmus Freytag
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnsupportedEncodingException
     extends IOException
 {
-    @java.io.Serial
-    private static final long serialVersionUID = -4274276298326136670L;
-
     /**
      * Constructs an UnsupportedEncodingException without a detail message.
      */

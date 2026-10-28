@@ -34,10 +34,8 @@ import java.security.GeneralSecurityException;
  * @since 1.2
  * @see Certificate
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertificateException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3192535253797119798L;
 
     /**
      * Constructs a certificate exception with no detail message. A detail

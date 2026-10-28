@@ -87,6 +87,7 @@ import java.util.stream.Stream;
  * @param <E> the type of elements held in this collection
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkedList<E>
     extends AbstractSequentialList<E>
     implements List<E>, Deque<E>, Cloneable, java.io.Serializable
@@ -1119,9 +1120,6 @@ public class LinkedList<E>
 
         return a;
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 876323262645176354L;
 
     /**
      * Saves the state of this {@code LinkedList} instance to a stream

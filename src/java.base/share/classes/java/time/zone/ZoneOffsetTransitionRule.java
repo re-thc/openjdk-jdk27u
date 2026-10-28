@@ -97,12 +97,8 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ZoneOffsetTransitionRule implements Serializable {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 6889046316657758795L;
 
     /**
      * @serial The month of the month-day of the first day of the cutover week.
