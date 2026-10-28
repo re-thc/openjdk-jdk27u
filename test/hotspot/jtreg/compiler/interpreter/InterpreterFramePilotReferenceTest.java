@@ -153,7 +153,7 @@ public class InterpreterFramePilotReferenceTest {
         for(int action:new int[]{4,5}) {
             var output=ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx64m","-XX:+UseG1GC",
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
-                "-XX:+TypeProfileCasts","-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::cast",
+                "-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::cast",
                 "-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::checkedJoin",
                 "-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::forward",
                 InterpreterFramePilotReferenceTest.class.getName(),Integer.toString(action),"profiles")
