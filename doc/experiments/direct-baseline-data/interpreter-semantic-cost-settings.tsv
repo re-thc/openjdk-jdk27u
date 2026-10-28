@@ -1,0 +1,27 @@
+setting	value
+runtime_checkpoint	71a7ec33d54805b791bf0facc321c803c4a8477e
+libjvm_sha256	2f80b2e16c709fa384d3438c04d16e803d0a3d499f89a3842ab176c17e3c44be
+harness_class_sha256	4a62c637676bd9ac7e24fb093a47d1d95fc39f7ee810bc311a7b906a04569878
+case_order_per_fork	[['p0', '01234', False], ['p1', '23401', True], ['p2', '40123', False]]
+flag	-Xshare:off
+flag	-Xms64m
+flag	-Xmx64m
+flag	-XX:+UseG1GC
+flag	-XX:ActiveProcessorCount=4
+flag	-XX:CICompilerCount=2
+flag	-XX:+UnlockExperimentalVMOptions
+flag	-XX:+UnlockDiagnosticVMOptions
+flag	-XX:+WhiteBoxAPI
+flag	-XX:-UseDirectBaseline
+flag	-XX:+UseInterpreterFramePilot
+flag	--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED
+flag	--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+flag	--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+flag	-Xbootclasspath/a:/workspace/interpreter-frame-semantic-cost/whitebox
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost::run*
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost::twice
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost$Token::equals
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost$Impl::apply
+source_sha256:InterpreterFrameSemanticCost.java	dca1bdfcea2cb152546bf8ce334c9d7486f674637400aafb3b72549764ab71a6
+source_sha256:InterpreterFrameCoverageProbe.java	73ec5fc324b1682e45281c1451cad665d41d982f9c85980835389d443183ed35
+source_sha256:analyze.py	38c0bc1cdcc69a5470d9dfbf2937abdf3b8182d291580a6b867b9f22f963d27f

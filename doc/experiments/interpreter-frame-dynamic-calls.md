@@ -9,6 +9,11 @@ with ordinary virtual and interface dispatch. Preparation remains explicit
 WhiteBox control. No admission, C1/C2 policy, default or public state changed;
 no application census or performance measurement was run.
 
+A later [bounded cost and real-method check](interpreter-frame-semantic-cost.md)
+uses this preserved image. It finds call-bearing execution regressions and
+substantial prefix truncation; the semantic qualification does not establish
+application payoff.
+
 ## Runtime contract
 
 Virtual/interface sites use the same resolved interpreter entries and dispatch
