@@ -107,12 +107,10 @@ import jdk.internal.util.ArraysSupport;
  * @see     Vector
  * @since   1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ArrayList<E> extends AbstractList<E>
         implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 {
-    @java.io.Serial
-    private static final long serialVersionUID = 8683452581122892189L;
-
     /**
      * Default initial capacity.
      */

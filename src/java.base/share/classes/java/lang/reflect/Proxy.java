@@ -285,10 +285,8 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * @see         InvocationHandler
  * @since       1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Proxy implements java.io.Serializable {
-    @java.io.Serial
-    private static final long serialVersionUID = -2222568056686623797L;
-
     /** parameter types of a proxy class constructor */
     private static final Class<?>[] constructorParams =
         { InvocationHandler.class };
@@ -1188,10 +1186,8 @@ public class Proxy implements java.io.Serializable {
      * so that it can distinguish CCE and NPE thrown due to the arguments
      * incompatible with the method signature.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class InvocationException extends ReflectiveOperationException {
-        @java.io.Serial
-        private static final long serialVersionUID = 0L;
-
         InvocationException(Throwable cause) {
             super(cause);
         }

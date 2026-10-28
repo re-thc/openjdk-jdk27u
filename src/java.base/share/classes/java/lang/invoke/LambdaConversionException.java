@@ -30,10 +30,8 @@ package java.lang.invoke;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LambdaConversionException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 292L + 8L;
-
     /**
      * Constructs a {@code LambdaConversionException}.
      */

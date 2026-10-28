@@ -94,11 +94,10 @@ import java.util.Spliterator;
  * @param <E> the type of elements maintained by this set
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConcurrentSkipListSet<E>
     extends AbstractSet<E>
     implements NavigableSet<E>, Cloneable, java.io.Serializable {
-
-    private static final long serialVersionUID = -2479143111061671589L;
 
     /**
      * @serial The underlying map. Uses Boolean.TRUE as value for each

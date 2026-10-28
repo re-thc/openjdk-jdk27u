@@ -32,10 +32,8 @@ package java.lang.reflect;
  * @since 9
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InaccessibleObjectException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 4158786093378140901L;
-
     /**
      * Constructs an {@code InaccessibleObjectException} with no detail message.
      */

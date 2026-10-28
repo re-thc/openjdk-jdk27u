@@ -34,10 +34,8 @@ package javax.security.auth;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RefreshFailedException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5058444488565265840L;
 
     /**
      * Constructs a RefreshFailedException with no detail message. A detail

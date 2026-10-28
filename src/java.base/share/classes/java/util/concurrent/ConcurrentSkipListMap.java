@@ -109,6 +109,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @param <V> the type of mapped values
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     implements ConcurrentNavigableMap<K,V>, Cloneable, Serializable {
     /*
@@ -325,8 +326,6 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * Values:       v, value
      * Comparisons:  c
      */
-
-    private static final long serialVersionUID = -8627078645895051609L;
 
     /**
      * The comparator used to maintain order in this map, or null if
@@ -2397,10 +2396,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class SubMap<K,V> extends AbstractMap<K,V>
         implements ConcurrentNavigableMap<K,V>, Serializable {
-        private static final long serialVersionUID = -7647078645895051609L;
-
         /** @serial Underlying map */
         final ConcurrentSkipListMap<K,V> m;
         /** @serial lower bound key, or null if from start */

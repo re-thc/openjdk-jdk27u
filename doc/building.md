@@ -66,7 +66,19 @@ for level in release fastdebug; do
 done
 ```
 
-Use `bash bin/configure-dev` with the same arguments for CPU, linker and ccache
+Normal configure targets x86-64-v3 on Linux x64, AVX2 on Windows x64,
+ARMv8.2-A on Linux ARM64, and Apple M1 on macOS ARM64. These are native
+binary requirements, not runtime dispatch choices. Below-baseline machines
+are unsupported and may fault before a diagnostic can be printed.
+Extra C/C++/assembler flags cannot replace the CPU profile: direct architecture
+selectors (`-march`, `-mcpu`, `/arch` or `-arch`), ABI-changing `-m32`/`-mx32`,
+and SIMD-disabling `-mgeneral-regs-only` are rejected. Individual feature and
+tuning options remain caller-owned, including disabling features above the
+baseline (for example, `-mno-avx512f` on Linux x64). Overrides that weaken the
+baseline are unsupported, whether direct or passed through compiler-driver
+options; configure does not exhaustively validate custom flags.
+
+Use `bash bin/configure-dev` with the same arguments for linker and ccache
 development defaults. On Linux it expects mold unless `CONFIGURE_DEV_NO_MOLD=1`
 is set. Use `gmake` where that is the GNU make command.
 

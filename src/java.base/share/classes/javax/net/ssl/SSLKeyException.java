@@ -33,10 +33,8 @@ package javax.net.ssl;
  * @since 1.4
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SSLKeyException extends SSLException {
-    @java.io.Serial
-    private static final long serialVersionUID = -8071664081941937874L;
-
     /**
      * Constructs an exception reporting a key management error
      * found by an SSL subsystem.

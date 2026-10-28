@@ -46,10 +46,8 @@ import jdk.internal.ref.CleanerFactory;
  * @author Jan Luehe
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class PBEKey implements SecretKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2234768909660948176L;
 
     private byte[] key;
 

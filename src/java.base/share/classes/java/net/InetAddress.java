@@ -250,6 +250,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * @since 1.0
  * @sealedGraph
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class InetAddress implements Serializable permits Inet4Address, Inet6Address {
 
     /**
@@ -346,10 +347,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * Lazily initialized via a data race; safe because Strings are immutable.
      */
     private transient String canonicalHostName = null;
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 3286316764910316507L;
 
     // "java.net.preferIPv4Stack" system property value
     private static final String PREFER_IPV4_STACK_VALUE;

@@ -52,6 +52,7 @@ package java.lang;
  * @jls 5.1.3 Narrowing Primitive Conversion
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Number implements java.io.Serializable {
     /**
      * Constructor for subclasses to call.
@@ -120,7 +121,4 @@ public abstract class Number implements java.io.Serializable {
         return (short)intValue();
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -8742448824652078965L;
 }

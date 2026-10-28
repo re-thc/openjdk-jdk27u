@@ -47,10 +47,8 @@ package java.text;
  * @author      Mark Davis
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ParseException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2703218443322787634L;
 
     /**
      * Constructs a ParseException with the specified detail message and

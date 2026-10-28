@@ -43,10 +43,8 @@ public class HybridProvider {
 
     public static final Provider PROVIDER = new ProviderImpl();
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class ProviderImpl extends Provider {
-        @java.io.Serial
-        private static final long serialVersionUID = 0L;
-
         ProviderImpl() {
             super("HybridAndDHAsKEM", PROVIDER_VER,
                     "Hybrid and DHAsKEM provider");

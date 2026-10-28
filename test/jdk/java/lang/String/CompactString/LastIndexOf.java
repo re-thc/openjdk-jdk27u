@@ -31,7 +31,6 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.lastIndexOf.
  * @run testng/othervm -XX:+CompactStrings LastIndexOf
- * @run testng/othervm -XX:-CompactStrings LastIndexOf
  */
 
 public class LastIndexOf extends CompactString {

@@ -43,9 +43,8 @@ import static sun.security.util.SecurityProviderConstants.*;
 /**
  * Provider class for the Elliptic Curve provider.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunEC extends Provider {
-
-    private static final long serialVersionUID = -2279741672933606418L;
 
     private static class ProviderServiceA extends ProviderService {
         ProviderServiceA(Provider p, String type, String algo, String cn,

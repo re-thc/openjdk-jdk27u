@@ -61,9 +61,8 @@ import java.io.Serializable;
  * @since 1.8
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DoubleAdder extends Striped64 implements Serializable {
-    private static final long serialVersionUID = 7249069246863182397L;
-
     /*
      * Note that we must use "long" for underlying representations,
      * because there is no compareAndSet for double, due to the fact
@@ -211,9 +210,8 @@ public class DoubleAdder extends Striped64 implements Serializable {
      * Striped64 superclass in serialized forms.
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SerializationProxy implements Serializable {
-        private static final long serialVersionUID = 7249069246863182397L;
-
         /**
          * The current value returned by sum().
          * @serial

@@ -132,6 +132,7 @@ import jdk.internal.util.DecimalDigits;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class ZoneOffset
         extends ZoneId
@@ -148,12 +149,6 @@ public final class ZoneOffset
      * The abs maximum seconds.
      */
     private static final int MAX_SECONDS = 18 * SECONDS_PER_HOUR;
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 2357656521762053153L;
-
     /**
      * The time-zone offset for UTC, with an ID of 'Z'.
      */

@@ -53,11 +53,9 @@ import java.security.*;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class RuntimePermission extends BasicPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7399184964622342223L;
 
     /**
      * Creates a new RuntimePermission with the specified name.

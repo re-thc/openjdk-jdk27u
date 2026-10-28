@@ -112,11 +112,8 @@ import jdk.internal.event.ThrowableTracer;
  * @jls 11.2 Compile-Time Checking of Exceptions
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Throwable implements Serializable {
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -3042686055658047285L;
-
     /**
      * Flag set by jdk.internal.event.JFRTracing to indicate if
      * exceptions should be traced by JFR.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,7 +688,6 @@ public:
 
   bool is_latin1() {
     jbyte coder = raw_oop()->byte_field(java_lang_String::coder_offset());
-    assert(CompactStrings || coder == java_lang_String::CODER_UTF16, "Must be UTF16 without CompactStrings");
     return coder == java_lang_String::CODER_LATIN1;
   }
 

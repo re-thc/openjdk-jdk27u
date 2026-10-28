@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4396492 4396496 4778510 6850113
  * @summary verify that the embedding values processed by the bidi code use negative values to
  * indicate overrides, rather than using bit 7.  Also tests Bidi without loading awt classes to

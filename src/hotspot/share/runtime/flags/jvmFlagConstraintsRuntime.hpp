@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +39,7 @@
   f(ccstr,  AOTCacheOutputConstraintFunc)             \
   f(ccstr,  AOTConfigurationConstraintFunc)           \
   f(ccstr,  AOTModeConstraintFunc)                    \
+  f(bool,   CompactStringsConstraintFunc)             \
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(int,    ContendedPaddingWidthConstraintFunc)      \
   f(size_t, VMPageSizeConstraintFunc)                 \

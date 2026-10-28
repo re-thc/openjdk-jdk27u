@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,5 +29,7 @@ public class HelloString {
         // Make sure the string below is in the shared string data file (string list)
         String testString = "shared_test_string_unique_14325";
         System.out.println("Hello String: " + testString);
+        String utf16 = "shared_test_string_\u0100";
+        System.out.println("UTF16 String: " + utf16);
     }
 }

@@ -34,12 +34,10 @@ package java.nio.charset;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MalformedInputException
     extends CharacterCodingException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3438823399834806194L;
 
     /**
      * @serial The length of the input.

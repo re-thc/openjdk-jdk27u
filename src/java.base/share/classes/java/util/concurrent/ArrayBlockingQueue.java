@@ -84,6 +84,7 @@ import java.util.function.Predicate;
  * @author Doug Lea
  * @param <E> the type of elements held in this queue
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
 
@@ -92,14 +93,12 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * nested loops, are shared and co-maintained with ArrayDeque.
      */
 
-    /**
-     * Serialization ID. This class relies on default serialization
+    /*
+     * This class relies on default serialization
      * even for the items array, which is default-serialized, even if
      * it is empty. Otherwise it could not be declared final, which is
      * necessary here.
      */
-    private static final long serialVersionUID = -817911632652898426L;
-
     /** @serial The queued items */
     @SuppressWarnings("serial") // Conditionally serializable
     final Object[] items;

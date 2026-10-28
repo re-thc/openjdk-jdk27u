@@ -33,12 +33,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalSelectorException
     extends IllegalArgumentException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8406323347253320987L;
 
     /**
      * Constructs an instance of this class.

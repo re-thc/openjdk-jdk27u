@@ -37,10 +37,8 @@ package java.security;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class KeyPair implements java.io.Serializable, BinaryEncodable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7565189502268009837L;
 
     /** @serial The private key. */
     private final PrivateKey privateKey;

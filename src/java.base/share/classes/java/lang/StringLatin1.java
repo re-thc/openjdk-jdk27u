@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,12 +80,6 @@ final class StringLatin1 {
         char[] dst = new char[value.length];
         inflate(value, 0, dst, 0, value.length);
         return dst;
-    }
-
-    static byte[] inflate(byte[] value, int off, int len) {
-        byte[] ret = StringUTF16.newBytesFor(len);
-        inflate(value, off, ret, 0, len);
-        return ret;
     }
 
     static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {

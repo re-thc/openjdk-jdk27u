@@ -33,10 +33,8 @@ package java.util;
  * @since 1.5
  * @serial exclude
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class JumboEnumSet<E extends Enum<E>> extends EnumSet<E> {
-    @java.io.Serial
-    private static final long serialVersionUID = 334349849919042784L;
-
     /**
      * Bit vector representation of this set.  The ith bit of the jth
      * element of this array represents the  presence of universe[64*j +i]

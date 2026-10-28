@@ -51,10 +51,9 @@ import sun.security.rsa.RSAUtil.KeyType;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
 
-    @java.io.Serial
-    private static final long serialVersionUID = 2644735423591199609L;
     private static final BigInteger THREE = BigInteger.valueOf(3);
 
     private BigInteger n;       // modulus

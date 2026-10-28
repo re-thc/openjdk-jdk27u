@@ -36,10 +36,8 @@ package jdk.internal.util.xml;
  * @since 1.6
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XMLStreamException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
-
 
     protected Throwable nested;
 

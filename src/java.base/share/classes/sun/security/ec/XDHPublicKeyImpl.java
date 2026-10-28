@@ -40,10 +40,8 @@ import sun.security.util.BitArray;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
 
     private final BigInteger u;
     @SuppressWarnings("serial") // Type of field is not Serializable

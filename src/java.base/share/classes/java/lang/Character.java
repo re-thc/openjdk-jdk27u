@@ -218,6 +218,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @author  Ulf Zibis
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final
 class Character implements java.io.Serializable, Comparable<Character>, Constable {
@@ -9394,10 +9395,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @serial
      */
     private final char value;
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 3786198910865385080L;
 
     /**
      * Constructs a newly allocated {@code Character} object that
