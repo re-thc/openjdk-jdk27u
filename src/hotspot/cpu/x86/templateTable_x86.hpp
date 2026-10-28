@@ -37,6 +37,15 @@
   static void emit_istore(InterpreterMacroAssembler* masm, int index);
   static void emit_iop2(InterpreterMacroAssembler* masm, Operation op);
 
+  // Explicit assembler/opcode forms shared by ordinary templates and the
+  // interpreter-frame pilot. They never consult TemplateTable::_desc.
+  static void emit_resolve_method_entry(InterpreterMacroAssembler* masm, Bytecodes::Code code,
+                                       int byte_no, Register cache, Register index, Label* unresolved);
+  static void emit_prepare_invoke(InterpreterMacroAssembler* masm, Bytecodes::Code code,
+                                  Register cache, Register recv, Register flags, address* return_table);
+  static void emit_direct_invoke(InterpreterMacroAssembler* masm, Bytecodes::Code code,
+                                 address* return_table, Label* unresolved);
+
   // Helpers
   static void index_check(Register array, Register index);
   static void index_check_without_pop(Register array, Register index);

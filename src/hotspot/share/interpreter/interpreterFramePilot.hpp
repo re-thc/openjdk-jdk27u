@@ -22,14 +22,16 @@
 #define SHARE_INTERPRETER_INTERPRETERFRAMEPILOT_HPP
 
 #include "memory/allStatic.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "runtime/handles.hpp"
 
 class InterpreterMacroAssembler;
 class Label;
 class MethodCounters;
+class Method;
 
 // Cost-isolation pilot, selected explicitly through WhiteBox. Bounded immutable
-// integer prefixes live inside the normal interpreter code arena. No nmethod,
+// category-1 bodies live inside the normal interpreter code arena. No nmethod,
 // compiled scopes/maps, persistent Method pointer or separate Java frame.
 class InterpreterFramePilot : AllStatic {
  private:
@@ -40,8 +42,9 @@ class InterpreterFramePilot : AllStatic {
          lock_cpu, resource_cleanup_cpu, blob_allocation_cpu, blob_allocation_wall, blob_requested_bytes,
          arena_initialization_cpu, arena_initialization_wall, resource_used_bytes, resource_chunk_bytes,
          assigned_slice_bytes, counter_allocation_cpu, buffer_owns_blob, producer_thread_id, request_thread_id,
-         preparation_action, lock_wall, stats_count };
+         preparation_action, lock_wall, continuation_hits, stats_count };
   static constexpr int arena_size=64*K;
+  static constexpr int shared_code_budget=64*K;
   static void reserve();
   static void record_blob_allocation(jlong cpu,jlong wall,int bytes);
   static void startup_costs(jlong* stats);
@@ -49,7 +52,13 @@ class InterpreterFramePilot : AllStatic {
   static void snapshot(const methodHandle& method,jlong* stats);
   // Emit once in the interpreter entry; execute before every native prefix.
   // Preserves rax (prefix entry) and rdx (owned MethodCounters).
-  static void emit_entry_guards(InterpreterMacroAssembler* masm, Label& fallback);
+  static void emit_entry_guards(InterpreterMacroAssembler* masm, Label& fallback, bool count_hit=true);
+  static address* invoke_return_table(bool is_interface);
+  static void set_return_entry(bool is_interface, TosState state, address entry);
+  static void set_call_entry(Bytecodes::Code code, address entry);
+  static address call_entry(Bytecodes::Code code);
+  static void emit_resume(InterpreterMacroAssembler* masm, TosState state, int step);
+  static address resume_entry(Method* method, address bcp);
   enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,
                            test_poll_guard_seen, test_poll_processed, test_poll_wrong_bci };
   // WhiteBox-only deterministic local-poll regression. Leaves allocate/block

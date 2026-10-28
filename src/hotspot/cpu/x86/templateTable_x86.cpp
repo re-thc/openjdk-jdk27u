@@ -2209,12 +2209,16 @@ void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits order_constrain
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
                                                        Register cache,
                                                        Register index) {
+  emit_resolve_method_entry(_masm,bytecode(),byte_no,cache,index,nullptr);
+}
+
+void TemplateTable::emit_resolve_method_entry(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
+                                            int byte_no, Register cache, Register index, Label* unresolved) {
   const Register temp = rbx;
   assert_different_registers(cache, index, temp);
 
   Label L_clinit_barrier_slow, L_done;
 
-  Bytecodes::Code code = bytecode();
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
@@ -2232,7 +2236,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ cmpl(temp, code);  // have we resolved this bytecode?
 
   // Class initialization barrier for static methods
-  if (bytecode() == Bytecodes::_invokestatic) {
+  if (code == Bytecodes::_invokestatic) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     const Register method = temp;
     const Register klass  = temp;
@@ -2248,11 +2252,15 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ movl(temp, code);
-  __ call_VM_preemptable(noreg, entry, temp);
-  // Update registers with resolved info
-  __ load_method_entry(cache, index);
+  if (unresolved != nullptr) {
+    __ jmp(*unresolved);
+  } else {
+    address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+    __ movl(temp, code);
+    __ call_VM_preemptable(noreg, entry, temp);
+    // Update registers with resolved info
+    __ load_method_entry(cache, index);
+  }
   __ bind(L_done);
 }
 
@@ -3220,8 +3228,12 @@ void TemplateTable::fast_xaccess(TosState state) {
 // Calls
 
 void TemplateTable::prepare_invoke(Register cache, Register recv, Register flags) {
+  emit_prepare_invoke(_masm,bytecode(),cache,recv,flags,nullptr);
+}
+
+void TemplateTable::emit_prepare_invoke(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
+                                       Register cache, Register recv, Register flags, address* return_table) {
   // determine flags
-  const Bytecodes::Code code = bytecode();
   const bool load_receiver       = (code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic);
   assert_different_registers(recv, flags);
 
@@ -3245,7 +3257,7 @@ void TemplateTable::prepare_invoke(Register cache, Register recv, Register flags
 
   // load return address
   {
-    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
+    const address table_addr = (address)(return_table==nullptr?Interpreter::invoke_return_entry_table_for(code):return_table);
     ExternalAddress table(table_addr);
     __ lea(rscratch1, table);
     __ movptr(flags, Address(rscratch1, flags, Address::times_ptr));
@@ -3324,36 +3336,46 @@ void TemplateTable::invokevirtual(int byte_no) {
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-
-  load_resolved_method_entry_special_or_static(rcx,  // ResolvedMethodEntry*
-                                               rbx,  // Method*
-                                               rdx); // flags
-  prepare_invoke(rcx,
-                 rcx,  // get receiver also for null check
-                 rdx); // flags
-
-  __ verify_oop(rcx);
-  __ null_check(rcx);
-  // do the call
-  __ profile_call(rax);
-  __ profile_arguments_type(rax, rbx, rbcp, false);
-  __ jump_from_interpreted(rbx, rax);
+  emit_direct_invoke(_masm,Bytecodes::_invokespecial,nullptr,nullptr);
 }
 
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
+  emit_direct_invoke(_masm,Bytecodes::_invokestatic,nullptr,nullptr);
+}
 
-  load_resolved_method_entry_special_or_static(rcx, // ResolvedMethodEntry*
-                                               rbx, // Method*
-                                               rdx  // flags
-                                               );
-  prepare_invoke(rcx, rcx, rdx);  // cache and flags
-
-  // do the call
+void TemplateTable::emit_direct_invoke(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
+                                     address* return_table, Label* unresolved) {
+  assert(code==Bytecodes::_invokestatic || code==Bytecodes::_invokespecial,"direct Java invoke");
+  emit_resolve_method_entry(_masm,code,f1_byte,rcx,rdx,unresolved);
+  __ load_unsigned_byte(rdx,Address(rcx,in_bytes(ResolvedMethodEntry::flags_offset())));
+  __ movptr(rbx,Address(rcx,in_bytes(ResolvedMethodEntry::method_offset())));
+  if(unresolved!=nullptr) {
+    __ testptr(rbx,rbx);__ jcc(Assembler::zero,*unresolved);
+    __ testl(rdx,(1<<ResolvedMethodEntry::has_appendix_shift) |
+                    (1<<ResolvedMethodEntry::has_local_signature_shift) |
+                    (1<<ResolvedMethodEntry::has_resolved_ref_shift));
+    __ jcc(Assembler::notZero,*unresolved);
+    __ load_unsigned_byte(rax,Address(rcx,in_bytes(ResolvedMethodEntry::type_offset())));
+    Label supported_type;
+    __ cmpl(rax,itos);__ jcc(Assembler::belowEqual,supported_type);
+    __ cmpl(rax,atos);__ jcc(Assembler::equal,supported_type);
+    __ cmpl(rax,vtos);__ jcc(Assembler::notEqual,*unresolved);
+    __ bind(supported_type);
+    if(code==Bytecodes::_invokespecial) {
+      __ load_unsigned_short(rax,Address(rcx,in_bytes(ResolvedMethodEntry::num_parameters_offset())));
+      __ movptr(rax,__ argument_address(rax,-2));
+      __ testptr(rax,rax);__ jcc(Assembler::zero,*unresolved);
+    }
+  }
+  emit_prepare_invoke(_masm,code,rcx,rcx,rdx,return_table);
+  if(code==Bytecodes::_invokespecial) {
+    __ verify_oop(rcx);__ null_check(rcx);
+  }
   __ profile_call(rax);
-  __ profile_arguments_type(rax, rbx, rbcp, false);
-  __ jump_from_interpreted(rbx, rax);
+  __ profile_arguments_type(rax,rbx,rbcp,false);
+  __ jump_from_interpreted(rbx,rax);
 }
 
 

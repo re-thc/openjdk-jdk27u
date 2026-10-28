@@ -173,9 +173,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
-  address entry = __ pc();
-
+static void emit_invoke_return_epilogue(InterpreterMacroAssembler* _masm,TosState state,size_t index_size) {
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
@@ -211,10 +209,23 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
      __ check_and_handle_earlyret();
    }
 
-  __ dispatch_next(state, step);
+}
 
+address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,int step,size_t index_size) {
+  address entry=__ pc();
+  emit_invoke_return_epilogue(_masm,state,index_size);
+  __ dispatch_next(state,step);
   return entry;
 }
+
+#ifdef AMD64
+address TemplateInterpreterGenerator::generate_pilot_return_entry_for(TosState state,int step) {
+  address entry=__ pc();
+  emit_invoke_return_epilogue(_masm,state,sizeof(u2));
+  InterpreterFramePilot::emit_resume(_masm,state,step);
+  return entry;
+}
+#endif
 
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {

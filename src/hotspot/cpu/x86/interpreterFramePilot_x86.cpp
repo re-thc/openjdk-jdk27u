@@ -75,6 +75,12 @@ class BufferCleanup : public StackObj {
 constexpr int slot_size=4096;
 constexpr int max_operations=64;
 constexpr int max_prefix_bytes=max_operations*5;
+// Count, code bytes, then (post-invoke BCI, native offset) pairs. No metadata.
+constexpr int resume_map_bytes=align_up((2+2*max_operations)*(int)sizeof(u2),wordSize);
+constexpr int resume_map_offset=slot_size-resume_map_bytes;
+address pilot_returns[2][vtos+1]={};
+address pilot_calls[4]={};
+int resume_counts[InterpreterFramePilot::arena_size/slot_size]={};
 // Every Stage A helper is bounded (TypeProfileWidth is limited to eight by
 // the VM). Reserve before emitting, including subtype/profile and GC helpers.
 constexpr int max_opcode_bytes=2048;
@@ -117,6 +123,12 @@ void InterpreterFramePilot::snapshot(const methodHandle& method,jlong* stats) {
   if(counters==nullptr || counters->method()!=method())return;
   stats[8]=(jlong)counters->interpreter_pilot_entry();stats[9]=counters->interpreter_pilot_hits();
   stats[10]=counters->interpreter_pilot_enabled();
+  address entry=counters->interpreter_pilot_entry();
+  if(entry!=nullptr) {
+    uintptr_t offset=(uintptr_t)entry-(uintptr_t)arena;
+    if(offset<arena_size && offset%slot_size==0)
+      stats[continuation_hits]=AtomicAccess::load(&resume_counts[offset/slot_size]);
+  }
 }
 bool InterpreterFramePilot::set_enabled(const methodHandle& method,bool enabled) {
   if(generation_lock==nullptr)return false;
@@ -216,7 +228,7 @@ void InterpreterFramePilot::emit_test_poll_return(InterpreterMacroAssembler* mas
   masm->pop(rbx);masm->pop(rdx);masm->pop(rax);
   masm->bind(done);
 }
-void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,Label& fallback) {
+void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,Label& fallback,bool count_hit) {
   if(test_poll_enabled()) {
     Label no_request;
     masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_poll_test_offset())),test_poll_requested);
@@ -262,7 +274,65 @@ void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,La
   masm->movptr(rscratch1,(intptr_t)&StopInterpreterAt);
   masm->cmpq(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
 #endif
-  masm->incrementl(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_hits_offset())));
+  if(count_hit)masm->incrementl(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_hits_offset())));
+}
+address* InterpreterFramePilot::invoke_return_table(bool is_interface) {
+  return pilot_returns[is_interface?1:0];
+}
+void InterpreterFramePilot::set_return_entry(bool is_interface,TosState state,address entry) {
+  assert(state>=btos && state<=vtos,"return table index");
+  pilot_returns[is_interface?1:0][state]=entry;
+}
+void InterpreterFramePilot::set_call_entry(Bytecodes::Code code,address entry) {
+  assert(code>=Bytecodes::_invokevirtual && code<=Bytecodes::_invokeinterface,"ordinary invoke");
+  pilot_calls[code-Bytecodes::_invokevirtual]=entry;
+}
+address InterpreterFramePilot::call_entry(Bytecodes::Code code) {
+  assert(code>=Bytecodes::_invokevirtual && code<=Bytecodes::_invokeinterface,"ordinary invoke");
+  return pilot_calls[code-Bytecodes::_invokevirtual];
+}
+JRT_LEAF(address, InterpreterFramePilot::resume_entry(Method* method,address bcp))
+  // The current interpreted frame keeps Method/CP metadata alive. This leaf
+  // cannot allocate, block, safepoint, resolve, or enter the VM.
+  if(method->is_old() || method->is_obsolete())return nullptr;
+  MethodCounters* counters=method->method_counters();
+  if(counters==nullptr || counters->method()!=method || !counters->interpreter_pilot_enabled())return nullptr;
+  address entry=counters->interpreter_pilot_entry();
+  uintptr_t offset=(uintptr_t)entry-(uintptr_t)arena;
+  if(entry==nullptr || offset>=arena_size || offset%slot_size!=0)return nullptr;
+  ptrdiff_t bci=bcp-method->code_base();
+  if(bci<0 || bci>=method->code_size())return nullptr;
+  const u2* map=(const u2*)(entry+resume_map_offset);
+  int count=map[0],bytes=map[1];
+  if(count>max_operations || bytes<=0 || bytes>=resume_map_offset)return nullptr;
+  for(int i=0;i<count;i++) {
+    if(map[2+2*i]==bci) {
+      int native_offset=map[3+2*i];
+      if(native_offset>=bytes)return nullptr;
+      // Explicit WhiteBox pilot diagnostic, separate from invocation hits.
+      AtomicAccess::add(&resume_counts[offset/slot_size],1,memory_order_relaxed);
+      return entry+native_offset;
+    }
+  }
+  return nullptr;
+JRT_END
+void InterpreterFramePilot::emit_resume(InterpreterMacroAssembler* masm,TosState state,int step) {
+  Label fallback;
+  masm->push(state);
+  masm->increment(rbcp,step);masm->save_bcp();
+  masm->get_method(rbx);
+  masm->movptr(rdx,Address(rbx,Method::method_counters_offset()));
+  masm->testptr(rdx,rdx);masm->jcc(Assembler::zero,fallback);
+  masm->cmpptr(rbx,Address(rdx,in_bytes(MethodCounters::method_offset())));
+  masm->jcc(Assembler::notEqual,fallback);
+  masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_enabled_offset())),0);
+  masm->jcc(Assembler::zero,fallback);
+  // A callee may have enabled tooling. Check it before entering even a leaf.
+  emit_entry_guards(masm,fallback,false);
+  masm->call_VM_leaf(CAST_FROM_FN_PTR(address,resume_entry),rbx,rbcp);
+  masm->testptr(rax,rax);masm->jcc(Assembler::zero,fallback);
+  masm->jmp(rax);
+  masm->bind(fallback);masm->dispatch_next(vtos,0,true);
 }
 template<bool Observe>
 bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* stats) {
@@ -295,7 +365,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   BufferCleanup<Observe> cleanup(stats,cleanup_start);
   jlong allocation_begin=0;
   if constexpr (Observe) allocation_begin=os::current_thread_cpu_time();
-  CodeBuffer code(arena+next_slot,slot_size);
+  CodeBuffer code(arena+next_slot,resume_map_offset);
   InterpreterMacroAssembler masm(&code);
   if constexpr (Observe) {
     stats[buffer_setup_cpu]=os::current_thread_cpu_time()-allocation_begin;
@@ -317,6 +387,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
     return false;
   };
   int operations=0,end_bci=0;
+  int call_bcis[max_operations],call_count=0;
   ConstantPool* pool=m->constants();
   Array<u2>* reference_map=pool->cache()==nullptr?nullptr:pool->cache()->reference_map();
   BytecodeStream stream(method);
@@ -461,6 +532,24 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         if(bc==Bytecodes::_instanceof) {masm.pop_ptr(rax);masm.xorl(rax,rax);masm.push(itos);}
         masm.bind(done);action=emitted;break;
       }
+      case Bytecodes::_invokestatic: case Bytecodes::_invokespecial: {
+        int method_index=stream.get_index_u2();
+        if(pool->cache()==nullptr || method_index>=pool->resolved_method_entries_length())break;
+        ResolvedMethodEntry* entry=pool->resolved_method_entry_at(method_index);
+        int cp_index=entry->constant_pool_index();
+        Symbol* owner=pool->uncached_klass_ref_at_noresolve(cp_index);
+        if(pool->uncached_name_ref_at(cp_index)->equals("<init>") ||
+           owner->equals("java/lang/invoke/MethodHandle") || owner->equals("java/lang/invoke/VarHandle"))break;
+        bool supported=true;
+        for(SignatureStream signature(pool->uncached_signature_ref_at(cp_index));!signature.is_done();signature.next()) {
+          BasicType type=signature.type();
+          if(type!=T_VOID && !is_reference_type(type) && !is_subword_type(type) && type!=T_INT) {supported=false;break;}
+        }
+        address target=call_entry(bc);
+        if(!supported || target==nullptr)break;
+        if(stream.next_bci()<=max_prefix_bytes)call_bcis[call_count++]=stream.next_bci();
+        masm.jump(RuntimeAddress(target));action=emitted;break;
+      }
       case Bytecodes::_ifeq: case Bytecodes::_ifne: case Bytecodes::_iflt: case Bytecodes::_ifge:
       case Bytecodes::_ifgt: case Bytecodes::_ifle:
       case Bytecodes::_if_icmpeq: case Bytecodes::_if_icmpne: case Bytecodes::_if_icmplt:
@@ -512,17 +601,29 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
     masm.save_bcp();
     guarantee(code.insts_size()-instruction_begin<max_opcode_bytes,"audited bounded Stage A opcode");
   }
-  // Nothing throwing or safepointing runs inside the bounded prefix. All
-  // expression values are canonical vtos at every bytecode boundary. Resume
-  // the original opcode through the active interpreter table and its poll.
+  // Values are canonical vtos at every boundary. Shared invoke codelets
+  // establish the ordinary interpreted call frame before a callee can run.
+  // Unsupported opcodes resume through the active table and its poll.
   if (operations==0 || end_bci>=m->code_size()) return reject_unpublished();
+  for(int i=0;i<call_count;i++)
+    if(!labels[call_bcis[i]].is_bound())masm.bind(labels[call_bcis[i]]);
   bind_exits();
   masm.dispatch_next(vtos,0,true);
   emission.stop();
   CpuCut<Observe> publication(Observe?&stats[publication_cpu]:nullptr);
   masm.flush();
   int bytes=code.insts_size();
-  guarantee(bytes<slot_size,"bounded pilot code slice");
+  guarantee(bytes<resume_map_offset,"bounded pilot code before immutable map");
+  u2* map=(u2*)(arena+next_slot+resume_map_offset);
+  memset(map,0,resume_map_bytes);map[1]=bytes;
+  for(int i=0;i<call_count;i++) {
+    int bci=call_bcis[i];
+    guarantee(labels[bci].is_bound(),"post-call BCI bound to native body or fallback");
+    int target=labels[bci].loc_pos();
+    if(target==ordinary.loc_pos())continue; // ordinary return/unsupported opcode
+    int row=map[0]++;
+    map[2+2*row]=bci;map[3+2*row]=target;
+  }
   NOT_PRODUCT(arena_strings[next_slot/slot_size].share(code.dbg_strings());)
   ICache::invalidate_range(arena+next_slot,bytes);
   if constexpr (Observe) { stats[3]=bytes;stats[4]=end_bci;stats[5]=operations; }

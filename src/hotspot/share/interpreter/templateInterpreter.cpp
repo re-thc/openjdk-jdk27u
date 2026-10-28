@@ -48,7 +48,7 @@ void TemplateInterpreter::initialize_stub() {
   // allocate interpreter
   int code_size = InterpreterCodeSize;
   NOT_PRODUCT(code_size *= 4;)
-  AMD64_ONLY(if (UseInterpreterFramePilot) code_size += InterpreterFramePilot::arena_size;)  // debug uses extra interpreter code space
+  AMD64_ONLY(if (UseInterpreterFramePilot) code_size += InterpreterFramePilot::arena_size+InterpreterFramePilot::shared_code_budget;)  // debug uses extra interpreter code space
   // 270+ interpreter codelets are generated and each of them is aligned to HeapWordSize,
   // plus their code section is aligned to CodeEntryAlignement. So we need additional size due to alignment.
   int max_aligned_codelets = 280;

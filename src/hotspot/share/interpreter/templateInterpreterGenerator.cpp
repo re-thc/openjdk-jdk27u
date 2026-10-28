@@ -25,6 +25,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterFramePilot.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
@@ -261,6 +262,28 @@ void TemplateInterpreterGenerator::generate_all() {
     vmassert(return_continuation != nullptr, "return entry not generated yet");
     Interpreter::_deopt_reexecute_return_entry = generate_deopt_entry_for(vtos, 0, return_continuation);
   }
+
+#if defined(AMD64) && !defined(ZERO)
+  if(UseInterpreterFramePilot) {
+    int available=Interpreter::code()->available_space();
+    {
+      CodeletMark cm(_masm,"interpreter-frame pilot direct-call returns");
+      for(TosState state:{itos,atos,vtos})
+        InterpreterFramePilot::set_return_entry(false,state,generate_pilot_return_entry_for(state,3));
+      for(int i=btos;i<itos;i++)
+        InterpreterFramePilot::set_return_entry(false,(TosState)i,InterpreterFramePilot::invoke_return_table(false)[itos]);
+    }
+    for(Bytecodes::Code code:{Bytecodes::_invokestatic,Bytecodes::_invokespecial}) {
+      CodeletMark cm(_masm,"interpreter-frame pilot direct invoke",code);
+      InterpreterFramePilot::set_call_entry(code,__ pc());
+      Label fallback;
+      TemplateTable::emit_direct_invoke(_masm,code,InterpreterFramePilot::invoke_return_table(false),&fallback);
+      __ bind(fallback);__ dispatch_next(vtos,0,true);
+    }
+    guarantee(available-Interpreter::code()->available_space()<InterpreterFramePilot::shared_code_budget,
+              "bounded pilot invoke/return codelets including headers/alignment");
+  }
+#endif
 
 }
 
