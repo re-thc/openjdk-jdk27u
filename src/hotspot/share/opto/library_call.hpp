@@ -256,6 +256,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
+  bool inline_native_time_adjustment();
 
   bool inline_native_vthread_start_transition(address funcAddr, const char* funcName, bool is_final_transition);
   bool inline_native_vthread_end_transition(address funcAddr, const char* funcName, bool is_first_transition);

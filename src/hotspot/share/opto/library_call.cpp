@@ -501,6 +501,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
+  case vmIntrinsics::_getNanoTimeAdjustment:    return inline_native_time_adjustment();
   case vmIntrinsics::_writeback0:               return inline_unsafe_writeback0();
   case vmIntrinsics::_writebackPreSync0:        return inline_unsafe_writebackSync0(true);
   case vmIntrinsics::_writebackPostSync0:       return inline_unsafe_writebackSync0(false);
@@ -2960,6 +2961,16 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
   assert(value_top == top(), "second value must be top");
 #endif
   set_result(value);
+  return true;
+}
+
+// Same pinned, non-pure RC_LEAF pattern as the other clock intrinsics.
+bool LibraryCallKit::inline_native_time_adjustment() {
+  const TypeFunc* tf = TypeFunc::make(callee()); // static (long) -> long
+  Node* time = make_runtime_call(RC_LEAF, tf,
+      CAST_FROM_FN_PTR(address, os::javaTimeNanosAdjustment),
+      "javaTimeNanosAdjustment", nullptr, argument(0), top());
+  set_result(_gvn.transform(new ProjNode(time, TypeFunc::Parms)));
   return true;
 }
 

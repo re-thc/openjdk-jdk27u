@@ -283,6 +283,7 @@ class os: AllStatic {
 
   static jlong  javaTimeMillis();
   static jlong  javaTimeNanos();
+  static jlong  javaTimeNanosAdjustment(jlong offset_secs);
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
   static void   run_periodic_checks(outputStream* st);

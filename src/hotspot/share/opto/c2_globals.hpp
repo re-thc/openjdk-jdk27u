@@ -639,6 +639,9 @@
   product(bool, BlockLayoutRotateLoops, true,                               \
           "Allow back branches to be fall throughs in the block layout")    \
                                                                             \
+  product(bool, InlineNanoTimeAdjustment, true, DIAGNOSTIC,                 \
+          "Inline VM.getNanoTimeAdjustment as a C2 clock leaf")             \
+                                                                            \
   product(bool, InlineReflectionGetCallerClass, true, DIAGNOSTIC,           \
           "inline sun.reflect.Reflection.getCallerClass(), known to be "    \
           "part of base library DLL")                                       \

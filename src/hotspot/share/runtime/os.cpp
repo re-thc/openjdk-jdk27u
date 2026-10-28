@@ -125,6 +125,23 @@ int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
   return result;
 }
 
+jlong os::javaTimeNanosAdjustment(jlong offset_secs) {
+  jlong seconds;
+  jlong nanos;
+  javaTimeSystemUTC(seconds, nanos);
+
+  // Preserve the +/- 2^32 second sentinel contract for every jlong offset.
+  // Use defined wrapping subtraction, then reject signed overflow as well as
+  // out-of-range differences before multiplying into nanoseconds.
+  const jlong max_diff_secs = CONST64(0x0100000000);
+  const jlong diff = java_subtract(seconds, offset_secs);
+  if (((seconds ^ offset_secs) & (seconds ^ diff)) < 0 ||
+      diff >= max_diff_secs || diff <= -max_diff_secs) {
+    return -1;
+  }
+  return diff * (jlong)1000000000 + nanos;
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
 // Returns buffer, or null if it failed.
