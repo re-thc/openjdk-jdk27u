@@ -35,10 +35,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * The SUN Security Provider.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Sun extends Provider {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6440182097568097204L;
 
     private static final String INFO = "SUN " +
     "(DSA parameter generation; SHA-1, MD5 digests; " +

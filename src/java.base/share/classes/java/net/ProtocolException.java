@@ -34,10 +34,8 @@ import java.io.IOException;
  * @author  Chris Warth
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ProtocolException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -6098449442062388080L;
-
     /**
      * Constructs a new {@code ProtocolException} with the
      * specified detail message.

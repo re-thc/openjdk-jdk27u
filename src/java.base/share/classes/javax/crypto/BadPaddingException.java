@@ -35,10 +35,8 @@ import java.security.GeneralSecurityException;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BadPaddingException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5315033893984728443L;
 
     /**
      * Constructs a {@code BadPaddingException} with no detail

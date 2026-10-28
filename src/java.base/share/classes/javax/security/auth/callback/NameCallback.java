@@ -33,10 +33,8 @@ package javax.security.auth.callback;
  * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NameCallback implements Callback, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3770938795909392253L;
 
     /**
      * @serial

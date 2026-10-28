@@ -97,14 +97,10 @@ import java.util.Objects;
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
         implements  ChronoLocalDateTime<D>, Temporal, TemporalAdjuster, Serializable {
 
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 4556003607393004514L;
     /**
      * Hours per day.
      */

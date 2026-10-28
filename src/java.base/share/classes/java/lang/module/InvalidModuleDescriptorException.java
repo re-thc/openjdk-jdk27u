@@ -32,10 +32,8 @@ package java.lang.module;
  * @see ModuleDescriptor#read
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidModuleDescriptorException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 4863390386809347380L;
-
     /**
      * Constructs an {@code InvalidModuleDescriptorException} with no detail
      * message.

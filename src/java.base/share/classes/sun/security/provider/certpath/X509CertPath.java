@@ -58,10 +58,8 @@ import sun.security.util.DerInputStream;
  * @author      Yassir Elley
  * @since       1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class X509CertPath extends CertPath {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4989800333263052980L;
 
     /**
      * List of certificates in this chain

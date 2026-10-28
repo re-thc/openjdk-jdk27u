@@ -61,9 +61,8 @@ import java.util.Objects;
  * @see LambdaMetafactory
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SerializedLambda implements Serializable {
-    @java.io.Serial
-    private static final long serialVersionUID = 8025925345765570181L;
     /**
      * @serial The capturing class.
      */

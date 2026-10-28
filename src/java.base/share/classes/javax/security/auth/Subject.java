@@ -117,10 +117,8 @@ import sun.security.util.ResourcesMgr;
  * @see java.security.Principal
  * @see java.security.DomainCombiner
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Subject implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8308522755600156056L;
 
     /**
      * A {@code Set} that provides a view of all of this
@@ -958,11 +956,9 @@ public final class Subject implements java.io.Serializable {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SecureSet<E>
         implements Set<E>, java.io.Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = 7911754171111800359L;
 
         /**
          * @serialField this$0 Subject The outer Subject instance.

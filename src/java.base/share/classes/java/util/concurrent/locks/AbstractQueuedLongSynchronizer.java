@@ -60,11 +60,10 @@ import jdk.internal.misc.Unsafe;
  * @since 1.6
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class AbstractQueuedLongSynchronizer
     extends AbstractOwnableSynchronizer
     implements java.io.Serializable {
-
-    private static final long serialVersionUID = 7373984972572414692L;
 
     /**
      * Constructor for subclasses to call.
@@ -1141,8 +1140,8 @@ public abstract class AbstractQueuedLongSynchronizer
      * <p>This class is Serializable, but all fields are transient,
      * so deserialized conditions have no waiters.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public class ConditionObject implements Condition, java.io.Serializable {
-        private static final long serialVersionUID = 1173984872572414699L;
         /** First node of condition queue. */
         private transient ConditionNode firstWaiter;
         /** Last node of condition queue. */

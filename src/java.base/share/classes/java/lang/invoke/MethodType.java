@@ -128,14 +128,12 @@ import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final
 class MethodType
         implements Constable,
                    TypeDescriptor.OfMethod<Class<?>, MethodType>,
                    java.io.Serializable {
-    @java.io.Serial
-    private static final long serialVersionUID = 292L;  // {rtype, {ptype...}}
-
     // The rtype and ptypes fields define the structural identity of the method type:
     private final @Stable Class<?>   rtype;
     private final @Stable Class<?>[] ptypes;

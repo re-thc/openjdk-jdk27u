@@ -356,6 +356,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Double extends Number
         implements Comparable<Double>, Constable, ConstantDesc {
@@ -1604,7 +1605,4 @@ public final class Double extends Number
         return this;
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -9172774392245257468L;
 }

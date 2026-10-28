@@ -154,11 +154,9 @@ import java.util.Objects;
  *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since = "25", forRemoval = true)
 public final class URLPermission extends Permission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2702463814894478682L;
 
     private transient String scheme;
     private transient String ssp;                 // scheme specific part

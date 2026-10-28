@@ -200,6 +200,7 @@ import sun.util.logging.PlatformLogger;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class HijrahChronology extends AbstractChronology implements Serializable {
 
     /**
@@ -210,11 +211,6 @@ public final class HijrahChronology extends AbstractChronology implements Serial
      * The Hijrah calendarType.
      */
     private final transient String calendarType;
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 3127340209035924785L;
     /**
      * Singleton instance of the Islamic Umm Al-Qura calendar of Saudi Arabia.
      * Other Hijrah chronology variants may be available from

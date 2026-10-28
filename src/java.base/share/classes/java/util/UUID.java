@@ -71,13 +71,8 @@ import jdk.internal.util.ByteArrayLittleEndian;
  *      RFC 9562 Universally Unique IDentifiers (UUIDs)
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
-
-    /**
-     * Explicit serialVersionUID for interoperability.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -4856846361193249489L;
 
     /**
      * @serial The most significant 64 bits of this UUID.

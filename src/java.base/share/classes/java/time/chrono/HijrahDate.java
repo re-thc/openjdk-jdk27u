@@ -116,16 +116,12 @@ import java.time.temporal.ValueRange;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class HijrahDate
         extends ChronoLocalDateImpl<HijrahDate>
         implements ChronoLocalDate, Serializable {
 
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -5207853542612002020L;
     /**
      * The Chronology of this HijrahDate.
      */

@@ -124,18 +124,13 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class IsoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the ISO chronology.
      */
     public static final IsoChronology INSTANCE = new IsoChronology();
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -1440403870442975015L;
 
     private static final long DAYS_0000_TO_1970 = (146097 * 5L) - (30L * 365L + 7L); // taken from LocalDate
 

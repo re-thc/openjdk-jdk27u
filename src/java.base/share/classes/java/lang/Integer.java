@@ -70,6 +70,7 @@ import static java.lang.Character.digit;
  *
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Integer extends Number
         implements Comparable<Integer>, Constable, ConstantDesc {
@@ -1976,7 +1977,4 @@ public final class Integer extends Number
         return this;
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    @Native private static final long serialVersionUID = 1360826667806852920L;
 }
