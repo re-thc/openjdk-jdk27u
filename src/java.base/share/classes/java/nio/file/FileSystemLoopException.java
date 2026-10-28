@@ -32,12 +32,10 @@ package java.nio.file;
  * @see Files#walkFileTree
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FileSystemLoopException
     extends FileSystemException
 {
-    @java.io.Serial
-    private static final long serialVersionUID = 4843039591949217617L;
-
     /**
      * Constructs an instance of this class.
      *

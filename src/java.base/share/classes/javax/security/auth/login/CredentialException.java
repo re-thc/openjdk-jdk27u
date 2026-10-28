@@ -30,10 +30,8 @@ package javax.security.auth.login;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CredentialException extends LoginException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4772893876810601859L;
 
     /**
      * Constructs a CredentialException with no detail message. A detail

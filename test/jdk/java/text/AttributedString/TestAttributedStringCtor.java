@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @requires vm.hasAWT
  * @bug 4146853
  * @summary Make sure we can construct an AttributedString from
  * an AttributedCharacterIterator covering only a subrange

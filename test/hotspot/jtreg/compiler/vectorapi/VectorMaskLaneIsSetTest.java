@@ -87,8 +87,12 @@ public class VectorMaskLaneIsSetTest {
     }
 
     @Run(test = "testVectorMaskLaneIsSet_Byte_variable")
-    public static void testVectorMaskLaneIsSet_Byte_variable_runner() {
-        Asserts.assertEquals(ma[0], testVectorMaskLaneIsSet_Byte_variable(0));
+    public static void testVectorMaskLaneIsSet_Byte_variable_runner(RunInfo info) {
+        checkC2(info);
+        for (int i = 0; i < B_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i], testVectorMaskLaneIsSet_Byte_variable(i));
+        }
+        checkC2(info);
     }
 
     @Test
@@ -99,8 +103,12 @@ public class VectorMaskLaneIsSetTest {
     }
 
     @Run(test = "testVectorMaskLaneIsSet_Short_variable")
-    public static void testVectorMaskLaneIsSet_Short_variable_runner() {
-        Asserts.assertEquals(ma[0], testVectorMaskLaneIsSet_Short_variable(0));
+    public static void testVectorMaskLaneIsSet_Short_variable_runner(RunInfo info) {
+        checkC2(info);
+        for (int i = 0; i < S_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i], testVectorMaskLaneIsSet_Short_variable(i));
+        }
+        checkC2(info);
     }
 
     @Test
@@ -111,8 +119,12 @@ public class VectorMaskLaneIsSetTest {
     }
 
     @Run(test = "testVectorMaskLaneIsSet_Int_variable")
-    public static void testVectorMaskLaneIsSet_Int_variable_runner() {
-        Asserts.assertEquals(ma[0], testVectorMaskLaneIsSet_Int_variable(0));
+    public static void testVectorMaskLaneIsSet_Int_variable_runner(RunInfo info) {
+        checkC2(info);
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i], testVectorMaskLaneIsSet_Int_variable(i));
+        }
+        checkC2(info);
     }
 
     @Test
@@ -123,8 +135,12 @@ public class VectorMaskLaneIsSetTest {
     }
 
     @Run(test = "testVectorMaskLaneIsSet_Long_variable")
-    public static void testVectorMaskLaneIsSet_Long_variable_runner() {
-        Asserts.assertEquals(ma[0], testVectorMaskLaneIsSet_Long_variable(0));
+    public static void testVectorMaskLaneIsSet_Long_variable_runner(RunInfo info) {
+        checkC2(info);
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i], testVectorMaskLaneIsSet_Long_variable(i));
+        }
+        checkC2(info);
     }
 
     @Test
@@ -135,8 +151,12 @@ public class VectorMaskLaneIsSetTest {
     }
 
     @Run(test = "testVectorMaskLaneIsSet_Float_variable")
-    public static void testVectorMaskLaneIsSet_Float_variable_runner() {
-        Asserts.assertEquals(ma[0], testVectorMaskLaneIsSet_Float_variable(0));
+    public static void testVectorMaskLaneIsSet_Float_variable_runner(RunInfo info) {
+        checkC2(info);
+        for (int i = 0; i < F_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i], testVectorMaskLaneIsSet_Float_variable(i));
+        }
+        checkC2(info);
     }
 
     @Test
@@ -147,8 +167,18 @@ public class VectorMaskLaneIsSetTest {
     }
 
     @Run(test = "testVectorMaskLaneIsSet_Double_variable")
-    public static void testVectorMaskLaneIsSet_Double_variable_runner() {
-        Asserts.assertEquals(ma[0], testVectorMaskLaneIsSet_Double_variable(0));
+    public static void testVectorMaskLaneIsSet_Double_variable_runner(RunInfo info) {
+        checkC2(info);
+        for (int i = 0; i < D_SPECIES.length(); i++) {
+            Asserts.assertEquals(ma[i], testVectorMaskLaneIsSet_Double_variable(i));
+        }
+        checkC2(info);
+    }
+
+    private static void checkC2(RunInfo info) {
+        if (!info.isWarmUp() && info.isC2CompilationEnabled() && !info.isCompilationSkipped()) {
+            Asserts.assertTrue(info.isTestC2Compiled(), info.getTest().getName() + " must remain in C2");
+        }
     }
 
     public static void main(String[] args) {

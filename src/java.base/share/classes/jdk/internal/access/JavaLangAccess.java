@@ -490,11 +490,6 @@ public interface JavaLangAccess {
     Object uncheckedStringConcat1(String[] constants);
 
     /**
-     * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
-     */
-    byte stringInitCoder();
-
-    /**
      * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
      */
     byte stringCoder(String str);

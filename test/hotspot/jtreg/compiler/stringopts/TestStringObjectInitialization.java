@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +34,7 @@
  * @requires vm.gc.Serial | vm.gc == null
  *
  * @compile -XDstringConcat=inline TestStringObjectInitialization.java
- * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-CompactStrings
+ * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops
  *                               -XX:-UseG1GC -XX:+UseSerialGC
  *                               compiler.stringopts.TestStringObjectInitialization
  */
@@ -80,9 +81,9 @@ public class TestStringObjectInitialization {
         }
 
         public void run() {
-            String[] array = {"a", "b", "c"};
+            String[] array = {"\u0100", "b", "c"};
             for (int i = 0; i < 100_000; ++i) {
-                test.run("a", array);
+                test.run("\u0100", array);
                 test.reset();
             }
         }

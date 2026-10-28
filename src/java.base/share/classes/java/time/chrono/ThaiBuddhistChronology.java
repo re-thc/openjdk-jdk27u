@@ -105,6 +105,7 @@ import java.util.Map;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ThaiBuddhistChronology extends AbstractChronology implements Serializable {
 
     /**
@@ -112,11 +113,6 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
      */
     public static final ThaiBuddhistChronology INSTANCE = new ThaiBuddhistChronology();
 
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 2775954514031616474L;
     /**
      * Containing the offset to add to the ISO year.
      */

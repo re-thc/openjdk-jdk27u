@@ -83,7 +83,9 @@ for gc in Epsilon Parallel Shenandoah; do
   fi
 done
 
-for module in java.desktop java.datatransfer java.se jdk.accessibility jdk.editpad \
+bash "$repo_root/.github/scripts/check-headless-beans.sh" "$jdk"
+
+for module in java.datatransfer java.se jdk.accessibility jdk.editpad \
   jdk.hotspot.agent jdk.jconsole jdk.jpackage jdk.unsupported.desktop; do
   if [[ -e $jdk/jmods/$module.jmod || -L $jdk/jmods/$module.jmod ]]; then
     echo "Unexpected desktop jmod: $module" >&2
@@ -117,10 +119,10 @@ native_commands=$(find "$build_dir/support/native" "$build_dir/hotspot" \
   exit 1
 }
 # Test oracle intentionally independent of Modules.gmk's product policy.
-excluded='java[.](desktop|datatransfer|se)|jdk[.](accessibility|editpad|hotspot[.]agent|jconsole|jpackage|unsupported[.]desktop)'
+excluded='java[.](datatransfer|se)|jdk[.](accessibility|editpad|hotspot[.]agent|jconsole|jpackage|unsupported[.]desktop)'
 source_pattern="/(src|gensrc)/($excluded)/|/gc/(epsilon|parallel|shenandoah)/|/splashscreen_stubs[.]c"
 while IFS= read -r input; do
-  if sed 's|\\|/|g' "$input" | grep -En "$source_pattern"; then
+  if sed 's|\\|/|g' "$input" | grep -En "$source_pattern|/src/java[.]desktop/(share|unix|windows|macosx)/|/(native|headers)/java[.]desktop/"; then
     echo "Excluded source in compiler input: $input" >&2
     exit 1
   fi
@@ -151,8 +153,8 @@ unexpected=$(find "$build_dir/jdk" "$build_dir/support" "$build_dir/hotspot" "$b
   -print | grep -E "/($excluded)(/|[.]jmod$)|/(compilefontconfig|dtdbuilder|generatenimbus|icondata|x11wrappergen)/|[.](air|metallib)$" || true)
 [[ -z $unexpected ]] || { echo "Excluded build outputs: $unexpected" >&2; exit 1; }
 # Product javac must not discover another module through a wildcard source path.
-if find "$build_dir/jdk/modules" -name '*.cmdline' -exec grep -En -- \
-    '--module-source-path [^ ]*\*|--module-source-path (java[.](desktop|datatransfer|se)|jdk[.](accessibility|editpad|hotspot[.]agent|jconsole|jpackage|unsupported[.]desktop))=' {} +; then
+if find "$build_dir/jdk/modules" -name '*.cmdline' -exec grep -El -- \
+    '--module-source-path [^ ]*\*|--module-source-path (java[.](datatransfer|se)|jdk[.](accessibility|editpad|hotspot[.]agent|jconsole|jpackage|unsupported[.]desktop))=|--module-source-path java[.]desktop=[^ ]*/(share|unix|windows|macosx)/classes' {} +; then
   echo 'Excluded or wildcard module source path exposed to product javac.' >&2
   exit 1
 fi
@@ -169,4 +171,4 @@ for command in "$build_dir"/hotspot/variant-*/libjvm/objs/os_windows.obj.cmdline
   grep -Eq -- '[-/]DHEADLESS' "$command" || { echo "HotSpot lacks HEADLESS: $command" >&2; exit 1; }
 done
 printf 'Compilation evidence passed: %s product javac lists, %s native compile records.\n' "$java_lists" "$native_commands"
-echo 'Development profile passed: Serial, G1, ZGC; no excluded collectors, desktop, audio or Metal compilation or outputs.'
+echo 'Development profile passed: Serial, G1, ZGC; non-GUI beans; no excluded collectors, GUI, audio or Metal compilation or outputs.'

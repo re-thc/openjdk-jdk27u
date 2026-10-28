@@ -36,10 +36,8 @@ package java.security;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeyException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7483676942812432108L;
 
     /**
      * Constructs a {@code KeyException} with no detail message. A detail

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@
 package jdk.internal.vm.vector;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.Unsafe;
 
 import java.util.function.*;
@@ -285,6 +287,14 @@ public class VectorSupport {
                  VecExtractOp<VM> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(vm, i);
+    }
+
+    // C2 folds this query before choosing the lane implementation. Other tiers
+    // retain the constant-lane implementation without a variable-extract call.
+    @IntrinsicCandidate
+    @ForceInline
+    public static boolean isVariableByteLaneSupported(int length) {
+        return false;
     }
 
     /* ============================================================================ */

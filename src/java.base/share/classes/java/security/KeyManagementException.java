@@ -44,10 +44,8 @@ package java.security;
  * @see KeyException
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeyManagementException extends KeyException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 947674216157062695L;
 
     /**
      * Constructs a {@code KeyManagementException} with no detail message. A

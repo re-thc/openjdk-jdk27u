@@ -2206,10 +2206,6 @@ public final class System {
                 return new StringConcatHelper.Concat1(constants);
             }
 
-            public byte stringInitCoder() {
-                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
-            }
-
             public byte stringCoder(String str) {
                 return str.coder();
             }

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @summary Basic test of package-info in named module and duplicate
  *          package-info in unnamed module
  * @modules java.desktop

@@ -65,12 +65,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class BasicPermission extends Permission
     implements java.io.Serializable
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6279438298436773498L;
 
     // does this permission have a wildcard at the end?
     private transient boolean wildcard;
@@ -305,13 +303,11 @@ public abstract class BasicPermission extends Permission
  * @serial include
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class BasicPermissionCollection
     extends PermissionCollection
     implements java.io.Serializable
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 739301742472979399L;
 
     /**
      * Key is name, value is permission. All permission objects in

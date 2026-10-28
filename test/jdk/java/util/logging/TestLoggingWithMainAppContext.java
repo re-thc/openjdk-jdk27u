@@ -27,6 +27,7 @@ import javax.imageio.ImageIO;
 
 /**
  * @test
+ * @requires vm.hasAWT
  * @bug 8019853 8023258
  * @summary Test that the default user context is used when in the main
  *          application context. This test must not be run in same VM or agent

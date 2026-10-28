@@ -24,6 +24,7 @@
 
 /*
 * @test
+ * @requires vm.hasAWT
 * @modules java.desktop
 * @bug 5094825
 * @summary verify no deadlock if crypto provider in other classloader is used to verify signed jars

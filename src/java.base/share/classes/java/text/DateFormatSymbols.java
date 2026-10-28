@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +50,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import jdk.internal.vm.annotation.DontInline;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleServiceProviderPool;
@@ -378,7 +380,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @param newEras the new era strings.
      */
     public void setEras(String[] newEras) {
-        eras = Arrays.copyOf(newEras, newEras.length);
+        String[] copy = Arrays.copyOf(newEras, newEras.length);
+        sharedSymbolArrays = null;
+        eras = copy;
         cachedHashCode = 0;
     }
 
@@ -419,7 +423,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * {@link java.util.Calendar#FEBRUARY Calendar.FEBRUARY}, etc.
      */
     public void setMonths(String[] newMonths) {
-        months = Arrays.copyOf(newMonths, newMonths.length);
+        String[] copy = Arrays.copyOf(newMonths, newMonths.length);
+        sharedSymbolArrays = null;
+        months = copy;
         cachedHashCode = 0;
     }
 
@@ -460,7 +466,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * {@link java.util.Calendar#FEBRUARY Calendar.FEBRUARY}, etc.
      */
     public void setShortMonths(String[] newShortMonths) {
-        shortMonths = Arrays.copyOf(newShortMonths, newShortMonths.length);
+        String[] copy = Arrays.copyOf(newShortMonths, newShortMonths.length);
+        sharedSymbolArrays = null;
+        shortMonths = copy;
         cachedHashCode = 0;
     }
 
@@ -482,7 +490,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * {@link java.util.Calendar#MONDAY Calendar.MONDAY}, etc.
      */
     public void setWeekdays(String[] newWeekdays) {
-        weekdays = Arrays.copyOf(newWeekdays, newWeekdays.length);
+        String[] copy = Arrays.copyOf(newWeekdays, newWeekdays.length);
+        sharedSymbolArrays = null;
+        weekdays = copy;
         cachedHashCode = 0;
     }
 
@@ -504,7 +514,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * {@link java.util.Calendar#MONDAY Calendar.MONDAY}, etc.
      */
     public void setShortWeekdays(String[] newShortWeekdays) {
-        shortWeekdays = Arrays.copyOf(newShortWeekdays, newShortWeekdays.length);
+        String[] copy = Arrays.copyOf(newShortWeekdays, newShortWeekdays.length);
+        sharedSymbolArrays = null;
+        shortWeekdays = copy;
         cachedHashCode = 0;
     }
 
@@ -521,7 +533,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @param newAmpms the new ampm strings.
      */
     public void setAmPmStrings(String[] newAmpms) {
-        ampms = Arrays.copyOf(newAmpms, newAmpms.length);
+        String[] copy = Arrays.copyOf(newAmpms, newAmpms.length);
+        sharedSymbolArrays = null;
+        ampms = copy;
         cachedHashCode = 0;
     }
 
@@ -638,7 +652,26 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         try
         {
             DateFormatSymbols other = (DateFormatSymbols)super.clone();
-            copyMembers(this, other);
+            SymbolArrays arrays = sharedSymbolArrays;
+            if (arrays != null && other.getClass() == DateFormatSymbols.class) {
+                // The snapshot remains privately owned even if writeObject
+                // concurrently detaches the source's fields for stream hooks.
+                arrays.copyTo(other);
+                other.canShareSymbolArrays = true;
+                // Object.clone normally copied the same snapshot already.
+                // Avoid a redundant volatile write on its still-private result.
+                if (other.sharedSymbolArrays != arrays) {
+                    other.sharedSymbolArrays = arrays;
+                }
+            } else {
+                // Without a snapshot, exclude partial serialization detachment.
+                synchronized (this) {
+                    copySymbolMembers(this, other);
+                }
+            }
+            // Time-zone tables do not participate in symbol-array sharing.
+            // Keep their potentially large copies outside the ownership lock.
+            copyOtherMembers(this, other);
             return other;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
@@ -713,6 +746,26 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     private transient int lastZoneIndex;
 
     /**
+     * Whether the six symbol arrays can be shared. They are never modified in
+     * place, and public setters replace them with copies. Subclasses and
+     * deserialized instances remain untrusted: serialized arrays can also be
+     * reachable elsewhere in the object graph.
+     * Cloning without a snapshot and serialization use this instance's monitor
+     * to coordinate sharing with the transition to externally reachable arrays.
+     */
+    private transient boolean canShareSymbolArrays;
+
+    /**
+     * Immutable references to privately owned arrays. Trusted, unmodified
+     * instances and their clones reuse the template's snapshot without taking
+     * the source monitor. Setters invalidate it before replacing a field;
+     * serialization invalidates it before detaching any arrays. A clone that
+     * already captured it continues to use its unexposed arrays, not the
+     * source's potentially detached fields.
+     */
+    private transient volatile SymbolArrays sharedSymbolArrays;
+
+    /**
      * Cached hash code
      */
     transient volatile int cachedHashCode;
@@ -752,25 +805,29 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             // JRE: Eras, short.Eras and narrow.Eras
             // CLDR: long.Eras, Eras and narrow.Eras
             if (resource.containsKey("Eras")) {
-                dfs.eras = resource.getStringArray("Eras");
+                dfs.eras = resource.getStringArray("Eras").clone();
             } else if (resource.containsKey("long.Eras")) {
-                dfs.eras = resource.getStringArray("long.Eras");
+                dfs.eras = resource.getStringArray("long.Eras").clone();
             } else if (resource.containsKey("short.Eras")) {
-                dfs.eras = resource.getStringArray("short.Eras");
+                dfs.eras = resource.getStringArray("short.Eras").clone();
             }
-            dfs.months = resource.getStringArray("MonthNames");
-            dfs.shortMonths = resource.getStringArray("MonthAbbreviations");
+            dfs.months = resource.getStringArray("MonthNames").clone();
+            dfs.shortMonths = resource.getStringArray("MonthAbbreviations").clone();
             dfs.ampms = resource.getStringArray("AmPmMarkers");
             // the array in the resource bundle may contain more elements for day periods.
             // Extract only am/pm.
-            if (dfs.ampms.length > 2) {
-                dfs.ampms = Arrays.copyOf(dfs.ampms, 2);
-            }
+            dfs.ampms = Arrays.copyOf(dfs.ampms, Math.min(2, dfs.ampms.length));
             dfs.localPatternChars = resource.getString("DateTimePatternChars");
 
             // Day of week names are stored in a 1-based array.
             dfs.weekdays = toOneBasedArray(resource.getStringArray("DayNames"));
             dfs.shortWeekdays = toOneBasedArray(resource.getStringArray("DayAbbreviations"));
+
+            // The cached template owns its arrays, including copies of the
+            // resource bundle arrays, so they can be shared without exposing
+            // the resource bundle's mutable storage.
+            dfs.canShareSymbolArrays = true;
+            dfs.sharedSymbolArrays = new SymbolArrays(dfs);
 
             // Put dfs in the cache
             ref = new SoftReference<>(dfs);
@@ -856,6 +913,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             return zoneStrings;
         }
 
+        return copyZoneStrings(zoneStrings);
+    }
+
+    // Keep this allocation-heavy loop outside clone's small shared-symbol path.
+    @DontInline
+    private static String[][] copyZoneStrings(String[][] zoneStrings) {
         int len = zoneStrings.length;
         String[][] aCopy = new String[len][];
         for (int i = 0; i < len; i++) {
@@ -869,7 +932,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     }
 
     /**
-     * Clones all the data members from the source DateFormatSymbols to
+     * Copies all the data members from the source DateFormatSymbols to
      * the target DateFormatSymbols.
      *
      * @param src the source DateFormatSymbols.
@@ -877,13 +940,29 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      */
     private void copyMembers(DateFormatSymbols src, DateFormatSymbols dst)
     {
+        copySymbolMembers(src, dst);
+        copyOtherMembers(src, dst);
+    }
+
+    private static void copySymbolMembers(DateFormatSymbols src, DateFormatSymbols dst) {
+        boolean exactClass = dst.getClass() == DateFormatSymbols.class;
+        SymbolArrays arrays;
+        if (src.canShareSymbolArrays && exactClass) {
+            arrays = src.sharedSymbolArrays;
+            if (arrays == null) {
+                arrays = new SymbolArrays(src);
+            }
+            arrays.copyTo(dst);
+        } else {
+            copySymbolArrays(src, dst);
+            arrays = exactClass ? new SymbolArrays(dst) : null;
+        }
+        dst.canShareSymbolArrays = exactClass;
+        dst.sharedSymbolArrays = arrays;
+    }
+
+    private static void copyOtherMembers(DateFormatSymbols src, DateFormatSymbols dst) {
         dst.locale = src.locale;
-        dst.eras = Arrays.copyOf(src.eras, src.eras.length);
-        dst.months = Arrays.copyOf(src.months, src.months.length);
-        dst.shortMonths = Arrays.copyOf(src.shortMonths, src.shortMonths.length);
-        dst.weekdays = Arrays.copyOf(src.weekdays, src.weekdays.length);
-        dst.shortWeekdays = Arrays.copyOf(src.shortWeekdays, src.shortWeekdays.length);
-        dst.ampms = Arrays.copyOf(src.ampms, src.ampms.length);
         if (src.zoneStrings != null) {
             dst.zoneStrings = src.getZoneStringsImpl(true);
         } else {
@@ -891,6 +970,42 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         }
         dst.localPatternChars = src.localPatternChars;
         dst.cachedHashCode = 0;
+    }
+
+    private static void copySymbolArrays(DateFormatSymbols src, DateFormatSymbols dst) {
+        dst.eras = Arrays.copyOf(src.eras, src.eras.length);
+        dst.months = Arrays.copyOf(src.months, src.months.length);
+        dst.shortMonths = Arrays.copyOf(src.shortMonths, src.shortMonths.length);
+        dst.weekdays = Arrays.copyOf(src.weekdays, src.weekdays.length);
+        dst.shortWeekdays = Arrays.copyOf(src.shortWeekdays, src.shortWeekdays.length);
+        dst.ampms = Arrays.copyOf(src.ampms, src.ampms.length);
+    }
+
+    private static final class SymbolArrays {
+        private final String[] eras;
+        private final String[] months;
+        private final String[] shortMonths;
+        private final String[] weekdays;
+        private final String[] shortWeekdays;
+        private final String[] ampms;
+
+        SymbolArrays(DateFormatSymbols src) {
+            eras = src.eras;
+            months = src.months;
+            shortMonths = src.shortMonths;
+            weekdays = src.weekdays;
+            shortWeekdays = src.shortWeekdays;
+            ampms = src.ampms;
+        }
+
+        void copyTo(DateFormatSymbols dst) {
+            dst.eras = eras;
+            dst.months = months;
+            dst.shortMonths = shortMonths;
+            dst.weekdays = weekdays;
+            dst.shortWeekdays = shortWeekdays;
+            dst.ampms = ampms;
+        }
     }
 
     /**
@@ -905,6 +1020,17 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         if (zoneStrings == null) {
             zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
         }
+        synchronized (this) {
+            if (canShareSymbolArrays) {
+                sharedSymbolArrays = null;
+                // A stream replacement hook can retain or mutate the arrays.
+                // Exclude cloning until every exposed array is detached and
+                // sharing is disabled. Subsequent writes preserve aliases.
+                copySymbolArrays(this, this);
+                canShareSymbolArrays = false;
+            }
+        }
+        // Do not hold this instance's monitor while invoking stream callbacks.
         stream.defaultWriteObject();
     }
 }

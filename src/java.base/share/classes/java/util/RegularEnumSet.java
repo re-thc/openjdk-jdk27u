@@ -33,9 +33,8 @@ package java.util;
  * @since 1.5
  * @serial exclude
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
-    @java.io.Serial
-    private static final long serialVersionUID = 3411599620347842686L;
     /**
      * Bit vector representation of this set.  The 2^k bit indicates the
      * presence of universe[k] in this set.

@@ -34,11 +34,9 @@ package javax.crypto;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalBlockSizeException
     extends java.security.GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1965144811953540392L;
 
     /**
      * Constructs an {@code IllegalBlockSizeException} with no detail message.

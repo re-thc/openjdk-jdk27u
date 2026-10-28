@@ -53,6 +53,7 @@ import java.util.Optional;
  * @author  Arthur van Hoff
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Boolean implements java.io.Serializable,
                                       Comparable<Boolean>, Constable
@@ -82,10 +83,6 @@ public final class Boolean implements java.io.Serializable,
      * @serial
      */
     private final boolean value;
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -3665804199014368530L;
 
     /**
      * Allocates a {@code Boolean} object representing the

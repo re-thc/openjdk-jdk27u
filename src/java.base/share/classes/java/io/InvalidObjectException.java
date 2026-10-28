@@ -32,10 +32,8 @@ package java.io;
  * @see ObjectInputValidation
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidObjectException extends ObjectStreamException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3233174318281839583L;
 
     /**
      * Constructs an {@code InvalidObjectException}.

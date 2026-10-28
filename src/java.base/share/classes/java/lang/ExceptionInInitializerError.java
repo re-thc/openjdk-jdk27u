@@ -39,13 +39,8 @@ import java.io.ObjectStreamField;
  * @author  Frank Yellin
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ExceptionInInitializerError extends LinkageError {
-    /**
-     * Use serialVersionUID from JDK 1.1.X for interoperability
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 1521711792217232256L;
-
     /**
      * Constructs an {@code ExceptionInInitializerError} with
      * {@code null} as its detail message string and with no saved

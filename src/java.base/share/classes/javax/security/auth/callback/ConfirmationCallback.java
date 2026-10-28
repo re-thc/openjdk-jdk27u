@@ -38,10 +38,8 @@ import java.io.ObjectInputStream;
  * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConfirmationCallback implements Callback, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -9095656433782481624L;
 
     /**
      * Unspecified option type.

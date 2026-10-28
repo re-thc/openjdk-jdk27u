@@ -530,9 +530,8 @@ public abstract class Clock implements InstantSource {
      * An instant source that always returns the latest time from
      * {@link System#currentTimeMillis()} or equivalent.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class SystemInstantSource implements InstantSource, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 3232399674412L;
         // this is a singleton, but the class is coded such that it is not a
         // problem if someone hacks around and creates another instance
         static final SystemInstantSource INSTANCE = new SystemInstantSource();
@@ -580,9 +579,8 @@ public abstract class Clock implements InstantSource {
      * Implementation of a clock that always returns the latest time from
      * {@code SystemInstantSource.INSTANCE}.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class SystemClock extends Clock implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 6740630888130243051L;
         static final SystemClock UTC = new SystemClock(ZoneOffset.UTC);
 
         private final ZoneId zone;
@@ -633,9 +631,8 @@ public abstract class Clock implements InstantSource {
      * Implementation of a clock that always returns the same instant.
      * This is typically used for testing.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class FixedClock extends Clock implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 7430389292664866958L;
         private final Instant instant;
         private final ZoneId zone;
 
@@ -682,9 +679,8 @@ public abstract class Clock implements InstantSource {
     /**
      * Implementation of a clock that adds an offset to an underlying clock.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class OffsetClock extends Clock implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 2007484719125426256L;
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private final Clock baseClock;
         private final Duration offset;
@@ -732,9 +728,8 @@ public abstract class Clock implements InstantSource {
     /**
      * Implementation of a clock that reduces the tick frequency of an underlying clock.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class TickClock extends Clock implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 6504659149906368850L;
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private final Clock baseClock;
         private final long tickNanos;
@@ -790,9 +785,8 @@ public abstract class Clock implements InstantSource {
     /**
      * Implementation of a clock based on an {@code InstantSource}.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class SourceClock extends Clock implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 235386528762398L;
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private final InstantSource baseSource;
         private final ZoneId zone;

@@ -32,10 +32,8 @@ package javax.security.auth.login;
  * @see javax.security.auth.login.LoginContext
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LoginException extends java.security.GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4679091624035232488L;
 
     /**
      * Constructs a LoginException with no detail message. A detail

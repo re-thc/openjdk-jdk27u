@@ -32,10 +32,8 @@ package java.security;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnrecoverableKeyException extends UnrecoverableEntryException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7275063078190151277L;
 
     /**
      * Constructs an {@code UnrecoverableKeyException} with no detail message.

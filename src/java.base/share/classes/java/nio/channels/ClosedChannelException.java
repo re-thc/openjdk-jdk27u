@@ -35,12 +35,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClosedChannelException
     extends java.io.IOException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 882777185433553857L;
 
     /**
      * Constructs an instance of this class.

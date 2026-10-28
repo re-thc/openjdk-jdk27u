@@ -47,11 +47,9 @@ import jdk.internal.access.SharedSecrets;
  * @see AccessController#doPrivileged(PrivilegedExceptionAction)
  * @see AccessController#doPrivileged(PrivilegedExceptionAction,AccessControlContext)
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrivilegedActionException extends Exception {
     // use serialVersionUID from JDK 1.2.2 for interoperability
-    @java.io.Serial
-    private static final long serialVersionUID = 4724086851538908602L;
-
     /**
      * Constructs a new {@code PrivilegedActionException} &quot;wrapping&quot;
      * the specific Exception.

@@ -49,10 +49,8 @@ import java.io.IOException;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GuardedObject implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5240450096227834308L;
 
     /**
      * @serial The object we are guarding.

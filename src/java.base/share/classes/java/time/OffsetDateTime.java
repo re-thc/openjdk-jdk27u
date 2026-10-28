@@ -127,6 +127,7 @@ import jdk.internal.util.DateTimeHelper;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class OffsetDateTime
         implements Temporal, TemporalAdjuster, Comparable<OffsetDateTime>, Serializable {
@@ -184,12 +185,6 @@ public final class OffsetDateTime
         }
         return cmp;
     }
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 2287754244819255394L;
 
     /**
      * @serial The local date-time.

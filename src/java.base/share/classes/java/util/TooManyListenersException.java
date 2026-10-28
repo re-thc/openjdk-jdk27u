@@ -47,10 +47,8 @@ package java.util;
  * @since  1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TooManyListenersException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 5074640544770687831L;
-
     /**
      * Constructs a TooManyListenersException with no detail message.
      * A detail message is a String that describes this particular exception.

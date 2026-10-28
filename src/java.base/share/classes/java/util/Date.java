@@ -125,6 +125,7 @@ import sun.util.calendar.ZoneInfo;
  * @see     java.util.TimeZone
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Date
     implements java.io.Serializable, Cloneable, Comparable<Date>
 {
@@ -144,13 +145,6 @@ public class Date
 
     // Initialized just before the value is used. See parse().
     private static int defaultCenturyStart;
-
-    /* use serialVersionUID from modified java.util.Date for
-     * interoperability with JDK1.1. The Date was modified to write
-     * and read only the UTC time.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 7523967970034938905L;
 
     /**
      * Allocates a {@code Date} object and initializes it so that

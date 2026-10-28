@@ -39,10 +39,9 @@
 
 /*
  * @test id=c2
- * @summary Check CharBuffer string copies with C2
+ * @summary Check CharBuffer string copies with C2 using Latin-1 and genuine UTF-16 data
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 CharBufferViewPutString
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=100 -XX:-CompactStrings CharBufferViewPutString
  */
 
 /*
