@@ -138,7 +138,7 @@ CodeBuffer::~CodeBuffer() {
     // addresses constructed before expansions will not be confused.
     cb->free_blob();
   }
-  if (_overflow_arena != nullptr) {
+  if (_owns_overflow_arena && _overflow_arena != nullptr) {
     // free any overflow storage
     delete _overflow_arena;
   }
@@ -858,6 +858,7 @@ csize_t CodeBuffer::figure_expanded_capacities(CodeSection* which_cs,
 }
 
 void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
+  assert(_owns_overflow_arena, "borrowed patch arena requires a nonexpanding buffer");
 #ifdef ASSERT
   // The code below copies contents across temp buffers. The following
   // sizes relate to buffer contents, and should not be changed by buffer

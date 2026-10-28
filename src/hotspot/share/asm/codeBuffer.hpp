@@ -563,6 +563,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder  _default_oop_recorder; // override with initialize_oop_recorder
   Arena*       _overflow_arena;
+  bool         _owns_overflow_arena;
 
   address      _last_label;           // record last bind label address, it's also the start of current bb.
   address      _last_merge_candidate; // used to merge consecutive memory barriers, loads or stores.
@@ -591,6 +592,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _total_size      = 0;
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
+    _owns_overflow_arena = true;
     _last_label      = nullptr;
     _last_merge_candidate = nullptr;
     _shared_stub_to_interp_requests = nullptr;
@@ -662,11 +664,15 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
  public:
   // (1) code buffer referring to pre-allocated instruction memory
-  CodeBuffer(address code_start, csize_t code_size)
+  // Optional patch storage is borrowed until destruction. Its lifetime must
+  // enclose all label fixups; this preallocated buffer must not expand.
+  CodeBuffer(address code_start, csize_t code_size, Arena* patch_arena = nullptr)
     DEBUG_ONLY(: Scrubber(this, sizeof(*this)))
   {
     assert(code_start != nullptr, "sanity");
     initialize_misc("static buffer");
+    _overflow_arena = patch_arena;
+    _owns_overflow_arena = patch_arena == nullptr;
     initialize(code_start, code_size);
     DEBUG_ONLY(verify_section_allocation();)
   }

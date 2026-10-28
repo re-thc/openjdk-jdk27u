@@ -77,6 +77,51 @@ class BufferCleanup : public StackObj {
 constexpr int slot_size=4096;
 constexpr int max_operations=64;
 constexpr int max_prefix_bytes=max_operations*5;
+// Every supported operation introduces at most one forward BCI target. Keep
+// only those labels and actual return sites, rather than constructing a Label
+// for every possible BCI. The enclosing prepare ResourceMark owns the storage.
+class PilotLabels : public StackObj {
+  u1 _bci_slots[max_prefix_bytes+1];
+  Label* _targets[max_operations];
+  Label* _returns[max_operations];
+  int _target_count;
+  int _return_count;
+
+  static Label* create() { return new (NEW_RESOURCE_ARRAY(Label,1)) Label(); }
+ public:
+  PilotLabels():_target_count(0),_return_count(0) {
+    memset(_bci_slots,0xff,sizeof(_bci_slots));
+  }
+  ~PilotLabels() {
+    // Retain Label's unbound-reference assertion before ResourceArea rollback.
+    for(int i=0;i<_target_count;i++)_targets[i]->~Label();
+    for(int i=0;i<_return_count;i++)_returns[i]->~Label();
+  }
+  Label* existing(int bci) const {
+    assert(bci>=0 && bci<=max_prefix_bytes,"bounded BCI");
+    return _bci_slots[bci]==0xff?nullptr:_targets[_bci_slots[bci]];
+  }
+  Label& target(int bci) {
+    Label* label=existing(bci);
+    if(label==nullptr) {
+      guarantee(_target_count<max_operations,"at most one target per operation");
+      label=create();_bci_slots[bci]=_target_count;_targets[_target_count++]=label;
+    }
+    return *label;
+  }
+  Label& add_return() {
+    guarantee(_return_count<max_operations,"at most one return site per operation");
+    Label* label=create();_returns[_return_count++]=label;return *label;
+  }
+  Label& return_at(int site) const {
+    assert(site>=0 && site<_return_count,"existing return site");
+    return *_returns[site];
+  }
+  void bind_pending(InterpreterMacroAssembler* masm) {
+    for(int i=0;i<_target_count;i++)
+      if(_targets[i]->is_unbound())masm->bind(*_targets[i]);
+  }
+};
 // Retain the qualified 3832-byte code budget. Only a diagnostic site count
 // and code-size header remain in the reserved tail; execution reads no map.
 constexpr int reserved_tail_bytes=align_up((2+2*max_operations)*(int)sizeof(u2),wordSize);
@@ -388,7 +433,9 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   BufferCleanup<Observe> cleanup(stats,cleanup_start);
   jlong allocation_begin=0;
   if constexpr (Observe) allocation_begin=os::current_thread_cpu_time();
-  CodeBuffer code(arena+next_slot,code_budget);
+  // Branch patch overflow shares the enclosing ResourceMark. No nested mark
+  // encloses label emission, and all labels/fixups die before that mark.
+  CodeBuffer code(arena+next_slot,code_budget,Thread::current()->resource_area());
   InterpreterMacroAssembler masm(&code);
   if constexpr (Observe) {
     stats[buffer_setup_cpu]=os::current_thread_cpu_time()-allocation_begin;
@@ -397,19 +444,17 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   assert(code.blob()==nullptr,"fixed interpreter slice, no per-method code cache allocation");
   CpuCut<Observe> emission(Observe?&stats[emission_cpu]:nullptr);
   Label ordinary;
-  Label labels[max_prefix_bytes+1];
-  Label return_labels[max_operations];
+  PilotLabels labels;
   int call_bcis[max_operations],return_locs[max_operations],call_count=0;
   address ordinary_returns[max_operations];
   auto bind_exits = [&]() {
-    for(int i=0;i<=max_prefix_bytes;i++)
-      if(labels[i].is_unbound())masm.bind(labels[i]);
+    labels.bind_pending(&masm);
     masm.bind(ordinary);
   };
   auto reject_unpublished = [&]() {
     bind_exits();
     for(int i=0;i<call_count;i++)
-      if(return_labels[i].is_unbound())masm.bind(return_labels[i]);
+      if(labels.return_at(i).is_unbound())masm.bind(labels.return_at(i));
     emission.stop();
     if constexpr (Observe) cleanup_start=os::current_thread_cpu_time();
     return false;
@@ -431,7 +476,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
     int instruction_budget=opcode_budget(bc,ordinary_call_bytes);
     if(stream.is_wide() || stream.bci()>max_prefix_bytes ||
        code.insts_remaining()<instruction_budget+fallback_bytes)break;
-    masm.bind(labels[stream.bci()]);
+    if(Label* target=labels.existing(stream.bci());target!=nullptr)masm.bind(*target);
     int instruction_begin=code.insts_size();
     int index=-1,value=0;
     bool terminal=false;
@@ -620,12 +665,12 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         } else {
           int site=call_count++;
           call_bcis[site]=next;ordinary_returns[site]=ordinary_return;
-          masm.lea(r8,return_labels[site]);
+          masm.lea(r8,labels.add_return());
           masm.jump(RuntimeAddress(target));
           // This island cannot be reached by ordinary body fallthrough. Bind
           // its return label only once successor classification is complete.
           return_locs[site]=masm.locator();
-          emit_return_site(&masm,result,stream.instruction_size(),labels[next],ordinary,next_slot/slot_size,profile_oop_returns);
+          emit_return_site(&masm,result,stream.instruction_size(),labels.target(next),ordinary,next_slot/slot_size,profile_oop_returns);
         }
         action=emitted;break;
       }
@@ -659,7 +704,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
           masm.jcc(MacroAssembler::negate_condition(condition),not_taken);
         }
         masm.profile_taken_branch(rax);masm.increment(rbcp,target-stream.bci());masm.save_bcp();
-        masm.jmp(target<=max_prefix_bytes?labels[target]:ordinary);
+        masm.jmp(target<=max_prefix_bytes?labels.target(target):ordinary);
         if(bc!=Bytecodes::_goto && bc!=Bytecodes::_goto_w) {
           masm.bind(not_taken);masm.profile_not_taken_branch(rax);
         }
@@ -695,16 +740,17 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   int native_sites=0,ordinary_sites=0;
   for(int i=0;i<call_count;i++) {
     int bci=call_bcis[i];
-    guarantee(labels[bci].is_bound(),"post-call BCI bound to native body or fallback");
-    if(labels[bci].loc_pos()!=ordinary.loc_pos()) {
-      return_labels[i].bind_loc(return_locs[i]);
-      return_labels[i].patch_instructions(&masm);
+    Label& successor=labels.target(bci);
+    guarantee(successor.is_bound(),"post-call BCI bound to native body or fallback");
+    if(successor.loc_pos()!=ordinary.loc_pos()) {
+      labels.return_at(i).bind_loc(return_locs[i]);
+      labels.return_at(i).patch_instructions(&masm);
       native_sites++;
     } else {
       // A contiguous prefix can leave only its final call without a native
       // successor. Select ordinary cleanup before any generated epilogue.
       guarantee(++ordinary_sites==1,"at most one truncated final call");
-      masm.bind(return_labels[i]);
+      masm.bind(labels.return_at(i));
       masm.jump(RuntimeAddress(ordinary_returns[i]));
     }
   }
