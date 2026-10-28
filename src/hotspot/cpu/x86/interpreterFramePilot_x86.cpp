@@ -189,17 +189,17 @@ struct PilotFragment {
   }
 };
 struct PilotFragmentConfig {
-  bool profile,casts,g1,serial,compressed_oops,compressed_klass,compact;
+  bool profile,casts,g1,serial,compressed_oops,compact;
   bool verify_oops,check_oops,verify_mdp,secondary,verify_secondary,popcount,apx;
   int avx;intx width;
   PilotFragmentConfig():profile(ProfileInterpreter),casts(TypeProfileCasts),g1(UseG1GC),serial(UseSerialGC),
-    compressed_oops(UseCompressedOops),compressed_klass(UseCompressedClassPointers),compact(UseCompactObjectHeaders),
+    compressed_oops(UseCompressedOops),compact(UseCompactObjectHeaders),
     verify_oops(VerifyOops),check_oops(CheckCompressedOops),verify_mdp(VerifyDataPointer),
     secondary(UseSecondarySupersTable),verify_secondary(VerifySecondarySupers),popcount(UsePopCountInstruction),
     apx(UseAPX),avx(UseAVX),width(TypeProfileWidth) {}
   bool equals(const PilotFragmentConfig& other) const {
     return profile==other.profile && casts==other.casts && g1==other.g1 && serial==other.serial &&
-      compressed_oops==other.compressed_oops && compressed_klass==other.compressed_klass && compact==other.compact &&
+      compressed_oops==other.compressed_oops && compact==other.compact &&
       verify_oops==other.verify_oops && check_oops==other.check_oops && verify_mdp==other.verify_mdp &&
       secondary==other.secondary && verify_secondary==other.verify_secondary && popcount==other.popcount &&
       apx==other.apx && avx==other.avx && width==other.width;
