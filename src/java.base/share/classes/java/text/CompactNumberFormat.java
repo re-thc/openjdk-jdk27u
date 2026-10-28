@@ -227,10 +227,8 @@ import java.util.stream.Collectors;
  * @see Locale
  * @since 12
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class CompactNumberFormat extends NumberFormat {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7128367218649234678L;
 
     /**
      * The patterns for compact form of numbers for this

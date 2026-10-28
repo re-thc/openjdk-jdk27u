@@ -203,6 +203,10 @@ AC_DEFUN([FLAGS_SETUP_ASFLAGS_CPU_DEP],
 [
   # Misuse EXTRA_CFLAGS to mimic old behavior
   $2JVM_ASFLAGS="$JVM_BASIC_ASFLAGS ${$2EXTRA_CFLAGS}"
+  # Preprocessed assembly must use the same CPU baseline as C and C++.
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    $2JVM_ASFLAGS="${$1_CPU_BASELINE_FLAGS} ${$2JVM_ASFLAGS}"
+  fi
 
   if test "x$1" = "xTARGET" && \
       test "x$TOOLCHAIN_TYPE" = xgcc && \

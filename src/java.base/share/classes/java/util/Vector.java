@@ -89,6 +89,7 @@ import jdk.internal.util.ArraysSupport;
  * @see LinkedList
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Vector<E>
     extends AbstractList<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable
@@ -123,10 +124,6 @@ public class Vector<E>
      * @serial
      */
     protected int capacityIncrement;
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -2767605614048989439L;
 
     /**
      * Constructs an empty vector with the specified initial capacity and

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +33,6 @@ import static org.testng.Assert.assertEquals;
  * @summary Tests Compact String. This one is for String.valueOf.
  *          valueOf(char[] data) is not tested here.
  * @run testng/othervm -XX:+CompactStrings ValueOf
- * @run testng/othervm -XX:-CompactStrings ValueOf
  */
 
 public class ValueOf {
@@ -46,6 +46,8 @@ public class ValueOf {
     public Object[][] valueOfs() {
         return new Object[][] { { String.valueOf(true), "true" },
                 { String.valueOf(false), "false" },
+                { String.valueOf('\u0100'), "\u0100" },
+                { String.valueOf('\ud800'), "\ud800" },
                 { String.valueOf(1.0f), "1.0" },
                 { String.valueOf(0.0f), "0.0" },
                 { String.valueOf(Float.MAX_VALUE), "3.4028235E38" },

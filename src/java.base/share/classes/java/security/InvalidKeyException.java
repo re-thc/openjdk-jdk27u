@@ -34,10 +34,8 @@ package java.security;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidKeyException extends KeyException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5698479920593359816L;
 
     /**
      * Constructs an {@code InvalidKeyException} with no detail message. A

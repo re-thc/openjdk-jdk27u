@@ -32,10 +32,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
 /**
  * The JSSE provider.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SunJSSE extends java.security.Provider {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3231825739635378733L;
 
     private static final String info = "Sun JSSE provider" +
         "(PKCS12, SunX509/PKIX key/trust factories, " +

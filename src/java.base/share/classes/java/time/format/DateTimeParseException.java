@@ -73,13 +73,8 @@ import java.time.DateTimeException;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DateTimeParseException extends DateTimeException {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 4304633501674722597L;
 
     /**
      * @serial The text that was being parsed.

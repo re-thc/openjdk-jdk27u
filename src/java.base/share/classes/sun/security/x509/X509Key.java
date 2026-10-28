@@ -55,11 +55,8 @@ import sun.security.util.*;
  *
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class X509Key implements PublicKey, DerEncoder {
-
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -5359250853002055002L;
 
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;

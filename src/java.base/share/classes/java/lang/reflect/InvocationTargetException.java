@@ -33,13 +33,8 @@ package java.lang.reflect;
  * @see Constructor
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvocationTargetException extends ReflectiveOperationException {
-    /**
-     * Use serialVersionUID from JDK 1.1.X for interoperability
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 4085088731926701167L;
-
     /**
      * This field holds the target if the
      * InvocationTargetException(Throwable target) constructor was

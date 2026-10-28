@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,15 @@
 
 include GensrcCommon.gmk
 
+ifeq ($(ENABLE_DESKTOP), false)
+  include $(TOPDIR)/make/modules/java.desktop/Headless.gmk
+  $(eval $(call SetupCopyFiles, COPY_HEADLESS_BEANS, \
+      SRC := $(TOPDIR)/src/java.desktop/share/classes, \
+      DEST := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop, \
+      FILES := $(HEADLESS_BEANS_FILES), \
+  ))
+  TARGETS += $(COPY_HEADLESS_BEANS)
+else
 ifeq ($(call isTargetOs, windows), false)
   include gensrc/GensrcIcons.gmk
 endif
@@ -78,3 +88,5 @@ $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
 TARGETS += $(COMPILE_PROPERTIES)
 
 ################################################################################
+
+endif # ENABLE_DESKTOP

@@ -132,6 +132,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Year
         implements Temporal, TemporalAdjuster, Comparable<Year>, Serializable {
@@ -145,11 +146,6 @@ public final class Year
      */
     public static final int MAX_VALUE = 999_999_999;
 
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -23038383694477807L;
     /**
      * Parser.
      */

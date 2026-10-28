@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,9 +54,33 @@ INCLUDE_HEADERS_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
 MAN_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_man $(IMPORT_MODULES_MAN))))
 
+# The server profile's java.desktop is Java-only. Reject both stale local
+# payloads and the imported native/resource fallbacks above before packaging.
+ifeq ($(ENABLE_DESKTOP), false)
+  ifeq ($(MODULE), java.desktop)
+    HEADLESS_DESKTOP_PAYLOADS := $(strip $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR) \
+        $(INCLUDE_HEADERS_DIR) $(MAN_DIR))
+    ifneq ($(HEADLESS_DESKTOP_PAYLOADS), )
+      $(error Headless java.desktop cannot package desktop native or resource payloads: $(HEADLESS_DESKTOP_PAYLOADS))
+    endif
+  endif
+endif
+
 $(call FillFindCache, \
     $(LIBS_DIR) $(CMDS_DIR) $(CONF_DIR) $(CLASSES_DIR) \
 )
+
+ifeq ($(ENABLE_DESKTOP), false)
+  ifeq ($(MODULE), java.desktop)
+    include $(TOPDIR)/make/modules/java.desktop/Headless.gmk
+    HEADLESS_UNLISTED_CLASSES := $(filter-out \
+        $(addprefix $(CLASSES_DIR)/,$(HEADLESS_DESKTOP_CLASS_PATTERNS)), \
+        $(filter %.class,$(call FindFiles,$(CLASSES_DIR))))
+    ifneq ($(HEADLESS_UNLISTED_CLASSES), )
+      $(error Headless java.desktop cannot package unlisted classes: $(HEADLESS_UNLISTED_CLASSES))
+    endif
+  endif
+endif
 
 ifneq ($(LIBS_DIR), )
   DEPS += $(call FindFiles, $(LIBS_DIR))

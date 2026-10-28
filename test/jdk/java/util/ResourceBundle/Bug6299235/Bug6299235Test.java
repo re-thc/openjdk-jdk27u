@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 6299235 8210408
  * @summary test Bug 6299235 to make sure the third-party provided sun resources
  *          could be picked up.

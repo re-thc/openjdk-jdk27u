@@ -30,10 +30,8 @@ package javax.security.auth.login;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AccountException extends LoginException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2112878680072211787L;
 
     /**
      * Constructs a AccountException with no detail message. A detail

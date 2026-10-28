@@ -31,10 +31,8 @@ package javax.security.auth.callback;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnsupportedCallbackException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -6873556327655666839L;
 
     /**
      * @serial

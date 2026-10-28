@@ -73,9 +73,8 @@ import sun.security.util.Debug;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NativePRNG extends SecureRandomSpi {
-
-    private static final long serialVersionUID = -6599091113397072932L;
 
     private static final Debug debug = Debug.getInstance("provider");
 
@@ -233,9 +232,8 @@ public final class NativePRNG extends SecureRandomSpi {
      *
      * @since   1.8
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class Blocking extends SecureRandomSpi {
-        private static final long serialVersionUID = -6396183145759983347L;
-
         private static final RandomIO INSTANCE = initIO(Variant.BLOCKING);
 
         static boolean isAvailable() {
@@ -276,9 +274,8 @@ public final class NativePRNG extends SecureRandomSpi {
      *
      * @since   1.8
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class NonBlocking extends SecureRandomSpi {
-        private static final long serialVersionUID = -1102062982994105487L;
-
         private static final RandomIO INSTANCE = initIO(Variant.NONBLOCKING);
 
         static boolean isAvailable() {

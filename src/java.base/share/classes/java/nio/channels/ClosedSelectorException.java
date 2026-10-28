@@ -32,12 +32,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClosedSelectorException
     extends IllegalStateException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6466297122317847835L;
 
     /**
      * Constructs an instance of this class.

@@ -120,10 +120,8 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
         }
     }
 
+   @SuppressWarnings("serial") // Serial version compatibility is not maintained.
    private static final class TlsMasterSecretKey implements SecretKey {
-        @java.io.Serial
-        private static final long serialVersionUID = 1019571680375368880L;
-
         private byte[] key;
 
         TlsMasterSecretKey(byte[] key) {

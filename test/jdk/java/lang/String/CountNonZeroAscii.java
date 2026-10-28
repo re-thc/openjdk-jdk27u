@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +32,8 @@ import java.util.Arrays;
 /*
  * @test
  * @modules java.base/jdk.internal.access
- * @summary test latin1 String countNonZeroAscii
+ * @summary test Latin1 and UTF16 String countNonZeroAscii
  * @run main/othervm -XX:+CompactStrings CountNonZeroAscii
- * @run main/othervm -XX:-CompactStrings CountNonZeroAscii
  */
 public class CountNonZeroAscii {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -52,6 +52,14 @@ public class CountNonZeroAscii {
                 assertEquals(i, JLA.countNonZeroAscii(s));
             }
             bytes[i] = (byte) 'A';
+        }
+
+        // Keep a non-Latin1 suffix so these prefixes exercise the UTF16 path.
+        for (int i = 0; i <= bytes.length; i++) {
+            String prefix = "A".repeat(i);
+            assertEquals(i, JLA.countNonZeroAscii(prefix + '\u0100'));
+            assertEquals(i, JLA.countNonZeroAscii(prefix + '\0' + '\u0100'));
+            assertEquals(i, JLA.countNonZeroAscii(prefix + '\u0080' + '\u0100'));
         }
     }
 

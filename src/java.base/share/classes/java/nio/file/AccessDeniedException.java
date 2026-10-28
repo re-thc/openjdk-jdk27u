@@ -32,12 +32,10 @@ package java.nio.file;
  * @since 1.7
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AccessDeniedException
     extends FileSystemException
 {
-    @java.io.Serial
-    private static final long serialVersionUID = 4943049599949219617L;
-
     /**
      * Constructs an instance of this class.
      *

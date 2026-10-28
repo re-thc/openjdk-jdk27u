@@ -93,7 +93,7 @@ public class ClassDescHooks implements ObjectStreamConstants {
         CustomOutputStream cout;
         CustomInputStream cin;
 
-        // test for backwards compatibility
+        // Check the historical field layout with this fork's boxed-number UIDs.
         bout = new ByteArrayOutputStream();
         foof = new File(System.getProperty("test.src", "."), "Foo.ser");
         fin = new FileInputStream(foof);

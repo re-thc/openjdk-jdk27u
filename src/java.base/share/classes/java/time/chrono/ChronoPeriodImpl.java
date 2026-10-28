@@ -91,15 +91,10 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class ChronoPeriodImpl
         implements ChronoPeriod, Serializable {
     // this class is only used by JDK chronology implementations and makes assumptions based on that fact
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 57387258289L;
 
     /**
      * The set of supported units.

@@ -162,9 +162,8 @@ package java.util.concurrent;
  * @since 1.7
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class RecursiveAction extends ForkJoinTask<Void> {
-    private static final long serialVersionUID = 5232453952276485070L;
-
     /**
      * Constructor for subclasses to call.
      */

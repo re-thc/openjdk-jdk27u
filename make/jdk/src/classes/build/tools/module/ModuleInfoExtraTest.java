@@ -119,17 +119,17 @@ public class ModuleInfoExtraTest {
                 open module server.open
                 {
                 %s
-                    exports openapi to java.desktop, client.keep;
+                    exports openapi to java.datatransfer, client.keep;
                 } // trailing comment
                 """.formatted(requires);
         String closed = """
                 module server.extra {
                 %s
                     exports api;
-                    exports impl to java.desktop, client.keep;
-                    exports hidden to java.desktop;
-                    opens impl to java.desktop, client.keep;
-                    opens hidden to java.desktop;
+                    exports impl to java.datatransfer, client.keep;
+                    exports hidden to java.datatransfer;
+                    opens impl to java.datatransfer, client.keep;
+                    opens hidden to java.datatransfer;
                     uses java.lang.Runnable;
                     provides java.lang.Runnable with impl.Service;
                 }
@@ -144,11 +144,11 @@ public class ModuleInfoExtraTest {
             Path output = generated.resolve(entry.getKey()).resolve("module-info.java");
             Files.createDirectories(output.getParent());
             GenModuleInfoSource generator = new GenModuleInfoSource(file, List.of(), allowed);
-            generator.moduleInfo.excludeModules(Set.of("java.desktop"));
+            generator.moduleInfo.excludeModules(Set.of("java.datatransfer"));
             generator.generate(output);
             if (entry.getKey().startsWith("server.")) {
                 String text = Files.readString(output);
-                if (!text.contains(requires) || text.contains("java.desktop")) {
+                if (!text.contains(requires) || text.contains("java.datatransfer")) {
                     throw new AssertionError("Imported requires/qualified targets changed: " + text);
                 }
             }
@@ -167,9 +167,9 @@ public class ModuleInfoExtraTest {
             Files.writeString(imported, entry.getValue());
         }
         // If javac discovers this excluded imported source, compilation fails.
-        Path desktop = input.resolve("java.desktop");
+        Path desktop = input.resolve("java.datatransfer");
         Files.createDirectories(desktop);
-        Files.writeString(desktop.resolve("module-info.java"), "module java.desktop { }");
+        Files.writeString(desktop.resolve("module-info.java"), "module java.datatransfer { }");
         Files.writeString(desktop.resolve("MustNotCompile.java"), "excluded invalid Java source");
         compileImports(generated, DIR.resolve("import-classes"));
 
@@ -179,7 +179,7 @@ public class ModuleInfoExtraTest {
         Files.writeString(extra, "exports openapi to client.keep;");
         Path original = DIR.resolve("augmented-source/module-info.java");
         Files.createDirectories(original.getParent());
-        Files.writeString(original, open.replace("exports openapi to java.desktop, client.keep;", ""));
+        Files.writeString(original, open.replace("exports openapi to java.datatransfer, client.keep;", ""));
         GenModuleInfoSource augmented = new GenModuleInfoSource(original, List.of(extra), allowed);
         augmented.generate(generated.resolve("server.open/module-info.java"));
         compileImports(generated, DIR.resolve("augmented-import-classes"));

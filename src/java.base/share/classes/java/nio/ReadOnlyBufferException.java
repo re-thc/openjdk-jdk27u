@@ -32,12 +32,10 @@ package java.nio;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ReadOnlyBufferException
     extends UnsupportedOperationException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1210063976496234090L;
 
     /**
      * Constructs an instance of this class.

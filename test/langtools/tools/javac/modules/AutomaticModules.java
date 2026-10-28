@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.hasAWT
  * @bug 8155026 8178011 8220702 8261625
  * @summary Test automatic modules
  * @library /tools/lib

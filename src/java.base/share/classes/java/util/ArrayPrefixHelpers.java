@@ -102,6 +102,7 @@ class ArrayPrefixHelpers {
     /** The smallest subtask array partition size to use as threshold */
     static final int MIN_PARTITION = 16;
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class CumulateTask<T> extends CountedCompleter<Void> {
         @SuppressWarnings("serial") // Not statically typed as Serializable
         final T[] array;
@@ -256,10 +257,9 @@ class ArrayPrefixHelpers {
                 }
             }
         }
-        @java.io.Serial
-        private static final long serialVersionUID = 5293554502939613543L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class LongCumulateTask extends CountedCompleter<Void> {
         final long[] array;
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -408,10 +408,9 @@ class ArrayPrefixHelpers {
                 }
             }
         }
-        @java.io.Serial
-        private static final long serialVersionUID = -5074099945909284273L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class DoubleCumulateTask extends CountedCompleter<Void> {
         final double[] array;
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -560,10 +559,9 @@ class ArrayPrefixHelpers {
                 }
             }
         }
-        @java.io.Serial
-        private static final long serialVersionUID = -586947823794232033L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class IntCumulateTask extends CountedCompleter<Void> {
         final int[] array;
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -712,7 +710,5 @@ class ArrayPrefixHelpers {
                 }
             }
         }
-        @java.io.Serial
-        private static final long serialVersionUID = 3731755594596840961L;
     }
 }

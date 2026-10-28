@@ -40,10 +40,8 @@ package java.lang;
  *
  * @since   1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AssertionError extends Error {
-    @java.io.Serial
-    private static final long serialVersionUID = -5013299493970297370L;
-
     /**
      * Constructs an AssertionError with no detail message.
      */
