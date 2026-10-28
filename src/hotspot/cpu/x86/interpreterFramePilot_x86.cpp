@@ -646,7 +646,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   u2* header=(u2*)(arena+next_slot+code_budget);
   header[0]=native_sites;header[1]=bytes;
   NOT_PRODUCT(arena_strings[next_slot/slot_size].share(code.dbg_strings());)
-  ICache::invalidate_range(arena+next_slot,bytes);
+  // masm.flush() already invalidated all executable bytes after label fixups.
   if constexpr (Observe) { stats[3]=bytes;stats[4]=end_bci;stats[5]=operations; }
   counters->publish_interpreter_pilot(arena+next_slot);
   next_slot+=slot_size;
