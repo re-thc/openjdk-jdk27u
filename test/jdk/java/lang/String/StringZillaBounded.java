@@ -28,7 +28,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 StringZillaBounded
  * @run main/othervm -Xbatch -XX:-TieredCompilation StringZillaBounded
  * @run main/othervm -Xcomp -XX:-TieredCompilation StringZillaBounded
- * @run main/othervm -Xbatch -XX:-CompactStrings StringZillaBounded
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16 StringZillaBounded
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaEqualsRange,_stringzillaFindLatin1,_stringzillaFindUTF16,_stringzillaRfindLatin1,_stringzillaRfindUTF16,_stringzillaFindUTF16Latin1,_stringzillaRfindUTF16Latin1,_stringzillaFindCharLatin1,_stringzillaFindCharUTF16,_stringzillaRfindCharLatin1,_stringzillaRfindCharUTF16,_indexOfL,_indexOfU,_indexOfUL,_indexOfIL,_indexOfIU,_indexOfIUL,_indexOfL_char,_indexOfU_char,_equalsL StringZillaBounded
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaBounded

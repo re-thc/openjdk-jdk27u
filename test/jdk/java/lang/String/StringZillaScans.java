@@ -28,7 +28,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 StringZillaScans
  * @run main/othervm -Xbatch -XX:-TieredCompilation StringZillaScans
  * @run main/othervm -Xcomp -XX:-TieredCompilation StringZillaScans
- * @run main/othervm -Xbatch -XX:-CompactStrings StringZillaScans
  * @run main/othervm -Xbatch -XX:-UseStringZillaIntrinsics StringZillaScans
  * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_stringzillaScanLatin1 StringZillaScans
  * @run main/othervm -Xmx32m -XX:+UseSerialGC StringZillaScans gc

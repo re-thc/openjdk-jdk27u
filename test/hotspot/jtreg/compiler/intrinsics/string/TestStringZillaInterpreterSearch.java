@@ -38,10 +38,11 @@
  * @requires vm.compiler1.enabled
  * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64")
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOfLatin1_0 TestStringZillaInterpreterSearch
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 TestStringZillaInterpreterSearch
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings -XX:-UseStringZillaIntrinsics -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 TestStringZillaInterpreterSearch
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-UseStringZillaIntrinsics -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOf0 -XX:CompileCommand=exclude,java.lang.StringUTF16::indexOfLatin1_0 TestStringZillaInterpreterSearch
  */
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -67,6 +68,14 @@ public class TestStringZillaInterpreterSearch {
 
     private static void oddByteMatches() {
         // A first odd-byte vendor hit must resume Java and find the aligned match.
+        // Wide target data keeps the UTF16 route reachable with compact strings.
+        char[] target = {0x0401, 0x0402};
+        ByteBuffer shifted = ByteBuffer.allocate(6).order(ByteOrder.nativeOrder());
+        for (int i = 0; i < target.length; i++) shifted.putChar(1 + i * 2, target[i]);
+        char[] source = new char[5];
+        for (int i = 0; i < 3; i++) source[i] = shifted.getChar(i * 2);
+        System.arraycopy(target, 0, source, 3, target.length);
+        check(source, target);
         check(new char[]{0x100, 0x200, 0, 1, 2}, new char[]{1, 2});
         check(new char[]{0x200, 0x401, 3, 0x102, 0x304}, new char[]{0x102, 0x304});
         check(new char[]{'b', 0, 0xff, 0x100}, new char[]{0});
