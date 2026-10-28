@@ -289,8 +289,10 @@ bool emit_fragment(InterpreterMacroAssembler* masm,PilotFragmentKind kind,Label*
     method_fragment_built|=1<<kind;
     // Known verification paths can add source strings or external transfers.
     // Other modes are checked against actual recorded relocation/string data.
-    bool supported=!((kind==fragment_instanceof || kind==fragment_checkcast) && VerifySecondarySupers) &&
-      !(kind==fragment_cold_reference && (VerifyOops || CheckCompressedOops));
+    bool supported=!((kind==fragment_instanceof || kind==fragment_checkcast) && VerifySecondarySupers);
+#ifdef ASSERT
+    supported=supported && !(kind==fragment_cold_reference && (VerifyOops || CheckCompressedOops));
+#endif
     fragment.state=2;
     if(supported) {
       // Nothing allocated or patched in this mark escapes except permanent
