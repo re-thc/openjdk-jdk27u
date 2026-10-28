@@ -21,14 +21,18 @@
 #include <jni.h>
 #include <jvmti.h>
 
-static jvmtiEnv* jvmti=nullptr;
 extern "C" {
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm,char*,void*) {
-  if(vm->GetEnv((void**)&jvmti,JVMTI_VERSION_1_2)!=JNI_OK)return JNI_ERR;
-  jvmtiCapabilities capabilities={};capabilities.can_redefine_classes=1;
-  return jvmti->AddCapabilities(&capabilities)==JVMTI_ERROR_NONE?JNI_OK:JNI_ERR;
-}
 JNIEXPORT void JNICALL Java_InterpreterFramePilotCallTest_redefine(JNIEnv* env,jclass,jclass klass,jbyteArray bytes) {
+  // Acquiring JVMTI capabilities enables can_walk_any_space. Do this only
+  // inside the test callee after proving its caller was executing natively.
+  JavaVM* vm=nullptr;jvmtiEnv* jvmti=nullptr;
+  if(env->GetJavaVM(&vm)!=JNI_OK || vm->GetEnv((void**)&jvmti,JVMTI_VERSION_1_2)!=JNI_OK) {
+    env->ThrowNew(env->FindClass("java/lang/AssertionError"),"Get JVMTI environment failed");return;
+  }
+  jvmtiCapabilities capabilities={};capabilities.can_redefine_classes=1;
+  if(jvmti->AddCapabilities(&capabilities)!=JVMTI_ERROR_NONE) {
+    env->ThrowNew(env->FindClass("java/lang/AssertionError"),"Live redefinition capability failed");return;
+  }
   jbyte* code=env->GetByteArrayElements(bytes,nullptr);
   if(code==nullptr)return;
   jvmtiClassDefinition definition={klass,env->GetArrayLength(bytes),(unsigned char*)code};

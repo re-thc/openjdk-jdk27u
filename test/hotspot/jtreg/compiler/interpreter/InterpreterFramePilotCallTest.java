@@ -142,11 +142,6 @@ public class InterpreterFramePilotCallTest {
         check((boolean)predicate.invoke(byteTag,intTag),"javac ordinary oracle");prepare(predicate,action);
         check((boolean)predicate.invoke(byteTag,intTag) && !(boolean)predicate.invoke(intTag,intTag),"javac predicate result");
         check(query(predicate,3)[9]>0,"real javac method executes native body");
-        redefinedClass=new Loader().define(redefineBytes(7));redefinedBytes=redefineBytes(13);
-        Method old=redefinedClass.getDeclaredMethod("body",int.class);check((int)old.invoke(null,2)==13,"pre-redefine oracle");prepare(old,action);
-        check((int)old.invoke(null,3)==16 && resumes(old)>0,"native caller before redefinition");
-        redefineNow=true;check((int)old.invoke(null,4)==19,"active old frame completes original post-call bytecodes");
-        check(query(old,3)[8]==0 && (int)old.invoke(null,4)==25,"new Method has no stale codelet");
         if(mode.equals("mixed")) {
             Method helper=method("helper",int.class);
             for(int level:new int[]{1,4}) {
@@ -156,9 +151,18 @@ public class InterpreterFramePilotCallTest {
             }
             before=resumes(direct);check(direct(8)==31 && resumes(direct)>before,"interpreted callee after deoptimization");
         }
-        control=guarded;record=true;before=resumes(guarded);effects=0;
-        check(guarded(5)==28 && effects==1 && resumes(guarded)==before,"tooling enabled in callee stops native resume");
-        recording.close();
+        if(mode.equals("redefine")) {
+            redefinedClass=new Loader().define(redefineBytes(7));redefinedBytes=redefineBytes(13);
+            Method old=redefinedClass.getDeclaredMethod("body",int.class);check((int)old.invoke(null,2)==13,"pre-redefine oracle");prepare(old,action);
+            check((int)old.invoke(null,3)==16 && resumes(old)>0,"native caller before redefinition");
+            redefineNow=true;check((int)old.invoke(null,4)==19,"active old frame completes original post-call bytecodes");
+            check(query(old,3)[8]==0 && (int)old.invoke(null,4)==25,"new Method has no stale codelet");
+        }
+        if(mode.equals("tooling")) {
+            control=guarded;record=true;before=resumes(guarded);effects=0;
+            check(guarded(5)==28 && effects==1 && resumes(guarded)==before,"tooling enabled in callee stops native resume");
+            recording.close();
+        }
         System.out.println("PILOT_DIRECT_CALL_OK action="+action+" mode="+mode);
     }
     public static void main(String[] args)throws Exception {
@@ -166,15 +170,17 @@ public class InterpreterFramePilotCallTest {
         String agent=Path.of(Utils.TEST_NATIVE_PATH,"libInterpreterFramePilotCalls.so").toAbsolutePath().toString();
         for(int action:new int[]{0,4,5})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
             ArrayList<String> options=new ArrayList<>(Arrays.asList("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
-                "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-agentpath:"+agent,"-Dpilot.library="+agent,
+                "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-Dpilot.library="+agent,
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot"));
             options.addAll(Arrays.asList(InterpreterFramePilotCallTest.class.getName(),Integer.toString(action),"int"));
             ProcessTools.executeTestJava(options).shouldHaveExitValue(0).shouldContain("PILOT_DIRECT_CALL_OK");
         }
-        ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-agentpath:"+agent,"-Dpilot.library="+agent,
+        for(String mode:new String[]{"mixed","redefine","tooling"}) {
+        ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-Dpilot.library="+agent,
             "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-XX:CompileThresholdScaling=100",
             "-XX:CompileCommand=dontinline,InterpreterFramePilotCallTest::*",
             "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
-            InterpreterFramePilotCallTest.class.getName(),"5","mixed").shouldHaveExitValue(0).shouldContain("PILOT_DIRECT_CALL_OK");
+            InterpreterFramePilotCallTest.class.getName(),"5",mode).shouldHaveExitValue(0).shouldContain("PILOT_DIRECT_CALL_OK");
+        }
     }
 }
