@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +27,10 @@
  * @bug 8158228
  * @summary Tests if mismatched char load from stable byte[] returns correct result
  *
- * @run main/othervm -XX:-CompactStrings -XX:TieredStopAtLevel=1 -Xcomp
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xcomp
  *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,*::charAt
  *                   compiler.stable.TestStableMismatched
- * @run main/othervm -XX:-CompactStrings -XX:-TieredCompilation -Xcomp
+ * @run main/othervm -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,*::charAt
  *                   compiler.stable.TestStableMismatched
  */
@@ -42,7 +43,7 @@ public class TestStableMismatched {
     }
 
     public static void test() {
-        String text = "abcdefg";
+        String text = "\u0100bcdefg";
         // Mismatched char load from @Stable byte[] String.value field
         char returned = text.charAt(6);
         if (returned != 'g') {

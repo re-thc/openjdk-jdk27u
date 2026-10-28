@@ -50,10 +50,8 @@ import sun.security.util.IOUtils;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CodeSource implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4977541819976013951L;
 
     /**
      * The code location.

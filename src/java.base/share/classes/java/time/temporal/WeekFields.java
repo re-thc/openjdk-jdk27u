@@ -185,6 +185,7 @@ import sun.util.locale.provider.LocaleResources;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class WeekFields implements Serializable {
     // implementation notes
     // querying week-of-month or week-of-year should return the week value bound within the month/year
@@ -239,12 +240,6 @@ public final class WeekFields implements Serializable {
      * This unit is an immutable and thread-safe singleton.
      */
     public static final TemporalUnit WEEK_BASED_YEARS = IsoFields.WEEK_BASED_YEARS;
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -1177360819670808121L;
 
     /**
      * @serial The first day-of-week.

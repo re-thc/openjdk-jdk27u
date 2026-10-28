@@ -218,9 +218,9 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ReentrantReadWriteLock
         implements ReadWriteLock, java.io.Serializable {
-    private static final long serialVersionUID = -6992448646407690164L;
     /** @serial Inner class providing readlock */
     private final ReentrantReadWriteLock.ReadLock readerLock;
     /** @serial Inner class providing writelock */
@@ -255,9 +255,8 @@ public class ReentrantReadWriteLock
      * Synchronization implementation for ReentrantReadWriteLock.
      * Subclassed into fair and nonfair versions.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     abstract static class Sync extends AbstractQueuedLongSynchronizer {
-        private static final long serialVersionUID = 6317671515068378041L;
-
         /*
          * Read vs write count extraction constants and functions.
          * Lock state is logically divided into two ints:
@@ -686,8 +685,8 @@ public class ReentrantReadWriteLock
     /**
      * Nonfair version of Sync
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class NonfairSync extends Sync {
-        private static final long serialVersionUID = -8159625535654395037L;
         final boolean writerShouldBlock() {
             return false; // writers can always barge
         }
@@ -706,8 +705,8 @@ public class ReentrantReadWriteLock
     /**
      * Fair version of Sync
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class FairSync extends Sync {
-        private static final long serialVersionUID = -2274990926593161451L;
         final boolean writerShouldBlock() {
             return hasQueuedPredecessors();
         }
@@ -719,8 +718,8 @@ public class ReentrantReadWriteLock
     /**
      * The lock returned by method {@link ReentrantReadWriteLock#readLock}.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ReadLock implements Lock, java.io.Serializable {
-        private static final long serialVersionUID = -5992448646407690164L;
         /** @serial */
         private final Sync sync;
 
@@ -938,8 +937,8 @@ public class ReentrantReadWriteLock
     /**
      * The lock returned by method {@link ReentrantReadWriteLock#writeLock}.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class WriteLock implements Lock, java.io.Serializable {
-        private static final long serialVersionUID = -4992448646407690164L;
         /** @serial */
         private final Sync sync;
 

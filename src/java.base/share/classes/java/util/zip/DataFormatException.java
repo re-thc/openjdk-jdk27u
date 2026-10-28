@@ -31,10 +31,8 @@ package java.util.zip;
  * @author      David Connelly
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DataFormatException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 2219632870893641452L;
-
     /**
      * Constructs a DataFormatException with no detail message.
      */

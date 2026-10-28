@@ -34,10 +34,8 @@ package javax.security.auth.login;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AccountLockedException extends AccountException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8280345554014066334L;
 
     /**
      * Constructs a AccountLockedException with no detail message.

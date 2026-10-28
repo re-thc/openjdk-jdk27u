@@ -106,10 +106,9 @@ import java.util.function.Predicate;
  * @author Doug Lea
  * @param <E> the type of elements held in this queue
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         implements Queue<E>, java.io.Serializable {
-    private static final long serialVersionUID = 196745693267521676L;
-
     /*
      * This is a modification of the Michael & Scott algorithm,
      * adapted for a garbage-collected environment, with support for

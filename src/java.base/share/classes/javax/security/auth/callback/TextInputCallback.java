@@ -34,10 +34,8 @@ package javax.security.auth.callback;
  * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TextInputCallback implements Callback, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8064222478852811804L;
 
     /**
      * @serial

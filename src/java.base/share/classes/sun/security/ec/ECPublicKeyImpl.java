@@ -45,10 +45,8 @@ import sun.security.x509.*;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2462037275160462289L;
 
     @SuppressWarnings("serial") // Type of field is not
                                 // Serializable;see writeReplace

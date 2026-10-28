@@ -54,6 +54,7 @@ tier1_part3 = \
     :jdk_svc_sanity \
     :jdk_foreign \
     :jdk_vector_sanity \
+    :jdk_headless_beans \
     java/net/IDN/ToASCII.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -400,6 +401,8 @@ jdk_vector = \
 
 jdk_vector_sanity = \
     jdk/incubator/vector/PreferredSpeciesTest.java \
+    jdk/incubator/vector/ReinterpretContracts.java \
+    jdk/incubator/vector/SelfReinterpretAllocation.java \
     jdk/incubator/vector/VectorHash.java \
     jdk/incubator/vector/VectorRuns.java
 
@@ -418,6 +421,25 @@ jdk_awt = \
 jdk_2d = \
     javax/print \
     sun/java2d
+
+# Non-GUI beans regressions selected in ordinary tier1 CI.
+jdk_headless_beans = \
+    java/beans/Introspector/GenericPropertyType.java \
+    java/beans/Introspector/OverriddenGenericGetter.java \
+    java/beans/Introspector/OverriddenGenericSetter.java \
+    java/beans/Introspector/Test6707231.java \
+    java/beans/Introspector/Test8034164.java \
+    java/beans/Introspector/Test6868189.java \
+    java/beans/Introspector/FlushClassInfoCache.java \
+    java/beans/Introspector/Test6194788.java \
+    java/beans/Introspector/TestTypeResolver.java \
+    java/beans/PropertyEditor/TestStringClassValue.java \
+    java/beans/PropertyEditor/TestEnumClassValue.java \
+    java/beans/PropertyEditor/TestIntegerTypeValue.java \
+    java/beans/PropertyChangeSupport/TestSerialization.java \
+    java/beans/PropertyChangeSupport/TestListeners.java \
+    java/beans/VetoableChangeSupport/TestSerialization.java \
+    java/beans/VetoableChangeSupport/Test4425885.java
 
 jdk_beans = \
     java/beans
@@ -503,7 +525,8 @@ jdk_svc_sanity = \
 
 jdk_management_sanity =
 
-jdk_instrument_sanity =
+jdk_instrument_sanity = \
+    java/lang/instrument/GetObjectSizeClassMirrors.java
 
 jdk_jmx_sanity =
 

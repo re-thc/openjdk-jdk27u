@@ -43,11 +43,9 @@ import sun.security.util.*;
  * @see DHPrivateKey
  * @see javax.crypto.KeyAgreement
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class DHPublicKey implements PublicKey,
 javax.crypto.interfaces.DHPublicKey, Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7647557958927458271L;
 
     // the public key
     private final BigInteger y;

@@ -30,10 +30,8 @@ package java.lang;
  *
  * @since      1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchMethodException extends ReflectiveOperationException {
-    @java.io.Serial
-    private static final long serialVersionUID = 5034388446362600923L;
-
     /**
      * Constructs a {@code NoSuchMethodException} without a detail message.
      */

@@ -50,8 +50,8 @@ import java.lang.invoke.VarHandle;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AtomicBoolean implements java.io.Serializable {
-    private static final long serialVersionUID = 4654671469794556979L;
     private static final VarHandle VALUE = MhUtil.findVarHandle(
             MethodHandles.lookup(), "value", int.class);
 

@@ -89,10 +89,9 @@ import java.util.function.Predicate;
  * @author Doug Lea
  * @param <E> the type of elements held in this queue
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkedTransferQueue<E> extends AbstractQueue<E>
     implements TransferQueue<E>, java.io.Serializable {
-    private static final long serialVersionUID = -3223113410248163686L;
-
     /*
      * *** Overview of Dual Queues with Slack ***
      *

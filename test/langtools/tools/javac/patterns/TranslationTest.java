@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +107,15 @@ public class TranslationTest extends TestRunner {
                """
                switch
                    case
+                   default
+               switch
+                   case
+                   case
+                   case
+                   case
+                   default
+               switch
+                   case
                        switch
                            case
                            case
@@ -150,6 +160,13 @@ public class TranslationTest extends TestRunner {
                """,
                toplevel -> printSwitchStructure(toplevel),
                """
+               switch
+                   case
+                   default
+               switch
+                   case
+                   case
+                   default
                switch
                    case
                        switch

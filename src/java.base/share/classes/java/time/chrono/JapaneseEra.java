@@ -121,6 +121,7 @@ import sun.util.calendar.CalendarDate;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JapaneseEra
         implements Era, Serializable {
 
@@ -162,12 +163,6 @@ public final class JapaneseEra
     // The number of predefined JapaneseEra constants.
     // There may be a supplemental era defined by the property.
     private static final int N_ERA_CONSTANTS = REIWA.getValue() + ERA_OFFSET;
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 1466499369062886794L;
 
     // array for the singleton JapaneseEra instances
     private static final JapaneseEra[] KNOWN_ERAS;

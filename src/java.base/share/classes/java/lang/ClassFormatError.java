@@ -32,10 +32,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClassFormatError extends LinkageError {
-    @java.io.Serial
-    private static final long serialVersionUID = -8420114879011949195L;
-
     /**
      * Constructs a {@code ClassFormatError} with no detail message.
      */

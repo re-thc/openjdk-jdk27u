@@ -37,11 +37,9 @@ import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 import sun.security.util.*;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class EdDSAPrivateKeyImpl
         extends PKCS8Key implements EdECPrivateKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final NamedParameterSpec paramSpec;

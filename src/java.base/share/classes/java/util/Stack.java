@@ -47,6 +47,7 @@ package java.util;
  * @author  Jonathan Payne
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Stack<E> extends Vector<E> {
     /**
      * Creates an empty Stack.
@@ -137,7 +138,4 @@ public class Stack<E> extends Vector<E> {
         return -1;
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 1224463164541339165L;
 }

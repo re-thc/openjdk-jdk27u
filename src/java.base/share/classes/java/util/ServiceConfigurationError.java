@@ -35,12 +35,10 @@ package java.util;
  * @see ServiceLoader
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ServiceConfigurationError
     extends Error
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 74132770414881L;
 
     /**
      * Constructs a new instance with the specified message.

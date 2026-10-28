@@ -437,6 +437,63 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
   return cg;
 }
 
+// Query normal inlining policy only when committing to the failed intrinsic's
+// fallback. In particular, successful intrinsics do not create InlineTree entries.
+class LateInlineVectorFallbackCallGenerator : public LateInlineCallGenerator {
+ private:
+  float _prof_factor;
+
+ protected:
+  virtual bool do_late_inline_check(Compile* C, JVMState* jvms) {
+    if (!C->inlining_incrementally()) {
+      return false;
+    }
+    CallGenerator* cg = C->call_generator(method(), Method::invalid_vtable_index,
+                                          false /*call_does_dispatch*/, jvms,
+                                          true /*allow_inline*/, _prof_factor,
+                                          nullptr /*speculative_receiver_type*/,
+                                          false /*allow_intrinsics*/);
+    if (C->failing() || cg == nullptr || !cg->is_parse()) {
+      return false;
+    }
+    _inline_cg = cg;
+    return true;
+  }
+
+ public:
+  LateInlineVectorFallbackCallGenerator(ciMethod* method, float prof_factor, CallStaticJavaNode* call) :
+    LateInlineCallGenerator(method, nullptr), _prof_factor(prof_factor) {
+    set_call_node(call);
+  }
+
+  virtual CallGenerator* with_call_node(CallNode* call) {
+    return new LateInlineVectorFallbackCallGenerator(method(), _prof_factor, call->as_CallStaticJava());
+  }
+};
+
+class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
+ private:
+  float _prof_factor;
+
+ public:
+  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, float prof_factor) :
+    LateInlineCallGenerator(method, intrinsic_cg), _prof_factor(prof_factor) {}
+
+  virtual bool is_vector_late_inline() const { return true; }
+
+  virtual JVMState* generate(JVMState* jvms) {
+    JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
+    auto* fallback = new LateInlineVectorFallbackCallGenerator(method(), _prof_factor, call_node()->as_CallStaticJava());
+    Compile::current()->add_vector_late_inline(fallback);
+    return new_jvms;
+  }
+};
+
+CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, float prof_factor) {
+  return new LateInlineVectorCallGenerator(m, intrinsic_cg, prof_factor);
+}
+
+
 // Allow inlining decisions to be delayed
 class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  private:

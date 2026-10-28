@@ -28,10 +28,8 @@ package jdk.internal.vm;
 /**
  * Internal exception used only by the VM.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PreemptedException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 6700691236100628123L;
-
     /**
      * Constructs an {@code PreemptedException} with no detail  message.
      */

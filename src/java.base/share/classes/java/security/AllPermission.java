@@ -46,10 +46,8 @@ import java.util.Enumeration;
  * @serial exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AllPermission extends Permission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2916474571451318075L;
 
     /**
      * Creates a new {@code AllPermission} object.
@@ -141,15 +139,13 @@ public final class AllPermission extends Permission {
  * @serial include
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class AllPermissionCollection
     extends PermissionCollection
     implements java.io.Serializable
 {
 
     // use serialVersionUID from JDK 1.2.2 for interoperability
-    @java.io.Serial
-    private static final long serialVersionUID = -4023755556366636806L;
-
     /**
      * @serial True if any {@code AllPermissionCollection} objects have been added.
      */

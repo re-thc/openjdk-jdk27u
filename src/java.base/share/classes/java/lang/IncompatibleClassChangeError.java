@@ -32,10 +32,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IncompatibleClassChangeError extends LinkageError {
-    @java.io.Serial
-    private static final long serialVersionUID = -4914975503642802119L;
-
     /**
      * Constructs an {@code IncompatibleClassChangeError} with no
      * detail message.

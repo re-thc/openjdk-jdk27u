@@ -58,6 +58,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @see     java.lang.Number
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Short extends Number implements Comparable<Short>, Constable {
 
@@ -609,7 +610,4 @@ public final class Short extends Number implements Comparable<Short>, Constable 
         return ((long) x) & 0xffffL;
     }
 
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 7515723908773894738L;
 }
