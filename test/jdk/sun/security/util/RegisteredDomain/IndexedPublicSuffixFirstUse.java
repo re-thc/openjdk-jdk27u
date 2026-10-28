@@ -99,6 +99,15 @@ public class IndexedPublicSuffixFirstUse {
         broken.add(image(trie(TLD, 1, "a.b")));
         broken.add(image(trie(TLD, 1, "*")));
         broken.add(image(trie(TLD, 1, "z", "a"))); // unsorted children
+        byte[] child = trie(TLD, 1, "a");
+        int childStart = raw.length;
+        // Exercise the byte-array parser's label-prefix and metadata bounds.
+        broken.add(image(Arrays.copyOf(child, childStart + 1)));
+        broken.add(image(Arrays.copyOf(child, child.length - 1)));
+        byte[] oversizedLabel = child.clone();
+        oversizedLabel[childStart] = (byte) 255;
+        oversizedLabel[childStart + 1] = (byte) 255;
+        broken.add(image(oversizedLabel));
         broken.add(image(Arrays.copyOf(raw, raw.length + 1)));
         byte[] compressed = compress(raw);
         byte[] extraCompressed = Arrays.copyOf(compressed, compressed.length + 1);

@@ -55,6 +55,7 @@ tier1_part3 = \
     :jdk_foreign \
     :jdk_vector_sanity \
     :jdk_headless_beans \
+    :jdk_publicsuffix_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -66,9 +67,10 @@ tier2 = \
     :tier2_part2 \
     :tier2_part3
 
-# com/sun/crypto/provider/Cipher is in tier1 because of JDK-8132855
+# Cipher and public suffix sanity tests are already selected in tier1.
 tier2_part1 = \
     :jdk_security \
+    -:jdk_publicsuffix_sanity \
     -com/sun/crypto/provider/Cipher
 
 # sun/nio/cs/ISO8859x.java and java/nio/Buffer are in tier1 because of JDK-8132854
@@ -231,6 +233,10 @@ jdk_time = \
 jdk_rmi = \
     java/rmi \
     sun/rmi
+
+jdk_publicsuffix_sanity = \
+    sun/security/util/RegisteredDomain \
+    sun/security/util/HostnameChecker/TestHostnameChecker.java
 
 jdk_security1 = \
     java/security

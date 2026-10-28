@@ -35,7 +35,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
@@ -50,12 +51,9 @@ public class IndexedPublicSuffix {
 
     public static void main(String[] args) throws Exception {
         String originalHome = System.getProperty("java.home");
-        // An optional image argument supports focused patch-module testing.
-        byte[] image = Files.readAllBytes(args.length == 0
-                ? Path.of(originalHome, RESOURCE) : Path.of(args[0]));
-        if (image[0] != 'P' || image[1] != 'S' || image[2] != 'L' || image[3] != '1') {
-            throw new AssertionError("Expected generated PSL1 resource");
-        }
+        // Format checks use an independent fixture. ParseNames tests the
+        // installed resource, which can also be a supported legacy ZIP.
+        byte[] image = fixture();
         java.time.ZoneId.systemDefault();
         Path home = Files.createTempDirectory(Path.of("."), "indexed-psl-").toAbsolutePath();
         Path resource = home.resolve(RESOURCE);
@@ -86,6 +84,16 @@ public class IndexedPublicSuffix {
                 RegisteredDomain.from(null);
                 throw new AssertionError("null accepted");
             } catch (NullPointerException expected) { }
+
+            // Finding int must still validate entries before and after it.
+            for (String invalid : List.of("aero", "uk")) {
+                byte[] badDirectory = image.clone();
+                int entry = metadata(image, invalid);
+                java.util.Arrays.fill(badDirectory, entry + 4, entry + 8, (byte) 0);
+                Files.write(resource, badDirectory);
+                empty("x.int");
+            }
+            Files.write(resource, image);
 
             // Change bytes in place while preserving size and modification time.
             // Corruption in an unrelated shard does not invalidate this TLD.
@@ -223,17 +231,50 @@ public class IndexedPublicSuffix {
         throw new AssertionError("Missing fixture TLD " + tld);
     }
 
+    private record Node(String label, int first, int count, int flags) { }
+
+    private static byte[] fixture() throws Exception {
+        return indexed(new TreeMap<>(Map.of(
+                "aero", List.of(new Node("aero", 1, 0, 1)),
+                "ck", List.of(new Node("ck", 1, 1, 4),
+                              new Node("www", 2, 0, 16)),
+                "cn", List.of(new Node("cn", 1, 1, 1),
+                              new Node("公司", 2, 0, 1)),
+                "com", List.of(new Node("com", 1, 1, 1),
+                               new Node("blogspot", 2, 0, 2)),
+                "int", List.of(new Node("int", 1, 0, 1)),
+                "jp", List.of(new Node("jp", 1, 2, 1),
+                              new Node("co", 3, 0, 1),
+                              new Node("kawasaki", 3, 1, 4),
+                              new Node("city", 4, 0, 16)),
+                "uk", List.of(new Node("uk", 1, 1, 1),
+                              new Node("co", 2, 0, 1)))));
+    }
+
     private static byte[] indexed(int authority, String... tlds) throws Exception {
-        var names = new TreeSet<>(List.of(tlds));
+        var tries = new TreeMap<String, List<Node>>();
+        for (String name : tlds) {
+            tries.put(name, List.of(new Node(name, 1, 0, authority)));
+        }
+        return indexed(tries);
+    }
+
+    private static byte[] indexed(Map<String, List<Node>> tries) throws Exception {
         var shards = new ArrayList<byte[]>();
         var rawLengths = new ArrayList<Integer>();
         int directory = 84;
-        for (String name : names) {
+        for (var entry : tries.entrySet()) {
+            String name = entry.getKey();
             directory += 14 + name.getBytes(StandardCharsets.UTF_8).length;
             var raw = new ByteArrayOutputStream();
             try (var out = new DataOutputStream(raw)) {
-                out.writeInt(1); label(out, name);
-                out.writeInt(1); out.writeShort(0); out.writeByte(authority);
+                out.writeInt(entry.getValue().size());
+                for (Node node : entry.getValue()) {
+                    label(out, node.label());
+                    out.writeInt(node.first());
+                    out.writeShort(node.count());
+                    out.writeByte(node.flags());
+                }
             }
             rawLengths.add(raw.size());
             var compressed = new ByteArrayOutputStream();
@@ -251,9 +292,9 @@ public class IndexedPublicSuffix {
         try (var out = new DataOutputStream(image)) {
             out.writeInt(0x50534c31); out.writeInt(2);
             out.writeInt(imageLength); out.writeInt(directory);
-            out.write(new byte[64]); out.writeInt(names.size());
+            out.write(new byte[64]); out.writeInt(tries.size());
             int offset = directory, index = 0;
-            for (String name : names) {
+            for (String name : tries.keySet()) {
                 label(out, name); out.writeInt(offset);
                 byte[] shard = shards.get(index);
                 out.writeInt(shard.length); out.writeInt(rawLengths.get(index++));

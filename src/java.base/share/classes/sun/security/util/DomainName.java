@@ -28,7 +28,6 @@ package sun.security.util;
 import java.io.BufferedReader;
 import java.io.PushbackInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -113,8 +112,7 @@ import sun.security.ssl.SSLLogger;
 
 class DomainName {
     /**
-     * For efficiency, the set of rules for each TLD is kept
-     * in text files and only loaded if needed.
+     * For efficiency, the rules for each TLD are loaded only if needed.
      */
     private static final Map<String, Rules> cache = new ConcurrentHashMap<>();
 
@@ -141,9 +139,9 @@ class DomainName {
     }
 
     /**
-     * A Rules object contains a list of rules for a particular TLD.
+     * A Rules object contains an indexed trie or legacy rule sets for a TLD.
      *
-     * Rules are stored in a linked list of RuleSet objects. The list is
+     * Legacy rules are stored in a linked list of RuleSet objects. The list is
      * indexed according to the number of labels in the name (minus one)
      * such that all rules with the same number of labels are stored
      * in the same RuleSet.
@@ -518,18 +516,17 @@ class DomainName {
         private static final int HEADER_LENGTH = 84;
         private static final int MAX_DIRECTORY_LENGTH = 1024 * 1024;
         private static final int MAX_SHARD_LENGTH = 8 * 1024 * 1024;
-        private final byte[] directory;
-        private final int[] entries;
-
-        private IndexedData(byte[] prefix, int imageLength) throws IOException {
+        private static int find(byte[] prefix, int imageLength, String tld)
+                throws IOException {
             int count = readInt(prefix, 80);
             if (count < 0 || count > (prefix.length - HEADER_LENGTH) / 15) {
                 throw new IOException("Invalid public suffix directory size");
             }
-            entries = new int[count];
             int position = HEADER_LENGTH;
             int previous = 0;
             int previousLength = 0;
+            int end = prefix.length;
+            int selected = -1;
             for (int i = 0; i < count; i++) {
                 if (position > prefix.length - 15) {
                     throw new IOException("Truncated public suffix directory");
@@ -544,30 +541,30 @@ class DomainName {
                                         name, length) >= 0) {
                     throw new IOException("Unsorted public suffix directory");
                 }
-                entries[i] = position;
                 previous = name;
                 previousLength = length;
-                position = name + length + 12;
+                int metadata = name + length;
+                int offset = readInt(prefix, metadata);
+                int compressed = readInt(prefix, metadata + 4);
+                int rawLength = readInt(prefix, metadata + 8);
+                if (offset != end || compressed < 1 || compressed > MAX_SHARD_LENGTH ||
+                    rawLength < 14 || rawLength > MAX_SHARD_LENGTH ||
+                    compressed > imageLength - end) {
+                    throw new IOException("Invalid public suffix directory entry");
+                }
+                end += compressed;
+                if (compareUTF8(prefix, name, length, tld) == 0) {
+                    selected = metadata;
+                }
+                position = metadata + 12;
             }
             if (position != prefix.length) {
                 throw new IOException("Invalid public suffix directory extent");
             }
-            int end = position;
-            for (int entry : entries) {
-                int metadata = entry + 2 + readUnsignedShort(prefix, entry);
-                int offset = readInt(prefix, metadata);
-                int compressed = readInt(prefix, metadata + 4);
-                int length = readInt(prefix, metadata + 8);
-                if (offset != end || compressed < 1 || compressed > MAX_SHARD_LENGTH ||
-                    length < 14 || length > MAX_SHARD_LENGTH || compressed > imageLength - end) {
-                    throw new IOException("Invalid public suffix directory entry");
-                }
-                end += compressed;
-            }
             if (end != imageLength) {
                 throw new IOException("Trailing public suffix image data");
             }
-            directory = prefix;
+            return selected;
         }
 
         static Rules rules(String tld, FileInputStream input) throws IOException {
@@ -592,8 +589,7 @@ class DomainName {
                     != prefix.length - header.length) {
                 throw new IOException("Truncated public suffix directory");
             }
-            IndexedData data = new IndexedData(prefix, imageLength);
-            int metadata = data.find(tld);
+            int metadata = find(prefix, imageLength, tld);
             if (metadata < 0) {
                 return null;
             }
@@ -604,25 +600,6 @@ class DomainName {
                 throw new IOException("Truncated public suffix shard");
             }
             return inflate(shard, readInt(prefix, metadata + 8), tld);
-        }
-
-        private int find(String tld) throws IOException {
-            int low = 0;
-            int high = entries.length - 1;
-            while (low <= high) {
-                int middle = (low + high) >>> 1;
-                int name = entries[middle] + 2;
-                int length = readUnsignedShort(directory, entries[middle]);
-                int comparison = compareUTF8(directory, name, length, tld);
-                if (comparison < 0) {
-                    low = middle + 1;
-                } else if (comparison > 0) {
-                    high = middle - 1;
-                } else {
-                    return name + length;
-                }
-            }
-            return -1;
         }
 
         private static Rules inflate(byte[] bytes, int length, String tld)
@@ -768,15 +745,6 @@ class DomainName {
             return index < target.length() ? -1 : 0;
         }
 
-        private static String readString(DataInputStream in) throws IOException {
-            int length = in.readUnsignedShort();
-            byte[] bytes = in.readNBytes(length);
-            if (bytes.length != length) {
-                throw new IOException("Invalid public suffix label length");
-            }
-            validateLabel(bytes, 0, length);
-            return new String(bytes, UTF_8);
-        }
     }
 
     /** Reversed-label BFS trie, with each node's children in UTF-16 order. */
@@ -789,46 +757,58 @@ class DomainName {
             RegisteredDomain.Type.values();
 
         IndexedRules(byte[] raw, String tld) throws IOException {
-            try (DataInputStream in = new DataInputStream(
-                    new ByteArrayInputStream(raw))) {
-                int size = in.readInt();
-                if (size < 1 || size > raw.length / 9) {
-                    throw new IOException("Invalid public suffix trie size");
+            if (raw.length < 4) {
+                throw new IOException("Truncated public suffix trie");
+            }
+            int size = IndexedData.readInt(raw, 0);
+            if (size < 1 || size > raw.length / 9) {
+                throw new IOException("Invalid public suffix trie size");
+            }
+            labels = new String[size];
+            first = new int[size];
+            count = new int[size];
+            flags = new byte[size];
+            int position = 4;
+            int next = 1;
+            for (int i = 0; i < size; i++) {
+                if (position > raw.length - 2) {
+                    throw new IOException("Truncated public suffix label length");
                 }
-                labels = new String[size];
-                first = new int[size];
-                count = new int[size];
-                flags = new byte[size];
-                int next = 1;
-                for (int i = 0; i < size; i++) {
-                    labels[i] = IndexedData.readString(in);
-                    first[i] = in.readInt();
-                    count[i] = in.readUnsignedShort();
-                    flags[i] = in.readByte();
-                    if ((i > 0 && i >= next) || first[i] != next || count[i] < 0 ||
-                        count[i] > size - next || (flags[i] & 0xc0) != 0 ||
-                        (flags[i] & 3) == 3 || ((flags[i] >>> 2) & 3) == 3 ||
-                        ((flags[i] >>> 4) & 3) == 3) {
-                        throw new IOException("Invalid public suffix trie node");
-                    }
-                    next += count[i];
+                int length = IndexedData.readUnsignedShort(raw, position);
+                position += 2;
+                if (length == 0 || length > raw.length - position - 7) {
+                    throw new IOException("Invalid public suffix label length");
                 }
-                if (next != size || in.available() != 0 ||
-                    !labels[0].equals(tld) || (flags[0] & 0x30) != 0) {
-                    throw new IOException("Invalid public suffix trie extent");
+                IndexedData.validateLabel(raw, position, length);
+                labels[i] = new String(raw, position, length, UTF_8);
+                position += length;
+                first[i] = IndexedData.readInt(raw, position);
+                count[i] = IndexedData.readUnsignedShort(raw, position + 4);
+                flags[i] = raw[position + 6];
+                position += 7;
+                if ((i > 0 && i >= next) || first[i] != next ||
+                    count[i] > size - next || (flags[i] & 0xc0) != 0 ||
+                    (flags[i] & 3) == 3 || ((flags[i] >>> 2) & 3) == 3 ||
+                    ((flags[i] >>> 4) & 3) == 3) {
+                    throw new IOException("Invalid public suffix trie node");
                 }
-                for (int i = 0; i < size; i++) {
-                    if (((flags[i] >>> 2) & 3) != 0) {
-                        for (int j = first[i]; j < first[i] + count[i]; j++) {
-                            if ((flags[j] & 3) != 0) {
-                                throw new IOException("Overlapping public suffix rules");
-                            }
+                next += count[i];
+            }
+            if (next != size || position != raw.length ||
+                !labels[0].equals(tld) || (flags[0] & 0x30) != 0) {
+                throw new IOException("Invalid public suffix trie extent");
+            }
+            for (int i = 0; i < size; i++) {
+                if (((flags[i] >>> 2) & 3) != 0) {
+                    for (int j = first[i]; j < first[i] + count[i]; j++) {
+                        if ((flags[j] & 3) != 0) {
+                            throw new IOException("Overlapping public suffix rules");
                         }
                     }
-                    for (int j = first[i] + 1; j < first[i] + count[i]; j++) {
-                        if (labels[j - 1].compareTo(labels[j]) >= 0) {
-                            throw new IOException("Unsorted public suffix children");
-                        }
+                }
+                for (int j = first[i] + 1; j < first[i] + count[i]; j++) {
+                    if (labels[j - 1].compareTo(labels[j]) >= 0) {
+                        throw new IOException("Unsorted public suffix children");
                     }
                 }
             }
