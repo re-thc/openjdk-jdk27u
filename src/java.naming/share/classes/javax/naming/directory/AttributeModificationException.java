@@ -58,6 +58,7 @@ import javax.naming.NamingException;
 */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeModificationException extends NamingException {
     /**
      * Contains the possibly null list of unexecuted modifications.
@@ -133,8 +134,4 @@ public class AttributeModificationException extends NamingException {
         return orig;
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 8060676069678710186L;
 }

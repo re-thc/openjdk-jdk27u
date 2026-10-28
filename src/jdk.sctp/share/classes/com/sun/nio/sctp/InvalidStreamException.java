@@ -32,10 +32,8 @@ import java.io.Serial;
  *
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidStreamException extends IllegalArgumentException {
-    @Serial
-    private static final long serialVersionUID = -9172703378046665558L;
-
     /**
      * Constructs an instance of this class.
      */

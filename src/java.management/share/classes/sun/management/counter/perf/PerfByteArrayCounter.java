@@ -28,6 +28,7 @@ package sun.management.counter.perf;
 import sun.management.counter.*;
 import java.nio.*;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PerfByteArrayCounter extends AbstractCounter
        implements ByteArrayCounter {
 
@@ -90,5 +91,4 @@ public class PerfByteArrayCounter extends AbstractCounter
                                            byteArrayValue());
     }
 
-    private static final long serialVersionUID = 2545474036937279921L;
 }

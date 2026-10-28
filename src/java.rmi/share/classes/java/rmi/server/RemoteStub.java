@@ -39,11 +39,9 @@ package java.rmi.server;
  * stubs are generated dynamically. See {@link UnicastRemoteObject}
  * for information about dynamic stub generation.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated
 public abstract class RemoteStub extends RemoteObject {
-
-    /** indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -1585587260594494182L;
 
     /**
      * Constructs a {@code RemoteStub}.

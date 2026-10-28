@@ -1047,6 +1047,7 @@ public final class CommandOutputControl {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static sealed class UnexpectedResultException extends IOException {
 
         private UnexpectedResultException(Result value, String message) {
@@ -1065,9 +1066,9 @@ public final class CommandOutputControl {
 
         private final transient Result value;
 
-        private static final long serialVersionUID = 1L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class UnexpectedExitCodeException extends UnexpectedResultException {
 
         public UnexpectedExitCodeException(Result value, String message) {
@@ -1088,9 +1089,9 @@ public final class CommandOutputControl {
             }
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class UnavailableExitCodeException extends UnexpectedResultException {
 
         public UnavailableExitCodeException(Result value, String message) {
@@ -1105,7 +1106,6 @@ public final class CommandOutputControl {
                     value.execAttrs().printableCommandLine()));
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
     public String description() {

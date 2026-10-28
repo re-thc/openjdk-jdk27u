@@ -50,13 +50,8 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * @see java.awt.dnd.DragSource
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3527844310018033570L;
 
     /*
      * constant for number of pixels hysterisis before drag is determined

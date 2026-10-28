@@ -57,13 +57,12 @@ import com.sun.org.apache.xml.internal.security.utils.I18n;
  *
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XMLSecurityException extends Exception {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /** Field msgID */
     protected String msgID;
 

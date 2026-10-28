@@ -33,10 +33,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class BinaryOpValueExp extends QueryEval implements ValueExp {
-
-    /* Serial version */
-    private static final long serialVersionUID = 1216286847881456786L;
 
     /**
      * @serial The operator

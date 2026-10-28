@@ -34,6 +34,7 @@ import java.io.Serial;
  * {@link java.awt.im.spi.InputMethodContext#createInputMethodWindow}.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SimpleInputMethodWindow
         extends Frame
         implements InputMethodWindow {
@@ -64,9 +65,4 @@ public class SimpleInputMethodWindow
         }
     }
 
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5093376647036461555L;
 }

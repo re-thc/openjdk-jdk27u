@@ -34,19 +34,17 @@ import java.io.ObjectStreamField;
  * This class represents numbers that are arguments to relational constraints.
  * A NumericValueExp may be used anywhere a ValueExp is required.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-4679739485102359104L</code>.
  *
  * @serial include
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class NumericValueExp extends QueryEval implements ValueExp {
 
-    private static final long serialVersionUID = -4679739485102359104L;
     /**
      * @serialField val Number The numeric value
      *
-     * <p>The <b>serialVersionUID</b> of this class is <code>-4679739485102359104L</code>.
      */
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("val", Number.class)

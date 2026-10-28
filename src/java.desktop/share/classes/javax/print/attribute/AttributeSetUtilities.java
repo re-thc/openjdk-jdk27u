@@ -76,14 +76,9 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnmodifiableAttributeSet
         implements AttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -6131802583863447813L;
 
         /**
          * @serial The attribute set.
@@ -172,15 +167,10 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnmodifiableDocAttributeSet
         extends UnmodifiableAttributeSet
         implements DocAttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -6349408326066898956L;
 
         /**
          * Constructs a new unmodifiable doc attribute set.
@@ -198,16 +188,11 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnmodifiablePrintRequestAttributeSet
         extends UnmodifiableAttributeSet
         implements PrintRequestAttributeSet, Serializable
     {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7799373532614825073L;
 
         /**
          * Constructs a new unmodifiable print request attribute set.
@@ -226,16 +211,11 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnmodifiablePrintJobAttributeSet
         extends UnmodifiableAttributeSet
         implements PrintJobAttributeSet, Serializable
     {
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -8002245296274522112L;
-
         /**
          * Constructs a new unmodifiable print job attribute set.
          *
@@ -253,16 +233,11 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnmodifiablePrintServiceAttributeSet
         extends UnmodifiableAttributeSet
         implements PrintServiceAttributeSet, Serializable
     {
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -7112165137107826819L;
-
         /**
          * Constructs a new unmodifiable print service attribute set.
          *
@@ -355,14 +330,9 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SynchronizedAttributeSet
                         implements AttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 8365731020128564925L;
 
         /**
          * @serial The attribute set.
@@ -450,15 +420,10 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SynchronizedDocAttributeSet
         extends SynchronizedAttributeSet
         implements DocAttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6455869095246629354L;
 
         /**
          * Constructs a new synchronized doc attribute set.
@@ -475,15 +440,10 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SynchronizedPrintRequestAttributeSet
         extends SynchronizedAttributeSet
         implements PrintRequestAttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 5671237023971169027L;
 
         /**
          * Constructs a new synchronized print request attribute set.
@@ -501,15 +461,10 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SynchronizedPrintJobAttributeSet
         extends SynchronizedAttributeSet
         implements PrintJobAttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 2117188707856965749L;
 
         /**
          * Constructs a new synchronized print job attribute set.
@@ -527,15 +482,10 @@ public final class AttributeSetUtilities {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SynchronizedPrintServiceAttributeSet
         extends SynchronizedAttributeSet
         implements PrintServiceAttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -2830705374001675073L;
 
         /**
          * Constructs a new synchronized print service attribute set.

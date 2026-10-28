@@ -50,6 +50,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends QuadCurve2D implements Serializable {
         /**
          * The X coordinate of the start point of the quadratic curve
@@ -238,11 +239,6 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
             this.y2    = y2;
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -8511188402130719609L;
     }
 
     /**
@@ -251,6 +247,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends QuadCurve2D implements Serializable {
         /**
          * The X coordinate of the start point of the quadratic curve
@@ -415,11 +412,6 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
             this.y2    = y2;
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 4217149928428559721L;
     }
 
     /**

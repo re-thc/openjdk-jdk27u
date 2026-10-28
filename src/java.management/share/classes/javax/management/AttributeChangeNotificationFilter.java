@@ -39,10 +39,8 @@ import java.util.Vector;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeChangeNotificationFilter implements NotificationFilter {
-
-    /* Serial version */
-    private static final long serialVersionUID = -6347317584796410029L;
 
     /**
      * @serial {@link Vector} that contains the enabled attribute names.

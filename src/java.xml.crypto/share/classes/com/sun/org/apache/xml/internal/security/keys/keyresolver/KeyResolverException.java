@@ -24,13 +24,12 @@ package com.sun.org.apache.xml.internal.security.keys.keyresolver;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeyResolverException extends XMLSecurityException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor KeyResolverException
      *

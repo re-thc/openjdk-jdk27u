@@ -756,6 +756,7 @@ public abstract class MappedMXBeanType {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class InProgress<T> extends OpenType<T> {
         private static final String description =
                   "Marker to detect recursive type use -- internal use only!";
@@ -779,7 +780,6 @@ public abstract class MappedMXBeanType {
         public boolean isValue(Object o) {
             return false;
         }
-        private static final long serialVersionUID = -3413063475064374490L;
     }
     private static final OpenType<?> inProgress;
     static {

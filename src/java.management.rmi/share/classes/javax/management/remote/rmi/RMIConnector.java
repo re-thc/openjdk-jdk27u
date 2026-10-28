@@ -115,12 +115,11 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RMIConnector implements JMXConnector, Serializable, JMXAddressable {
 
     private static final ClassLogger logger =
             new ClassLogger("javax.management.remote.rmi", "RMIConnector");
-
-    private static final long serialVersionUID = 817323035842634473L;
 
     static final class Util {
         private Util() {}

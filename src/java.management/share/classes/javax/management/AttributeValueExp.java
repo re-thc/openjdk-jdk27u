@@ -40,11 +40,9 @@ import java.io.ObjectInputStream;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeValueExp implements ValueExp  {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = -7768025046539163385L;
 
     /**
      * @serial The name of the attribute

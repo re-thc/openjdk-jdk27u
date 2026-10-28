@@ -33,10 +33,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class AndQueryExp extends QueryEval implements QueryExp {
-
-    /* Serial version */
-    private static final long serialVersionUID = -1081892073854801359L;
 
     /**
      * @serial The first QueryExp of the conjunction

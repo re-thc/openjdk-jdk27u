@@ -174,6 +174,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * @author      Jim Graham
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MediaTracker implements java.io.Serializable {
 
     /**
@@ -195,12 +196,6 @@ public class MediaTracker implements java.io.Serializable {
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private MediaEntry head;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -483174189758638095L;
 
     /**
      * Creates a media tracker to track images for a given component.
@@ -935,18 +930,13 @@ abstract class MediaEntry {
  * The entry of the list of {@code Images} that is being tracked by the
  * {@code MediaTracker}.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class ImageMediaEntry extends MediaEntry implements ImageObserver,
 java.io.Serializable {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     final Image image;
     final int width;
     final int height;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4739377000350280650L;
 
     ImageMediaEntry(MediaTracker mt, Image img, int c, int w, int h) {
         super(mt, c);

@@ -344,6 +344,7 @@ import java.util.Hashtable;
  * @see       java.awt.ComponentOrientation
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GridBagLayout implements LayoutManager2,
 java.io.Serializable {
 
@@ -2225,9 +2226,4 @@ java.io.Serializable {
         }
     }
 
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8838754796412211005L;
 }

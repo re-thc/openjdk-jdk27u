@@ -61,12 +61,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class ServicePermission extends Permission
     implements java.io.Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -1227585031618624935L;
 
     /**
      * Initiate a security context to the specified service
@@ -413,6 +411,7 @@ public final class ServicePermission extends Permission
 }
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class KrbServicePermissionCollection extends PermissionCollection
     implements java.io.Serializable {
 
@@ -521,9 +520,6 @@ final class KrbServicePermissionCollection extends PermissionCollection
     public Enumeration<Permission> elements() {
         return perms.elements();
     }
-
-    @Serial
-    private static final long serialVersionUID = -4118834211490102011L;
 
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:

@@ -40,6 +40,7 @@ import sun.awt.AWTAccessor;
  *
  * @since       1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ScrollPaneAdjustable implements Adjustable, Serializable {
 
     /**
@@ -171,12 +172,6 @@ public final class ScrollPaneAdjustable implements Adjustable, Serializable {
             }
         });
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3359745691033257079L;
 
 
     /**

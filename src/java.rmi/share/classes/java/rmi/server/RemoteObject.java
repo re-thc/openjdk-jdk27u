@@ -42,14 +42,11 @@ import sun.rmi.server.Util;
  * @author      Peter Jones
  * @since       1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class RemoteObject implements Remote, java.io.Serializable {
 
     /** The object's remote reference. */
     protected transient RemoteRef ref;
-
-    /** indicate compatibility with JDK 1.1.x version of class */
-    @java.io.Serial
-    private static final long serialVersionUID = -3215090123894869218L;
 
     /**
      * Creates a remote object.

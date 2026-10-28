@@ -97,6 +97,7 @@ import sun.awt.util.IdentityArrayList;
  * @author      Arthur van Hoff
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Dialog extends Window {
 
     static {
@@ -291,12 +292,6 @@ public class Dialog extends Window {
 
     private static final String base = "dialog";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5920926903803293709L;
 
     /**
      * Constructs an initially invisible, modeless {@code Dialog} with
@@ -1586,14 +1581,9 @@ public class Dialog extends Window {
      * Java Accessibility API appropriate to dialog user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTDialog extends AccessibleAWTWindow
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 4837230331833941201L;
-
         /**
          * Constructs an {@code AccessibleAWTDialog}.
          */

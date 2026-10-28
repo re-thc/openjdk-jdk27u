@@ -42,10 +42,8 @@ import javax.lang.model.element.Element;
  * @see Element#getAnnotation(Class)
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MirroredTypesException extends RuntimeException {
-
-    @Serial
-    private static final long serialVersionUID = 269L;
 
     transient List<? extends TypeMirror> types; // cannot be serialized
 

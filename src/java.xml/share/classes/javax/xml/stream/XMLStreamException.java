@@ -34,9 +34,8 @@ package javax.xml.stream;
  * @since 1.6
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XMLStreamException extends Exception {
-  private static final long serialVersionUID = 2018819321811497362L;
-
   /**
    * The nested exception.
    *

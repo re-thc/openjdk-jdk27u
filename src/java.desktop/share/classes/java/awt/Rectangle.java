@@ -116,6 +116,7 @@ import java.io.Serial;
  * @author      Sami Shaio
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Rectangle extends Rectangle2D
     implements Shape, java.io.Serializable
 {
@@ -158,12 +159,6 @@ public class Rectangle extends Rectangle2D
      * @since 1.0
      */
     public int height;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -4345857070255674764L;
 
     /**
      * Constructs a new {@code Rectangle} whose upper-left corner

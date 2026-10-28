@@ -47,13 +47,8 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DocumentName extends TextSyntax implements DocAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7883105848533280430L;
 
     /**
      * Constructs a new document name attribute with the given document name and

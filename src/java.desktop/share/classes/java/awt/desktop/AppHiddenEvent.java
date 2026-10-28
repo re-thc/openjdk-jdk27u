@@ -37,13 +37,8 @@ import java.io.Serial;
  * @see AppHiddenListener#appUnhidden(AppHiddenEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AppHiddenEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2637465279476429224L;
 
     /**
      * Constructs an {@code AppHiddenEvent}.

@@ -65,13 +65,8 @@ import sun.java2d.cmm.Profile;
  * The inverse transform is done by converting the PCS Y components to device
  * Gray via the inverse of the grayTRC.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ICC_ProfileGray extends ICC_Profile {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1124721290732002649L;
 
     /**
      * Constructs a new {@code ICC_ProfileGray} from the specified CMM profile.

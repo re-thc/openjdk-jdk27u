@@ -46,14 +46,9 @@ import java.security.BasicPermission;
  * @since 1.3
  * @deprecated There is no replacement for this class.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="24", forRemoval=true)
 public class AudioPermission extends BasicPermission {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5518053473477801126L;
 
     /**
      * Creates a new {@code AudioPermission} object that has the specified

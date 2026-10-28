@@ -33,10 +33,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StringValueExp implements ValueExp   {
-
-    /* Serial version */
-    private static final long serialVersionUID = -3256390509806284044L;
 
     /**
      * @serial The string literal

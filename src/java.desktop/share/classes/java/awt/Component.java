@@ -209,6 +209,7 @@ import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON;
  * @author      Arthur van Hoff
  * @author      Sami Shaio
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Component implements ImageObserver, MenuContainer,
                                            Serializable
 {
@@ -652,12 +653,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see     #getAlignmentX
      */
     public static final float RIGHT_ALIGNMENT = 1.0f;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -7644114512714619750L;
 
     /**
      * If any {@code PropertyChangeListeners} have been registered,
@@ -9229,14 +9224,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * The class used to obtain the accessible role for this object.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected abstract class AccessibleAWTComponent extends AccessibleContext
         implements Serializable, AccessibleComponent {
-
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 642321655757800191L;
 
         /**
          * Though the class is abstract, this should be called by
@@ -9273,13 +9263,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * when shown/hidden..
          * @since 1.3
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         protected class AccessibleAWTComponentHandler implements ComponentListener, Serializable {
-
-            /**
-             * Use serialVersionUID from JDK 1.3 for interoperability.
-             */
-            @Serial
-            private static final long serialVersionUID = -1009684107426231869L;
 
             /**
              * Constructs an {@code AccessibleAWTComponentHandler}.
@@ -9315,13 +9300,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * when focus events happen
          * @since 1.3
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         protected class AccessibleAWTFocusHandler implements FocusListener, Serializable {
-
-            /**
-             * Use serialVersionUID from JDK 1.3 for interoperability.
-             */
-            @Serial
-            private static final long serialVersionUID = 3150908257351582233L;
 
             /**
              * Constructs an {@code AccessibleAWTFocusHandler}.

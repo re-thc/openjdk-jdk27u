@@ -37,6 +37,7 @@ import java.util.Hashtable;
   * @author Rosanna Lee
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Continuation extends ResolveResult {
     /**
      * The name that we started out with. It is initialized by the constructor
@@ -437,5 +438,4 @@ public class Continuation extends ResolveResult {
             "; resolvedContext: " + resolvedContext;
     }
 
-    private static final long serialVersionUID = 8162530656132624308L;
 }

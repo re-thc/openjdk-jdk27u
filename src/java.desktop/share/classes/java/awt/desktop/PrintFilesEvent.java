@@ -38,13 +38,8 @@ import java.util.List;
  * @see PrintFilesHandler#printFiles(PrintFilesEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrintFilesEvent extends FilesEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5752560876153618618L;
 
     /**
      * Constructs a {@code PrintFilesEvent}.

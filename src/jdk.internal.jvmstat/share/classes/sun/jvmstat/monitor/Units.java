@@ -31,6 +31,7 @@ package sun.jvmstat.monitor;
  *
  * @author   Brian Doherty
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Units implements java.io.Serializable {
 
     /* The enumeration values for this typesafe enumeration must be
@@ -124,5 +125,4 @@ public class Units implements java.io.Serializable {
         map[value] = this;
     }
 
-    private static final long serialVersionUID = 6992337162326171013L;
 }

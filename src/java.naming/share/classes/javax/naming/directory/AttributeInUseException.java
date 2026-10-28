@@ -40,6 +40,7 @@ import javax.naming.NamingException;
   * @see DirContext#modifyAttributes
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeInUseException extends NamingException {
     /**
      * Constructs a new instance of AttributeInUseException with
@@ -60,8 +61,4 @@ public class AttributeInUseException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 4437710305529322564L;
 }

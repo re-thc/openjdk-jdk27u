@@ -70,6 +70,7 @@ import sun.awt.SunToolkit;
  * @author Amy Fowler
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FocusEvent extends ComponentEvent {
 
     /**
@@ -179,12 +180,6 @@ public class FocusEvent extends ComponentEvent {
      * @since 1.4
      */
     transient Component opposite;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 523753786457416396L;
 
     /**
      * Constructs a {@code FocusEvent} object with the

@@ -107,13 +107,8 @@ import java.io.Serializable;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class EnumSyntax implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2739521845085831642L;
 
     /**
      * This enumeration value's integer value.

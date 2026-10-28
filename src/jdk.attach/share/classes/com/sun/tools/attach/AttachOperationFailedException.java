@@ -37,9 +37,8 @@ import java.io.IOException;
  *
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttachOperationFailedException extends IOException {
-
-    private static final long serialVersionUID = 2140308168167478043L;
 
     /**
      * Constructs an <code>AttachOperationFailedException</code> with

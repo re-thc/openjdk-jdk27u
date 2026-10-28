@@ -39,10 +39,8 @@ import javax.lang.model.UnknownEntityException;
  * @see ModuleElement.DirectiveVisitor#visitUnknown
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownDirectiveException extends UnknownEntityException {
-
-    @Serial
-    private static final long serialVersionUID = 269L;
 
     private final transient ModuleElement.Directive directive;
     private final transient Object parameter;

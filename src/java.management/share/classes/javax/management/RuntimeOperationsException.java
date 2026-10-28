@@ -33,10 +33,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RuntimeOperationsException extends JMRuntimeException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = -8408923047489133588L;
 
     /**
      * @serial The encapsulated {@link RuntimeException}
