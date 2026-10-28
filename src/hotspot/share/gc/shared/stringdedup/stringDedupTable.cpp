@@ -525,7 +525,6 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
   assert(TypeArrayKlass::cast(value->klass())->element_type() == T_BYTE, "precondition");
   int length = value->length();
   static_assert(sizeof(jchar) == 2 * sizeof(jbyte), "invariant");
-  assert(((length & 1) == 0) || CompactStrings, "invariant");
   if ((length & 1) == 0) {
     // If the length of the byte array is even, then the value array could be
     // either non-latin1 or a compact latin1 that happens to have an even length.

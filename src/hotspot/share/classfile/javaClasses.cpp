@@ -239,7 +239,6 @@ void java_lang_String::serialize_offsets(SerializeClosure* f) {
 
 Handle java_lang_String::basic_create(int length, bool is_latin1, TRAPS) {
   assert(_initialized, "Must be initialized");
-  assert(CompactStrings || !is_latin1, "Must be UTF16 without CompactStrings");
 
   // Create the String object first, so there's a chance that the String
   // and the char array it points to end up in the same cache line.

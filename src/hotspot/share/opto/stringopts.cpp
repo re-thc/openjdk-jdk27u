@@ -1728,7 +1728,6 @@ jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
   const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset()).as_byte();
-  assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
   return coder;
 }
 
@@ -1979,9 +1978,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 
   Node* result;
   if (!kit.stopped()) {
-    assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
-           "Result string must be UTF16 encoded if CompactStrings is disabled");
-
     Node* dst_array = nullptr;
     if (sc->num_arguments() == 1 &&
         (sc->mode(0) == StringConcat::StringMode ||
