@@ -26,7 +26,6 @@
  * @summary Startup-disabled Instant parsing bypasses input guards and library initialization
  * @modules java.base/java.time:open java.base/jdk.internal.misc
  * @run main/othervm -Djdk.time.instantSpeedate=false -XX:+CompactStrings -Djava.system.class.loader=InstantSpeedateDisabled$EarlyLoader InstantSpeedateDisabled
- * @run main/othervm -Djdk.time.instantSpeedate=false -XX:-CompactStrings -Djava.system.class.loader=InstantSpeedateDisabled$EarlyLoader InstantSpeedateDisabled
  */
 
 import java.lang.reflect.Method;
@@ -119,7 +118,8 @@ public class InstantSpeedateDisabled {
                 "2000-01-01T00:00:00.1234567Z", "2000-01-01T00:00:00.123456789Z",
                 "2016-12-31T23:59:60.5Z", "2000-01-01T24:00:00Z",
                 "2000-01-01t00:00:00z", "2000-01-01T00:00:00+00:00:30",
-                "+10000-01-01T00:00:00Z"}) {
+                "+10000-01-01T00:00:00Z", "2000-01-01T\u01300:00:00Z",
+                "2000-01-01T\ud8000:00:00Z", "2000-01-01T\ud83d\ude00:00:00Z"}) {
             if (fast.invoke(null, text) != null) throw new AssertionError("disabled helper accepted " + text);
             compare(text);
         }

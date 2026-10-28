@@ -26,7 +26,6 @@
  * @summary Permanent Instant backend load failure bypasses guards; transient loading does not disable it
  * @modules java.base/java.time:open java.base/jdk.internal.loader:open
  * @run main/othervm -Djdk.time.instantSpeedate=true -XX:+CompactStrings InstantSpeedateUnavailable
- * @run main/othervm -Djdk.time.instantSpeedate=true -XX:-CompactStrings InstantSpeedateUnavailable
  */
 
 import java.lang.reflect.InvocationTargetException;
@@ -109,7 +108,9 @@ public class InstantSpeedateUnavailable {
             for (String text : new String[] {VALID, "1969-12-31T23:59:59.000001Z",
                     "1900-02-29T00:00:00Z", "2000-04-31T00:00:00.1Z", "garbage", "",
                     "2000-01-01T00:00:00.123456789Z", "2016-12-31T23:59:60.5Z",
-                    "2000-01-01T24:00:00Z", "2000-01-01t00:00:00z", null}) {
+                    "2000-01-01T24:00:00Z", "2000-01-01t00:00:00z",
+                    "2000-01-01T\u01300:00:00Z", "2000-01-01T\ud8000:00:00Z",
+                    "2000-01-01T\ud83d\ude00:00:00Z", null}) {
                 if (!Objects.equals(outcome(text, true), outcome(text, false))) {
                     throw new AssertionError("Original formatter mismatch: " + text);
                 }

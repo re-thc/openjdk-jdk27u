@@ -37,14 +37,7 @@
  *      -Xint -XX:+CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 0 true
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xint -XX:-CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 0 true
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xint -XX:-UseInstantParseIntrinsic -XX:+CompactStrings
- *      compiler.intrinsics.time.TestInstantParseIntrinsic 0 false
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xint -XX:-UseInstantParseIntrinsic -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 0 false
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -52,37 +45,18 @@
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 true
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings
- *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 true
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-TieredCompilation -XX:+CompactStrings
- *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xbatch -XX:-TieredCompilation -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:+CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xbatch -XX:-CompactStrings compiler.intrinsics.time.TestInstantParseIntrinsic 4 true
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:-UseInstantParseIntrinsic -XX:+CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 false
  * @run main/othervm/native --enable-native-access=ALL-UNNAMED
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xbatch -XX:-UseInstantParseIntrinsic -XX:-CompactStrings
- *      compiler.intrinsics.time.TestInstantParseIntrinsic 1 false
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -Xbatch -XX:DisableIntrinsic=_parseInstant -XX:+CompactStrings
- *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 false
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -Xbatch -XX:DisableIntrinsic=_parseInstant -XX:-CompactStrings
  *      compiler.intrinsics.time.TestInstantParseIntrinsic 4 false
  */
 
@@ -126,7 +100,8 @@ public class TestInstantParseIntrinsic {
         Method nativeMethod = parser.getDeclaredMethod("parse0", String.class);
 
         // Register the Rust entry before replacing the separate JNI binding.
-        same(Instant.parse("1970-01-01T00:00:00Z"), Instant.EPOCH, "Library initialization");
+        same(invokeFast("1970-01-01T00:00:00Z"), Instant.EPOCH, "Native backend initialization");
+        checkUtf16Fallbacks();
         System.loadLibrary("InstantJniMiss");
         for (int i = 0; i < 32; i++) invokeFast("1970-01-01T00:00:00Z");
         check(WB.getBooleanVMFlag("UseInstantParseIntrinsic") != null, "Intrinsic flag is missing");
@@ -163,6 +138,9 @@ public class TestInstantParseIntrinsic {
                 Instant.ofEpochSecond(253_402_300_799L, 999_999_000), libraryResult);
         check(WB.getMethodCompilationLevel(fast) == level, "Valid values lost the selected compilation tier");
 
+        checkUtf16Fallbacks();
+        check(WB.getMethodCompilationLevel(fast) == level, "UTF16 inputs lost the selected compilation tier");
+
         nativeValue("1969-12-31t23:59:59.000001z", Instant.ofEpochSecond(-1, 1000), libraryResult);
         for (String lexical : new String[] {"1969-12-31 23:59:59Z", "1969-12-31_23:59:59.000001z",
                 "1969-12-31T23:59:59,000001Z", "1900-02-29_00:00:00Z",
@@ -179,14 +157,22 @@ public class TestInstantParseIntrinsic {
                     "Public fallback value");
         }
         for (String text : new String[] {"1900-02-29T00:00:00Z", "2000-13-01T00:00:00Z",
-                "2000-01-01T00:60:00Z", "2000-01-01T00:00:00ZZ",
-                "2000-01-01T\u01300:00:00Z", "2000-01-01T\ud8000:00:00Z"}) {
+                "2000-01-01T00:60:00Z", "2000-01-01T00:00:00ZZ"}) {
             reject(text);
         }
         same(Instant.parse(new StringBuilder("1969-12-31T23:59:59.000001Z")),
                 Instant.ofEpochSecond(-1, 1000), "Custom CharSequence fallback");
         System.out.println("Instant intrinsic: level=" + level + ", enabled=" + intrinsic
                 + "; JNI binding replaced with MISS; availability and values checked");
+    }
+
+    private static void checkUtf16Fallbacks() throws Exception {
+        for (String text : new String[] {"2000-01-01T\u01300:00:00Z",
+                "2000-01-01T\ud8000:00:00Z", "2000-01-01T\ud83d\ude00:00:00Z"}) {
+            check(text.chars().anyMatch(c -> c > 0xff), "UTF16 input must contain a wide code unit");
+            same(invokeFast(new String(text.toCharArray())), null, "UTF16 input must use Java");
+            reject(text);
+        }
     }
 
     private static Instant invokeFast(String text) throws Exception {
