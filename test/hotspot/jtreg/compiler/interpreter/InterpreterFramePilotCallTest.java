@@ -111,7 +111,7 @@ public class InterpreterFramePilotCallTest {
     static long[] query(Method m,int action){return WB.interpreterFramePilot(m,action);}
     static long resumes(Method m){return query(m,3)[CONTINUATIONS];}
     static void prepare(Method m,int action){
-        WB.markMethodProfiled(m);WB.makeMethodNotCompilable(m);
+        WB.markMethodProfiled(m);WB.makeMethodNotCompilable(m);WB.testSetDontInlineMethod(m,true);
         long[] data=query(m,action);check(data[0]==1 && data[8]!=0,"prepare "+m+Arrays.toString(data));
         check(!WB.isMethodCompiled(m) && data[27]==0,"real interpreter frame/no nmethod");
     }
