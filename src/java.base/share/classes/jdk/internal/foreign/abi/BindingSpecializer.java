@@ -528,13 +528,21 @@ public class BindingSpecializer {
 
         // Here we check if the current scope has not been already acquired.
         // To do that, we generate many comparisons (one per cached scope).
-        // Note that we always skip comparisons against the very first cached scope
-        // (as that is the function address, which typically belongs to another scope).
-        // We also stop the comparisons at SCOPE_DEDUP_DEPTH, to keep a lid on the size
-        // of the generated code.
+        // Check the first SCOPE_DEDUP_DEPTH argument slots before the symbol,
+        // preserving the existing argument-cache hit path.
         for (int i = 1; i < curScopeLocalIdx && i <= SCOPE_DEDUP_DEPTH; i++) {
             cb.dup() // dup for comparison
               .aload(scopeSlots[i])
+              .if_acmpeq(skipAcquire);
+            hasLookup = true;
+        }
+
+        // Library lookup and arguments can share an arena. Include the symbol
+        // after argument-cache misses, adding at most one comparison per argument.
+        // A non-positive depth still disables all deduplication.
+        if (SCOPE_DEDUP_DEPTH > 0 && curScopeLocalIdx > 0) {
+            cb.dup()
+              .aload(scopeSlots[0])
               .if_acmpeq(skipAcquire);
             hasLookup = true;
         }
