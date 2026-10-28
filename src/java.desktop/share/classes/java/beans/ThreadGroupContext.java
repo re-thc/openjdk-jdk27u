@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,6 @@ package java.beans;
 import com.sun.beans.finder.BeanInfoFinder;
 import com.sun.beans.finder.PropertyEditorFinder;
 
-import java.awt.GraphicsEnvironment;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -80,7 +80,7 @@ final class ThreadGroupContext {
         Boolean isGuiAvailable = this.isGuiAvailable;
         return (isGuiAvailable != null)
                 ? isGuiAvailable.booleanValue()
-                : !GraphicsEnvironment.isHeadless();
+                : false; // This fork has no GUI implementation.
     }
 
     void setGuiAvailable(boolean isGuiAvailable) {

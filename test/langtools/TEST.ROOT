@@ -43,5 +43,6 @@ requires.extraPropDefns.vmOpts = \
     --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
     --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
+    vm.hasAWT \
     vm.continuations \
     vm.debug
