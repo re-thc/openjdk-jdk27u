@@ -30,7 +30,6 @@ package jdk.internal.math;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.nio.cs.ISO_8859_1;
 
 import static java.lang.Math.multiplyHigh;
 
@@ -59,14 +58,11 @@ abstract sealed class ToDecimal permits DoubleToDecimal, FloatToDecimal {
 
     @ForceInline
     static String decimalString(byte[] str, int size) {
-        if (JLA.stringInitCoder() == 0) {
-            // Transfer only an exactly sized, exclusively owned array. The
-            // formatter's reserved buffer remains separate and mutable.
-            byte[] owned = new byte[size];
-            System.arraycopy(str, 0, owned, 0, size);
-            return JLA.uncheckedNewStringWithLatin1Bytes(owned);
-        }
-        return new String(str, 0, size, ISO_8859_1.INSTANCE);
+        // Transfer only an exactly sized, exclusively owned array. The
+        // formatter's reserved buffer remains separate and mutable.
+        byte[] owned = new byte[size];
+        System.arraycopy(str, 0, owned, 0, size);
+        return JLA.uncheckedNewStringWithLatin1Bytes(owned);
     }
 
     final boolean isLatin1() {
