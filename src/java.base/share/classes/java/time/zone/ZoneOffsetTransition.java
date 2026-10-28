@@ -96,13 +96,10 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ZoneOffsetTransition
         implements Comparable<ZoneOffsetTransition>, Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -6946044323557704546L;
     /**
      * @serial The transition epoch-second.
      */

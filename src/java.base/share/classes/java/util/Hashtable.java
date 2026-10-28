@@ -133,6 +133,7 @@ import jdk.internal.util.ArraysSupport;
  * @see     TreeMap
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Hashtable<K,V>
     extends Dictionary<K,V>
     implements Map<K,V>, Cloneable, java.io.Serializable {
@@ -170,10 +171,6 @@ public class Hashtable<K,V>
      * the Hashtable fail-fast.  (See ConcurrentModificationException).
      */
     private transient int modCount = 0;
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 1421746759512286392L;
 
     /**
      * Constructs a new, empty hashtable with the specified initial

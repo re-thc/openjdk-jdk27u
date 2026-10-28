@@ -207,6 +207,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Instant
         implements Temporal, TemporalAdjuster, Comparable<Instant>, Serializable {
@@ -245,12 +246,6 @@ public final class Instant
      * an {@code int}.
      */
     public static final Instant MAX = Instant.ofEpochSecond(MAX_SECOND, 999_999_999);
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -665713676816604388L;
 
     /**
      * @serial The number of seconds from the epoch of 1970-01-01T00:00:00Z.

@@ -83,10 +83,8 @@ package java.security;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class SecureRandomSpi implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2991854161009191830L;
 
     /**
      * Constructor without a parameter.

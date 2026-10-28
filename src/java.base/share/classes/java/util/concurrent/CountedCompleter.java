@@ -424,9 +424,8 @@ import jdk.internal.misc.Unsafe;
  * @since 1.8
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
-    private static final long serialVersionUID = 5232453752276485070L;
-
     /** @serial This task's completer, or null if none */
     final CountedCompleter<?> completer;
     /** @serial The number of pending tasks until completion */

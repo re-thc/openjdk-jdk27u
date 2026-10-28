@@ -54,11 +54,9 @@ import sun.security.rsa.RSAUtil.KeyType;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class RSAPrivateCrtKeyImpl
         extends PKCS8Key implements RSAPrivateCrtKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1326088454257084918L;
 
     private BigInteger n;       // modulus
     private BigInteger e;       // public exponent

@@ -81,6 +81,7 @@ import sun.security.util.SecurityProperties;
  * @serial exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class FilePermission extends Permission implements Serializable {
 
@@ -189,9 +190,6 @@ public final class FilePermission extends Permission implements Serializable {
 //        sb.append("***\n");
 //        return sb.toString();
 //    }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7930732926638008763L;
 
     /**
      * Use the platform's default file system to avoid recursive initialization
@@ -1106,6 +1104,7 @@ public final class FilePermission extends Permission implements Serializable {
  *
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class FilePermissionCollection extends PermissionCollection
     implements Serializable
 {
@@ -1203,9 +1202,6 @@ final class FilePermissionCollection extends PermissionCollection
     public Enumeration<Permission> elements() {
         return perms.elements();
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2202956749081564585L;
 
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:

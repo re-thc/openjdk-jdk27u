@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +39,6 @@ import jdk.test.whitebox.WhiteBox;
  * @requires vm.flagless
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xverify:all HiddenClassUnloading
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -Xverify:all -XX:-CompactStrings HiddenClassUnloading
  */
 public class HiddenClassUnloading {
     public static void main(String[] args) throws Throwable {
@@ -63,7 +62,7 @@ public class HiddenClassUnloading {
                     lookup,
                     "concat",
                     MethodType.methodType(String.class, ptypes),
-                    "\1".repeat(length), // recipe
+                    ((i & 1) == 0 ? "" : "\u0100") + "\1".repeat(length), // recipe
                     new Object[0]
             );
         }

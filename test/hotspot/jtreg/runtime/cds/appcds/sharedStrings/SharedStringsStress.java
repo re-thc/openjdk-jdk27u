@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -52,7 +54,7 @@ public class SharedStringsStress {
 
     public static void main(String[] args) throws Exception {
         try (FileOutputStream fos = new FileOutputStream(sharedArchiveConfigFile)) {
-            PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(fos, UTF_8));
             out.println("VERSION: 1.0");
             out.println("@SECTION: String");
             out.println("31: shared_test_string_unique_14325");
@@ -61,7 +63,10 @@ public class SharedStringsStress {
             // StringTable::allocate_shared_table() in HotSpot.
             for (int i=0; i<260000; i++) {
                 String s = "generated_string " + i;
-                out.println(s.length() + ": " + s);
+                if ((i & 1) != 0) {
+                    s += '\u0100';
+                }
+                out.println(s.getBytes(UTF_8).length + ": " + s);
             }
             out.close();
         }

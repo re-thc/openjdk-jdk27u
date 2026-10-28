@@ -35,12 +35,10 @@ package java.net;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class URISyntaxException
     extends Exception
 {
-    @java.io.Serial
-    private static final long serialVersionUID = 2137979680897488891L;
-
     /**
      * @serial The input string.
      */

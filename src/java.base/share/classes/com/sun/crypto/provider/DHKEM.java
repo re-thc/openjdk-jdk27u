@@ -166,10 +166,8 @@ public class DHKEM implements KEMSpi {
     }
 
     // Not really a random. For KAT test only. It generates key pair from ikm.
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class RFC9180DeriveKeyPairSR extends SecureRandom {
-
-        @Serial
-        private static final long serialVersionUID = 0L;
 
         private final byte[] ikm;
 

@@ -33,10 +33,8 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GenericSignatureFormatError extends ClassFormatError {
-    @java.io.Serial
-    private static final long serialVersionUID = 6709919147137911034L;
-
     /**
      * Constructs a new {@code GenericSignatureFormatError}.
      *

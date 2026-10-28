@@ -50,6 +50,7 @@ import java.util.Set;
  * @since  1.4
  * @author Josh Bloch
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class StackTraceElement implements java.io.Serializable {
 
     private static final String NATIVE_METHOD = "Native Method";
@@ -595,6 +596,4 @@ public final class StackTraceElement implements java.io.Serializable {
     private static native void initStackTraceElement(StackTraceElement element,
                                                      StackFrameInfo sfi);
 
-    @java.io.Serial
-    private static final long serialVersionUID = 6992337162326171013L;
 }

@@ -55,11 +55,9 @@ import java.security.*;
  * @author Roland Schemers
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class SSLPermission extends BasicPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3456898025505876775L;
 
     /**
      * Creates a new SSLPermission with the specified name.

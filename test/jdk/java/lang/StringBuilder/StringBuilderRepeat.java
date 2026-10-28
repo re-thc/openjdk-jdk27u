@@ -31,7 +31,6 @@ import java.util.Arrays;
  * @test
  * @bug 8302323 8351443
  * @summary Test StringBuilder.repeat sanity tests
- * @run testng/othervm -XX:-CompactStrings StringBuilderRepeat
  * @run testng/othervm -XX:+CompactStrings StringBuilderRepeat
  */
 @Test

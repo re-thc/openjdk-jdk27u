@@ -66,8 +66,6 @@ public final class MD4 extends DigestBase {
     static {
         md4Provider = new Provider("MD4Provider", PROVIDER_VER,
             "MD4 MessageDigest") {
-            @java.io.Serial
-            private static final long serialVersionUID = -8850464997518327965L;
         };
         md4Provider.put("MessageDigest.MD4", "sun.security.provider.MD4");
     }

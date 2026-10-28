@@ -33,12 +33,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FileLockInterruptionException
     extends java.io.IOException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7104080643653532383L;
 
     /**
      * Constructs an instance of this class.

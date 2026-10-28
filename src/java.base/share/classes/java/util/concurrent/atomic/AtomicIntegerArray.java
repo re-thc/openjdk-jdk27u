@@ -47,8 +47,8 @@ import java.util.function.IntUnaryOperator;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AtomicIntegerArray implements java.io.Serializable {
-    private static final long serialVersionUID = 2862133569453604235L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(int[].class);
     /** @serial */
