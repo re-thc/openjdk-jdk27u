@@ -15,6 +15,22 @@ ARM64 Apple M1. Below-baseline machines are unsupported. Use
 review the `ENABLE_DESKTOP` build guards and module/collector requirements
 in retained tests.
 
+The restricted `java.desktop` module exports `java.beans` for build tools and
+server frameworks: introspection, descriptors, change/veto listeners and scalar
+property editors. It retains the standard module name and boot-loader mapping,
+so existing `requires java.desktop` declarations and JMX lookups work. The module
+has only the implicit `java.base` dependency; it adds no desktop native libraries.
+XML persistence, bean contexts, Swing, imaging, printing and audio are excluded.
+
+`java.awt` exports only the nominal `Image`, `Component`, `Graphics` and
+`Rectangle` types needed to resolve public JavaBeans method signatures, including
+reflective inspection. These are **not full AWT classes**: their constructors
+throw `UnsupportedOperationException`, and they supply no GUI API or behavior.
+`SimpleBeanInfo` has no default icons and its `loadImage` method throws
+`UnsupportedOperationException`. Custom visual editors and Swing bean metadata
+are unsupported. The upstream desktop sources remain available in the checkout;
+only the explicit beans source list and headless signature types are compiled.
+
 On x64 and AArch64, this fork defaults to four-byte object headers with Serial,
 G1 and ZGC. `-XX:-UseFourByteObjectHeaders` selects eight-byte compact headers;
 `-XX:-UseCompactObjectHeaders` selects legacy headers and overrides any

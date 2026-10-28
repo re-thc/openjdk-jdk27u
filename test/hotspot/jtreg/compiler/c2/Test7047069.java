@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.hasAWT
  * @key randomness
  * @bug 7047069
  * @summary Array can dynamically change size when assigned to an object field
