@@ -33,7 +33,6 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.codePointBefore.
  * @run testng/othervm -XX:+CompactStrings CodePointBefore
- * @run testng/othervm -XX:-CompactStrings CodePointBefore
  */
 
 public class CodePointBefore extends CompactString {

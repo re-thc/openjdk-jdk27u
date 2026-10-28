@@ -32,7 +32,6 @@ import static org.testng.Assert.assertEquals;
  * @summary Tests Compact String. Verifies the compareTo method for String,
  * StringBuilder and StringBuffer.
  * @run testng/othervm -XX:+CompactStrings CompareTo
- * @run testng/othervm -XX:-CompactStrings CompareTo
  */
 
 public class CompareTo extends CompactString {

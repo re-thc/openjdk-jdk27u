@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +70,6 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
-define_pd_global(bool, CompactStrings, true);
 
 // Clear short arrays bigger than one word in an arch-specific way
 define_pd_global(intx, InitArrayShortSize, BytesPerLong);

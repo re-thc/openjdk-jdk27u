@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,11 +487,6 @@ public interface JavaLangAccess {
      * make a copy.
      */
     Object uncheckedStringConcat1(String[] constants);
-
-    /**
-     * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
-     */
-    byte stringInitCoder();
 
     /**
      * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants

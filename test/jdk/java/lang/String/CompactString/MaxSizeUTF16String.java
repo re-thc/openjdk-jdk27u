@@ -35,7 +35,6 @@ import jdk.internal.misc.Unsafe;
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @run junit/othervm/timeout=480 -XX:+CompactStrings -Xmx8g MaxSizeUTF16String
- * @run junit/othervm/timeout=480 -XX:-CompactStrings -Xmx8g MaxSizeUTF16String
  * @run junit/othervm/timeout=480 -Xcomp -Xmx8g MaxSizeUTF16String
  */
 
