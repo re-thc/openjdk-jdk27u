@@ -21,6 +21,7 @@
 #include "interpreter/interpreterFramePilot.hpp"
 #if defined(AMD64) && !defined(ZERO)
 #include "asm/codeBuffer.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/templateTable.hpp"
@@ -380,7 +381,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
     if constexpr (Observe) cleanup_start=os::current_thread_cpu_time();
     return false;
   };
-  int operations=0,end_bci=0;
+  int operations=0,end_bci=0,furthest_forward_bci=0;
   ConstantPool* pool=m->constants();
   Array<u2>* reference_map=pool->cache()==nullptr?nullptr:pool->cache()->reference_map();
   BytecodeStream stream(method);
@@ -390,6 +391,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
     masm.bind(labels[stream.bci()]);
     int instruction_begin=code.insts_size();
     int index=-1,value=0;
+    bool terminal=false;
     enum { stop, load, store, aload, astore, constant, binary, nop, emitted } action=stop;
     TemplateTable::Operation op=TemplateTable::add;
     // Preserve the original integer-prefix controls with handlers. The new
@@ -474,25 +476,44 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         int field_index=stream.get_index_u2();
         if(pool->cache()==nullptr || field_index>=pool->resolved_field_entries_length())break;
         ResolvedFieldEntry* field=pool->resolved_field_entry_at(field_index);
-        if(!field->is_resolved(bc) || field->field_holder()==nullptr ||
-           field->field_holder()->name()->equals("java/lang/ref/Reference"))break;
-        BasicType type=as_BasicType((TosState)field->tos_state());
+        bool resolved=field->is_resolved(bc);
+        if(resolved && (field->field_holder()==nullptr ||
+            field->field_holder()==vmClasses::Reference_klass()))break;
+        BasicType type=resolved?as_BasicType((TosState)field->tos_state()):
+            Signature::basic_type(pool->uncached_signature_ref_at(field->constant_pool_index()));
         if(type!=T_OBJECT && type!=T_ARRAY && type!=T_BOOLEAN && type!=T_BYTE && type!=T_CHAR && type!=T_SHORT && type!=T_INT)break;
-        int offset=field->field_offset();
+        if(!resolved) {
+          // Reuse the interpreter's opcode-specific acquire publication. A cold
+          // entry falls back without consuming operands and can work on a later
+          // invocation after ordinary resolution, with no body regeneration.
+          masm.load_field_entry(rcx,rdx);
+          masm.cmpb(Address(rcx,in_bytes(ResolvedFieldEntry::get_code_offset())),bc);
+          masm.jcc(Assembler::notEqual,ordinary);
+          masm.cmpb(Address(rcx,in_bytes(ResolvedFieldEntry::type_offset())),as_TosState(type));
+          masm.jcc(Assembler::notEqual,ordinary);
+          masm.movptr(rbx,Address(rcx,in_bytes(ResolvedFieldEntry::field_holder_offset())));
+          masm.movptr(rscratch1,(intptr_t)vmClasses::Reference_klass_addr());
+          masm.cmpptr(rbx,Address(rscratch1,0));masm.jcc(Assembler::equal,ordinary);
+        }
         if(bc==Bytecodes::_getfield) {
           masm.movptr(rax,Address(rsp,0));masm.testptr(rax,rax);masm.jcc(Assembler::zero,ordinary);
           masm.pop_ptr(rax);
         } else {
-          masm.load_field_entry(rcx,rdx);
-          masm.movptr(rax,Address(rcx,in_bytes(ResolvedFieldEntry::field_holder_offset())));
-          masm.clinit_barrier(rax,nullptr,&ordinary);
-          masm.movptr(rax,Address(rax,in_bytes(Klass::java_mirror_offset())));
+          if(resolved) {
+            masm.load_field_entry(rcx,rdx);
+            masm.movptr(rbx,Address(rcx,in_bytes(ResolvedFieldEntry::field_holder_offset())));
+          }
+          masm.clinit_barrier(rbx,nullptr,&ordinary);
+          masm.movptr(rax,Address(rbx,in_bytes(Klass::java_mirror_offset())));
           masm.resolve_oop_handle(rax,rscratch1);
         }
+        if(!resolved)
+          masm.load_sized_value(rbx,Address(rcx,in_bytes(ResolvedFieldEntry::field_offset_offset())),sizeof(int),true);
+        const Address field_address=resolved?Address(rax,field->field_offset()):Address(rax,rbx,Address::times_1);
         if(is_reference_type(type)) {
-          masm.load_heap_oop(rax,Address(rax,offset),rdx);masm.push(atos);
+          masm.load_heap_oop(rax,field_address,rdx);masm.push(atos);
         } else {
-          masm.access_load_at(type,IN_HEAP,rax,Address(rax,offset),noreg);masm.push(itos);
+          masm.access_load_at(type,IN_HEAP,rax,field_address,noreg);masm.push(itos);
         }
         action=emitted;break;
       }
@@ -565,6 +586,9 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         }
         action=emitted;break;
       }
+      case Bytecodes::_ireturn: case Bytecodes::_areturn: case Bytecodes::_return:
+        if(furthest_forward_bci<=stream.bci())break;
+        masm.jmp(ordinary);terminal=true;action=emitted;break;
       case Bytecodes::_ifeq: case Bytecodes::_ifne: case Bytecodes::_iflt: case Bytecodes::_ifge:
       case Bytecodes::_ifgt: case Bytecodes::_ifle:
       case Bytecodes::_if_icmpeq: case Bytecodes::_if_icmpne: case Bytecodes::_if_icmplt:
@@ -573,6 +597,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
       case Bytecodes::_ifnull: case Bytecodes::_ifnonnull: case Bytecodes::_goto: case Bytecodes::_goto_w: {
         int target=bc==Bytecodes::_goto_w?stream.dest_w():stream.dest();
         if(target<=stream.bci() || target>=m->code_size())break;
+        if(target<=max_prefix_bytes)furthest_forward_bci=MAX2(furthest_forward_bci,target);
         Label not_taken;
         if(bc!=Bytecodes::_goto && bc!=Bytecodes::_goto_w) {
           Assembler::Condition condition=Assembler::equal;
@@ -612,8 +637,10 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
       default: ShouldNotReachHere();
     }
     end_bci=stream.next_bci();operations++;
-    masm.increment(rbcp,stream.instruction_size());
-    masm.save_bcp();
+    if(!terminal) {
+      masm.increment(rbcp,stream.instruction_size());
+      masm.save_bcp();
+    }
     guarantee(code.insts_size()-instruction_begin<max_opcode_bytes,"audited bounded Stage A opcode");
   }
   // Values are canonical vtos at every boundary. Shared invoke codelets
