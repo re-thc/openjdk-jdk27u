@@ -61,6 +61,7 @@ public class InterpreterFramePilotTemplateTest {
     }
     static void child()throws Exception {
         WB=WhiteBox.getWhiteBox();Unsafe u=Unsafe.getUnsafe();
+        check(WB.getBooleanVMFlag("ProfileInterpreter"),"profiling fragments emit real code");
         Method direct=InterpreterFramePilotTemplateTest.class.getDeclaredMethod("direct",int.class);
         Method iface=InterpreterFramePilotTemplateTest.class.getDeclaredMethod("throughInterface",Op.class,int.class);
         Method field=coldField();
@@ -99,7 +100,7 @@ public class InterpreterFramePilotTemplateTest {
             List<String> options=new ArrayList<>(List.of("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI",
-                "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations"));
+                "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations","-XX:+ProfileInterpreter"));
             if(Platform.isDebugBuild())options.addAll(List.of("-XX:-VerifyOops","-XX:-CheckCompressedOops","-XX:-VerifyDataPointer","-XX:-VerifySecondarySupers"));
             options.addAll(List.of(InterpreterFramePilotTemplateTest.class.getName(),"child"));
             ProcessTools.executeTestJava(options).shouldHaveExitValue(0).shouldContain("PILOT_TEMPLATES_OK");
