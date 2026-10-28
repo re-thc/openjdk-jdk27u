@@ -175,7 +175,7 @@ Java class initialization, so this needs no new runtime phase guard.
 
 Single-step changes its dynamic bit in a VM operation, but enabling it requires
 the already-excluded capability. INTERP_EVENT_BITS likewise contains single-step,
-method entry/exit, frame-pop and field-access/modification events; the inspected
+method entry/exit and field-access/modification events; the inspected
 interp_only_mode setters and virtual-thread restores do not create a new
 permission. If a future scope permits native entry with those capabilities,
 this proof expires: actual event handling and thread-mode checks must then be

@@ -53,12 +53,14 @@ class InterpreterFramePilot : AllStatic {
   // Emit once in the interpreter entry; execute before every native prefix.
   // Preserves rax (prefix entry) and rdx (owned MethodCounters).
   static void emit_entry_guards(InterpreterMacroAssembler* masm, Label& fallback, bool count_hit=true);
-  static address* invoke_return_table(bool is_interface);
-  static void set_return_entry(bool is_interface, TosState state, address entry);
   static void set_call_entry(Bytecodes::Code code, address entry);
   static address call_entry(Bytecodes::Code code);
-  static void emit_dynamic_call_stub(InterpreterMacroAssembler* masm,Bytecodes::Code code,Label& fallback);
-  static void emit_resume(InterpreterMacroAssembler* masm, TosState state, int step);
+  // r8 carries this site's ordinary return PC only until prepare_invoke pushes it.
+  static void emit_call_stub(InterpreterMacroAssembler* masm, Bytecodes::Code code, Label& fallback);
+  static void emit_return_site(InterpreterMacroAssembler* masm, TosState state, int step,
+                               Label& successor, Label& fallback, int slot);
+  static void emit_resume(InterpreterMacroAssembler* masm, TosState state, int step,
+                          Label& successor, Label& fallback, int slot);
   enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,
                            test_poll_guard_seen, test_poll_processed, test_poll_wrong_bci };
   // WhiteBox-only deterministic local-poll regression. Leaves allocate/block

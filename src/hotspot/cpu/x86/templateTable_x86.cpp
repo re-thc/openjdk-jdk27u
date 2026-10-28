@@ -3262,8 +3262,9 @@ void TemplateTable::prepare_invoke(Register cache, Register recv, Register flags
   emit_prepare_invoke(_masm,bytecode(),cache,recv,flags,nullptr);
 }
 
-void TemplateTable::emit_prepare_invoke(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
-                                       Register cache, Register recv, Register flags, address* return_table) {
+static void emit_prepare_invoke_impl(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
+                                     Register cache, Register recv, Register flags, address* return_table,
+                                     Register return_pc) {
   // determine flags
   const bool load_receiver       = (code != Bytecodes::_invokestatic) && (code != Bytecodes::_invokedynamic);
   assert_different_registers(recv, flags);
@@ -3286,21 +3287,30 @@ void TemplateTable::emit_prepare_invoke(InterpreterMacroAssembler* _masm, Byteco
     __ verify_oop(recv);
   }
 
-  // load return address
-  {
+  // The pilot's r8 is live only through this push, never across a Java call.
+  // Ordinary templates retain their return-table selection.
+  if (return_pc != noreg) {
+    assert(return_pc!=cache && return_pc!=recv && return_pc!=flags && return_pc!=rbcp &&
+           return_pc!=rscratch1 && return_pc!=rscratch2 && return_pc!=rax && return_pc!=rbx,
+           "return PC survives the bounded pre-push prefix");
+    __ push(return_pc);
+  } else {
     const address table_addr = (address)(return_table==nullptr?Interpreter::invoke_return_entry_table_for(code):return_table);
     ExternalAddress table(table_addr);
     __ lea(rscratch1, table);
     __ movptr(flags, Address(rscratch1, flags, Address::times_ptr));
+    __ push(flags);
   }
-
-  // push return address
-  __ push(flags);
 
   // Restore flags value from the constant pool cache entry, and restore rsi
   // for later null checks.  r13 is the bytecode pointer
   __ movl(flags, rbcp);
   __ restore_bcp();
+}
+
+void TemplateTable::emit_prepare_invoke(InterpreterMacroAssembler* masm, Bytecodes::Code code,
+                                       Register cache, Register recv, Register flags, address* return_table) {
+  emit_prepare_invoke_impl(masm,code,cache,recv,flags,return_table,noreg);
 }
 
 static void emit_invokevirtual_helper(InterpreterMacroAssembler* _masm,Register index,Register recv,Register flags) {
@@ -3351,12 +3361,12 @@ void TemplateTable::invokevirtual_helper(Register index,Register recv,Register f
 }
 
 
-static void emit_virtual_invoke(InterpreterMacroAssembler* _masm,address* return_table,Label* unresolved) {
+static void emit_virtual_invoke(InterpreterMacroAssembler* _masm,address* return_table,Label* unresolved,Register return_pc=noreg) {
   TemplateTable::emit_resolve_method_entry(_masm,Bytecodes::_invokevirtual,TemplateTable::f2_byte,rcx,rdx,unresolved);
   __ load_unsigned_byte(rdx,Address(rcx,in_bytes(ResolvedMethodEntry::flags_offset())));
   if(unresolved!=nullptr)emit_pilot_invoke_gate(_masm,Bytecodes::_invokevirtual,rcx,rdx,*unresolved);
   emit_virtual_payload(_masm,rcx,rbx,rdx);
-  TemplateTable::emit_prepare_invoke(_masm,Bytecodes::_invokevirtual,rcx,rcx,rdx,return_table);
+  emit_prepare_invoke_impl(_masm,Bytecodes::_invokevirtual,rcx,rcx,rdx,return_table,return_pc);
   emit_invokevirtual_helper(_masm,rbx,rcx,rdx);
 }
 
@@ -3378,23 +3388,28 @@ void TemplateTable::invokestatic(int byte_no) {
   emit_direct_invoke(_masm,Bytecodes::_invokestatic,nullptr,nullptr);
 }
 
-void TemplateTable::emit_direct_invoke(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
-                                     address* return_table, Label* unresolved) {
+static void emit_direct_invoke_impl(InterpreterMacroAssembler* _masm, Bytecodes::Code code,
+                                    address* return_table, Label* unresolved, Register return_pc) {
   assert(code==Bytecodes::_invokestatic || code==Bytecodes::_invokespecial,"direct Java invoke");
-  emit_resolve_method_entry(_masm,code,f1_byte,rcx,rdx,unresolved);
+  TemplateTable::emit_resolve_method_entry(_masm,code,TemplateTable::f1_byte,rcx,rdx,unresolved);
   __ load_unsigned_byte(rdx,Address(rcx,in_bytes(ResolvedMethodEntry::flags_offset())));
   __ movptr(rbx,Address(rcx,in_bytes(ResolvedMethodEntry::method_offset())));
   if(unresolved!=nullptr) {
     __ testptr(rbx,rbx);__ jcc(Assembler::zero,*unresolved);
     emit_pilot_invoke_gate(_masm,code,rcx,rdx,*unresolved);
   }
-  emit_prepare_invoke(_masm,code,rcx,rcx,rdx,return_table);
+  emit_prepare_invoke_impl(_masm,code,rcx,rcx,rdx,return_table,return_pc);
   if(code==Bytecodes::_invokespecial) {
     __ verify_oop(rcx);__ null_check(rcx);
   }
   __ profile_call(rax);
   __ profile_arguments_type(rax,rbx,rbcp,false);
   __ jump_from_interpreted(rbx,rax);
+}
+
+void TemplateTable::emit_direct_invoke(InterpreterMacroAssembler* masm, Bytecodes::Code code,
+                                     address* return_table, Label* unresolved) {
+  emit_direct_invoke_impl(masm,code,return_table,unresolved,noreg);
 }
 
 
@@ -3405,13 +3420,13 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
 }
 
 
-static void emit_interface_invoke(InterpreterMacroAssembler* _masm,address* return_table,Label* unresolved) {
+static void emit_interface_invoke(InterpreterMacroAssembler* _masm,address* return_table,Label* unresolved,Register return_pc=noreg) {
   TemplateTable::emit_resolve_method_entry(_masm,Bytecodes::_invokeinterface,TemplateTable::f1_byte,rcx,rdx,unresolved);
   __ load_unsigned_byte(rdx,Address(rcx,in_bytes(ResolvedMethodEntry::flags_offset())));
   // Check before loading REFC into rax; the gate uses rax as its scratch.
   if(unresolved!=nullptr)emit_pilot_invoke_gate(_masm,Bytecodes::_invokeinterface,rcx,rdx,*unresolved);
   emit_interface_payload(_masm,rcx,rax,rbx,rdx);
-  TemplateTable::emit_prepare_invoke(_masm,Bytecodes::_invokeinterface,rcx,rcx,rdx,return_table);
+  emit_prepare_invoke_impl(_masm,Bytecodes::_invokeinterface,rcx,rcx,rdx,return_table,return_pc);
   // First check for Object case, then private interface method,
   // then regular interface method.
 
@@ -3590,12 +3605,10 @@ void TemplateTable::invokeinterface(int byte_no) {
 }
 
 #ifdef AMD64
-void InterpreterFramePilot::emit_dynamic_call_stub(InterpreterMacroAssembler* masm,Bytecodes::Code code,Label& fallback) {
-  if(code==Bytecodes::_invokevirtual)emit_virtual_invoke(masm,invoke_return_table(false),&fallback);
-  else {
-    assert(code==Bytecodes::_invokeinterface,"ordinary dynamic invoke");
-    emit_interface_invoke(masm,invoke_return_table(true),&fallback);
-  }
+void InterpreterFramePilot::emit_call_stub(InterpreterMacroAssembler* masm,Bytecodes::Code code,Label& fallback) {
+  if(code==Bytecodes::_invokevirtual)emit_virtual_invoke(masm,nullptr,&fallback,r8);
+  else if(code==Bytecodes::_invokeinterface)emit_interface_invoke(masm,nullptr,&fallback,r8);
+  else emit_direct_invoke_impl(masm,code,nullptr,&fallback,r8);
 }
 #endif
 

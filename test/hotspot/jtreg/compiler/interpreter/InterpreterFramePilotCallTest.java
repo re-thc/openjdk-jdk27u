@@ -53,6 +53,8 @@ public class InterpreterFramePilotCallTest {
     static class Caller extends Base { int special(int x){return super.value(x)+11;} }
     static int helper(int x) { effects++;return x*3; }
     static int direct(int x) { return helper(x)+7; }
+    static int tail(int x) { return helper(x); }
+    static int unsupportedSuccessor(int x) { return switch(helper(x)){case 3->17;case 6->19;default->23;}; }
     static int twice(int x) { return helper(helper(x))+13; }
     static int recursive(int x) { return x==0?1:recursive(x-1)+3; }
     static int stacked(Object token,int x) { return x+gcNumber(token); }
@@ -123,6 +125,19 @@ public class InterpreterFramePilotCallTest {
     static void child(int action,String mode)throws Exception {
         WB=WhiteBox.getWhiteBox();
         System.load(System.getProperty("pilot.library"));
+        if(mode.equals("returns")) {
+            tail(1);unsupportedSuccessor(1);
+            Method tail=method("tail",int.class),truncated=method("unsupportedSuccessor",int.class);
+            prepare(tail,action);prepare(truncated,action);effects=0;
+            for(int i=0;i<20;i++) {
+                check(tail(i)==i*3,"tail keeps ordinary return semantics");
+                check(unsupportedSuccessor(i)==(i==1?17:i==2?19:23),"unsupported next bytecode executes once");
+            }
+            check(effects==40 && query(tail,3)[9]==20 && query(truncated,3)[9]==20,
+                "both no-successor call prefixes execute and call once");
+            check(resumes(tail)==0 && resumes(truncated)==0,"no native successor uses ordinary typed return");
+            System.out.println("PILOT_DIRECT_CALL_OK action="+action+" mode="+mode);return;
+        }
         Method direct=method("direct",int.class),twice=method("twice",int.class),stacked=method("stacked",Object.class,int.class),
             roots=method("roots",Holder.class),throwing=method("throwing",int.class),guarded=method("guarded",int.class),initialize=method("initialize",int.class);
         Caller caller=new Caller();Method special=Caller.class.getDeclaredMethod("special",int.class);
@@ -191,6 +206,37 @@ public class InterpreterFramePilotCallTest {
                 check(throughActiveDeopt(3)==22 && !WB.isMethodCompiled(activeMethod) && resumes(through)>before,
                     "active compiled callee deoptimizes with suspended interpreter caller level "+level);
             }
+            // A genuine virtual-thread suspension copies/patches the same
+            // ordinary return word. Deoptimize the compiled blocked callee
+            // while frozen; the sole caller local must survive moving GC.
+            Method awaitMethod=method("await",Holder.class);
+            for(int level:new int[]{1,4}) {
+                compile(awaitMethod,level);released=false;entered=false;
+                AtomicReference<Object> virtualResult=new AtomicReference<>();
+                AtomicReference<Throwable> virtualFailure=new AtomicReference<>();
+                long resumesBefore=resumes(blocked);
+                Thread virtual=Thread.ofVirtual().unstarted(() -> {
+                    try{virtualResult.set(blocked(new Holder(new Token())));}
+                    catch(Throwable failure){virtualFailure.set(failure);}
+                });
+                virtual.start();
+                try {
+                    long end=System.nanoTime()+20_000_000_000L;
+                    while(!entered || virtual.getState()!=Thread.State.WAITING) {
+                        check(System.nanoTime()<end,"virtual callee blocked in wait");Thread.sleep(1);
+                    }
+                    check(Arrays.stream(virtual.getStackTrace()).anyMatch(f -> f.getMethodName().equals("blocked")),
+                        "frozen virtual caller stack walk");
+                    check(WB.isMethodCompiled(awaitMethod) && WB.deoptimizeMethod(awaitMethod)>0,
+                        "compiled blocked callee deoptimized while virtual thread suspended level "+level);
+                    WB.fullGC();
+                } finally {
+                    synchronized(monitor){released=true;monitor.notifyAll();}virtual.join(20_000);
+                }
+                check(!virtual.isAlive() && virtualFailure.get()==null && virtualResult.get() instanceof Token &&
+                    ((Token)virtualResult.get()).value==379 && resumes(blocked)==resumesBefore+1,
+                    "virtual frozen caller sole oop survives GC/deopt and resumes exactly once level "+level);
+            }
         }
         if(mode.equals("redefine")) {
             redefinedClass=new Loader().define(redefineBytes(7));redefinedBytes=redefineBytes(13);
@@ -216,7 +262,7 @@ public class InterpreterFramePilotCallTest {
             options.addAll(Arrays.asList(InterpreterFramePilotCallTest.class.getName(),Integer.toString(action),"int"));
             ProcessTools.executeTestJava(options).shouldHaveExitValue(0).shouldContain("PILOT_DIRECT_CALL_OK");
         }
-        for(String mode:new String[]{"mixed","redefine","tooling"}) {
+        for(String mode:new String[]{"mixed","returns","redefine","tooling"}) {
         ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-Dpilot.library="+agent,
             "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-XX:CompileThresholdScaling=100",
             "-XX:CompileCommand=dontinline,InterpreterFramePilotCallTest::*",

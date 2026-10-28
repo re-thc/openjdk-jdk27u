@@ -53,7 +53,6 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_ClassCastException_handler();
   address generate_ArrayIndexOutOfBounds_handler();
   address generate_return_entry_for(TosState state, int step, size_t index_size);
-  AMD64_ONLY(address generate_pilot_return_entry_for(TosState state,int step);)
   address generate_earlyret_entry_for(TosState state);
   address generate_deopt_entry_for(TosState state, int step, address continuation = nullptr);
   address generate_safept_entry_for(TosState state, address runtime_entry);

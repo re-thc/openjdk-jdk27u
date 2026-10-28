@@ -266,24 +266,12 @@ void TemplateInterpreterGenerator::generate_all() {
 #if defined(AMD64) && !defined(ZERO)
   if(UseInterpreterFramePilot) {
     int available=Interpreter::code()->available_space();
-    {
-      CodeletMark cm(_masm,"interpreter-frame pilot call returns");
-      const TosState states[]={itos,atos,vtos};
-      for(int form=0;form<2;form++) {
-        for(TosState state:states)
-          InterpreterFramePilot::set_return_entry(form!=0,state,generate_pilot_return_entry_for(state,form==0?3:5));
-        for(int i=btos;i<itos;i++)
-          InterpreterFramePilot::set_return_entry(form!=0,(TosState)i,InterpreterFramePilot::invoke_return_table(form!=0)[itos]);
-      }
-    }
     const Bytecodes::Code codes[]={Bytecodes::_invokestatic,Bytecodes::_invokespecial,Bytecodes::_invokevirtual,Bytecodes::_invokeinterface};
     for(Bytecodes::Code code:codes) {
       CodeletMark cm(_masm,"interpreter-frame pilot invoke",code);
       InterpreterFramePilot::set_call_entry(code,__ pc());
       Label fallback;
-      if(code==Bytecodes::_invokevirtual || code==Bytecodes::_invokeinterface)
-        InterpreterFramePilot::emit_dynamic_call_stub(_masm,code,fallback);
-      else TemplateTable::emit_direct_invoke(_masm,code,InterpreterFramePilot::invoke_return_table(false),&fallback);
+      InterpreterFramePilot::emit_call_stub(_masm,code,fallback);
       __ bind(fallback);__ dispatch_next(vtos,0,true);
     }
     guarantee(available-Interpreter::code()->available_space()<InterpreterFramePilot::shared_code_budget,

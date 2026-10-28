@@ -219,11 +219,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,i
 }
 
 #ifdef AMD64
-address TemplateInterpreterGenerator::generate_pilot_return_entry_for(TosState state,int step) {
-  address entry=__ pc();
-  emit_invoke_return_epilogue(_masm,state,sizeof(u2));
-  InterpreterFramePilot::emit_resume(_masm,state,step);
-  return entry;
+void InterpreterFramePilot::emit_return_site(InterpreterMacroAssembler* masm, TosState state, int step,
+                                             Label& successor, Label& fallback, int slot) {
+  emit_invoke_return_epilogue(masm,state,sizeof(u2));
+  emit_resume(masm,state,step,successor,fallback,slot);
 }
 #endif
 
