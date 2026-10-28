@@ -1,5 +1,10 @@
 # Next semantic scope: category-1 callers with interpreter-native calls
 
+Implementation checkpoint: the approved Stage A and ordinary-call Stage B are
+now qualified locally; see [dynamic-call results and remaining limits](interpreter-frame-dynamic-calls.md).
+The proposal and retained reach estimates below preserve their original
+denominators. Stage C and automatic admission remain deferred.
+
 Automatic admission for the current integer-prefix subset is not the next
 implementation. The recommendation is one staged semantic batch: instance and
 reference values, cached field reads and forward control flow, completed by
