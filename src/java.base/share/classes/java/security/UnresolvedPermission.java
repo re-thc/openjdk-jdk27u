@@ -54,13 +54,11 @@ import java.util.Objects;
  *       resources as the Security Manager is no longer supported.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class UnresolvedPermission extends Permission
 implements java.io.Serializable
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4821973115467008846L;
 
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance

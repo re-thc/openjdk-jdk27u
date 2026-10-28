@@ -39,10 +39,8 @@ import javax.security.auth.callback.CallbackHandler;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class AuthProvider extends Provider {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4197859053084546461L;
 
     /**
      * Constructs a provider with the specified name, version number,

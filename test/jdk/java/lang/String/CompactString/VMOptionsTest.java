@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +34,13 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @bug 8077559
- * @summary Tests Compact String. This one is testing
- *          if Compact String enable/disable VM Options is indeed working in String class,
- *          it's verified by testing if the VM option affect coder and
- *          COMPACT_STRINGS field in String class.
+ * @summary Verify always-enabled compact storage and genuine UTF16 coders.
  * @modules java.base/java.lang:open
- * @run testng/othervm -XX:+CompactStrings -DCompactStringEnabled=true VMOptionsTest
- * @run testng/othervm -XX:-CompactStrings -DCompactStringEnabled=false VMOptionsTest
+ * @run testng/othervm VMOptionsTest
+ * @run testng/othervm -XX:+CompactStrings VMOptionsTest
  */
 
 public class VMOptionsTest {
-    boolean compactStringEnabled;
     // corresponding "COMPACT_STRINGS" field in String class.
     Field COMPACT_STRINGS;
     // corresponding "coder" field in String class.
@@ -55,7 +52,6 @@ public class VMOptionsTest {
 
     @BeforeClass
     public void setUp() throws Exception {
-        compactStringEnabled = Boolean.valueOf(System.getProperty("CompactStringEnabled", null));
         COMPACT_STRINGS = String.class.getDeclaredField("COMPACT_STRINGS");
         COMPACT_STRINGS.setAccessible(true);
         coder = String.class.getDeclaredField("coder");
@@ -67,6 +63,10 @@ public class VMOptionsTest {
         return new Object[][] {
                 new Object[] {"", LATIN1},
                 new Object[] {"abc", LATIN1},
+                new Object[] {"\u00ff", LATIN1},
+                new Object[] {"\ud83d\ude00", UTF16},
+                new Object[] {"a\ud800", UTF16},
+                new Object[] {"\udc00", UTF16},
                 new Object[] {"A\uff21", UTF16},
                 new Object[] {"\uff21\uff22", UTF16}
         };
@@ -78,15 +78,14 @@ public class VMOptionsTest {
     @Test(dataProvider = "provider")
     public void testCoder(String str, byte expected) throws Exception {
         byte c = (byte) coder.get(str);
-        expected = compactStringEnabled ? expected : UTF16;
         assertEquals(c, expected);
     }
 
     /*
      * verify the COMPACT_STRINGS flag in String objects.
      */
-    @Test(dataProvider = "provider")
-    public void testCompactStringFlag(String str, byte ignore) throws Exception {
-        assertTrue(COMPACT_STRINGS.get(str).equals(compactStringEnabled));
+    @Test
+    public void testCompactStringFlag() throws Exception {
+        assertTrue(COMPACT_STRINGS.getBoolean(null));
     }
 }

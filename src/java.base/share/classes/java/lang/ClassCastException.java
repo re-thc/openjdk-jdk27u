@@ -36,10 +36,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClassCastException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -9223365651070458532L;
-
     /**
      * Constructs a {@code ClassCastException} with no detail message.
      */

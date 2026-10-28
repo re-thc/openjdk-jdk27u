@@ -55,12 +55,10 @@ import static java.security.DrbgParameters.Capability.*;
  * The default value is also mentioned in the @implNote part of
  * {@link DrbgParameters} class.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DRBG extends SecureRandomSpi {
 
     private static final String PROP_NAME = "securerandom.drbg.config";
-
-    @java.io.Serial
-    private static final long serialVersionUID = 9L;
 
     private transient AbstractDrbg impl;
 

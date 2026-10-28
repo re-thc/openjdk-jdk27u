@@ -33,10 +33,8 @@ package java.util;
  * @see     java.util.Scanner
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InputMismatchException extends NoSuchElementException {
-    @java.io.Serial
-    private static final long serialVersionUID = 8811230760997066428L;
-
     /**
      * Constructs an {@code InputMismatchException} with {@code null}
      * as its error message string.

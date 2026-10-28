@@ -33,10 +33,8 @@ package javax.security.auth.login;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AccountNotFoundException extends AccountException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1498349563916294614L;
 
     /**
      * Constructs a AccountNotFoundException with no detail message.

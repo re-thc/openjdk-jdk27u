@@ -31,10 +31,8 @@ package java.lang;
  *
  * @since      1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClassCircularityError extends LinkageError {
-    @java.io.Serial
-    private static final long serialVersionUID = 1054362542914539689L;
-
     /**
      * Constructs a {@code ClassCircularityError} with no detail message.
      */

@@ -31,9 +31,8 @@ package sun.net.ftp;
  * <p>The specific error code can be retrieved with {@link #getReplyCode() }.</p>
  * @author      Jonathan Payne
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FtpProtocolException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 5978077070276545054L;
     private final FtpReplyCode code;
 
     /**

@@ -42,12 +42,10 @@ package javax.security.cert;
  * @author Hemma Prafullchandra
  * @deprecated Use the classes in {@code java.security.cert} instead.
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since="9", forRemoval=true)
 public class CertificateNotYetValidException extends CertificateException {
 
-    @java.io.Serial
-    private static final long serialVersionUID = -8976172474266822818L;
     /**
      * Constructs a CertificateNotYetValidException with no detail message. A
      * detail message is a String that describes this particular

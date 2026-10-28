@@ -35,12 +35,10 @@ package java.nio.charset;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CoderMalfunctionError
     extends Error
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1151412348057794301L;
 
     /**
      * Initializes an instance of this class.

@@ -583,12 +583,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      *
      * @since 1.6
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class SimpleEntry<K,V>
         implements Entry<K,V>, java.io.Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = -8499721149061103585L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K key;
@@ -731,12 +729,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * @param <V> the type of the value
      * @since 1.6
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class SimpleImmutableEntry<K,V>
         implements Entry<K,V>, java.io.Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 7138329143949025153L;
-
         /** @serial */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private final K key;

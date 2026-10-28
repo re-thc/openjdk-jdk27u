@@ -32,10 +32,8 @@ package javax.crypto;
  *
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AEADBadTagException extends BadPaddingException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -488059093241685509L;
 
     /**
      * Constructs an {@code AEADBadTagException} with no detail message.

@@ -33,10 +33,8 @@ import java.security.SecureRandomParameters;
 /**
  * Exported and non-exported parameters that can be used by DRBGs.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MoreDrbgParameters implements SecureRandomParameters, Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 9L;
 
     final transient EntropySource es;
 

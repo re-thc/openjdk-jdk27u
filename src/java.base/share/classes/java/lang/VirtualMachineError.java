@@ -33,10 +33,8 @@ package java.lang;
  * @author  Frank Yellin
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class VirtualMachineError extends Error {
-    @java.io.Serial
-    private static final long serialVersionUID = 4161983926571568670L;
-
     /**
      * Constructs a {@code VirtualMachineError} with no detail message.
      */

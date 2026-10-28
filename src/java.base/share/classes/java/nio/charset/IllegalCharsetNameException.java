@@ -32,12 +32,10 @@ package java.nio.charset;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalCharsetNameException
     extends IllegalArgumentException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1457525358470002989L;
 
     /**
      * The illegal charset name.

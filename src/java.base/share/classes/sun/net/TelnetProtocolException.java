@@ -34,10 +34,8 @@ import java.io.*;
  * @author      Jonathan Payne
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TelnetProtocolException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = 8509127047257111343L;
-
     public TelnetProtocolException(String s) {
         super(s);
     }

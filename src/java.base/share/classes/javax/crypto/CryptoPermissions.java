@@ -62,11 +62,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author Sharon Liu
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class CryptoPermissions extends PermissionCollection
 implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4946547168093391015L;
 
     /**
      * @serialField perms java.util.Hashtable

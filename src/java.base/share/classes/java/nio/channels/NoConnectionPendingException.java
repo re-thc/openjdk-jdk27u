@@ -33,12 +33,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoConnectionPendingException
     extends IllegalStateException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8296561183633134743L;
 
     /**
      * Constructs an instance of this class.

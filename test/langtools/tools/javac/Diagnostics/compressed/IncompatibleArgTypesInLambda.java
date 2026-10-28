@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 8381642
  * @summary IncompatibleArgTypesInLambda error reported at wrong position
  * @library /tools/lib

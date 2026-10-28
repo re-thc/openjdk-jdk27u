@@ -32,10 +32,8 @@ package jdk.internal.net.quic;
  * <p>For a list of errors see:
  * https://www.rfc-editor.org/rfc/rfc9000.html#name-transport-error-codes
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class QuicTransportException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 5259674758792412464L;
-
     private final QuicTLSEngine.KeySpace keySpace;
     private final long frameType;
     private final long errorCode;

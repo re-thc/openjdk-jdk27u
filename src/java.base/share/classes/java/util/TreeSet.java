@@ -93,6 +93,7 @@ package java.util;
  * @since   1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TreeSet<E> extends AbstractSet<E>
     implements NavigableSet<E>, Cloneable, java.io.Serializable
 {
@@ -585,6 +586,4 @@ public class TreeSet<E> extends AbstractSet<E>
         return TreeMap.keySpliteratorFor(m);
     }
 
-    @java.io.Serial
-    private static final long serialVersionUID = -2479143000061671589L;
 }

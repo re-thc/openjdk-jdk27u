@@ -53,10 +53,8 @@ import java.util.Locale;
  * @see javax.crypto.SecretKeyFactory
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SecretKeySpec implements KeySpec, SecretKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6577238317307289933L;
 
     /**
      * The secret key.

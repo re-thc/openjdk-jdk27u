@@ -90,10 +90,9 @@ import java.util.concurrent.TransferQueue;
  * @author Doug Lea and Bill Scherer and Michael Scott
  * @param <E> the type of elements held in this queue
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SynchronousQueue<E> extends AbstractQueue<E>
     implements BlockingQueue<E>, java.io.Serializable {
-    private static final long serialVersionUID = -3223113410248163686L;
-
     /*
      * This class implements extensions of the dual stack and dual
      * queue algorithms described in "Nonblocking Concurrent Objects
@@ -549,11 +548,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     @SuppressWarnings("serial")
     static class WaitQueue implements java.io.Serializable { }
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class LifoWaitQueue extends WaitQueue {
-        private static final long serialVersionUID = -3633113410248163686L;
     }
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class FifoWaitQueue extends WaitQueue {
-        private static final long serialVersionUID = -3623113410248163686L;
     }
     /** @serial */
     private ReentrantLock qlock;

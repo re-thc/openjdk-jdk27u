@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +70,6 @@ define_pd_global(bool,  PreserveFramePointer,     false);
 define_pd_global(uintx, TypeProfileLevel, 0);
 
 // No performance work done here yet.
-define_pd_global(bool, CompactStrings, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
 

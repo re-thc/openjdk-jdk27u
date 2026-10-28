@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +37,7 @@ CDSConst CDSConstants::offsets[] = {
   { "GenericCDSFileMapHeader::_base_archive_name_offset", offset_of(GenericCDSFileMapHeader, _base_archive_name_offset) },
   { "GenericCDSFileMapHeader::_base_archive_name_size",   offset_of(GenericCDSFileMapHeader, _base_archive_name_size)   },
   { "CDSFileMapHeaderBase::_regions[0]",                  offset_of(CDSFileMapHeaderBase, _regions)                     },
+  { "FileMapHeader::_compact_strings",                    offset_of(FileMapHeader, _compact_strings)                    },
   { "FileMapHeader::_jvm_ident",                          offset_of(FileMapHeader, _jvm_ident)                          },
   { "CDSFileMapRegion::_crc",                             offset_of(CDSFileMapRegion, _crc)                             },
   { "CDSFileMapRegion::_used",                            offset_of(CDSFileMapRegion, _used)                            },

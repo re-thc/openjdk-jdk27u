@@ -1395,12 +1395,10 @@ public abstract class NumberFormat extends Format  {
      *
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
-        @java.io.Serial
-        private static final long serialVersionUID = 7494728892700160890L;
-
         // table of all instances in this class, used by readResolve
         private static final Map<String, Field> instanceMap = new HashMap<>(11);
 

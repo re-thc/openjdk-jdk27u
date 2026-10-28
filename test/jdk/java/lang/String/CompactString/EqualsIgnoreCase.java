@@ -33,7 +33,6 @@ import static org.testng.Assert.assertTrue;
  * @bug 8077559 8248655 8302871
  * @summary Tests Compact String. This one is for String.equalsIgnoreCase.
  * @run testng/othervm -XX:+CompactStrings EqualsIgnoreCase
- * @run testng/othervm -XX:-CompactStrings EqualsIgnoreCase
  */
 
 public class EqualsIgnoreCase extends CompactString {

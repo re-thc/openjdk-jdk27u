@@ -63,10 +63,8 @@ package java.security;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Permission implements Guard, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5636570222231596674L;
 
     /**
      * @serial The permission name.

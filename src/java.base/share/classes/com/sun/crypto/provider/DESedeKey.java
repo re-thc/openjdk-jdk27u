@@ -44,10 +44,8 @@ import jdk.internal.ref.CleanerFactory;
  *
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class DESedeKey implements SecretKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2463986565756745178L;
 
     private byte[] key;
 

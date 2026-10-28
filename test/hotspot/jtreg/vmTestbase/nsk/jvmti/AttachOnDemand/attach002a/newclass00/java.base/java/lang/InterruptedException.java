@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
 package java.lang;
 
 public class InterruptedException extends Exception {
-
-    // real value does not matter JVM TI require same field
-    private static final long serialVersionUID = 6700697376100628473L;
 
     public InterruptedException() {
         super("attach002a: redefined version");

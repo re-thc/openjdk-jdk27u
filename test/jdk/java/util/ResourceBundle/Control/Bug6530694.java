@@ -21,6 +21,7 @@
  * questions.
  *
  * @test
+ * @requires vm.hasAWT
  * @bug 6530694
  * @summary Checks that sun.util.CoreResourceBundleControl does not apply
  *     to the application provided Swing resources.
