@@ -28,6 +28,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterFramePilot.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
@@ -2446,18 +2447,8 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
   __ movptr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
 }
 
-void TemplateTable::load_resolved_method_entry_interface(Register cache,
-                                                         Register klass,
-                                                         Register method_or_table_index,
-                                                         Register flags) {
-  // setup registers
-  const Register index = rdx;
-  assert_different_registers(cache, klass, method_or_table_index, flags);
-
-  // determine constant pool cache field offsets
-  resolve_cache_and_index_for_method(f1_byte, cache, index);
-  __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
-
+static void emit_interface_payload(InterpreterMacroAssembler* _masm,Register cache,Register klass,
+                                   Register method_or_table_index,Register flags) {
   // Forced-virtual Object calls load REFC into klass and a Method* (vfinal)
   // or vtable index into method_or_table_index. Other interface calls load
   // the cached interface klass and Method*.
@@ -2495,6 +2486,35 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   __ bind(Done);
 }
 
+void TemplateTable::load_resolved_method_entry_interface(Register cache,
+                                                         Register klass,
+                                                         Register method_or_table_index,
+                                                         Register flags) {
+  // setup registers
+  const Register index = rdx;
+  assert_different_registers(cache, klass, method_or_table_index, flags);
+
+  // determine constant pool cache field offsets
+  resolve_cache_and_index_for_method(f1_byte, cache, index);
+  __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
+
+  emit_interface_payload(_masm,cache,klass,method_or_table_index,flags);
+}
+
+
+static void emit_virtual_payload(InterpreterMacroAssembler* _masm,Register cache,
+                                 Register method_or_table_index,Register flags) {
+  // method_or_table_index can either be an itable index or a method depending on the virtual final flag
+  Label isVFinal; Label Done;
+  __ testl(flags, (1 << ResolvedMethodEntry::is_vfinal_shift));
+  __ jcc(Assembler::notZero, isVFinal);
+  __ load_unsigned_short(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::table_index_offset())));
+  __ jmp(Done);
+  __ bind(isVFinal);
+  __ movptr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ bind(Done);
+}
+
 void TemplateTable::load_resolved_method_entry_virtual(Register cache,
                                                        Register method_or_table_index,
                                                        Register flags) {
@@ -2507,15 +2527,7 @@ void TemplateTable::load_resolved_method_entry_virtual(Register cache,
   resolve_cache_and_index_for_method(f2_byte, cache, index);
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
 
-  // method_or_table_index can either be an itable index or a method depending on the virtual final flag
-  Label isVFinal; Label Done;
-  __ testl(flags, (1 << ResolvedMethodEntry::is_vfinal_shift));
-  __ jcc(Assembler::notZero, isVFinal);
-  __ load_unsigned_short(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::table_index_offset())));
-  __ jmp(Done);
-  __ bind(isVFinal);
-  __ movptr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
-  __ bind(Done);
+  emit_virtual_payload(_masm,cache,method_or_table_index,flags);
 }
 
 // The registers cache and index expected to be set before call.
@@ -3227,6 +3239,25 @@ void TemplateTable::fast_xaccess(TosState state) {
 //-----------------------------------------------------------------------------
 // Calls
 
+static void emit_pilot_invoke_gate(InterpreterMacroAssembler* _masm,Bytecodes::Code code,
+                                   Register cache,Register flags,Label& fallback) {
+  __ testl(flags,(1<<ResolvedMethodEntry::has_appendix_shift) |
+                 (1<<ResolvedMethodEntry::has_local_signature_shift) |
+                 (1<<ResolvedMethodEntry::has_resolved_ref_shift));
+  __ jcc(Assembler::notZero,fallback);
+  __ load_unsigned_byte(rax,Address(cache,in_bytes(ResolvedMethodEntry::type_offset())));
+  Label supported_type;
+  __ cmpl(rax,itos);__ jcc(Assembler::belowEqual,supported_type);
+  __ cmpl(rax,atos);__ jcc(Assembler::equal,supported_type);
+  __ cmpl(rax,vtos);__ jcc(Assembler::notEqual,fallback);
+  __ bind(supported_type);
+  if(code!=Bytecodes::_invokestatic) {
+    __ load_unsigned_short(rax,Address(cache,in_bytes(ResolvedMethodEntry::num_parameters_offset())));
+    __ movptr(rax,__ argument_address(rax,-2));
+    __ testptr(rax,rax);__ jcc(Assembler::zero,fallback);
+  }
+}
+
 void TemplateTable::prepare_invoke(Register cache, Register recv, Register flags) {
   emit_prepare_invoke(_masm,bytecode(),cache,recv,flags,nullptr);
 }
@@ -3272,9 +3303,8 @@ void TemplateTable::emit_prepare_invoke(InterpreterMacroAssembler* _masm, Byteco
   __ restore_bcp();
 }
 
-void TemplateTable::invokevirtual_helper(Register index,
-                                         Register recv,
-                                         Register flags) {
+static void emit_invokevirtual_helper(InterpreterMacroAssembler* _masm,Register index,Register recv,Register flags) {
+
   // Uses temporary registers rax, rdx
   assert_different_registers(index, recv, rax, rdx);
   assert(index == rbx, "");
@@ -3316,22 +3346,25 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ jump_from_interpreted(method, rdx);
 }
 
-void TemplateTable::invokevirtual(int byte_no) {
-  transition(vtos, vtos);
-  assert(byte_no == f2_byte, "use this argument");
-
-  load_resolved_method_entry_virtual(rcx,  // ResolvedMethodEntry*
-                                     rbx,  // Method or itable index
-                                     rdx); // Flags
-  prepare_invoke(rcx,  // ResolvedMethodEntry*
-                 rcx,  // Receiver
-                 rdx); // flags
-
-  // rbx: index
-  // rcx: receiver
-  // rdx: flags
-  invokevirtual_helper(rbx, rcx, rdx);
+void TemplateTable::invokevirtual_helper(Register index,Register recv,Register flags) {
+  emit_invokevirtual_helper(_masm,index,recv,flags);
 }
+
+
+static void emit_virtual_invoke(InterpreterMacroAssembler* _masm,address* return_table,Label* unresolved) {
+  TemplateTable::emit_resolve_method_entry(_masm,Bytecodes::_invokevirtual,TemplateTable::f2_byte,rcx,rdx,unresolved);
+  __ load_unsigned_byte(rdx,Address(rcx,in_bytes(ResolvedMethodEntry::flags_offset())));
+  if(unresolved!=nullptr)emit_pilot_invoke_gate(_masm,Bytecodes::_invokevirtual,rcx,rdx,*unresolved);
+  emit_virtual_payload(_masm,rcx,rbx,rdx);
+  TemplateTable::emit_prepare_invoke(_masm,Bytecodes::_invokevirtual,rcx,rcx,rdx,return_table);
+  emit_invokevirtual_helper(_masm,rbx,rcx,rdx);
+}
+
+void TemplateTable::invokevirtual(int byte_no) {
+  transition(vtos,vtos);assert(byte_no==f2_byte,"use this argument");
+  emit_virtual_invoke(_masm,nullptr,nullptr);
+}
+
 
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
@@ -3353,21 +3386,7 @@ void TemplateTable::emit_direct_invoke(InterpreterMacroAssembler* _masm, Bytecod
   __ movptr(rbx,Address(rcx,in_bytes(ResolvedMethodEntry::method_offset())));
   if(unresolved!=nullptr) {
     __ testptr(rbx,rbx);__ jcc(Assembler::zero,*unresolved);
-    __ testl(rdx,(1<<ResolvedMethodEntry::has_appendix_shift) |
-                    (1<<ResolvedMethodEntry::has_local_signature_shift) |
-                    (1<<ResolvedMethodEntry::has_resolved_ref_shift));
-    __ jcc(Assembler::notZero,*unresolved);
-    __ load_unsigned_byte(rax,Address(rcx,in_bytes(ResolvedMethodEntry::type_offset())));
-    Label supported_type;
-    __ cmpl(rax,itos);__ jcc(Assembler::belowEqual,supported_type);
-    __ cmpl(rax,atos);__ jcc(Assembler::equal,supported_type);
-    __ cmpl(rax,vtos);__ jcc(Assembler::notEqual,*unresolved);
-    __ bind(supported_type);
-    if(code==Bytecodes::_invokespecial) {
-      __ load_unsigned_short(rax,Address(rcx,in_bytes(ResolvedMethodEntry::num_parameters_offset())));
-      __ movptr(rax,__ argument_address(rax,-2));
-      __ testptr(rax,rax);__ jcc(Assembler::zero,*unresolved);
-    }
+    emit_pilot_invoke_gate(_masm,code,rcx,rdx,*unresolved);
   }
   emit_prepare_invoke(_masm,code,rcx,rcx,rdx,return_table);
   if(code==Bytecodes::_invokespecial) {
@@ -3386,16 +3405,13 @@ void TemplateTable::fast_invokevfinal(int byte_no) {
 }
 
 
-void TemplateTable::invokeinterface(int byte_no) {
-  transition(vtos, vtos);
-  assert(byte_no == f1_byte, "use this argument");
-
-  load_resolved_method_entry_interface(rcx,  // ResolvedMethodEntry*
-                                       rax,  // Klass*
-                                       rbx,  // Method* or itable/vtable index
-                                       rdx); // flags
-  prepare_invoke(rcx, rcx, rdx); // receiver, flags
-
+static void emit_interface_invoke(InterpreterMacroAssembler* _masm,address* return_table,Label* unresolved) {
+  TemplateTable::emit_resolve_method_entry(_masm,Bytecodes::_invokeinterface,TemplateTable::f1_byte,rcx,rdx,unresolved);
+  __ load_unsigned_byte(rdx,Address(rcx,in_bytes(ResolvedMethodEntry::flags_offset())));
+  // Check before loading REFC into rax; the gate uses rax as its scratch.
+  if(unresolved!=nullptr)emit_pilot_invoke_gate(_masm,Bytecodes::_invokeinterface,rcx,rdx,*unresolved);
+  emit_interface_payload(_masm,rcx,rax,rbx,rdx);
+  TemplateTable::emit_prepare_invoke(_masm,Bytecodes::_invokeinterface,rcx,rcx,rdx,return_table);
   // First check for Object case, then private interface method,
   // then regular interface method.
 
@@ -3567,6 +3583,22 @@ void TemplateTable::invokeinterface(int byte_no) {
              c_rarg1, c_rarg2);
   __ should_not_reach_here();
 }
+
+void TemplateTable::invokeinterface(int byte_no) {
+  transition(vtos,vtos);assert(byte_no==f1_byte,"use this argument");
+  emit_interface_invoke(_masm,nullptr,nullptr);
+}
+
+#ifdef AMD64
+void InterpreterFramePilot::emit_dynamic_call_stub(InterpreterMacroAssembler* masm,Bytecodes::Code code,Label& fallback) {
+  if(code==Bytecodes::_invokevirtual)emit_virtual_invoke(masm,invoke_return_table(false),&fallback);
+  else {
+    assert(code==Bytecodes::_invokeinterface,"ordinary dynamic invoke");
+    emit_interface_invoke(masm,invoke_return_table(true),&fallback);
+  }
+}
+#endif
+
 
 void TemplateTable::invokehandle(int byte_no) {
   transition(vtos, vtos);

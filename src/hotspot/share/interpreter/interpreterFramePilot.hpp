@@ -57,6 +57,7 @@ class InterpreterFramePilot : AllStatic {
   static void set_return_entry(bool is_interface, TosState state, address entry);
   static void set_call_entry(Bytecodes::Code code, address entry);
   static address call_entry(Bytecodes::Code code);
+  static void emit_dynamic_call_stub(InterpreterMacroAssembler* masm,Bytecodes::Code code,Label& fallback);
   static void emit_resume(InterpreterMacroAssembler* masm, TosState state, int step);
   static address resume_entry(Method* method, address bcp);
   enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,

@@ -532,7 +532,8 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         if(bc==Bytecodes::_instanceof) {masm.pop_ptr(rax);masm.xorl(rax,rax);masm.push(itos);}
         masm.bind(done);action=emitted;break;
       }
-      case Bytecodes::_invokestatic: case Bytecodes::_invokespecial: {
+      case Bytecodes::_invokestatic: case Bytecodes::_invokespecial:
+      case Bytecodes::_invokevirtual: case Bytecodes::_invokeinterface: {
         int method_index=stream.get_index_u2();
         if(pool->cache()==nullptr || method_index>=pool->resolved_method_entries_length())break;
         ResolvedMethodEntry* entry=pool->resolved_method_entry_at(method_index);
