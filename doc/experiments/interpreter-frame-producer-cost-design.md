@@ -116,6 +116,14 @@ sixteen field and sixteen return-island guard references, before type checks and
 other fallbacks. The one-int-call Static/Interface/Equals cases can fit their
 four return-island guards inline. Other helper-local labels may overflow too.
 
+Correction from the subsequent
+[per-operation attribution](interpreter-frame-emitter-attribution.md): the actual
+Key captures use four already resolved fields, not the conditional cold-field
+shape assumed above. They have four field null guards and 24 total ordinary-label
+references, rather than the cold-shape minimum of 32. JrtPath uses the cold shape
+and sixteen references. Both still overflow the inline patch cache, so the private
+arena finding is unchanged; the larger field-guard estimate does not describe Key.
+
 Consequently the six short-case zero ResourceArea deltas did not establish
 allocation-free generation. Their counters observe the thread ResourceArea, not
 this private CodeBuffer arena. The allocation path on these larger bodies is
