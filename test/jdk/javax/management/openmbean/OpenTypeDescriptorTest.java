@@ -26,7 +26,7 @@
  * @bug 6254721
  * @bug 6360539
  * @summary Test that Open*MBeanInfo classes include "openType" in descriptor
- *          and also test serial compatibility with Java 5.
+ *          and also test Java 5 field layouts with this fork's descriptor UIDs.
  * @author Eamonn McManus
  *
  * @run clean OpenTypeDescriptorTest
@@ -104,9 +104,9 @@ public class OpenTypeDescriptorTest {
             }
         }
 
-        // Serial compatibility test:
+        // Historical field layout test with this fork's descriptor UIDs:
         //
-        System.out.println("Testing serial compatibility with Java "+
+        System.out.println("Testing field layouts from Java "+
                 MBeanFeatureInfoSerialStore.SERIALIZER_VM_VERSION+
                 " "+
                 MBeanFeatureInfoSerialStore.SERIALIZER_VM_VENDOR);

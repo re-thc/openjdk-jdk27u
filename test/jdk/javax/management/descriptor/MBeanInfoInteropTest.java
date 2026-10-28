@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6204469
- * @summary Check that descriptors have not broken serial interop.
+ * @summary Check descriptor field layouts with this fork's serialization UIDs.
  * @author Eamonn McManus
  *
  * @run clean MBeanInfoInteropTest SerializedInfo
@@ -39,9 +39,9 @@
  * this creates the class SerializedInfo.java.  The idea is to do that on JDK 5.0
  * then run this test on the latest JDK, or vice versa.  The
  * copy included in this source directory was generated on JDK 5.0
- * so that we continue to check forward interop (serialize on JDK 5,
- * deserialize on JDK 6).  There is no easy way to automate backward
- * interop checking.
+ * with only java.base descriptor UID bytes updated for this fork. Field layouts
+ * and payload values remain from JDK 5; historical UID compatibility is not
+ * maintained. There is no easy way to automate backward interop checking.
  */
 
 import java.io.ByteArrayInputStream;
