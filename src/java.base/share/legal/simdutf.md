@@ -1,4 +1,4 @@
-## simdutf v9.3.2
+## simdutf v9.3.3
 
 ### Notice
 

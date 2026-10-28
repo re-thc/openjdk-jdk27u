@@ -1,4 +1,4 @@
-/* auto-generated on 2026-10-17 03:05:59 +0000. Do not edit! */
+/* auto-generated on 2026-10-27 23:10:33 +0000. Do not edit! */
 /* begin file src/simdutf.cpp */
 #include "simdutf.h"
 // Overridden by kernels that must clear the upper vector state before calling
@@ -17321,7 +17321,7 @@ uint64_t to_base64_mask(block64 *b, bool *error) {
   if (default_or_url) {
     lut_lo =
         simdutf_make_uint8x16_t(0xa9, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8,
-                                0xf8, 0xf9, 0xf1, 0xa2, 0xa1, 0xa5, 0xa0, 0xa6);
+                                0xf8, 0xf9, 0xf1, 0xa2, 0xa1, 0xa5, 0xa0, 0xb6);
   } else if (base64_url) {
     lut_lo =
         simdutf_make_uint8x16_t(0xa9, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8,
@@ -17334,7 +17334,7 @@ uint64_t to_base64_mask(block64 *b, bool *error) {
 #else
   if (default_or_url) {
     lut_lo = uint8x16_t{0xa9, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8,
-                        0xf8, 0xf9, 0xf1, 0xa2, 0xa1, 0xa5, 0xa0, 0xa6};
+                        0xf8, 0xf9, 0xf1, 0xa2, 0xa1, 0xa5, 0xa0, 0xb6};
   } else if (base64_url) {
     lut_lo = uint8x16_t{0xa9, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8, 0xf8,
                         0xf8, 0xf9, 0xf1, 0xa0, 0xa1, 0xa5, 0xa0, 0xa2};
@@ -17352,10 +17352,10 @@ uint64_t to_base64_mask(block64 *b, bool *error) {
   if (default_or_url) {
     lut_hi =
         simdutf_make_uint8x16_t(0x0, 0x1, 0x0, 0x0, 0x1, 0x6, 0x8, 0x8, 0x10,
-                                0x20, 0x20, 0x12, 0x40, 0x80, 0x80, 0x40);
+                                0x20, 0x20, 0x10, 0x40, 0x80, 0x80, 0x40);
   } else if (base64_url) {
     lut_hi =
-        simdutf_make_uint8x16_t(0x0, 0x1, 0x0, 0x0, 0x1, 0x6, 0x8, 0x8, 0x10,
+        simdutf_make_uint8x16_t(0x0, 0x1, 0x0, 0x0, 0x1, 0x4, 0x8, 0x8, 0x10,
                                 0x20, 0x20, 0x12, 0x40, 0x80, 0x80, 0x40);
   } else {
     lut_hi =
@@ -17365,7 +17365,7 @@ uint64_t to_base64_mask(block64 *b, bool *error) {
 #else
   if (default_or_url) {
     lut_hi = uint8x16_t{0x0,  0x1,  0x0,  0x0,  0x1,  0x6,  0x8,  0x8,
-                        0x10, 0x20, 0x20, 0x12, 0x40, 0x80, 0x80, 0x40};
+                        0x10, 0x20, 0x20, 0x10, 0x40, 0x80, 0x80, 0x40};
   } else if (base64_url) {
     lut_hi = uint8x16_t{0x0,  0x1,  0x0,  0x0,  0x1,  0x4,  0x8,  0x8,
                         0x10, 0x20, 0x20, 0x12, 0x40, 0x80, 0x80, 0x40};
@@ -18806,6 +18806,51 @@ namespace simdutf {
 namespace arm64 {
 namespace {
 
+template <typename T> simdutf_really_inline T load_bytes_as(const uint8_t *p) {
+  T v;
+  std::memcpy(&v, p, sizeof(T));
+  return v;
+}
+
+// Returns true if the n bytes at p are all ASCII, reading only those bytes.
+// The validators use it on the last, partial block instead of copying that
+// block to the stack, which would stall the vector load of the copy.
+simdutf_really_inline bool tail_is_ascii(const uint8_t *p, size_t n) {
+  uint64_t acc = 0;
+  if (n >= 16) {
+    for (size_t i = 0; i + 16 < n; i += 16) {
+      acc |=
+          load_bytes_as<uint64_t>(p + i) | load_bytes_as<uint64_t>(p + i + 8);
+    }
+    acc |= load_bytes_as<uint64_t>(p + n - 16) |
+           load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 8) {
+    acc = load_bytes_as<uint64_t>(p) | load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 4) {
+    acc = load_bytes_as<uint32_t>(p) | load_bytes_as<uint32_t>(p + n - 4);
+  } else {
+    for (size_t i = 0; i < n; i++) {
+      acc |= p[i];
+    }
+  }
+  return (acc & 0x8080808080808080) == 0;
+}
+
+// Like tail_is_ascii(buf + idx, len - idx), for the remainder that
+// buf_block_reader leaves at idx (1 to 64 bytes, unless len is 0). The caller
+// must already know that the bytes before idx are ASCII. Inputs of at least
+// one block are checked with one load of their last block instead, which
+// overlaps bytes that were already checked: a non-ASCII byte there can only be
+// at or after idx.
+simdutf_really_inline bool remainder_is_ascii(const uint8_t *buf, size_t len,
+                                              size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  if (len >= block) {
+    return simd::simd8x64<uint8_t>(buf + len - block).is_ascii();
+  }
+  return tail_is_ascii(buf + idx, len - idx);
+}
+
 // Walks through a buffer in block-sized increments, loading the last part with
 // spaces
 template <size_t STEP_SIZE> struct buf_block_reader {
@@ -19119,6 +19164,16 @@ struct utf8_checker {
     }
   }
 
+  // Checks a block that may overlap bytes already checked, given the register
+  // of input just before it. Each byte is checked against the same preceding
+  // bytes as before, so the overlapping bytes give the same result.
+  simdutf_really_inline void
+  check_overlapping_input(const simd8x64<uint8_t> &input,
+                          const simd8<uint8_t> prev_input) {
+    this->prev_input_block = prev_input;
+    this->check_next_input(input);
+  }
+
   // do not forget to call check_eof!
   simdutf_really_inline bool errors() const {
     return this->error.any_bits_set_anywhere();
@@ -19206,6 +19261,42 @@ namespace arm64 {
 namespace {
 namespace utf8_validation {
 
+// Checks the bytes from idx on, after the last full block. When the bytes
+// before the window (the last 64 bytes of the input) fill a register, the
+// window is checked in place: the bytes that the last full block already
+// checked are checked again with the same preceding bytes, so they give the
+// same result. An ASCII tail cannot start or finish a multibyte character, so
+// it only needs check_eof(), which reports a character that the last full
+// block left incomplete. Shorter inputs copy the tail to the stack.
+template <class checker>
+simdutf_really_inline void check_remainder(checker &c, const uint8_t *input,
+                                           size_t length, size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  static_assert(block == 8 * sizeof(uint64_t), "one mask bit per byte");
+  if (length >= block + width) {
+    // The window starts at or before idx: buf_block_reader leaves 1 to 64
+    // bytes, so 0 <= idx - start < 64.
+    const size_t start = length - block;
+    const simd::simd8x64<uint8_t> in(input + start);
+    // Bit i is set if byte start + i is not ASCII, so the bytes from idx on
+    // are the top length - idx bits. is_ascii() goes first because GCC, up
+    // to at least GCC 17, builds gteq_unsigned(0x80) from min and compare
+    // instead of one movemask, which costs ASCII tails about 0.5 ns.
+    if (!in.is_ascii() && (in.gteq_unsigned(0x80) >> (idx - start)) != 0) {
+      c.check_overlapping_input(in,
+                                simd::simd8<uint8_t>(input + start - width));
+    }
+  } else if (idx != length) {
+    // Only an empty input leaves no bytes. Its pointer may be null, and
+    // memcpy from a null pointer is undefined.
+    uint8_t buffer[block]{};
+    std::memcpy(buffer, input + idx, length - idx);
+    c.check_next_input(simd::simd8x64<uint8_t>(buffer));
+  }
+  c.check_eof();
+}
+
 /**
  * Validates that the string is actual UTF-8.
  */
@@ -19218,12 +19309,7 @@ bool generic_validate_utf8(const uint8_t *input, size_t length) {
     c.check_next_input(in);
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   return !c.errors();
 }
 
@@ -19257,12 +19343,7 @@ result generic_validate_utf8_with_errors(const uint8_t *input, size_t length) {
     reader.advance();
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   if (c.errors()) {
     if (count != 0) {
       count--;
@@ -19486,17 +19567,14 @@ result generic_validate_ascii_with_errors(const char *input, size_t length) {
 
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  if (!in.is_ascii()) {
-    SIMDUTF_VZEROUPPER();
-    result res = scalar::ascii::validate_with_errors(
-        reinterpret_cast<const char *>(input + count), length - count);
-    return result(res.error, count + res.count);
-  } else {
+  if (remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                         reader.block_index())) {
     return result(error_code::SUCCESS, length);
   }
+  SIMDUTF_VZEROUPPER();
+  result res = scalar::ascii::validate_with_errors(
+      reinterpret_cast<const char *>(input + count), length - count);
+  return result(res.error, count + res.count);
 }
 
 bool generic_validate_ascii(const char *input, size_t length) {
@@ -19508,10 +19586,8 @@ bool generic_validate_ascii(const char *input, size_t length) {
     }
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  return in.is_ascii();
+  return remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                            reader.block_index());
 }
 
 } // namespace ascii_validation
@@ -33625,6 +33701,51 @@ namespace simdutf {
 namespace haswell {
 namespace {
 
+template <typename T> simdutf_really_inline T load_bytes_as(const uint8_t *p) {
+  T v;
+  std::memcpy(&v, p, sizeof(T));
+  return v;
+}
+
+// Returns true if the n bytes at p are all ASCII, reading only those bytes.
+// The validators use it on the last, partial block instead of copying that
+// block to the stack, which would stall the vector load of the copy.
+simdutf_really_inline bool tail_is_ascii(const uint8_t *p, size_t n) {
+  uint64_t acc = 0;
+  if (n >= 16) {
+    for (size_t i = 0; i + 16 < n; i += 16) {
+      acc |=
+          load_bytes_as<uint64_t>(p + i) | load_bytes_as<uint64_t>(p + i + 8);
+    }
+    acc |= load_bytes_as<uint64_t>(p + n - 16) |
+           load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 8) {
+    acc = load_bytes_as<uint64_t>(p) | load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 4) {
+    acc = load_bytes_as<uint32_t>(p) | load_bytes_as<uint32_t>(p + n - 4);
+  } else {
+    for (size_t i = 0; i < n; i++) {
+      acc |= p[i];
+    }
+  }
+  return (acc & 0x8080808080808080) == 0;
+}
+
+// Like tail_is_ascii(buf + idx, len - idx), for the remainder that
+// buf_block_reader leaves at idx (1 to 64 bytes, unless len is 0). The caller
+// must already know that the bytes before idx are ASCII. Inputs of at least
+// one block are checked with one load of their last block instead, which
+// overlaps bytes that were already checked: a non-ASCII byte there can only be
+// at or after idx.
+simdutf_really_inline bool remainder_is_ascii(const uint8_t *buf, size_t len,
+                                              size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  if (len >= block) {
+    return simd::simd8x64<uint8_t>(buf + len - block).is_ascii();
+  }
+  return tail_is_ascii(buf + idx, len - idx);
+}
+
 // Walks through a buffer in block-sized increments, loading the last part with
 // spaces
 template <size_t STEP_SIZE> struct buf_block_reader {
@@ -33938,6 +34059,16 @@ struct utf8_checker {
     }
   }
 
+  // Checks a block that may overlap bytes already checked, given the register
+  // of input just before it. Each byte is checked against the same preceding
+  // bytes as before, so the overlapping bytes give the same result.
+  simdutf_really_inline void
+  check_overlapping_input(const simd8x64<uint8_t> &input,
+                          const simd8<uint8_t> prev_input) {
+    this->prev_input_block = prev_input;
+    this->check_next_input(input);
+  }
+
   // do not forget to call check_eof!
   simdutf_really_inline bool errors() const {
     return this->error.any_bits_set_anywhere();
@@ -34025,6 +34156,42 @@ namespace haswell {
 namespace {
 namespace utf8_validation {
 
+// Checks the bytes from idx on, after the last full block. When the bytes
+// before the window (the last 64 bytes of the input) fill a register, the
+// window is checked in place: the bytes that the last full block already
+// checked are checked again with the same preceding bytes, so they give the
+// same result. An ASCII tail cannot start or finish a multibyte character, so
+// it only needs check_eof(), which reports a character that the last full
+// block left incomplete. Shorter inputs copy the tail to the stack.
+template <class checker>
+simdutf_really_inline void check_remainder(checker &c, const uint8_t *input,
+                                           size_t length, size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  static_assert(block == 8 * sizeof(uint64_t), "one mask bit per byte");
+  if (length >= block + width) {
+    // The window starts at or before idx: buf_block_reader leaves 1 to 64
+    // bytes, so 0 <= idx - start < 64.
+    const size_t start = length - block;
+    const simd::simd8x64<uint8_t> in(input + start);
+    // Bit i is set if byte start + i is not ASCII, so the bytes from idx on
+    // are the top length - idx bits. is_ascii() goes first because GCC, up
+    // to at least GCC 17, builds gteq_unsigned(0x80) from min and compare
+    // instead of one movemask, which costs ASCII tails about 0.5 ns.
+    if (!in.is_ascii() && (in.gteq_unsigned(0x80) >> (idx - start)) != 0) {
+      c.check_overlapping_input(in,
+                                simd::simd8<uint8_t>(input + start - width));
+    }
+  } else if (idx != length) {
+    // Only an empty input leaves no bytes. Its pointer may be null, and
+    // memcpy from a null pointer is undefined.
+    uint8_t buffer[block]{};
+    std::memcpy(buffer, input + idx, length - idx);
+    c.check_next_input(simd::simd8x64<uint8_t>(buffer));
+  }
+  c.check_eof();
+}
+
 /**
  * Validates that the string is actual UTF-8.
  */
@@ -34037,12 +34204,7 @@ bool generic_validate_utf8(const uint8_t *input, size_t length) {
     c.check_next_input(in);
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   return !c.errors();
 }
 
@@ -34076,12 +34238,7 @@ result generic_validate_utf8_with_errors(const uint8_t *input, size_t length) {
     reader.advance();
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   if (c.errors()) {
     if (count != 0) {
       count--;
@@ -34184,17 +34341,14 @@ result generic_validate_ascii_with_errors(const char *input, size_t length) {
 
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  if (!in.is_ascii()) {
-    SIMDUTF_VZEROUPPER();
-    result res = scalar::ascii::validate_with_errors(
-        reinterpret_cast<const char *>(input + count), length - count);
-    return result(res.error, count + res.count);
-  } else {
+  if (remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                         reader.block_index())) {
     return result(error_code::SUCCESS, length);
   }
+  SIMDUTF_VZEROUPPER();
+  result res = scalar::ascii::validate_with_errors(
+      reinterpret_cast<const char *>(input + count), length - count);
+  return result(res.error, count + res.count);
 }
 
 bool generic_validate_ascii(const char *input, size_t length) {
@@ -34206,10 +34360,8 @@ bool generic_validate_ascii(const char *input, size_t length) {
     }
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  return in.is_ascii();
+  return remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                            reader.block_index());
 }
 
 } // namespace ascii_validation
@@ -40978,6 +41130,51 @@ namespace simdutf {
 namespace ppc64 {
 namespace {
 
+template <typename T> simdutf_really_inline T load_bytes_as(const uint8_t *p) {
+  T v;
+  std::memcpy(&v, p, sizeof(T));
+  return v;
+}
+
+// Returns true if the n bytes at p are all ASCII, reading only those bytes.
+// The validators use it on the last, partial block instead of copying that
+// block to the stack, which would stall the vector load of the copy.
+simdutf_really_inline bool tail_is_ascii(const uint8_t *p, size_t n) {
+  uint64_t acc = 0;
+  if (n >= 16) {
+    for (size_t i = 0; i + 16 < n; i += 16) {
+      acc |=
+          load_bytes_as<uint64_t>(p + i) | load_bytes_as<uint64_t>(p + i + 8);
+    }
+    acc |= load_bytes_as<uint64_t>(p + n - 16) |
+           load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 8) {
+    acc = load_bytes_as<uint64_t>(p) | load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 4) {
+    acc = load_bytes_as<uint32_t>(p) | load_bytes_as<uint32_t>(p + n - 4);
+  } else {
+    for (size_t i = 0; i < n; i++) {
+      acc |= p[i];
+    }
+  }
+  return (acc & 0x8080808080808080) == 0;
+}
+
+// Like tail_is_ascii(buf + idx, len - idx), for the remainder that
+// buf_block_reader leaves at idx (1 to 64 bytes, unless len is 0). The caller
+// must already know that the bytes before idx are ASCII. Inputs of at least
+// one block are checked with one load of their last block instead, which
+// overlaps bytes that were already checked: a non-ASCII byte there can only be
+// at or after idx.
+simdutf_really_inline bool remainder_is_ascii(const uint8_t *buf, size_t len,
+                                              size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  if (len >= block) {
+    return simd::simd8x64<uint8_t>(buf + len - block).is_ascii();
+  }
+  return tail_is_ascii(buf + idx, len - idx);
+}
+
 // Walks through a buffer in block-sized increments, loading the last part with
 // spaces
 template <size_t STEP_SIZE> struct buf_block_reader {
@@ -41291,6 +41488,16 @@ struct utf8_checker {
     }
   }
 
+  // Checks a block that may overlap bytes already checked, given the register
+  // of input just before it. Each byte is checked against the same preceding
+  // bytes as before, so the overlapping bytes give the same result.
+  simdutf_really_inline void
+  check_overlapping_input(const simd8x64<uint8_t> &input,
+                          const simd8<uint8_t> prev_input) {
+    this->prev_input_block = prev_input;
+    this->check_next_input(input);
+  }
+
   // do not forget to call check_eof!
   simdutf_really_inline bool errors() const {
     return this->error.any_bits_set_anywhere();
@@ -41378,6 +41585,42 @@ namespace ppc64 {
 namespace {
 namespace utf8_validation {
 
+// Checks the bytes from idx on, after the last full block. When the bytes
+// before the window (the last 64 bytes of the input) fill a register, the
+// window is checked in place: the bytes that the last full block already
+// checked are checked again with the same preceding bytes, so they give the
+// same result. An ASCII tail cannot start or finish a multibyte character, so
+// it only needs check_eof(), which reports a character that the last full
+// block left incomplete. Shorter inputs copy the tail to the stack.
+template <class checker>
+simdutf_really_inline void check_remainder(checker &c, const uint8_t *input,
+                                           size_t length, size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  static_assert(block == 8 * sizeof(uint64_t), "one mask bit per byte");
+  if (length >= block + width) {
+    // The window starts at or before idx: buf_block_reader leaves 1 to 64
+    // bytes, so 0 <= idx - start < 64.
+    const size_t start = length - block;
+    const simd::simd8x64<uint8_t> in(input + start);
+    // Bit i is set if byte start + i is not ASCII, so the bytes from idx on
+    // are the top length - idx bits. is_ascii() goes first because GCC, up
+    // to at least GCC 17, builds gteq_unsigned(0x80) from min and compare
+    // instead of one movemask, which costs ASCII tails about 0.5 ns.
+    if (!in.is_ascii() && (in.gteq_unsigned(0x80) >> (idx - start)) != 0) {
+      c.check_overlapping_input(in,
+                                simd::simd8<uint8_t>(input + start - width));
+    }
+  } else if (idx != length) {
+    // Only an empty input leaves no bytes. Its pointer may be null, and
+    // memcpy from a null pointer is undefined.
+    uint8_t buffer[block]{};
+    std::memcpy(buffer, input + idx, length - idx);
+    c.check_next_input(simd::simd8x64<uint8_t>(buffer));
+  }
+  c.check_eof();
+}
+
 /**
  * Validates that the string is actual UTF-8.
  */
@@ -41390,12 +41633,7 @@ bool generic_validate_utf8(const uint8_t *input, size_t length) {
     c.check_next_input(in);
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   return !c.errors();
 }
 
@@ -41429,12 +41667,7 @@ result generic_validate_utf8_with_errors(const uint8_t *input, size_t length) {
     reader.advance();
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   if (c.errors()) {
     if (count != 0) {
       count--;
@@ -43014,17 +43247,14 @@ result generic_validate_ascii_with_errors(const char *input, size_t length) {
 
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  if (!in.is_ascii()) {
-    SIMDUTF_VZEROUPPER();
-    result res = scalar::ascii::validate_with_errors(
-        reinterpret_cast<const char *>(input + count), length - count);
-    return result(res.error, count + res.count);
-  } else {
+  if (remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                         reader.block_index())) {
     return result(error_code::SUCCESS, length);
   }
+  SIMDUTF_VZEROUPPER();
+  result res = scalar::ascii::validate_with_errors(
+      reinterpret_cast<const char *>(input + count), length - count);
+  return result(res.error, count + res.count);
 }
 
 bool generic_validate_ascii(const char *input, size_t length) {
@@ -43036,10 +43266,8 @@ bool generic_validate_ascii(const char *input, size_t length) {
     }
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  return in.is_ascii();
+  return remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                            reader.block_index());
 }
 
 } // namespace ascii_validation
@@ -50033,6 +50261,51 @@ namespace simdutf {
 namespace westmere {
 namespace {
 
+template <typename T> simdutf_really_inline T load_bytes_as(const uint8_t *p) {
+  T v;
+  std::memcpy(&v, p, sizeof(T));
+  return v;
+}
+
+// Returns true if the n bytes at p are all ASCII, reading only those bytes.
+// The validators use it on the last, partial block instead of copying that
+// block to the stack, which would stall the vector load of the copy.
+simdutf_really_inline bool tail_is_ascii(const uint8_t *p, size_t n) {
+  uint64_t acc = 0;
+  if (n >= 16) {
+    for (size_t i = 0; i + 16 < n; i += 16) {
+      acc |=
+          load_bytes_as<uint64_t>(p + i) | load_bytes_as<uint64_t>(p + i + 8);
+    }
+    acc |= load_bytes_as<uint64_t>(p + n - 16) |
+           load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 8) {
+    acc = load_bytes_as<uint64_t>(p) | load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 4) {
+    acc = load_bytes_as<uint32_t>(p) | load_bytes_as<uint32_t>(p + n - 4);
+  } else {
+    for (size_t i = 0; i < n; i++) {
+      acc |= p[i];
+    }
+  }
+  return (acc & 0x8080808080808080) == 0;
+}
+
+// Like tail_is_ascii(buf + idx, len - idx), for the remainder that
+// buf_block_reader leaves at idx (1 to 64 bytes, unless len is 0). The caller
+// must already know that the bytes before idx are ASCII. Inputs of at least
+// one block are checked with one load of their last block instead, which
+// overlaps bytes that were already checked: a non-ASCII byte there can only be
+// at or after idx.
+simdutf_really_inline bool remainder_is_ascii(const uint8_t *buf, size_t len,
+                                              size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  if (len >= block) {
+    return simd::simd8x64<uint8_t>(buf + len - block).is_ascii();
+  }
+  return tail_is_ascii(buf + idx, len - idx);
+}
+
 // Walks through a buffer in block-sized increments, loading the last part with
 // spaces
 template <size_t STEP_SIZE> struct buf_block_reader {
@@ -50346,6 +50619,16 @@ struct utf8_checker {
     }
   }
 
+  // Checks a block that may overlap bytes already checked, given the register
+  // of input just before it. Each byte is checked against the same preceding
+  // bytes as before, so the overlapping bytes give the same result.
+  simdutf_really_inline void
+  check_overlapping_input(const simd8x64<uint8_t> &input,
+                          const simd8<uint8_t> prev_input) {
+    this->prev_input_block = prev_input;
+    this->check_next_input(input);
+  }
+
   // do not forget to call check_eof!
   simdutf_really_inline bool errors() const {
     return this->error.any_bits_set_anywhere();
@@ -50433,6 +50716,42 @@ namespace westmere {
 namespace {
 namespace utf8_validation {
 
+// Checks the bytes from idx on, after the last full block. When the bytes
+// before the window (the last 64 bytes of the input) fill a register, the
+// window is checked in place: the bytes that the last full block already
+// checked are checked again with the same preceding bytes, so they give the
+// same result. An ASCII tail cannot start or finish a multibyte character, so
+// it only needs check_eof(), which reports a character that the last full
+// block left incomplete. Shorter inputs copy the tail to the stack.
+template <class checker>
+simdutf_really_inline void check_remainder(checker &c, const uint8_t *input,
+                                           size_t length, size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  static_assert(block == 8 * sizeof(uint64_t), "one mask bit per byte");
+  if (length >= block + width) {
+    // The window starts at or before idx: buf_block_reader leaves 1 to 64
+    // bytes, so 0 <= idx - start < 64.
+    const size_t start = length - block;
+    const simd::simd8x64<uint8_t> in(input + start);
+    // Bit i is set if byte start + i is not ASCII, so the bytes from idx on
+    // are the top length - idx bits. is_ascii() goes first because GCC, up
+    // to at least GCC 17, builds gteq_unsigned(0x80) from min and compare
+    // instead of one movemask, which costs ASCII tails about 0.5 ns.
+    if (!in.is_ascii() && (in.gteq_unsigned(0x80) >> (idx - start)) != 0) {
+      c.check_overlapping_input(in,
+                                simd::simd8<uint8_t>(input + start - width));
+    }
+  } else if (idx != length) {
+    // Only an empty input leaves no bytes. Its pointer may be null, and
+    // memcpy from a null pointer is undefined.
+    uint8_t buffer[block]{};
+    std::memcpy(buffer, input + idx, length - idx);
+    c.check_next_input(simd::simd8x64<uint8_t>(buffer));
+  }
+  c.check_eof();
+}
+
 /**
  * Validates that the string is actual UTF-8.
  */
@@ -50445,12 +50764,7 @@ bool generic_validate_utf8(const uint8_t *input, size_t length) {
     c.check_next_input(in);
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   return !c.errors();
 }
 
@@ -50484,12 +50798,7 @@ result generic_validate_utf8_with_errors(const uint8_t *input, size_t length) {
     reader.advance();
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   if (c.errors()) {
     if (count != 0) {
       count--;
@@ -50591,17 +50900,14 @@ result generic_validate_ascii_with_errors(const char *input, size_t length) {
 
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  if (!in.is_ascii()) {
-    SIMDUTF_VZEROUPPER();
-    result res = scalar::ascii::validate_with_errors(
-        reinterpret_cast<const char *>(input + count), length - count);
-    return result(res.error, count + res.count);
-  } else {
+  if (remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                         reader.block_index())) {
     return result(error_code::SUCCESS, length);
   }
+  SIMDUTF_VZEROUPPER();
+  result res = scalar::ascii::validate_with_errors(
+      reinterpret_cast<const char *>(input + count), length - count);
+  return result(res.error, count + res.count);
 }
 
 bool generic_validate_ascii(const char *input, size_t length) {
@@ -50613,10 +50919,8 @@ bool generic_validate_ascii(const char *input, size_t length) {
     }
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  return in.is_ascii();
+  return remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                            reader.block_index());
 }
 
 } // namespace ascii_validation
@@ -58025,6 +58329,51 @@ namespace simdutf {
 namespace lasx {
 namespace {
 
+template <typename T> simdutf_really_inline T load_bytes_as(const uint8_t *p) {
+  T v;
+  std::memcpy(&v, p, sizeof(T));
+  return v;
+}
+
+// Returns true if the n bytes at p are all ASCII, reading only those bytes.
+// The validators use it on the last, partial block instead of copying that
+// block to the stack, which would stall the vector load of the copy.
+simdutf_really_inline bool tail_is_ascii(const uint8_t *p, size_t n) {
+  uint64_t acc = 0;
+  if (n >= 16) {
+    for (size_t i = 0; i + 16 < n; i += 16) {
+      acc |=
+          load_bytes_as<uint64_t>(p + i) | load_bytes_as<uint64_t>(p + i + 8);
+    }
+    acc |= load_bytes_as<uint64_t>(p + n - 16) |
+           load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 8) {
+    acc = load_bytes_as<uint64_t>(p) | load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 4) {
+    acc = load_bytes_as<uint32_t>(p) | load_bytes_as<uint32_t>(p + n - 4);
+  } else {
+    for (size_t i = 0; i < n; i++) {
+      acc |= p[i];
+    }
+  }
+  return (acc & 0x8080808080808080) == 0;
+}
+
+// Like tail_is_ascii(buf + idx, len - idx), for the remainder that
+// buf_block_reader leaves at idx (1 to 64 bytes, unless len is 0). The caller
+// must already know that the bytes before idx are ASCII. Inputs of at least
+// one block are checked with one load of their last block instead, which
+// overlaps bytes that were already checked: a non-ASCII byte there can only be
+// at or after idx.
+simdutf_really_inline bool remainder_is_ascii(const uint8_t *buf, size_t len,
+                                              size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  if (len >= block) {
+    return simd::simd8x64<uint8_t>(buf + len - block).is_ascii();
+  }
+  return tail_is_ascii(buf + idx, len - idx);
+}
+
 // Walks through a buffer in block-sized increments, loading the last part with
 // spaces
 template <size_t STEP_SIZE> struct buf_block_reader {
@@ -58338,6 +58687,16 @@ struct utf8_checker {
     }
   }
 
+  // Checks a block that may overlap bytes already checked, given the register
+  // of input just before it. Each byte is checked against the same preceding
+  // bytes as before, so the overlapping bytes give the same result.
+  simdutf_really_inline void
+  check_overlapping_input(const simd8x64<uint8_t> &input,
+                          const simd8<uint8_t> prev_input) {
+    this->prev_input_block = prev_input;
+    this->check_next_input(input);
+  }
+
   // do not forget to call check_eof!
   simdutf_really_inline bool errors() const {
     return this->error.any_bits_set_anywhere();
@@ -58425,6 +58784,42 @@ namespace lasx {
 namespace {
 namespace utf8_validation {
 
+// Checks the bytes from idx on, after the last full block. When the bytes
+// before the window (the last 64 bytes of the input) fill a register, the
+// window is checked in place: the bytes that the last full block already
+// checked are checked again with the same preceding bytes, so they give the
+// same result. An ASCII tail cannot start or finish a multibyte character, so
+// it only needs check_eof(), which reports a character that the last full
+// block left incomplete. Shorter inputs copy the tail to the stack.
+template <class checker>
+simdutf_really_inline void check_remainder(checker &c, const uint8_t *input,
+                                           size_t length, size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  static_assert(block == 8 * sizeof(uint64_t), "one mask bit per byte");
+  if (length >= block + width) {
+    // The window starts at or before idx: buf_block_reader leaves 1 to 64
+    // bytes, so 0 <= idx - start < 64.
+    const size_t start = length - block;
+    const simd::simd8x64<uint8_t> in(input + start);
+    // Bit i is set if byte start + i is not ASCII, so the bytes from idx on
+    // are the top length - idx bits. is_ascii() goes first because GCC, up
+    // to at least GCC 17, builds gteq_unsigned(0x80) from min and compare
+    // instead of one movemask, which costs ASCII tails about 0.5 ns.
+    if (!in.is_ascii() && (in.gteq_unsigned(0x80) >> (idx - start)) != 0) {
+      c.check_overlapping_input(in,
+                                simd::simd8<uint8_t>(input + start - width));
+    }
+  } else if (idx != length) {
+    // Only an empty input leaves no bytes. Its pointer may be null, and
+    // memcpy from a null pointer is undefined.
+    uint8_t buffer[block]{};
+    std::memcpy(buffer, input + idx, length - idx);
+    c.check_next_input(simd::simd8x64<uint8_t>(buffer));
+  }
+  c.check_eof();
+}
+
 /**
  * Validates that the string is actual UTF-8.
  */
@@ -58437,12 +58832,7 @@ bool generic_validate_utf8(const uint8_t *input, size_t length) {
     c.check_next_input(in);
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   return !c.errors();
 }
 
@@ -58476,12 +58866,7 @@ result generic_validate_utf8_with_errors(const uint8_t *input, size_t length) {
     reader.advance();
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   if (c.errors()) {
     if (count != 0) {
       count--;
@@ -58583,17 +58968,14 @@ result generic_validate_ascii_with_errors(const char *input, size_t length) {
 
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  if (!in.is_ascii()) {
-    SIMDUTF_VZEROUPPER();
-    result res = scalar::ascii::validate_with_errors(
-        reinterpret_cast<const char *>(input + count), length - count);
-    return result(res.error, count + res.count);
-  } else {
+  if (remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                         reader.block_index())) {
     return result(error_code::SUCCESS, length);
   }
+  SIMDUTF_VZEROUPPER();
+  result res = scalar::ascii::validate_with_errors(
+      reinterpret_cast<const char *>(input + count), length - count);
+  return result(res.error, count + res.count);
 }
 
 bool generic_validate_ascii(const char *input, size_t length) {
@@ -58605,10 +58987,8 @@ bool generic_validate_ascii(const char *input, size_t length) {
     }
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  return in.is_ascii();
+  return remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                            reader.block_index());
 }
 
 } // namespace ascii_validation
@@ -65311,6 +65691,51 @@ namespace simdutf {
 namespace lsx {
 namespace {
 
+template <typename T> simdutf_really_inline T load_bytes_as(const uint8_t *p) {
+  T v;
+  std::memcpy(&v, p, sizeof(T));
+  return v;
+}
+
+// Returns true if the n bytes at p are all ASCII, reading only those bytes.
+// The validators use it on the last, partial block instead of copying that
+// block to the stack, which would stall the vector load of the copy.
+simdutf_really_inline bool tail_is_ascii(const uint8_t *p, size_t n) {
+  uint64_t acc = 0;
+  if (n >= 16) {
+    for (size_t i = 0; i + 16 < n; i += 16) {
+      acc |=
+          load_bytes_as<uint64_t>(p + i) | load_bytes_as<uint64_t>(p + i + 8);
+    }
+    acc |= load_bytes_as<uint64_t>(p + n - 16) |
+           load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 8) {
+    acc = load_bytes_as<uint64_t>(p) | load_bytes_as<uint64_t>(p + n - 8);
+  } else if (n >= 4) {
+    acc = load_bytes_as<uint32_t>(p) | load_bytes_as<uint32_t>(p + n - 4);
+  } else {
+    for (size_t i = 0; i < n; i++) {
+      acc |= p[i];
+    }
+  }
+  return (acc & 0x8080808080808080) == 0;
+}
+
+// Like tail_is_ascii(buf + idx, len - idx), for the remainder that
+// buf_block_reader leaves at idx (1 to 64 bytes, unless len is 0). The caller
+// must already know that the bytes before idx are ASCII. Inputs of at least
+// one block are checked with one load of their last block instead, which
+// overlaps bytes that were already checked: a non-ASCII byte there can only be
+// at or after idx.
+simdutf_really_inline bool remainder_is_ascii(const uint8_t *buf, size_t len,
+                                              size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  if (len >= block) {
+    return simd::simd8x64<uint8_t>(buf + len - block).is_ascii();
+  }
+  return tail_is_ascii(buf + idx, len - idx);
+}
+
 // Walks through a buffer in block-sized increments, loading the last part with
 // spaces
 template <size_t STEP_SIZE> struct buf_block_reader {
@@ -65624,6 +66049,16 @@ struct utf8_checker {
     }
   }
 
+  // Checks a block that may overlap bytes already checked, given the register
+  // of input just before it. Each byte is checked against the same preceding
+  // bytes as before, so the overlapping bytes give the same result.
+  simdutf_really_inline void
+  check_overlapping_input(const simd8x64<uint8_t> &input,
+                          const simd8<uint8_t> prev_input) {
+    this->prev_input_block = prev_input;
+    this->check_next_input(input);
+  }
+
   // do not forget to call check_eof!
   simdutf_really_inline bool errors() const {
     return this->error.any_bits_set_anywhere();
@@ -65711,6 +66146,42 @@ namespace lsx {
 namespace {
 namespace utf8_validation {
 
+// Checks the bytes from idx on, after the last full block. When the bytes
+// before the window (the last 64 bytes of the input) fill a register, the
+// window is checked in place: the bytes that the last full block already
+// checked are checked again with the same preceding bytes, so they give the
+// same result. An ASCII tail cannot start or finish a multibyte character, so
+// it only needs check_eof(), which reports a character that the last full
+// block left incomplete. Shorter inputs copy the tail to the stack.
+template <class checker>
+simdutf_really_inline void check_remainder(checker &c, const uint8_t *input,
+                                           size_t length, size_t idx) {
+  constexpr size_t block = sizeof(simd::simd8x64<uint8_t>);
+  constexpr size_t width = sizeof(simd::simd8<uint8_t>);
+  static_assert(block == 8 * sizeof(uint64_t), "one mask bit per byte");
+  if (length >= block + width) {
+    // The window starts at or before idx: buf_block_reader leaves 1 to 64
+    // bytes, so 0 <= idx - start < 64.
+    const size_t start = length - block;
+    const simd::simd8x64<uint8_t> in(input + start);
+    // Bit i is set if byte start + i is not ASCII, so the bytes from idx on
+    // are the top length - idx bits. is_ascii() goes first because GCC, up
+    // to at least GCC 17, builds gteq_unsigned(0x80) from min and compare
+    // instead of one movemask, which costs ASCII tails about 0.5 ns.
+    if (!in.is_ascii() && (in.gteq_unsigned(0x80) >> (idx - start)) != 0) {
+      c.check_overlapping_input(in,
+                                simd::simd8<uint8_t>(input + start - width));
+    }
+  } else if (idx != length) {
+    // Only an empty input leaves no bytes. Its pointer may be null, and
+    // memcpy from a null pointer is undefined.
+    uint8_t buffer[block]{};
+    std::memcpy(buffer, input + idx, length - idx);
+    c.check_next_input(simd::simd8x64<uint8_t>(buffer));
+  }
+  c.check_eof();
+}
+
 /**
  * Validates that the string is actual UTF-8.
  */
@@ -65723,12 +66194,7 @@ bool generic_validate_utf8(const uint8_t *input, size_t length) {
     c.check_next_input(in);
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   return !c.errors();
 }
 
@@ -65762,12 +66228,7 @@ result generic_validate_utf8_with_errors(const uint8_t *input, size_t length) {
     reader.advance();
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  c.check_next_input(in);
-  reader.advance();
-  c.check_eof();
+  check_remainder(c, input, length, reader.block_index());
   if (c.errors()) {
     if (count != 0) {
       count--;
@@ -65869,17 +66330,14 @@ result generic_validate_ascii_with_errors(const char *input, size_t length) {
 
     count += 64;
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  if (!in.is_ascii()) {
-    SIMDUTF_VZEROUPPER();
-    result res = scalar::ascii::validate_with_errors(
-        reinterpret_cast<const char *>(input + count), length - count);
-    return result(res.error, count + res.count);
-  } else {
+  if (remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                         reader.block_index())) {
     return result(error_code::SUCCESS, length);
   }
+  SIMDUTF_VZEROUPPER();
+  result res = scalar::ascii::validate_with_errors(
+      reinterpret_cast<const char *>(input + count), length - count);
+  return result(res.error, count + res.count);
 }
 
 bool generic_validate_ascii(const char *input, size_t length) {
@@ -65891,10 +66349,8 @@ bool generic_validate_ascii(const char *input, size_t length) {
     }
     reader.advance();
   }
-  uint8_t block[64]{};
-  reader.get_remainder(block);
-  simd::simd8x64<uint8_t> in(block);
-  return in.is_ascii();
+  return remainder_is_ascii(reinterpret_cast<const uint8_t *>(input), length,
+                            reader.block_index());
 }
 
 } // namespace ascii_validation
