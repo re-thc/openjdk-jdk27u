@@ -178,8 +178,8 @@ enum PilotFragmentKind {
 struct PilotFragment {
   static constexpr int capacity=2048;
   static constexpr int max_patches=12;
-  u1 bytes[capacity];
   u2 patches[max_patches];
+  u2 offset;
   u2 size;
   u1 patch_count;
   u1 state; // zero: unbuilt, one: retained, two: use C++ instead
@@ -205,7 +205,15 @@ struct PilotFragmentConfig {
       apx==other.apx && avx==other.avx && width==other.width;
   }
 };
-PilotFragment fragments[fragment_count];
+// Keep metadata and actually used source bytes together. Separate 2KiB arrays
+// scatter first state/data writes over mostly unused pages.
+// The pool retains the same worst-case capacity without touching unused bytes.
+struct PilotFragmentStorage {
+  PilotFragment fragments[fragment_count];
+  int used;
+  u1 bytes[fragment_count*PilotFragment::capacity];
+};
+PilotFragmentStorage fragment_storage;
 // Capture configuration lazily, inside the complete held preparation interval.
 alignas(PilotFragmentConfig) u1 fragment_config_storage[sizeof(PilotFragmentConfig)];
 PilotFragmentConfig* fragment_config=nullptr;
@@ -284,7 +292,7 @@ bool emit_fragment(InterpreterMacroAssembler* masm,PilotFragmentKind kind,Label*
   PilotFragmentConfig config;
   if(fragment_config==nullptr)fragment_config=new (fragment_config_storage) PilotFragmentConfig(config);
   if(!fragment_config->equals(config))return false;
-  PilotFragment& fragment=fragments[kind];
+  PilotFragment& fragment=fragment_storage.fragments[kind];
   if(fragment.state==0) {
     method_fragment_built|=1<<kind;
     // Known verification paths can add source strings or external transfers.
@@ -299,7 +307,10 @@ bool emit_fragment(InterpreterMacroAssembler* masm,PilotFragmentKind kind,Label*
       // bytes and integer offsets. In particular, destination Label overflow
       // belongs to the caller's OUTER mark and must not grow inside this one.
       ResourceMark rm;
-      CodeBuffer source(fragment.bytes,PilotFragment::capacity,Thread::current()->resource_area(),128*sizeof(relocInfo));
+      // At most eight earlier families retained fewer than 2KiB each. A failed
+      // attempt commits no bytes; its closed source buffer can be overwritten.
+      guarantee(fragment_storage.used<=(int)sizeof(fragment_storage.bytes)-PilotFragment::capacity,"bounded source window");
+      CodeBuffer source(fragment_storage.bytes+fragment_storage.used,PilotFragment::capacity,Thread::current()->resource_area(),128*sizeof(relocInfo));
       InterpreterMacroAssembler builder(&source);Label exit;
       switch(kind) {
         case fragment_taken:builder.profile_taken_branch(rax);break;
@@ -319,7 +330,9 @@ bool emit_fragment(InterpreterMacroAssembler* masm,PilotFragmentKind kind,Label*
       NOT_PRODUCT(clean=clean && source.dbg_strings().is_empty();)
       if(clean) {
         guarantee(source.insts_size()<PilotFragment::capacity,"bounded fragment");
-        fragment.size=source.insts_size();fragment.state=1;
+        fragment.offset=fragment_storage.used;fragment.size=source.insts_size();
+        fragment_storage.used+=fragment.size;
+        fragment.state=1;
       }
     }
   }
@@ -327,7 +340,7 @@ bool emit_fragment(InterpreterMacroAssembler* masm,PilotFragmentKind kind,Label*
   // Source CodeBuffer/Labels and their ResourceMark have ended before any
   // destination fixup is attached. Copies retain all runtime guards and BCP work.
   guarantee(masm->code()->insts_remaining()>=fragment.size,"audited opcode reservation");
-  address begin=masm->pc();memcpy(begin,fragment.bytes,fragment.size);
+  address begin=masm->pc();memcpy(begin,fragment_storage.bytes+fragment.offset,fragment.size);
   masm->set_inst_end(begin+fragment.size);
   for(int i=0;i<fragment.patch_count;i++) {
     assert(fallback!=nullptr,"explicit external exit");
@@ -916,10 +929,8 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   u2* header=(u2*)(arena+next_slot+code_budget);
   header[0]=native_sites;header[1]=bytes;
   header[2]=method_fragment_used;header[3]=method_fragment_built;
-  int retained_bytes=0;
-  for(int i=0;i<fragment_count;i++)if(fragments[i].state==1)retained_bytes+=fragments[i].size;
-  header[4]=retained_bytes;
-  header[5]=sizeof(fragments)+sizeof(fragment_config_storage)+sizeof(fragment_config)+sizeof(fragment_walk_flag)+
+  header[4]=fragment_storage.used;
+  header[5]=sizeof(fragment_storage)+sizeof(fragment_config_storage)+sizeof(fragment_config)+sizeof(fragment_walk_flag)+
     sizeof(method_fragment_used)+sizeof(method_fragment_built);
   header[8]=0x544d; // Generation-only prototype metrics; never read by guest code.
   NOT_PRODUCT(arena_strings[next_slot/slot_size].share(code.dbg_strings());)
