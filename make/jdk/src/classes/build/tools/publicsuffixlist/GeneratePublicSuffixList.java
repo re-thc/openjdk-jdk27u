@@ -345,6 +345,8 @@ public final class GeneratePublicSuffixList {
     }
 
     private static final class UnsupportedIndexedRules extends IOException {
+        private static final long serialVersionUID = 1L;
+
         UnsupportedIndexedRules(String message) {
             super(message);
         }
