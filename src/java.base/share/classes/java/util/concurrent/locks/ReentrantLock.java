@@ -106,8 +106,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ReentrantLock implements Lock, java.io.Serializable {
-    private static final long serialVersionUID = 7373984872572414699L;
     /** @serial Synchronizer providing all implementation mechanics */
     private final Sync sync;
 
@@ -116,9 +116,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * into fair and nonfair versions below. Uses AQS state to
      * represent the number of holds on the lock.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     abstract static class Sync extends AbstractQueuedSynchronizer {
-        private static final long serialVersionUID = -5179523762034025860L;
-
         /**
          * Performs non-fair tryLock.
          */
@@ -218,9 +217,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for non-fair locks
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class NonfairSync extends Sync {
-        private static final long serialVersionUID = 7316153563782823691L;
-
         final boolean initialTryLock() {
             Thread current = Thread.currentThread();
             if (compareAndSetState(0, 1)) { // first attempt is unguarded
@@ -251,9 +249,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for fair locks
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class FairSync extends Sync {
-        private static final long serialVersionUID = -3000897897090466540L;
-
         /**
          * Acquires only if reentrant or queue is empty.
          */

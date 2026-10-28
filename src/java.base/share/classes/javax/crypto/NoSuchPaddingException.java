@@ -36,10 +36,8 @@ import java.security.GeneralSecurityException;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchPaddingException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4572885201200175466L;
 
     /**
      * Constructs a {@code NoSuchPaddingException} with no detail

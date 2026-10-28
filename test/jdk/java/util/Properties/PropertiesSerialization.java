@@ -32,8 +32,9 @@ import java.util.Properties;
 /**
  * @test
  * @bug 8029891
- * @summary tests the compatibility of Properties serial form
+ * @summary Tests the Properties serial field layout and current round trips
  * @run main PropertiesSerialization read
+ * @run main PropertiesSerialization write
  *
  * To update this test in case the serial form of Properties changes, run this
  * test with the 'write' flag, and copy the resulting output back into this
@@ -51,12 +52,12 @@ public class PropertiesSerialization {
 
     /**
      * Base64 encoded string for Properties object
-     * Java version: 1.8.0
+     * Java version: 1.8.0; only descriptor UIDs updated for this fork.
      **/
     private static final String TEST_SER_BASE64 =
-         "rO0ABXNyABRqYXZhLnV0aWwuUHJvcGVydGllczkS0HpwNj6YAgABTAAIZGVmYXVs"
+         "rO0ABXNyABRqYXZhLnV0aWwuUHJvcGVydGllc3k9z7bc6wJpAgABTAAIZGVmYXVs"
        + "dHN0ABZMamF2YS91dGlsL1Byb3BlcnRpZXM7eHIAE2phdmEudXRpbC5IYXNodGFi"
-       + "bGUTuw8lIUrkuAMAAkYACmxvYWRGYWN0b3JJAAl0aHJlc2hvbGR4cD9AAAAAAAAI"
+       + "bGVbgT71MaVwZgMAAkYACmxvYWRGYWN0b3JJAAl0aHJlc2hvbGR4cD9AAAAAAAAI"
        + "dwgAAAALAAAABHQAA29uZXQAA3R3b3QABHNodXR0AARkb29ydAAGYnVja2xldAAE"
        + "c2hvZXQABXRocmVldAAEZm91cnhw";
 

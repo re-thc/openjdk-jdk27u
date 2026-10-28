@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4151160
  * @summary Make sure to return correct run start and limit values
  * when the iterator has been created with begin and end index values.

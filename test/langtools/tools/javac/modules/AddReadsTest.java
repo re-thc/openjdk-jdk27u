@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @summary Test the --add-reads option
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api

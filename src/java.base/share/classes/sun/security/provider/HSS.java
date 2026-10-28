@@ -888,9 +888,8 @@ public final class HSS extends SignatureSpi {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class HSSPublicKey extends X509Key implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 21;
         private transient int L;
         private transient LMSPublicKey lmsPublicKey;
 

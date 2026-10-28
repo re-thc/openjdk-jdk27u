@@ -132,15 +132,10 @@ import jdk.internal.util.DecimalDigits;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 4183400860270640070L;
 
     /**
      * For backward compatibility of the serialized {@code YearMonth.class} object,

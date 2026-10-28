@@ -47,13 +47,8 @@ import java.io.ObjectStreamField;
  * @see     java.lang.ClassLoader#loadClass(java.lang.String, boolean)
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClassNotFoundException extends ReflectiveOperationException {
-    /**
-     * use serialVersionUID from JDK 1.1.X for interoperability
-     */
-     @java.io.Serial
-     private static final long serialVersionUID = 9176873029745254542L;
-
     /**
      * Constructs a {@code ClassNotFoundException} with no detail message.
      */

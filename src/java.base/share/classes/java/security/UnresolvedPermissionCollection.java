@@ -49,7 +49,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @serial include
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 final class UnresolvedPermissionCollection
 extends PermissionCollection
 implements java.io.Serializable
@@ -130,9 +130,6 @@ implements java.io.Serializable
 
         return Collections.enumeration(results);
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7176153071733132400L;
 
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:

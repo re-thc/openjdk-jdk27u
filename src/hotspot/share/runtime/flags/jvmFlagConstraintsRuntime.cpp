@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +71,14 @@ JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
                         "Unrecognized value %s for AOTMode. Must be one of the following: "
                         "off, record, create, auto, on, required\n",
                         value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error CompactStringsConstraintFunc(bool value, bool verbose) {
+  if (!value) {
+    JVMFlag::printError(verbose, "CompactStrings cannot be disabled in this VM\n");
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;

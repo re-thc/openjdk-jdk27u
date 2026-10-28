@@ -26,7 +26,6 @@
 package sun.reflect.generics.reflectiveObjects;
 
 /** Temporary class used to indicate missing functionality */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotImplementedException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -9177857708926624790L;
 }

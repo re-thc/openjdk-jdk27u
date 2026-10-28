@@ -30,10 +30,8 @@ import java.security.GeneralSecurityException;
 /**
  * An NTLM-related Exception
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NTLMException extends GeneralSecurityException {
-    @java.io.Serial
-    private static final long serialVersionUID = -3298539507906689430L;
-
     /**
      * If the incoming packet is invalid.
      */

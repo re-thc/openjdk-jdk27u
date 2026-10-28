@@ -46,11 +46,8 @@ import java.io.*;
  *     and {@code java.security.Principal}.
  */
 @Deprecated(since="1.2", forRemoval=true)
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 public abstract class Signer extends Identity {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1763464102261361480L;
 
     /**
      * The signer's private key.

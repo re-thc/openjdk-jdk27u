@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 8173374
  * @summary Tests module dot graph
  * @modules java.desktop

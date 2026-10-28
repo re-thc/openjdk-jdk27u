@@ -36,12 +36,10 @@ package javax.security.auth;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class AuthPermission extends
 java.security.BasicPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5806031445061587174L;
 
     /**
      * Creates a new AuthPermission with the specified name.

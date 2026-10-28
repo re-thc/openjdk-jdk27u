@@ -36,10 +36,8 @@ import java.security.GeneralSecurityException;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ShortBufferException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8427718640832943747L;
 
     /**
      * Constructs a {@code ShortBufferException} with no detail

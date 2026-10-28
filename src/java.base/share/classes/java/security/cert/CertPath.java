@@ -118,10 +118,8 @@ import java.util.List;
  * @author      Yassir Elley
  * @since       1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class CertPath implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6068470306649138683L;
 
     /** The type of certificates in this chain. */
     private final transient String type;
@@ -297,10 +295,8 @@ public abstract class CertPath implements Serializable {
      * Alternate {@code CertPath} class for serialization.
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected static class CertPathRep implements Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = 3015633072427920915L;
 
         /** @serial The type of {@code Certificate}s in the {@code CertPath}. */
         private final String type;

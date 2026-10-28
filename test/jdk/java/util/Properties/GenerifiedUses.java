@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 5060820 5054615 5056707 5061476
  * @modules java.desktop
  *          java.naming

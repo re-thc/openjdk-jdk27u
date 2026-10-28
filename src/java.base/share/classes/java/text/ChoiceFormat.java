@@ -235,12 +235,10 @@ import java.util.Objects;
  * @author       Mark Davis
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ChoiceFormat extends NumberFormat {
 
     // Proclaim serial compatibility with 1.1 FCS
-    @java.io.Serial
-    private static final long serialVersionUID = 1795184449645032964L;
-
     /**
      * Apply the given pattern to this ChoiceFormat object. The syntax and error
      * related caveats for the ChoiceFormat pattern can be found in the

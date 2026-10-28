@@ -34,12 +34,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClosedByInterruptException
     extends AsynchronousCloseException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4488191543534286750L;
 
     /**
      * Constructs an instance of this class.

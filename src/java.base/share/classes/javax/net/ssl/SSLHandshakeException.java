@@ -32,10 +32,8 @@ package javax.net.ssl;
  * @since 1.4
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SSLHandshakeException extends SSLException {
-    @java.io.Serial
-    private static final long serialVersionUID = -5045881315018326890L;
-
     /**
      * Constructs an exception reporting an error found by
      * an SSL subsystem during handshaking.

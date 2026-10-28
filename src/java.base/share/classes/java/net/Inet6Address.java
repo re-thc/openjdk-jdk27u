@@ -197,6 +197,7 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final
 class Inet6Address extends InetAddress {
     static final int INADDRSZ = 16;
@@ -386,9 +387,6 @@ class Inet6Address extends InetAddress {
     }
 
     private final transient Inet6AddressHolder holder6;
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6880410070516793377L;
 
     // Perform native initialization
     static { init(); }

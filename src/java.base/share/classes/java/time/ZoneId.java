@@ -176,6 +176,7 @@ import static java.util.Map.entry;
  * @since 1.8
  * @sealedGraph
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public abstract sealed class ZoneId implements Serializable permits ZoneOffset, ZoneRegion {
 
@@ -253,12 +254,6 @@ public abstract sealed class ZoneId implements Serializable permits ZoneOffset, 
         entry("MST", "America/Phoenix"),
         entry("HST", "Pacific/Honolulu")
     );
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 8352817235686L;
-
     //-----------------------------------------------------------------------
     /**
      * Gets the system default time-zone.

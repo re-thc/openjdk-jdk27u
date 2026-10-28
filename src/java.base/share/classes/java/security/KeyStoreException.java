@@ -34,10 +34,8 @@ package java.security;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeyStoreException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1119353179322377262L;
 
     /**
      * Constructs a {@code KeyStoreException} with no detail message.  (A

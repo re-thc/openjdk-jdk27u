@@ -63,12 +63,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.io.ObjectStreamConstants;
 import java.io.Serializable;
 import java.util.Formatter;
-import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
 
@@ -78,23 +79,17 @@ import org.junit.jupiter.api.Assertions;
 public abstract class AbstractTCKTest {
 
     /**
-     * Map from package name to the serialVersionUID of the .Ser class for the package.
-     */
-    private static Map<String, Long> serialVersionUIDs = Map.of(
-                "java.time",        -7683839454370182990L,
-                "java.time.chrono", -6103370247208168577L,
-                "java.time.zone",   -8885321777449118786L
-                );
-
-    /**
-     * Returns the serialVersionUID for the class.
-     * The SUIDs are defined by the specification for each class.
-     * @param serClass the class to return the SUID of
-     * @return returns the serialVersionUID for the class
+     * Returns the current UID of the package's serialization delegate.
+     * This fork preserves the payload format but does not pin historical UIDs.
      */
     public final static long getSUID(Class<?> serClass) {
-        String pkgName = serClass.getPackageName();
-        return serialVersionUIDs.get(pkgName);
+        String delegate = serClass.getPackageName() + ".Ser";
+        try {
+            Class<?> type = Class.forName(delegate, false, serClass.getClassLoader());
+            return ObjectStreamClass.lookup(type).getSerialVersionUID();
+        } catch (ClassNotFoundException e) {
+            throw new AssertionError("Missing serialization delegate: " + delegate, e);
+        }
     }
 
 
@@ -186,12 +181,12 @@ public abstract class AbstractTCKTest {
 
     /**
      * Verify the class cannot be deserialized from a handcoded stream.
-     * Fail if the deserialization does <em>not</em> throw an Exception.
+     * Fail unless the serialization-proxy guard throws InvalidObjectException.
      * @param serClass the class to embed in the handcoded stream
      * @throws Exception if an unexpected condition occurs
      */
     protected static void assertNotSerializable(Class<?> serClass) throws Exception {
-        long serVer = getSUID(serClass);
+        long serVer = ObjectStreamClass.lookup(serClass).getSerialVersionUID();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream out = new DataOutputStream(baos)) {
@@ -212,8 +207,8 @@ public abstract class AbstractTCKTest {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
             ObjectInputStream in = new ObjectInputStream(bis)) {
             Object o = in.readObject();
-        } catch (Exception ioe) {
-            // Expected exception
+        } catch (InvalidObjectException ioe) {
+            // The matching UID ensures this reaches the serialization-proxy guard.
             return;
         }
         fail("Class should not be deserializable " + serClass.getName());
