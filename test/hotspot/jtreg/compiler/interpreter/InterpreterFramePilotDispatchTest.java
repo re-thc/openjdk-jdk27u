@@ -185,6 +185,7 @@ public class InterpreterFramePilotDispatchTest {
         for(int n=0;n<2;n++)expect(AssertionError.class,()->actual.invoke(null,null,message));
         check(effects==2 && resumes(actual)>0,"real javac supplier/cast/error path returns into generated code");
         if(mixed) {
+            check(WB.getBooleanVMFlag("ProfileInterpreter") && WB.getMethodData(face)!=0,"mixed-mode interface profiles enabled");
             Method[] targets={A.class.getDeclaredMethod("value",int.class),B.class.getDeclaredMethod("value",int.class),
                 A.class.getDeclaredMethod("apply",int.class),B.class.getDeclaredMethod("apply",int.class),Base.class.getDeclaredMethod("finalValue",int.class)};
             for(int level:new int[]{1,4}) {
@@ -208,9 +209,19 @@ public class InterpreterFramePilotDispatchTest {
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
                 InterpreterFramePilotDispatchTest.class.getName(),Integer.toString(action)).shouldHaveExitValue(0).shouldContain("PILOT_DISPATCH_OK");
         }
-        ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-XX:CompileThresholdScaling=100",
+        var profiled=ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-XX:CompileThresholdScaling=100",
             "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
             "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
+            "-XX:CompileCommand=print,InterpreterFramePilotDispatchTest::interfaceCall",
             InterpreterFramePilotDispatchTest.class.getName(),"5","mixed").shouldHaveExitValue(0).shouldContain("PILOT_DISPATCH_OK");
+        String data=null;
+        for(String section:profiled.getOutput().split("-{20,}\\R"))
+            if(section.contains("::interfaceCall(")){data=section;break;}
+        check(data!=null,"interface method data printed");
+        for(String receiver:new String[]{"A","B"}) {
+            String pattern=java.util.regex.Pattern.quote("InterpreterFramePilotDispatchTest$"+receiver)+"'?\\(24[ )]";
+            check(java.util.regex.Pattern.compile(pattern).matcher(data).results().count()==1,"once-only receiver profile "+receiver+"\n"+data);
+        }
+        System.out.println(data);System.out.println("PILOT_INTERFACE_PROFILE_COUNTS_OK A=24 B=24");
     }
 }
