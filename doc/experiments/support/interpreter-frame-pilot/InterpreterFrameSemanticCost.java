@@ -89,7 +89,7 @@ public class InterpreterFrameSemanticCost {
             long wall=System.nanoTime()-w,threadCpu=cpu.getCurrentThreadCpuTime()-c;
             long[] after=WB.interpreterFramePilot(targets[i],3);sink=value;
             check(value==expected[i],"checksum "+NAMES[i]);
-            check(after[9]-before[9]==(on?count:0),"native entries "+NAMES[i]);
+            check(after[9]-before[9]==(on && countContinuations?count:0),"native entries "+NAMES[i]);
             check(after[32]-before[32]==(on && countContinuations && (i==1||i==3||i==4)?count:0),"native continuations "+NAMES[i]);
             check(WB.getMethodCompilationLevel(callers[i])==4 && WB.getMethodCompilationLevel(targets[i])==0,"root/caller levels");
             for(Method m:callees)check(WB.getMethodCompilationLevel(m)==4,"callee level "+m);
@@ -102,6 +102,7 @@ public class InterpreterFrameSemanticCost {
         }
         for(int block=0;block<4;block++)for(int i=0;i<5;i++)System.out.println("SAMPLE "+NAMES[i]+" "+block+" "+Arrays.toString(samples[block*5+i]));
         System.out.println("COMPILATION "+compileBefore+" "+compileAfter);
+        System.out.println("COUNTERS "+countContinuations);
         Unsafe u=Unsafe.getUnsafe();
         for(int i=0;i<5;i++){
             long entry=gen[i][8];int maps=Short.toUnsignedInt(u.getShort(entry+3832)),bytes=Short.toUnsignedInt(u.getShort(entry+3834));

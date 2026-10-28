@@ -274,7 +274,10 @@ void InterpreterFramePilot::emit_entry_guards(InterpreterMacroAssembler* masm,La
   masm->movptr(rscratch1,(intptr_t)&StopInterpreterAt);
   masm->cmpq(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
 #endif
-  if(count_hit)masm->incrementl(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_hits_offset())));
+  // Entry hits are the control for the continuation regression counters.
+  // Neither diagnostic is generated in the normal timing configuration.
+  if(count_hit && WhiteBoxAPI && InterpreterFramePilotTestContinuations)
+    masm->incrementl(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_hits_offset())));
 }
 address* InterpreterFramePilot::invoke_return_table(bool is_interface) {
   return pilot_returns[is_interface?1:0];
@@ -337,7 +340,7 @@ void InterpreterFramePilot::emit_resume(InterpreterMacroAssembler* masm,TosState
   masm->bind(next);
   masm->load_unsigned_short(rdx,Address(rscratch2,0));
   masm->cmpl(rdx,r8);masm->jcc(Assembler::equal,found);
-  masm->addptr(rscratch2,2*sizeof(u2));masm->decl(r9);
+  masm->addptr(rscratch2,2*sizeof(u2));masm->decrementl(r9);
   masm->jcc(Assembler::notZero,next);masm->jmp(fallback);
   masm->bind(found);
   masm->load_unsigned_short(rdx,Address(rscratch2,sizeof(u2)));
@@ -347,7 +350,7 @@ void InterpreterFramePilot::emit_resume(InterpreterMacroAssembler* masm,TosState
     // address, atomic instruction, flag load or counter-selection branch.
     masm->shrptr(rcx,exact_log2(slot_size));
     masm->movptr(r9,(intptr_t)resume_counts);
-    masm->lock();masm->incl(Address(r9,rcx,Address::times_4,0));
+    masm->lock();masm->incrementl(Address(r9,rcx,Address::times_4,0));
   }
   masm->addptr(rax,rdx);
   masm->jmp(rax);

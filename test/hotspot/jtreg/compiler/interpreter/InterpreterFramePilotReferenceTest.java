@@ -146,13 +146,13 @@ public class InterpreterFramePilotReferenceTest {
         if(args.length!=0){child(Integer.parseInt(args[0]),args.length>1);return;}
         for(int action:new int[]{0,4,5})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
             ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xint","-Xmx64m",collector,
-                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
+                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
                 InterpreterFramePilotReferenceTest.class.getName(),Integer.toString(action))
                 .shouldHaveExitValue(0).shouldContain("PILOT_REFERENCE_OK");
         }
         for(int action:new int[]{4,5}) {
             var output=ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx64m","-XX:+UseG1GC",
-                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
+                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
                 "-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::cast",
                 "-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::checkedJoin",
                 "-XX:CompileCommand=print,InterpreterFramePilotReferenceTest::forward",

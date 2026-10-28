@@ -121,7 +121,7 @@ public class InterpreterFramePilotGuardTest {
                 ArrayList<String> command = new ArrayList<>();
                 command.addAll(java.util.List.of("-Xint", "-Xmx64m", "-Xbootclasspath/a:.",
                         "-XX:+UnlockExperimentalVMOptions", "-XX:+UnlockDiagnosticVMOptions",
-                        "-XX:+WhiteBoxAPI", "-XX:+UseInterpreterFramePilot", "-XX:GuaranteedSafepointInterval=0"));
+                        "-XX:+WhiteBoxAPI", "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations", "-XX:GuaranteedSafepointInterval=0"));
                 if (mode.equals("breakpoint")) command.add("-agentpath:" + library);
                 if (mode.equals("poll")) command.add("-XX:+InterpreterFramePilotTestPoll");
                 command.addAll(java.util.List.of(InterpreterFramePilotGuardTest.class.getName(), mode,

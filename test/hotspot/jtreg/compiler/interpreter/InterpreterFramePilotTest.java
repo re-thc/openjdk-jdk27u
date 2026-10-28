@@ -199,7 +199,7 @@ public class InterpreterFramePilotTest {
     public static void main(String[] args)throws Exception {
         if(args.length>0){child(args[0]);return;}
         String[] common={"-Xbootclasspath/a:.","-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-Xmx64m"};
+                "-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations","-Xmx64m"};
         for(String suffix:new String[]{"","-direct","-plain"}) {
         for(String gc:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
             ProcessTools.executeTestJava(concat(common,"-Xint",gc,InterpreterFramePilotTest.class.getName(),"semantics"+suffix))
