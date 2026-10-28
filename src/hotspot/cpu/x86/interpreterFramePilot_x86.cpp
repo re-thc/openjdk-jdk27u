@@ -166,6 +166,176 @@ static int opcode_budget(Bytecodes::Code bc,int ordinary_call_bytes) {
 }
 const Register rbcp=r13;
 const Register rlocals=r14;
+
+// Fixed helper families for this interpreter-frame experiment. Source bytes are
+// never executed or referenced by a published body. All construction and copying
+// happens under generation_lock; the old C++ emitters remain the fallback.
+enum PilotFragmentKind {
+  fragment_taken,fragment_not_taken,fragment_type_profile,fragment_null_profile,
+  fragment_instanceof,fragment_checkcast,fragment_cold_reference,
+  fragment_resume3,fragment_resume5,fragment_count
+};
+struct PilotFragment {
+  static constexpr int capacity=2048;
+  static constexpr int max_patches=12;
+  u1 bytes[capacity];
+  u2 patches[max_patches];
+  u2 size;
+  u1 patch_count;
+  u1 state; // zero: unbuilt, one: retained, two: use C++ instead
+  void record(InterpreterMacroAssembler* masm) {
+    guarantee(patch_count<max_patches,"bounded helper exits");
+    patches[patch_count++]=masm->offset();
+  }
+};
+struct PilotFragmentConfig {
+  bool profile,casts,g1,serial,compressed_oops,compressed_klass,compact;
+  bool verify_oops,check_oops,verify_mdp,secondary,verify_secondary,popcount,apx;
+  int avx;intx width;
+  PilotFragmentConfig():profile(ProfileInterpreter),casts(TypeProfileCasts),g1(UseG1GC),serial(UseSerialGC),
+    compressed_oops(UseCompressedOops),compressed_klass(UseCompressedClassPointers),compact(UseCompactObjectHeaders),
+    verify_oops(VerifyOops),check_oops(CheckCompressedOops),verify_mdp(VerifyDataPointer),
+    secondary(UseSecondarySupersTable),verify_secondary(VerifySecondarySupers),popcount(UsePopCountInstruction),
+    apx(UseAPX),avx(UseAVX),width(TypeProfileWidth) {}
+  bool equals(const PilotFragmentConfig& other) const {
+    return profile==other.profile && casts==other.casts && g1==other.g1 && serial==other.serial &&
+      compressed_oops==other.compressed_oops && compressed_klass==other.compressed_klass && compact==other.compact &&
+      verify_oops==other.verify_oops && check_oops==other.check_oops && verify_mdp==other.verify_mdp &&
+      secondary==other.secondary && verify_secondary==other.verify_secondary && popcount==other.popcount &&
+      apx==other.apx && avx==other.avx && width==other.width;
+  }
+};
+PilotFragment fragments[fragment_count];
+// Capture configuration lazily, inside the complete held preparation interval.
+alignas(PilotFragmentConfig) u1 fragment_config_storage[sizeof(PilotFragmentConfig)];
+PilotFragmentConfig* fragment_config=nullptr;
+bool* fragment_walk_flag=nullptr;
+int method_fragment_used=0,method_fragment_built=0;
+
+template<bool Record>
+void fragment_failure(InterpreterMacroAssembler* masm,Assembler::Condition condition,
+                      Label& fallback,PilotFragment* fragment) {
+  if constexpr(Record)fragment->record(masm);
+  masm->jcc(condition,fallback);
+}
+
+template<bool Record>
+void emit_resume_prefix(InterpreterMacroAssembler* masm,int step,Label& fallback,PilotFragment* fragment) {
+  masm->increment(rbcp,step);masm->save_bcp();
+  masm->get_method(rbx);
+  masm->movptr(rdx,Address(rbx,Method::method_counters_offset()));
+  masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_enabled_offset())),0);
+  fragment_failure<Record>(masm,Assembler::zero,fallback,fragment);
+  masm->testl(Address(rbx,in_bytes(Method::method_flags_offset())+
+                         in_bytes(MethodFlags::status_offset())),MethodFlags::old_or_obsolete_mask());
+  fragment_failure<Record>(masm,Assembler::notZero,fallback,fragment);
+#if INCLUDE_JVMTI
+  assert(fragment_walk_flag!=nullptr,"member emitter supplied stable VM flag address");
+  masm->movptr(rscratch1,(intptr_t)fragment_walk_flag);
+  masm->cmpb(Address(rscratch1,0),0);
+  fragment_failure<Record>(masm,Assembler::notEqual,fallback,fragment);
+#endif
+  masm->testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
+  fragment_failure<Record>(masm,Assembler::notZero,fallback,fragment);
+#ifdef ASSERT
+  bool* const flags[]={&TraceBytecodes,&CountBytecodes,&PrintBytecodeHistogram,&PrintBytecodePairHistogram};
+  for(bool* flag:flags) {
+    masm->movptr(rscratch1,(intptr_t)flag);masm->cmpb(Address(rscratch1,0),0);
+    fragment_failure<Record>(masm,Assembler::notEqual,fallback,fragment);
+  }
+  masm->movptr(rscratch1,(intptr_t)&StopInterpreterAt);masm->cmpq(Address(rscratch1,0),0);
+  fragment_failure<Record>(masm,Assembler::notEqual,fallback,fragment);
+#endif
+}
+
+template<bool Record>
+void emit_type_predicate(InterpreterMacroAssembler* masm,bool instance,Label& fallback,PilotFragment* fragment) {
+  Label success,profile;
+  masm->check_klass_subtype(rdx,rax,rcx,success);
+  if(!instance) {
+    if constexpr(Record)fragment->record(masm);
+    masm->jmp(fallback);
+  } else {masm->xorl(r8,r8);masm->jmp(profile);}
+  masm->bind(success);
+  if(instance)masm->movl(r8,1);
+  masm->bind(profile);
+}
+
+template<bool Record>
+void emit_cold_reference(InterpreterMacroAssembler* masm,Label& fallback,PilotFragment* fragment) {
+  masm->load_field_entry(rcx,rdx);
+  masm->cmpb(Address(rcx,in_bytes(ResolvedFieldEntry::get_code_offset())),Bytecodes::_getfield);
+  fragment_failure<Record>(masm,Assembler::notEqual,fallback,fragment);
+  masm->cmpb(Address(rcx,in_bytes(ResolvedFieldEntry::type_offset())),atos);
+  fragment_failure<Record>(masm,Assembler::notEqual,fallback,fragment);
+  masm->movptr(rbx,Address(rcx,in_bytes(ResolvedFieldEntry::field_holder_offset())));
+  masm->movptr(rscratch1,(intptr_t)vmClasses::Reference_klass_addr());
+  masm->cmpptr(rbx,Address(rscratch1,0));
+  fragment_failure<Record>(masm,Assembler::equal,fallback,fragment);
+  masm->movptr(rax,Address(rsp,0));masm->testptr(rax,rax);
+  fragment_failure<Record>(masm,Assembler::zero,fallback,fragment);
+  masm->pop_ptr(rax);
+  masm->load_sized_value(rbx,Address(rcx,in_bytes(ResolvedFieldEntry::field_offset_offset())),sizeof(int),true);
+  masm->load_heap_oop(rax,Address(rax,rbx,Address::times_1),rdx);masm->push(atos);
+}
+
+bool emit_fragment(InterpreterMacroAssembler* masm,PilotFragmentKind kind,Label* fallback=nullptr) {
+  assert(generation_lock->owned_by_self(),"serialized template lifetime and publication");
+  PilotFragmentConfig config;
+  if(fragment_config==nullptr)fragment_config=new (fragment_config_storage) PilotFragmentConfig(config);
+  if(!fragment_config->equals(config))return false;
+  PilotFragment& fragment=fragments[kind];
+  if(fragment.state==0) {
+    method_fragment_built|=1<<kind;
+    // Known verification paths can add source strings or external transfers.
+    // Other modes are checked against actual recorded relocation/string data.
+    bool supported=!((kind==fragment_instanceof || kind==fragment_checkcast) && VerifySecondarySupers) &&
+      !(kind==fragment_cold_reference && (VerifyOops || CheckCompressedOops));
+    fragment.state=2;
+    if(supported) {
+      // Nothing allocated or patched in this mark escapes except permanent
+      // bytes and integer offsets. In particular, destination Label overflow
+      // belongs to the caller's OUTER mark and must not grow inside this one.
+      ResourceMark rm;
+      CodeBuffer source(fragment.bytes,PilotFragment::capacity,Thread::current()->resource_area(),128*sizeof(relocInfo));
+      InterpreterMacroAssembler builder(&source);Label exit;
+      switch(kind) {
+        case fragment_taken:builder.profile_taken_branch(rax);break;
+        case fragment_not_taken:builder.profile_not_taken_branch(rax);break;
+        case fragment_type_profile:builder.profile_typecheck(rcx,rdx);break;
+        case fragment_null_profile:builder.profile_null_seen(rcx);break;
+        case fragment_instanceof:emit_type_predicate<true>(&builder,true,exit,&fragment);break;
+        case fragment_checkcast:emit_type_predicate<true>(&builder,false,exit,&fragment);break;
+        case fragment_cold_reference:emit_cold_reference<true>(&builder,exit,&fragment);break;
+        case fragment_resume3:emit_resume_prefix<true>(&builder,3,exit,&fragment);break;
+        case fragment_resume5:emit_resume_prefix<true>(&builder,5,exit,&fragment);break;
+        default:ShouldNotReachHere();
+      }
+      builder.bind(exit);
+      bool clean=source.consts()->is_empty() && source.stubs()->is_empty() &&
+        source.total_relocation_size()==0 && source.total_oop_size()==0 && source.total_metadata_size()==0;
+      NOT_PRODUCT(clean=clean && source.dbg_strings().is_empty();)
+      if(clean) {
+        guarantee(source.insts_size()<PilotFragment::capacity,"bounded fragment");
+        fragment.size=source.insts_size();fragment.state=1;
+      }
+    }
+  }
+  if(fragment.state!=1)return false;
+  // Source CodeBuffer/Labels and their ResourceMark have ended before any
+  // destination fixup is attached. Copies retain all runtime guards and BCP work.
+  guarantee(masm->code()->insts_remaining()>=fragment.size,"audited opcode reservation");
+  address begin=masm->pc();memcpy(begin,fragment.bytes,fragment.size);
+  masm->set_inst_end(begin+fragment.size);
+  for(int i=0;i<fragment.patch_count;i++) {
+    assert(fallback!=nullptr,"explicit external exit");
+    address branch=begin+fragment.patches[i];
+    address target=masm->code_section()->target(*fallback,branch);
+    masm->pd_patch_instruction(branch,target,__FILE__,__LINE__);
+  }
+  method_fragment_used|=1<<kind;
+  return true;
+}
 }
 
 void InterpreterFramePilot::reserve() {
@@ -368,34 +538,15 @@ address InterpreterFramePilot::call_entry(Bytecodes::Code code) {
 }
 void InterpreterFramePilot::emit_resume(InterpreterMacroAssembler* masm,TosState state,int step,
                                        Label& successor,Label& fallback,int slot) {
-  masm->push(state);
-  masm->increment(rbcp,step);masm->save_bcp();
-  masm->get_method(rbx);
-  masm->movptr(rdx,Address(rbx,Method::method_counters_offset()));
-  // This activation entered its own published body. Live Methods retain their
-  // counters, and this immutable return PC already owns its native successor.
-  masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_enabled_offset())),0);
-  masm->jcc(Assembler::zero,fallback);
-  masm->testl(Address(rbx,in_bytes(Method::method_flags_offset())+
-                         in_bytes(MethodFlags::status_offset())),MethodFlags::old_or_obsolete_mask());
-  masm->jcc(Assembler::notZero,fallback);
 #if INCLUDE_JVMTI
-  // OnLoad-derived capabilities were permanently excluded at method entry.
-  // This availability flag can change through a Live capability update.
-  masm->movptr(rscratch1,(intptr_t)&JvmtiExport::_can_walk_any_space);
-  masm->cmpb(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
+  fragment_walk_flag=&JvmtiExport::_can_walk_any_space;
 #endif
-  masm->testb(Address(r15_thread,JavaThread::polling_word_offset()),SafepointMechanism::poll_bit());
-  masm->jcc(Assembler::notZero,fallback);
-#ifdef ASSERT
-  bool* const debug_flags[]={&TraceBytecodes,&CountBytecodes,&PrintBytecodeHistogram,&PrintBytecodePairHistogram};
-  for(bool* flag:debug_flags) {
-    masm->movptr(rscratch1,(intptr_t)flag);
-    masm->cmpb(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
-  }
-  masm->movptr(rscratch1,(intptr_t)&StopInterpreterAt);
-  masm->cmpq(Address(rscratch1,0),0);masm->jcc(Assembler::notEqual,fallback);
-#endif
+  masm->push(state);
+  // The push/VerifyOops and slot-specific test counter stay in the shared C++
+  // emitter. Only the closed prefix with explicit fallback edges is copied.
+  bool copied=(step==3 || step==5) &&
+    emit_fragment(masm,step==3?fragment_resume3:fragment_resume5,&fallback);
+  if(!copied)emit_resume_prefix<false>(masm,step,fallback,nullptr);
   if(WhiteBoxAPI && InterpreterFramePilotTestContinuations) {
     masm->movptr(rscratch1,(intptr_t)&resume_counts[slot]);
     masm->lock();masm->incrementl(Address(rscratch1,0));
@@ -428,6 +579,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
 #endif
   // A fixed private slice is never rewritten/recycled after publication. No
   // Method/klass/oop address is embedded; dead class versions leave dead bytes.
+  method_fragment_used=0;method_fragment_built=0;
   analysis.stop();
   jlong cleanup_start=0;
   BufferCleanup<Observe> cleanup(stats,cleanup_start);
@@ -570,6 +722,8 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         BasicType type=resolved?as_BasicType((TosState)field->tos_state()):
             Signature::basic_type(pool->uncached_signature_ref_at(field->constant_pool_index()));
         if(type!=T_OBJECT && type!=T_ARRAY && type!=T_BOOLEAN && type!=T_BYTE && type!=T_CHAR && type!=T_SHORT && type!=T_INT)break;
+        if(!resolved && bc==Bytecodes::_getfield && is_reference_type(type) &&
+           emit_fragment(&masm,fragment_cold_reference,&ordinary)) {action=emitted;break;}
         if(!resolved) {
           // Reuse the interpreter's opcode-specific acquire publication. A cold
           // entry falls back without consuming operands and can work on a later
@@ -608,7 +762,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
       case Bytecodes::_checkcast: case Bytecodes::_instanceof: {
         int cp_index=stream.get_index_u2();
         if(cp_index<=0 || cp_index>=pool->length())break;
-        Label null_value,success,profile,done;
+        Label null_value,done;
         masm.movptr(rax,Address(rsp,0));masm.testptr(rax,rax);masm.jcc(Assembler::zero,null_value);
         masm.get_cpool_and_tags(rcx,rdx);
         masm.movl(rbx,cp_index);
@@ -618,19 +772,15 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
         masm.movptr(rdx,Address(rsp,0));masm.load_klass(rdx,rdx,rscratch1);
         // Pure predicate first. A failed checkcast must not advance MDP then
         // replay/profiling the original bytecode a second time.
-        masm.check_klass_subtype(rdx,rax,rcx,success);
-        if(bc==Bytecodes::_checkcast)masm.jmp(ordinary);
-        else {
-          masm.xorl(r8,r8);masm.jmp(profile);
-        }
-        masm.bind(success);
-        if(bc==Bytecodes::_instanceof)masm.movl(r8,1);
-        masm.bind(profile);
-        masm.movptr(rdx,Address(rsp,0));masm.load_klass(rdx,rdx,rscratch1);masm.profile_typecheck(rcx,rdx);
+        if(!emit_fragment(&masm,bc==Bytecodes::_instanceof?fragment_instanceof:fragment_checkcast,&ordinary))
+          emit_type_predicate<false>(&masm,bc==Bytecodes::_instanceof,ordinary,nullptr);
+        masm.movptr(rdx,Address(rsp,0));masm.load_klass(rdx,rdx,rscratch1);
+        if(!emit_fragment(&masm,fragment_type_profile))masm.profile_typecheck(rcx,rdx);
         // profile_typecheck(rcx,rdx) preserves r8, including its CAS path.
         if(bc==Bytecodes::_instanceof) {masm.pop_ptr(rax);masm.movl(rax,r8);masm.push(itos);}
         masm.jmp(done);
-        masm.bind(null_value);masm.profile_null_seen(rcx);
+        masm.bind(null_value);
+        if(!emit_fragment(&masm,fragment_null_profile))masm.profile_null_seen(rcx);
         if(bc==Bytecodes::_instanceof) {masm.pop_ptr(rax);masm.xorl(rax,rax);masm.push(itos);}
         masm.bind(done);action=emitted;break;
       }
@@ -703,10 +853,12 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
           }
           masm.jcc(MacroAssembler::negate_condition(condition),not_taken);
         }
-        masm.profile_taken_branch(rax);masm.increment(rbcp,target-stream.bci());masm.save_bcp();
+        if(!emit_fragment(&masm,fragment_taken))masm.profile_taken_branch(rax);
+        masm.increment(rbcp,target-stream.bci());masm.save_bcp();
         masm.jmp(target<=max_prefix_bytes?labels.target(target):ordinary);
         if(bc!=Bytecodes::_goto && bc!=Bytecodes::_goto_w) {
-          masm.bind(not_taken);masm.profile_not_taken_branch(rax);
+          masm.bind(not_taken);
+          if(!emit_fragment(&masm,fragment_not_taken))masm.profile_not_taken_branch(rax);
         }
         action=emitted;break;
       }
@@ -761,6 +913,13 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   guarantee(bytes<code_budget,"bounded pilot code including direct return sites");
   u2* header=(u2*)(arena+next_slot+code_budget);
   header[0]=native_sites;header[1]=bytes;
+  header[2]=method_fragment_used;header[3]=method_fragment_built;
+  int retained_bytes=0;
+  for(int i=0;i<fragment_count;i++)if(fragments[i].state==1)retained_bytes+=fragments[i].size;
+  header[4]=retained_bytes;
+  header[5]=sizeof(fragments)+sizeof(fragment_config_storage)+sizeof(fragment_config)+sizeof(fragment_walk_flag)+
+    sizeof(method_fragment_used)+sizeof(method_fragment_built);
+  header[8]=0x544d; // Generation-only prototype metrics; never read by guest code.
   NOT_PRODUCT(arena_strings[next_slot/slot_size].share(code.dbg_strings());)
   // masm.flush() already invalidated all executable bytes after label fixups.
   if constexpr (Observe) { stats[3]=bytes;stats[4]=end_bci;stats[5]=operations; }

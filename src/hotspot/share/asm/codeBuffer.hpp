@@ -666,7 +666,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // (1) code buffer referring to pre-allocated instruction memory
   // Optional patch storage is borrowed until destruction. Its lifetime must
   // enclose all label fixups; this preallocated buffer must not expand.
-  CodeBuffer(address code_start, csize_t code_size, Arena* patch_arena = nullptr)
+  // Optional relocation bytes permit checking nonexecuted precomputed code.
+  CodeBuffer(address code_start, csize_t code_size, Arena* patch_arena = nullptr, csize_t locs_size = 0)
     DEBUG_ONLY(: Scrubber(this, sizeof(*this)))
   {
     assert(code_start != nullptr, "sanity");
@@ -674,6 +675,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _overflow_arena = patch_arena;
     _owns_overflow_arena = patch_arena == nullptr;
     initialize(code_start, code_size);
+    if (locs_size != 0) {
+      _insts.initialize_locs(locs_size / sizeof(relocInfo));
+    }
     DEBUG_ONLY(verify_section_allocation();)
   }
 
