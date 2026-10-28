@@ -6,6 +6,15 @@ link, source callers may stop compiling, reflective lookups may fail, and custom
 subclasses may need to migrate removed overrides. The list is not a promise that
 all external software has migrated.
 
+The fork computes serialization UIDs for `Date`, `Character` and `String`.
+Removing their public members changes those computed UIDs again. Streams written
+by master before this API removal can therefore fail with `InvalidClassException`,
+including SQL date/time subclasses whose stream contains a `java.util.Date`
+descriptor and serialized `String.class` objects. Ordinary serialized string
+values use the special string protocol. Current-image round trips remain
+supported; cross-version UID preservation is not claimed or restored with fixed
+UID fields.
+
 The six deprecated JDBC interface contracts, `String.getBytes(int,int,byte[],int)`,
 the four-argument high-byte `String` constructor, all 13 SQL Date/Time throwing
 guards, `Date.parse`, and all monitor management
