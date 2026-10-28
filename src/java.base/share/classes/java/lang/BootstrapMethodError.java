@@ -39,10 +39,8 @@ package java.lang;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BootstrapMethodError extends LinkageError {
-    @java.io.Serial
-    private static final long serialVersionUID = 292L;
-
     /**
      * Constructs a {@code BootstrapMethodError} with no detail message.
      */

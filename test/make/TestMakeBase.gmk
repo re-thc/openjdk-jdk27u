@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,84 @@ $(ESCAPE_DOLLAR_DIR)/_escape_dollar: $(DEPS)
 	$(TOUCH) $@
 
 TEST_TARGETS += $(ESCAPE_DOLLAR_DIR)/_escape_dollar
+
+################################################################################
+# Test that ExecuteWithLog waits for both log writers, including on failure.
+
+EXECUTE_WITH_LOG_DIR := $(OUTPUT_DIR)/execute-with-log
+$(call MakeDir, $(EXECUTE_WITH_LOG_DIR))
+
+# Delay the writers so that returning before they finish reliably fails.
+test-execute-with-log: TEE := $(BASH) -c 'sleep 1; exec "$$@"' _ $(TEE)
+test-execute-with-log:
+	$(ECHO) standard-out > $(EXECUTE_WITH_LOG_DIR)/expected-out
+	$(ECHO) standard-err > $(EXECUTE_WITH_LOG_DIR)/expected-err
+	$(SORT) $(EXECUTE_WITH_LOG_DIR)/expected-out $(EXECUTE_WITH_LOG_DIR)/expected-err \
+	    > $(EXECUTE_WITH_LOG_DIR)/expected-log
+	$(call ExecuteWithLog, $(EXECUTE_WITH_LOG_DIR)/success, \
+	    $(BASH) -c 'echo standard-out; echo standard-err >&2') \
+	    > $(EXECUTE_WITH_LOG_DIR)/stdout 2> $(EXECUTE_WITH_LOG_DIR)/stderr
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/expected-out $(EXECUTE_WITH_LOG_DIR)/stdout
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/expected-err $(EXECUTE_WITH_LOG_DIR)/stderr
+	$(SORT) $(EXECUTE_WITH_LOG_DIR)/success.log > $(EXECUTE_WITH_LOG_DIR)/log
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/expected-log $(EXECUTE_WITH_LOG_DIR)/log
+	status=0; $(call ExecuteWithLog, $(EXECUTE_WITH_LOG_DIR)/failure, \
+	    $(BASH) -c 'echo standard-out; echo standard-err >&2; exit 37') \
+	    > $(EXECUTE_WITH_LOG_DIR)/stdout 2> $(EXECUTE_WITH_LOG_DIR)/stderr \
+	    || status=$$?; test $$status -eq 37
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/expected-out $(EXECUTE_WITH_LOG_DIR)/stdout
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/expected-err $(EXECUTE_WITH_LOG_DIR)/stderr
+	$(SORT) $(EXECUTE_WITH_LOG_DIR)/failure.log > $(EXECUTE_WITH_LOG_DIR)/log
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/expected-log $(EXECUTE_WITH_LOG_DIR)/log
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/failure.log \
+	    $(MAKESUPPORT_OUTPUTDIR)/failure-logs/test-make_make-base_execute-with-log_failure.log
+	$(DIFF) $(EXECUTE_WITH_LOG_DIR)/failure.cmdline \
+	    $(MAKESUPPORT_OUTPUTDIR)/failure-logs/test-make_make-base_execute-with-log_failure.cmdline
+
+TEST_TARGETS += test-execute-with-log
+
+################################################################################
+# Test that the special-test output writer finishes before its result is saved.
+
+SPECIAL_TEST_LOGGING_DIR := $(OUTPUT_DIR)/special-test-logging
+SPECIAL_TEST_LOGGING_ARGS := $(MAKE_ARGS) -f $(TOPDIR)/make/RunTests.gmk \
+    TEST=make:make-base \
+    TEE=$(call ShellQuote, $(BASH) $(TOPDIR)/test/make/special-test-logging-tee.sh $(TEE))
+
+test-special-test-logging:
+	$(RM) -r $(SPECIAL_TEST_LOGGING_DIR)
+	$(MKDIR) -p $(SPECIAL_TEST_LOGGING_DIR)
+	$(ECHO) special-test-stdout > $(SPECIAL_TEST_LOGGING_DIR)/expected
+	+$(MAKE) $(SPECIAL_TEST_LOGGING_ARGS) \
+	    OUTPUTDIR=$(SPECIAL_TEST_LOGGING_DIR)/success \
+	    TEST_SUPPORT_DIR=$(SPECIAL_TEST_LOGGING_DIR)/success/test-support \
+	    TEST_SUBTARGET=special-test-logging-success \
+	    > $(SPECIAL_TEST_LOGGING_DIR)/success.stdout 2> $(SPECIAL_TEST_LOGGING_DIR)/success.stderr
+	test -f $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/special_make_make_base/test-output.txt.done
+	test "`$(CAT) $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/special_make_make_base/exitcode.txt`" = 0
+	$(DIFF) $(SPECIAL_TEST_LOGGING_DIR)/expected $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/special_make_make_base/test-output.txt
+	$(GREP) -q '^special-test-stdout$$' $(SPECIAL_TEST_LOGGING_DIR)/success.stdout
+	$(GREP) -q '^special-test-stderr$$' $(SPECIAL_TEST_LOGGING_DIR)/success.stderr
+	$(GREP) -q 'TEST SUCCESS' $(SPECIAL_TEST_LOGGING_DIR)/success/test-results/test-summary.txt
+	+$(MAKE) $(SPECIAL_TEST_LOGGING_ARGS) \
+	    OUTPUTDIR=$(SPECIAL_TEST_LOGGING_DIR)/failure \
+	    TEST_SUPPORT_DIR=$(SPECIAL_TEST_LOGGING_DIR)/failure/test-support \
+	    TEST_SUBTARGET=special-test-logging-failure \
+	    > $(SPECIAL_TEST_LOGGING_DIR)/failure.stdout 2> $(SPECIAL_TEST_LOGGING_DIR)/failure.stderr
+	test -f $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/special_make_make_base/test-output.txt.done
+	test "`$(CAT) $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/special_make_make_base/exitcode.txt`" = 2
+	$(DIFF) $(SPECIAL_TEST_LOGGING_DIR)/expected $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/special_make_make_base/test-output.txt
+	$(GREP) -q '^special-test-stdout$$' $(SPECIAL_TEST_LOGGING_DIR)/failure.stdout
+	$(GREP) -q '^special-test-stderr$$' $(SPECIAL_TEST_LOGGING_DIR)/failure.stderr
+	$(GREP) -q 'TEST FAILURE' $(SPECIAL_TEST_LOGGING_DIR)/failure/test-results/test-summary.txt
+	test -f $(SPECIAL_TEST_LOGGING_DIR)/failure/make-support/exit-with-error
+
+special-test-logging-success special-test-logging-failure:
+	@$(ECHO) special-test-stdout; $(ECHO) special-test-stderr >&2; \
+	    if test '$@' = special-test-logging-failure; then exit 37; fi
+
+TEST_TARGETS += test-special-test-logging
+.PHONY: test-special-test-logging special-test-logging-success special-test-logging-failure
 
 ################################################################################
 # Test containing and not-containing

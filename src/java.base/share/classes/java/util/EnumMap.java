@@ -78,6 +78,7 @@ import jdk.internal.access.SharedSecrets;
  * @see EnumSet
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     implements java.io.Serializable, Cloneable
 {
@@ -750,9 +751,6 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         return SharedSecrets.getJavaLangAccess()
                                         .getEnumConstantsShared(keyType);
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 458661240069192865L;
 
     /**
      * Save the state of the {@code EnumMap} instance to a stream (i.e.,

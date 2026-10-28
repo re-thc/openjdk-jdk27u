@@ -31,6 +31,7 @@ package java.io;
  * @author  Xueming Shen
  * @since   1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IOError extends Error {
     /**
      * Constructs a new instance of IOError with the specified cause. The
@@ -46,6 +47,4 @@ public class IOError extends Error {
         super(cause);
     }
 
-    @java.io.Serial
-    private static final long serialVersionUID = 67100927991680413L;
 }

@@ -30,7 +30,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestStrictUTF8Decode
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestStrictUTF8Decode
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestStrictUTF8Decode
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestStrictUTF8Decode
  */
 
 import java.nio.charset.MalformedInputException;

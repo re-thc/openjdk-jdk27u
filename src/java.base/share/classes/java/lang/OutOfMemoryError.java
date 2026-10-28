@@ -37,10 +37,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class OutOfMemoryError extends VirtualMachineError {
-    @java.io.Serial
-    private static final long serialVersionUID = 8228564086184010517L;
-
     /**
      * Constructs an {@code OutOfMemoryError} with no detail message.
      */

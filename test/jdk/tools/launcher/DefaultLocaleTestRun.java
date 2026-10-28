@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4958170 4891531 4989534
  * @modules java.desktop
  * @summary Test to see if default java locale settings are identical

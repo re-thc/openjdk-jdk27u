@@ -9459,12 +9459,22 @@ bool LibraryCallKit::inline_getObjectSize() {
   Node* layout_val = get_layout_helper(klass_node, layout_con);
   int   layout_is_con = (layout_val == nullptr);
 
+  // Class mirrors include the represented class's static fields. Their stored
+  // size is in HeapWords, unlike the fixed instance size in the layout helper.
+  auto mirror_size = [&](Node* mirror) {
+    Node* adr = basic_plus_adr(mirror, java_lang_Class::oop_size_offset());
+    Node* size = make_load(control(), adr, TypeInt::POS, T_INT, MemNode::unordered);
+    return _gvn.transform(new LShiftLNode(ConvI2L(size), intcon(LogHeapWordSize)));
+  };
+
   if (layout_is_con) {
     // Layout helper is constant, can figure out things at compile time.
 
     if (Klass::layout_helper_is_instance(layout_con)) {
-      // Instance case:  layout_con contains the size itself.
-      Node *size = longcon(Klass::layout_helper_size_in_bytes(layout_con));
+      ciKlass* klass = _gvn.type(klass_node)->is_klassptr()->exact_klass();
+      Node* size = klass->is_mirror_instance_klass()
+                     ? mirror_size(obj)
+                     : longcon(Klass::layout_helper_size_in_bytes(layout_con));
       set_result(size);
     } else {
       // Array case: size is round(header + element_size*arraylength).
@@ -9500,12 +9510,13 @@ bool LibraryCallKit::inline_getObjectSize() {
   } else {
     // Layout helper is not constant, need to test for array-ness at runtime.
 
-    enum { _instance_path = 1, _array_path, PATH_LIMIT };
+    enum { _instance_path = 1, _array_path, _mirror_path, PATH_LIMIT };
     RegionNode* result_reg = new RegionNode(PATH_LIMIT);
     PhiNode* result_val = new PhiNode(result_reg, TypeLong::LONG);
     record_for_igvn(result_reg);
 
-    Node* array_ctl = generate_array_guard(klass_node, nullptr, &obj);
+    Node* array_obj = obj;
+    Node* array_ctl = generate_array_guard(klass_node, nullptr, &array_obj);
     if (array_ctl != nullptr) {
       // Array case: size is round(header + element_size*arraylength).
       // Since arraylength is different for every array instance, we have to
@@ -9513,7 +9524,7 @@ bool LibraryCallKit::inline_getObjectSize() {
 
       PreserveJVMState pjvms(this);
       set_control(array_ctl);
-      Node* arr_length = load_array_length(obj);
+      Node* arr_length = load_array_length(array_obj);
 
       int round_mask = MinObjAlignmentInBytes - 1;
       Node* mask = intcon(round_mask);
@@ -9541,6 +9552,20 @@ bool LibraryCallKit::inline_getObjectSize() {
 
       result_reg->init_req(_array_path, control());
       result_val->init_req(_array_path, size);
+    }
+
+    if (!stopped()) {
+      Node* class_klass = makecon(TypeKlassPtr::make(env()->Class_klass()));
+      Node* cmp = _gvn.transform(new CmpPNode(klass_node, class_klass));
+      Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+      Node* mirror_ctl = generate_fair_guard(bol, nullptr);
+      if (mirror_ctl != nullptr) {
+        PreserveJVMState pjvms(this);
+        set_control(mirror_ctl);
+        Node* mirror = _gvn.transform(new CheckCastPPNode(control(), obj, TypeInstPtr::MIRROR));
+        result_reg->init_req(_mirror_path, control());
+        result_val->init_req(_mirror_path, mirror_size(mirror));
+      }
     }
 
     if (!stopped()) {

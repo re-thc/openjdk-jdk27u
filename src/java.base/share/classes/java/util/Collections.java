@@ -1052,10 +1052,8 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableCollection<E> implements Collection<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 1820017752578914078L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<? extends E> c;
@@ -1174,11 +1172,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableSequencedCollection<E> extends UnmodifiableCollection<E>
             implements SequencedCollection<E>, Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -6060065079711684830L;
 
         UnmodifiableSequencedCollection(SequencedCollection<? extends E> c) {
             super(c);
@@ -1247,11 +1243,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableSet<E> extends UnmodifiableCollection<E>
                                  implements Set<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -9215047833775013803L;
-
         UnmodifiableSet(Set<? extends E> s)     {super(s);}
         public boolean equals(Object o) {return o == this || c.equals(o);}
         public int hashCode()           {return c.hashCode();}
@@ -1285,11 +1279,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableSequencedSet<E> extends UnmodifiableSequencedCollection<E>
                                              implements SequencedSet<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -2153469532349793522L;
-
         UnmodifiableSequencedSet(SequencedSet<? extends E> s)    {super(s);}
         public boolean equals(Object o)                          {return o == this || c.equals(o);}
         public int hashCode()                                    {return c.hashCode();}
@@ -1335,11 +1327,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableSortedSet<E>
                              extends UnmodifiableSet<E>
                              implements SortedSet<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -4929149591599911165L;
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
@@ -1393,12 +1384,10 @@ public final class Collections {
      * @param <E> type of elements
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableNavigableSet<E>
                              extends UnmodifiableSortedSet<E>
                              implements NavigableSet<E>, Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -6027448201786391929L;
 
         /**
          * A singleton empty unmodifiable navigable set used for
@@ -1406,11 +1395,9 @@ public final class Collections {
          *
          * @param <E> type of elements, if there were any, and bounds
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         private static class EmptyNavigableSet<E> extends UnmodifiableNavigableSet<E>
             implements Serializable {
-            @java.io.Serial
-            private static final long serialVersionUID = -6291252904449939134L;
-
             public EmptyNavigableSet() {
                 super(new TreeSet<>());
             }
@@ -1487,11 +1474,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableList<E> extends UnmodifiableCollection<E>
                                   implements List<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = -283967356065247728L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<? extends E> list;
@@ -1587,6 +1572,7 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableRandomAccessList<E> extends UnmodifiableList<E>
                                               implements RandomAccess
     {
@@ -1598,9 +1584,6 @@ public final class Collections {
             return new UnmodifiableRandomAccessList<>(
                 list.subList(fromIndex, toIndex));
         }
-
-        @java.io.Serial
-        private static final long serialVersionUID = -2542308836966382001L;
 
         /**
          * Allows instances to be deserialized in pre-1.4 JREs (which do
@@ -1642,10 +1625,8 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableMap<K,V> implements Map<K,V>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -1034234728574286014L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Map<? extends K, ? extends V> m;
@@ -1770,11 +1751,9 @@ public final class Collections {
          *
          * @serial include
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         static class UnmodifiableEntrySet<K,V>
             extends UnmodifiableSet<Map.Entry<K,V>> {
-            @java.io.Serial
-            private static final long serialVersionUID = 7854390611657943733L;
-
             @SuppressWarnings({"unchecked"})
             UnmodifiableEntrySet(Set<? extends Map.Entry<? extends K, ? extends V>> s) {
                 super((Set<Map.Entry<K, V>>)s);
@@ -2001,10 +1980,8 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class UnmodifiableSequencedMap<K,V> extends UnmodifiableMap<K,V> implements SequencedMap<K,V>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -8171676257373950636L;
-
         UnmodifiableSequencedMap(Map<? extends K, ? extends V> m) {
             super(m);
         }
@@ -2068,12 +2045,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableSortedMap<K,V>
           extends UnmodifiableMap<K,V>
           implements SortedMap<K,V>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -8806743815996713206L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, ? extends V> sm;
@@ -2120,12 +2095,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnmodifiableNavigableMap<K,V>
           extends UnmodifiableSortedMap<K,V>
           implements NavigableMap<K,V>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -4858195264774772197L;
-
         /**
          * A class for the {@link #EMPTY_NAVIGABLE_MAP} which needs readResolve
          * to preserve singleton property.
@@ -2133,11 +2106,9 @@ public final class Collections {
          * @param <K> type of keys, if there were any, and of bounds
          * @param <V> type of values, if there were any
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         private static class EmptyNavigableMap<K,V> extends UnmodifiableNavigableMap<K,V>
             implements Serializable {
-
-            @java.io.Serial
-            private static final long serialVersionUID = -2239321462712562324L;
 
             EmptyNavigableMap()                       { super(new TreeMap<>()); }
 
@@ -2286,10 +2257,8 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedCollection<E> implements Collection<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 3053995032091335093L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;  // Backing Collection
@@ -2420,12 +2389,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedSet<E>
           extends SynchronizedCollection<E>
           implements Set<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = 487447009682186044L;
-
         SynchronizedSet(Set<E> s) {
             super(s);
         }
@@ -2489,13 +2456,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedSortedSet<E>
         extends SynchronizedSet<E>
         implements SortedSet<E>
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 8695801310862127406L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
@@ -2586,13 +2551,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedNavigableSet<E>
         extends SynchronizedSortedSet<E>
         implements NavigableSet<E>
     {
-        @java.io.Serial
-        private static final long serialVersionUID = -5505529816273629798L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
@@ -2700,12 +2663,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedList<E>
         extends SynchronizedCollection<E>
         implements List<E> {
-        @java.io.Serial
-        private static final long serialVersionUID = -7754090372962971524L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
@@ -2869,6 +2830,7 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedRandomAccessList<E>
         extends SynchronizedList<E>
         implements RandomAccess {
@@ -2900,9 +2862,6 @@ public final class Collections {
                     list.subList(fromIndex, toIndex), mutex);
             }
         }
-
-        @java.io.Serial
-        private static final long serialVersionUID = 1530674583602358482L;
 
         /**
          * Allows instances to be deserialized in pre-1.4 JREs (which do
@@ -2953,11 +2912,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SynchronizedMap<K,V>
         implements Map<K,V>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 1978198479659022715L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K,V> m;     // Backing Map
@@ -3152,13 +3109,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedSortedMap<K,V>
         extends SynchronizedMap<K,V>
         implements SortedMap<K,V>
     {
-        @java.io.Serial
-        private static final long serialVersionUID = -8798146769416483793L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K,V> sm;
@@ -3257,13 +3212,11 @@ public final class Collections {
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SynchronizedNavigableMap<K,V>
         extends SynchronizedSortedMap<K,V>
         implements NavigableMap<K,V>
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 699392247599746807L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K,V> nm;
@@ -3441,10 +3394,8 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedCollection<E> implements Collection<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 1578914078182001775L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Collection<E> c;
@@ -3593,12 +3544,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedQueue<E>
         extends CheckedCollection<E>
         implements Queue<E>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 1433151992604707767L;
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final Queue<E> queue;
@@ -3651,12 +3601,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedSet<E> extends CheckedCollection<E>
                                  implements Set<E>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 4694047833775013803L;
-
         CheckedSet(Set<E> s, Class<E> elementType) { super(s, elementType); }
 
         public boolean equals(Object o) { return o == this || c.equals(o); }
@@ -3699,12 +3647,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedSortedSet<E> extends CheckedSet<E>
         implements SortedSet<E>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 1599911165492914959L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedSet<E> ss;
@@ -3765,12 +3711,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedNavigableSet<E> extends CheckedSortedSet<E>
         implements NavigableSet<E>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = -5429120189805438922L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableSet<E> ns;
@@ -3850,12 +3794,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedList<E>
         extends CheckedCollection<E>
         implements List<E>
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 65247728283967356L;
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final List<E> list;
@@ -3939,12 +3882,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedRandomAccessList<E> extends CheckedList<E>
                                             implements RandomAccess
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 1638200125423088369L;
-
         CheckedRandomAccessList(List<E> list, Class<E> type) {
             super(list, type);
         }
@@ -4001,12 +3942,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class CheckedMap<K,V>
         implements Map<K,V>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 5742860141034234728L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<K, V> m;
@@ -4402,12 +4341,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedSortedMap<K,V> extends CheckedMap<K,V>
         implements SortedMap<K,V>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 1599671320688067438L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final SortedMap<K, V> sm;
@@ -4479,12 +4416,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CheckedNavigableMap<K,V> extends CheckedSortedMap<K,V>
         implements NavigableMap<K,V>, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = -4852462692372534096L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final NavigableMap<K, V> nm;
@@ -4759,13 +4694,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class EmptySet<E>
         extends AbstractSet<E>
         implements Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 1582296315990362920L;
-
         public Iterator<E> iterator() { return emptyIterator(); }
 
         public int size() {return 0;}
@@ -4886,12 +4819,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class EmptyList<E>
         extends AbstractList<E>
         implements RandomAccess, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 8842843931221139166L;
-
         public Iterator<E> iterator() {
             return emptyIterator();
         }
@@ -5035,13 +4966,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class EmptyMap<K,V>
         extends AbstractMap<K,V>
         implements Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 6428348081105594320L;
-
         public int size()                          {return 0;}
         public boolean isEmpty()                   {return true;}
         public void clear()                        {}
@@ -5215,13 +5144,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SingletonSet<E>
         extends AbstractSet<E>
         implements Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 3193687207550431679L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E element;
@@ -5285,12 +5212,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SingletonList<E>
         extends AbstractList<E>
         implements RandomAccess, Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = 3093736618740652951L;
 
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
@@ -5369,12 +5294,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SingletonMap<K,V>
           extends AbstractMap<K,V>
           implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -6979724477215052911L;
-
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K k;
@@ -5510,13 +5433,11 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class CopiesList<E>
         extends AbstractList<E>
         implements RandomAccess, Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 2739099268398711800L;
-
         /** @serial */
         final int n;
         /** @serial */
@@ -5704,11 +5625,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class ReverseComparator
         implements Comparator<Comparable<Object>>, Serializable {
-
-        @java.io.Serial
-        private static final long serialVersionUID = 7207038068494060240L;
 
         static final ReverseComparator REVERSE_ORDER
             = new ReverseComparator();
@@ -5769,12 +5688,10 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class ReverseComparator2<T> implements Comparator<T>,
         Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = 4374092139857L;
-
         /**
          * The comparator specified in the static factory.  This will never
          * be null, as the static factory returns a ReverseComparator
@@ -6062,6 +5979,7 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SetFromMap<E> extends AbstractSet<E>
         implements Set<E>, Serializable
     {
@@ -6108,9 +6026,6 @@ public final class Collections {
         public Stream<E> stream()           {return s.stream();}
         @Override
         public Stream<E> parallelStream()   {return s.parallelStream();}
-
-        @java.io.Serial
-        private static final long serialVersionUID = 2454657854757543876L;
 
         @java.io.Serial
         private void readObject(java.io.ObjectInputStream stream)
@@ -6173,6 +6088,7 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SequencedSetFromMap<E> extends SetFromMap<E> implements SequencedSet<E> {
         private E nsee(Map.Entry<E, Boolean> e) {
             if (e == null) {
@@ -6202,8 +6118,6 @@ public final class Collections {
         public E removeFirst()    { return nsee(map().pollFirstEntry()); }
         public E removeLast()     { return nsee(map().pollLastEntry()); }
 
-        @java.io.Serial
-        private static final long serialVersionUID = -3943479744841433802L;
     }
 
     /**
@@ -6236,10 +6150,9 @@ public final class Collections {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class AsLIFOQueue<E> extends AbstractQueue<E>
         implements Queue<E>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 1802017725587941708L;
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Deque<E> q;

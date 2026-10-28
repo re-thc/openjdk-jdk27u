@@ -33,10 +33,8 @@ package java.util;
  * @see     java.util.Stack
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EmptyStackException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 5084686378493302095L;
-
     /**
      * Constructs a new {@code EmptyStackException} with {@code null}
      * as its error message string.

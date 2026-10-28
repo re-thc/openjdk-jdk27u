@@ -142,14 +142,9 @@ import jdk.internal.util.DecimalDigits;
  * @param <D> the ChronoLocalDate of this date-time
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
         implements ChronoLocalDate, Temporal, TemporalAdjuster, Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 6282433883239719096L;
 
     /**
      * Casts the {@code Temporal} to {@code ChronoLocalDate} ensuring it bas the specified chronology.

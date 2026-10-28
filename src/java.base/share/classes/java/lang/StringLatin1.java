@@ -82,12 +82,6 @@ final class StringLatin1 {
         return dst;
     }
 
-    static byte[] inflate(byte[] value, int off, int len) {
-        byte[] ret = StringUTF16.newBytesFor(len);
-        inflate(value, off, ret, 0, len);
-        return ret;
-    }
-
     static void getChars(byte[] value, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         inflate(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }

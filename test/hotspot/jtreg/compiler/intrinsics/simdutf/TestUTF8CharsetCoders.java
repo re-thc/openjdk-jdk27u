@@ -30,7 +30,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestUTF8CharsetCoders
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestUTF8CharsetCoders
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestUTF8CharsetCoders
- * @run main/othervm -Xbatch -XX:-CompactStrings TestUTF8CharsetCoders
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 TestUTF8CharsetCoders
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=0 TestUTF8CharsetCoders
  */

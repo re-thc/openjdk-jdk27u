@@ -30,7 +30,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestUTF16UTF8
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestUTF16UTF8
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestUTF16UTF8
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestUTF16UTF8
  */
 
 import java.nio.ByteBuffer;

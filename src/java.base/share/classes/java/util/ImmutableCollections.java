@@ -1442,10 +1442,8 @@ class ImmutableCollections {
  * @serial
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class CollSer implements Serializable {
-    @java.io.Serial
-    private static final long serialVersionUID = 6309168927139932177L;
-
     static final int IMM_LIST       = 1;
     static final int IMM_SET        = 2;
     static final int IMM_MAP        = 3;

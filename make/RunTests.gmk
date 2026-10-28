@@ -1216,10 +1216,9 @@ define SetupRunSpecialTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/test-execution, \
-	    $$($1_TEST_COMMAND_LINE) \
-	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/test-output.txt) \
-	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
+	    $$($1_TEST_COMMAND_LINE) | $(TEE) $$($1_TEST_RESULTS_DIR)/test-output.txt \
+	    && $$(ECHO) $$$${PIPESTATUS[0]} > $$($1_EXITCODE) \
+	    || $$(ECHO) $$$${PIPESTATUS[0]} > $$($1_EXITCODE) \
 	)
 
   # We can not parse the various "special" tests.

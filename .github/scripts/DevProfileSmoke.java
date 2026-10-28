@@ -44,14 +44,14 @@ public class DevProfileSmoke {
      * @throws Exception if a server facility fails
      */
     public static void main(String[] args) throws Exception {
-        for (String module : new String[] { "java.desktop", "java.datatransfer", "java.se",
+        for (String module : new String[] { "java.datatransfer", "java.se",
                 "jdk.accessibility", "jdk.editpad", "jdk.hotspot.agent", "jdk.jconsole",
                 "jdk.jpackage", "jdk.unsupported.desktop" }) {
             if (ModuleFinder.ofSystem().find(module).isPresent()) {
                 throw new AssertionError("Unexpected desktop-dependent module: " + module);
             }
         }
-        for (String module : new String[] { "jdk.compiler", "jdk.javadoc", "jdk.jdeps",
+        for (String module : new String[] { "java.desktop", "jdk.compiler", "jdk.javadoc", "jdk.jdeps",
                 "jdk.jshell", "jdk.jlink", "jdk.attach", "jdk.jdi", "jdk.management",
                 "jdk.management.agent", "jdk.jfr", "java.sql", "java.naming", "jdk.unsupported" }) {
             if (ModuleFinder.ofSystem().find(module).isEmpty()) {

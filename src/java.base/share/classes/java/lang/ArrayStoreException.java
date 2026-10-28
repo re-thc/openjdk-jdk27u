@@ -36,10 +36,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ArrayStoreException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -4522193890499838241L;
-
     /**
      * Constructs an {@code ArrayStoreException} with no detail message.
      */

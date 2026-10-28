@@ -87,13 +87,8 @@ import java.io.StreamCorruptedException;
  * @serial include
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class Ser implements Externalizable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -7683839454370182990L;
 
     static final byte DURATION_TYPE = 1;
     static final byte INSTANT_TYPE = 2;

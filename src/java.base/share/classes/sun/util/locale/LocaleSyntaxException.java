@@ -31,10 +31,8 @@
  */
 package sun.util.locale;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LocaleSyntaxException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1L;
 
     private final int index;
 

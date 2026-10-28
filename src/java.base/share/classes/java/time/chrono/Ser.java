@@ -90,13 +90,8 @@ import java.time.LocalDateTime;
  * @serial include
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class Ser implements Externalizable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -6103370247208168577L;
 
     static final byte CHRONO_TYPE = 1;
     static final byte CHRONO_LOCAL_DATE_TIME_TYPE = 2;

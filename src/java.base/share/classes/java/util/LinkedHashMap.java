@@ -173,6 +173,7 @@ import java.util.function.Function;
  * @see     Hashtable
  * @since   1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkedHashMap<K,V>
     extends HashMap<K,V>
     implements SequencedMap<K,V>
@@ -208,9 +209,6 @@ public class LinkedHashMap<K,V>
             super(hash, key, value, next);
         }
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3801124242820219131L;
 
     /**
      * The head (eldest) of the doubly linked list.

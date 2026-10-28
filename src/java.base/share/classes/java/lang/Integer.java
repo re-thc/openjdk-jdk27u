@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +43,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.lang.Character.digit;
-import static java.lang.String.COMPACT_STRINGS;
 
 /**
  * The {@code Integer} class is the {@linkplain
@@ -70,6 +70,7 @@ import static java.lang.String.COMPACT_STRINGS;
  *
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Integer extends Number
         implements Comparable<Integer>, Constable, ConstantDesc {
@@ -159,47 +160,25 @@ public final class Integer extends Number
             return toString(i);
         }
 
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[33];
-            boolean negative = (i < 0);
-            int charPos = 32;
-
-            if (!negative) {
-                i = -i;
-            }
-
-            while (i <= -radix) {
-                buf[charPos--] = digits[-(i % radix)];
-                i = i / radix;
-            }
-            buf[charPos] = digits[-i];
-
-            if (negative) {
-                buf[--charPos] = '-';
-            }
-
-            return StringLatin1.newString(buf, charPos, (33 - charPos));
-        }
-        return toStringUTF16(i, radix);
-    }
-
-    private static String toStringUTF16(int i, int radix) {
-        byte[] buf = new byte[33 * 2];
+        byte[] buf = new byte[33];
         boolean negative = (i < 0);
         int charPos = 32;
+
         if (!negative) {
             i = -i;
         }
+
         while (i <= -radix) {
-            StringUTF16.putChar(buf, charPos--, digits[-(i % radix)]);
+            buf[charPos--] = digits[-(i % radix)];
             i = i / radix;
         }
-        StringUTF16.putChar(buf, charPos, digits[-i]);
+        buf[charPos] = digits[-i];
 
         if (negative) {
-            StringUTF16.putChar(buf, --charPos, '-');
+            buf[--charPos] = '-';
         }
-        return StringUTF16.newString(buf, charPos, (33 - charPos));
+
+        return StringLatin1.newString(buf, charPos, (33 - charPos));
     }
 
     /**
@@ -1998,7 +1977,4 @@ public final class Integer extends Number
         return this;
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    @Native private static final long serialVersionUID = 1360826667806852920L;
 }

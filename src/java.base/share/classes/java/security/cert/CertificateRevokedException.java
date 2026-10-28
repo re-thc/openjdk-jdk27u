@@ -50,10 +50,8 @@ import sun.security.x509.InvalidityDateExtension;
  * @since 1.7
  * @see CertPathValidatorException
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertificateRevokedException extends CertificateException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7839996631571608627L;
 
     /**
      * @serial the date on which the certificate was revoked

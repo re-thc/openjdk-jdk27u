@@ -105,6 +105,7 @@ import java.util.Map;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class MinguoChronology extends AbstractChronology implements Serializable {
 
     /**
@@ -112,11 +113,6 @@ public final class MinguoChronology extends AbstractChronology implements Serial
      */
     public static final MinguoChronology INSTANCE = new MinguoChronology();
 
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 1039765215346859963L;
     /**
      * The difference in years between ISO and Minguo.
      */

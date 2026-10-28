@@ -548,15 +548,6 @@ final class StringUTF16 {
         return len;
     }
 
-    // Create the UTF16 buffer for !COMPACT_STRINGS
-    static byte[] toBytes(int[] val, int index, int len) {
-        final int end = index + len;
-        int n = computeCodePointSize(val, index, end);
-
-        byte[] buf = newBytesFor(n);
-        return extractCodepoints(val, index, end, buf, 0);
-     }
-
     static byte[] toBytes(char c) {
         byte[] result = new byte[2];
         putChar(result, 0, c);
@@ -1231,8 +1222,7 @@ final class StringUTF16 {
                 i++;
             }
             // Check if we should try to compress to latin1
-            if (String.COMPACT_STRINGS &&
-                !StringLatin1.canEncode(oldChar) &&
+            if (!StringLatin1.canEncode(oldChar) &&
                 StringLatin1.canEncode(newChar)) {
                 byte[] res = StringUTF16.compress(buf, 0, len);
                 byte coder = StringUTF16.coderFromArrayLen(res, len);
@@ -1269,14 +1259,14 @@ final class StringUTF16 {
         //  | 7 |  UTF16 |  UTF16 |  UTF16 | null or UTF16         |
         //  +---+--------+--------+--------+-----------------------+
 
-        if (String.COMPACT_STRINGS && valLat1 && !targLat1) {
+        if (valLat1 && !targLat1) {
             // combinations 2 or 3
             return null; // for string to return this;
         }
 
-        int i = (String.COMPACT_STRINGS && valLat1)
+        int i = valLat1
                         ? StringLatin1.indexOf(value, targ) :
-                (String.COMPACT_STRINGS && targLat1)
+                targLat1
                         ? indexOfLatin1(value, targ)
                         : indexOf(value, targ);
         if (i < 0) {
@@ -1288,9 +1278,9 @@ final class StringUTF16 {
         int[] pos = new int[16];
         pos[0] = i;
         i += targLen;
-        while ((j = ((String.COMPACT_STRINGS && valLat1)
+        while ((j = (valLat1
                             ? StringLatin1.indexOf(value, valLen, targ, targLen, i) :
-                     (String.COMPACT_STRINGS && targLat1)
+                     targLat1
                             ? indexOfLatin1(value, valLen, targ, targLen, i)
                             : indexOf(value, valLen, targ, targLen, i))) > 0)
         {
@@ -1316,7 +1306,7 @@ final class StringUTF16 {
         int posFrom = 0, posTo = 0;
         for (int q = 0; q < p; ++q) {
             int nextPos = pos[q];
-            if (String.COMPACT_STRINGS && valLat1) {
+            if (valLat1) {
                 while (posFrom < nextPos) {
                     char c = (char)(value[posFrom++] & 0xff);
                     putChar(result, posTo++, c);
@@ -1327,7 +1317,7 @@ final class StringUTF16 {
                 }
             }
             posFrom += targLen;
-            if (String.COMPACT_STRINGS && replLat1) {
+            if (replLat1) {
                 for (int k = 0; k < replLen; ++k) {
                     char c = (char)(repl[k] & 0xff);
                     putChar(result, posTo++, c);
@@ -1338,7 +1328,7 @@ final class StringUTF16 {
                 }
             }
         }
-        if (String.COMPACT_STRINGS && valLat1) {
+        if (valLat1) {
             while (posFrom < valLen) {
                 char c = (char)(value[posFrom++] & 0xff);
                 putChar(result, posTo++, c);
@@ -1349,7 +1339,7 @@ final class StringUTF16 {
             }
         }
 
-        if (String.COMPACT_STRINGS && replLat1 && !targLat1) {
+        if (replLat1 && !targLat1) {
             // combination 6
             byte[] res = StringUTF16.compress(result, 0, resultLen);
             byte coder = StringUTF16.coderFromArrayLen(res, resultLen);
@@ -1739,13 +1729,9 @@ final class StringUTF16 {
         if (len == 0) {
             return "";
         }
-        if (String.COMPACT_STRINGS) {
-            byte[] res = StringUTF16.compress(val, index, len);
-            byte coder = StringUTF16.coderFromArrayLen(res, len);
-            return new String(res, coder);
-        }
-        int last = index + len;
-        return new String(Arrays.copyOfRange(val, index << 1, last << 1), UTF16);
+        byte[] res = StringUTF16.compress(val, index, len);
+        byte coder = StringUTF16.coderFromArrayLen(res, len);
+        return new String(res, coder);
     }
 
     static class CharsSpliterator implements Spliterator.OfInt {

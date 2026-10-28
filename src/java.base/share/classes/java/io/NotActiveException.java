@@ -30,10 +30,8 @@ package java.io;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotActiveException extends ObjectStreamException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3893467273049808895L;
 
     /**
      * Constructor to create a new NotActiveException with the reason given.

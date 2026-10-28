@@ -163,15 +163,10 @@ import jdk.internal.util.DateTimeHelper;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class ZonedDateTime
         implements Temporal, ChronoZonedDateTime<LocalDate>, Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -6260982410461394882L;
 
     /**
      * @serial The local date-time.

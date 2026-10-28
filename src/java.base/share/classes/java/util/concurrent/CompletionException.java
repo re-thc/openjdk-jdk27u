@@ -42,9 +42,8 @@ package java.util.concurrent;
  * @since 1.8
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CompletionException extends RuntimeException {
-    private static final long serialVersionUID = 7830266012832686185L;
-
     /**
      * Constructs a {@code CompletionException} with no detail message.
      * The cause is not initialized, and may subsequently be

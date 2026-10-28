@@ -79,6 +79,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @serial exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Permissions extends PermissionCollection
 implements Serializable
 {
@@ -345,9 +346,6 @@ implements Serializable
         return pc;
     }
 
-    @java.io.Serial
-    private static final long serialVersionUID = 4858622370623524688L;
-
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:
     // private Hashtable perms;
@@ -513,6 +511,7 @@ final class PermissionsEnumerator implements Enumeration<Permission> {
  * @serial include
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class PermissionsHash extends PermissionCollection
 implements Serializable
 {
@@ -577,8 +576,6 @@ implements Serializable
         return permsMap.elements();
     }
 
-    @java.io.Serial
-    private static final long serialVersionUID = -8491988220802933440L;
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:
     // private Hashtable perms;

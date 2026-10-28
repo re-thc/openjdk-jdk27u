@@ -65,6 +65,7 @@ import jdk.internal.util.ArraysSupport;
  * @author  Martin Buchholz
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BitSet implements Cloneable, java.io.Serializable {
     /*
      * BitSets are packed into arrays of "words."  Currently a word is
@@ -105,10 +106,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * the user knows what he's doing and try harder to preserve it.
      */
     private transient boolean sizeIsSticky = false;
-
-    /* use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 7997698588986878753L;
 
     /**
      * Given a bit index, return word index containing it.

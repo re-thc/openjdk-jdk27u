@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4909550
  * @summary 1.5 beta-b15 java compiler throws NPE
  * @author gafter

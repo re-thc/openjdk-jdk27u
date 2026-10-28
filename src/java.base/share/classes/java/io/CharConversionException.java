@@ -30,12 +30,10 @@ package java.io;
  * @author      Asmus Freytag
  * @since       1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CharConversionException
     extends java.io.IOException
 {
-    @java.io.Serial
-    private static final long serialVersionUID = -8680016352018427031L;
-
     /**
      * This provides no detailed message.
      */

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug     4164450
  * @summary JSR 199: Standard interface for Java compilers
  * @author  Peter von der Ahé

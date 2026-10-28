@@ -50,8 +50,8 @@ import java.util.function.UnaryOperator;
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AtomicReference<V> implements java.io.Serializable {
-    private static final long serialVersionUID = -1848883965231344442L;
     private static final VarHandle VALUE = MhUtil.findVarHandle(
             MethodHandles.lookup(), "value", Object.class);
 

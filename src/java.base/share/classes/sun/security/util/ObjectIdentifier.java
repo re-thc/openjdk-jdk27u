@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Hemma Prafullchandra
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ObjectIdentifier implements Serializable {
     /*
      * The maximum encoded OID length, excluding the ASN.1 encoding tag and
@@ -109,9 +110,6 @@ public final class ObjectIdentifier implements Serializable {
      * the 4th case, non-huge OID is still supportable in old versions, while
      * huge OID is not.
      */
-    @java.io.Serial
-    private static final long serialVersionUID = 8697030238860181294L;
-
     /**
      * Changed to Object
      * @serial
@@ -177,9 +175,8 @@ public final class ObjectIdentifier implements Serializable {
         os.defaultWriteObject();
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class HugeOidNotSupportedByOldJDK implements Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = 1L;
         static HugeOidNotSupportedByOldJDK theOne =
                 new HugeOidNotSupportedByOldJDK();
     }

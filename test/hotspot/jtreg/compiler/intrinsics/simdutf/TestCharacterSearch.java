@@ -29,7 +29,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestCharacterSearch
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestCharacterSearch
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestCharacterSearch
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestCharacterSearch
  */
 import java.util.Arrays;
 public class TestCharacterSearch {

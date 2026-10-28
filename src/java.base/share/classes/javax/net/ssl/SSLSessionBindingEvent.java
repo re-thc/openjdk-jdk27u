@@ -45,13 +45,11 @@ import java.util.EventObject;
  * @author Nathan Abramson
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public
 class SSLSessionBindingEvent
 extends EventObject
 {
-    @java.io.Serial
-    private static final long serialVersionUID = 3989172637106345L;
-
     /**
      * @serial The name to which the object is being bound or unbound
      */

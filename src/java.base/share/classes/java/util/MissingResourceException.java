@@ -47,6 +47,7 @@ package java.util;
  * @author      Mark Davis
  * @since       1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MissingResourceException extends RuntimeException {
 
     /**
@@ -107,9 +108,6 @@ public class MissingResourceException extends RuntimeException {
     //============ privates ============
 
     // serialization compatibility with JDK1.1
-    @java.io.Serial
-    private static final long serialVersionUID = -4876345176062000401L;
-
     /**
      * The class name of the resource bundle requested by the user.
      * @serial

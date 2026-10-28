@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +42,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.Character.digit;
-import static java.lang.String.COMPACT_STRINGS;
 
 /**
  * The {@code Long} class is the {@linkplain
@@ -69,6 +69,7 @@ import static java.lang.String.COMPACT_STRINGS;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
@@ -142,45 +143,24 @@ public final class Long extends Number
         if (radix == 10)
             return toString(i);
 
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[65];
-            int charPos = 64;
-            boolean negative = (i < 0);
-
-            if (!negative) {
-                i = -i;
-            }
-
-            while (i <= -radix) {
-                buf[charPos--] = Integer.digits[(int)(-(i % radix))];
-                i = i / radix;
-            }
-            buf[charPos] = Integer.digits[(int)(-i)];
-
-            if (negative) {
-                buf[--charPos] = '-';
-            }
-            return StringLatin1.newString(buf, charPos, (65 - charPos));
-        }
-        return toStringUTF16(i, radix);
-    }
-
-    private static String toStringUTF16(long i, int radix) {
-        byte[] buf = new byte[65 * 2];
+        byte[] buf = new byte[65];
         int charPos = 64;
         boolean negative = (i < 0);
+
         if (!negative) {
             i = -i;
         }
+
         while (i <= -radix) {
-            StringUTF16.putChar(buf, charPos--, Integer.digits[(int)(-(i % radix))]);
+            buf[charPos--] = Integer.digits[(int)(-(i % radix))];
             i = i / radix;
         }
-        StringUTF16.putChar(buf, charPos, Integer.digits[(int)(-i)]);
+        buf[charPos] = Integer.digits[(int)(-i)];
+
         if (negative) {
-            StringUTF16.putChar(buf, --charPos, '-');
+            buf[--charPos] = '-';
         }
-        return StringUTF16.newString(buf, charPos, (65 - charPos));
+        return StringLatin1.newString(buf, charPos, (65 - charPos));
     }
 
     /**
@@ -1988,7 +1968,4 @@ public final class Long extends Number
         return this;
     }
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    @Native private static final long serialVersionUID = 4290774380558885855L;
 }

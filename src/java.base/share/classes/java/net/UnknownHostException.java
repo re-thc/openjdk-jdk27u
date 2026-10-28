@@ -33,10 +33,8 @@ import java.io.IOException;
  * @author  Jonathan Payne
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownHostException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -4639126076052875403L;
-
     /**
      * Constructs a new {@code UnknownHostException} with the
      * specified detail message.

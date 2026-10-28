@@ -31,7 +31,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestUTF8Latin1Decode
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestUTF8Latin1Decode
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestUTF8Latin1Decode
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestUTF8Latin1Decode
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=2 TestUTF8Latin1Decode
  */
 

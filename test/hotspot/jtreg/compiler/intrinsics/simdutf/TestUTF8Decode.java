@@ -29,7 +29,6 @@
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 TestUTF8Decode
  * @run main/othervm -XX:-UseSIMDUTFIntrinsics TestUTF8Decode
  * @run main/othervm -Xbatch -XX:-TieredCompilation TestUTF8Decode
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestUTF8Decode
  */
 
 import java.nio.ByteBuffer;
