@@ -210,6 +210,8 @@ public class InterpreterFramePilotCallTest {
             // ordinary return word. Deoptimize the compiled blocked callee
             // while frozen; the sole caller local must survive moving GC.
             Method awaitMethod=method("await",Holder.class);
+            var carrier=Class.forName("java.lang.VirtualThread").getDeclaredField("carrierThread");
+            carrier.setAccessible(true);
             for(int level:new int[]{1,4}) {
                 compile(awaitMethod,level);released=false;entered=false;
                 AtomicReference<Object> virtualResult=new AtomicReference<>();
@@ -222,11 +224,13 @@ public class InterpreterFramePilotCallTest {
                 virtual.start();
                 try {
                     long end=System.nanoTime()+20_000_000_000L;
-                    while(!entered || virtual.getState()!=Thread.State.WAITING) {
-                        check(System.nanoTime()<end,"virtual callee blocked in wait");Thread.sleep(1);
+                    while(!entered || virtual.getState()!=Thread.State.WAITING || carrier.get(virtual)!=null) {
+                        check(System.nanoTime()<end,"virtual callee blocked and unmounted");Thread.sleep(1);
                     }
                     check(Arrays.stream(virtual.getStackTrace()).anyMatch(f -> f.getMethodName().equals("blocked")),
                         "frozen virtual caller stack walk");
+                    check(carrier.get(virtual)==null && virtual.getState()==Thread.State.WAITING,
+                        "callee remains unmounted before frozen-frame deoptimization");
                     check(WB.isMethodCompiled(awaitMethod) && WB.deoptimizeMethod(awaitMethod)>0,
                         "compiled blocked callee deoptimized while virtual thread suspended level "+level);
                     WB.fullGC();
@@ -264,6 +268,7 @@ public class InterpreterFramePilotCallTest {
         }
         for(String mode:new String[]{"mixed","returns","redefine","tooling"}) {
         ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-Dpilot.library="+agent,
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
             "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-XX:CompileThresholdScaling=100",
             "-XX:CompileCommand=dontinline,InterpreterFramePilotCallTest::*",
             "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
