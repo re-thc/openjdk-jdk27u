@@ -1,5 +1,10 @@
 # Ordinary-call pilot: bounded preparation, execution and coverage check
 
+Follow-up: the [continuation correction](interpreter-frame-continuation-fix.md)
+removes the normal-path test counters and C ABI lookup. This report preserves
+the earlier counted-image evidence at `315fa3b2411`; its unfavorable outcomes
+are not replaced by the follow-up.
+
 The qualified `71a7ec33d54` image makes the tested field/branch and nonnull
 reference paths faster, but all three call-bearing cases regress in every
 matched JVM. Preparation is much smaller machinery than an nmethod compiler,

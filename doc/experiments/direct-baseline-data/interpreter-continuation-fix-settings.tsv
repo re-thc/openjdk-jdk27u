@@ -1,0 +1,38 @@
+key	value
+runtime_source	38b1b63a0eaff83a30992a28b4369b5dad10de18
+preserved_reference	71a7ec33d54805b791bf0facc321c803c4a8477e
+preserved_adverse_evidence	315fa3b2411d93fc5c73760c6714f9f34439b315
+old_image	/workspace/interpreter-frame-stage-b2/image-release
+old_libjvm_sha256	2f80b2e16c709fa384d3438c04d16e803d0a3d499f89a3842ab176c17e3c44be
+new_image	/workspace/interpreter-frame-continuation-fix/image-release
+new_libjvm_sha256	6580c63b5e4a6fb9a7374398da0309d26348a2ed8c3b9ab6ac08a3dac84176b3
+class_sha256	e13db4e5c0ba19b0fd7abd82b4a36483e19e1fc7c055f253cfa14378cdaba2a6
+plan	"[[""p0-old"", ""old"", ""01234"", false], [""p0-new"", ""new"", ""01234"", false], [""p1-new"", ""new"", ""23401"", true], [""p1-old"", ""old"", ""23401"", true], [""p2-old"", ""old"", ""40123"", false], [""p2-new"", ""new"", ""40123"", false]]"
+flag	-Xshare:off
+flag	-Xms64m
+flag	-Xmx64m
+flag	-XX:+UseG1GC
+flag	-XX:ActiveProcessorCount=4
+flag	-XX:CICompilerCount=2
+flag	-XX:+UnlockExperimentalVMOptions
+flag	-XX:+UnlockDiagnosticVMOptions
+flag	-XX:+WhiteBoxAPI
+flag	-XX:-UseDirectBaseline
+flag	-XX:+UseInterpreterFramePilot
+flag	--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED
+flag	--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+flag	--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+flag	-Xbootclasspath/a:/workspace/interpreter-frame-continuation-fix/match/whitebox
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost::run*
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost::twice
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost$Token::equals
+flag	-XX:CompileCommand=compileonly,InterpreterFrameSemanticCost$Impl::apply
+instruction_audit:ordinary_common_itos_epilogue_instructions	13
+instruction_audit:ordinary_dispatch_tail_instructions	4
+instruction_audit:pilot_additional_aligned_tail_instructions	52
+instruction_audit:successful_first_map_leaf_instructions	50
+instruction_audit:leaf_atomic_instruction	lock xadd %ecx,(%rsi)
+instruction_audit:meaning	executed static instructions on selected successful first-row path; not measured retired cycles
+instruction_audit:new_additional_first_map_tail_instructions	83
+instruction_audit:old_additional_including_leaf	102
+instruction_audit:new_entry_hit_instructions	0
