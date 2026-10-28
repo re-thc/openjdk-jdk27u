@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Malformed self-describing PSL data remains retryable and bounded
- * @modules java.base/sun.security.util:open
+ * @modules java.base/sun.security.util:+open
  * @run main/othervm IndexedPublicSuffixFirstUse
  */
 
