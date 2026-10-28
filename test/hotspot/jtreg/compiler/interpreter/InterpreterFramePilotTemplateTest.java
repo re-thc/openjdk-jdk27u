@@ -97,7 +97,7 @@ public class InterpreterFramePilotTemplateTest {
     public static void main(String[] args)throws Exception {
         if(args.length!=0){child();return;}
         for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
-            List<String> options=new ArrayList<>(List.of("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
+            List<String> options=new ArrayList<>(List.of("-Xbootclasspath/a:.","-Xmx96m",collector,
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI",
                 "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations","-XX:+ProfileInterpreter"));
