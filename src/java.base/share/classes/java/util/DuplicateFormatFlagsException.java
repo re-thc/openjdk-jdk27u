@@ -35,10 +35,8 @@ package java.util;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class DuplicateFormatFlagsException extends IllegalFormatException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 18890531L;
 
     /** @serial */
     private String flags;

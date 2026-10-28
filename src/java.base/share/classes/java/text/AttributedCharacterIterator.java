@@ -86,6 +86,7 @@ public interface AttributedCharacterIterator extends CharacterIterator {
      * @since 1.2
      */
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Attribute implements Serializable {
 
         /**
@@ -196,9 +197,6 @@ public interface AttributedCharacterIterator extends CharacterIterator {
         public static final Attribute INPUT_METHOD_SEGMENT = new Attribute("input_method_segment");
 
         // make sure the serial version doesn't change between compiler versions
-        @java.io.Serial
-        private static final long serialVersionUID = -9142742483513960612L;
-
     };
 
     /**

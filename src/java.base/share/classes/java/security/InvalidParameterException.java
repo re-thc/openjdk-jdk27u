@@ -34,10 +34,8 @@ package java.security;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidParameterException extends IllegalArgumentException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -857968536935667808L;
 
     /**
      * Constructs an {@code InvalidParameterException} with no detail message.

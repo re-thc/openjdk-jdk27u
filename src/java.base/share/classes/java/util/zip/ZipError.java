@@ -33,11 +33,9 @@ package java.util.zip;
  * @author  Dave Bristor
  * @since   1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="24", forRemoval = true)
 public class ZipError extends InternalError {
-    @java.io.Serial
-    private static final long serialVersionUID = 853973422266861979L;
-
     /**
      * Constructs a ZipError with the given detail message.
      * @param s the {@code String} containing a detail message

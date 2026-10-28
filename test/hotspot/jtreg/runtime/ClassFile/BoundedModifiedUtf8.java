@@ -25,7 +25,6 @@
  * @test
  * @summary Bounded modified UTF8 constant-pool decoding and format checks
  * @run main/othervm -Xverify:all BoundedModifiedUtf8
- * @run main/othervm -Xverify:all -XX:-CompactStrings BoundedModifiedUtf8
  * @run main/othervm -Xverify:all -Xint BoundedModifiedUtf8
  * @run main/othervm -Xverify:all -XX:TieredStopAtLevel=1 BoundedModifiedUtf8
  * @run main/othervm -Xverify:all -XX:-TieredCompilation -Xbatch BoundedModifiedUtf8

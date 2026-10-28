@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,29 +23,11 @@
  * questions.
  */
 
-
-/*
- * @test
- *
- * @summary converted from VM Testbase vm/compiler/optimizations/stringconcat/implicit/Implicit01/cs_disabled.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Implicit01
+/**
+ * Non-GUI JavaBeans support for this fork's server profile.
+ * The java.awt types are signature placeholders, not an AWT implementation.
  */
-
-
-/*
- * @test id=stringConcatInline
- *
- * @summary The same test with an updated compile directive that produces
- *          StringBuilder-backed string concatenations.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @compile -XDstringConcat=inline ../../Implicit01.java
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.implicit.Implicit01
- */
-
+module java.desktop {
+    exports java.beans;
+    exports java.awt;
+}

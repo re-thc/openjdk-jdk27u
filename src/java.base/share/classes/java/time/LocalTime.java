@@ -124,6 +124,7 @@ import jdk.internal.util.DateTimeHelper;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class LocalTime
         implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
@@ -220,12 +221,6 @@ public final class LocalTime
      * Nanos per day.
      */
     static final long NANOS_PER_DAY = NANOS_PER_HOUR * HOURS_PER_DAY;
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 6414437269572265201L;
 
     /**
      * @serial The hour.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +24,42 @@
 
 /**
  * @test CdsDifferentCompactStrings
- * @summary CDS (class data sharing) requires the same -XX:[+-]CompactStrings
- *          setting between archive creation time and load time.
+ * @summary Reject disabled compact strings at startup and in archive headers.
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CdsDifferentCompactStrings
  */
 
+import java.io.File;
+
+import jdk.test.lib.cds.CDSArchiveUtils;
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.whitebox.WhiteBox;
 
 public class CdsDifferentCompactStrings {
     public static void main(String[] args) throws Exception {
-        createAndLoadSharedArchive("+", "-");
-        createAndLoadSharedArchive("-", "+");
-    }
+        CDSTestUtils.createArchiveAndCheck("-XX:+CompactStrings");
+        CDSTestUtils.runWithArchiveAndCheck();
 
-    private static void createAndLoadSharedArchive(String create, String load)
-        throws Exception
-    {
-        String createCompactStringsArgument = "-XX:" + create + "CompactStrings";
-        String loadCompactStringsArgument   = "-XX:" + load   + "CompactStrings";
+        // An explicit off request is rejected before the archive is considered.
+        CDSTestUtils.runWithArchive("-XX:-CompactStrings")
+                .shouldContain("CompactStrings cannot be disabled in this VM")
+                .shouldHaveExitValue(1);
 
-        CDSTestUtils.createArchiveAndCheck(createCompactStringsArgument);
-
-        OutputAnalyzer out = CDSTestUtils.runWithArchive("-Xlog:cds", loadCompactStringsArgument);
-        CDSTestUtils.checkMappingFailure(out);
-
-        out.shouldMatch("The shared archive file's CompactStrings " +
-                        "setting .* does not equal the current CompactStrings setting")
-            .shouldHaveExitValue(1);
+        // An off-mode archive must still be rejected independently of flag parsing.
+        File archive = CDSArchiveUtils.copyArchiveFile(
+                new File(CDSTestUtils.getDefaultArchiveName()), "compact-strings-mismatch.jsa");
+        int offset = WhiteBox.getWhiteBox().getCDSOffsetForName("FileMapHeader::_compact_strings");
+        CDSArchiveUtils.writeData(archive, offset, new byte[] { 0 });
+        CDSTestUtils.run(new CDSOptions().setArchiveName(archive.getPath())
+                // Exercise the option check rather than the deliberately stale header CRC.
+                .addSuffix("-XX:-VerifySharedSpaces", "-Xlog:cds"))
+                .assertAbnormalExit("The shared archive file's CompactStrings setting (disabled)"
+                        + " does not equal the current CompactStrings setting (enabled)");
     }
 }

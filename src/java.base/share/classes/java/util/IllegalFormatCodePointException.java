@@ -36,10 +36,8 @@ package java.util;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class IllegalFormatCodePointException extends IllegalFormatException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 19080630L;
 
     /** @serial */
     private int c;

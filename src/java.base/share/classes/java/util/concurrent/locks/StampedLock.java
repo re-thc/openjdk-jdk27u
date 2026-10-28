@@ -239,6 +239,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * @since 1.8
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StampedLock implements java.io.Serializable {
     /*
      * Algorithmic notes:
@@ -307,8 +308,6 @@ public class StampedLock implements java.io.Serializable {
      * further spread out contended locations, but might be subject to
      * future improvements.
      */
-
-    private static final long serialVersionUID = -6001602636862214147L;
 
     /** The number of bits to use for reader count before overflowing */
     private static final int LG_READERS = 7; // 127 readers

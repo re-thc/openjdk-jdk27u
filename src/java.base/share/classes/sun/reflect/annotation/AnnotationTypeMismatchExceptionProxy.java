@@ -33,9 +33,8 @@ import java.lang.reflect.Method;
  * @author  Josh Bloch
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class AnnotationTypeMismatchExceptionProxy extends ExceptionProxy {
-    @java.io.Serial
-    private static final long serialVersionUID = 7844069490309503934L;
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private Method member; // Would be more robust to null-out in a writeObject method.
     private final String foundType;

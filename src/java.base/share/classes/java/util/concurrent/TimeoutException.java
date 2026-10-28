@@ -46,9 +46,8 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TimeoutException extends Exception {
-    private static final long serialVersionUID = 1900926677490660714L;
-
     /**
      * Constructs a {@code TimeoutException} with no specified detail
      * message.

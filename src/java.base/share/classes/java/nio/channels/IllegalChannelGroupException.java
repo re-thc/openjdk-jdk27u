@@ -32,12 +32,10 @@ package java.nio.channels;
  * @since 1.7
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalChannelGroupException
     extends IllegalArgumentException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2495041211157744253L;
 
     /**
      * Constructs an instance of this class.

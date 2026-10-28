@@ -36,7 +36,8 @@ ifeq ($(strip $(JVM_VARIANTS)), )
 endif
 $(foreach v, $(JVM_VARIANTS), \
     $(call AssertEquals, $(sort $(filter %gc, $(JVM_FEATURES_$v))), $(SERVER_JVM_COLLECTORS), Prebuilt variant collectors))
-$(call AssertEquals, $(filter java.desktop java.datatransfer java.se jdk.jconsole, $(call FindAllModules)), , Prebuilt module exclusions)
+$(call AssertEquals, $(filter java.datatransfer java.se jdk.jconsole, $(call FindAllModules)), , Prebuilt module exclusions)
+$(call AssertEquals, $(filter java.desktop, $(call FindAllModules)), java.desktop, Prebuilt beans module)
 
 all:
 	$(ECHO) "Prebuilt server policy and module graph passed."

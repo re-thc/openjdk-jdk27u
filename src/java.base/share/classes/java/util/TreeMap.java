@@ -120,6 +120,7 @@ import java.util.function.Function;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TreeMap<K,V>
     extends AbstractMap<K,V>
     implements NavigableMap<K,V>, Cloneable, java.io.Serializable
@@ -1651,10 +1652,9 @@ public class TreeMap<K,V>
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     abstract static class NavigableSubMap<K,V> extends AbstractMap<K,V>
         implements NavigableMap<K,V>, java.io.Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -2102997345730753016L;
         /**
          * @serial The backing map.
          */
@@ -2202,10 +2202,8 @@ public class TreeMap<K,V>
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AscendingSubMap<K,V> extends NavigableSubMap<K,V> {
-        @java.io.Serial
-        private static final long serialVersionUID = 912986545866124060L;
-
         AscendingSubMap(TreeMap<K,V> m,
                         boolean fromStart, K lo, boolean loInclusive,
                         boolean toEnd,     K hi, boolean hiInclusive) {
@@ -2286,9 +2284,8 @@ public class TreeMap<K,V>
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class DescendingSubMap<K,V>  extends NavigableSubMap<K,V> {
-        @java.io.Serial
-        private static final long serialVersionUID = 912986545866120460L;
         DescendingSubMap(TreeMap<K,V> m,
                         boolean fromStart, K lo, boolean loInclusive,
                         boolean toEnd,     K hi, boolean hiInclusive) {
@@ -2380,10 +2377,9 @@ public class TreeMap<K,V>
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private class SubMap extends AbstractMap<K,V>
         implements SortedMap<K,V>, java.io.Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -6520786458950516097L;
         /** @serial */
         private boolean fromStart = false, toEnd = false;
         /** @serial */
@@ -2774,9 +2770,6 @@ public class TreeMap<K,V>
 
         setColor(x, BLACK);
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 919286545866124006L;
 
     /**
      * Save the state of the {@code TreeMap} instance to a stream (i.e.,

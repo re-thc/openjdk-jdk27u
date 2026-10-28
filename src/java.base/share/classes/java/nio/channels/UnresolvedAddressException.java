@@ -32,12 +32,10 @@ package java.nio.channels;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnresolvedAddressException
     extends IllegalArgumentException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6136959093620794148L;
 
     /**
      * Constructs an instance of this class.

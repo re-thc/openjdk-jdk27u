@@ -39,10 +39,8 @@ package javax.net.ssl;
  * @since 1.4
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SSLPeerUnverifiedException extends SSLException {
-    @java.io.Serial
-    private static final long serialVersionUID = -8919512675000600547L;
-
     /**
      * Constructs an exception reporting that the SSL peer's
      * identity has not been verified.

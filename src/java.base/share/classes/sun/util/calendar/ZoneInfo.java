@@ -61,6 +61,7 @@ import java.util.stream.Stream;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ZoneInfo extends TimeZone {
 
     private static final int UTC_TIME = 0;
@@ -162,9 +163,6 @@ public class ZoneInfo extends TimeZone {
      * True if the object has been modified after its instantiation.
      */
     private transient boolean dirty = false;
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2653134537216586139L;
 
     /**
      * A constructor.

@@ -203,6 +203,7 @@ import jdk.internal.misc.Unsafe;
  * @since 1.7
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /*
@@ -1510,8 +1511,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     // Serialization support
 
-    private static final long serialVersionUID = -7721805057305804111L;
-
     /**
      * Saves this task to a stream (that is, serializes it).
      *
@@ -1557,6 +1556,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * to be compliant with AbstractExecutorService constraints
      * when used in ForkJoinPool.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AdaptedRunnable<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
         @SuppressWarnings("serial") // Conditionally serializable
@@ -1574,12 +1574,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public String toString() {
             return super.toString() + "[Wrapped task = " + runnable + "]";
         }
-        private static final long serialVersionUID = 5232453952276885070L;
     }
 
     /**
      * Adapter for Runnables without results.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AdaptedRunnableAction extends ForkJoinTask<Void>
         implements RunnableFuture<Void> {
         @SuppressWarnings("serial") // Conditionally serializable
@@ -1594,12 +1594,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public String toString() {
             return super.toString() + "[Wrapped task = " + runnable + "]";
         }
-        private static final long serialVersionUID = 5232453952276885070L;
     }
 
     /**
      * Adapter for Callables.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AdaptedCallable<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
         @SuppressWarnings("serial") // Conditionally serializable
@@ -1625,7 +1625,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public String toString() {
             return super.toString() + "[Wrapped task = " + callable + "]";
         }
-        private static final long serialVersionUID = 2838392045355241008L;
     }
 
     /**
@@ -1638,6 +1637,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * been cancelled on entry and might not otherwise be cancelled by
      * others.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     abstract static class InterruptibleTask<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
         transient volatile Thread runner;
@@ -1695,12 +1695,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             return ((a == null) ? s :
                     (s + "[Wrapped task = " + a.toString() + "]"));
         }
-        private static final long serialVersionUID = 2838392045355241008L;
     }
 
     /**
      * Adapter for Callable-based interruptible tasks.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AdaptedInterruptibleCallable<T> extends InterruptibleTask<T> {
         @SuppressWarnings("serial") // Conditionally serializable
         final Callable<? extends T> callable;
@@ -1713,12 +1713,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final void setRawResult(T v) { result = v; }
         final T compute() throws Exception { return callable.call(); }
         final Object adaptee() { return callable; }
-        private static final long serialVersionUID = 2838392045355241008L;
     }
 
     /**
      * Adapter for Runnable-based interruptible tasks.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AdaptedInterruptibleRunnable<T> extends InterruptibleTask<T> {
         @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
@@ -1732,12 +1732,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final void setRawResult(T v) { }
         final T compute() { runnable.run(); return result; }
         final Object adaptee() { return runnable; }
-        private static final long serialVersionUID = 2838392045355241008L;
     }
 
     /**
      * Adapter for Runnables in which failure forces worker exception.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class RunnableExecuteAction extends InterruptibleTask<Void> {
         @SuppressWarnings("serial") // Conditionally serializable
         final Runnable runnable;
@@ -1758,7 +1758,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 }
             }
         }
-        private static final long serialVersionUID = 5232453952276885070L;
     }
 
     /**

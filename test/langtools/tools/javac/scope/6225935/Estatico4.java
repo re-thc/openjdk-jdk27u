@@ -1,5 +1,6 @@
 /*
  * @test    /nodynamiccopyright/
+ * @requires vm.hasAWT
  * @bug     6214959
  * @modules java.desktop
  * @summary Compiler fails to produce error message with ODD number of import static

@@ -159,8 +159,8 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Semaphore implements java.io.Serializable {
-    private static final long serialVersionUID = -3222578661600680210L;
     /** @serial All mechanics via AbstractQueuedSynchronizer subclass */
     private final Sync sync;
 
@@ -169,9 +169,8 @@ public class Semaphore implements java.io.Serializable {
      * to represent permits. Subclassed into fair and nonfair
      * versions.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     abstract static class Sync extends AbstractQueuedSynchronizer {
-        private static final long serialVersionUID = 1192457210091910933L;
-
         Sync(int permits) {
             setState(permits);
         }
@@ -224,9 +223,8 @@ public class Semaphore implements java.io.Serializable {
     /**
      * NonFair version
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class NonfairSync extends Sync {
-        private static final long serialVersionUID = -2694183684443567898L;
-
         NonfairSync(int permits) {
             super(permits);
         }
@@ -239,9 +237,8 @@ public class Semaphore implements java.io.Serializable {
     /**
      * Fair version
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class FairSync extends Sync {
-        private static final long serialVersionUID = 2014338818796000944L;
-
         FairSync(int permits) {
             super(permits);
         }

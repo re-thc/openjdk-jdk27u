@@ -50,12 +50,9 @@ import sun.security.util.DerInputStream;
  * @see DSA
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DSAPrivateKey extends PKCS8Key
         implements java.security.interfaces.DSAPrivateKey, Serializable {
-
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -3244453684193605938L;
 
     /* the private key */
     private final BigInteger x;

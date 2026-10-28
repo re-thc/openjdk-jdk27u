@@ -32,10 +32,8 @@ package java.security;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SignatureException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7509989324975124438L;
 
     /**
      * Constructs a {@code SignatureException} with no detail message. A

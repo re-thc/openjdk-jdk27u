@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.hasAWT
  * @modules java.base/jdk.internal.misc
  *          java.desktop
  * @run main/othervm --add-exports=java.desktop/sun.awt=java.base AddExportsTest

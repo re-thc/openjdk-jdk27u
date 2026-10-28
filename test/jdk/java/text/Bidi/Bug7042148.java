@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 7042148
  * @summary verify that Bidi.baseIsLeftToRight() returns the correct value even if an incorrect position is set in the given AttributedCharacterIterator.
  * @modules java.desktop

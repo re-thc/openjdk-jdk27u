@@ -59,10 +59,8 @@ import java.security.GeneralSecurityException;
  * @since       1.4
  * @author      Yassir Elley
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertPathValidatorException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3083180014971893139L;
 
     /**
      * @serial the index of the certificate in the certification path

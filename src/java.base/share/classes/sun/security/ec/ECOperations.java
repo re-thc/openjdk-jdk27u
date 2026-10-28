@@ -54,8 +54,8 @@ public class ECOperations {
      * will throw this exception to indicate that the r or s value is 0, and
      * that the signing operation should be tried again with a different nonce.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class IntermediateValueException extends Exception {
-        private static final long serialVersionUID = 1;
     }
 
     static final Map<BigInteger, IntegerFieldModuloP> fields = Map.of(
