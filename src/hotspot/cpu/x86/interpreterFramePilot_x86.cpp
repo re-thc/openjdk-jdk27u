@@ -87,6 +87,38 @@ int resume_counts[InterpreterFramePilot::arena_size/slot_size]={};
 // the VM). Reserve before emitting, including subtype/profile and GC helpers.
 constexpr int max_opcode_bytes=2048;
 constexpr int fallback_bytes=512;
+// These subsets have bounded inline work; leave complex type/constant helpers
+// and profiling/tooling return configurations at the original 2KiB allowance.
+static int opcode_budget(Bytecodes::Code bc,int ordinary_call_bytes) {
+  if((bc>=Bytecodes::_iconst_m1 && bc<=Bytecodes::_iconst_5) ||
+     (bc>=Bytecodes::_iload_0 && bc<=Bytecodes::_iload_3) ||
+     (bc>=Bytecodes::_istore_0 && bc<=Bytecodes::_istore_3) ||
+     (bc>=Bytecodes::_aload_0 && bc<=Bytecodes::_aload_3) ||
+     (bc>=Bytecodes::_astore_0 && bc<=Bytecodes::_astore_3))return 256;
+  switch(bc) {
+    case Bytecodes::_iload: case Bytecodes::_istore: case Bytecodes::_aload: case Bytecodes::_astore:
+    case Bytecodes::_bipush: case Bytecodes::_sipush: case Bytecodes::_aconst_null:
+    case Bytecodes::_pop: case Bytecodes::_dup: case Bytecodes::_swap: case Bytecodes::_nop:
+    case Bytecodes::_iadd: case Bytecodes::_isub: case Bytecodes::_imul:
+    case Bytecodes::_iand: case Bytecodes::_ior: case Bytecodes::_ixor:
+    case Bytecodes::_ishl: case Bytecodes::_ishr: case Bytecodes::_iushr:
+    case Bytecodes::_ineg: case Bytecodes::_i2b: case Bytecodes::_i2c: case Bytecodes::_i2s: case Bytecodes::_iinc:
+    case Bytecodes::_ireturn: case Bytecodes::_areturn: case Bytecodes::_return:
+      return 256;
+    case Bytecodes::_getfield: case Bytecodes::_getstatic:
+    case Bytecodes::_ifeq: case Bytecodes::_ifne: case Bytecodes::_iflt: case Bytecodes::_ifge:
+    case Bytecodes::_ifgt: case Bytecodes::_ifle:
+    case Bytecodes::_if_icmpeq: case Bytecodes::_if_icmpne: case Bytecodes::_if_icmplt:
+    case Bytecodes::_if_icmpge: case Bytecodes::_if_icmpgt: case Bytecodes::_if_icmple:
+    case Bytecodes::_if_acmpeq: case Bytecodes::_if_acmpne:
+    case Bytecodes::_ifnull: case Bytecodes::_ifnonnull: case Bytecodes::_goto: case Bytecodes::_goto_w:
+      return 512;
+    case Bytecodes::_invokestatic: case Bytecodes::_invokespecial:
+    case Bytecodes::_invokevirtual: case Bytecodes::_invokeinterface:
+      return ordinary_call_bytes;
+    default:return max_opcode_bytes;
+  }
+}
 const Register rbcp=r13;
 const Register rlocals=r14;
 }
@@ -386,13 +418,19 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
   // non-LambdaForm caller has no return profile; do not encode its unreachable
   // helper. Profile-all and compiled LambdaForms retain the shared emitter.
   const bool profile_oop_returns=!MethodData::profile_return_jsr292_only() || m->is_compiled_lambda_form();
+  // Without those three epilogues the whole call/island has fewer than64 x86
+  // instructions, including ASSERT guards, VerifyOops setup and test counters.
+  // Shared verifier/failure bodies are not copied into the site.
+  const int ordinary_call_bytes=(!profile_oop_returns && !JvmtiExport::can_pop_frame() &&
+      !JvmtiExport::can_force_early_return())?1024:max_opcode_bytes;
   int operations=0,end_bci=0,furthest_forward_bci=0;
   ConstantPool* pool=m->constants();
   Array<u2>* reference_map=pool->cache()==nullptr?nullptr:pool->cache()->reference_map();
   BytecodeStream stream(method);
   for (Bytecodes::Code bc;(bc=stream.next())!=Bytecodes::_illegal && operations<max_operations;) {
+    int instruction_budget=opcode_budget(bc,ordinary_call_bytes);
     if(stream.is_wide() || stream.bci()>max_prefix_bytes ||
-       code.insts_remaining()<max_opcode_bytes+fallback_bytes)break;
+       code.insts_remaining()<instruction_budget+fallback_bytes)break;
     masm.bind(labels[stream.bci()]);
     int instruction_begin=code.insts_size();
     int index=-1,value=0;
@@ -646,7 +684,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
       masm.increment(rbcp,stream.instruction_size());
       masm.save_bcp();
     }
-    guarantee(code.insts_size()-instruction_begin<max_opcode_bytes,"audited bounded Stage A opcode");
+    guarantee(code.insts_size()-instruction_begin<instruction_budget,"audited bounded pilot opcode");
   }
   // Values are canonical vtos at every boundary. Shared invoke codelets
   // establish the ordinary interpreted call frame before a callee can run.
