@@ -81,7 +81,8 @@ public class CallingSequenceBuilderClassifierTest {
             checkClassification(test);
             testedKinds.add(test.binding().getClass());
         }
-        // Keep coverage equivalent to the old exhaustive pattern switches.
+        // Keep kind coverage equivalent to the old exhaustive pattern switches,
+        // including the complete kind set handled by BindingSpecializer.doBindings.
         // Move and Dereference group the concrete operators. Cast remains one
         // operator kind, including constants with their own implementation class.
         Set<Class<?>> permittedKinds = new HashSet<>();

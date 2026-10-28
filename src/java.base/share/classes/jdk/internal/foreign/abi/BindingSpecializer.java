@@ -73,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.TypeKind.LONG;
@@ -480,20 +481,35 @@ public class BindingSpecializer {
 
     private void doBindings(List<Binding> bindings) {
         for (Binding binding : bindings) {
-            switch (binding) {
-                case VMStore vmStore             -> emitVMStore(vmStore);
-                case VMLoad vmLoad               -> emitVMLoad(vmLoad);
-                case BufferStore bufferStore     -> emitBufferStore(bufferStore);
-                case BufferLoad bufferLoad       -> emitBufferLoad(bufferLoad);
-                case Copy copy                   -> emitCopyBuffer(copy);
-                case Allocate allocate           -> emitAllocBuffer(allocate);
-                case BoxAddress boxAddress       -> emitBoxAddress(boxAddress);
-                case SegmentBase _               -> emitSegmentBase();
-                case SegmentOffset segmentOffset -> emitSegmentOffset(segmentOffset);
-                case Dup _                       -> emitDupBinding();
-                case ShiftLeft shiftLeft         -> emitShiftLeft(shiftLeft);
-                case ShiftRight shiftRight       -> emitShiftRight(shiftRight);
-                case Cast cast                   -> emitCast(cast);
+            Objects.requireNonNull(binding);
+            if (binding instanceof VMStore vmStore) {
+                emitVMStore(vmStore);
+            } else if (binding instanceof VMLoad vmLoad) {
+                emitVMLoad(vmLoad);
+            } else if (binding instanceof BufferStore bufferStore) {
+                emitBufferStore(bufferStore);
+            } else if (binding instanceof BufferLoad bufferLoad) {
+                emitBufferLoad(bufferLoad);
+            } else if (binding instanceof Copy copy) {
+                emitCopyBuffer(copy);
+            } else if (binding instanceof Allocate allocate) {
+                emitAllocBuffer(allocate);
+            } else if (binding instanceof BoxAddress boxAddress) {
+                emitBoxAddress(boxAddress);
+            } else if (binding instanceof SegmentBase) {
+                emitSegmentBase();
+            } else if (binding instanceof SegmentOffset segmentOffset) {
+                emitSegmentOffset(segmentOffset);
+            } else if (binding instanceof Dup) {
+                emitDupBinding();
+            } else if (binding instanceof ShiftLeft shiftLeft) {
+                emitShiftLeft(shiftLeft);
+            } else if (binding instanceof ShiftRight shiftRight) {
+                emitShiftRight(shiftRight);
+            } else if (binding instanceof Cast cast) {
+                emitCast(cast);
+            } else {
+                throw new MatchException(null, null);
             }
         }
     }

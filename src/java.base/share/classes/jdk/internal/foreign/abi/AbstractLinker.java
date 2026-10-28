@@ -317,19 +317,22 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
-        return switch (ml) {
-            case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
-            case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
-            case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
-            case AddressLayout al -> {
-                var stripped = al.withoutName();
-                var target = al.targetLayout();
-                if (target.isPresent())
-                    stripped = stripped.withTargetLayout(stripNames(target.get()));
-                yield stripped;
-            }
-            default -> ml.withoutName(); // ValueLayout and PaddingLayout
-        };
+        Objects.requireNonNull(ml);
+        if (ml instanceof StructLayout sl) {
+            return MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
+        } else if (ml instanceof UnionLayout ul) {
+            return MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
+        } else if (ml instanceof SequenceLayout sl) {
+            return MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
+        } else if (ml instanceof AddressLayout al) {
+            var stripped = al.withoutName();
+            var target = al.targetLayout();
+            if (target.isPresent())
+                stripped = stripped.withTargetLayout(stripNames(target.get()));
+            return stripped;
+        } else {
+            return ml.withoutName(); // ValueLayout and PaddingLayout
+        }
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
