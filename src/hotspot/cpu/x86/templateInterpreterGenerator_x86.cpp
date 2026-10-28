@@ -173,7 +173,8 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
   return entry;
 }
 
-static void emit_invoke_return_epilogue(InterpreterMacroAssembler* _masm,TosState state,size_t index_size) {
+static void emit_invoke_return_epilogue(InterpreterMacroAssembler* _masm,TosState state,size_t index_size,
+                                        bool profile_oop_return=true) {
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
@@ -183,7 +184,7 @@ static void emit_invoke_return_epilogue(InterpreterMacroAssembler* _masm,TosStat
   __ restore_bcp();
   __ restore_locals();
 
-  if (state == atos) {
+  if (state == atos && profile_oop_return) {
     Register mdp = rbx;
     Register tmp = rcx;
     __ profile_return_type(mdp, rax, tmp);
@@ -220,8 +221,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,i
 
 #ifdef AMD64
 void InterpreterFramePilot::emit_return_site(InterpreterMacroAssembler* masm, TosState state, int step,
-                                             Label& successor, Label& fallback, int slot) {
-  emit_invoke_return_epilogue(masm,state,sizeof(u2));
+                                             Label& successor, Label& fallback, int slot, bool profile_oop_return) {
+  emit_invoke_return_epilogue(masm,state,sizeof(u2),profile_oop_return);
   emit_resume(masm,state,step,successor,fallback,slot);
 }
 #endif

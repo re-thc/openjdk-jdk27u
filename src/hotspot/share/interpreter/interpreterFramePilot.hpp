@@ -58,7 +58,7 @@ class InterpreterFramePilot : AllStatic {
   // r8 carries this site's ordinary return PC only until prepare_invoke pushes it.
   static void emit_call_stub(InterpreterMacroAssembler* masm, Bytecodes::Code code, Label& fallback);
   static void emit_return_site(InterpreterMacroAssembler* masm, TosState state, int step,
-                               Label& successor, Label& fallback, int slot);
+                               Label& successor, Label& fallback, int slot, bool profile_oop_return);
   static void emit_resume(InterpreterMacroAssembler* masm, TosState state, int step,
                           Label& successor, Label& fallback, int slot);
   enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,

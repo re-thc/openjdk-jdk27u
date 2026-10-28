@@ -139,21 +139,60 @@ public class InterpreterFramePilotCoverageTest {
         check(!WB.isMethodCompiled(reads[0]) && query(reads[0],3)[9]>0,"actual interpreted native arena execution");
         System.out.println("PILOT_COVERAGE_OK action="+action+" profiles="+profiles);
     }
+    static Object identity(Object value){return value;}
+    static void lambdaControl()throws Exception {
+        WB=WhiteBox.getWhiteBox();
+        Class<?> holder=Class.forName("java.lang.invoke.DirectMethodHandle$Holder");
+        Method root=Arrays.stream(holder.getDeclaredMethods()).filter(m -> m.getName().equals("invokeStatic") &&
+            m.getReturnType()==Object.class && Arrays.equals(m.getParameterTypes(),new Class<?>[]{Object.class,Object.class}))
+            .findFirst().orElseThrow();root.setAccessible(true);
+        check(Arrays.stream(root.getDeclaredAnnotations()).anyMatch(a ->
+            a.annotationType().getName().equals("java.lang.invoke.LambdaForm$Compiled")),"trusted LambdaForm marker");
+        var handle=java.lang.invoke.MethodHandles.lookup().findStatic(InterpreterFramePilotCoverageTest.class,"identity",
+            java.lang.invoke.MethodType.methodType(Object.class,Object.class));
+        WB.deoptimizeMethod(root);WB.clearMethodState(root);prepare(root,4);
+        long before=resumes(root);Object token=new Object();
+        for(int n=0;n<8;n++)check(root.invoke(null,handle,token)==token,"actual compiled-LambdaForm result");
+        check(resumes(root)>before,"compiled LambdaForm resumes generated caller");
+        System.out.println("PILOT_LAMBDA_RETURN_OK");
+    }
     public static void main(String[] args)throws Exception {
-        if(args.length>0){child(Integer.parseInt(args[0]),args.length>1);return;}
+        if(args.length>0){if(args[0].equals("lambda"))lambdaControl();else child(Integer.parseInt(args[0]),args.length>1);return;}
         for(int action:new int[]{0,4,5})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"})
             ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
                 "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI",
                 "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
                 InterpreterFramePilotCoverageTest.class.getName(),Integer.toString(action))
                 .shouldHaveExitValue(0).shouldContain("PILOT_COVERAGE_OK");
+        for(int level:new int[]{111,222}) {
         var output=ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC",
             "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI",
             "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
+            "-XX:TypeProfileLevel="+level,
             "-XX:CompileCommand=print,InterpreterFramePilotCoverageTest::early",
+            "-XX:CompileCommand=print,InterpreterFramePilotCoverageTest::readRef",
             InterpreterFramePilotCoverageTest.class.getName(),"4","profiles")
             .shouldHaveExitValue(0).shouldContain("PILOT_COVERAGE_OK");
         String text=output.getOutput();
         check(text.contains("taken(20)") && text.contains("not taken(20)"),"early-return branches profiled exactly once\n"+text);
+        String ref=Arrays.stream(text.split("-{20,}\\R")).filter(x -> x.contains("::readRef(")).findFirst().orElseThrow();
+        check(ref.contains("count(20)"),"oop calls counted once\n"+ref);
+        if(level==222)check(java.util.regex.Pattern.compile("return type[^\\n]*java[/.]lang[/.]Object").matcher(ref).find(),
+            "ordinary oop return type recorded under full profiling\n"+ref);
+        else check(!ref.contains("return type"),"ordinary return type absent under jsr292-only policy\n"+ref);
+        System.out.println("PILOT_RETURN_PROFILE_OK level="+level+"\n"+ref);
+        }
+        var lambda=ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC",
+            "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+            "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI",
+            "-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations","-XX:TypeProfileLevel=111",
+            "-XX:CompileCommand=print,java.lang.invoke.DirectMethodHandle$Holder::invokeStatic",
+            InterpreterFramePilotCoverageTest.class.getName(),"lambda")
+            .shouldHaveExitValue(0).shouldContain("PILOT_LAMBDA_RETURN_OK");
+        String form=Arrays.stream(lambda.getOutput().split("-{20,}\\R"))
+            .filter(x -> x.contains("::invokeStatic(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;")).findFirst().orElseThrow();
+        check(java.util.regex.Pattern.compile("return type[^\\n]*java[/.]lang[/.]invoke[/.]MemberName").matcher(form).find(),
+            "compiled LambdaForm keeps jsr292-only return profile\n"+form);
+        System.out.println("PILOT_LAMBDA_PROFILE_OK\n"+form);
     }
 }

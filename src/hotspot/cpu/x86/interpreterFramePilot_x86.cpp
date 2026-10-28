@@ -29,6 +29,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -381,6 +382,10 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
     if constexpr (Observe) cleanup_start=os::current_thread_cpu_time();
     return false;
   };
+  // Every supported call is an ordinary invoke. Under jsr292-only policy a
+  // non-LambdaForm caller has no return profile; do not encode its unreachable
+  // helper. Profile-all and compiled LambdaForms retain the shared emitter.
+  const bool profile_oop_returns=!MethodData::profile_return_jsr292_only() || m->is_compiled_lambda_form();
   int operations=0,end_bci=0,furthest_forward_bci=0;
   ConstantPool* pool=m->constants();
   Array<u2>* reference_map=pool->cache()==nullptr?nullptr:pool->cache()->reference_map();
@@ -582,7 +587,7 @@ bool InterpreterFramePilot::generate_locked(const methodHandle& method,jlong* st
           // This island cannot be reached by ordinary body fallthrough. Bind
           // its return label only once successor classification is complete.
           return_locs[site]=masm.locator();
-          emit_return_site(&masm,result,stream.instruction_size(),labels[next],ordinary,next_slot/slot_size);
+          emit_return_site(&masm,result,stream.instruction_size(),labels[next],ordinary,next_slot/slot_size,profile_oop_returns);
         }
         action=emitted;break;
       }
