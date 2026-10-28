@@ -82,6 +82,7 @@ typedef enum {
     Process trailer:
         CHECK -> LENGTH -> DONE
  */
+#include "crc32_raw.h"
 typedef struct inflate_state inflate_state;
 
 /* Struct for memory allocation handling */
@@ -142,6 +143,7 @@ struct ALIGNED_(64) inflate_state {
     code codes[ENOUGH];         /* space for code tables */
 
     inflate_allocs *alloc_bufs; /* struct for handling memory allocations */
+    crc32_raw_state ALIGNED_(16) raw_crc; /* opt-in; ordinary format mode unchanged */
 
 #ifdef INFLATE_STRICT
     unsigned dmax;              /* zlib header max distance (INFLATE_STRICT) */

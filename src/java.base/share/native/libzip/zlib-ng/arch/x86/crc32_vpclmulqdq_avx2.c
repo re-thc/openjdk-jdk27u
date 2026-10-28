@@ -6,6 +6,9 @@
 
 #define X86_VPCLMULQDQ
 #include "crc32_pclmulqdq_tpl.h"
+#define CRC32_RAW_COPY_NAME crc32_raw_copy_avx2
+#define CRC32_RAW_UPDATE_NAME crc32_raw_update_avx2
+#include "crc32_raw_fold_tpl.h"
 
 Z_INTERNAL uint32_t crc32_vpclmulqdq_avx2(uint32_t crc, const uint8_t *buf, size_t len) {
     return crc32_copy_impl(crc, NULL, buf, len, 0);

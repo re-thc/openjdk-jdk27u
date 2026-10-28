@@ -6,6 +6,15 @@
 #define ZLIB_NAME_MANGLING_H
 
 /* all linked symbols and init macros */
+/* Experimental persistent raw-inflate CRC helpers. */
+#define crc32_raw_copy_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_pclmulqdq
+#define crc32_raw_update_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_update_pclmulqdq
+#define crc32_raw_final_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_final_pclmulqdq
+#define crc32_raw_copy_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx2
+#define crc32_raw_update_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx2
+#define crc32_raw_copy_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx512
+#define crc32_raw_update_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx512
+
 #define _dist_code            @ZLIB_SYMBOL_PREFIX@_dist_code
 #define _length_code          @ZLIB_SYMBOL_PREFIX@_length_code
 #define _tr_align             @ZLIB_SYMBOL_PREFIX@_tr_align

@@ -24,10 +24,30 @@ static int inflateStateCheck(PREFIX3(stream) *strm);
 static void updatewindow(PREFIX3(stream) *strm, const uint8_t *end, uint32_t len, int32_t cksum);
 static uint32_t syncsearch(uint32_t *have, const unsigned char *buf, uint32_t len);
 
+static void raw_crc_reset(crc32_raw_state *s) {
+    uint32_t seed = 0x9db42487;
+    if (s->hardware) {
+        memset(s->fold,0,sizeof(s->fold));
+        memcpy(s->fold,&seed,sizeof(seed));
+    }
+    s->value = CRC32_INITIAL_VALUE;
+    s->finished = 0;
+}
+static void raw_crc_copy_c(crc32_raw_state *s, uint8_t *dst, const uint8_t *src, size_t len) {
+    s->value = FUNCTABLE_CALL(crc32_copy)(s->value,dst,src,len);
+}
+static void raw_crc_update_c(crc32_raw_state *s, const uint8_t *src, size_t len) {
+    s->value = FUNCTABLE_CALL(crc32)(s->value,src,len);
+}
+
 static inline void inf_chksum_cpy(PREFIX3(stream) *strm, uint8_t *dst,
                            const uint8_t *src, uint32_t copy) {
     if (!copy) return;
     struct inflate_state *state = (struct inflate_state*)strm->state;
+    if (state->raw_crc.copy) {
+        state->raw_crc.copy(&state->raw_crc, dst, src, copy);
+        return;
+    }
 #ifdef GUNZIP
     if (state->flags) {
         strm->adler = state->check = FUNCTABLE_CALL(crc32_copy)(state->check, dst, src, copy);
@@ -40,6 +60,10 @@ static inline void inf_chksum_cpy(PREFIX3(stream) *strm, uint8_t *dst,
 
 static inline void inf_chksum(PREFIX3(stream) *strm, const uint8_t *src, uint32_t len) {
     struct inflate_state *state = (struct inflate_state*)strm->state;
+    if (state->raw_crc.copy) {
+        state->raw_crc.update(&state->raw_crc, src, len);
+        return;
+    }
 #ifdef GUNZIP
     if (state->flags) {
         strm->adler = state->check = FUNCTABLE_CALL(crc32)(state->check, src, len);
@@ -73,6 +97,7 @@ int32_t Z_EXPORT PREFIX(inflateResetKeep)(PREFIX3(stream) *strm) {
         strm->adler = state->wrap & 1;
     state->mode = HEAD;
     state->check = ADLER32_INITIAL_VALUE;
+    if (state->raw_crc.copy) { raw_crc_reset(&state->raw_crc); strm->adler = 0; }
     state->last = 0;
     state->havedict = 0;
     state->flags = -1;
@@ -132,6 +157,7 @@ int32_t Z_EXPORT PREFIX(inflateReset2)(PREFIX3(stream) *strm, int32_t windowBits
         return Z_STREAM_ERROR;
 
     /* update state and reset the rest of it */
+    state->raw_crc.copy = NULL; /* Reset2 chooses a new format; extension must be re-enabled. */
     state->wrap = wrap;
     state->wbits = (unsigned)windowBits;
     return PREFIX(inflateReset)(strm);
@@ -249,6 +275,7 @@ int32_t ZNG_CONDEXPORT PREFIX(inflateInit2)(PREFIX3(stream) *strm, int32_t windo
     strm->state = (struct internal_state *)state;
     state->strm = strm;
     state->mode = HEAD;     /* to pass state test in inflateReset2() */
+    state->raw_crc.copy = NULL;
     ret = PREFIX(inflateReset2)(strm, windowBits);
     if (ret != Z_OK) {
         free_inflate(strm);
@@ -1181,11 +1208,13 @@ int32_t Z_EXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int32_t flush) {
   inf_leave:
     RESTORE();
     uint32_t check_bytes = out - strm->avail_out;
+    int window_updated = 0;
     if (INFLATE_NEED_UPDATEWINDOW(strm) &&
             (state->wsize || (out != strm->avail_out && state->mode < BAD &&
                  (state->mode < CHECK || flush != Z_FINISH)))) {
         /* update sliding window with respective checksum if not in "raw" mode */
-        updatewindow(strm, strm->next_out, check_bytes, state->wrap & 4);
+        updatewindow(strm, strm->next_out, check_bytes, (state->wrap & 4) || state->raw_crc.copy);
+        window_updated = 1;
     }
     in -= strm->avail_in;
     out -= strm->avail_out;
@@ -1193,6 +1222,17 @@ int32_t Z_EXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int32_t flush) {
     strm->total_out += out;
     state->total += out;
 
+    if (state->raw_crc.copy) {
+        if (!window_updated && out) state->raw_crc.update(&state->raw_crc, put-out, out);
+        if (ret == Z_STREAM_END && !state->raw_crc.finished) {
+#ifdef X86_PCLMULQDQ_CRC
+            if (state->raw_crc.hardware)
+                state->raw_crc.value = crc32_raw_final_pclmulqdq(&state->raw_crc);
+#endif
+            strm->adler = state->check = state->raw_crc.value;
+            state->raw_crc.finished = 1;
+        }
+    }
     strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
                       (state->mode == TYPE ? 128 : 0) + (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK) {
@@ -1204,6 +1244,34 @@ int32_t Z_EXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int32_t flush) {
     }
     return ret;
 }
+
+#ifndef ZLIB_COMPAT
+int32_t Z_EXPORT zng_inflateEnableRawCRC32(zng_stream *strm) {
+    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
+    struct inflate_state *state = (struct inflate_state *)strm->state;
+    if (state->wrap || state->mode != HEAD || strm->total_in || strm->total_out || state->bits)
+        return Z_STREAM_ERROR;
+    crc32_raw_state *s = &state->raw_crc;
+    s->copy = raw_crc_copy_c; s->update = raw_crc_update_c; s->hardware = 0;
+#ifdef X86_PCLMULQDQ_CRC
+    if (FUNCTABLE_FPTR(crc32_copy) == &crc32_copy_pclmulqdq) {
+        s->copy = crc32_raw_copy_pclmulqdq; s->update = crc32_raw_update_pclmulqdq; s->hardware = 1;
+    }
+#ifdef X86_VPCLMULQDQ_AVX2
+    if (FUNCTABLE_FPTR(crc32_copy) == &crc32_copy_vpclmulqdq_avx2) {
+        s->copy = crc32_raw_copy_avx2; s->update = crc32_raw_update_avx2; s->hardware = 1;
+    }
+#endif
+#ifdef X86_VPCLMULQDQ_AVX512
+    if (FUNCTABLE_FPTR(crc32_copy) == &crc32_copy_vpclmulqdq_avx512) {
+        s->copy = crc32_raw_copy_avx512; s->update = crc32_raw_update_avx512; s->hardware = 1;
+    }
+#endif
+#endif
+    raw_crc_reset(s); strm->adler = 0;
+    return Z_OK;
+}
+#endif
 
 int32_t Z_EXPORT PREFIX(inflateEnd)(PREFIX3(stream) *strm) {
     if (inflateStateCheck(strm))

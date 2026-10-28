@@ -6,6 +6,15 @@
 #define ZLIB_NAME_MANGLING_H
 
 /* all linked symbols and init macros */
+/* Experimental persistent raw-inflate CRC helpers. */
+#define crc32_raw_copy_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_pclmulqdq
+#define crc32_raw_update_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_update_pclmulqdq
+#define crc32_raw_final_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_final_pclmulqdq
+#define crc32_raw_copy_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx2
+#define crc32_raw_update_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx2
+#define crc32_raw_copy_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx512
+#define crc32_raw_update_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx512
+
 #define zng__dist_code            @ZLIB_SYMBOL_PREFIX@zng__dist_code
 #define zng__length_code          @ZLIB_SYMBOL_PREFIX@zng__length_code
 #define zng__tr_align             @ZLIB_SYMBOL_PREFIX@zng__tr_align
@@ -102,6 +111,7 @@
 #define zng_inflateGetDictionary  @ZLIB_SYMBOL_PREFIX@zng_inflateGetDictionary
 #define zng_inflateGetHeader      @ZLIB_SYMBOL_PREFIX@zng_inflateGetHeader
 #define zng_inflateInit           @ZLIB_SYMBOL_PREFIX@zng_inflateInit
+#define zng_inflateEnableRawCRC32 @ZLIB_SYMBOL_PREFIX@zng_inflateEnableRawCRC32
 #define zng_inflateInit2          @ZLIB_SYMBOL_PREFIX@zng_inflateInit2
 #define zng_inflateInit2_         @ZLIB_SYMBOL_PREFIX@zng_inflateInit2_
 #define zng_inflateInit_          @ZLIB_SYMBOL_PREFIX@zng_inflateInit_
