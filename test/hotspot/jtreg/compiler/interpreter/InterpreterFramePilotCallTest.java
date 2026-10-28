@@ -90,7 +90,7 @@ public class InterpreterFramePilotCallTest {
     }
     static Object blocked(Holder holder) { Object keep=holder.value;await(holder);return keep==null?null:keep; }
     static Method activeMethod;static boolean deoptActive;
-    static void deoptPoint() { if(deoptActive)WB.deoptimizeMethod(activeMethod); }
+    static void deoptPoint() { if(deoptActive)check(WB.deoptimizeMethod(activeMethod)>0,"active callee nmethod marked"); }
     static int activeCallee(int x) { deoptPoint();return x*5; }
     static int throughActiveDeopt(int x) { return activeCallee(x)+7; }
     static class Loader extends ClassLoader { Class<?> define(byte[] bytes){return defineClass(null,bytes,0,bytes.length);} }
@@ -152,6 +152,7 @@ public class InterpreterFramePilotCallTest {
         try {
             long end=System.nanoTime()+20_000_000_000L;
             while(!entered){check(System.nanoTime()<end,"callee reached wait");Thread.sleep(1);}
+            while(worker.getState()!=Thread.State.WAITING){check(System.nanoTime()<end,"callee blocked in wait");Thread.sleep(1);}
             WB.fullGC();
             check(Arrays.stream(worker.getStackTrace()).anyMatch(f -> f.getMethodName().equals("blocked")),"blocked suspended caller walk");
         } finally {
