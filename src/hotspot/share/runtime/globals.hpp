@@ -1130,6 +1130,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, InterpreterFramePilotTestPoll, false, DIAGNOSTIC,            \
           "Generate forced-poll regression hooks for WhiteBox pilot tests")  \
                                                                             \
+  product(bool, InterpreterFramePilotTestContinuations, false, DIAGNOSTIC,   \
+          "Generate continuation counters for WhiteBox pilot tests")        \
+                                                                            \
   product(bool, PrintInterpreter, false, DIAGNOSTIC,                        \
           "Print the generated interpreter code")                           \
                                                                             \

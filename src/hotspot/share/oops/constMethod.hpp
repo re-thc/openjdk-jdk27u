@@ -424,6 +424,9 @@ public:
   static ByteSize codes_offset()
                             { return in_ByteSize(sizeof(ConstMethod)); }
 
+  static ByteSize code_size_offset()
+                            { return byte_offset_of(ConstMethod, _code_size); }
+
   static ByteSize constants_offset()
                             { return byte_offset_of(ConstMethod, _constants); }
 

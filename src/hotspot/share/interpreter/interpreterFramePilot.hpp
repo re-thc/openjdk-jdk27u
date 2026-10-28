@@ -59,7 +59,6 @@ class InterpreterFramePilot : AllStatic {
   static address call_entry(Bytecodes::Code code);
   static void emit_dynamic_call_stub(InterpreterMacroAssembler* masm,Bytecodes::Code code,Label& fallback);
   static void emit_resume(InterpreterMacroAssembler* masm, TosState state, int step);
-  static address resume_entry(Method* method, address bcp);
   enum TestPollState : u1 { test_poll_none, test_poll_requested, test_poll_armed,
                            test_poll_guard_seen, test_poll_processed, test_poll_wrong_bci };
   // WhiteBox-only deterministic local-poll regression. Leaves allocate/block

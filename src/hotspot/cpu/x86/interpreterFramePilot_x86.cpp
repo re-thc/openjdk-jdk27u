@@ -291,31 +291,6 @@ address InterpreterFramePilot::call_entry(Bytecodes::Code code) {
   assert(code>=Bytecodes::_invokevirtual && code<=Bytecodes::_invokeinterface,"ordinary invoke");
   return pilot_calls[code-Bytecodes::_invokevirtual];
 }
-JRT_LEAF(address, InterpreterFramePilot::resume_entry(Method* method,address bcp))
-  // The current interpreted frame keeps Method/CP metadata alive. This leaf
-  // cannot allocate, block, safepoint, resolve, or enter the VM.
-  if(method->is_old() || method->is_obsolete())return nullptr;
-  MethodCounters* counters=method->method_counters();
-  if(counters==nullptr || counters->method()!=method || !counters->interpreter_pilot_enabled())return nullptr;
-  address entry=counters->interpreter_pilot_entry();
-  uintptr_t offset=(uintptr_t)entry-(uintptr_t)arena;
-  if(entry==nullptr || offset>=arena_size || offset%slot_size!=0)return nullptr;
-  ptrdiff_t bci=bcp-method->code_base();
-  if(bci<0 || bci>=method->code_size())return nullptr;
-  const u2* map=(const u2*)(entry+resume_map_offset);
-  int count=map[0],bytes=map[1];
-  if(count>max_operations || bytes<=0 || bytes>=resume_map_offset)return nullptr;
-  for(int i=0;i<count;i++) {
-    if(map[2+2*i]==bci) {
-      int native_offset=map[3+2*i];
-      if(native_offset>=bytes)return nullptr;
-      // Explicit WhiteBox pilot diagnostic, separate from invocation hits.
-      AtomicAccess::add(&resume_counts[offset/slot_size],1,memory_order_relaxed);
-      return entry+native_offset;
-    }
-  }
-  return nullptr;
-JRT_END
 void InterpreterFramePilot::emit_resume(InterpreterMacroAssembler* masm,TosState state,int step) {
   Label fallback;
   masm->push(state);
@@ -327,10 +302,54 @@ void InterpreterFramePilot::emit_resume(InterpreterMacroAssembler* masm,TosState
   masm->jcc(Assembler::notEqual,fallback);
   masm->cmpb(Address(rdx,in_bytes(MethodCounters::interpreter_pilot_enabled_offset())),0);
   masm->jcc(Assembler::zero,fallback);
-  // A callee may have enabled tooling. Check it before entering even a leaf.
+  // A callee may have enabled tooling. Check it before native continuation.
   emit_entry_guards(masm,fallback,false);
-  masm->call_VM_leaf(CAST_FROM_FN_PTR(address,resume_entry),rbx,rbcp);
+
+  // No VM/callee boundary follows these checks. The current interpreter
+  // frame keeps Method/CP/counters alive, and the map is immutable after the
+  // acquire entry load (a plain load on x86). Do not reload/revalidate the
+  // already checked owner and enablement through a C ABI call.
+  masm->testl(Address(rbx,in_bytes(Method::method_flags_offset())+
+                         in_bytes(MethodFlags::status_offset())),MethodFlags::old_or_obsolete_mask());
+  masm->jcc(Assembler::notZero,fallback);
+  masm->movptr(rax,Address(rdx,in_bytes(MethodCounters::interpreter_pilot_entry_offset())));
   masm->testptr(rax,rax);masm->jcc(Assembler::zero,fallback);
+  masm->movptr(r9,(intptr_t)&arena);masm->movptr(r9,Address(r9,0));
+  masm->movptr(rcx,rax);masm->subptr(rcx,r9);
+  masm->cmpptr(rcx,arena_size);masm->jcc(Assembler::aboveEqual,fallback);
+  masm->testptr(rcx,slot_size-1);masm->jcc(Assembler::notZero,fallback);
+
+  masm->movptr(r9,Address(rbx,in_bytes(Method::const_offset())));
+  masm->lea(rscratch1,Address(r9,in_bytes(ConstMethod::codes_offset())));
+  masm->movptr(r8,rbcp);masm->subptr(r8,rscratch1);
+  masm->load_unsigned_short(rscratch1,Address(r9,in_bytes(ConstMethod::code_size_offset())));
+  // The unsigned comparison rejects negative BCIs as well.
+  masm->cmpptr(r8,rscratch1);masm->jcc(Assembler::aboveEqual,fallback);
+
+  masm->load_unsigned_short(r9,Address(rax,resume_map_offset));
+  masm->testl(r9,r9);masm->jcc(Assembler::zero,fallback);
+  masm->cmpl(r9,max_operations);masm->jcc(Assembler::above,fallback);
+  masm->load_unsigned_short(rscratch1,Address(rax,resume_map_offset+sizeof(u2)));
+  masm->testl(rscratch1,rscratch1);masm->jcc(Assembler::zero,fallback);
+  masm->cmpl(rscratch1,resume_map_offset);masm->jcc(Assembler::aboveEqual,fallback);
+  masm->lea(rscratch2,Address(rax,resume_map_offset+2*sizeof(u2)));
+  Label next,found;
+  masm->bind(next);
+  masm->load_unsigned_short(rdx,Address(rscratch2,0));
+  masm->cmpl(rdx,r8);masm->jcc(Assembler::equal,found);
+  masm->addptr(rscratch2,2*sizeof(u2));masm->decl(r9);
+  masm->jcc(Assembler::notZero,next);masm->jmp(fallback);
+  masm->bind(found);
+  masm->load_unsigned_short(rdx,Address(rscratch2,sizeof(u2)));
+  masm->cmpl(rdx,rscratch1);masm->jcc(Assembler::aboveEqual,fallback);
+  if(WhiteBoxAPI && InterpreterFramePilotTestContinuations) {
+    // Selected at startup generation; normal entries contain no diagnostic
+    // address, atomic instruction, flag load or counter-selection branch.
+    masm->shrptr(rcx,exact_log2(slot_size));
+    masm->movptr(r9,(intptr_t)resume_counts);
+    masm->lock();masm->incl(Address(r9,rcx,Address::times_4,0));
+  }
+  masm->addptr(rax,rdx);
   masm->jmp(rax);
   masm->bind(fallback);masm->dispatch_next(vtos,0,true);
 }

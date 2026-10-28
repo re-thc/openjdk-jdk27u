@@ -58,6 +58,8 @@ public class InterpreterFrameSemanticCost {
         check(order.length()==5 && order.chars().distinct().count()==5,"permutation");
         ThreadMXBean cpu=ManagementFactory.getThreadMXBean();cpu.getCurrentThreadCpuTime();
         var compilation=ManagementFactory.getCompilationMXBean();
+        Boolean counterFlag=WB.getBooleanVMFlag("InterpreterFramePilotTestContinuations");
+        boolean countContinuations=counterFlag==null || counterFlag;
         Method[] targets=targets(),callers=new Method[5];
         for(int i=0;i<5;i++)callers[i]=InterpreterFrameSemanticCost.class.getDeclaredMethod("run"+NAMES[i],int.class);
         Method[] callees={InterpreterFrameSemanticCost.class.getDeclaredMethod("twice",int.class),
@@ -88,7 +90,7 @@ public class InterpreterFrameSemanticCost {
             long[] after=WB.interpreterFramePilot(targets[i],3);sink=value;
             check(value==expected[i],"checksum "+NAMES[i]);
             check(after[9]-before[9]==(on?count:0),"native entries "+NAMES[i]);
-            check(after[32]-before[32]==(on && (i==1||i==3||i==4)?count:0),"native continuations "+NAMES[i]);
+            check(after[32]-before[32]==(on && countContinuations && (i==1||i==3||i==4)?count:0),"native continuations "+NAMES[i]);
             check(WB.getMethodCompilationLevel(callers[i])==4 && WB.getMethodCompilationLevel(targets[i])==0,"root/caller levels");
             for(Method m:callees)check(WB.getMethodCompilationLevel(m)==4,"callee level "+m);
             samples[block*5+i]=new long[]{on?1:0,count,threadCpu,wall,after[9]-before[9],after[32]-before[32],value};

@@ -72,6 +72,9 @@ class MethodFlags {
 
   MethodFlags() : _status(0) {}
 
+  static ByteSize status_offset() { return byte_offset_of(MethodFlags, _status); }
+  static int old_or_obsolete_mask() { return _misc_is_old | _misc_is_obsolete; }
+
   // Create getters and setters for the status values.
 #define M_STATUS_GET_SET(name, ignore)          \
   bool name() const { return (_status & _misc_##name) != 0; } \

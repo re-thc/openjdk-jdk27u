@@ -206,12 +206,12 @@ public class InterpreterFramePilotDispatchTest {
         for(int action:new int[]{0,4,5})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
             ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
                 "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
+                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
                 InterpreterFramePilotDispatchTest.class.getName(),Integer.toString(action)).shouldHaveExitValue(0).shouldContain("PILOT_DISPATCH_OK");
         }
         var profiled=ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-XX:CompileThresholdScaling=100",
             "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-            "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
+            "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
             "-XX:CompileCommand=print,InterpreterFramePilotDispatchTest::interfaceCall",
             InterpreterFramePilotDispatchTest.class.getName(),"5","mixed").shouldHaveExitValue(0).shouldContain("PILOT_DISPATCH_OK");
         String data=null;

@@ -212,7 +212,7 @@ public class InterpreterFramePilotCallTest {
         for(int action:new int[]{0,4,5})for(String collector:new String[]{"-XX:+UseSerialGC","-XX:+UseG1GC"}) {
             ArrayList<String> options=new ArrayList<>(Arrays.asList("-Xbootclasspath/a:.","-Xint","-Xmx96m",collector,
                 "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-Dpilot.library="+agent,
-                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot"));
+                "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations"));
             options.addAll(Arrays.asList(InterpreterFramePilotCallTest.class.getName(),Integer.toString(action),"int"));
             ProcessTools.executeTestJava(options).shouldHaveExitValue(0).shouldContain("PILOT_DIRECT_CALL_OK");
         }
@@ -220,7 +220,7 @@ public class InterpreterFramePilotCallTest {
         ProcessTools.executeTestJava("-Xbootclasspath/a:.","-Xmx96m","-XX:+UseG1GC","-Dpilot.library="+agent,
             "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED","-XX:CompileThresholdScaling=100",
             "-XX:CompileCommand=dontinline,InterpreterFramePilotCallTest::*",
-            "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot",
+            "-XX:+UnlockExperimentalVMOptions","-XX:+UnlockDiagnosticVMOptions","-XX:+WhiteBoxAPI","-XX:+UseInterpreterFramePilot","-XX:+InterpreterFramePilotTestContinuations",
             InterpreterFramePilotCallTest.class.getName(),"5",mode).shouldHaveExitValue(0).shouldContain("PILOT_DIRECT_CALL_OK");
         }
     }
