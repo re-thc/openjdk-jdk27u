@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @requires vm.hasAWT
    @bug 4136620 4144590
    @summary Make sure that Attribute & subclasses are serialized and deserialized correctly
    @modules java.desktop

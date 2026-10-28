@@ -33,10 +33,8 @@ package java.security.cert;
  * @author Hemma Prafullchandra
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertificateParsingException extends CertificateException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7989222416793322029L;
 
     /**
      * Constructs a CertificateParsingException with no detail message. A

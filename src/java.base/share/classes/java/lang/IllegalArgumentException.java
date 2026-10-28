@@ -31,6 +31,7 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalArgumentException extends RuntimeException {
     /**
      * Constructs an {@code IllegalArgumentException} with no
@@ -88,6 +89,4 @@ public class IllegalArgumentException extends RuntimeException {
         super(cause);
     }
 
-    @java.io.Serial
-    private static final long serialVersionUID = -5365630128856068164L;
 }

@@ -71,10 +71,8 @@ import java.util.Objects;
 /// and `expanded` arguments. For example, seed and expanded key must match.
 ///
 /// @see sun.security.provider.NamedKeyPairGenerator
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NamedPKCS8Key extends PKCS8Key {
-    @Serial
-    private static final long serialVersionUID = 1L;
-
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
     private final transient byte[] expanded;

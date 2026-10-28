@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4306909
  * @summary Verify bug fix for 4306909
  * @author Neal Gafter (gafter)

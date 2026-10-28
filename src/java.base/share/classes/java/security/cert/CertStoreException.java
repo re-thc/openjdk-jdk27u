@@ -48,10 +48,8 @@ import java.security.GeneralSecurityException;
  * @since       1.4
  * @author      Sean Mullan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertStoreException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2395296107471573245L;
 
     /**
      * Creates a {@code CertStoreException} with {@code null} as

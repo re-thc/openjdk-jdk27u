@@ -65,10 +65,9 @@ package java.lang;
 
 import java.util.*;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class ProcessEnvironment extends HashMap<String,String>
 {
-
-    private static final long serialVersionUID = -8017839552603542824L;
 
     private static String validateName(String name) {
         // An initial `=' indicates a magic Windows variable name -- OK

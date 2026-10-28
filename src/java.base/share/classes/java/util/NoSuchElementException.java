@@ -33,10 +33,8 @@ package java.util;
  * @see     java.util.Iterator#next()
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchElementException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 6769829250639411880L;
-
     /**
      * Constructs a {@code NoSuchElementException} with {@code null}
      * as its error message string.

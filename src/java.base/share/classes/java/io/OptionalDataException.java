@@ -44,10 +44,8 @@ package java.io;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class OptionalDataException extends ObjectStreamException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8011121865681257820L;
 
     /*
      * Create an {@code OptionalDataException} with a length.

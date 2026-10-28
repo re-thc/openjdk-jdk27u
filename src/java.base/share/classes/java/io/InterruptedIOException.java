@@ -38,10 +38,8 @@ package java.io;
  * @see     java.lang.Thread#interrupt()
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InterruptedIOException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = 4020568460727500567L;
-
     /**
      * Constructs an {@code InterruptedIOException} with
      * {@code null} as its error detail message.

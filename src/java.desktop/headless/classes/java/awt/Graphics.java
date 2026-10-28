@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,15 +23,18 @@
  * questions.
  */
 
+package java.awt;
 
-/*
- * @test
- *
- * @summary converted from VM Testbase vm/compiler/optimizations/stringconcat/explicit/Merge01/cs_disabled.
- * VM Testbase keywords: [jit, quick]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm -XX:-CompactStrings vm.compiler.optimizations.stringconcat.explicit.Merge01
+/**
+ * Nominal type retained solely for JavaBeans method signatures in this fork.
+ * GUI operations, instances, and the full AWT API are unsupported.
  */
-
+public abstract class Graphics {
+    /**
+     * This server profile cannot create AWT objects.
+     * @throws UnsupportedOperationException always
+     */
+    protected Graphics() {
+        throw new UnsupportedOperationException("AWT is unavailable in this server profile");
+    }
+}

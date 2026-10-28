@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4227137
  * @summary Basic functional test for virtual-machine shutdown hooks
  * @modules java.desktop

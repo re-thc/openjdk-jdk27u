@@ -333,6 +333,7 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -402,10 +403,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     // All 18-digit base ten strings fit into a long; not all 19-digit
     // strings will
     private static final int MAX_COMPACT_DIGITS = 18;
-
-    /* Appease the serialization gods */
-    @java.io.Serial
-    private static final long serialVersionUID = 6108874887143696463L;
 
     // Cache of common small BigDecimal values.
     @Stable

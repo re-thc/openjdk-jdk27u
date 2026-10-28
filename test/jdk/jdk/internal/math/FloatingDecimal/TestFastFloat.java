@@ -29,9 +29,7 @@
  * @run main/othervm -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -Xint -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseFastFloatIntrinsics TestFastFloat
- * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings TestFastFloat
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UseFastFloatIntrinsics TestFastFloat
- * @run main/othervm -XX:-CompactStrings -XX:+UseFastFloatIntrinsics TestFastFloat
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits TestFastFloat
  * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseFastFloat,_parseFastFloatDigits TestFastFloat
  * @run main/othervm -XX:-UseFastFloatIntrinsics TestFastFloat
@@ -43,7 +41,6 @@
  * @summary Native decimal parsing uses JNI on the Zero interpreter
  * @modules java.base/jdk.internal.math:+open
  * @run main/othervm -Xint TestFastFloat
- * @run main/othervm -Xint -XX:-CompactStrings TestFastFloat
  * @run main/othervm -Xint -XX:-UseFastFloatIntrinsics TestFastFloat
  */
 
@@ -55,7 +52,6 @@
  * @run main/othervm -Xmx64m -Xint -XX:+UseZGC TestFastFloat
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseZGC TestFastFloat
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:+UseZGC TestFastFloat
- * @run main/othervm -Xmx64m -Xint -XX:+UseZGC -XX:-CompactStrings TestFastFloat
  */
 
 /*
@@ -66,7 +62,6 @@
  * @run main/othervm -Xmx64m -Xint -XX:+UseShenandoahGC TestFastFloat
  * @run main/othervm -Xmx64m -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseShenandoahGC TestFastFloat
  * @run main/othervm -Xmx64m -Xbatch -XX:-TieredCompilation -XX:+UseShenandoahGC TestFastFloat
- * @run main/othervm -Xmx64m -Xint -XX:+UseShenandoahGC -XX:-CompactStrings TestFastFloat
  */
 
 import java.lang.reflect.Constructor;
@@ -199,6 +194,17 @@ public class TestFastFloat {
                     digits[index] = invalid;
                     check(new String(digits));
                 }
+            }
+        }
+        // With permanent CompactStrings, valid floating-point text is Latin1.
+        // Use genuinely non-Latin1 Strings to exercise UTF16 rejection at the
+        // native length boundaries. U+0139 has the low byte of ASCII '9', so
+        // narrowing before validating the full code unit would accept it.
+        for (int length : new int[] {1023, 1024, 1025}) {
+            for (int index : new int[] {0, length / 2, length - 1}) {
+                char[] digits = "9".repeat(length).toCharArray();
+                digits[index] = '\u0139';
+                check(new String(digits));
             }
         }
         Random random = new Random(0x193839L);

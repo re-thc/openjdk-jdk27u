@@ -33,10 +33,8 @@ package javax.security.auth.login;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CredentialNotFoundException extends CredentialException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7779934467214319475L;
 
     /**
      * Constructs a CredentialNotFoundException with no detail message.

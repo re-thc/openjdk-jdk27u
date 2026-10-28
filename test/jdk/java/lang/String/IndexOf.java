@@ -30,21 +30,14 @@
 
 /*
  * @test
- * @bug 8320448
+ * @bug 8320448 8360271
  * @summary test String indexOf() intrinsic
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts IndexOf
  */
 
-/*
- * @test
- * @bug 8360271
- * @summary test String indexOf() intrinsic
- * @requires vm.cpu.features ~= ".*avx2.*"
- * @requires vm.compiler2.enabled
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation -XX:UseAVX=2 -XX:+UnlockDiagnosticVMOptions -XX:+EnableX86ECoreOpts -XX:-CompactStrings IndexOf
- */
+
 
  public class IndexOf {
   final int scope = 32*2+16+8;

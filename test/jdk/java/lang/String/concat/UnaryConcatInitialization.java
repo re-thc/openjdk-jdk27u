@@ -26,9 +26,8 @@
  * @summary Unary string concatenation does not initialize the hidden class generator
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xverify:all UnaryConcatInitialization
- * @run main/othervm -Xverify:all -XX:-CompactStrings UnaryConcatInitialization
  * @run main/othervm -Xverify:all -Xshare:off UnaryConcatInitialization check-init
- * @run main/othervm -Xverify:all -Xshare:off -XX:-CompactStrings
+ * @run main/othervm -Xverify:all -Xshare:off
  *                  -Djava.lang.invoke.StringConcat.cacheThreshold=0
  *                  -Djava.lang.invoke.StringConcat.inlineThreshold=0
  *                  UnaryConcatInitialization check-init

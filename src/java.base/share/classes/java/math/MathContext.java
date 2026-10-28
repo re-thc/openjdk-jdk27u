@@ -54,6 +54,7 @@ import java.io.*;
  * @since 1.5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class MathContext implements Serializable {
 
     /* ----- Constants ----- */
@@ -64,9 +65,6 @@ public final class MathContext implements Serializable {
     private static final int MIN_DIGITS = 0;
 
     // Serialization version
-    @java.io.Serial
-    private static final long serialVersionUID = 5579720004786848255L;
-
     /* ----- Public Properties ----- */
     /**
      * A {@code MathContext} object whose settings have the values

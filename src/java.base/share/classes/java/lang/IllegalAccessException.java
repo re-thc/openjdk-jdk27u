@@ -55,9 +55,8 @@ package java.lang;
  * @see     java.lang.reflect.Constructor#newInstance(Object[])
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalAccessException extends ReflectiveOperationException {
-    private static final long serialVersionUID = 6616958222490762034L;
-
     /**
      * Constructs an {@code IllegalAccessException} without a
      * detail message.

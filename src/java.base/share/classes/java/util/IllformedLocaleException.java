@@ -39,10 +39,8 @@ package java.util;
  * @see Locale
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllformedLocaleException extends RuntimeException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5245986824925681401L;
 
     /** @serial */
     private int _errIdx = -1;

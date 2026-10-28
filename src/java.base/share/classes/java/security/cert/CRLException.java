@@ -33,10 +33,8 @@ import java.security.GeneralSecurityException;
  * @author Hemma Prafullchandra
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CRLException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -6694728944094197147L;
 
     /**
      * Constructs a CRLException with no detail message. A

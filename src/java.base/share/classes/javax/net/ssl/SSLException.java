@@ -36,10 +36,8 @@ import java.io.IOException;
  * @since 1.4
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SSLException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = 4511006460650708967L;
-
     /**
      * Constructs an exception reporting an error found by
      * an SSL subsystem.

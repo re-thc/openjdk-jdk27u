@@ -30,16 +30,10 @@
  * @run main/othervm -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xint TestDecimalIntegers
  * @run main/othervm -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xbatch -XX:TieredStopAtLevel=1 TestDecimalIntegers
  * @run main/othervm -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xbatch -XX:-TieredCompilation TestDecimalIntegers
- * @run main/othervm -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xbatch -XX:TieredStopAtLevel=1 -XX:-CompactStrings TestDecimalIntegers
- * @run main/othervm -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xbatch -XX:-TieredCompilation -XX:-CompactStrings TestDecimalIntegers
- * @run main/othervm -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -Xint -XX:-CompactStrings TestDecimalIntegers
  * @run main/othervm -Xint -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseDecimalInt,_parseDecimalLong,_parseUnsignedDecimalInt,_parseUnsignedDecimalLong,_formatDecimalIntLatin1,_formatDecimalIntUTF16,_formatDecimalLongLatin1,_formatDecimalLongUTF16 TestDecimalIntegers
- * @run main/othervm -Xint -XX:-CompactStrings -XX:+UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_parseDecimalInt,_parseDecimalLong,_parseUnsignedDecimalInt,_parseUnsignedDecimalLong,_formatDecimalIntLatin1,_formatDecimalIntUTF16,_formatDecimalLongLatin1,_formatDecimalLongUTF16 TestDecimalIntegers
  * @run main/othervm -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
- * @run main/othervm -Xint -XX:+CompactStrings TestDecimalIntegers
- * @run main/othervm -Xint -XX:-CompactStrings TestDecimalIntegers
- * @run main/othervm -Xint -XX:+CompactStrings -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
- * @run main/othervm -Xint -XX:-CompactStrings -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
+ * @run main/othervm -Xint TestDecimalIntegers
+ * @run main/othervm -Xint -XX:-UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
  * @run main/othervm -Xint -XX:-UseFastIntegerIntrinsics -XX:+UseZmijIntegerIntrinsics TestDecimalIntegers
  * @run main/othervm -Xint -XX:+UseFastIntegerIntrinsics -XX:-UseZmijIntegerIntrinsics TestDecimalIntegers
  */

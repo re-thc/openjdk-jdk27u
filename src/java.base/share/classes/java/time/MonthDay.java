@@ -128,15 +128,10 @@ import jdk.internal.util.DecimalDigits;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class MonthDay
         implements TemporalAccessor, TemporalAdjuster, Comparable<MonthDay>, Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -939150713474957432L;
 
     /**
      * For backward compatibility of the serialized {@code MonthDay.class} object,

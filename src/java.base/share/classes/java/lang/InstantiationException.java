@@ -41,10 +41,8 @@ package java.lang;
  * @see     java.lang.Class#newInstance()
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InstantiationException extends ReflectiveOperationException {
-    @java.io.Serial
-    private static final long serialVersionUID = -8441929162975509110L;
-
     /**
      * Constructs an {@code InstantiationException} with no detail message.
      */

@@ -34,10 +34,8 @@ package java.lang.reflect;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MalformedParameterizedTypeException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -5696557788586220964L;
-
     /**
      * Constructs a {@code MalformedParameterizedTypeException} with
      * no detail message.

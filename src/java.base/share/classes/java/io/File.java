@@ -155,6 +155,7 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class File
     implements Serializable, Comparable<File>
 {
@@ -2066,10 +2067,6 @@ public class File
             = UNSAFE.objectFieldOffset(File.class, "path");
     private static final long PREFIX_LENGTH_OFFSET
             = UNSAFE.objectFieldOffset(File.class, "prefixLength");
-
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 301077366599181567L;
 
     // -- Integration with java.nio.file --
 
