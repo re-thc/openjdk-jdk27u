@@ -1,0 +1,245 @@
+Native macOS socket-to-file buffer qualification -- 2026-10-30
+Repository: https://github.com/re-thc/openjdk-jdk27u
+Measured source branch: wip/io-buffer-mac-handoff.
+Handback branch: wip/io-buffer-mac-handback (shared change and qualification).
+Independent baseline-fix branch: wip/macos-sendfile-zero-count.
+Baseline-fix commit: 66ea1e76a1e5ef7f9241c006af204d5c4b897fb7 (parent b16e63cf101).
+The handback branch excludes that fix; no merge or PR is performed.
+A: b16e63cf101b08b6f55ce8260fbb3d6ab2e98721
+Original B: c17bd64d367043e72a39905326d1b0996a33174b
+Final B: that tip with the independent macOS zero-length sendfile guard applied.
+Timed patch parity: original-warmed A and B both lacked the sendfile fix.
+In final, A lacked it and B had it. Mixed-original and inline-sensitivity
+builds both lacked it. The measured transferFrom path does not call the fixed
+transferTo/sendfile path. The matched original-warmed series is retained in full.
+
+Decision
+Retain the shared opportunistic staging implementation. No sustained runtime
+regression against A was demonstrated in quota-exhausted, mixed-quota, tiny
+socket, or arbitrary-channel controls. Native staging saves heap allocation
+and improves the measured cache-hot loopback socket-to-file path. Compiler
+code growth and adverse pairs remain visible below; this is not proof that
+every workload or cold invocation is faster.
+Fix the demonstrated macOS correctness bug: count=0 must not reach sendfile,
+where zero requests transmission through EOF. The included TransferSocketChannel
+test fails with "zero count" on both A and original B and passes on final B.
+The fix is confined to macOS FileDispatcherImpl.c; shared staging is unchanged.
+The shared handback retains the known baseline TransferSocketChannel failure
+until the independent fix is applied; the 44-pass result is for their combination.
+
+Environment and build
+Apple M6, native arm64, 12 logical CPUs, 16 GiB; macOS 27.0.1 (26A434), AC power.
+Xcode 27.1, Apple clang 21.0.0, macOS 27.0 SDK; Homebrew OpenJDK 27.0.1.0.3 boot JDK.
+Both builds: release/server, 8 build jobs, native debug symbols internal,
+source date 1793260800, version opt io-qualification, Shenandoah excluded,
+reduced modules and normal fork object-header defaults. No cross compilation.
+Baseline sources were extracted with git archive, not patched into the candidate.
+Fresh builds hit a pre-existing make/Main.gmk whitespace-only stale-output check.
+EXCLUDED_MODULE_OUTPUTS= bypassed that guard for both clean configurations.
+The macOS sandbox blocked /dev/fd and sockets; builds/tests/harness ran with approval.
+Configure commands and all build flags are retained in each spec.gmk.
+
+Correctness
+Combined validation (shared tip plus separate baseline fix):
+44 jtreg test descriptions passed, 0 failed, 0 errors, 1 Windows-only skip;
+2,456 JUnit framework cases passed within those descriptions (not extra jtreg tests).
+TransferFromSocketBuffer: all five descriptions passed. Basic executes on both
+platform and virtual threads; denied quota, 64 competing reservations, ordinary
+direct-memory limits, cancellation, content/position/tail preservation and quota
+recovery passed. With 128 parked virtual transfers the pool reports exactly
+128 allocations / 1,048,576 bytes under the large budget, and exactly 8 / 65,536
+under the tight budget; remaining transfers and the 129th transfer use heap fallback.
+Close releases the reservations. Zero-budget content/EOF/16 EAGAIN took 12.8 ms
+including setup in the test; this is a smoke check, not a paired latency estimate.
+TransferSocketChannel passes platform/virtual, blocking/nonblocking, backpressure,
+content, position and zero-count checks after the macOS fix.
+Also passed: FileInputStream (11 descriptions), Buffer (17), Transfer, Transfers,
+TransferFromExtend, TransferToAppending, TransferOverlappedFileChannel,
+ClosedChannelTransfer, CloseDuringTransfer, TransferToChannel, TransferToNonWritable,
+TempDirectBuffersReclamation. Baseline BulkReadMetadata passed both descriptions.
+Linux /dev/full, DIRECT alignment and Linux-specific transfer syscalls were not run.
+
+Measurement protocol
+Local Java harness, standard library plus existing JavaNioAccess for mixed quota;
+Python runner/analyzer use only the standard library. No framework added.
+One scenario per fresh JVM. Eight adjacent A/B pairs per scenario, alternating
+AB and BA; rotate scenarios each round and reverse odd rounds. Run serially,
+with no build/test activity during timed series. No timed sample was discarded.
+Fixed JVM settings: -Xms256m -Xmx256m -Xshare:off -XX:MaxDirectMemorySize=1m,
+virtual scheduler parallelism 2. Five warmup batches and at least one second
+of warmup, then five equal-operation samples. A fork contributes its sample
+median; A and B columns are medians of eight fork medians. Paired percent is
+median(B_i/A_i - 1), which need not equal the ratio of the displayed A/B medians.
+95% intervals use 10,000 paired bootstrap resamples, seed 20261030; they are
+descriptive small-sample intervals, with no multiple-comparison adjustment.
+CPU is process CPU ns/op, including sender, GC and any concurrent compilation;
+it can exceed wall time and is sensitive to sender scheduling. Allocation is
+ThreadMXBean total allocated heap bytes; setup, formatting and verification are
+outside samples. Caller allocation is also in CSV; virtual caller values are -1
+because that per-thread counter does not support virtual threads. Native malloc
+traffic is not counted as heap allocation: eligible calls allocate/free min(count,
+8192) native bytes, rounded to address size, with a reservation of that capacity.
+Available native calls perform three reservation and three release atomics;
+failed quota probes perform no successful reservation or cleanup/retry loop.
+FileChannel and socket setup are excluded. The sender continuously writes 64 KiB
+heap batches over loopback; transferFrom overwrites position zero of the same
+temporary file. Verify exact count, unchanged file position and every final byte.
+No fsync: these are page-cache writes, not durable storage or production network tests.
+Per sample: socket/arbitrary ops=max(300,min(60000,64 MiB/size)); empty=100000.
+Exhausted holds a live 1 MiB direct buffer for the entire fork. Mixed alternates
+a full-budget reservation and a free budget on each transfer, charging the same
+reservation/release operations to A and B. Existing temporary I/O caches are unmetered.
+Empty is a nonblocking socket with no incoming data; arbitrary is a custom heap source.
+
+Final rebuilt B versus b16e63cf101 -- primary platform-thread results
+case: kind / bytes / quota / thread
+wall and CPU: A -> B in ns/op; delta is median paired percent [95% bootstrap interval]
+heap: total JVM allocated B/op, excluding setup; adverse: B slower, then slower by >3%
+arbitrary:7:available:platform
+  wall 826.7 -> 831.0; +1.35% [-0.70, +3.19]; adverse 5/8, >3% 2/8; worst +3.38%
+  CPU  828.1 -> 833.9; +1.49% [-0.51, +3.14]; heap 16.0 -> 16.0
+arbitrary:8192:available:platform
+  wall 1068.4 -> 1055.4; -1.65% [-2.99, +0.54]; adverse 3/8, >3% 1/8; worst +11.10%
+  CPU  1103.7 -> 1107.8; -0.34% [-2.41, +4.84]; heap 8224.0 -> 8200.0
+empty:8192:available:platform
+  wall 305.4 -> 192.7; -37.07% [-38.38, -35.74]; adverse 0/8, >3% 0/8; worst -35.29%
+  CPU  317.7 -> 193.4; -39.65% [-40.91, -38.22]; heap 8200.0 -> 0.0
+empty:8192:exhausted:platform
+  wall 313.9 -> 304.3; -1.04% [-3.76, +4.02]; adverse 3/8, >3% 2/8; worst +6.74%
+  CPU  326.2 -> 318.1; -0.79% [-2.82, +4.15]; heap 8200.0 -> 8200.0
+socket:1048576:available:platform
+  wall 196015.3 -> 171816.4; -13.61% [-16.18, -10.73]; adverse 0/8, >3% 0/8; worst -10.68%
+  CPU  276178.3 -> 259855.0; -11.38% [-20.27, -4.86]; heap 8248.0 -> 56.0
+socket:1048576:exhausted:platform
+  wall 193487.8 -> 194968.2; +0.25% [-0.64, +0.49]; adverse 5/8, >3% 0/8; worst +2.80%
+  CPU  261913.3 -> 258333.3; +0.26% [-5.45, +1.61]; heap 8248.0 -> 8248.0
+socket:65536:available:platform
+  wall 12475.6 -> 10805.1; -13.52% [-14.16, -12.36]; adverse 0/8, >3% 0/8; worst -11.99%
+  CPU  17629.4 -> 16540.5; -6.18% [-8.69, -1.82]; heap 8248.0 -> 56.0
+socket:65536:exhausted:platform
+  wall 12334.0 -> 12329.7; -0.10% [-0.68, +0.26]; adverse 4/8, >3% 0/8; worst +1.25%
+  CPU  17251.5 -> 17372.1; +1.08% [-3.46, +4.76]; heap 8248.0 -> 8248.0
+socket:7:available:platform
+  wall 1105.8 -> 1089.9; -1.15% [-2.31, -0.69]; adverse 0/8, >3% 0/8; worst -0.69%
+  CPU  1111.0 -> 1091.9; -1.36% [-2.03, -0.68]; heap 64.0 -> 0.0
+socket:7:exhausted:platform
+  wall 1103.1 -> 1100.4; +0.21% [-1.27, +1.43]; adverse 5/8, >3% 1/8; worst +14.80%
+  CPU  1108.0 -> 1106.6; +0.21% [-1.09, +1.41]; heap 64.0 -> 64.0
+socket:8192:available:platform
+  wall 1631.6 -> 1309.2; -19.46% [-20.00, -17.97]; adverse 0/8, >3% 0/8; worst -17.08%
+  CPU  2157.7 -> 1750.5; -15.36% [-18.15, -9.12]; heap 8248.0 -> 56.0
+socket:8192:exhausted:platform
+  wall 1667.3 -> 1642.5; -1.28% [-2.50, +1.76]; adverse 2/8, >3% 1/8; worst +24.13%
+  CPU  2255.7 -> 2225.8; -0.01% [-3.83, +3.68]; heap 8248.0 -> 8248.0
+
+Original B versus b16e63cf101 -- mixed quota and virtual threads
+Shared buffer code is identical to final B. Mixed values include the matched
+quota-toggling control cost. Virtual runs use total JVM heap allocation.
+case: kind / bytes / quota / thread
+wall and CPU: A -> B in ns/op; delta is median paired percent [95% bootstrap interval]
+heap: total JVM allocated B/op, excluding setup; adverse: B slower, then slower by >3%
+empty:8192:mixed:platform
+  wall 294.0 -> 254.8; -13.87% [-14.85, -11.39]; adverse 0/8, >3% 0/8; worst -10.03%
+  CPU  307.2 -> 261.9; -15.49% [-16.29, -12.76]; heap 8200.0 -> 4152.0
+socket:7:available:virtual
+  wall 1104.0 -> 1099.0; -0.33% [-1.52, +0.20]; adverse 2/8, >3% 0/8; worst +1.69%
+  CPU  1112.5 -> 1100.7; -0.63% [-1.53, +0.65]; heap 64.0 -> 0.0
+socket:7:mixed:platform
+  wall 1119.2 -> 1109.1; -0.97% [-1.94, -0.15]; adverse 1/8, >3% 0/8; worst +1.08%
+  CPU  1123.7 -> 1120.3; -0.47% [-1.38, +0.39]; heap 64.0 -> 60.0
+socket:8192:available:virtual
+  wall 1667.8 -> 1325.6; -20.43% [-23.70, -19.02]; adverse 0/8, >3% 0/8; worst -18.29%
+  CPU  2130.1 -> 1755.2; -17.47% [-24.33, -15.85]; heap 8248.0 -> 56.0
+socket:8192:exhausted:virtual
+  wall 1638.7 -> 1628.7; -0.80% [-2.14, +0.08]; adverse 3/8, >3% 0/8; worst +2.44%
+  CPU  2139.3 -> 2073.9; -3.45% [-4.87, -1.41]; heap 8248.0 -> 8248.0
+socket:8192:mixed:platform
+  wall 1653.6 -> 1534.1; -7.99% [-10.63, -6.40]; adverse 0/8, >3% 0/8; worst -5.57%
+  CPU  2135.2 -> 2061.7; -7.35% [-9.06, +1.87]; heap 8248.0 -> 4152.0
+
+C2 and inlining overhead
+Separate PrintInlining/LogCompilation runs show the staging method grows from
+137 to 322 bytecodes, three below aarch64 FreqInlineSize=325. Bits.tryReserveMemory
+grows from 52 to 75 after moving limit initialization. Both the staging method
+and the 6-byte access wrapper / 75-byte reservation method hot-inline in the
+observed available, denied and arbitrary controls. Mixed heap/direct type profiles
+can compile both paths and recompile; some compilations reject calls as already
+compiled into a big method. This is compiler overhead, not an unconditional lost inline.
+One diagnostic mixed-8-KiB pair illustrates the cost: transferFrom C2 nmethod content was
+1,912 bytes / 3 ms task duration for A, versus 50,912 / 99 ms for B; standalone
+staging was 11,152 / 8 ms versus 27,064 / 50 ms. Native-only tiny transferFrom
+instead shrank 17,152 -> 13,016 content bytes. These are single diagnostic task observations,
+not paired estimates of compiler CPU or a general code-size ratio. Logging, profiles
+and compiler scheduling affect them. The steady-state process CPU table is the
+measured CPU cost; cold-start and uncommon caller compilation remain uncertain.
+A separate eight-pair sensitivity series uses original B for BOTH variants:
+A normal policy; B adds only CompileCommand=dontinline for the staging method.
+This measures sensitivity to the boundary; it is not a baseline-versus-branch result.
+case: kind / bytes / quota / thread
+wall and CPU: A -> B in ns/op; delta is median paired percent [95% bootstrap interval]
+heap: total JVM allocated B/op, excluding setup; adverse: B slower, then slower by >3%
+empty:8192:exhausted:platform
+  wall 298.3 -> 302.5; +0.15% [-5.44, +5.05]; adverse 4/8, >3% 3/8; worst +5.60%
+  CPU  311.1 -> 317.7; +0.90% [-5.39, +4.77]; heap 8200.0 -> 8200.0
+socket:7:available:platform
+  wall 1097.0 -> 1094.1; -0.06% [-1.11, +0.21]; adverse 3/8, >3% 0/8; worst +0.61%
+  CPU  1101.2 -> 1097.1; -0.24% [-1.18, +0.31]; heap 0.0 -> 0.0
+socket:7:exhausted:platform
+  wall 1116.7 -> 1109.6; -0.74% [-1.37, +0.10]; adverse 2/8, >3% 0/8; worst +0.38%
+  CPU  1120.5 -> 1112.0; -0.83% [-1.39, -0.20]; heap 64.0 -> 16.0
+socket:8192:mixed:platform
+  wall 1504.2 -> 1522.3; +0.38% [-0.64, +1.17]; adverse 5/8, >3% 1/8; worst +4.63%
+  CPU  1920.1 -> 1963.9; +0.26% [-1.31, +3.72]; heap 4152.0 -> 4152.0
+
+Tiny denied calls change scalar replacement (64 -> 16 heap B/op in this sensitivity
+series), but its timing interval includes zero. The normal baseline comparison
+does not establish an allocation or throughput regression on denied tiny calls.
+No ForceInline annotation, speculative loop split or compiler tuning was added.
+
+Adverse pairs and uncertainty
+final: positive wall-time differences retained, one-based pair numbers:
+  arbitrary:7:available:platform: 1=+2.17%, 3=+0.53%, 4=+2.65%, 5=+3.19%, 7=+3.38%
+  arbitrary:8192:available:platform: 2=+0.53%, 4=+11.10%, 8=+0.54%
+  empty:8192:exhausted:platform: 1=+2.67%, 4=+4.02%, 8=+6.74%
+  socket:1048576:exhausted:platform: 2=+2.80%, 3=+0.36%, 6=+0.24%, 7=+0.49%, 8=+0.26%
+  socket:65536:exhausted:platform: 1=+0.03%, 4=+0.26%, 5=+1.25%, 8=+0.12%
+  socket:7:exhausted:platform: 1=+1.43%, 2=+0.24%, 3=+0.18%, 4=+1.10%, 6=+14.80%
+  socket:8192:exhausted:platform: 1=+24.13%, 3=+1.76%
+mixed-original: positive wall-time differences retained, one-based pair numbers:
+  socket:7:available:virtual: 1=+1.69%, 7=+0.20%
+  socket:7:mixed:platform: 5=+1.08%
+  socket:8192:exhausted:virtual: 4=+0.06%, 6=+0.08%, 8=+2.44%
+The original independent primary series also retained substantial exhausted-quota
+outliers: 8 KiB +17.34%, 64 KiB +19.87%, and empty +10.43% worst paired wall time.
+Its exhausted medians were respectively +0.36%, -0.01%, -0.90%; confidence intervals
+included zero. Scheduling, GC, compilation or workload costs could contribute;
+their causes were not isolated. All pairs are retained. The complete original
+series is in the CSV and raw files.
+No CPU affinity, thermal control, isolation from all OS activity, storage diversity,
+or long production workload was available. Eight pairs cannot rule out small costs,
+rare tail regressions, cold compilation or high-contention quota atomics. The 7-byte
+case is especially close to call/syscall overhead; avoid a universal speedup claim.
+Mac results qualify shared Java/native buffer ownership and copy/allocation behavior.
+They provide no evidence for Linux sendfile/splice/copy_file_range syscall savings.
+
+Reproduction and artifacts (relative to repository root)
+Published harness and instructions: doc/io-buffer-macos/README.txt.
+The small Java harness, original harness snapshot, standard-library Python runner
+and analyzer, all 2,720 raw samples, all 272 paired fork medians, and compact C2
+excerpts/task data are included under doc/io-buffer-macos/.
+The four timing series remain separate. No timing sample was removed or pooled.
+Raw command paths are relative to repository root; all other arguments and numeric
+measurements are unchanged. manifest.json records source/patch parity and hashes.
+Full summary matrix: doc/io-buffer-macos-results.csv.
+
+Full native builds, compiler XML/stdout and jtreg .jtr logs remain local in build/:
+  io-candidate/jdk; io-20261030/baseline-src/build/io-baseline/jdk;
+  io-20261030/unmodified-jdk; io-20261030/c2-observation/;
+  io-20261030/{candidate-included-tests,baseline-included-tests,final-tests}.log;
+  io-candidate/test-support/.
+Pilot, diagnostic output-interleaving failure and broken-symlink copy artifacts
+were excluded from results; successful series above are complete with no filtering.
+Valid timing totals: 544 fresh JVMs, 2,720 samples across the four reported series;
+12 additional compiler-diagnostic JVMs are not pooled into the timing results.
+No framework or dependency installed. The original report generator remains local
+at build/io-20261030/write_report.py; publication/provenance text was updated here.

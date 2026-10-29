@@ -1,0 +1,56 @@
+{
+  "baseline": "b16e63cf101b08b6f55ce8260fbb3d6ab2e98721",
+  "shared_tip": "c17bd64d367043e72a39905326d1b0996a33174b",
+  "handback_branch": "wip/io-buffer-mac-handback",
+  "baseline_fix_branch": "wip/macos-sendfile-zero-count",
+  "baseline_fix_commit": "66ea1e76a1e5ef7f9241c006af204d5c4b897fb7",
+  "timed_sendfile_fix": {
+    "original-warmed": {
+      "A": false,
+      "B": false
+    },
+    "final": {
+      "A": false,
+      "B": true
+    },
+    "mixed-original": {
+      "A": false,
+      "B": false
+    },
+    "inline-sensitivity": {
+      "A": false,
+      "B": false,
+      "same_shared_tip_both_variants": true
+    }
+  },
+  "measured_path": "FileChannel.transferFrom: socket to file; sendfile fix affects transferTo: file to socket",
+  "validation": "44 jtreg passes, 1 Windows-only skip, 2456 JUnit cases on shared tip with separate fix applied",
+  "raw_samples": {
+    "final": 960,
+    "original-warmed": 960,
+    "mixed-original": 480,
+    "inline-sensitivity": 320
+  },
+  "command_paths": "Repository absolute prefixes removed; commands run from repository root. Other arguments and measurements unchanged.",
+  "source_harness": {
+    "final": "SocketFileBench.java",
+    "original-warmed": "original/SocketFileBench.java",
+    "mixed-original": "SocketFileBench.java",
+    "inline-sensitivity": "SocketFileBench.java"
+  },
+  "sha256": {
+    "README.txt": "68e25cf05ffc2b3e1c69aa5a536a701670990fd1dcaaaa3e0d106dd8ce562cce",
+    "SocketFileBench.java": "5a835640bb6282cc9083b73644be7961993e617387f8d4b710bb28afd3695e42",
+    "analyze.py": "fb33e67442f1920722ce8d25e73e8428bd3806181e507e85cd8686aed4043b89",
+    "c2-inlining.txt": "c24fb7f71ff4ceaeee37a5d1e0f03b862ac4d217917975651c0adeeba940d33d",
+    "c2-tasks.json": "82203c4af1a18670238761a7f403e6365d6186c80f902744034385e512c2a9fd",
+    "original/SocketFileBench.java": "7c3db62b5e18e8e4dd334cf224eaa489b8f6d26e54383d9ec0cce1e6b3fbcd9b",
+    "paired-forks.csv": "400e01f360fd304ac29d7dc85bf0b6ac4f6203ee9856cb68b108bd5c2cee61e0",
+    "results/final/raw.jsonl": "ffc3410443fa536b84bb377b08d0380b92babfba9ea3af9b58ba47353ef940e2",
+    "results/inline-sensitivity/raw.jsonl": "499bdf8cf71eece34cbd466157eb7cdefd70b0fe0205187d60b27bc85d5857ed",
+    "results/mixed-original/raw.jsonl": "cfeb6bc693ea6fc49e9a7159525bbb177681f73f49486f6000b1e8e5953837a2",
+    "results/original-warmed/raw.jsonl": "bee301ba8849f45acd942d5e9dcd8f3509e724be4848e9c2a9dea1a863b6bec1",
+    "run_pairs.py": "86786b70c443dfcc14e9e69ef4133d75b5d543826834f10fa0f93dcfe57a99ed",
+    "validation.txt": "3ab191ee9d8ceddd666e03e8a142d57bc57c810ff945b80056e3e2a7097038d5"
+  }
+}

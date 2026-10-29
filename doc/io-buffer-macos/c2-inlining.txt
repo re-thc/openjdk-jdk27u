@@ -1,0 +1,111 @@
+Diagnostic compiler excerpts; original stdout line numbers retained.
+Full XML/stdout logs remain in the local build/io-20261030/c2-observation directory.
+
+00-arbitrary-7-available-platform-A.out
+2164: 104  500   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)
+2210:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   inline (hot)
+2575:                               @ 53   SocketFileBench$Source::read (26 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)    \-> TypeProfile (10803/10803 counts) = SocketFileBench$Source
+
+00-arbitrary-7-available-platform-B.out
+2151: 104  508   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+2193:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   inline (hot)
+
+00-empty-8192-exhausted-platform-A.out
+1978: 98  481   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)
+2099:                               @ 53   sun.nio.ch.SocketChannelImpl::read (38 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)    \-> TypeProfile (9489/9489 counts) = sun/nio/ch/SocketChannelImpl
+2322:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   inline (hot)
+
+00-empty-8192-exhausted-platform-B.out
+1971: 99  483       4       java.nio.Bits::tryReserveMemory (75 bytes)
+2019: 99  473   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+2141:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+2371:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   inline (hot)
+2375:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+
+00-socket-7-available-platform-A.out
+2708:          @ 281   java.util.concurrent.locks.ReentrantLock::127  589   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)
+3377:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   inline (hot)
+3627:                               @ 53   sun.nio.ch.SocketChannelImpl::read (38 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)    \-> TypeProfile (7696/7696 counts) = sun/nio/ch/SocketChannelImpl
+
+00-socket-7-available-platform-B.out
+2552:     @ 129   jdk.internal.misc.Blocker::begin125  580   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+2712: 129  575       4       java.nio.Bits::tryReserveMemory (75 bytes)
+2943:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   inline (hot)
+2947:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3172:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+
+00-socket-7-exhausted-platform-A.out
+2709:          123  574   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)
+3298:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   inline (hot)
+3424:                               @ 53   sun.nio.ch.SocketChannelImpl::read (38 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)    \-> TypeProfile (8593/8593 counts) = sun/nio/ch/SocketChannelImpl
+
+00-socket-7-exhausted-platform-B.out
+2565: 121  571   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+2929: 129  579       4       java.nio.Bits::tryReserveMemory (75 bytes)
+3292:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   inline (hot)
+3296:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3409:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+
+00-socket-7-mixed-platform-A.out
+3019:                      127  609   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)
+3390:                                 @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3400:                               @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3459:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   inline (hot)
+3709:                               @ 53   sun.nio.ch.SocketChannelImpl::read (38 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)    \-> TypeProfile (9282/9282 counts) = sun/nio/ch/SocketChannelImpl
+3931:                                   @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3953:                                   @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+
+00-socket-7-mixed-platform-B.out
+2069: 107  553       4       java.nio.Bits::tryReserveMemory (75 bytes)
+3193: 131  613   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+3464:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3474:                               @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3491: 145  613   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   made not entrant: uncommon trap
+3495:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3539:                               @ 148   java.nio.MappedByteBuffer::limit (6 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::limit (8 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (5743/11486 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (5743/11486 counts) = java/nio/DirectByteBuffer
+3544:                               @ 172   java.nio.MappedByteBuffer::flip (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::flip (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (5743/11486 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (5743/11486 counts) = java/nio/DirectByteBuffer
+3584:                               @ 214   java.nio.MappedByteBuffer::clear (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::clear (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (5742/11485 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (5743/11485 counts) = java/nio/DirectByteBuffer
+3608: 145  626   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+3627:                               @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3640:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   inline (hot)
+3644:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3688:                                 @ 148   java.nio.MappedByteBuffer::limit (6 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::limit (8 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (4867/9734 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (4867/9734 counts) = java/nio/DirectByteBuffer
+3744:                                 @ 172   java.nio.MappedByteBuffer::flip (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::flip (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (4867/9734 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (4867/9734 counts) = java/nio/DirectByteBuffer
+3784:                                 @ 214   java.nio.MappedByteBuffer::clear (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::clear (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (4866/9733 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (4867/9733 counts) = java/nio/DirectByteBuffer
+3805:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3849:                               @ 148   java.nio.MappedByteBuffer::limit (6 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::limit (8 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (11027/22057 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (11030/22057 counts) = java/nio/DirectByteBuffer
+3854:                               @ 172   java.nio.MappedByteBuffer::flip (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::flip (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (11027/22057 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (11030/22057 counts) = java/nio/DirectByteBuffer
+3860:                               @ 214   java.nio.MappedByteBuffer::clear (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::clear (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (11026/22056 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (11030/22056 counts) = java/nio/DirectByteBuffer
+3897:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   failed to inline: already compiled into a big method
+3950:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3972:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+
+00-socket-8192-mixed-platform-A.out
+3274: 134  620   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)
+3479:                               @ 53   sun.nio.ch.SocketChannelImpl::read (38 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)    \-> TypeProfile (8195/8195 counts) = sun/nio/ch/SocketChannelImpl
+3575:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   inline (hot)
+3601: 145  627       4       java.nio.Bits::tryReserveMemory (52 bytes)
+3612:                                 @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3623:                               @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3652:                                   @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3664:                !                @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   failed to inline: already compiled into a big method
+3680:                                   @ 25   java.nio.Bits::tryReserveMemory (52 bytes)   inline (hot)
+3692:                !                @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (137 bytes)   failed to inline: already compiled into a big method
+
+00-socket-8192-mixed-platform-B.out
+2262:                      112  576       4       java.nio.Bits::tryReserveMemory (75 bytes)
+3470: 143  643   !   4       sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)
+3960:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3970:                               @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+3990:                                 @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+4034:                               @ 148   java.nio.MappedByteBuffer::limit (6 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::limit (8 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (6201/12404 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (6203/12404 counts) = java/nio/DirectByteBuffer
+4039:                               @ 172   java.nio.MappedByteBuffer::flip (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::flip (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (6200/12403 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (6203/12403 counts) = java/nio/DirectByteBuffer
+4227:                               @ 214   java.nio.MappedByteBuffer::clear (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::clear (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (6200/12403 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (6203/12403 counts) = java/nio/DirectByteBuffer
+4251:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+4263:                !                @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   failed to inline: already compiled into a big method
+4278:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+4290:                !                @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   failed to inline: already compiled into a big method
+4364:                !              @ 154   sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)   inline (hot)
+4368:                                   @ 2   java.nio.Bits::tryReserveMemory (75 bytes)   inline (hot)
+4412:                                 @ 148   java.nio.MappedByteBuffer::limit (6 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::limit (8 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (3304/6609 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (3305/6609 counts) = java/nio/DirectByteBuffer
+4609:                                 @ 172   java.nio.MappedByteBuffer::flip (5 bytes)   inline (hot)   callee changed to  java.nio.ByteBuffer::flip (7 bytes)   inline (hot)   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (3304/6608 counts) = java/nio/HeapByteBuffer   callee changed to  sun.nio.ch.FileChannelImpl::transferFromArbitraryChannel (322 bytes)    \-> TypeProfile (3304/6608 counts) = java/nio/DirectByteBuffer
