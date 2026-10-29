@@ -43,7 +43,7 @@ typedef struct {
 
 class ZipLibrary : AllStatic {
  private:
-  typedef jlong (*ProcessFunc)(jboolean, jlong, jlong, jint, jlong, jint, jint, jint, jint*);
+  typedef jlong (*ProcessFunc)(jboolean, jlong, jlong, jint, jlong, jint, intptr_t, jint);
   static Atomic<address> _process_entry;
   static address initialize_process();
 
@@ -64,12 +64,12 @@ class ZipLibrary : AllStatic {
                         jint input_len, jint output_len, jint params, jint status);
   static jlong process(jboolean inflate, jlong stream,
                        jlong input, jint input_len, jlong output, jint output_len,
-                       jint flush, jint params, jint* checksum) {
+                       intptr_t control, jint params) {
     // Reuse the loaded DLL entry without a per-call C++ forwarding frame.
     address entry = _process_entry.load_acquire();
     if (entry == nullptr) entry = initialize_process();
     return CAST_TO_FN_PTR(ProcessFunc, entry)(inflate, stream, input, input_len,
-        output, output_len, flush, params, checksum);
+        output, output_len, control, params);
   }
 };
 

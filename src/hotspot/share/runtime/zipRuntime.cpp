@@ -79,28 +79,35 @@ jlong ZipRuntime::process(jint inflate, oop receiver, jlong stream,
   if (in.not_null()) in_addr += cast_from_oop<jlong>(in()) + arrayOopDesc::base_offset_in_bytes(T_BYTE);
   if (out.not_null()) out_addr += cast_from_oop<jlong>(out()) + arrayOopDesc::base_offset_in_bytes(T_BYTE);
   jlong result;
-  jint checksum = 0;
+  // The native completion contract writes this before returning finished.
+  // Other statuses and deflate never read it; no per-call initialization.
+  jint checksum;
   {
     ThreadToNativeFromVM transition(current);
     result = ZipLibrary::process(inflate, stream, in_addr, input_len,
-                                out_addr, output_len, flush, params, &checksum);
+        out_addr, output_len,
+        inflate ? reinterpret_cast<intptr_t>(&checksum) : flush, params);
   }
   if (out.not_null()) Universe::heap()->unpin_object(current, out());
   if (in.not_null()) Universe::heap()->unpin_object(current, in());
   if (pin_arrays) current->exit_jni_deferred_suspension();
-  if (inflate && (static_cast<uint64_t>(result) >> 62) == 1) {
-    // Both arrays are unpinned and recv is a GC-safe handle. No JNI call or
-    // second native transition is needed for successful stream completion.
-    store_inflater_checksum(recv(), checksum);
-  }
-  if ((static_cast<uint64_t>(result) >> 62) == 3) {
-    jobject recv_handle = JNIHandles::make_local(current, recv());
-    {
-      ThreadToNativeFromVM transition(current);
-      result = ZipLibrary::complete(current->jni_environment(), inflate, recv_handle,
-        stream, input_len, output_len, params, static_cast<jint>(result));
+  const uint64_t status = static_cast<uint64_t>(result) >> 62;
+  // Normal progress (00) and dictionary requests (10) need no completion
+  // work. Share one status gate for finished (01) and error (11) results.
+  if ((status & 1) != 0) {
+    if (status == 1) {
+      // Arrays are unpinned and recv is a GC-safe handle. No second native
+      // transition is needed to store the completed inflater checksum.
+      if (inflate) store_inflater_checksum(recv(), checksum);
+    } else {
+      jobject recv_handle = JNIHandles::make_local(current, recv());
+      {
+        ThreadToNativeFromVM transition(current);
+        result = ZipLibrary::complete(current->jni_environment(), inflate, recv_handle,
+          stream, input_len, output_len, params, static_cast<jint>(result));
+      }
+      JNIHandles::destroy_local(recv_handle);
     }
-    JNIHandles::destroy_local(recv_handle);
   }
   return result;
 }

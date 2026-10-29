@@ -44,7 +44,7 @@ typedef jint(*ZIP_Adler32Byte_t)(jint adler, jint value);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
-typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, jint, jint, jint*);
+typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, intptr_t, jint);
 static ZIP_Process_t ZIP_Process = nullptr;
 typedef jlong (*ZIP_Complete_t)(JNIEnv*, jboolean, jobject, jlong, jint, jint, jint, jint);
 static ZIP_Complete_t ZIP_Complete = nullptr;

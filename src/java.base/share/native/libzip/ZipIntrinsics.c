@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <stdint.h>
 #include "jni.h"
 #include "jlong.h"
 #include "zip_zlib_backend.h"
@@ -38,19 +39,26 @@ JNIEXPORT jlong JNICALL ZIP_FinishDeflate(JNIEnv*, jobject, jlong, jint, jint, j
 JNIEXPORT jlong JNICALL
 ZIP_Process(jboolean inflate, jlong stream,
             jlong input, jint inputLen, jlong output, jint outputLen,
-            jint flush, jint params, jint *checksum) {
-    jint status = inflate ? ZIP_Inflate(stream, input, inputLen, output, outputLen)
-                          : ZIP_Deflate(stream, input, inputLen, output, outputLen, flush, params);
-    if ((status != Z_OK && status != Z_STREAM_END && status != Z_BUF_ERROR &&
-         !(inflate && status == Z_NEED_DICT)) ||
-        (!inflate && (params & 1) && status == Z_STREAM_END)) {
+            intptr_t volatile control, jint params) {
+    if (inflate) {
+        jint status = ZIP_Inflate(stream, input, inputLen, output, outputLen);
+        // Inflate has no flush argument. Its control slot instead carries a
+        // call-local checksum output, read only at completion. Volatile keeps
+        // that value out of registers across ordinary processing calls.
+        if (status == Z_OK || status == Z_BUF_ERROR || status == Z_NEED_DICT) {
+            return ZIP_FinishInflate(NULL, NULL, stream, inputLen, outputLen, status);
+        }
+        if (status == Z_STREAM_END) {
+            // The scalar belongs to the VM caller's stack and is never retained.
+            *(jint *)control = (jint)((z_stream *)jlong_to_ptr(stream))->adler;
+            return ZIP_FinishInflate(NULL, NULL, stream, inputLen, outputLen, status);
+        }
         return ZIP_ERROR | (jlong)(unsigned int)status;
     }
-    if (inflate) {
-        // Copy the completed checksum with the existing processing call. This
-        // scalar belongs to the VM caller's stack and is never retained.
-        if (status == Z_STREAM_END) *checksum = (jint)((z_stream *)jlong_to_ptr(stream))->adler;
-        return ZIP_FinishInflate(NULL, NULL, stream, inputLen, outputLen, status);
+    jint status = ZIP_Deflate(stream, input, inputLen, output, outputLen, (jint)control, params);
+    if ((status != Z_OK && status != Z_STREAM_END && status != Z_BUF_ERROR) ||
+        ((params & 1) && status == Z_STREAM_END)) {
+        return ZIP_ERROR | (jlong)(unsigned int)status;
     }
     return ZIP_FinishDeflate(NULL, NULL, stream, inputLen, outputLen, params, status);
 }
