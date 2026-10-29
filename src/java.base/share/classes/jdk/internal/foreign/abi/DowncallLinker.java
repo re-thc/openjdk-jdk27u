@@ -50,11 +50,12 @@ public class DowncallLinker {
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
-    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MhUtil.findVirtual(
-            MethodHandles.lookup(), DowncallLinker.class, "invokeInterpBindings",
-            methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
-
-    private static final MethodHandle EMPTY_OBJECT_ARRAY_HANDLE = MethodHandles.constant(Object[].class, new Object[0]);
+    private static final class InterpreterHandles {
+        private static final MethodHandle INVOKE_BINDINGS = MhUtil.findVirtual(
+                MethodHandles.lookup(), DowncallLinker.class, "invokeInterpBindings",
+                methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
+        private static final MethodHandle EMPTY_OBJECT_ARRAY = MethodHandles.constant(Object[].class, new Object[0]);
+    }
 
     private final ABIDescriptor abi;
     private final CallingSequence callingSequence;
@@ -84,7 +85,7 @@ public class DowncallLinker {
             handle = BindingSpecializer.specializeDowncall(handle, callingSequence, abi);
          } else {
             InvocationData invData = new InvocationData(handle, callingSequence);
-            handle = insertArguments(MH_INVOKE_INTERP_BINDINGS.bindTo(this), 2, invData);
+            handle = insertArguments(InterpreterHandles.INVOKE_BINDINGS.bindTo(this), 2, invData);
             MethodType interpType = callingSequence.callerMethodType();
             if (callingSequence.needsReturnBuffer()) {
                 // Return buffer is supplied by invokeInterpBindings
@@ -108,7 +109,7 @@ public class DowncallLinker {
     // Funnel from type to Object[]
     private static MethodHandle makeCollectorHandle(MethodType type) {
         return type.parameterCount() == 0
-            ? EMPTY_OBJECT_ARRAY_HANDLE
+            ? InterpreterHandles.EMPTY_OBJECT_ARRAY
             : identity(Object[].class)
                 .asCollector(Object[].class, type.parameterCount())
                 .asType(type.changeReturnType(Object[].class));
