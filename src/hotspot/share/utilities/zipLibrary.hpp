@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_ZIPLIBRARY_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
  // Type definitions for zip file and zip file entry
 typedef void* jzfile;
@@ -41,6 +42,11 @@ typedef struct {
 } jzentry;
 
 class ZipLibrary : AllStatic {
+ private:
+  typedef jlong (*ProcessFunc)(jboolean, jlong, jlong, jint, jlong, jint, jint, jint, jint*);
+  static Atomic<address> _process_entry;
+  static address initialize_process();
+
  public:
   static void** open(const char* name, char** pmsg);
   static void close(jzfile* zip);
@@ -58,7 +64,13 @@ class ZipLibrary : AllStatic {
                         jint input_len, jint output_len, jint params, jint status);
   static jlong process(jboolean inflate, jlong stream,
                        jlong input, jint input_len, jlong output, jint output_len,
-                       jint flush, jint params);
+                       jint flush, jint params, jint* checksum) {
+    // Reuse the loaded DLL entry without a per-call C++ forwarding frame.
+    address entry = _process_entry.load_acquire();
+    if (entry == nullptr) entry = initialize_process();
+    return CAST_TO_FN_PTR(ProcessFunc, entry)(inflate, stream, input, input_len,
+        output, output_len, flush, params, checksum);
+  }
 };
 
 #endif // SHARE_UTILITIES_ZIPLIBRARY_HPP

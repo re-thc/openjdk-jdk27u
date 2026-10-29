@@ -22,15 +22,43 @@
  *
  */
 
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "memory/universe.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/zipRuntime.hpp"
 #include "utilities/zipLibrary.hpp"
+
+// Resolve only when an Inflater completes. Do not preload its class at VM
+// startup or select a same-named field declared by a user subclass.
+static Atomic<int> inflater_checksum_offset{0};
+
+static NOINLINE int resolve_inflater_checksum_offset(oop receiver) {
+  Klass* klass = receiver->klass();
+  while (klass != nullptr && klass->name() != vmSymbols::java_util_zip_Inflater()) {
+    klass = klass->super();
+  }
+  guarantee(klass != nullptr && klass->class_loader() == nullptr, "expected bootstrap Inflater");
+  int offset = 0;
+  JavaClasses::compute_offset(offset, InstanceKlass::cast(klass),
+      vmSymbols::zip_outputConsumed_name(), vmSymbols::int_signature());
+  guarantee(offset > 0, "missing Inflater checksum output");
+  inflater_checksum_offset.release_store(offset);
+  return offset;
+}
+
+static void store_inflater_checksum(oop receiver, jint checksum) {
+  int offset = inflater_checksum_offset.load_acquire();
+  if (offset == 0) offset = resolve_inflater_checksum_offset(receiver);
+  receiver->int_field_put(offset, checksum);
+}
 
 jlong ZipRuntime::process(jint inflate, oop receiver, jlong stream,
     oop input, jlong input_offset, jint input_len,
@@ -51,14 +79,20 @@ jlong ZipRuntime::process(jint inflate, oop receiver, jlong stream,
   if (in.not_null()) in_addr += cast_from_oop<jlong>(in()) + arrayOopDesc::base_offset_in_bytes(T_BYTE);
   if (out.not_null()) out_addr += cast_from_oop<jlong>(out()) + arrayOopDesc::base_offset_in_bytes(T_BYTE);
   jlong result;
+  jint checksum = 0;
   {
     ThreadToNativeFromVM transition(current);
     result = ZipLibrary::process(inflate, stream, in_addr, input_len,
-                                out_addr, output_len, flush, params);
+                                out_addr, output_len, flush, params, &checksum);
   }
   if (out.not_null()) Universe::heap()->unpin_object(current, out());
   if (in.not_null()) Universe::heap()->unpin_object(current, in());
   if (pin_arrays) current->exit_jni_deferred_suspension();
+  if (inflate && (static_cast<uint64_t>(result) >> 62) == 1) {
+    // Both arrays are unpinned and recv is a GC-safe handle. No JNI call or
+    // second native transition is needed for successful stream completion.
+    store_inflater_checksum(recv(), checksum);
+  }
   if ((static_cast<uint64_t>(result) >> 62) == 3) {
     jobject recv_handle = JNIHandles::make_local(current, recv());
     {

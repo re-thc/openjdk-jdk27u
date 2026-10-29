@@ -544,6 +544,7 @@ class SerializeClosure;
   template(char_signature,                            "C")                                        \
   template(double_signature,                          "D")                                        \
   template(float_signature,                           "F")                                        \
+  template(zip_outputConsumed_name,                   "outputConsumed")                           \
   template(int_signature,                             "I")                                        \
   template(long_signature,                            "J")                                        \
   template(short_signature,                           "S")                                        \

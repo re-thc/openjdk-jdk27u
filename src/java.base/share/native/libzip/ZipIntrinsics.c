@@ -38,7 +38,7 @@ JNIEXPORT jlong JNICALL ZIP_FinishDeflate(JNIEnv*, jobject, jlong, jint, jint, j
 JNIEXPORT jlong JNICALL
 ZIP_Process(jboolean inflate, jlong stream,
             jlong input, jint inputLen, jlong output, jint outputLen,
-            jint flush, jint params) {
+            jint flush, jint params, jint *checksum) {
     jint status = inflate ? ZIP_Inflate(stream, input, inputLen, output, outputLen)
                           : ZIP_Deflate(stream, input, inputLen, output, outputLen, flush, params);
     if ((status != Z_OK && status != Z_STREAM_END && status != Z_BUF_ERROR &&
@@ -46,7 +46,12 @@ ZIP_Process(jboolean inflate, jlong stream,
         (!inflate && (params & 1) && status == Z_STREAM_END)) {
         return ZIP_ERROR | (jlong)(unsigned int)status;
     }
-    if (inflate) return ZIP_FinishInflate(NULL, NULL, stream, inputLen, outputLen, status);
+    if (inflate) {
+        // Copy the completed checksum with the existing processing call. This
+        // scalar belongs to the VM caller's stack and is never retained.
+        if (status == Z_STREAM_END) *checksum = (jint)((z_stream *)jlong_to_ptr(stream))->adler;
+        return ZIP_FinishInflate(NULL, NULL, stream, inputLen, outputLen, status);
+    }
     return ZIP_FinishDeflate(NULL, NULL, stream, inputLen, outputLen, params, status);
 }
 

@@ -111,6 +111,29 @@ public class InflaterInputStream extends FilterInputStream {
         buf = new byte[size];
     }
 
+    // GZIP needs the receiver class before creating its owned raw inflater.
+    // The final getClass() call does not invoke subclass code.
+    @SuppressWarnings("this-escape")
+    InflaterInputStream(InputStream in, int size) {
+        super(checkGZIPInput(in, size));
+        inf = new Inflater(true, getClass() == GZIPInputStream.class);
+        usesDefaultInflater = true;
+        try {
+            buf = new byte[size];
+        } catch (OutOfMemoryError error) {
+            inf.end();
+            throw error;
+        }
+    }
+
+    private static InputStream checkGZIPInput(InputStream in, int size) {
+        Objects.requireNonNull(in);
+        if (size <= 0) {
+            throw new IllegalArgumentException("buffer size <= 0");
+        }
+        return in;
+    }
+
     /**
      * Creates a new input stream with the specified decompressor and a
      * default buffer size.
