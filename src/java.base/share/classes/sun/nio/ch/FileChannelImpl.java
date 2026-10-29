@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,11 +722,12 @@ public class FileChannelImpl
      * Transfers bytes from this channel's file to the resource that the given file
      * descriptor is connected to.
      */
-    private long transferToFileDescriptor(long position, int count, FileDescriptor targetFD) {
+    private long transferToFileDescriptor(long position, int count, FileDescriptor targetFD,
+                                         boolean isSocket) {
         long n;
         boolean append = fdAccess.getAppend(targetFD);
         do {
-            n = nd.transferTo(fd, position, count, targetFD, append);
+            n = nd.transferTo(fd, position, count, targetFD, append, isSocket);
         } while ((n == IOStatus.INTERRUPTED) && isOpen());
         return n;
     }
@@ -744,7 +746,7 @@ public class FileChannelImpl
             try {
                 int targetIndex = target.beforeTransfer();
                 try {
-                    long n = transferToFileDescriptor(position, count, target.fd);
+                    long n = transferToFileDescriptor(position, count, target.fd, false);
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
@@ -772,7 +774,7 @@ public class FileChannelImpl
             try {
                 target.beforeTransferTo();
                 try {
-                    long n = transferToFileDescriptor(position, count, target.getFD());
+                    long n = transferToFileDescriptor(position, count, target.getFD(), true);
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {

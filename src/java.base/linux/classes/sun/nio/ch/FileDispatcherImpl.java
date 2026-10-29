@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +38,8 @@ class FileDispatcherImpl extends UnixFileDispatcherImpl {
     }
 
     long transferTo(FileDescriptor src, long position, long count,
-                    FileDescriptor dst, boolean append) {
-        return transferTo0(src, position, count, dst, append);
+                    FileDescriptor dst, boolean append, boolean isSocket) {
+        return transferTo0(src, position, count, dst, append, isSocket);
     }
 
     long transferFrom(FileDescriptor src, FileDescriptor dst,
@@ -50,7 +51,7 @@ class FileDispatcherImpl extends UnixFileDispatcherImpl {
 
     static native long transferTo0(FileDescriptor src, long position,
                                    long count, FileDescriptor dst,
-                                   boolean append);
+                                   boolean append, boolean isSocket);
 
     static native long transferFrom0(FileDescriptor src, FileDescriptor dst,
                                      long position, long count, boolean append);

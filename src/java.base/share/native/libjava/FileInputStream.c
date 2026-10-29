@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +85,21 @@ Java_java_io_FileInputStream_length0(JNIEnv *env, jobject this) {
         return -1;
     }
     if ((length = IO_GetLength(fd)) == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "GetLength failed");
+    }
+    return length;
+}
+
+/* Returns -2 for a nonregular file; errors must not populate the kind cache. */
+JNIEXPORT jlong JNICALL
+Java_java_io_FileInputStream_regularFileLength0(JNIEnv *env, jobject this) {
+    FD fd = getFD(env, this, fis_fd);
+    if (fd == -1) {
+        JNU_ThrowIOException(env, "Stream Closed");
+        return -1;
+    }
+    jlong length = IO_GetRegularFileLength(fd);
+    if (length == -1) {
         JNU_ThrowIOExceptionWithLastError(env, "GetLength failed");
     }
     return length;
