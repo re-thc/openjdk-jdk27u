@@ -50,13 +50,9 @@ on:
         required: false
         type: string
         default: '[ "debug", "release" ]'
-      gcc-major-version:
+      gcc-version:
         required: true
         type: string
-      gcc-package-suffix:
-        required: false
-        type: string
-        default: ''
       apt-architecture:
         required: false
         type: string
@@ -112,25 +108,25 @@ jobs:
         run: |
           # Set a proper suffix for packages if using a different architecture
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
-            echo 'suffix=:${{ inputs.apt-architecture }}' >> $GITHUB_OUTPUT
+            echo 'suffix=:${{ inputs.apt-architecture }}' >> "$GITHUB_OUTPUT"
           fi
 
       # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
-      - name: 'Install toolchain and dependencies'
+      - name: 'Install dependencies'
         run: |
           # Install dependencies using apt-get
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
             sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
           fi
-          # Ubuntu 26.04 packages GCC 16 in universe; it is not preinstalled.
           sudo apt update
           sudo apt install --only-upgrade apt
           sudo apt install \
-            gcc-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
-            g++-${{ inputs.gcc-major-version }}${{ inputs.gcc-package-suffix }} \
             ccache \
             ${{ inputs.apt-extra-packages }}
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
+
+      - name: 'Install released GCC'
+        id: gcc
+        run: bash .github/scripts/install-gcc.sh '${{ inputs.gcc-version }}' "$RUNNER_TEMP/gcc"
 
       - name: 'Install mold 3.0.0'
         run: |
@@ -149,26 +145,25 @@ jobs:
           tar --extract --file "$archive" --strip-components=1 --directory "$RUNNER_TEMP/mold"
           echo "$RUNNER_TEMP/mold/bin" >> "$GITHUB_PATH"
 
-      - name: 'Verify GCC version'
-        run: |
-          test "$(gcc -dumpversion)" = "${{ inputs.gcc-major-version }}"
-          test "$(g++ -dumpversion)" = "${{ inputs.gcc-major-version }}"
-          gcc --version
-          mold --version
-
       - name: 'Restore compiler cache'
         uses: ./.github/actions/compiler-cache
         with:
           platform: ${{ inputs.platform }}
           debug-level: ${{ matrix.debug-level }}
-          toolchain: gcc-${{ inputs.gcc-major-version }}
+          toolchain: ${{ steps.gcc.outputs.identity }}
 
       - name: 'Configure'
+        env:
+          CC: ${{ steps.gcc.outputs.path }}/gcc
+          CXX: ${{ steps.gcc.outputs.path }}/g++
         run: >
           bash bin/configure-dev
           --with-conf-name=${{ inputs.platform }}
+          --with-toolchain-path=${{ steps.gcc.outputs.path }}
+          --with-sysroot=/
+          --with-extra-ldflags=-specs=builtin.specs
           ${{ matrix.debug-level == 'debug' && '--with-debug-level=fastdebug' || '' }}
-          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-version-opt="${GITHUB_ACTOR}-${GITHUB_SHA}"
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
@@ -181,6 +176,21 @@ jobs:
           cat config.log &&
           exit 1)
 
+      - name: 'Check configured GCC selection'
+        env:
+          GCC_BIN: ${{ steps.gcc.outputs.path }}
+          GCC_VERSION: ${{ inputs.gcc-version }}
+        run: |
+          spec="build/${{ inputs.platform }}/spec.gmk"
+          test "$(sed -n 's/^CC_VERSION_NUMBER := //p' "$spec")" = "$GCC_VERSION"
+          test "$(sed -n 's/^CXX_VERSION_NUMBER := //p' "$spec")" = "$GCC_VERSION"
+          cc=$(sed -n 's/^CC := *//p' "$spec")
+          cxx=$(sed -n 's/^CXX := *//p' "$spec")
+          test "${cc##* }" = "$GCC_BIN/gcc"
+          test "${cxx##* }" = "$GCC_BIN/g++"
+          test "$(sed -n 's/^SYSROOT := //p' "$spec")" = /
+          mold --version
+
       - name: 'Build'
         id: build
         uses: ./.github/actions/do-build
@@ -188,6 +198,21 @@ jobs:
           make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: "${{ matrix.debug-level == 'debug' && '-debug' || '' }}"
+        if: ${{ inputs.dry-run == false }}
+
+      - name: 'Check GCC runtime paths'
+        run: |
+          image="build/${{ inputs.platform }}/images/jdk"
+          test -d "$image"
+          while IFS= read -r -d '' artifact; do
+            if readelf --file-header "$artifact" > /dev/null 2>&1; then
+              dynamic=$(readelf --dynamic "$artifact")
+              if grep -F "$RUNNER_TEMP/gcc" <<< "$dynamic"; then
+                echo "JDK artifact embeds the temporary GCC install path: $artifact" >&2
+                exit 1
+              fi
+            fi
+          done < <(find "$image" -type f -print0)
         if: ${{ inputs.dry-run == false }}
 
       - name: 'Check development profile'

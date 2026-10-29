@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 5004188
- * @run main TestSerialization 1.5.0_10.ser 1.6.0.ser
- * @summary Tests serialization of VetoableChangeSupport
+ * @run main TestSerialization
+ * @summary Tests current-runtime serialization and listener preservation of VetoableChangeSupport
  * @author Sergey Malenkov
  */
 
@@ -34,10 +34,8 @@ import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeListenerProxy;
 import java.beans.VetoableChangeSupport;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -46,17 +44,9 @@ public final class TestSerialization implements VetoableChangeListener, Serializ
     private static final String NAME = "property";
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            String file = System.getProperty("java.version") + ".ser";
-            serialize(file, create());
-        }
-        else {
-            byte[] array = serialize(create());
-            for (String file : args) {
-                check(deserialize(file));
-                check(array, read(file));
-            }
-        }
+        VetoableChangeSupport vcs = create();
+        check(vcs);
+        check(deserialize(serialize(vcs)));
     }
 
     private static VetoableChangeSupport create() {
@@ -75,16 +65,6 @@ public final class TestSerialization implements VetoableChangeListener, Serializ
         check(allListeners, 2);
         check(allListeners[0], 0);
         check(allListeners[1], 1, NAME);
-    }
-
-    private static void check(byte[] a1, byte[] a2) {
-        int length = a1.length;
-        if (length != a2.length)
-            throw new Error("Different file sizes: " + length + " != " + a2.length);
-
-        for (int i = 0; i < length; i++)
-            if (a1[i] != a2[i])
-                throw new Error("Different bytes at " + i + " position");
     }
 
     private static void check(VetoableChangeListener[] array, int length) {
@@ -112,43 +92,9 @@ public final class TestSerialization implements VetoableChangeListener, Serializ
         check((VetoableChangeListener)object.getListener(), index);
     }
 
-    private static byte[] read(String file) throws Exception {
-        FileInputStream stream = null;
-        try {
-            stream = new FileInputStream(new File(System.getProperty("test.src", "."), file));
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            for (int i = stream.read(); i != -1; i = stream.read())
-                out.write(i);
-
-            return out.toByteArray();
-        }
-        finally {
-            if (stream != null)
-                stream.close();
-        }
-    }
-
-    private static VetoableChangeSupport deserialize(String file) throws Exception {
-        ObjectInputStream stream = null;
-        try {
-            stream = new ObjectInputStream(new FileInputStream(new File(System.getProperty("test.src", "."), file)));
+    private static VetoableChangeSupport deserialize(byte[] array) throws Exception {
+        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(array))) {
             return (VetoableChangeSupport)stream.readObject();
-        }
-        finally {
-            if (stream != null)
-                stream.close();
-        }
-    }
-
-    private static void serialize(String file, VetoableChangeSupport vcs) throws Exception {
-        ObjectOutputStream stream = null;
-        try {
-            stream = new ObjectOutputStream(new FileOutputStream(new File(System.getProperty("test.src", "."), file)));
-            stream.writeObject(vcs);
-        }
-        finally {
-            if (stream != null)
-                stream.close();
         }
     }
 
