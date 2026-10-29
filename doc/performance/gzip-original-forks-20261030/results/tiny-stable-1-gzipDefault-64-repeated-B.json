@@ -1,0 +1,60 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.util.zip.GZIPLifecycle.gzipDefault",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Users/rethcmm/gh/openjdk-jdk27u/build/gzip-candidate/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-gzip-qualification",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "content" : "repeated",
+            "size" : "64"
+        },
+        "primaryMetric" : {
+            "score" : 249.0469482603264,
+            "scoreError" : 11.345211994713559,
+            "scoreConfidence" : [
+                237.70173626561282,
+                260.3921602550399
+            ],
+            "scorePercentiles" : {
+                "0.0" : 248.55043949445835,
+                "50.0" : 248.84594684175636,
+                "90.0" : 249.74445844476446,
+                "95.0" : 249.74445844476446,
+                "99.0" : 249.74445844476446,
+                "99.9" : 249.74445844476446,
+                "99.99" : 249.74445844476446,
+                "99.999" : 249.74445844476446,
+                "99.9999" : 249.74445844476446,
+                "100.0" : 249.74445844476446
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    249.74445844476446,
+                    248.84594684175636,
+                    248.55043949445835
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

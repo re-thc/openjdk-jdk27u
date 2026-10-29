@@ -42,14 +42,23 @@ are timed. Creation and close are therefore amortized over 16 streams, not
 omitted in setup/teardown. All scores normalize to one stream.
 
 Each A/B observation uses a fresh JVM, one JMH thread, 256 MiB heap and
-SerialGC, with default ZIP/CRC intrinsics. Five A/B rounds alternate AB/BA
-order; case order reverses between rounds. Main runs warm up 3 x 400 ms and
+SerialGC, with default ZIP/CRC intrinsics. Five A/B rounds reverse case
+order between rounds. Correction: the order formula and case reversal kept
+the A/B order fixed per case; they did not alternate AB/BA within each case.
+All five original unprofiled 64-byte default-buffer pairs ran A then B.
+That suite is interleaved but not order-balanced. Main runs warm up 3 x 400 ms and
 measure 3 x 400 ms. The statistic below is the median measurement iteration
 per fork, then the median of five fork medians. Negative time change is
 faster. No correctness tests or other benchmark jobs ran concurrently;
 reference tests finished before the first benchmark. Host background tasks,
 CPU placement, clock rate and ASLR were not fixed. Initial thermal inspection
 reported no recorded thermal/performance warnings.
+
+The original ten unprofiled default-buffer timing-fork commands, raw results
+and console logs are now tracked in doc/performance/gzip-original-forks-20261030/.
+Those ~204 ns / ~248 ns timing JVMs did not capture compilation logs. Separate
+instrumented runs cannot establish their compiler state or inlining decisions.
+The newly recorded launch-order limitation is another possible source of bias.
 
 The main comparison:
 method          bytes    content    forks A/B      PR6 ns   candidate ns   time change

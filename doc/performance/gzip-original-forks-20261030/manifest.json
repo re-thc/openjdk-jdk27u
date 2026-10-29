@@ -1,0 +1,240 @@
+{
+  "dataset": "Original unprofiled tiny-stable 64-byte default-buffer GZIPLifecycle timing forks",
+  "runtime_revisions": {
+    "A": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+    "B": "d7150d6f56e08c441f2efbb67464a9388136caf2"
+  },
+  "B_runtime_equivalent_to_handback": "ac242a073e42cbb6bc6a55091f922add36ae674e",
+  "B_equivalence_reason": "The handback commit adds only benchmark and qualification documents to d7150d6f.",
+  "benchmark_source_revision": "ac242a073e42cbb6bc6a55091f922add36ae674e",
+  "benchmark_path": "test/micro/org/openjdk/bench/java/util/zip/GZIPLifecycle.java",
+  "benchmark_source_sha256": "40f6503161e2e99d351b8f0dc8066190bedf80e10b5c56dbdb04c62b0e31709a",
+  "benchmark_class_sha256": "c1777ef04fd559d90bf9598dcb8ca9e0a9468f2c4527c4c2d2efb72db1ebe861",
+  "machine": {
+    "cpu": "Apple M6",
+    "cores": 12,
+    "memory_bytes": 17179869184,
+    "os": "macOS 27.0.1 (26A434)",
+    "arch": "arm64"
+  },
+  "toolchain": {
+    "clang": "Apple clang 21.0.0 (clang-2100.3.34.2), Xcode 27.1",
+    "boot_jdk": "Homebrew OpenJDK 27.0.1.0.3",
+    "native_cpu_baseline": "-mcpu=apple-m1"
+  },
+  "aggregation": "Median of three measurement iterations per fork, then median of five fork medians per variant.",
+  "aggregate_median_ns_per_stream": {
+    "A": 204.24059967322904,
+    "B": 248.17671768179298
+  },
+  "recorded_pair_launch_orders": {
+    "0": [
+      "A",
+      "B"
+    ],
+    "1": [
+      "A",
+      "B"
+    ],
+    "2": [
+      "A",
+      "B"
+    ],
+    "3": [
+      "A",
+      "B"
+    ],
+    "4": [
+      "A",
+      "B"
+    ]
+  },
+  "launch_order_correction": "All five original default-buffer pairs were A then B; they were interleaved but not order-balanced.",
+  "recorded_commands": "commands.jsonl: unchanged selected lines from the original launcher record, in execution order.",
+  "command_scope": "Exact recorded JMH launcher invocations. Full internal OS commands and PIDs of the spawned JVMs were not separately recorded.",
+  "compilation_logs_available_from_these_forks": false,
+  "separate_diagnostic_logs_included": false,
+  "can_determine_these_forks_compilation_or_inlining_from_available_evidence": false,
+  "forks": [
+    {
+      "id": "tiny-stable-0-gzipDefault-64-repeated-A",
+      "variant": "A",
+      "runtime_source_revision": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+      "recorded_command_timestamp_unix": 1793297443.053765,
+      "result": "results/tiny-stable-0-gzipDefault-64-repeated-A.json",
+      "console_log": "console/tiny-stable-0-gzipDefault-64-repeated-A.log",
+      "measurement_iterations_ns_per_stream": [
+        203.66305804867662,
+        203.78296665827352,
+        203.90780792736106
+      ],
+      "fork_median_ns_per_stream": 203.78296665827352,
+      "jmh_mean_ns_per_stream": 203.78461087810373,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-0-gzipDefault-64-repeated-B",
+      "variant": "B",
+      "runtime_source_revision": "d7150d6f56e08c441f2efbb67464a9388136caf2",
+      "recorded_command_timestamp_unix": 1793297449.501784,
+      "result": "results/tiny-stable-0-gzipDefault-64-repeated-B.json",
+      "console_log": "console/tiny-stable-0-gzipDefault-64-repeated-B.log",
+      "measurement_iterations_ns_per_stream": [
+        246.04059112858909,
+        246.26261073986518,
+        246.47594959999375
+      ],
+      "fork_median_ns_per_stream": 246.26261073986518,
+      "jmh_mean_ns_per_stream": 246.25971715614935,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-1-gzipDefault-64-repeated-A",
+      "variant": "A",
+      "runtime_source_revision": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+      "recorded_command_timestamp_unix": 1793297481.717429,
+      "result": "results/tiny-stable-1-gzipDefault-64-repeated-A.json",
+      "console_log": "console/tiny-stable-1-gzipDefault-64-repeated-A.log",
+      "measurement_iterations_ns_per_stream": [
+        203.07690646683588,
+        203.21744758553865,
+        203.23662259309697
+      ],
+      "fork_median_ns_per_stream": 203.21744758553865,
+      "jmh_mean_ns_per_stream": 203.17699221515716,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-1-gzipDefault-64-repeated-B",
+      "variant": "B",
+      "runtime_source_revision": "d7150d6f56e08c441f2efbb67464a9388136caf2",
+      "recorded_command_timestamp_unix": 1793297488.170489,
+      "result": "results/tiny-stable-1-gzipDefault-64-repeated-B.json",
+      "console_log": "console/tiny-stable-1-gzipDefault-64-repeated-B.log",
+      "measurement_iterations_ns_per_stream": [
+        249.74445844476446,
+        248.84594684175636,
+        248.55043949445835
+      ],
+      "fork_median_ns_per_stream": 248.84594684175636,
+      "jmh_mean_ns_per_stream": 249.0469482603264,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-2-gzipDefault-64-repeated-A",
+      "variant": "A",
+      "runtime_source_revision": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+      "recorded_command_timestamp_unix": 1793297494.6116369,
+      "result": "results/tiny-stable-2-gzipDefault-64-repeated-A.json",
+      "console_log": "console/tiny-stable-2-gzipDefault-64-repeated-A.log",
+      "measurement_iterations_ns_per_stream": [
+        243.4833407741826,
+        243.44423017222763,
+        243.58744708785443
+      ],
+      "fork_median_ns_per_stream": 243.4833407741826,
+      "jmh_mean_ns_per_stream": 243.50500601142156,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-2-gzipDefault-64-repeated-B",
+      "variant": "B",
+      "runtime_source_revision": "d7150d6f56e08c441f2efbb67464a9388136caf2",
+      "recorded_command_timestamp_unix": 1793297501.054225,
+      "result": "results/tiny-stable-2-gzipDefault-64-repeated-B.json",
+      "console_log": "console/tiny-stable-2-gzipDefault-64-repeated-B.log",
+      "measurement_iterations_ns_per_stream": [
+        248.2139315989793,
+        248.16662678179716,
+        248.17671768179298
+      ],
+      "fork_median_ns_per_stream": 248.17671768179298,
+      "jmh_mean_ns_per_stream": 248.18575868752313,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-3-gzipDefault-64-repeated-A",
+      "variant": "A",
+      "runtime_source_revision": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+      "recorded_command_timestamp_unix": 1793297533.276566,
+      "result": "results/tiny-stable-3-gzipDefault-64-repeated-A.json",
+      "console_log": "console/tiny-stable-3-gzipDefault-64-repeated-A.log",
+      "measurement_iterations_ns_per_stream": [
+        252.8926652097972,
+        252.84736365948515,
+        252.43168088539312
+      ],
+      "fork_median_ns_per_stream": 252.84736365948515,
+      "jmh_mean_ns_per_stream": 252.72390325155848,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-3-gzipDefault-64-repeated-B",
+      "variant": "B",
+      "runtime_source_revision": "d7150d6f56e08c441f2efbb67464a9388136caf2",
+      "recorded_command_timestamp_unix": 1793297539.726741,
+      "result": "results/tiny-stable-3-gzipDefault-64-repeated-B.json",
+      "console_log": "console/tiny-stable-3-gzipDefault-64-repeated-B.log",
+      "measurement_iterations_ns_per_stream": [
+        247.82445133297477,
+        247.87895528614902,
+        247.85176494087256
+      ],
+      "fork_median_ns_per_stream": 247.85176494087256,
+      "jmh_mean_ns_per_stream": 247.85172385333212,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-4-gzipDefault-64-repeated-A",
+      "variant": "A",
+      "runtime_source_revision": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+      "recorded_command_timestamp_unix": 1793297546.175606,
+      "result": "results/tiny-stable-4-gzipDefault-64-repeated-A.json",
+      "console_log": "console/tiny-stable-4-gzipDefault-64-repeated-A.log",
+      "measurement_iterations_ns_per_stream": [
+        204.24059967322904,
+        204.27523350839385,
+        204.10871733605788
+      ],
+      "fork_median_ns_per_stream": 204.24059967322904,
+      "jmh_mean_ns_per_stream": 204.20818350589357,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    },
+    {
+      "id": "tiny-stable-4-gzipDefault-64-repeated-B",
+      "variant": "B",
+      "runtime_source_revision": "d7150d6f56e08c441f2efbb67464a9388136caf2",
+      "recorded_command_timestamp_unix": 1793297552.6230311,
+      "result": "results/tiny-stable-4-gzipDefault-64-repeated-B.json",
+      "console_log": "console/tiny-stable-4-gzipDefault-64-repeated-B.log",
+      "measurement_iterations_ns_per_stream": [
+        248.79000692632675,
+        248.99678880355938,
+        249.19387645849122
+      ],
+      "fork_median_ns_per_stream": 248.99678880355938,
+      "jmh_mean_ns_per_stream": 248.9935573961258,
+      "compilation_logging_enabled": false,
+      "compilation_log": null,
+      "missing_compilation_log_reason": "LogCompilation was not enabled for this original timing fork."
+    }
+  ]
+}
