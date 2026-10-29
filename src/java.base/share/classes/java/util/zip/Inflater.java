@@ -616,6 +616,15 @@ public class Inflater implements AutoCloseable {
         }
     }
 
+    // Only for an owned, fresh raw inflater. The native mode survives reset()
+    // and exposes the final payload CRC through getAdler() at end of stream.
+    boolean enableRawCRC32() {
+        synchronized (zsRef) {
+            ensureOpen();
+            return enableRawCRC32(zsRef.address());
+        }
+    }
+
     /**
      * Returns the total number of compressed bytes input so far.
      *
@@ -765,6 +774,7 @@ public class Inflater implements AutoCloseable {
         long inputAddress, int inputLen,
         long outputAddress, int outputLen) throws DataFormatException;
     private static native int getAdler(long addr);
+    private static native boolean enableRawCRC32(long addr);
     private static native void reset(long addr);
     private static native void end(long addr);
 

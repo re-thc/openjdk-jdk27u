@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +45,11 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  */
 public class CRC32 implements Checksum {
     private int crc;
+
+    // Cache the completed payload CRC from GZIPInputStream's owned inflater.
+    void setValue(int value) {
+        crc = value;
+    }
 
     /**
      * Creates a new CRC32 object.

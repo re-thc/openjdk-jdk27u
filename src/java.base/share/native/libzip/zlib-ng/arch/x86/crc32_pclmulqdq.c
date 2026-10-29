@@ -20,6 +20,10 @@
 #ifdef X86_PCLMULQDQ_CRC
 
 #include "crc32_pclmulqdq_tpl.h"
+#define CRC32_RAW_COPY_NAME crc32_raw_copy_pclmulqdq
+#define CRC32_RAW_UPDATE_NAME crc32_raw_update_pclmulqdq
+#define CRC32_RAW_FINAL_NAME crc32_raw_final_pclmulqdq
+#include "crc32_raw_fold_tpl.h"
 
 Z_INTERNAL uint32_t crc32_pclmulqdq(uint32_t crc, const uint8_t *buf, size_t len) {
     return crc32_copy_impl(crc, NULL, buf, len, 0);

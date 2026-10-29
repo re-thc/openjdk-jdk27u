@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +86,12 @@ public class GZIPInputStream extends InflaterInputStream {
     private static final boolean alwaysReadNextMember =
             Boolean.getBoolean("jdk.util.gzip.tryReadAheadAfterTrailer");
 
+    // Experimental opt-in; Java continues to own headers and trailers.
+    private static final boolean useNativeCRC =
+            Boolean.getBoolean("jdk.util.gzip.useNativeCRC");
+
+    private final boolean inflaterCRC;
+
     /**
      * GZIP header magic number.
      */
@@ -143,6 +150,9 @@ public class GZIPInputStream extends InflaterInputStream {
             // raise an exception, so we pass "true" for
             // the "failOnEOF" param.
             readHeader(in, true);
+            // Subclasses can observe or replace the protected crc and inf fields.
+            inflaterCRC = useNativeCRC && getClass() == GZIPInputStream.class
+                    && inf.enableRawCRC32();
         } catch (IOException ioe) {
             this.inf.end();
             throw ioe;
@@ -217,6 +227,9 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         int n = super.read(buf, off, len);
         if (n == -1) {
+            if (inflaterCRC) {
+                crc.setValue(inf.getAdler());
+            }
             if (hasNoMoreMembers()) {
                 eos = true;
             } else {
@@ -226,7 +239,7 @@ public class GZIPInputStream extends InflaterInputStream {
                 // decompressed data.
                 return this.read(buf, off, len);
             }
-        } else {
+        } else if (!inflaterCRC) {
             crc.update(buf, off, n);
         }
         return n;

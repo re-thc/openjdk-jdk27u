@@ -299,6 +299,16 @@ Java_java_util_zip_Inflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
     return ((z_stream *)jlong_to_ptr(addr))->adler;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_java_util_zip_Inflater_enableRawCRC32(JNIEnv *env, jclass cls, jlong addr)
+{
+#ifdef INCLUDE_ZLIBNG
+    return zng_inflateEnableRawCRC32(jlong_to_ptr(addr)) == Z_OK;
+#else
+    return JNI_FALSE;
+#endif
+}
+
 JNIEXPORT void JNICALL
 Java_java_util_zip_Inflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {

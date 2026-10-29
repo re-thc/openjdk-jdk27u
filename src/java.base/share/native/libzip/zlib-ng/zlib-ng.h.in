@@ -55,7 +55,7 @@ extern "C" {
 #define ZLIBNG_VER_REVISION 90
 #define ZLIBNG_VER_STATUS 0         /* 0=devel, 1-E=beta, F=Release (DEPRECATED) */
 #define ZLIBNG_VER_STATUSH 0x0      /* Hex values: 0=devel, 1-9=beta, A-E=Release Candidate, F=Release */
-#define ZLIBNG_VER_MODIFIED 0       /* non-zero if modified externally from zlib-ng */
+#define ZLIBNG_VER_MODIFIED 1       /* non-zero if modified externally from zlib-ng */
 
 /*
     The 'zlib' compression library provides in-memory compression and
@@ -960,6 +960,14 @@ int32_t zng_inflateCopy(zng_stream *dest, zng_stream *source);
    (such as zalloc being NULL).  msg is left unchanged in both source and
    destination.
 */
+
+/* Experimental raw CRC32. Enable after init/reset and before the first inflate
+ * call, while the raw stream is in HEAD state. Dictionary setup may precede it.
+ * Reset/ResetKeep retain it and reset the checksum; Reset2 disables it.
+ * adler is zero while decoding and is the final CRC only at STREAM_END.
+ * No header/trailer is parsed and no check value is validated in this mode. */
+Z_EXTERN Z_EXPORT
+int32_t zng_inflateEnableRawCRC32(zng_stream *strm);
 
 Z_EXTERN Z_EXPORT
 int32_t zng_inflateReset(zng_stream *strm);
