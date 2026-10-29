@@ -41,6 +41,9 @@
  *      -Djdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH=3
  *      jdk.internal.foreign.abi.BindingSpecializerScopeTest
  * @run main/othervm --patch-module java.base=${test.classes}
+ *      -Djdk.internal.foreign.abi.Specializer.SCOPE_DEDUP_DEPTH=2147483647
+ *      jdk.internal.foreign.abi.BindingSpecializerScopeTest
+ * @run main/othervm --patch-module java.base=${test.classes}
  *      -Djdk.internal.foreign.abi.Specializer.PERFORM_VERIFICATION=true
  *      jdk.internal.foreign.abi.BindingSpecializerScopeTest
  */
@@ -68,6 +71,8 @@ public class BindingSpecializerScopeTest {
     private static final RuntimeException LEAF_FAILURE = new RuntimeException("leaf failure");
     private static final Field ACQUIRE_COUNT;
     private static final MethodHandle LEAF;
+    private static final MethodHandle FIVE_LEAF;
+    private static final CallingSequence FIVE_SEQUENCE;
     private static final CallingSequence SEQUENCE;
     private static final ABIDescriptor ABI;
     private static int checks;
@@ -85,6 +90,15 @@ public class BindingSpecializerScopeTest {
                     FunctionDescriptor.of(ValueLayout.JAVA_LONG,
                             ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS), false)
                     .callingSequence();
+            FIVE_LEAF = MethodHandles.lookup().findStatic(BindingSpecializerScopeTest.class, "fiveLeaf",
+                    MethodType.methodType(long.class, Runnable.class, long.class, long.class,
+                            long.class, long.class, long.class, long.class));
+            FIVE_SEQUENCE = CallArranger.getBindings(MethodType.methodType(long.class,
+                    MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                    MemorySegment.class, MemorySegment.class),
+                    FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS,
+                            ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
+                            ValueLayout.ADDRESS), false).callingSequence();
             Field abi = CallArranger.class.getDeclaredField("CSysV");
             abi.setAccessible(true);
             ABI = (ABIDescriptor) abi.get(null);
@@ -178,7 +192,7 @@ public class BindingSpecializerScopeTest {
                 checkCount(symbol, 1);
                 checkCount(first, 1);
                 // Symbol comparison must retain the original argument-slot budget.
-                checkCount(second, DEPTH >= 2 ? 1 : 2);
+                checkCount(second, DEPTH > 0 ? 1 : 2);
             }), symbol, first, second, second);
             checkCount(symbol, 0);
             checkCount(first, 0);
@@ -220,7 +234,7 @@ public class BindingSpecializerScopeTest {
                 checkCount(symbol, DEPTH > 0 ? 1 : 2);
                 // Slot 1 is null when the first argument shares the symbol.
                 // Slot 2 must still be examined at the default depth of 2.
-                checkCount(argument, DEPTH >= 2 ? 1 : 2);
+                checkCount(argument, DEPTH > 0 ? 1 : 2);
             };
             invoke(specialize(counts), symbol, symbol, argument, argument);
             checkCount(symbol, 0);
@@ -268,7 +282,62 @@ public class BindingSpecializerScopeTest {
         check(result == 42, "NULL address is accepted independently of Java null");
     }
 
+    public static long fiveLeaf(Runnable action, long symbol, long a, long b, long c, long d, long e) {
+        action.run();
+        return a + b + c + d + e;
+    }
+
+    private static long invokeFive(Runnable action, MemorySegment symbol, MemorySegment a,
+                                   MemorySegment b, MemorySegment c, MemorySegment d,
+                                   MemorySegment e) throws Throwable {
+        MethodHandle handle = BindingSpecializer.specializeDowncall(
+                MethodHandles.insertArguments(FIVE_LEAF, 0, action), FIVE_SEQUENCE, ABI);
+        return (long) handle.invokeExact((SegmentAllocator) Arena.global(), symbol, a, b, c, d, e);
+    }
+
+    private static void checkFivePointers() throws Throwable {
+        try (Arena symbols = Arena.ofShared(); Arena first = Arena.ofShared();
+             Arena second = Arena.ofShared(); Arena third = Arena.ofShared()) {
+            MemorySegment symbol = symbols.allocate(8), b = first.allocate(8);
+            MemorySegment c = second.allocate(8), d = third.allocate(8);
+            Runnable counts = () -> {
+                checkCount(symbol, 1);
+                checkCount(b, DEPTH > 0 ? 1 : 2);
+                checkCount(c, DEPTH > 0 ? 1 : 3);
+            };
+            check(invokeFive(counts, symbol, b, b, c, c.asSlice(0, 4), c)
+                    == 2 * b.address() + 3 * c.address(), "Five-pointer result preserved");
+            checkCount(symbol, 0); checkCount(b, 0); checkCount(c, 0);
+            try {
+                invokeFive(() -> { counts.run(); throw LEAF_FAILURE; }, symbol, b, b, c, c, c);
+                throw new AssertionError("Five-pointer leaf did not throw");
+            } catch (RuntimeException ex) {
+                check(ex == LEAF_FAILURE, "Five-pointer failure identity preserved");
+            }
+            checkCount(symbol, 0); checkCount(b, 0); checkCount(c, 0);
+            invokeFive(() -> {
+                checkCount(c, DEPTH >= 3 ? 1 : 2);
+                checkCount(d, 1);
+            }, symbol, b, b, c, d, c);
+            checkCount(c, 0); checkCount(d, 0);
+            // A hit in an earlier fixed slot must not lose the later held session.
+            invokeFive(() -> checkCount(c, DEPTH > 0 ? 1 : 2), symbol, b, b, c, b, c);
+            checkCount(b, 0); checkCount(c, 0);
+            MemorySegment closed;
+            try (Arena dead = Arena.ofShared()) { closed = dead.allocate(8); }
+            Runnable never = () -> { throw new AssertionError("Invalid call reached leaf"); };
+            expect(IllegalStateException.class, () -> invokeFive(never, symbol, b, b, c, closed, null));
+            expect(NullPointerException.class, () -> invokeFive(never, symbol, b, b, c, null, closed));
+            expect(IllegalArgumentException.class, () -> invokeFive(never, symbol, b, b, c,
+                    MemorySegment.ofArray(new byte[8]), null));
+            expect(IllegalArgumentException.class, () -> invokeFive(never, symbol,b,b,c,
+                    MemorySegment.NULL,MemorySegment.ofArray(new byte[8])));
+            checkCount(symbol, 0); checkCount(b, 0); checkCount(c, 0);
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
+        checkFivePointers();
         checkSameArena(Arena.ofShared());
         checkSameArena(Arena.ofConfined());
         checkBoundedSlots();
