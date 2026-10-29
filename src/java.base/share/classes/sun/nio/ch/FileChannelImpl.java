@@ -1091,10 +1091,23 @@ public class FileChannelImpl
         throws IOException
     {
         int c = (int) Math.min(count, TRANSFER_SIZE);
-        ByteBuffer bb = ByteBuffer.allocate(c);
-        long tw = 0;                    // Total bytes written
-        long pos = position;
+        // Trusted sockets can use an exact-size, budgeted native buffer. If
+        // capacity is unavailable, retain the original heap staging path rather
+        // than triggering direct-memory cleaning, retry delays or quota OOME.
+        // Direct I/O keeps its existing aligned staging path.
+        var nioAccess = SharedSecrets.getJavaNioAccess();
+        long allocationSize = (c + (long) Unsafe.ADDRESS_SIZE - 1) & -Unsafe.ADDRESS_SIZE;
+        boolean useDirectBuffer = c > 0 && !direct && src instanceof SocketChannelImpl
+                && nioAccess.tryReserveMemory(allocationSize, c);
+        long address = 0;
+        long tw = 0;                        // Total bytes written
         try {
+            if (useDirectBuffer)
+                address = Unsafe.getUnsafe().allocateMemory(c);
+            ByteBuffer bb = useDirectBuffer
+                    ? nioAccess.newDirectByteBuffer(address, c)
+                    : ByteBuffer.allocate(c);
+            long pos = position;
             while (tw < count) {
                 bb.limit((int) Math.min((count - tw), TRANSFER_SIZE));
                 // read may block, closing this channel will not wake it up
@@ -1109,12 +1122,16 @@ public class FileChannelImpl
                 pos += nw;
                 bb.clear();
             }
-            return tw;
         } catch (IOException x) {
-            if (tw > 0)
-                return tw;
-            throw x;
+            if (tw <= 0)
+                throw x;
+        } finally {
+            if (useDirectBuffer) {
+                Unsafe.getUnsafe().freeMemory(address);
+                nioAccess.unreserveMemory(allocationSize, c);
+            }
         }
+        return tw;
     }
 
     @Override
