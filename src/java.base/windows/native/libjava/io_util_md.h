@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +84,8 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
 #define IO_GetLength handleGetLength
+// Preserve Windows' existing classification of all streams as regular.
+#define IO_GetRegularFileLength handleGetLength
 #define IO_IsRegularFile handleIsRegularFile
 
 /*

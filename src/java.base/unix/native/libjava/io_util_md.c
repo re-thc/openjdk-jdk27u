@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,6 +271,17 @@ handleGetLength(FD fd)
     }
 #endif
     return sb.st_size;
+}
+
+/* A regular file's fresh length, -2 for another type, or -1 on error. */
+jlong
+handleGetRegularFileLength(FD fd)
+{
+    struct stat sb;
+    if (fstat(fd, &sb) == -1) {
+        return -1;
+    }
+    return S_ISREG(sb.st_mode) ? (jlong)sb.st_size : -2;
 }
 
 jboolean
