@@ -1,16 +1,22 @@
 Updating zlib-ng in OpenJDK
 
-Sources: zlib-ng/ (unmodified upstream); stock zlib 1.3.2 remains the fallback.
+Sources: zlib-ng/ (upstream plus maintained raw-inflate CRC patch);
+stock zlib 1.3.2 remains the fallback. See make/data/zlib-ng/README.md
+for the required patch/probe, pinned replay checksums and rebase procedure.
 Version: 2.3.90
 Revision: 49323f2af98b92fccf03cfc62ea2cb5591a3202e
 Archive: https://codeload.github.com/zlib-ng/zlib-ng/tar.gz/49323f2af98b92fccf03cfc62ea2cb5591a3202e
 SHA-256: bc36e6f11cdbe71352b551ed98c94cd9d5f13dc248f3c3b56c518cc72678d604
 
-1) Verify the replacement revision and archive checksum, then run from the JDK root:
+1) For the maintained pin, verify the archive checksum and run from the JDK root:
    python3 make/scripts/update-zlib-ng.py --archive /path/to/zlib-ng-COMMIT.tar.gz \
        --revision COMMIT --sha256 VERIFIED_SHA256
-   Update this file's provenance. The importer preserves upstream bytes/modes,
-   removes obsolete vendor files and regenerates the JDK legal notice.
+   A new revision requires a deliberate patch rebase and importer checksum update
+   following make/data/zlib-ng/README.md; drift fails before checkout writes.
+   The importer reapplies the maintained implementation and synthetic probe,
+   preserves the upstream license and regenerates the attributed JDK legal notice.
+   Run make test-make-zlib-ng-import for offline failure/replay checks and repeat
+   regeneration with the official pinned archive to verify exact provenance.
 
 2) Keep zlib-ng/LICENSE.md and src/java.base/share/legal/zlib-ng.md.
    Keep this file outside zlib-ng/: the importer replaces that directory.

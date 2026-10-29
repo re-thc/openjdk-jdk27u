@@ -39,6 +39,15 @@ git diff --exit-code -- src/java.base/share/native/libzip/zlib-ng \
 python3 test/make/zlib-ng/test-import.py --archive /path/upstream.tar.gz -v
 ```
 
+The ordinary Linux x64 release CI build also runs
+`make test-make-zlib-ng-import`. This uses the existing make-test route and
+reconstructs a filtered fixture by reversing this one patch from the checked-in
+vendor tree. It exercises replay, no-write failure checks, license preservation
+and idempotence without downloading anything. It does not verify the official
+upstream archive's checksum or replace the explicit `--archive` checks above.
+The make-test target is registered only on Linux build hosts, where the
+executable-mode checks are qualified. Python 3 and Git must be available.
+
 Run regeneration on a checkout containing the complete source and regression
 series. A second import must also leave no diff. Python 3 and Git are required;
 the importer performs no network access. Regeneration is checked on Linux with

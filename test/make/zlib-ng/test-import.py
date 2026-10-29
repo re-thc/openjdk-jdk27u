@@ -22,13 +22,16 @@
 # questions.
 #
 
-"""Offline maintenance checks; pass the pinned upstream archive as --archive."""
+"""Offline import checks; --archive additionally checks the official pinned archive."""
 import argparse
 import contextlib
 import difflib
 import hashlib
 import importlib.util
 import io
+import os
+import shutil
+import subprocess
 from pathlib import Path
 import tarfile
 import tempfile
@@ -46,6 +49,30 @@ def snapshot(path, git_modes=False):
     return {str(p.relative_to(path)): (p.read_bytes(), (0o755 if p.stat().st_mode & 0o111 else 0o644)
                                     if git_modes else p.stat().st_mode & 0o777)
             for p in path.rglob('*') if p.is_file()}
+
+
+def offline_archive(directory):
+    # Reconstruct only the selected upstream files from this reviewed tree.
+    # This exercises replay and failure handling without a network download;
+    # it does not substitute for checking the official upstream archive hash.
+    stage = directory / 'upstream'
+    importer.no_symlinks(ROOT / importer.VENDOR)
+    shutil.copytree(ROOT / importer.VENDOR, stage)
+    git_env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
+    for options in (['--check'], []):
+        subprocess.run(['git', 'apply', '--no-index', '--reverse', *options,
+                        str(ROOT / importer.PATCH)], cwd=stage, env=git_env, check=True)
+    target = directory / 'filtered-upstream.tar'
+    with tarfile.open(target, 'w') as archive:
+        for source in sorted(stage.rglob('*')):
+            if not source.is_file():
+                continue
+            data = source.read_bytes()
+            member = tarfile.TarInfo('zlib-ng-' + importer.REVISION + '/' + source.relative_to(stage).as_posix())
+            member.size = len(data)
+            member.mode = 0o755 if source.stat().st_mode & 0o111 else 0o644
+            archive.addfile(member, io.BytesIO(data))
+    return target
 
 
 class ImportTest(unittest.TestCase):
@@ -204,7 +231,17 @@ class ImportTest(unittest.TestCase):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--archive', type=Path, required=True)
+    parser.add_argument('--archive', type=Path)
     args, remaining = parser.parse_known_args()
-    ARCHIVE = args.archive.resolve()
-    unittest.main(argv=[__file__, *remaining])
+    if args.archive is not None:
+        ARCHIVE = args.archive.resolve()
+        unittest.main(argv=[__file__, *remaining])
+    else:
+        with tempfile.TemporaryDirectory(prefix='offline-zlib-ng-fixture-') as directory:
+            ARCHIVE = offline_archive(Path(directory))
+            print('Offline reconstructed fixture; official archive SHA requires --archive.', flush=True)
+            # A test-local input checksum, never an importer option or a change
+            # to its maintained production pin.
+            digest = hashlib.sha256(ARCHIVE.read_bytes()).hexdigest()
+            with patch.object(importer, 'ARCHIVE_SHA256', digest):
+                unittest.main(argv=[__file__, *remaining])

@@ -190,6 +190,10 @@ jobs:
           test "$(sed -n 's/^SYSROOT := //p' "$spec")" = /
           mold --version
 
+      - name: 'Test maintained zlib-ng import (offline)'
+        run: make CONF=${{ inputs.platform }} test-make-zlib-ng-import
+        if: ${{ inputs.dry-run == false && inputs.platform == 'linux-x64' && matrix.debug-level == 'release' }}
+
       - name: 'Build'
         id: build
         uses: ./.github/actions/do-build

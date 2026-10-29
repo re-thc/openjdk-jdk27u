@@ -32,7 +32,6 @@ import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
-import java.util.Objects;
 
 /**
  * This class implements a stream filter for decompressing GZIP file format data.
@@ -86,10 +85,6 @@ public class GZIPInputStream extends InflaterInputStream {
     private static final boolean alwaysReadNextMember =
             Boolean.getBoolean("jdk.util.gzip.tryReadAheadAfterTrailer");
 
-    // Experimental opt-in; Java continues to own headers and trailers.
-    private static final boolean useNativeCRC =
-            Boolean.getBoolean("jdk.util.gzip.useNativeCRC");
-
     private final boolean inflaterCRC;
 
     /**
@@ -142,8 +137,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
-        super(in, createInflater(in, size), size);
-        usesDefaultInflater = true;
+        super(in, size);
         try {
             // we don't expect the stream to be at EOF
             // and if it is, then we want readHeader to
@@ -151,27 +145,11 @@ public class GZIPInputStream extends InflaterInputStream {
             // the "failOnEOF" param.
             readHeader(in, true);
             // Subclasses can observe or replace the protected crc and inf fields.
-            inflaterCRC = useNativeCRC && getClass() == GZIPInputStream.class
-                    && inf.enableRawCRC32();
+            inflaterCRC = getClass() == GZIPInputStream.class && inf.hasRawCRC32();
         } catch (IOException ioe) {
             this.inf.end();
             throw ioe;
         }
-    }
-
-    /*
-     * Creates and returns an Inflater only if the input stream is not null and the
-     * buffer size is > 0.
-     * If the input stream is null, then this method throws a
-     * NullPointerException. If the size is <= 0, then this method throws
-     * an IllegalArgumentException
-     */
-    private static Inflater createInflater(InputStream in, int size) {
-        Objects.requireNonNull(in);
-        if (size <= 0) {
-            throw new IllegalArgumentException("buffer size <= 0");
-        }
-        return new Inflater(true);
     }
 
     /**
@@ -228,7 +206,7 @@ public class GZIPInputStream extends InflaterInputStream {
         int n = super.read(buf, off, len);
         if (n == -1) {
             if (inflaterCRC) {
-                crc.setValue(inf.getAdler());
+                crc.setValue(inf.rawCRC32());
             }
             if (hasNoMoreMembers()) {
                 eos = true;

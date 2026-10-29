@@ -57,7 +57,7 @@ Java_java_util_zip_Inflater_initIDs(JNIEnv *env, jclass cls)
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
+Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jint mode)
 {
     z_stream *strm = calloc(1, sizeof(z_stream));
 
@@ -66,9 +66,14 @@ Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
         return jlong_zero;
     } else {
         const char *msg;
-        int ret = inflateInit2(strm, nowrap ? -MAX_WBITS : MAX_WBITS);
+        int ret = inflateInit2(strm, mode != 0 ? -MAX_WBITS : MAX_WBITS);
         switch (ret) {
           case Z_OK:
+#ifdef INCLUDE_ZLIBNG
+            if (mode == 2 && zng_inflateEnableRawCRC32(strm) == Z_OK) {
+                return ptr_to_jlong(strm) | 1;
+            }
+#endif
             return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
             free(strm);
@@ -153,6 +158,11 @@ static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
 
     switch (ret) {
     case Z_STREAM_END:
+        // Intrinsics use the call-local scalar output and store after unpinning.
+        // JNI wrappers are already past ReleasePrimitiveArrayCritical here.
+        if (env != NULL) {
+            (*env)->SetIntField(env, this, outputConsumedID, (jint)strm->adler);
+        }
         finished = 1;
         /* fall through */
     case Z_OK:
@@ -297,16 +307,6 @@ JNIEXPORT jint JNICALL
 Java_java_util_zip_Inflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
 {
     return ((z_stream *)jlong_to_ptr(addr))->adler;
-}
-
-JNIEXPORT jboolean JNICALL
-Java_java_util_zip_Inflater_enableRawCRC32(JNIEnv *env, jclass cls, jlong addr)
-{
-#ifdef INCLUDE_ZLIBNG
-    return zng_inflateEnableRawCRC32(jlong_to_ptr(addr)) == Z_OK;
-#else
-    return JNI_FALSE;
-#endif
 }
 
 JNIEXPORT void JNICALL

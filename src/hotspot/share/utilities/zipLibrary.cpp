@@ -44,7 +44,7 @@ typedef jint(*ZIP_Adler32Byte_t)(jint adler, jint value);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
-typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, jint, jint);
+typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, intptr_t, jint);
 static ZIP_Process_t ZIP_Process = nullptr;
 typedef jlong (*ZIP_Complete_t)(JNIEnv*, jboolean, jobject, jlong, jint, jint, jint, jint);
 static ZIP_Complete_t ZIP_Complete = nullptr;
@@ -229,12 +229,15 @@ void* ZipLibrary::handle() {
   return _zip_handle;
 }
 
-jlong ZipLibrary::process(jboolean inflate, jlong stream,
-                         jlong input, jint input_len, jlong output, jint output_len,
-                         jint flush, jint params) {
+Atomic<address> ZipLibrary::_process_entry{nullptr};
+
+address ZipLibrary::initialize_process() {
+  // Publish only after initialize() has acquired/completed the existing DLL
+  // setup. Error completion may immediately need the other resolved entries.
   initialize();
-  return ZIP_Process(inflate, stream, input, input_len,
-                     output, output_len, flush, params);
+  address entry = CAST_FROM_FN_PTR(address, ZIP_Process);
+  _process_entry.release_store(entry);
+  return entry;
 }
 
 jlong ZipLibrary::complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
