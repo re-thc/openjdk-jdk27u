@@ -1,0 +1,642 @@
+[
+  {
+    "name": "00-normal-A",
+    "pid": "59681",
+    "policy": "normal",
+    "variant": "A",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "1016",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "936",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "942",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "1006",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "980",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.191",
+        "size": "5568"
+      },
+      {
+        "compile_id": "983",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.195",
+        "size": "10408"
+      },
+      {
+        "compile_id": "994",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.196",
+        "size": "1816"
+      },
+      {
+        "compile_id": "1007",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.202",
+        "size": "4696"
+      },
+      {
+        "compile_id": "1016",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.210",
+        "size": "10392"
+      },
+      {
+        "compile_id": "1042",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.206",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "01-normal-B",
+    "pid": "59685",
+    "policy": "normal",
+    "variant": "B",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "989",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "919",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "930",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "1000",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "966",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.178",
+        "size": "5568"
+      },
+      {
+        "compile_id": "969",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.184",
+        "size": "10176"
+      },
+      {
+        "compile_id": "979",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.185",
+        "size": "1816"
+      },
+      {
+        "compile_id": "992",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.192",
+        "size": "4696"
+      },
+      {
+        "compile_id": "1000",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.200",
+        "size": "10520"
+      },
+      {
+        "compile_id": "1030",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.195",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "02-control-B",
+    "pid": "59689",
+    "policy": "control",
+    "variant": "B",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "997",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "987",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "926",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "928",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "965",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.133",
+        "size": "5936"
+      },
+      {
+        "compile_id": "977",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.137",
+        "size": "1816"
+      },
+      {
+        "compile_id": "967",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.137",
+        "size": "10560"
+      },
+      {
+        "compile_id": "990",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.145",
+        "size": "5032"
+      },
+      {
+        "compile_id": "997",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.154",
+        "size": "10368"
+      },
+      {
+        "compile_id": "1022",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.141",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "03-control-A",
+    "pid": "59696",
+    "policy": "control",
+    "variant": "A",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "1018",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "940",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "947",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "1002",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "977",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.154",
+        "size": "5936"
+      },
+      {
+        "compile_id": "980",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.160",
+        "size": "10864"
+      },
+      {
+        "compile_id": "991",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.161",
+        "size": "1816"
+      },
+      {
+        "compile_id": "1003",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.166",
+        "size": "5032"
+      },
+      {
+        "compile_id": "1018",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.176",
+        "size": "10320"
+      },
+      {
+        "compile_id": "1044",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.163",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "04-normal-B",
+    "pid": "59762",
+    "policy": "normal",
+    "variant": "B",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "1016",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "1005",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "937",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "942",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "980",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.136",
+        "size": "5568"
+      },
+      {
+        "compile_id": "982",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.140",
+        "size": "10176"
+      },
+      {
+        "compile_id": "994",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.142",
+        "size": "1816"
+      },
+      {
+        "compile_id": "1008",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.149",
+        "size": "4696"
+      },
+      {
+        "compile_id": "1016",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.156",
+        "size": "10520"
+      },
+      {
+        "compile_id": "1044",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.135",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "05-normal-A",
+    "pid": "59766",
+    "policy": "normal",
+    "variant": "A",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "1021",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "1005",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "939",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "945",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "981",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.135",
+        "size": "5560"
+      },
+      {
+        "compile_id": "994",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.141",
+        "size": "1816"
+      },
+      {
+        "compile_id": "985",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.141",
+        "size": "10384"
+      },
+      {
+        "compile_id": "1006",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.147",
+        "size": "4696"
+      },
+      {
+        "compile_id": "1021",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.156",
+        "size": "10328"
+      },
+      {
+        "compile_id": "1048",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.143",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "06-control-A",
+    "pid": "59854",
+    "policy": "control",
+    "variant": "A",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "1015",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "949",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "954",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "1030",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "990",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.143",
+        "size": "5936"
+      },
+      {
+        "compile_id": "1003",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.149",
+        "size": "1816"
+      },
+      {
+        "compile_id": "994",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.150",
+        "size": "10848"
+      },
+      {
+        "compile_id": "1016",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.154",
+        "size": "5032"
+      },
+      {
+        "compile_id": "1030",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.163",
+        "size": "10272"
+      },
+      {
+        "compile_id": "1054",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.151",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  },
+  {
+    "name": "07-control-B",
+    "pid": "59878",
+    "policy": "control",
+    "variant": "B",
+    "allocation_events": [],
+    "lock_events": [],
+    "header_inlining": [
+      {
+        "compile_id": "990",
+        "caller": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "982",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_success",
+        "reason": "inline (hot)"
+      },
+      {
+        "compile_id": "904",
+        "caller": "java.util.zip.GZIPInputStream hasNoMoreMembers ()Z",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      },
+      {
+        "compile_id": "918",
+        "caller": "java.util.zip.GZIPInputStream <init> (Ljava/io/InputStream;I)V",
+        "decision": "inline_fail",
+        "reason": "callee is too large"
+      }
+    ],
+    "gzip_c2_nmethods": [
+      {
+        "compile_id": "958",
+        "compile_kind": null,
+        "method": "java.util.zip.InflaterInputStream read ([BII)I",
+        "stamp": "0.140",
+        "size": "5936"
+      },
+      {
+        "compile_id": "960",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream read ([BII)I",
+        "stamp": "0.144",
+        "size": "10536"
+      },
+      {
+        "compile_id": "972",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "0.147",
+        "size": "1816"
+      },
+      {
+        "compile_id": "985",
+        "compile_kind": null,
+        "method": "java.util.zip.GZIPInputStream readHeader (Ljava/io/InputStream;Z)I",
+        "stamp": "0.154",
+        "size": "5032"
+      },
+      {
+        "compile_id": "990",
+        "compile_kind": null,
+        "method": "org.openjdk.bench.java.util.zip.GZIPLifecycle gzip (I)J",
+        "stamp": "0.161",
+        "size": "10304"
+      },
+      {
+        "compile_id": "1012",
+        "compile_kind": null,
+        "method": "java.util.zip.Inflater inflate ([BII)I",
+        "stamp": "1.148",
+        "size": "1768"
+      }
+    ],
+    "inflate_intrinsic_records": 2,
+    "global_elimination_tags": {}
+  }
+]

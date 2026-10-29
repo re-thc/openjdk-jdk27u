@@ -1,0 +1,65 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.util.zip.GZIPLifecycle.gzipDefault",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Users/rethcmm/gh/openjdk-jdk27u/build/gzip-candidate/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+LogCompilation",
+            "-XX:LogFile=/Users/rethcmm/gh/openjdk-jdk27u/build/gzip-elimination-eight-20261030/compilation/02-control-B.xml",
+            "-XX:-EliminateAllocations",
+            "-XX:-EliminateLocks"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-gzip-qualification",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "content" : "repeated",
+            "size" : "64"
+        },
+        "primaryMetric" : {
+            "score" : 250.41856500683835,
+            "scoreError" : 14.294899228618576,
+            "scoreConfidence" : [
+                236.1236657782198,
+                264.7134642354569
+            ],
+            "scorePercentiles" : {
+                "0.0" : 249.51596577749143,
+                "50.0" : 250.81565040287015,
+                "90.0" : 250.9240788401534,
+                "95.0" : 250.9240788401534,
+                "99.0" : 250.9240788401534,
+                "99.9" : 250.9240788401534,
+                "99.99" : 250.9240788401534,
+                "99.999" : 250.9240788401534,
+                "99.9999" : 250.9240788401534,
+                "100.0" : 250.9240788401534
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    250.9240788401534,
+                    250.81565040287015,
+                    249.51596577749143
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

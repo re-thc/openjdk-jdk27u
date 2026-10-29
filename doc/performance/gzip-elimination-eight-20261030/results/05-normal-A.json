@@ -1,0 +1,63 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.openjdk.bench.java.util.zip.GZIPLifecycle.gzipDefault",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Users/rethcmm/gh/openjdk-jdk27u/build/gzip-20261030/pr6-src/build/gzip-pr6/jdk/bin/java",
+        "jvmArgs" : [
+            "-Xms256m",
+            "-Xmx256m",
+            "-XX:+UseSerialGC",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+LogCompilation",
+            "-XX:LogFile=/Users/rethcmm/gh/openjdk-jdk27u/build/gzip-elimination-eight-20261030/compilation/05-normal-A.xml"
+        ],
+        "jdkVersion" : "27.0.2-internal",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "27.0.2-internal-gzip-qualification",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "content" : "repeated",
+            "size" : "64"
+        },
+        "primaryMetric" : {
+            "score" : 251.38444076030785,
+            "scoreError" : 12.381883552818538,
+            "scoreConfidence" : [
+                239.0025572074893,
+                263.7663243131264
+            ],
+            "scorePercentiles" : {
+                "0.0" : 250.60125258525898,
+                "50.0" : 251.7518242407928,
+                "90.0" : 251.8002454548718,
+                "95.0" : 251.8002454548718,
+                "99.0" : 251.8002454548718,
+                "99.9" : 251.8002454548718,
+                "99.99" : 251.8002454548718,
+                "99.999" : 251.8002454548718,
+                "99.9999" : 251.8002454548718,
+                "100.0" : 251.8002454548718
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    250.60125258525898,
+                    251.8002454548718,
+                    251.7518242407928
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

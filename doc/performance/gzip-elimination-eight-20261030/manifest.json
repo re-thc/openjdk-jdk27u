@@ -1,0 +1,129 @@
+{
+  "measured_forks": 8,
+  "executed_order": [
+    [
+      "normal",
+      "A"
+    ],
+    [
+      "normal",
+      "B"
+    ],
+    [
+      "control",
+      "B"
+    ],
+    [
+      "control",
+      "A"
+    ],
+    [
+      "normal",
+      "B"
+    ],
+    [
+      "normal",
+      "A"
+    ],
+    [
+      "control",
+      "A"
+    ],
+    [
+      "control",
+      "B"
+    ]
+  ],
+  "policies": {
+    "normal": "Default allocation/lock elimination policy.",
+    "control": "-XX:-EliminateAllocations -XX:-EliminateLocks"
+  },
+  "control_does_not_disable_DoEscapeAnalysis": true,
+  "benchmark": "GZIPLifecycle.gzipDefault, 64 bytes, default buffer, complete setup/read/close.",
+  "benchmark_class_sha256": "c1777ef04fd559d90bf9598dcb8ca9e0a9468f2c4527c4c2d2efb72db1ebe861",
+  "timing_and_compilation_logs_from_same_jvms": true,
+  "runtime_provenance": "Previously verified release images for f2a1e1a and ac242a; the latter has runtime source identical to d7150d6f.",
+  "interpretation": "No ~204 ns PR6 fork reproduced; no logged elimination events; mechanism probe is inconclusive, not a replication of the original +21.5% result.",
+  "logs": [
+    {
+      "name": "00-normal-A",
+      "pid": "59681",
+      "original_path": "compilation/00-normal-A.xml",
+      "archive_path": "compilation/00-normal-A.xml.gz",
+      "original_xml_bytes": 3433218,
+      "original_xml_sha256": "35d9e21ee48dc7d57612e7d29d954b207bd1affd43e431681d173316cc15838a",
+      "archive_sha256": "90cc8c4b16ca2cd9ac6b304a94862295ae31e96a3c6b9b4796ae0691568d0758",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "01-normal-B",
+      "pid": "59685",
+      "original_path": "compilation/01-normal-B.xml",
+      "archive_path": "compilation/01-normal-B.xml.gz",
+      "original_xml_bytes": 3439258,
+      "original_xml_sha256": "5ac5e3bf311beeb02b51ac5c58bc5af4c47d2bb3aa46c25e68f4f2a80b1d9566",
+      "archive_sha256": "10f8372151c8976f40293846da1287f7912c0ec77b77a654f4d8badad85f3984",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "02-control-B",
+      "pid": "59689",
+      "original_path": "compilation/02-control-B.xml",
+      "archive_path": "compilation/02-control-B.xml.gz",
+      "original_xml_bytes": 3311698,
+      "original_xml_sha256": "788e4b44c96f09e747acc4b25694e81ebfc221dcde88c3097997c7b5d230bc76",
+      "archive_sha256": "e1263f77153784ffd6902c737b102fefaef78e551a8d08e3d543fbe44d0bb58d",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "03-control-A",
+      "pid": "59696",
+      "original_path": "compilation/03-control-A.xml",
+      "archive_path": "compilation/03-control-A.xml.gz",
+      "original_xml_bytes": 3397631,
+      "original_xml_sha256": "3ffe9fac0a24d813fbed5a228de0ce41d18af0ef741235980527b8f6f164860f",
+      "archive_sha256": "74a7be2f09b5f2263cc64a8d5ecee75af4f01494fe4333616105e9ea3f7d9fb6",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "04-normal-B",
+      "pid": "59762",
+      "original_path": "compilation/04-normal-B.xml",
+      "archive_path": "compilation/04-normal-B.xml.gz",
+      "original_xml_bytes": 3417282,
+      "original_xml_sha256": "89596999a39c4c1089e3d89cbbb136de024b82a0e94bcd699518468268d98a70",
+      "archive_sha256": "b4d5bdc09d6b75a67d22381a818fe42a0f684bf15dcd183d734ebb8dfcf31150",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "05-normal-A",
+      "pid": "59766",
+      "original_path": "compilation/05-normal-A.xml",
+      "archive_path": "compilation/05-normal-A.xml.gz",
+      "original_xml_bytes": 3435159,
+      "original_xml_sha256": "a4074f666f0f127cff987afe6000927b3197f56a2dcde2fd788f380b330679e2",
+      "archive_sha256": "624795a3c7471c710365694fff00c7bf4aaad1a939cee089b3ef2cba636fa225",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "06-control-A",
+      "pid": "59854",
+      "original_path": "compilation/06-control-A.xml",
+      "archive_path": "compilation/06-control-A.xml.gz",
+      "original_xml_bytes": 3465561,
+      "original_xml_sha256": "0c94ae7c1dd12659239542e8b17939a55d1ec5dc50f37832d8cdf0dc771771bd",
+      "archive_sha256": "800bc2b45df38fa522b65d0a2975062bce51f73a96ec52fa6c8a5af264f1fadb",
+      "same_measured_jvm_as_result": true
+    },
+    {
+      "name": "07-control-B",
+      "pid": "59878",
+      "original_path": "compilation/07-control-B.xml",
+      "archive_path": "compilation/07-control-B.xml.gz",
+      "original_xml_bytes": 3325166,
+      "original_xml_sha256": "8130d5dfc6cd21367e072facd18c3236baacef59854a369e15d16ecf95ab353b",
+      "archive_sha256": "34d439844f9b9fa4fa66fb77783c082faf21ba42018a7cbf345849ab374e3160",
+      "same_measured_jvm_as_result": true
+    }
+  ]
+}

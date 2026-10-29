@@ -1,0 +1,47 @@
+{
+  "revisions": {
+    "A": "f2a1e1a17a1be172883b5774f86024ac5220c87d",
+    "B": "ac242a073e42cbb6bc6a55091f922add36ae674e"
+  },
+  "pairs": [
+    {
+      "pair": 0,
+      "policy": "normal",
+      "order": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "pair": 1,
+      "policy": "control",
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "pair": 2,
+      "policy": "normal",
+      "order": [
+        "B",
+        "A"
+      ]
+    },
+    {
+      "pair": 3,
+      "policy": "control",
+      "order": [
+        "A",
+        "B"
+      ]
+    }
+  ],
+  "measured_forks": 8,
+  "normal": "Default elimination policy; no elimination overrides.",
+  "control": "-XX:-EliminateAllocations -XX:-EliminateLocks; DoEscapeAnalysis unchanged.",
+  "common": "-Xms256m -Xmx256m -XX:+UseSerialGC -XX:+UnlockDiagnosticVMOptions -XX:+LogCompilation",
+  "benchmark": "GZIPLifecycle.gzipDefault; size=64, content=repeated; complete setup/read/close.",
+  "protocol": "1 measured JVM per command; 3 x 1 s warmup, 3 x 1 s measurement, 1 thread.",
+  "no_additional_runs": true
+}

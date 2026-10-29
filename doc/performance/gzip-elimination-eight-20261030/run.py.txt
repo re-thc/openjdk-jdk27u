@@ -1,0 +1,88 @@
+"""Eight requested measured forks, with compiler logs from those same JVMs."""
+import hashlib
+import json
+from pathlib import Path
+import statistics
+import subprocess
+import time
+import xml.etree.ElementTree as ET
+
+OUT = Path(__file__).resolve().parent
+ROOT = OUT.parents[1]
+OLD = ROOT / 'build/gzip-20261030'
+DEPS = Path('/Users/rethcmm/gh/qual-out/pr39-arm64-review-20261020/final-01f68c41561-20261021/deps')
+CP = ':'.join([str(OLD / 'bench')] + [str(DEPS / name) for name in
+               ['jmh-core.jar', 'jopt-simple.jar', 'commons-math3.jar']])
+JAVA = {'A': OLD / 'pr6-src/build/gzip-pr6/jdk/bin/java',
+        'B': ROOT / 'build/gzip-candidate/jdk/bin/java'}
+REVISIONS = {'A': 'f2a1e1a17a1be172883b5774f86024ac5220c87d',
+             'B': 'ac242a073e42cbb6bc6a55091f922add36ae674e'}
+PAIRS = [('normal', ['A', 'B']), ('control', ['B', 'A']),
+         ('normal', ['B', 'A']), ('control', ['A', 'B'])]
+
+assert hashlib.sha256((OLD / 'bench/org/openjdk/bench/java/util/zip/GZIPLifecycle.class').read_bytes()).hexdigest() == 'c1777ef04fd559d90bf9598dcb8ca9e0a9468f2c4527c4c2d2efb72db1ebe861'
+assert not (OUT / 'commands.jsonl').exists(), 'Do not append or repeat forks in this eight-fork experiment.'
+for directory in ['results', 'console', 'compilation']:
+    (OUT / directory).mkdir(exist_ok=True)
+plan = [{'pair': pair, 'policy': policy, 'order': order} for pair, (policy, order) in enumerate(PAIRS)]
+(OUT / 'plan.json').write_text(json.dumps({'revisions': REVISIONS,
+    'pairs': plan, 'measured_forks': 8,
+    'normal': 'Default elimination policy; no elimination overrides.',
+    'control': '-XX:-EliminateAllocations -XX:-EliminateLocks; DoEscapeAnalysis unchanged.',
+    'common': '-Xms256m -Xmx256m -XX:+UseSerialGC -XX:+UnlockDiagnosticVMOptions -XX:+LogCompilation',
+    'benchmark': 'GZIPLifecycle.gzipDefault; size=64, content=repeated; complete setup/read/close.',
+    'protocol': '1 measured JVM per command; 3 x 1 s warmup, 3 x 1 s measurement, 1 thread.',
+    'no_additional_runs': True}, indent=2) + '\n')
+
+records = []
+sequence = 0
+with (OUT / 'commands.jsonl').open('w') as commands:
+    for pair, (policy, order) in enumerate(PAIRS):
+        for variant in order:
+            name = f'{sequence:02}-{policy}-{variant}'
+            result = OUT / 'results' / (name + '.json')
+            console = OUT / 'console' / (name + '.log')
+            compilation = OUT / 'compilation' / (name + '.xml')
+            args = '-Xms256m -Xmx256m -XX:+UseSerialGC'
+            args += ' -XX:+UnlockDiagnosticVMOptions -XX:+LogCompilation -XX:LogFile=' + str(compilation)
+            if policy == 'control':
+                args += ' -XX:-EliminateAllocations -XX:-EliminateLocks'
+            command = [str(JAVA[variant]), '-cp', CP, 'org.openjdk.jmh.Main',
+                'GZIPLifecycle.gzipDefault$', '-p', 'size=64', '-p', 'content=repeated',
+                '-f', '1', '-t', '1', '-foe', 'true', '-wi', '3', '-w', '1s',
+                '-i', '3', '-r', '1s', '-jvmArgs', args,
+                '-rf', 'json', '-rff', str(result)]
+            item = {'sequence': sequence, 'pair': pair, 'policy': policy, 'variant': variant,
+                    'revision': REVISIONS[variant], 'name': name, 'started_unix': time.time(),
+                    'command': command, 'result': str(result.relative_to(OUT)),
+                    'console': str(console.relative_to(OUT)),
+                    'compilation': str(compilation.relative_to(OUT))}
+            commands.write(json.dumps(item) + '\n')
+            commands.flush()
+            print('START', name, flush=True)
+            with console.open('w') as output:
+                subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=True)
+            row, = json.loads(result.read_text())
+            assert row['forks'] == row['threads'] == 1
+            assert row['params'] == {'content': 'repeated', 'size': '64'}
+            log = ET.parse(compilation).getroot()
+            assert log.tag == 'hotspot_log'
+            vm_args = log.findtext('vm_arguments/args', '')
+            assert '-XX:+LogCompilation' in vm_args and str(compilation) in vm_args
+            if policy == 'control':
+                assert '-XX:-EliminateAllocations' in vm_args and '-XX:-EliminateLocks' in vm_args
+            else:
+                assert 'EliminateAllocations' not in vm_args and 'EliminateLocks' not in vm_args
+            samples, = row['primaryMetric']['rawData']
+            item.update({'completed_unix': time.time(), 'pid': log.get('process'),
+                'fork_median_ns': statistics.median(samples),
+                'jmh_mean_ns': row['primaryMetric']['score'], 'measurements_ns': samples,
+                'actual_fork_vm_args_from_compilation_log': vm_args.strip()})
+            records.append(item)
+            (OUT / 'forks.json').write_text(json.dumps(records, indent=2) + '\n')
+            print('DONE', name, 'pid=' + str(item['pid']),
+                  'median_ns=' + str(item['fork_median_ns']), flush=True)
+            sequence += 1
+assert sequence == len(records) == 8
+assert len({record['pid'] for record in records}) == 8
+print('COMPLETE: exactly eight measured forks; each has its own complete compilation log.', flush=True)

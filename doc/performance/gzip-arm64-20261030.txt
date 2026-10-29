@@ -60,6 +60,12 @@ Those ~204 ns / ~248 ns timing JVMs did not capture compilation logs. Separate
 instrumented runs cannot establish their compiler state or inlining decisions.
 The newly recorded launch-order limitation is another possible source of bias.
 
+A subsequent eight-fork allocation/lock-elimination mechanism probe is at
+doc/performance/gzip-elimination-eight-20261030/. It captures compiler logs
+from its own measured JVMs in the prescribed normal AB, control BA, normal
+BA, control AB order. It did not reproduce the ~204 ns PR6 population and
+does not establish the cause of the original fork-population difference.
+
 The main comparison:
 method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
 gzipBuffered         64     random   5/5         350.17         303.06      -13.45%
