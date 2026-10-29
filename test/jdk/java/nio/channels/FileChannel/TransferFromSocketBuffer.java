@@ -274,6 +274,24 @@ public class TransferFromSocketBuffer {
                 check(file.transferFrom(source, i, 1) == 1, "arbitrary count");
                 initial.checkSame("arbitrary");
             }
+            int[] reads = {0};
+            var failing = new ReadableByteChannel() {
+                public int read(ByteBuffer buffer) throws IOException {
+                    if (reads[0]++ == 0) {
+                        buffer.put((byte) 11).put((byte) 12);
+                        return 2;
+                    }
+                    throw new IOException("failure after progress");
+                }
+                public boolean isOpen() { return true; }
+                public void close() { }
+            };
+            file.position(1);
+            check(file.transferFrom(failing, 2, 4) == 2, "IOException discarded completed prefix");
+            check(reads[0] == 2 && file.position() == 1, "partial failure position/read count");
+            check(Arrays.equals(Files.readAllBytes(path), new byte[] {7, 7, 11, 12}),
+                    "partial failure content");
+            initial.checkSame("partial IOException");
         } finally { Files.delete(path); }
     }
     private static void denied() throws Exception {

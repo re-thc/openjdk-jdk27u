@@ -1100,41 +1100,38 @@ public class FileChannelImpl
         boolean useDirectBuffer = c > 0 && !direct && src instanceof SocketChannelImpl
                 && nioAccess.tryReserveMemory(allocationSize, c);
         long address = 0;
+        long tw = 0;                        // Total bytes written
         try {
             if (useDirectBuffer)
                 address = Unsafe.getUnsafe().allocateMemory(c);
             ByteBuffer bb = useDirectBuffer
                     ? nioAccess.newDirectByteBuffer(address, c)
                     : ByteBuffer.allocate(c);
-            long tw = 0;                    // Total bytes written
             long pos = position;
-            try {
-                while (tw < count) {
-                    bb.limit((int) Math.min((count - tw), TRANSFER_SIZE));
-                    // read may block, closing this channel will not wake it up
-                    int nr = src.read(bb);
-                    if (nr <= 0)
-                        break;
-                    bb.flip();
-                    int nw = write(bb, pos);
-                    tw += nw;
-                    if (nw != nr)
-                        break;
-                    pos += nw;
-                    bb.clear();
-                }
-                return tw;
-            } catch (IOException x) {
-                if (tw > 0)
-                    return tw;
-                throw x;
+            while (tw < count) {
+                bb.limit((int) Math.min((count - tw), TRANSFER_SIZE));
+                // read may block, closing this channel will not wake it up
+                int nr = src.read(bb);
+                if (nr <= 0)
+                    break;
+                bb.flip();
+                int nw = write(bb, pos);
+                tw += nw;
+                if (nw != nr)
+                    break;
+                pos += nw;
+                bb.clear();
             }
+        } catch (IOException x) {
+            if (tw <= 0)
+                throw x;
         } finally {
             if (useDirectBuffer) {
                 Unsafe.getUnsafe().freeMemory(address);
                 nioAccess.unreserveMemory(allocationSize, c);
             }
         }
+        return tw;
     }
 
     @Override
