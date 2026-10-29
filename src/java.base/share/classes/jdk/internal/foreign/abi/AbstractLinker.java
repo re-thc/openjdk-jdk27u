@@ -176,8 +176,14 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     private void checkLayouts(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(this::checkLayout);
-        descriptor.argumentLayouts().forEach(this::checkLayout);
+        var returnLayout = descriptor.returnLayout();
+        if (returnLayout.isPresent()) {
+            checkLayout(returnLayout.get());
+        }
+        var argumentLayouts = descriptor.argumentLayouts();
+        for (int i = 0; i < argumentLayouts.size(); i++) {
+            checkLayout(argumentLayouts.get(i));
+        }
     }
 
     private void checkLayout(MemoryLayout layout) {
