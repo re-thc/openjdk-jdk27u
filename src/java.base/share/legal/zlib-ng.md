@@ -1,5 +1,8 @@
 ## zlib-ng (commit 49323f2af98b92fccf03cfc62ea2cb5591a3202e)
 
+Locally modified for persistent raw-inflate CRC32; maintained patch and
+synthetic regression probe: `make/data/zlib-ng/raw-crc32.patch`.
+
 ### zlib License
 <pre>
 
