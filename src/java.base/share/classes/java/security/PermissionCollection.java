@@ -97,10 +97,8 @@ import java.util.stream.StreamSupport;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class PermissionCollection implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -6727011328946861783L;
 
     /**
      * @serial Whether this permission collection is read-only.

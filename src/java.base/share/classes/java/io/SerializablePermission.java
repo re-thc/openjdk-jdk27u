@@ -51,11 +51,9 @@ import java.util.StringTokenizer;
 
 /* code was borrowed originally from java.lang.RuntimePermission. */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class SerializablePermission extends BasicPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8537212141160296410L;
 
     /**
      * @serial

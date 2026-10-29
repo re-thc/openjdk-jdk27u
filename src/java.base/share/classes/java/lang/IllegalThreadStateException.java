@@ -32,10 +32,8 @@ package java.lang;
  * @see Thread#start()
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalThreadStateException extends IllegalArgumentException {
-    @java.io.Serial
-    private static final long serialVersionUID = -7626246362397460174L;
-
     /**
      * Constructs an {@code IllegalThreadStateException} with no
      * detail message.

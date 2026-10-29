@@ -40,11 +40,10 @@ package javax.security.cert;
  * @see Certificate
  * @deprecated Use the classes in {@code java.security.cert} instead.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="9", forRemoval=true)
 public class CertificateException extends Exception {
 
-    @java.io.Serial
-    private static final long serialVersionUID = -5757213374030785290L;
     /**
      * Constructs a certificate exception with no detail message. A detail
      * message is a String that describes this particular exception.

@@ -114,10 +114,8 @@ import sun.util.logging.PlatformLogger;
  * @see java.math.BigDecimal
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Currency implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -158308464356906721L;
 
     /**
      * ISO 4217 currency code for this currency.

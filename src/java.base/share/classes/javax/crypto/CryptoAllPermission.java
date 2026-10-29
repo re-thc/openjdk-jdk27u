@@ -40,10 +40,8 @@ import java.util.Vector;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class CryptoAllPermission extends CryptoPermission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5066513634293192112L;
 
     // This class is similar to java.security.AllPermission.
     static final String ALG_NAME = "CryptoAllPermission";
@@ -111,12 +109,10 @@ final class CryptoAllPermission extends CryptoPermission {
  *
  * @author Sharon Liu
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class CryptoAllPermissionCollection extends PermissionCollection
     implements java.io.Serializable
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7450076868380144072L;
 
     // true if a CryptoAllPermission has been added
     private boolean all_allowed;

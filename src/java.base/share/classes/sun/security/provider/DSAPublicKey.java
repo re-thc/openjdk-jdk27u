@@ -52,12 +52,9 @@ import sun.security.x509.X509Key;
  * @see DSA
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DSAPublicKey extends X509Key
 implements java.security.interfaces.DSAPublicKey, Serializable {
-
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -2994193307391104133L;
 
     /* the public key */
     private BigInteger y;

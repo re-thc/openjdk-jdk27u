@@ -42,10 +42,8 @@ import java.util.function.UnaryOperator;
 public class PropertyExpander {
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ExpandException extends GeneralSecurityException {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -7941948581406161702L;
 
         public ExpandException(String msg) {
             super(msg);

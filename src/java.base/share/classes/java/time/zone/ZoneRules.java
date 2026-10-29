@@ -106,12 +106,9 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ZoneRules implements Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 3044319355680032515L;
     /**
      * The last year to have its transitions cached.
      */

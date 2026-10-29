@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @requires vm.cds
+ * @requires vm.hasAWT & (vm.cds)
  * @summary Testing -Xbootclasspath/a support for CDS
  * @modules java.desktop
  * @requires vm.cds

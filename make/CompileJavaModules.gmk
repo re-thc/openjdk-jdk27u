@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +34,7 @@ include Modules.gmk
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
 # module-info.java.
-ifneq ($(IMPORT_MODULES_CLASSES), )
+ifneq ($(filter $(MODULE), $(call FindImportedModules)), )
   IMPORT_MODULE_DIR := $(IMPORT_MODULES_CLASSES)/$(MODULE)
   ifneq ($(wildcard $(IMPORT_MODULE_DIR)), )
     $(MODULE)_INCLUDE_FILES := module-info.java

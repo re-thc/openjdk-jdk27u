@@ -42,10 +42,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * @since  1.7
  * @author Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class VerificationProvider extends Provider {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7482667077568930381L;
 
     private static final boolean ACTIVE;
 

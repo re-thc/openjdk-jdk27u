@@ -69,12 +69,8 @@ import java.time.DateTimeException;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ZoneRulesException extends DateTimeException {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -1632418723876261839L;
 
     /**
      * Constructs a new date-time exception with the specified message.

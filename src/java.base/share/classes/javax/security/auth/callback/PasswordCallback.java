@@ -41,10 +41,8 @@ import jdk.internal.ref.CleanerFactory;
  * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PasswordCallback implements Callback, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2267422647454909926L;
 
     private transient Cleaner.Cleanable cleanable;
 

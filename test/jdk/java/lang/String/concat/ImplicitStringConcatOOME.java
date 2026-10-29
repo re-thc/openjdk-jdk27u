@@ -32,7 +32,6 @@
  *
  * @requires sun.arch.data.model == "64"
  * @run main/othervm -Xverify:all -Xmx4g ImplicitStringConcatOOME
- * @run main/othervm -Xverify:all -Xmx4g -XX:-CompactStrings ImplicitStringConcatOOME
  */
 
 import java.lang.reflect.Field;

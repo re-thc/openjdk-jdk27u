@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 7051769 8038092 8174270
  * @summary verify that Bidi.toString() returns the corect result.
  *     The second run is intended to test lazy SharedSectets init for 8038092

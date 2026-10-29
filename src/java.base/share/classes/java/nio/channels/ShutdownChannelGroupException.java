@@ -33,12 +33,10 @@ package java.nio.channels;
  * @since 1.7
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ShutdownChannelGroupException
     extends IllegalStateException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3903801676350154157L;
 
     /**
      * Constructs an instance of this class.

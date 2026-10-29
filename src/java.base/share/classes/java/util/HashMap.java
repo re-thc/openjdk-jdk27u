@@ -136,11 +136,9 @@ import jdk.internal.access.SharedSecrets;
  * @see     Hashtable
  * @since   1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HashMap<K,V> extends AbstractMap<K,V>
     implements Map<K,V>, Cloneable, Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 362498820763181265L;
 
     /*
      * Implementation notes.

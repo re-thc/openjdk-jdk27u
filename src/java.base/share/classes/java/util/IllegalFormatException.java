@@ -34,6 +34,7 @@ package java.util;
  * @sealedGraph
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class IllegalFormatException extends IllegalArgumentException
     permits DuplicateFormatFlagsException,
             FormatFlagsConversionMismatchException,
@@ -47,9 +48,6 @@ public sealed class IllegalFormatException extends IllegalArgumentException
             MissingFormatWidthException,
             UnknownFormatConversionException,
             UnknownFormatFlagsException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 18830826L;
 
     // package-private to prevent explicit instantiation
     IllegalFormatException() { }

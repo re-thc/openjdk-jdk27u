@@ -33,10 +33,8 @@ import java.io.IOException;
  * @author  Jonathan Payne
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SocketException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -5935874303556886934L;
-
     /**
      * Constructs a new {@code SocketException} with the
      * specified detail message.

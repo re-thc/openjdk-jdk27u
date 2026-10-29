@@ -71,10 +71,8 @@ import sun.security.util.*;
  * @see java.security.cert.X509Certificate
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class X500Principal implements Principal, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -500463348111345721L;
 
     /**
      * RFC 1779 String format of Distinguished Names.

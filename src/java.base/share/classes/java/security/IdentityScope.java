@@ -63,12 +63,9 @@ import java.util.Properties;
  *     and {@code java.security.Principal}.
  */
 @Deprecated(since="1.2", forRemoval=true)
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 public abstract
 class IdentityScope extends Identity {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2337346281189773310L;
 
     /* The system's scope */
     private static IdentityScope scope;

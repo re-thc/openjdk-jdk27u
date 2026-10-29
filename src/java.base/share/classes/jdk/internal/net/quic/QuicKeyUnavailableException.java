@@ -35,10 +35,8 @@ import jdk.internal.net.quic.QuicTLSEngine.KeySpace;
  * the keys aren't available for a particular {@linkplain KeySpace keyspace} or
  * the keys for the {@code keyspace} have been discarded.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class QuicKeyUnavailableException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 8553365136999153478L;
-
     public QuicKeyUnavailableException(final String message, final KeySpace keySpace) {
         super(Objects.requireNonNull(keySpace) + " keyspace: " + message);
     }

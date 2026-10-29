@@ -492,10 +492,8 @@ import java.util.Objects;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MessageFormat extends Format {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6479157306784022952L;
 
     /**
      * Constructs a MessageFormat for the default
@@ -1382,12 +1380,10 @@ public class MessageFormat extends Format {
      *
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Field extends Format.Field {
 
         // Proclaim serial compatibility with 1.4 FCS
-        @java.io.Serial
-        private static final long serialVersionUID = 7899943957617360810L;
-
         /**
          * Creates a Field with the specified name.
          *

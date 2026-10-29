@@ -36,11 +36,8 @@ package java.lang;
  * @see     java.lang.reflect.AnnotatedElement
  * @since   1.5
  */
-@SuppressWarnings("rawtypes") /* rawtypes are part of the public api */
+@SuppressWarnings({"rawtypes", "serial"}) /* rawtypes are part of the public api */
 public class EnumConstantNotPresentException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -6046998521960521108L;
-
     /**
      * @serial The type of the missing enum constant.
      */

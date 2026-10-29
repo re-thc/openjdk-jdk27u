@@ -35,10 +35,8 @@ package java.io;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class WriteAbortedException extends ObjectStreamException {
-    @java.io.Serial
-    private static final long serialVersionUID = -3326426625597282442L;
-
     /**
      * Exception that was caught while writing the ObjectStream.
      *

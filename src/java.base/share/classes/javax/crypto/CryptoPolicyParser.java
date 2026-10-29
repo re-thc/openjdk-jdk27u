@@ -654,10 +654,8 @@ final class CryptoPolicyParser {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ParsingException extends GeneralSecurityException {
-
-        @java.io.Serial
-        private static final long serialVersionUID = 7147241245566588374L;
 
         /**
          * Constructs a {@code ParsingException} with the specified

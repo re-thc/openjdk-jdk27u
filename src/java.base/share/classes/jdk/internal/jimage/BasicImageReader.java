@@ -533,9 +533,8 @@ public class BasicImageReader implements AutoCloseable {
         return new ByteArrayInputStream(bytes);
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class ImageVersionMismatchException extends IOException {
-        @Deprecated
-        private static final long serialVersionUID = 1L;
         // If needed we could capture major/minor version for use by JImageTask.
         ImageVersionMismatchException(String name, int majorVersion, int minorVersion) {
             super("The image file \"" + name + "\" is not the correct version. " +

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 8049238
  * @summary Checks Signature attribute for array return type of method.
  * @library /tools/lib /tools/javac/lib ../lib

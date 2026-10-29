@@ -93,6 +93,7 @@ import java.util.function.Predicate;
  * @author Martin Buchholz
  * @param <E> the type of elements held in this deque
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConcurrentLinkedDeque<E>
     extends AbstractCollection<E>
     implements Deque<E>, java.io.Serializable {
@@ -248,8 +249,6 @@ public class ConcurrentLinkedDeque<E>
      * 40% overhead relative to ConcurrentLinkedQueue, which feels as
      * good as we can hope for.
      */
-
-    private static final long serialVersionUID = 876323262645176354L;
 
     /**
      * A node from which the first node on list (that is, the unique node p

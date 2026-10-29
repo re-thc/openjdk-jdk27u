@@ -36,10 +36,8 @@ import java.security.cert.CertPathBuilderException;
  * @author      Sean Mullan
  * @see         CertPathBuilderException
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SunCertPathBuilderException extends CertPathBuilderException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7814288414129264709L;
 
     /**
      * @serial
