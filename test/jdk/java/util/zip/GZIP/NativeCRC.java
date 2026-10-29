@@ -379,6 +379,37 @@ public class NativeCRC {
         }
     }
 
+    // Closing before EOF must discard the owned CRC state without reading or
+    // validating the deliberately corrupt trailer, including after no payload.
+    static void earlyClose(byte[] data, boolean supported) throws Exception {
+        byte[] gz = member(data, false);
+        gz[gz.length - 8] ^= 1;
+        for (int prefix : new int[]{0, 31}) {
+            int[] reads = {0}, closes = {0};
+            ByteArrayInputStream input = new ByteArrayInputStream(gz) {
+                public synchronized int read() {
+                    reads[0]++;
+                    return super.read();
+                }
+                public synchronized int read(byte[] b, int off, int len) {
+                    reads[0]++;
+                    return super.read(b, off, len);
+                }
+                public void close() { closes[0]++; }
+            };
+            try (GZIPInputStream in = new GZIPInputStream(input, 17)) {
+                check(ACTIVE.getBoolean(in) == supported);
+                check(Arrays.equals(in.readNBytes(prefix), Arrays.copyOf(data, prefix)));
+                int before = reads[0];
+                in.close();
+                in.close();
+                check(reads[0] == before && closes[0] == 1);
+                try { in.read(); throw new AssertionError(); }
+                catch (IOException expected) { check(expected.getMessage().equals("Stream closed")); }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         boolean supported;
         try (Inflater inf = rawInflater()) { supported = enabled(inf); }
@@ -399,6 +430,7 @@ public class NativeCRC {
             valid(member(p, true), p, supported);
         }
         byte[] shortData = Arrays.copyOf(data, 31);
+        earlyClose(data, supported);
         closingTrailer(shortData, false);
         closingTrailer(shortData, true);
         failedCloseAfterPayload(shortData, false);
