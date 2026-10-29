@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +78,10 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
 
     off_t numBytes;
     int result;
+
+    // A zero length means "through EOF" to macOS sendfile, not no bytes.
+    if (count == 0)
+        return 0;
 
     numBytes = count;
 
