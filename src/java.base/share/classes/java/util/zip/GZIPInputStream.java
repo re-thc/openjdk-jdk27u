@@ -247,10 +247,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * when reading the header, this method will throw an IOException.
      */
     private int readHeader(InputStream stream, boolean failOnEOF) throws IOException {
-        // Subclasses can observe header updates to the protected checksum.
-        // Otherwise, checksum the header only when FHCRC requests it.
-        InputStream in = getClass() == GZIPInputStream.class
-                ? stream : new CheckedInputStream(stream, crc);
+        InputStream in = new CheckedInputStream(stream, crc);
         crc.reset();
 
         int magic;
@@ -285,39 +282,34 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         // Read flags
         int flg = readUByte(in);
-        if ((flg & FHCRC) != 0 && in == stream) {
-            // The magic and method have already been validated. Seed the
-            // checksum with the four bytes read before FHCRC was known.
-            CRC32 headerCRC = crc;
-            headerCRC.update(GZIP_MAGIC);
-            headerCRC.update(GZIP_MAGIC >>> 8);
-            headerCRC.update(8);
-            headerCRC.update(flg);
-            in = new CheckedInputStream(stream, headerCRC);
+        // Only FHCRC needs the remaining header bytes checksummed. Subclasses
+        // can observe the protected checksum, so retain their checked reads.
+        if ((flg & FHCRC) == 0 && getClass() == GZIPInputStream.class) {
+            in = stream;
         }
         // Skip MTIME, XFL, and OS fields
         skipBytes(in, 6);
         int n = 2 + 2 + 6;
         // Skip optional extra field
-        if ((flg & FEXTRA) != 0) {
+        if ((flg & FEXTRA) == FEXTRA) {
             int m = readUShort(in);
             skipBytes(in, m);
             n += m + 2;
         }
         // Skip optional file name
-        if ((flg & FNAME) != 0) {
+        if ((flg & FNAME) == FNAME) {
             do {
                 n++;
             } while (readUByte(in) != 0);
         }
         // Skip optional file comment
-        if ((flg & FCOMMENT) != 0) {
+        if ((flg & FCOMMENT) == FCOMMENT) {
             do {
                 n++;
             } while (readUByte(in) != 0);
         }
         // Check optional header CRC
-        if ((flg & FHCRC) != 0) {
+        if ((flg & FHCRC) == FHCRC) {
             int v = (int)crc.getValue() & 0xffff;
             if (readUShort(in) != v) {
                 throw new ZipException("Corrupt GZIP header");
