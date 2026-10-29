@@ -40,12 +40,10 @@ import java.io.InvalidObjectException;
  * @see DirectoryStream
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DirectoryIteratorException
     extends ConcurrentModificationException
 {
-    @java.io.Serial
-    private static final long serialVersionUID = -6012699886086212874L;
-
     /**
      * Constructs an instance of this class.
      *

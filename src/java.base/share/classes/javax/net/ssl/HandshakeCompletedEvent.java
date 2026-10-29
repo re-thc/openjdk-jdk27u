@@ -47,11 +47,9 @@ import java.security.cert.X509Certificate;
  * @since 1.4
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HandshakeCompletedEvent extends EventObject
 {
-    @java.io.Serial
-    private static final long serialVersionUID = 7914963744257769778L;
-
     private final transient SSLSession session;
 
     /**

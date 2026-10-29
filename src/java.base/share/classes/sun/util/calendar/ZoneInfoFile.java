@@ -26,13 +26,14 @@
 package sun.util.calendar;
 
 import java.io.ByteArrayInputStream;
-import java.io.BufferedInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -176,6 +177,25 @@ public final class ZoneInfoFile {
     }
 
     /**
+     * Puts the serialized java.time.zone.ZoneRules of every region ID into
+     * the given map, so that java.time does not have to parse tzdb.dat again.
+     * The byte arrays are shared with this class and must not be modified.
+     *
+     * @param regionToRules the map to add to
+     */
+    public static void putRules(Map<String, ? super byte[]> regionToRules) {
+        // java.time rejects tzdb.dat if any version has a rule index out of
+        // range, which java.util.TimeZone only finds when the zone is used
+        if (badRuleIndex >= 0) {
+            throw new ArrayIndexOutOfBoundsException("Index " + badRuleIndex
+                    + " out of bounds for length " + ruleArray.length);
+        }
+        for (int i = 0; i < regions.length; i++) {
+            regionToRules.put(regions[i], ruleArray[indices[i]]);
+        }
+    }
+
+    /**
      * Gets a ZoneInfo with the given GMT offset. The object
      * has its ID in the format of GMT{+|-}hh:mm.
      *
@@ -230,6 +250,8 @@ public final class ZoneInfoFile {
     private static byte[][] ruleArray;
     private static String[] regions;
     private static int[] indices;
+    // The first rule index of any version that is out of range, -1 if none
+    private static int badRuleIndex = -1;
 
     static {
         loadTZDB();
@@ -238,75 +260,160 @@ public final class ZoneInfoFile {
     private static void loadTZDB() {
         try {
             String libDir = StaticProperty.javaHome() + File.separator + "lib";
-            try (DataInputStream dis = new DataInputStream(
-                     new BufferedInputStream(new FileInputStream(
-                         new File(libDir, "tzdb.dat"))))) {
-                load(dis);
+            byte[] data;
+            try (FileInputStream in = new FileInputStream(new File(libDir, "tzdb.dat"))) {
+                data = in.readAllBytes();
             }
+            load(new TzdbReader(data));
         } catch (Exception x) {
+            LoadFailure.cause = x;
             throw new Error(x);
         }
     }
 
     /**
-     * Loads the rules from a DateInputStream
+     * Holds the exception that made loading tzdb.dat fail, for java.time to
+     * report it. It is kept apart from ZoneInfoFile, which cannot be used any
+     * more once its initialization has failed.
+     */
+    public static final class LoadFailure {
+        private static Exception cause;
+
+        private LoadFailure() {
+        }
+
+        /**
+         * Returns the exception that made loading tzdb.dat fail.
+         *
+         * @return the exception, or null if loading did not fail
+         */
+        public static Exception cause() {
+            return cause;
+        }
+    }
+
+    /**
+     * Loads the rules from the contents of tzdb.dat
      *
-     * @param dis  the DateInputStream to load, not null
+     * @param in  the contents to load, not null
      * @throws IOException if an error occurs
      */
-    private static void load(DataInputStream dis) throws IOException {
-        if (dis.readByte() != 1) {
+    private static void load(TzdbReader in) throws IOException {
+        if (in.readByte() != 1) {
             throw new StreamCorruptedException("File format not recognised");
         }
         // group
-        String groupId = dis.readUTF();
+        String groupId = in.readUTF();
         if ("TZDB".equals(groupId) == false) {
             throw new StreamCorruptedException("File format not recognised");
         }
         // versions, only keep the last one
-        int versionCount = dis.readShort();
+        int versionCount = in.readShort();
         for (int i = 0; i < versionCount; i++) {
-            versionId = dis.readUTF();
+            versionId = in.readUTF();
 
         }
         // regions
-        int regionCount = dis.readShort();
+        int regionCount = in.readShort();
         String[] regionArray = new String[regionCount];
         for (int i = 0; i < regionCount; i++) {
-            regionArray[i] = dis.readUTF();
+            regionArray[i] = in.readUTF();
         }
         // rules
-        int ruleCount = dis.readShort();
+        int ruleCount = in.readShort();
         ruleArray = new byte[ruleCount][];
         for (int i = 0; i < ruleCount; i++) {
-            byte[] bytes = new byte[dis.readShort()];
-            dis.readFully(bytes);
-            ruleArray[i] = bytes;
+            ruleArray[i] = in.readBytes(in.readShort());
         }
         // link version-region-rules, only keep the last version, if more than one
         for (int i = 0; i < versionCount; i++) {
-            regionCount = dis.readShort();
+            regionCount = in.readShort();
             regions = new String[regionCount];
             indices = new int[regionCount];
             for (int j = 0; j < regionCount; j++) {
-                regions[j] = regionArray[dis.readShort()];
-                indices[j] = dis.readShort();
+                regions[j] = regionArray[in.readShort()];
+                indices[j] = in.readUnsignedShort();
+                if (indices[j] >= ruleCount && badRuleIndex < 0) {
+                    badRuleIndex = indices[j];
+                }
             }
         }
         // remove the following ids from the map, they
         // are excluded from the "old" ZoneInfo
         zones.remove("ROC");
         for (int i = 0; i < versionCount; i++) {
-            int aliasCount = dis.readShort();
+            int aliasCount = in.readShort();
             aliases.clear();
             for (int j = 0; j < aliasCount; j++) {
-                String alias = regionArray[dis.readShort()];
-                String region = regionArray[dis.readShort()];
+                String alias = regionArray[in.readShort()];
+                String region = regionArray[in.readShort()];
                 aliases.put(alias, region);
             }
         }
         // old us time-zone names
         aliases.putAll(ZoneId.SHORT_IDS);
+    }
+
+    // Reads the contents of tzdb.dat, which is written by DataOutput, from memory.
+    // All of the file is parsed before the first time zone is available, which is
+    // cheaper than reading it through a DataInputStream.
+    private static final class TzdbReader {
+        private final byte[] buf;
+        private int pos;
+
+        TzdbReader(byte[] buf) {
+            this.buf = buf;
+        }
+
+        byte readByte() throws IOException {
+            if (pos >= buf.length) {
+                throw new EOFException();
+            }
+            return buf[pos++];
+        }
+
+        int readShort() throws IOException {
+            return (short) readUnsignedShort();
+        }
+
+        int readUnsignedShort() throws IOException {
+            if (buf.length - pos < 2) {
+                throw new EOFException();
+            }
+            int v = ((buf[pos] & 0xff) << 8) | (buf[pos + 1] & 0xff);
+            pos += 2;
+            return v;
+        }
+
+        byte[] readBytes(int len) throws IOException {
+            // A negative length fails here, as with DataInput.readFully
+            byte[] bytes = new byte[len];
+            if (buf.length - pos < len) {
+                throw new EOFException();
+            }
+            System.arraycopy(buf, pos, bytes, 0, len);
+            pos += len;
+            return bytes;
+        }
+
+        String readUTF() throws IOException {
+            int start = pos;
+            int len = readUnsignedShort();
+            if (buf.length - pos < len) {
+                throw new EOFException();
+            }
+            int end = pos + len;
+            int i = pos;
+            while (i < end && buf[i] > 0) {
+                i++;
+            }
+            // IDs and names are expected to have single byte characters only
+            String s = i == end
+                    ? new String(buf, pos, len, StandardCharsets.ISO_8859_1)
+                    : new DataInputStream(new ByteArrayInputStream(buf, start, end - start)).readUTF();
+            pos = end;
+            return s;
+        }
     }
 
     /////////////////////////Ser/////////////////////////////////

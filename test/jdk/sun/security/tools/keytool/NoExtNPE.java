@@ -35,7 +35,7 @@ import java.nio.file.Path;
 public class NoExtNPE {
     public static void main(String[] args) throws Exception {
         SecurityTools.keytool("-list -v -keystore " +
-                Path.of(System.getProperty("test.src"), "CloneKeyAskPassword.jks")
+                Path.of(System.getProperty("test.src"), "NoExtNPE.p12")
                 + " -storepass test123").shouldHaveExitValue(0);
     }
 }

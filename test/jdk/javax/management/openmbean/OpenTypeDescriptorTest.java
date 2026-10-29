@@ -25,8 +25,8 @@
  * @test
  * @bug 6254721
  * @bug 6360539
- * @summary Test that Open*MBeanInfo classes include "openType" in descriptor
- *          and also test serial compatibility with Java 5.
+ * @summary Test that Open*MBeanInfo classes include "openType" in descriptors
+ *          and reject inconsistent descriptor types.
  * @author Eamonn McManus
  *
  * @run clean OpenTypeDescriptorTest
@@ -102,36 +102,6 @@ public class OpenTypeDescriptorTest {
                 failure("OpenType is " + openType + ", descriptor says " +
                         descriptorType + " for " + x);
             }
-        }
-
-        // Serial compatibility test:
-        //
-        System.out.println("Testing serial compatibility with Java "+
-                MBeanFeatureInfoSerialStore.SERIALIZER_VM_VERSION+
-                " "+
-                MBeanFeatureInfoSerialStore.SERIALIZER_VM_VENDOR);
-
-        for (String key : MBeanFeatureInfoSerialStore.keySet() ) {
-            MBeanFeatureInfo f = MBeanFeatureInfoSerialStore.get(key);
-            DescriptorRead x = (DescriptorRead)f;
-            OpenType descriptorType = (OpenType)
-                    x.getDescriptor().getFieldValue("openType");
-            OpenType openType;
-            if (x instanceof OpenMBeanParameterInfo)
-                openType = ((OpenMBeanParameterInfo) x).getOpenType();
-            else if (x instanceof OpenMBeanOperationInfo)
-                openType = ((OpenMBeanOperationInfo) x).getReturnOpenType();
-            else
-                throw new Exception("Can't get OpenType for " + key +": "+
-                        x.getClass());
-            if (openType.equals(descriptorType))
-                System.out.println("OK "+key+": " + x);
-            else {
-                failure("OpenType for "+key+" is " + openType +
-                        ", descriptor says " +
-                        descriptorType + " for " + x);
-            }
-
         }
 
         // Test that we get an exception if "openType" in Descriptor

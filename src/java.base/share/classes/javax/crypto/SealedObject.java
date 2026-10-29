@@ -25,8 +25,6 @@
 
 package javax.crypto;
 
-import jdk.internal.access.SharedSecrets;
-
 import java.io.*;
 import java.security.AlgorithmParameters;
 import java.security.Key;
@@ -437,17 +435,12 @@ public class SealedObject implements Serializable {
             encodedParams = encodedParams.clone();
     }
 
-    // This method is also called inside SealedObjectForKeyProtector.java.
     private ObjectInputStream getExtObjectInputStream(Cipher c)
             throws BadPaddingException, IllegalBlockSizeException, IOException {
 
         byte[] content = c.doFinal(this.encryptedContent);
         ByteArrayInputStream b = new ByteArrayInputStream(content);
         return new extObjectInputStream(b);
-    }
-
-    static {
-        SharedSecrets.setJavaxCryptoSealedObjectAccess(SealedObject::getExtObjectInputStream);
     }
 }
 

@@ -42,10 +42,8 @@ package java.io;
  * @see     java.io.IOException
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UTFDataFormatException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = 420743449228280612L;
-
     /**
      * Constructs a {@code UTFDataFormatException} with
      * {@code null} as its error detail message.

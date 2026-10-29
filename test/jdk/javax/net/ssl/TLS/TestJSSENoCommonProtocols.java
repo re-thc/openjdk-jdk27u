@@ -31,8 +31,8 @@
  *          and all checking is done on the client side.
  * @compile CipherTestUtils.java JSSEClient.java JSSEServer.java
  * @run main/othervm
- *              -DSERVER_PROTOCOL=TLSv1
- *              -DCLIENT_PROTOCOL=TLSv1.1,TLSv1.2
- *              -DCIPHER=SSL_RSA_WITH_RC4_128_MD5
+ *              -DSERVER_PROTOCOL=TLSv1.2
+ *              -DCLIENT_PROTOCOL=TLSv1.3
+ *              -DCIPHER=TLS_AES_128_GCM_SHA256
  *          TestJSSE javax.net.ssl.SSLHandshakeException
  */

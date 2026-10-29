@@ -119,12 +119,10 @@ package java.util;
  * @since   1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkedHashSet<E>
     extends HashSet<E>
     implements SequencedSet<E>, Cloneable, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2851667679971038690L;
 
     /**
      * Constructs a new, empty linked hash set with the specified initial

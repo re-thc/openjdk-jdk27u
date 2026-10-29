@@ -43,10 +43,8 @@ import java.io.IOException;
  * @serial exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidPropertiesFormatException extends IOException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7763056076009360219L;
 
     /**
      * Constructs an InvalidPropertiesFormatException with the specified

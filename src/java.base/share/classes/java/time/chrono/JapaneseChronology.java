@@ -120,6 +120,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JapaneseChronology extends AbstractChronology implements Serializable {
 
     static final LocalGregorianCalendar JCAL =
@@ -132,12 +133,6 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
      * Singleton instance for Japanese chronology.
      */
     public static final JapaneseChronology INSTANCE = new JapaneseChronology();
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 459996390165777884L;
 
     //-----------------------------------------------------------------------
     /**

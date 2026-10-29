@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,7 +440,6 @@ class SerializeClosure;
   template(isJavaIdentifierPart_name,                 "isJavaIdentifierPart")                     \
   template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
-  template(compact_strings_name,                      "COMPACT_STRINGS")                          \
   template(numberOfLeadingZeros_name,                 "numberOfLeadingZeros")                     \
   template(numberOfTrailingZeros_name,                "numberOfTrailingZeros")                    \
   template(bitCount_name,                             "bitCount")                                 \

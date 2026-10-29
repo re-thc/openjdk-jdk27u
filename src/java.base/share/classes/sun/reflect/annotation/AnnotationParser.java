@@ -30,7 +30,6 @@ import java.lang.reflect.*;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.Supplier;
 
 import jdk.internal.reflect.ConstantPool;
 
@@ -161,6 +160,33 @@ public class AnnotationParser {
             // Type mismatch in constant pool
             throw new AnnotationFormatError(e);
         }
+    }
+
+    /**
+     * Returns whether annotations contain temporarily unresolved enum constants
+     * and must remain uncached. See AnnotationInvocationHandler.hasUnresolvedEnumConstant.
+     */
+    public static boolean hasUnresolvedEnumConstant(Collection<? extends Annotation> annotations) {
+        for (Annotation annotation : annotations) {
+            if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(annotation)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Parameter-annotation variant of {@link #hasUnresolvedEnumConstant(Collection)}.
+     */
+    public static boolean hasUnresolvedEnumConstant(Annotation[][] annotations) {
+        for (Annotation[] parameterAnnotations : annotations) {
+            for (Annotation annotation : parameterAnnotations) {
+                if (AnnotationInvocationHandler.hasUnresolvedEnumConstant(annotation)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static Annotation[][] parseParameterAnnotations2(
@@ -693,8 +719,7 @@ public class AnnotationParser {
                                           ByteBuffer buf,
                                           ConstantPool constPool,
                                           Class<?> container) {
-        return parseArrayElements(new Class<?>[length],
-                buf, 'c', () -> parseClassValue(buf, constPool, container));
+        return parseArrayElements(new Class<?>[length], buf, 'c', constPool, container);
     }
 
     private static Object parseEnumArray(int length, Class<? extends Enum<?>> enumType,
@@ -702,7 +727,7 @@ public class AnnotationParser {
                                          ConstantPool constPool,
                                          Class<?> container) {
         return parseArrayElements((Object[]) Array.newInstance(enumType, length),
-                buf, 'e', () -> parseEnumValue(enumType, buf, constPool, container));
+                buf, 'e', constPool, container);
     }
 
     private static Object parseAnnotationArray(int length,
@@ -711,18 +736,34 @@ public class AnnotationParser {
                                                ConstantPool constPool,
                                                Class<?> container) {
         return parseArrayElements((Object[]) Array.newInstance(annotationType, length),
-                buf, '@', () -> parseAnnotation(buf, constPool, container, true));
+                buf, '@', constPool, container);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object parseArrayElement(Class<?> componentType, int tag,
+                                            ByteBuffer buf,
+                                            ConstantPool constPool,
+                                            Class<?> container) {
+        return switch (tag) {
+            case 'c' -> parseClassValue(buf, constPool, container);
+            case 'e' -> parseEnumValue((Class<? extends Enum<?>>) componentType,
+                                       buf, constPool, container);
+            case '@' -> parseAnnotation(buf, constPool, container, true);
+            default -> throw new AssertionError(tag);
+        };
     }
 
     private static Object parseArrayElements(Object[] result,
                                              ByteBuffer buf,
                                              int expectedTag,
-                                             Supplier<Object> parseElement) {
+                                             ConstantPool constPool,
+                                             Class<?> container) {
+        Class<?> componentType = result.getClass().getComponentType();
         Object exceptionProxy = null;
         for (int i = 0; i < result.length; i++) {
             int tag = buf.get();
             if (tag == expectedTag) {
-                Object value = parseElement.get();
+                Object value = parseArrayElement(componentType, tag, buf, constPool, container);
                 if (value instanceof ExceptionProxy proxyValue) {
                     if (exceptionProxy == null)
                         exceptionProxy = proxyValue;

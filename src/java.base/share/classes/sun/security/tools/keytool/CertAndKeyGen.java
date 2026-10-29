@@ -69,9 +69,9 @@ public final class CertAndKeyGen {
      * Creates a CertAndKeyGen object for a particular key type
      * and signature algorithm.
      *
-     * @param keyType type of key, e.g. "RSA", "DSA"
-     * @param sigAlg name of the signature algorithm, e.g. "MD5WithRSA",
-     *          "MD2WithRSA", "SHAwithDSA". If set to null, a default
+     * @param keyType type of key, e.g. "RSA", "EC"
+     * @param sigAlg name of the signature algorithm, e.g. "SHA256withRSA",
+     *          "SHA256withECDSA". If set to null, a default
      *          algorithm matching the private key will be chosen after
      *          the first keypair is generated.
      * @exception NoSuchAlgorithmException on unrecognized algorithms.

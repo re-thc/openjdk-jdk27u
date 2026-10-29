@@ -4184,11 +4184,10 @@ public final class Arrays {
     /**
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class ArrayList<E> extends AbstractList<E>
         implements RandomAccess, java.io.Serializable
     {
-        @java.io.Serial
-        private static final long serialVersionUID = -2764017481108945198L;
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E[] a;

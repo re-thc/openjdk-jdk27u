@@ -169,6 +169,7 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 
 //---------------------------match---------------------------------------------
 void Matcher::match( ) {
+  AARCH64_ONLY(FloatRoundTripClassificationMark classification_mark(this);)
   if( MaxLabelRootDepth < 100 ) { // Too small?
     assert(false, "invalid MaxLabelRootDepth, increase it to 100 minimum");
     MaxLabelRootDepth = 100;
@@ -304,6 +305,8 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
+  AARCH64_ONLY(prepare_float_roundtrip_accumulations();)
+
   C->print_method(PHASE_BEFORE_MATCHING, 1);
 
   // Create new ideal node ConP #null even if it does exist in old space
@@ -384,6 +387,8 @@ void Matcher::match( ) {
     }
     C->record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));
   }
+  // Disable old-node classification before either old-space destruction path.
+  AARCH64_ONLY(clear_float_roundtrip_accumulations();)
   if (C->failing()) {
     // delete old;
     old->destruct_contents();
@@ -2118,6 +2123,7 @@ void Matcher::find_shared(Node* n) {
 }
 
 bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_op, int& mem_addr_idx) {
+  AARCH64_ONLY(if (opcode == Op_AddF) { collect_float_roundtrip_add(n); })
   switch(opcode) {  // Handle some opcodes special
     case Op_Phi:             // Treat Phis as shared roots
     case Op_Parm:

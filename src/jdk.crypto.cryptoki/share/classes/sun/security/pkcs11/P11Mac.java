@@ -105,9 +105,7 @@ final class P11Mac extends MacSpi {
             }
             macLength = svcKi.keyLen / 8;
         }
-        ckMechanism = new CK_MECHANISM(mechanism, mechanism == CKM_SSL3_MD5_MAC
-                || mechanism == CKM_SSL3_SHA1_MAC ? Long.valueOf(macLength) :
-                null);
+        ckMechanism = new CK_MECHANISM(mechanism);
     }
 
     // reset the states to the pre-initialized values

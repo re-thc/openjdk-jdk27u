@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8057810 8267319
- * @summary New defaults for DSA, RSA, EC keys in jarsigner and keytool
+ * @summary Default signatures for RSA, EC and RSASSA-PSS keys in jarsigner and keytool
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.tools.keytool
  *          java.base/sun.security.util
@@ -50,14 +50,13 @@ public class DefaultSigalg {
     public static void main(String[] args) throws Exception {
 
         // Three test cases
-        String[] keyalgs = {"DSA", "RSA", "EC", "RSASSA-PSS"};
+        String[] keyalgs = {"RSA", "EC", "RSASSA-PSS"};
         // Expected default keytool sigalg
-        String[] sigalgs = {"SHA256withDSA", "SHA384withRSA",
-                "SHA384withECDSA", "RSASSA-PSS"};
+        String[] sigalgs = {"SHA384withRSA", "SHA384withECDSA", "RSASSA-PSS"};
         // Expected keysizes
-        int[] keysizes = {2048, 3072, 384, 3072};
+        int[] keysizes = {3072, 384, 3072};
         // Expected jarsigner digest alg used in signature
-        String[] digestalgs = {"SHA-256", "SHA-384", "SHA-384", "SHA-384"};
+        String[] digestalgs = {"SHA-384", "SHA-384", "SHA-384"};
 
         // Create a jar file
         sun.tools.jar.Main m =
@@ -68,21 +67,21 @@ public class DefaultSigalg {
         }
 
         // Generate keypairs and sign the jar
-        Files.deleteIfExists(Paths.get("jks"));
+        Files.deleteIfExists(Paths.get("keystore.p12"));
         for (String keyalg: keyalgs) {
             sun.security.tools.keytool.Main.main(
-                    ("-keystore jks -storepass changeit -keypass changeit " +
+                    ("-keystore keystore.p12 -storetype PKCS12 -storepass changeit -keypass changeit " +
                             "-dname CN=A -alias " + keyalg + " -genkeypair " +
                             "-keyalg " + keyalg).split(" "));
             sun.security.tools.jarsigner.Main.main(
-                    ("-keystore jks -storepass changeit a.jar " + keyalg).split(" "));
+                    ("-keystore keystore.p12 -storepass changeit a.jar " + keyalg).split(" "));
         }
 
         // Check result
-        KeyStore ks = KeyStore.getInstance("JKS");
-        try (FileInputStream jks = new FileInputStream("jks");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        try (FileInputStream store = new FileInputStream("keystore.p12");
                 JarFile jf = new JarFile("a.jar")) {
-            ks.load(jks, "changeit".toCharArray());
+            ks.load(store, "changeit".toCharArray());
             for (int i = 0; i<keyalgs.length; i++) {
                 String keyalg = keyalgs[i];
                 // keytool

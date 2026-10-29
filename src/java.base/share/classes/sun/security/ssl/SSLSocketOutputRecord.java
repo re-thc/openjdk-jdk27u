@@ -108,51 +108,6 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
                 return;
             }
 
-            if (firstMessage) {
-                firstMessage = false;
-
-                if ((helloVersion == ProtocolVersion.SSL20Hello) &&
-                    (source[offset] == SSLHandshake.CLIENT_HELLO.id) &&
-                                            //  5: recode header size
-                    (source[offset + 4 + 2 + 32] == 0)) {
-                                            // V3 session ID is empty
-                                            //  4: handshake header size
-                                            //  2: client_version in ClientHello
-                                            // 32: random in ClientHello
-
-                    ByteBuffer v2ClientHello = encodeV2ClientHello(
-                            source, (offset + 4), (length - 4));
-
-                    // array offset is zero
-                    byte[] record = v2ClientHello.array();
-                    int limit = v2ClientHello.limit();
-                    handshakeHash.deliver(record, 2, (limit - 2));
-
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
-                        SSLLogger.fine(
-                                "WRITE: SSLv2 ClientHello message" +
-                                ", length = " + limit);
-                    }
-
-                    // deliver this message
-                    //
-                    // Version 2 ClientHello message should be plaintext.
-                    //
-                    // No max fragment length negotiation.
-                    deliverStream.write(record, 0, limit);
-                    deliverStream.flush();
-
-                    if (SSLLogger.isOn() &&
-                            SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                        SSLLogger.fine("Raw write",
-                                (new ByteArrayInputStream(record, 0, limit)));
-                    }
-
-                    return;
-                }
-            }
-
             byte handshakeType = source[0];
             if (handshakeHash.isHashable(handshakeType)) {
                 handshakeHash.deliver(source, offset, length);
@@ -308,7 +263,6 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
                 throw new SSLHandshakeException("sequence number overflow");
             }
 
-            boolean isFirstRecordOfThePayload = true;
             for (int limit = (offset + length); offset < limit;) {
                 int fragLen;
                 if (packetSize > 0) {
@@ -324,12 +278,7 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
                 // Calculate more impact, for example TLS 1.3 padding.
                 fragLen = calculateFragmentSize(fragLen);
 
-                if (isFirstRecordOfThePayload && needToSplitPayload()) {
-                    fragLen = 1;
-                    isFirstRecordOfThePayload = false;
-                } else {
-                    fragLen = Math.min(fragLen, (limit - offset));
-                }
+                fragLen = Math.min(fragLen, (limit - offset));
 
                 // use the buf of ByteArrayOutputStream
                 int position = headerSize + writeCipher.getExplicitNonceSize();
@@ -360,10 +309,6 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
                 // reset the internal buffer
                 count = 0;
 
-                if (isFirstAppOutputRecord) {
-                    isFirstAppOutputRecord = false;
-                }
-
                 offset += fragLen;
             }
         } finally {
@@ -379,35 +324,6 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
         } finally {
             recordLock.unlock();
         }
-    }
-
-    /*
-     * Need to split the payload except the following cases:
-     *
-     * 1. protocol version is TLS 1.1 or later;
-     * 2. bulk cipher does not use CBC mode, including null bulk cipher suites.
-     * 3. the payload is the first application record of a freshly
-     *    negotiated TLS session.
-     * 4. the CBC protection is disabled;
-     *
-     * By default, we counter chosen plaintext issues on CBC mode
-     * ciphersuites in SSLv3/TLS1.0 by sending one byte of application
-     * data in the first record of every payload, and the rest in
-     * subsequent record(s). Note that the issues have been solved in
-     * TLS 1.1 or later.
-     *
-     * It is not necessary to split the very first application record of
-     * a freshly negotiated TLS session, as there is no previous
-     * application data to guess.  To improve compatibility, we will not
-     * split such records.
-     *
-     * This avoids issues in the outbound direction.  For a full fix,
-     * the peer must have similar protections.
-     */
-    private boolean needToSplitPayload() {
-        return (!protocolVersion.useTLS11PlusSpec()) &&
-                writeCipher.isCBCMode() && !isFirstAppOutputRecord &&
-                Record.enableCBCProtection;
     }
 
     private int getFragLimit() {

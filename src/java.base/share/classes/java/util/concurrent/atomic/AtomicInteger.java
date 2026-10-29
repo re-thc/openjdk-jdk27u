@@ -52,9 +52,8 @@ import jdk.internal.misc.Unsafe;
  * @since 1.5
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AtomicInteger extends Number implements java.io.Serializable {
-    private static final long serialVersionUID = 6214790243416807050L;
-
     /*
      * This class intended to be implemented using VarHandles, but there
      * are unresolved cyclic startup dependencies.

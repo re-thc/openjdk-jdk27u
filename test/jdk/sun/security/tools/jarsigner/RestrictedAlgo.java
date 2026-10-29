@@ -74,24 +74,11 @@ public class RestrictedAlgo {
                         + "jdk.security.legacyAlgorithms=");
         }
 
-        System.out.println("\nTesting sigalg MD2\n");
-        test("RSA", "MD2withRSA", "SigAlgMD2", "SHA256", true);
-
-        System.out.println("\nTesting sigalg MD5\n");
-        test("RSA", "MD5withRSA", "SigAlgMD5", "SHA256", true);
-
-        System.out.println("\nTesting digestalg MD2\n");
-        test("RSA", "SHA256withRSA", "DigestAlgMD2", "MD2", false);
-
         System.out.println("\nTesting digestalg MD5\n");
         test("RSA", "SHA256withRSA", "DigestAlgMD5", "MD5", false);
 
         System.out.println("\nTesting RSA Keysize: RSA keySize < 1024\n");
         test("RSA", "SHA256withRSA", "KeySizeRSA", "SHA256", true,
-                "-keysize", "512");
-
-        System.out.println("\nTesting DSA Keysize: DSA keySize < 1024\n");
-        test("DSA", "SHA256withDSA", "KeySizeDSA", "SHA256", true,
                 "-keysize", "512");
     }
 

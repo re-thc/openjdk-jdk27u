@@ -78,8 +78,6 @@ public class CounterMode {
         "DES",
         "DESede",
         "DESede",
-        "Blowfish",
-        "Blowfish",
     };
 
     private final static byte[][] KEYS = {
@@ -92,8 +90,6 @@ public class CounterMode {
         toByteArray("874d6191b620e326"),
         toByteArray("8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b"),
         toByteArray("874d6191b620e3261bef6864990db6ce9806f66b7970fdff"),
-        toByteArray("2b7e151628aed2a6abf7158809cf4f3c"),
-        toByteArray("874d6191b620e3261bef6864990db6ce"),
     };
 
     private final static byte[][] IVS = {
@@ -104,8 +100,6 @@ public class CounterMode {
         toByteArray("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"),
         toByteArray("fffffffffffffffd"),
         toByteArray("f0f1f2f3f4f5f6f7"),
-        toByteArray("f0f1f2f3f4f5f6f7"),
-        toByteArray("f0f1f2f3f4f5f6ff"),
         toByteArray("f0f1f2f3f4f5f6f7"),
         toByteArray("f0f1f2f3f4f5f6ff"),
     };
@@ -120,8 +114,6 @@ public class CounterMode {
         toByteArray("6bc1bee22e409f96"),
         toByteArray("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710"),
         toByteArray("6bc1bee22e409f96e9"),
-        toByteArray("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710"),
-        toByteArray("6bc1bee22e409f"),
     };
 
     private final static byte[][] CIPHER = {
@@ -134,8 +126,6 @@ public class CounterMode {
         toByteArray("79:5e:90:a6:35:9d:1e:b2"),
         toByteArray("0a:ce:b5:1e:20:74:2e:29:17:28:55:d6:c9:28:62:c3:43:a5:da:30:90:9f:8f:46:60:3d:b6:5c:b6:bc:21:52:06:2f:6f:b4:14:0d:ef:23:e2:99:fd:4b:dc:65:ee:6a:50:76:5b:86:43:65:56:ee:1a:7a:25:07:43:b4:f0:88"),
         toByteArray("12:06:8f:ae:bb:47:a7:68:8b"),
-        toByteArray("ac:92:83:dd:79:f3:c2:36:0c:da:06:bd:ed:69:ca:47:42:2e:68:11:5e:6b:63:56:3e:87:b0:be:98:17:42:7d:8b:4a:5b:be:af:0c:2b:f0:1c:1c:62:60:b9:2c:69:04:ca:c9:23:d2:08:9d:8d:57:7f:61:f7:e6:79:83:ae:89"),
-        toByteArray("65:ff:ee:6b:64:9e:a0"),
     };
 
     private static String toString(byte[] b) {

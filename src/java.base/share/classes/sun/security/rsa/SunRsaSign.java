@@ -38,10 +38,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunRsaSign extends Provider {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 866040293550393045L;
 
     public SunRsaSign() {
         super("SunRsaSign", PROVIDER_VER, "Sun RSA signature provider");

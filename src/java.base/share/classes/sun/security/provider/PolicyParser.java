@@ -478,10 +478,8 @@ public class PolicyParser {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ParsingException extends GeneralSecurityException {
-
-        @java.io.Serial
-        private static final long serialVersionUID = -4330692689482574072L;
 
         private String i18nMessage;
         @SuppressWarnings("serial") // Not statically typed as Serializable

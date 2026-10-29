@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.hasAWT
  * @bug 8324345
  * @modules java.desktop
  * @summary Ensure that ConnectionGraph::find_inst_mem does not cause a stack

@@ -58,12 +58,8 @@ import java.util.*;
  *     and {@code java.security.Principal}.
  */
 @Deprecated(since="1.2", forRemoval=true)
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 public abstract class Identity implements Principal, Serializable {
-
-    /** use serialVersionUID from JDK 1.1.x for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 3609922007826600659L;
 
     /**
      * The name for this {@code Identity}.

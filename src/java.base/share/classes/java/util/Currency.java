@@ -114,10 +114,8 @@ import sun.util.logging.PlatformLogger;
  * @see java.math.BigDecimal
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Currency implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -158308464356906721L;
 
     /**
      * ISO 4217 currency code for this currency.
@@ -395,7 +393,8 @@ public final class Currency implements Serializable {
 
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
 
-        if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
+        if (country == null || country.length() != 2
+                || !isAsciiLetter(country.charAt(0)) || !isAsciiLetter(country.charAt(1))) {
             throw new IllegalArgumentException(
                     "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
         }
@@ -691,6 +690,10 @@ public final class Currency implements Serializable {
     @java.io.Serial
     private Object readResolve() {
         return getInstance(currencyCode);
+    }
+
+    private static boolean isAsciiLetter(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
     }
 
     /**

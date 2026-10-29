@@ -78,13 +78,11 @@ import jdk.internal.access.SharedSecrets;
  * @since 1.5
  * @see EnumMap
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     implements Cloneable, java.io.Serializable permits JumboEnumSet, RegularEnumSet
 {
     // declare EnumSet.class serialization compatibility with JDK 8
-    @java.io.Serial
-    private static final long serialVersionUID = 1009687484059888093L;
-
     /**
      * The class of all the elements of this set.
      */
@@ -419,6 +417,7 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      *
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SerializationProxy<E extends Enum<E>>
         implements java.io.Serializable
     {
@@ -463,8 +462,6 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
             return result;
         }
 
-        @java.io.Serial
-        private static final long serialVersionUID = 362491234563181265L;
     }
 
     /**

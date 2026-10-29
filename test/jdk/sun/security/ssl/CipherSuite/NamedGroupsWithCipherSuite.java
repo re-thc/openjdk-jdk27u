@@ -27,8 +27,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
-import jdk.test.lib.security.SecurityUtils;
-
 /*
   * @test
   * @bug 8224650 8242929 8314323
@@ -54,9 +52,7 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
 
     private static final List<Protocol> PROTOCOLS = List.of(
             Protocol.TLSV1_3,
-            Protocol.TLSV1_2,
-            Protocol.TLSV1_1,
-            Protocol.TLSV1
+            Protocol.TLSV1_2
     );
 
     private static final List<CipherSuite> CIPHER_SUITES = List.of(
@@ -73,9 +69,6 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
             CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
             CipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-
-            CipherSuite.TLS_DHE_DSS_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_DHE_DSS_WITH_AES_256_CBC_SHA256,
 
             CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
@@ -131,12 +124,6 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
                 endEntityCerts = new SSLSocketTemplate.Cert[] {
                         SSLSocketTemplate.Cert.EE_ECDSA_SECP521R1 };
             }
-        } else if (protocol.id < Protocol.TLSV1_2.id
-                && cipher.keyExAlgorithm == KeyExAlgorithm.DHE_DSS) {
-            trustedCerts = new SSLSocketTemplate.Cert[] {
-                    SSLSocketTemplate.Cert.CA_DSA_1024 };
-            endEntityCerts = new SSLSocketTemplate.Cert[] {
-                    SSLSocketTemplate.Cert.EE_DSA_1024 };
         }
     }
 
@@ -168,9 +155,6 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
         // Named group is set as per run argument with no change in it's alphabet
         System.setProperty("jdk.tls.namedGroups", namedGroup);
         System.out.println("NamedGroup: " + namedGroup);
-
-        // Re-enable TLSv1 and TLSv1.1 since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
         boolean hybridGroup = HYBRID_NAMEDGROUPS.contains(namedGroup);
         List<Protocol> protocolList = hybridGroup ?
@@ -227,7 +211,6 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
     private static boolean ffdhGroupSupportedByCipher(
             CipherSuite cipherSuite) {
         return cipherSuite.keyExAlgorithm == null
-                || cipherSuite.keyExAlgorithm == KeyExAlgorithm.DHE_DSS
                 || cipherSuite.keyExAlgorithm == KeyExAlgorithm.DHE_RSA;
     }
 }

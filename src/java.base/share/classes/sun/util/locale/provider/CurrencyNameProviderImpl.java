@@ -64,6 +64,12 @@ public class CurrencyNameProviderImpl extends CurrencyNameProvider
         return LocaleProviderAdapter.toLocaleArray(langtags);
     }
 
+    @Override
+    public boolean isSupportedLocale(Locale locale) {
+        return LocaleProviderAdapter.isAvailableLocale(locale, langtags)
+                || super.isSupportedLocale(locale);
+    }
+
     /**
      * Gets the symbol of the given currency code for the specified locale.
      * For example, for "USD" (US Dollar), the symbol is "$" if the specified

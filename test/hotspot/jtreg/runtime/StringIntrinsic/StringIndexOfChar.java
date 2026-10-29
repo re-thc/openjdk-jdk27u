@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +25,24 @@
 /* @test
  * @bug 8239787
  * @summary String.indexOf(char) for empty string must give -1
- * @run main/othervm -XX:-CompactStrings StringIndexOfChar
+ * @run main/othervm StringIndexOfChar
  */
 public class StringIndexOfChar {
     public static void main(String[] args) throws Exception {
         String emptyString = "";
+        String utf16 = "\u0100";
         for (int i = 0; i < 100; i++) {
             for(int c = 0; c < 0xFFFF; c++) {
                 int result = emptyString.indexOf((char)c, -1);
                 if (result != -1) {
                     throw new Exception("new String(\"\").indexOf(char, -1) must be -1, but got " + result);
+                }
+                if (utf16.indexOf((char)c, utf16.length()) != -1) {
+                    throw new Exception("UTF16 search over an empty range must give -1");
+                }
+                int expected = c == '\u0100' ? 0 : -1;
+                if (utf16.indexOf((char)c, -1) != expected) {
+                    throw new Exception("Unexpected UTF16 search result for character " + c);
                 }
             }
         }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +32,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -1204,6 +1206,30 @@ bool VectorNode::should_swap_inputs_to_help_global_value_numbering() {
     return false;
   }
 
+#ifdef AARCH64
+  switch (Opcode()) {
+    case Op_MulVB:
+    case Op_MulVS:
+    case Op_MulVI:
+      if (UseSVE > 0 && length_in_bytes() > 16) {
+        const bool in1_is_replicate = in(1)->Opcode() == Op_Replicate;
+        const bool in2_is_replicate = in(2)->Opcode() == Op_Replicate;
+        if (in1_is_replicate != in2_is_replicate) {
+          Node* data = in(in1_is_replicate ? 2 : 1);
+          // SVE integer multiply destroys its first source. Prefer disposable
+          // data, but preserve the existing ordering for shared data: destroying
+          // it can add a copy even when the broadcast is also shared.
+          if (data->outcnt() == 1) {
+            return in1_is_replicate;
+          }
+        }
+      }
+      break;
+    default:
+      break;
+  }
+#endif
+
   if (is_commutative_vector_operation(Opcode())) {
     assert(req() == 3, "Must be a binary operation");
     // For non-predicated commutative operations, sort the inputs in
@@ -1425,10 +1451,40 @@ Node* VectorNode::push_through_replicate(PhaseGVN* phase) {
   return new ReplicateNode(sop, vect_type());
 }
 
+// Return the existing square in an unmasked cube of value. The value itself
+// may be any vector expression; only the participating multiplies are inspected.
+static Node* find_mulvl_square(Node* cube, Node* value) {
+  if (cube->Opcode() != Op_MulVL || cube->is_predicated_vector()) {
+    return nullptr;
+  }
+  Node* square = cube->in(1);
+  Node* other = cube->in(2);
+  if (other != value) {
+    swap(square, other);
+  }
+  if (other == value && square->Opcode() == Op_MulVL && !square->is_predicated_vector() &&
+      square->in(1) == value && square->in(2) == value) {
+    return square;
+  }
+  return nullptr;
+}
+
 Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* n = ideal_partial_operations(phase, this, vect_type());
   if (n != nullptr) {
     return n;
+  }
+
+  if (Opcode() == Op_MulVL && !is_predicated_vector()) {
+    // Integer multiplication wraps modulo 2^64, so four identical factors
+    // can share one square without changing overflow semantics.
+    Node* square = find_mulvl_square(in(1), in(2));
+    if (square == nullptr) {
+      square = find_mulvl_square(in(2), in(1));
+    }
+    if (square != nullptr) {
+      return VectorNode::make(Opcode(), square, square, vect_type());
+    }
   }
 
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
@@ -2697,6 +2753,48 @@ Node* OrVNode::Identity(PhaseGVN* phase) {
   return redundant_logical_identity(this);
 }
 
+Node* VectorMaskCmpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Floating-point self comparisons depend on NaNs. Predicated comparisons
+  // must also preserve the result for inactive lanes.
+  const TypeVect* input_type = in(1)->bottom_type()->isa_vect();
+  // ReplicateNode does not support boolean or char lanes. Check the mask
+  // type as well as the operand type; floating-point masks may use integers.
+  auto supported_type = [](BasicType bt) {
+    return bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG;
+  };
+  BasicType bt = vect_type()->element_basic_type();
+  if (!is_predicated_vector() && in(1) == in(2) && input_type != nullptr &&
+      supported_type(input_type->element_basic_type()) && supported_type(bt)) {
+    int value;
+    switch (_predicate) {
+      case BoolTest::eq:
+      case BoolTest::le:
+      case BoolTest::ge:
+      case BoolTest::ule:
+      case BoolTest::uge:
+        value = -1;
+        break;
+      case BoolTest::ne:
+      case BoolTest::lt:
+      case BoolTest::gt:
+      case BoolTest::ult:
+      case BoolTest::ugt:
+        value = 0;
+        break;
+      default:
+        return VectorNode::Ideal(phase, can_reshape);
+    }
+    Node* scalar;
+    if (bt == T_LONG) {
+      scalar = phase->longcon(value);
+    } else {
+      scalar = phase->intcon(value);
+    }
+    return VectorNode::scalar2vector(scalar, length(), bt, vect_type()->isa_pvectmask() != nullptr);
+  }
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
 // Returns whether (XorV (VectorMaskCmp) -1) can be optimized by negating the
 // comparison operation.
 bool VectorMaskCmpNode::predicate_can_be_negated() {
@@ -2815,24 +2913,34 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
   if (in(1) == in(2)) {
     return in(1);
   }
+  if (!is_predicated_vector()) {
+    if (VectorNode::is_all_zeros_vector(in(3))) {
+      return in(1);
+    }
+    if (VectorNode::is_all_ones_vector(in(3))) {
+      return in(2);
+    }
+  }
   return this;
 }
 static bool is_replicate_uint_constant(const Node* n) {
   return n->Opcode() == Op_Replicate &&
          n->in(1)->is_Con() &&
          n->in(1)->bottom_type()->isa_long() &&
-         n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
+         (julong)n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFUL;
 }
 
 static bool has_vector_elements_fit_uint(Node* n) {
   auto is_lower_doubleword_mask_pattern = [](const Node* n) {
     return n->Opcode() == Op_AndV &&
+           !n->is_predicated_vector() &&
            (is_replicate_uint_constant(n->in(1)) ||
             is_replicate_uint_constant(n->in(2)));
   };
 
   auto is_clear_upper_doubleword_uright_shift_pattern = [](const Node* n) {
     return n->Opcode() == Op_URShiftVL &&
+           !n->is_predicated_vector() &&
            n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
@@ -2848,6 +2956,7 @@ static bool has_vector_elements_fit_int(Node* n) {
 
   auto is_clear_upper_doubleword_right_shift_pattern = [](const Node* n) {
     return n->Opcode() == Op_RShiftVL &&
+           !n->is_predicated_vector() &&
            n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
            n->in(2)->in(1)->bottom_type()->isa_int() &&
            n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;

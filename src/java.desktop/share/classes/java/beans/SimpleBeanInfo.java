@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +27,6 @@
 package java.beans;
 
 import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.image.ImageProducer;
-import java.net.URL;
 
 /**
  * This is a support class to make it easier for people to provide
@@ -119,81 +117,16 @@ public class SimpleBeanInfo implements BeanInfo {
      */
     @Override
     public Image getIcon(final int iconKind) {
-        final BeanDescriptor descriptor = getBeanDescriptor();
-        if (descriptor != null) {
-            final Class<?> type = descriptor.getBeanClass();
-            if (type != null && type.getClassLoader() == null
-                    && type.getAnnotation(JavaBean.class) != null) {
-                final String name = type.getName();
-                final int index = name.lastIndexOf('.');
-                if (name.substring(0, index).equals("javax.swing")) {
-                    final String className = type.getSimpleName();
-                    switch (iconKind) {
-                        case ICON_COLOR_32x32:
-                            return loadImage(className, "Color32.gif");
-                        case ICON_COLOR_16x16:
-                            return loadImage(className, "Color16.gif");
-                        case ICON_MONO_32x32:
-                            return loadImage(className, "Mono32.gif");
-                        case ICON_MONO_16x16:
-                            return loadImage(className, "Mono16.gif");
-                    }
-                }
-            }
-        }
         return null;
     }
 
     /**
-     * This is a utility method to help in loading standard icon images.
-     *
-     * @param  resourceName A pathname relative to the directory holding the
-     *         class file of the current class
-     * @return an image object. May be null if the load failed.
-     * @see java.beans.SimpleBeanInfo#loadImage(String)
-     */
-    private Image loadStandardImage(final String resourceName) {
-        return loadImage(resourceName);
-    }
-
-    /**
-     * This is a utility method to help in loading standard icon images.
-     *
-     * @param  resourceName A pathname relative to the directory holding the
-     *         class file of the current class
-     * @param  suffix A {@code String} containing a file suffix (<i>e.g.</i>,
-     *         "Color32.gif" or "Mono32.gif")
-     * @return an image object. May be null if the load failed.
-     * @see java.beans.SimpleBeanInfo#loadImage(String)
-     */
-    private Image loadImage(final String resourceName, final String suffix) {
-        final String prefix = "/javax/swing/beaninfo/images/";
-        final Image image = loadStandardImage(prefix + resourceName + suffix);
-        return image == null ? loadStandardImage(prefix + "JComponent" + suffix)
-                             : image;
-    }
-
-    /**
-     * This is a utility method to help in loading icon images. It takes the
-     * name of a resource file associated with the current object's class file
-     * and loads an image object from that file. Typically images will be GIFs.
-     *
-     * @param  resourceName A pathname relative to the directory holding the
-     *         class file of the current class. For example, "wombat.gif".
-     * @return an image object or null if the resource is not found or the
-     *         resource could not be loaded as an Image
+     * Image loading is unavailable in this fork's server profile.
+     * @param resourceName the image resource name
+     * @return never returns normally
+     * @throws UnsupportedOperationException always
      */
     public Image loadImage(final String resourceName) {
-        try {
-            final URL url = getClass().getResource(resourceName);
-            if (url != null) {
-                final ImageProducer ip = (ImageProducer) url.getContent();
-                if (ip != null) {
-                    return Toolkit.getDefaultToolkit().createImage(ip);
-                }
-            }
-        } catch (final Exception ignored) {
-        }
-        return null;
+        throw new UnsupportedOperationException("Image loading is unavailable in this server profile");
     }
 }

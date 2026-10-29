@@ -28,7 +28,6 @@ package java.net;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.Permissions;
 import java.security.PermissionCollection;
@@ -441,15 +440,13 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         java.nio.ByteBuffer bb = res.getByteBuffer();
         if (bb != null) {
             // Use (direct) ByteBuffer:
-            CodeSigner[] signers = res.getCodeSigners();
-            CodeSource cs = new CodeSource(url, signers);
+            CodeSource cs = res.getCodeSource();
             PerfCounter.getReadClassBytesTime().addElapsedTimeFrom(t0);
             return defineClass(name, bb, cs);
         } else {
             byte[] b = res.getBytes();
             // must read certificates AFTER reading bytes.
-            CodeSigner[] signers = res.getCodeSigners();
-            CodeSource cs = new CodeSource(url, signers);
+            CodeSource cs = res.getCodeSource();
             PerfCounter.getReadClassBytesTime().addElapsedTimeFrom(t0);
             return defineClass(name, b, 0, b.length, cs);
         }

@@ -141,13 +141,8 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * @author  Xueming Shen
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Properties extends Hashtable<Object,Object> {
-    /**
-     * use serialVersionUID from JDK 1.1.X for interoperability
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 4112578634029874840L;
-
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**

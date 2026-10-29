@@ -31,10 +31,8 @@ package java.net;
  * @since   1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SocketTimeoutException extends java.io.InterruptedIOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -8846654841826352300L;
-
     /**
      * Constructs a new SocketTimeoutException with a detail
      * message.

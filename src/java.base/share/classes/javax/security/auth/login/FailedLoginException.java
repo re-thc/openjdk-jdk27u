@@ -34,10 +34,8 @@ package javax.security.auth.login;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FailedLoginException extends LoginException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 802556922354616286L;
 
     /**
      * Constructs a FailedLoginException with no detail message. A detail

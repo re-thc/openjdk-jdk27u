@@ -80,3 +80,8 @@ runs:
       with:
         script: core.setFailed('Build failed. See summary for details.')
       if: steps.check.outputs.failure == 'true'
+
+    - name: 'Make regression tests'
+      run: make CONF="${{ inputs.platform }}" test-make-headless test-make-make-base
+      shell: bash
+      if: steps.check.outputs.failure != 'true'

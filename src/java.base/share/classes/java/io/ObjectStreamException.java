@@ -30,10 +30,8 @@ package java.io;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class ObjectStreamException extends IOException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7260898174833392607L;
 
     /**
      * Create an ObjectStreamException with the specified argument.

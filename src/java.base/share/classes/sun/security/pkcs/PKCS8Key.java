@@ -55,11 +55,8 @@ import java.util.Arrays;
  *
  * We support this format but do not parse attributes.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PKCS8Key implements PrivateKey, InternalPrivateKey {
-
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -3836890099307167124L;
 
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;

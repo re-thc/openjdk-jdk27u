@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Enum for an SSL/TLS/DTLS protocol version.
@@ -40,13 +41,8 @@ import java.util.List;
 enum ProtocolVersion {
     TLS13           (0x0304,    "TLSv1.3",      false),
     TLS12           (0x0303,    "TLSv1.2",      false),
-    TLS11           (0x0302,    "TLSv1.1",      false),
-    TLS10           (0x0301,    "TLSv1",        false),
-    SSL30           (0x0300,    "SSLv3",        false),
-    SSL20Hello      (0x0002,    "SSLv2Hello",   false),
 
     DTLS12          (0xFEFD,    "DTLSv1.2",     true),
-    DTLS10          (0xFEFF,    "DTLSv1.0",     true),
 
     // Dummy protocol version value for invalid SSLSession
     NONE            (-1,        "NONE",         false);
@@ -65,39 +61,15 @@ enum ProtocolVersion {
     // The limit of minimum protocol version
     static final int LIMIT_MIN_VALUE = 0x0000;
 
-    // (D)TLS ProtocolVersion array for TLS 1.0 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_10 = new ProtocolVersion[] {
-            TLS10, SSL30
-        };
-
-    // (D)TLS ProtocolVersion array for TLS 1.1/DTLS 1.0 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_11 = new ProtocolVersion[] {
-            TLS11, TLS10, SSL30, DTLS10
-        };
-
-    // (D)TLS ProtocolVersion array for (D)TLS 1.2 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_12 = new ProtocolVersion[] {
-            TLS12, TLS11, TLS10, SSL30, DTLS12, DTLS10
-    };
-
-    // (D)TLS ProtocolVersion array for (D)TLS 1.3 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_13 = new ProtocolVersion[] {
-            TLS13, TLS12, TLS11, TLS10, SSL30, DTLS12, DTLS10
-        };
+    // The oldest record versions accepted from a peer. A peer may send its
+    // ClientHello, or an alert about it, in a record of an older version
+    // than the one it negotiates.
+    private static final int MIN_TLS_RECORD_VERSION = 0x0300;
+    private static final int MIN_DTLS_RECORD_VERSION = 0xFEFF;
 
     // No protocol version specified.
     static final ProtocolVersion[] PROTOCOLS_OF_NONE = new ProtocolVersion[] {
             NONE
-        };
-
-    // (D)TLS ProtocolVersion array for SSL 3.0.
-    static final ProtocolVersion[] PROTOCOLS_OF_30 = new ProtocolVersion[] {
-            SSL30
-        };
-
-    // (D)TLS ProtocolVersion array for TLS 1.1/DTSL 1.0.
-    static final ProtocolVersion[] PROTOCOLS_OF_11 = new ProtocolVersion[] {
-            TLS11, DTLS10
         };
 
     // (D)TLS ProtocolVersion array for (D)TLS 1.2.
@@ -110,40 +82,10 @@ enum ProtocolVersion {
             TLS13
         };
 
-    // (D)TLS ProtocolVersion array for TSL 1.0/1.1 and DTLS 1.0.
-    static final ProtocolVersion[] PROTOCOLS_10_11 = new ProtocolVersion[] {
-            TLS11, TLS10, DTLS10
-        };
-
-    // (D)TLS ProtocolVersion array for TSL 1.1/1.2 and DTLS 1.0/1.2.
-    static final ProtocolVersion[] PROTOCOLS_11_12 = new ProtocolVersion[] {
-            TLS12, TLS11, DTLS12, DTLS10
-        };
-
-    // (D)TLS ProtocolVersion array for TSL 1.2/1.3 and DTLS 1.2/1.3.
+    // (D)TLS ProtocolVersion array for TSL 1.2/1.3 and DTLS 1.2.
     static final ProtocolVersion[] PROTOCOLS_12_13 = new ProtocolVersion[] {
             TLS13, TLS12, DTLS12
         };
-
-    // (D)TLS ProtocolVersion array for TSL 1.0/1.1/1.2 and DTLS 1.0/1.2.
-    static final ProtocolVersion[] PROTOCOLS_10_12 = new ProtocolVersion[] {
-            TLS12, TLS11, TLS10, DTLS12, DTLS10
-        };
-
-    // TLS ProtocolVersion array for TLS 1.2 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_TLS12 = new ProtocolVersion[] {
-            TLS12, TLS11, TLS10, SSL30
-    };
-
-    // TLS ProtocolVersion array for TLS 1.1 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_TLS11 = new ProtocolVersion[] {
-            TLS11, TLS10, SSL30
-    };
-
-    // TLS ProtocolVersion array for TLS 1.0 and previous versions.
-    static final ProtocolVersion[] PROTOCOLS_TO_TLS10 = new ProtocolVersion[] {
-            TLS10, SSL30
-    };
 
     // Empty ProtocolVersion array
     static final ProtocolVersion[] PROTOCOLS_EMPTY = new ProtocolVersion[0];
@@ -211,6 +153,15 @@ enum ProtocolVersion {
     /**
      * Return a ProtocolVersion for the given (D)TLS protocol name.
      */
+    // Names of versions that are no longer implemented. They are accepted
+    // and ignored, so that existing configurations keep working.
+    private static final Set<String> RETIRED_NAMES = Set.of(
+            "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "DTLSv1.0");
+
+    static boolean isRetired(String name) {
+        return name != null && RETIRED_NAMES.contains(name);
+    }
+
     static ProtocolVersion nameOf(String name) {
         for (ProtocolVersion pv : ProtocolVersion.values()) {
             if (pv.name.equals(name)) {
@@ -222,21 +173,16 @@ enum ProtocolVersion {
     }
 
     /**
-     * Return true if the specific (D)TLS protocol is negotiable.
+     * Return true if a record of the specific (D)TLS version is acceptable.
      *
-     * Used to filter out SSLv2Hello and protocol numbers less than the
-     * minimal supported protocol versions.
+     * Used to filter out records of an unknown format.
      */
-    static boolean isNegotiable(
-            byte major, byte minor, boolean isDTLS, boolean allowSSL20Hello) {
+    static boolean isRecordVersion(byte major, byte minor, boolean isDTLS) {
         int v = ((major & 0xFF) << 8) | (minor & 0xFF);
         if (isDTLS) {
-            return v <= DTLS10.id;
+            return v <= MIN_DTLS_RECORD_VERSION;
         } else {
-            if (v < SSL30.id) {
-                return allowSSL20Hello && (v == SSL20Hello.id);
-            }
-            return true;
+            return v >= MIN_TLS_RECORD_VERSION;
         }
     }
 
@@ -287,6 +233,9 @@ enum ProtocolVersion {
         for (String pn : protocolNames) {
             ProtocolVersion pv = ProtocolVersion.nameOf(pn);
             if (pv == null) {
+                if (isRetired(pn)) {
+                    continue;
+                }
                 throw new IllegalArgumentException(
                         "Unsupported protocol: " + pn);
             }
@@ -303,11 +252,7 @@ enum ProtocolVersion {
      */
     static boolean useTLS12PlusSpec(String name) {
         ProtocolVersion pv = ProtocolVersion.nameOf(name);
-        if (pv != null && pv != NONE) {
-            return pv.isDTLS ? (pv.id <= DTLS12.id) : (pv.id >= TLS12.id);
-        }
-
-        return false;
+        return pv != null && pv != NONE;
     }
 
     /**
@@ -339,38 +284,6 @@ enum ProtocolVersion {
      */
     boolean useTLS13PlusSpec() {
         return isDTLS ? (this.id < DTLS12.id) : (this.id >= TLS13.id);
-    }
-
-    /**
-     * Return true if this ProtocolVersion object is of (D)TLS 1.2 or
-     * newer version.
-     */
-    boolean useTLS12PlusSpec() {
-        return isDTLS ? (this.id <= DTLS12.id) : (this.id >= TLS12.id);
-    }
-
-    /**
-     * Return true if this ProtocolVersion object is of
-     * TLS 1.1/DTLS 1.0 or newer version.
-     */
-    boolean useTLS11PlusSpec() {
-        return isDTLS || (this.id >= TLS11.id);
-    }
-
-    /**
-     * Return true if this ProtocolVersion object is of TLS 1.0 or
-     * newer version.
-     */
-    boolean useTLS10PlusSpec() {
-        return isDTLS || (this.id >= TLS10.id);
-    }
-
-    /**
-     * Return true if this ProtocolVersion object is of TLS 1.0 or
-     * newer version.
-     */
-    static boolean useTLS10PlusSpec(int id, boolean isDTLS) {
-        return isDTLS || (id >= TLS10.id);
     }
 
     /**

@@ -35,10 +35,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchFieldError extends IncompatibleClassChangeError {
-    @java.io.Serial
-    private static final long serialVersionUID = -3456430195886129035L;
-
     /**
      * Constructs a {@code NoSuchFieldError} with no detail message.
      */

@@ -36,10 +36,8 @@ package java.util;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EventObject implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5516075349620653480L;
 
     /**
      * The object on which the Event initially occurred.

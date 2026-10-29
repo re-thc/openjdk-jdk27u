@@ -40,10 +40,8 @@ import java.security.GeneralSecurityException;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidParameterSpecException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -970468769593399342L;
 
     /**
      * Constructs an InvalidParameterSpecException with no detail message. A

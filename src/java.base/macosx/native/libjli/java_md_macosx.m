@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +41,22 @@
 #include "manifest_info.h"
 
 /* Support Cocoa event loop on the main thread */
+#ifndef HEADLESS
 #include <Cocoa/Cocoa.h>
 #include <objc/objc-runtime.h>
 #include <objc/objc-auto.h>
+#endif
 
 #include <errno.h>
 #include <spawn.h>
 #include <unistd.h>
 
+#ifndef HEADLESS
 struct NSAppArgs {
     int argc;
     char **argv;
 };
+#endif
 
 #define JVM_DLL "libjvm.dylib"
 #define JAVA_DLL "libjava.dylib"
@@ -76,32 +81,9 @@ struct NSAppArgs {
  *      - removes any JVM selection options from the
  *        arguments that were passed to the launcher
  *
- *  - CreateExecutionEnvironment then creates a new
- *    thread, within the same process, to launch the
- *    application's main() Java method and parks the
- *    current thread, on which CreateExecutionEnvironment
- *    was invoked, in Apple's Cocoa event loop. Before
- *    doing so, CreateExecutionEnvironment maintains a
- *    state flag to keep note that a new thread has
- *    been spawned.
- *
- *  - The newly created thread (in which the application's
- *    main() method will ultimately run) starts right from
- *    the beginning of the current process' main function,
- *    which effectively means that JLI_Launch is re-invoked
- *    on this new thread and the same above sequence of code
- *    flow repeats again. During this "recursive" call, when
- *    at the point of creating a new thread in
- *    CreateExecutionEnvironment, the CreateExecutionEnvironment
- *    will check for the state flag to see if a new thread
- *    has already been spawned and upon noticing that it
- *    has, it will skip spawning any more threads and will
- *    return back from CreateExecutionEnvironment.
- *
- *  - The control returns back from CreateExecutionEnvironment
- *    to JLI_Launch, and the thread on which the control
- *    returns is the thread on which the application's main()
- *    Java method will be invoked.
+ *  - CreateExecutionEnvironment returns to JLI_Launch. Desktop
+ *    builds first reserve the initial thread for Cocoa and restart
+ *    the launcher on another thread; headless builds skip that step.
  *
  *  - JLI_Launch then invokes LoadJavaVM which dlopen()s the
  *    JVM library and asserts the presence of JNI Invocation
@@ -118,13 +100,15 @@ struct NSAppArgs {
  *
  *  - JLI_Launch then ultimately calls JVMInit.
  *
- *  - JVMInit then invokes JavaMain.
+ *  - JVMInit invokes JavaMain through ContinueInNewThread in
+ *    headless builds. Desktop builds also support running JavaMain
+ *    on the initial thread.
  *
  *  - JavaMain, before launching the application, invokes
  *    PostJVMInit.
  *
- *  - PostJVMInit invokes ShowSplashScreen which displays
- *    a splash screen for the application, if applicable.
+ *  - In desktop builds, PostJVMInit also initializes AWT and
+ *    displays a splash screen, if applicable.
  *
  *  - Control then returns back from PostJVMInit into
  *    JavaMain, which then loads the application's main
@@ -237,6 +221,7 @@ JLI_SetPreferredJVM(const char *prefJVM) {
     sPreferredJVMType = strdup(prefJVM);
 }
 
+#ifndef HEADLESS
 static BOOL awtLoaded = NO;
 static pthread_mutex_t awtLoaded_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  awtLoaded_cv = PTHREAD_COND_INITIALIZER;
@@ -324,6 +309,8 @@ static void MacOSXStartup(int argc, char *argv[]) {
     ParkEventLoop();
 }
 
+#endif
+
 void
 CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jdkroot[], jint so_jdkroot,
@@ -363,12 +350,14 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         }
     }
 
+#ifndef HEADLESS
     /*
      * Mac OS X requires the Cocoa event loop to be run on the "main"
      * thread. Spawn off a new thread to run main() and pass
      * this thread off to the Cocoa event loop.
      */
     MacOSXStartup(argc, argv);
+#endif
 
     /*
      * we seem to have everything we need
@@ -593,6 +582,7 @@ SetExecname(char **argv)
 }
 
 /* --- Splash Screen shared library support --- */
+#ifndef HEADLESS
 
 static JavaVM* SetJavaVMValue()
 {
@@ -672,6 +662,8 @@ void* SplashProcAddress(const char* name) {
     }
 }
 
+#endif
+
 /*
  * Signature adapter for pthread_create().
  */
@@ -728,7 +720,9 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
 }
 
 static JavaVM* jvmInstance = NULL;
+#ifndef HEADLESS
 static jboolean sameThread = JNI_FALSE; /* start VM in current thread */
+#endif
 
 /*
  * Note there is a callback on this function from the splashscreen logic,
@@ -746,6 +740,7 @@ RegisterThread()
     // stubbed out for windows and *nixes.
 }
 
+#ifndef HEADLESS
 static void
 SetXDockArgForAWT(const char *arg)
 {
@@ -891,11 +886,16 @@ SetXStartOnFirstThreadArg()
     setenv(envVar, "1", 1);
 }
 
+#endif
+
 // MacOSX we may continue in the same thread
 int
 JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
                  int argc, char **argv,
                  int mode, char *what, int ret) {
+#ifdef HEADLESS
+    return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
+#else
     if (sameThread) {
         JLI_TraceLauncher("In same thread\n");
         // need to block this thread against the main thread
@@ -926,6 +926,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
     } else {
         return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
     }
+#endif
 }
 
 /*
@@ -934,14 +935,17 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
  */
 void PostJVMInit(JNIEnv *env, jclass mainClass, JavaVM *vm) {
     jvmInstance = vm;
+#ifndef HEADLESS
     SetMainClassForAWT(env, mainClass);
     CHECK_EXCEPTION_RETURN();
     ShowSplashScreen();
+#endif
 }
 
 jboolean
 ProcessPlatformOption(const char* arg)
 {
+#ifndef HEADLESS
     if (JLI_StrCmp(arg, "-XstartOnFirstThread") == 0) {
        SetXStartOnFirstThreadArg();
        return JNI_TRUE;
@@ -949,6 +953,7 @@ ProcessPlatformOption(const char* arg)
        SetXDockArgForAWT(arg);
        return JNI_TRUE;
     }
+#endif
     // arguments we know not
     return JNI_FALSE;
 }

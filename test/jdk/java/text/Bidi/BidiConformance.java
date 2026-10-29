@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 6850113 8032446 8255242
  * @summary confirm the behavior of new Bidi implementation. (Backward compatibility)
  * @modules java.desktop

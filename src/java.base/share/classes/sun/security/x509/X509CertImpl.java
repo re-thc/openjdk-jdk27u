@@ -69,9 +69,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 @SuppressWarnings("serial") // See writeReplace method in Certificate
 public class X509CertImpl extends X509Certificate implements DerEncoder {
 
-    @java.io.Serial
-    private static final long serialVersionUID = -3457612960190864406L;
-
     public static final String NAME = "x509";
 
     // Certificate data, and its envelope

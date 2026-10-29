@@ -46,7 +46,7 @@ public class StartDateTest {
         int year = cal.get(Calendar.YEAR);
         int month = cal.get(Calendar.MONTH);
 
-        new File("jks").delete();
+        new File("ks").delete();
 
         run("one", "+1y");
         cal.setTime(getIssueDate("one"));
@@ -137,8 +137,8 @@ public class StartDateTest {
     }
 
     // The keytool command line template, alias and startdate TBD
-    static String[] cmd = ("-alias tbd -startdate tbd -keystore jks " +
-            "-storetype jks -storepass changeit -keypass changeit " +
+    static String[] cmd = ("-alias tbd -startdate tbd -keystore ks " +
+            "-storetype pkcs12 -storepass changeit -keypass changeit " +
             "-keyalg rsa -genkeypair -dname CN=Haha -debug").split(" ");
 
     static void run(String alias, String startDate) throws Exception {
@@ -148,8 +148,8 @@ public class StartDateTest {
     }
 
     static Date getIssueDate(String alias) throws Exception {
-        KeyStore ks = KeyStore.getInstance("jks");
-        try (FileInputStream fis = new FileInputStream("jks")) {
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        try (FileInputStream fis = new FileInputStream("ks")) {
             ks.load(fis, "changeit".toCharArray());
         }
         X509Certificate cert = (X509Certificate)ks.getCertificate(alias);

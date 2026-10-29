@@ -70,6 +70,7 @@ import sun.security.util.SecurityConstants;
  * @serial exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class PropertyPermission extends BasicPermission {
 
@@ -359,9 +360,6 @@ public final class PropertyPermission extends BasicPermission {
         return new PropertyPermissionCollection();
     }
 
-    @java.io.Serial
-    private static final long serialVersionUID = 885438825399942851L;
-
     /**
      * WriteObject is called to save the state of the PropertyPermission
      * to a stream. The actions are serialized, and the superclass
@@ -405,6 +403,7 @@ public final class PropertyPermission extends BasicPermission {
  *
  * @serial include
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class PropertyPermissionCollection extends PermissionCollection
     implements Serializable
 {
@@ -565,9 +564,6 @@ final class PropertyPermissionCollection extends PermissionCollection
          */
         return (Enumeration)perms.elements();
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 7015263904581634791L;
 
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:
