@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,11 +116,6 @@ class Bits {                            // package-private
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, long cap) {
 
-        if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
-            MAX_MEMORY = VM.maxDirectMemory();
-            MEMORY_LIMIT_SET = true;
-        }
-
         // optimist!
         if (tryReserveMemory(size, cap)) {
             return;
@@ -221,7 +217,13 @@ class Bits {                            // package-private
         }
     }
 
-    private static boolean tryReserveMemory(long size, long cap) {
+    // Opportunistic reservation only: do not clean, request GC or wait for memory.
+    static boolean tryReserveMemory(long size, long cap) {
+
+        if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
+            MAX_MEMORY = VM.maxDirectMemory();
+            MEMORY_LIMIT_SET = true;
+        }
 
         // -XX:MaxDirectMemorySize limits the total capacity rather than the
         // actual memory usage, which will differ when buffers are page

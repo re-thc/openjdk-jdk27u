@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +124,15 @@ public interface JavaNioAccess {
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
      */
     void reserveMemory(long size, long cap);
+
+    /**
+     * Attempts to reserve native memory without cleaning, requesting GC or
+     * waiting for capacity. A successful reservation must be released exactly
+     * once with {@link #unreserveMemory(long, long)}; failure changes no accounting.
+     * The size is the native allocation size and cap is its logical capacity,
+     * as for {@link #reserveMemory(long, long)}.
+     */
+    boolean tryReserveMemory(long size, long cap);
 
     /**
      * Used by {@code jdk.internal.foreign.NativeMemorySegmentImpl}.
