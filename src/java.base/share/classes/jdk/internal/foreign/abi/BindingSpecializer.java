@@ -153,6 +153,7 @@ public class BindingSpecializer {
     private int[] leafArgSlots;
     private int[] scopeSlots;
     private int curScopeLocalIdx = -1;
+    private int lastUncachedScopeLocal = -1;
     private int returnAllocatorIdx = -1;
     private int contextIdx = -1;
     private int returnBufferIdx = -1;
@@ -303,6 +304,12 @@ public class BindingSpecializer {
             }
             scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
             curScopeLocalIdx = 0; // used from emitGetInput
+            // A later repeated arena can miss all fixed argument slots.
+            // Allocate one call-local reference only when such reuse is possible.
+            if (SCOPE_DEDUP_DEPTH > 0 && numScopes - 2 > SCOPE_DEDUP_DEPTH) {
+                lastUncachedScopeLocal = cb.allocateLocal(REFERENCE);
+                cb.aconst_null().astore(lastUncachedScopeLocal);
+            }
         }
 
         // create a Binding.Context for this call
@@ -563,12 +570,26 @@ public class BindingSpecializer {
             hasLookup = true;
         }
 
+        // Keep the fixed argument and symbol hit paths ahead of this lookup.
+        if (lastUncachedScopeLocal != -1 && curScopeLocalIdx - 1 > SCOPE_DEDUP_DEPTH) {
+            cb.dup()
+              .aload(lastUncachedScopeLocal)
+              .if_acmpeq(skipAcquire);
+            hasLookup = true;
+        }
+
         // 1 scope to acquire on the stack
         cb.dup();
-        int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
+        int scopeIndex = curScopeLocalIdx++;
+        int nextScopeLocal = scopeSlots[scopeIndex];
         // call acquire first here. So that if it fails, we don't call release
         cb.invokevirtual(EmissionConstants.CD_MemorySessionImpl, "acquire0", EmissionConstants.MTD_ACQUIRE0) // call acquire on the other
           .astore(nextScopeLocal); // store off one to release later
+        if (lastUncachedScopeLocal != -1 && scopeIndex > SCOPE_DEDUP_DEPTH) {
+            // Only a successful acquisition can be reused. Its original slot
+            // retains ownership, so release order and failed-acquire cleanup stay intact.
+            cb.aload(nextScopeLocal).astore(lastUncachedScopeLocal);
+        }
 
         if (hasLookup) { // avoid ASM generating a bunch of nops for the dead code
             cb.goto_(end)
