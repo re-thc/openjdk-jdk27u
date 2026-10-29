@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
@@ -68,15 +66,12 @@ public class DowncallLinker {
     }
 
     public MethodHandle getBoundMethodHandle() {
-        Binding.VMStore[] argMoves = argMoveBindingsStream(callingSequence).toArray(Binding.VMStore[]::new);
-        Binding.VMLoad[] retMoves = retMoveBindings(callingSequence);
-
         MethodType leafType = callingSequence.calleeMethodType();
 
         NativeEntryPoint nep = NativeEntryPoint.make(
             abi,
-            toStorageArray(argMoves),
-            toStorageArray(retMoves),
+            argumentMoveStorages(callingSequence),
+            returnMoveStorages(callingSequence),
             leafType,
             callingSequence.needsReturnBuffer(),
             callingSequence.capturedStateMask(),
@@ -119,24 +114,34 @@ public class DowncallLinker {
                 .asType(type.changeReturnType(Object[].class));
     }
 
-    private Stream<Binding.VMStore> argMoveBindingsStream(CallingSequence callingSequence) {
-        return callingSequence.argumentBindings()
-                .filter(Binding.VMStore.class::isInstance)
-                .map(Binding.VMStore.class::cast);
+    private static VMStorage[] argumentMoveStorages(CallingSequence sequence) {
+        int count = 0;
+        for (int i = 0; i < sequence.argumentBindingsCount(); i++) {
+            for (Binding binding : sequence.argumentBindings(i)) {
+                if (binding instanceof Binding.VMStore) count++;
+            }
+        }
+        VMStorage[] result = new VMStorage[count];
+        int index = 0;
+        for (int i = 0; i < sequence.argumentBindingsCount(); i++) {
+            for (Binding binding : sequence.argumentBindings(i)) {
+                if (binding instanceof Binding.VMStore move) result[index++] = move.storage();
+            }
+        }
+        return result;
     }
 
-    private Binding.VMLoad[] retMoveBindings(CallingSequence callingSequence) {
-        return retMoveBindingsStream(callingSequence).toArray(Binding.VMLoad[]::new);
-    }
-
-    private Stream<Binding.VMLoad> retMoveBindingsStream(CallingSequence callingSequence) {
-        return callingSequence.returnBindings().stream()
-                .filter(Binding.VMLoad.class::isInstance)
-                .map(Binding.VMLoad.class::cast);
-    }
-
-    private VMStorage[] toStorageArray(Binding.Move[] moves) {
-        return Arrays.stream(moves).map(Binding.Move::storage).toArray(VMStorage[]::new);
+    private static VMStorage[] returnMoveStorages(CallingSequence sequence) {
+        int count = 0;
+        for (Binding binding : sequence.returnBindings()) {
+            if (binding instanceof Binding.VMLoad) count++;
+        }
+        VMStorage[] result = new VMStorage[count];
+        int index = 0;
+        for (Binding binding : sequence.returnBindings()) {
+            if (binding instanceof Binding.VMLoad move) result[index++] = move.storage();
+        }
+        return result;
     }
 
     private record InvocationData(MethodHandle leaf, CallingSequence callingSequence) {}
