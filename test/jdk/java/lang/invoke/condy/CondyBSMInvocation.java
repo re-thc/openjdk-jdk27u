@@ -25,6 +25,7 @@
  * @test
  * @bug 8186046 8199875
  * @summary Test basic invocation of bootstrap methods
+ * @modules java.base/java.lang.invoke:open
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
  * @run junit CondyBSMInvocation
@@ -51,6 +52,71 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CondyBSMInvocation {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
+
+    private static int exactCalls;
+
+    public static Object exact_bsm(MethodHandles.Lookup caller, String name, Class<?> type) throws Exception {
+        assertTrue(caller.hasFullPrivilegeAccess());
+        assertTrue((caller.lookupModes() & MethodHandles.Lookup.ORIGINAL) != 0);
+        exactCalls++;
+        return switch (name) {
+            case "value" -> type == String.class ? "value" : Integer.valueOf(42);
+            case "nil" -> null;
+            case "wrong" -> new Object();
+            case "checked" -> throw new Exception("checked");
+            case "error" -> throw new LinkageError("error");
+            default -> throw new AssertionError(name);
+        };
+    }
+
+    @Test
+    public void testExactNoArgsBootstrap() throws Throwable {
+        MethodType bsmType = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
+        for (Class<?> type : new Class<?>[] {Object.class, String.class, int.class, long.class}) {
+            MethodHandle mh = InstructionHelper.ldcDynamicConstant(L, "value", type, "exact_bsm", bsmType);
+            int before = exactCalls;
+            Object expected = Integer.valueOf(42);
+            if (type == String.class) expected = "value";
+            if (type == long.class) expected = Long.valueOf(42);
+            assertEquals(expected, mh.invoke());
+            assertEquals(expected, mh.invoke());
+            assertEquals(before + 1, exactCalls);
+        }
+        MethodHandle nil = InstructionHelper.ldcDynamicConstant(L, "nil", Object.class, "exact_bsm", bsmType);
+        assertNull(nil.invoke());
+        MethodHandle wrong = InstructionHelper.ldcDynamicConstant(L, "wrong", String.class, "exact_bsm", bsmType);
+        assertInstanceOf(ClassCastException.class, assertThrows(BootstrapMethodError.class, wrong::invoke).getCause());
+        MethodHandle checked = InstructionHelper.ldcDynamicConstant(L, "checked", Object.class, "exact_bsm", bsmType);
+        Throwable cause = assertThrows(BootstrapMethodError.class, checked::invoke).getCause();
+        assertEquals(Exception.class, cause.getClass());
+        assertEquals("checked", cause.getMessage());
+        MethodHandle error = InstructionHelper.ldcDynamicConstant(L, "error", Object.class, "exact_bsm", bsmType);
+        assertEquals("error", assertThrows(LinkageError.class, error::invoke).getMessage());
+    }
+
+    public static Object sameResult(Object value) {
+        return value;
+    }
+
+    @Test
+    public void testExactBootstrapEntryPoints() throws Throwable {
+        // The VM may represent zero static arguments by null or an empty array.
+        // Call both entries explicitly, including an exact-typed combinator BSM.
+        var invoke = Class.forName("java.lang.invoke.BootstrapMethodInvoker").getDeclaredMethod("invoke",
+                Class.class, MethodHandle.class, String.class, Object.class, Object.class, Class.class);
+        invoke.setAccessible(true);
+        MethodType type = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class);
+        MethodHandle direct = L.findStatic(CondyBSMInvocation.class, "exact_bsm", type);
+        MethodHandle adapted = MethodHandles.filterReturnValue(direct,
+                L.findStatic(CondyBSMInvocation.class, "sameResult", methodType(Object.class, Object.class)));
+        for (MethodHandle bsm : new MethodHandle[] {direct, adapted}) {
+            for (Object info : new Object[] {null, new Object[0]}) {
+                int before = exactCalls;
+                assertEquals(42, invoke.invoke(null, Object.class, bsm, "value", Object.class, info, CondyBSMInvocation.class));
+                assertEquals(before + 1, exactCalls);
+            }
+        }
+    }
 
 
     @Test

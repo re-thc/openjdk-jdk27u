@@ -87,7 +87,11 @@ final class BootstrapMethodInvoker {
             if (info == null) {
                 // VM is allowed to pass up a null meaning no BSM args
                 if (type instanceof Class<?> c) {
-                    result = bootstrapMethod.invoke(caller, name, c);
+                    if (bootstrapMethod.type() == CONDY_NO_ARGS_MT) {
+                        result = bootstrapMethod.invokeBasic(caller, name, c);
+                    } else {
+                        result = bootstrapMethod.invoke(caller, name, c);
+                    }
                 } else {
                     result = bootstrapMethod.invoke(caller, name, (MethodType)type);
                 }
@@ -129,7 +133,9 @@ final class BootstrapMethodInvoker {
                 Object[] argv = (Object[]) info;
 
                 MethodType bsmType = bootstrapMethod.type();
-                if (isLambdaMetafactoryIndyBSM(bsmType) && argv.length == 3) {
+                if (bsmType == CONDY_NO_ARGS_MT && argv.length == 0 && type instanceof Class<?> c) {
+                    result = bootstrapMethod.invokeBasic(caller, name, c);
+                } else if (isLambdaMetafactoryIndyBSM(bsmType) && argv.length == 3) {
                     result = (CallSite)bootstrapMethod
                             .invokeBasic(caller, name, (MethodType)type, (MethodType)argv[0],
                                     (MethodHandle)argv[1], (MethodType)argv[2]);
@@ -250,6 +256,11 @@ final class BootstrapMethodInvoker {
 
     private static final MethodType SCF_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, String.class, Object[].class);
+
+    // Includes MethodHandles::classData. The exact signature needs no adaptation,
+    // so do not link a generic invoke adapter just to invoke this bootstrap.
+    private static final MethodType CONDY_NO_ARGS_MT = MethodType.methodType(Object.class,
+            Lookup.class, String.class, Class.class);
 
     /**
      * @return true iff the BSM method type exactly matches
