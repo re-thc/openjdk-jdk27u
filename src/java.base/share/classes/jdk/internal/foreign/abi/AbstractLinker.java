@@ -319,16 +319,32 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         // since the linker already restricts those such that they will always be the same
         Objects.requireNonNull(ml);
         if (ml instanceof StructLayout sl) {
-            return MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
+            var members = stripNames(sl.memberLayouts());
+            if (members == null && ((AbstractLayout<?>) sl).hasNaturalAlignment()) {
+                return sl.withoutName();
+            }
+            return MemoryLayout.structLayout(members != null ? members : sl.memberLayouts().toArray(new MemoryLayout[sl.memberLayouts().size()]));
         } else if (ml instanceof UnionLayout ul) {
-            return MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
+            var members = stripNames(ul.memberLayouts());
+            if (members == null && ((AbstractLayout<?>) ul).hasNaturalAlignment()) {
+                return ul.withoutName();
+            }
+            return MemoryLayout.unionLayout(members != null ? members : ul.memberLayouts().toArray(new MemoryLayout[ul.memberLayouts().size()]));
         } else if (ml instanceof SequenceLayout sl) {
-            return MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
+            var element = stripNames(sl.elementLayout());
+            if (element == sl.elementLayout() && ((AbstractLayout<?>) sl).hasNaturalAlignment()) {
+                return sl.withoutName();
+            }
+            return MemoryLayout.sequenceLayout(sl.elementCount(), element);
         } else if (ml instanceof AddressLayout al) {
             var stripped = al.withoutName();
             var target = al.targetLayout();
-            if (target.isPresent())
-                stripped = stripped.withTargetLayout(stripNames(target.get()));
+            if (target.isPresent()) {
+                var normalized = stripNames(target.get());
+                if (normalized != target.get()) {
+                    stripped = stripped.withTargetLayout(normalized);
+                }
+            }
             return stripped;
         } else {
             return ml.withoutName(); // ValueLayout and PaddingLayout
@@ -336,18 +352,32 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
-        var ret = new MemoryLayout[layouts.size()];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = stripNames(layouts.get(i));
+        // A null result means that every immutable child was already normalized.
+        MemoryLayout[] ret = null;
+        for (int i = 0; i < layouts.size(); i++) {
+            var original = layouts.get(i);
+            var normalized = stripNames(original);
+            if (normalized != original) {
+                if (ret == null) {
+                    ret = layouts.toArray(new MemoryLayout[layouts.size()]);
+                }
+                ret[i] = normalized;
+            }
         }
         return ret;
     }
 
     private static FunctionDescriptor stripNames(FunctionDescriptor function) {
         var retLayout = function.returnLayout();
-        if (retLayout.isEmpty()) {
-            return FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts()));
+        var originalReturn = retLayout.orElse(null);
+        var normalizedReturn = originalReturn == null ? null : stripNames(originalReturn);
+        var arguments = stripNames(function.argumentLayouts());
+        if (normalizedReturn == originalReturn && arguments == null) {
+            return function;
         }
-        return FunctionDescriptor.of(stripNames(retLayout.get()), stripNames(function.argumentLayouts()));
+        if (arguments == null) {
+            arguments = function.argumentLayouts().toArray(new MemoryLayout[function.argumentLayouts().size()]);
+        }
+        return normalizedReturn == null ? FunctionDescriptor.ofVoid(arguments) : FunctionDescriptor.of(normalizedReturn, arguments);
     }
 }

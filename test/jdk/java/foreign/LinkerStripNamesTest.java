@@ -92,6 +92,7 @@ public class LinkerStripNamesTest {
         MethodHandle normalized = linker.downcallHandle(FunctionDescriptor.of(
                 integer.withName("return"), integer.withName("argument")));
         check(retained == normalized, "Names must share the retained public downcall cache entry");
+        checkIdentityReuse(strip);
         try {
             linker.downcallHandle(FunctionDescriptor.of(integer.withByteAlignment(1), integer));
             throw new AssertionError("Invalid alignment accepted");
@@ -99,5 +100,91 @@ public class LinkerStripNamesTest {
             checks++;
         }
         System.out.println("LINKER_STRIP_NAMES_PASS checks=" + checks);
+    }
+
+    private static void checkIdentityReuse(Method strip) throws Throwable {
+        Method stripDescriptor = AbstractLinker.class.getDeclaredMethod("stripNames", FunctionDescriptor.class);
+        stripDescriptor.setAccessible(true);
+        var integer = ValueLayout.JAVA_INT;
+        var wide = ValueLayout.JAVA_LONG;
+        var struct = MemoryLayout.structLayout(integer, MemoryLayout.paddingLayout(4), wide);
+        var union = MemoryLayout.unionLayout(integer, wide);
+        var sequence = MemoryLayout.sequenceLayout(3, union);
+        var pointer = ValueLayout.ADDRESS.withTargetLayout(sequence);
+        List<MemoryLayout> unchanged = List.of(integer, wide, MemoryLayout.paddingLayout(4),
+                struct, union, sequence, pointer, ValueLayout.ADDRESS,
+                MemoryLayout.structLayout(), MemoryLayout.unionLayout(), MemoryLayout.sequenceLayout(0, integer),
+                integer.withByteAlignment(1).withOrder(ByteOrder.BIG_ENDIAN),
+                pointer.withByteAlignment(1).withOrder(ByteOrder.BIG_ENDIAN));
+        for (var layout : unchanged) {
+            check(strip.invoke(null, layout) == layout, "Unchanged immutable layout was recreated: " + layout);
+            var named = layout.withName("outer");
+            check(strip.invoke(null, named).equals(layout), "Outer name normalization changed properties");
+            check(named.name().orElseThrow().equals("outer"), "Input layout was modified");
+        }
+        // Address targets bypass the linker's by-value alignment checks. Keep the
+        // existing normalization of their non-natural group/sequence alignment.
+        for (MemoryLayout target : List.of(struct.withByteAlignment(16), union.withByteAlignment(16),
+                sequence.withByteAlignment(16))) {
+            var address = ValueLayout.ADDRESS.withTargetLayout(target);
+            var actual = (AddressLayout) strip.invoke(null, address);
+            check(actual != address, "Non-natural pointee normalization was skipped");
+            check(actual.targetLayout().orElseThrow().byteAlignment() == 8, "Pointee alignment reset changed");
+            check(target.byteAlignment() == 16, "Pointee input was modified");
+        }
+        var oddScalar = integer.withByteAlignment(1).withOrder(ByteOrder.BIG_ENDIAN);
+        var oddAddress = ValueLayout.ADDRESS.withTargetLayout(oddScalar).withByteAlignment(1).withOrder(ByteOrder.BIG_ENDIAN);
+        check(strip.invoke(null, oddAddress) == oddAddress, "Scalar pointee order/alignment must remain unchanged");
+        var emptyAligned = MemoryLayout.structLayout().withByteAlignment(16);
+        check(strip.invoke(null, emptyAligned).equals(MemoryLayout.structLayout()), "Empty aggregate alignment reset");
+        var nestedAligned = ValueLayout.ADDRESS.withTargetLayout(ValueLayout.ADDRESS.withTargetLayout(emptyAligned));
+        var nestedPlain = ValueLayout.ADDRESS.withTargetLayout(ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.structLayout()));
+        check(strip.invoke(null, nestedAligned).equals(nestedPlain), "Nested pointee alignment reset");
+
+        List<FunctionDescriptor> descriptors = List.of(FunctionDescriptor.ofVoid(), FunctionDescriptor.ofVoid(integer),
+                FunctionDescriptor.of(wide), FunctionDescriptor.of(wide, integer, wide, pointer),
+                FunctionDescriptor.of(struct, union, pointer));
+        for (var descriptor : descriptors) {
+            check(stripDescriptor.invoke(null, descriptor) == descriptor, "Unchanged descriptor was recreated");
+        }
+        // Exercise first/middle/last changed children and return-only changes.
+        for (int changed = 0; changed < 4; changed++) {
+            MemoryLayout[] args = {integer, wide, pointer};
+            MemoryLayout result = wide;
+            if (changed < 3) args[changed] = args[changed].withName("changed");
+            else result = result.withName("changed");
+            var descriptor = FunctionDescriptor.of(result, args);
+            var actual = (FunctionDescriptor) stripDescriptor.invoke(null, descriptor);
+            check(actual.equals(FunctionDescriptor.of(wide, integer, wide, pointer)), "Changed child normalization");
+            check(actual != descriptor, "Named descriptor was reused");
+            check(stripDescriptor.invoke(null, actual) == actual, "Normalization is not identity-idempotent");
+        }
+        var nested = MemoryLayout.structLayout(integer.withName("i"), MemoryLayout.paddingLayout(4),
+                MemoryLayout.sequenceLayout(2, wide.withName("j")).withName("seq")).withName("struct");
+        var expected = MemoryLayout.structLayout(integer, MemoryLayout.paddingLayout(4), MemoryLayout.sequenceLayout(2, wide));
+        var address = ValueLayout.ADDRESS.withTargetLayout(nested).withName("address");
+        check(strip.invoke(null, address).equals(ValueLayout.ADDRESS.withTargetLayout(expected)), "Nested names survived");
+        var namedVoid = FunctionDescriptor.ofVoid(address);
+        var normalizedVoid = (FunctionDescriptor) stripDescriptor.invoke(null, namedVoid);
+        check(normalizedVoid.equals(FunctionDescriptor.ofVoid(ValueLayout.ADDRESS.withTargetLayout(expected))), "Void descriptor normalization");
+        check(stripDescriptor.invoke(null, normalizedVoid) == normalizedVoid, "Void descriptor was recreated twice");
+        var linker = Linker.nativeLinker();
+        var retained = linker.downcallHandle(FunctionDescriptor.of(ValueLayout.ADDRESS.withTargetLayout(expected)));
+        var renamed = linker.downcallHandle(FunctionDescriptor.of(address));
+        check(retained == renamed, "Renamed pointees must share the public downcall cache entry");
+        var different = linker.downcallHandle(FunctionDescriptor.of(ValueLayout.ADDRESS.withTargetLayout(integer)));
+        check(retained != different, "Different pointees must retain distinct public cache entries");
+        try {
+            linker.downcallHandle(FunctionDescriptor.of(struct.withByteAlignment(16)));
+            throw new AssertionError("Over-aligned aggregate accepted");
+        } catch (IllegalArgumentException expectedException) {
+            checks++;
+        }
+        try {
+            stripDescriptor.invoke(null, (FunctionDescriptor) null);
+            throw new AssertionError("Null descriptor accepted");
+        } catch (InvocationTargetException ex) {
+            check(ex.getCause() instanceof NullPointerException, "Null descriptor must throw NPE");
+        }
     }
 }
