@@ -241,10 +241,17 @@ public class NativeCRC {
         try (Inflater inf = OWNED.newInstance(false, true)) { check(!enabled(inf)); }
         errorAccounting(data, supported);
         Inflater closed = new Inflater(true); closed.end();
-        for (Method getter : new Method[]{ENABLED, CACHED}) {
-            try {
-                getter.invoke(closed); throw new AssertionError();
-            } catch (InvocationTargetException e) { check(e.getCause() instanceof IllegalStateException); }
+        check(!enabled(closed) && cached(closed) == 0);
+        try { closed.getAdler(); throw new AssertionError(); }
+        catch (IllegalStateException expected) { check(expected.getMessage().equals("Inflater has been closed")); }
+        try (Inflater inf = rawInflater()) {
+            inf.setInput(deflate(data, true, null));
+            check(inf.inflate(new byte[data.length + 1]) == data.length && inf.finished());
+            inf.end();
+            check(enabled(inf) == supported);
+            check(cached(inf) == (supported ? (int) want.getValue() : 0));
+            try { inf.getAdler(); throw new AssertionError(); }
+            catch (IllegalStateException expected) { check(expected.getMessage().equals("Inflater has been closed")); }
         }
     }
 
@@ -342,6 +349,36 @@ public class NativeCRC {
         }
     }
 
+    // An underlying close failure leaves the stream's closed flags unset,
+    // although its owned inflater has already ended. The Java-CRC baseline
+    // still validates CRC before its later closed-inflater size query.
+    static void failedCloseAfterPayload(byte[] data, boolean corrupt) throws Exception {
+        byte[] gz = member(data, false);
+        if (corrupt) gz[gz.length - 8] ^= 1;
+        ByteArrayInputStream input = new ByteArrayInputStream(gz) {
+            public synchronized int read(byte[] b, int off, int len) {
+                return super.read(b, off, Math.min(len, gz.length - 8 - pos));
+            }
+            public void close() throws IOException { throw new IOException("close failed"); }
+        };
+        GZIPInputStream in = new GZIPInputStream(input, 8192);
+        try {
+            byte[] b = new byte[data.length + 1];
+            check(in.read(b) == data.length);
+            try { in.close(); throw new AssertionError(); }
+            catch (IOException expected) { check(expected.getMessage().equals("close failed")); }
+            try {
+                in.read(b); throw new AssertionError();
+            } catch (ZipException expected) {
+                check(corrupt && expected.getMessage().equals("Corrupt GZIP trailer"));
+            } catch (IllegalStateException expected) {
+                check(!corrupt && expected.getMessage().equals("Inflater has been closed"));
+            }
+        } finally {
+            try { in.close(); } catch (IOException expected) { }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         boolean supported;
         try (Inflater inf = rawInflater()) { supported = enabled(inf); }
@@ -364,6 +401,8 @@ public class NativeCRC {
         byte[] shortData = Arrays.copyOf(data, 31);
         closingTrailer(shortData, false);
         closingTrailer(shortData, true);
+        failedCloseAfterPayload(shortData, false);
+        failedCloseAfterPayload(shortData, true);
         valid(concat(member(new byte[0], true), member(shortData, false),
                 member(data, true), member(new byte[0], false)), concat(shortData, data), supported);
         byte[] gz = member(shortData, true);

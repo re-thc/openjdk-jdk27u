@@ -631,19 +631,15 @@ public class Inflater implements AutoCloseable {
         }
     }
 
+    // Owner-only Java metadata, following the same synchronization discipline
+    // as hasPendingOutput(). No native address is accessed. GZIP reads these
+    // on its owner thread after inflate returns; cached bits survive end().
     boolean hasRawCRC32() {
-        synchronized (zsRef) {
-            ensureOpen();
-            return rawCRC32;
-        }
+        return rawCRC32;
     }
 
-    // The completion path copied the already-computed value; no native query.
     int rawCRC32() {
-        synchronized (zsRef) {
-            ensureOpen();
-            return finished && rawCRC32 ? outputConsumed : 0;
-        }
+        return finished && rawCRC32 ? outputConsumed : 0;
     }
 
     /**
