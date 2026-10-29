@@ -1,0 +1,220 @@
+Local Apple Silicon GZIP qualification, 2026-10-30
+
+Reference A: f2a1e1a17a1be172883b5774f86024ac5220c87d (original PR6).
+Candidate B: d7150d6f56e08c441f2efbb67464a9388136caf2.
+Qualified source branch: wip/gzip-boundary-checkpoint-20261029.
+Local handback branch: wip/gzip-arm64-handback-20261030.
+The handback adds the measured benchmark and this report/CSV; runtime source
+remains exactly d7150d6f56e08c441f2efbb67464a9388136caf2.
+
+PR6 is the candidate's direct ancestor. A uses the exact archived PR6 tree;
+B adds only the eight checkpoint commits. Thus both include exactly the same
+underlying master changes, JVM/compiler baseline and original PR6 features.
+There is no comparison against a newer, unrelated master build.
+
+Machine: Apple M6, 12 cores, 16 GiB RAM, native arm64; macOS 27.0.1 (26A434).
+Tools: Xcode 27.1, Apple clang 21.0.0 (clang-2100.3.34.2), Homebrew GNU make,
+Homebrew OpenJDK 27.0.1.0.3 boot JDK, installed jtreg 8.3+1, JMH 1.37.
+Both builds: release server, internal native debug symbols, repository's
+-mcpu=apple-m1 baseline, same source date and version, Shenandoah excluded.
+Exact configure commands and build outputs are in *-configure.log and
+*-build.log beside this report. Both full JDK builds succeeded.
+
+The runtime implementation remains the checkpoint implementation. The only
+new repository source is test/micro/org/openjdk/bench/java/util/zip/GZIPLifecycle.java.
+No additional size thresholds, architecture-specific CRC state, JNI entry
+points or stream subclass heuristics were added. No push or merge was done.
+
+All reads consume the whole payload and EOF. GZIP timing includes allocating
+the output buffer, ByteArrayInputStream, GZIPInputStream and owned Inflater,
+header parsing, payload reads, trailer validation and close. Default input
+buffer is 512 bytes; buffered is 8192. Output chunks are min(size+1, 8192).
+Fixture preparation and validation, plus JVM/JIT warmup, are outside timing.
+Repeated data repeats a seeded random 256-byte pattern; random data uses
+the same fixed seed.
+The two content labels produce identical fixtures at 64 bytes and should
+not be treated as independent payload populations at that size.
+
+Fresh Inflater creates and closes an Inflater for each complete stream.
+Reused Inflater creates one per batch of 16 complete streams and closes it
+inside the timed batch; reset, setInput and a fresh output buffer per stream
+are timed. Creation and close are therefore amortized over 16 streams, not
+omitted in setup/teardown. All scores normalize to one stream.
+
+Each A/B observation uses a fresh JVM, one JMH thread, 256 MiB heap and
+SerialGC, with default ZIP/CRC intrinsics. Five A/B rounds alternate AB/BA
+order; case order reverses between rounds. Main runs warm up 3 x 400 ms and
+measure 3 x 400 ms. The statistic below is the median measurement iteration
+per fork, then the median of five fork medians. Negative time change is
+faster. No correctness tests or other benchmark jobs ran concurrently;
+reference tests finished before the first benchmark. Host background tasks,
+CPU placement, clock rate and ASLR were not fixed. Initial thermal inspection
+reported no recorded thermal/performance warnings.
+
+The main comparison:
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+gzipBuffered         64     random   5/5         350.17         303.06      -13.45%
+gzipBuffered         64   repeated   5/5         306.01         334.90        9.44%
+gzipBuffered      65536     random   5/5        8379.20        3698.01      -55.87%
+gzipBuffered      65536   repeated   5/5        9810.64        5079.34      -48.23%
+gzipBuffered    1048576     random   5/5      122172.26       50122.13      -58.97%
+gzipBuffered    1048576   repeated   5/5      119426.97       46581.36      -61.00%
+gzipDefault          64     random   5/5         205.75         248.14       20.60%
+gzipDefault          64   repeated   5/5         253.44         248.15       -2.09%
+gzipDefault       65536     random   5/5       12387.75       10739.07      -13.31%
+gzipDefault       65536   repeated   5/5        9106.78        4593.86      -49.56%
+gzipDefault     1048576     random   5/5      178228.19      155249.11      -12.89%
+gzipDefault     1048576   repeated   5/5      118643.74       47728.48      -59.77%
+rawFresh             64     random   5/5         147.67         147.17       -0.34%
+rawFresh             64   repeated   5/5         147.16         146.21       -0.65%
+rawFresh          65536     random   5/5        1709.63        1691.53       -1.06%
+rawFresh          65536   repeated   5/5        3875.86        3839.38       -0.94%
+rawFresh        1048576     random   5/5       26889.54       26780.02       -0.41%
+rawFresh        1048576   repeated   5/5       38125.47       36809.55       -3.45%
+rawReused            64     random   5/5          55.60          54.98       -1.12%
+rawReused            64   repeated   5/5          55.51          54.95       -1.01%
+rawReused         65536     random   5/5        1554.45        1550.83       -0.23%
+rawReused         65536   repeated   5/5        3760.64        3716.41       -1.18%
+rawReused       1048576     random   5/5       26616.03       26629.86        0.05%
+rawReused       1048576   repeated   5/5       37960.95       36795.61       -3.07%
+
+The main bulk results are stable: 64 KiB to 1 MiB GZIP reads take about
+48-61% less time on repeated data. Buffered random reads take about 56-59%
+less time; default-buffer random reads take about 13% less time. Small input
+chunks require many inflate calls, limiting the benefit of CRC fusion.
+Raw fresh/reused Inflater medians are approximately flat to 3.5% faster.
+These are local workload observations, not universal throughput guarantees.
+
+Public wrapped Inflater controls (random payloads):
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+wrappedFresh         64     random   5/5         151.76         150.84       -0.61%
+wrappedFresh    1048576     random   5/5       32196.30       32025.24       -0.53%
+wrappedReused        64     random   5/5          61.31          60.11       -1.96%
+wrappedReused   1048576     random   5/5       32126.09       31759.18       -1.14%
+
+Empty and 1-KiB complete GZIP reads (same main timing protocol):
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+gzipBuffered          0   repeated   5/5         376.83         310.95      -17.48%
+gzipBuffered       1024   repeated   5/5         879.12         810.16       -7.84%
+gzipDefault           0   repeated   5/5         235.49         239.33        1.63%
+gzipDefault        1024   repeated   5/5         729.51         647.92      -11.18%
+
+The empty default-buffer read has a small reproducible cost, about 4 ns
+(roughly 1.6%). The native setup/completion contract adds some work even
+without payload CRC work to save. This does not justify another size-based
+policy or separate initialization path. The 1-KiB reads improve by about
+8-11% with this fixture.
+
+The 64-byte investigation is deliberately retained, including adverse
+results. Short main runs show separate fast/slow fork populations on both
+builds, around 205 and 250 ns with the default buffer. The random-labelled
+five-fork median is 20.6% worse for B, while the identical repeated-labelled
+fixture is 2.1% better. Buffered short medians likewise have opposite signs.
+This is substantial variability; the short medians alone cannot establish
+either a reliable tiny-read gain or an implementation regression.
+
+Longer follow-up, 3 x 1 s warmup plus 3 x 1 s measurement, five A/B rounds,
+with GC allocation profiling and LogCompilation:
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+gzipBuffered         64   repeated   5/5         372.53         360.90       -3.12%
+gzipDefault          64   repeated   5/5         253.11         248.15       -1.96%
+
+GC profiler reports identical Java allocation in A/B: 1064 bytes per
+default-buffer 64-byte read and 8744 bytes with the larger buffer. This
+does not count native zlib allocations. The C2 compilation logs for both
+builds show _inflateBytesBytes, including a later recompilation near
+1.15 s. The longer warmup finishes after those recorded compilations.
+There is no confirmed causal attribution of the timing populations to one
+specific inlining, alignment, allocator or scheduling effect. Profiling
+can itself affect timings, so an additional longer unprofiled run follows.
+
+Longer unprofiled follow-up (same 3 x 1 s / 3 x 1 s protocol):
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+gzipBuffered         64   repeated   5/5         317.72         309.51       -2.58%
+gzipDefault          64   repeated   5/5         204.24         248.18       21.51%
+
+The unprofiled default-buffer median is 204.24 -> 248.18 ns, +21.51%
+(43.94 ns). This is a material measured regression for that workload and
+must not be dismissed because the profiled median has the opposite sign.
+Buffered longer results remain highly variable. Tiny parity is not claimed.
+In the recorded C2 logs, PR6 inlines readHeader into the benchmark's gzip
+caller in one sample, while the candidate rejects it as already compiled
+into a big method. Allocation is identical. This supports an inlining/
+compilation-order hypothesis, not a proven universal causal explanation.
+
+Diagnostic only: same forced readHeader inlining on A and B, three A/B
+rounds and the longer timing protocol (not a shipping setting):
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+gzipDefault          64   repeated   3/3         247.78         209.21      -15.56%
+
+This control reverses the median gap and brings two of three candidate
+forks back to about 207-209 ns. Both builds still show more than one timing
+population. It supports inlining sensitivity as a contributor but does not
+validate a source fix or eliminate the adverse unprofiled result. A forced
+inlining policy is not shipped. The default-buffer 64-byte regression stays
+an explicit unresolved performance cost of this checkpoint qualification.
+
+G1 bulk sanity check, three interleaved A/B rounds, otherwise main protocol:
+method          bytes    content    forks A/B      PR6 ns   candidate ns   time change
+gzipBuffered    1048576     random   3/3      122510.61       50136.11      -59.08%
+gzipBuffered    1048576   repeated   3/3      119795.86       47093.61      -60.69%
+gzipDefault     1048576     random   3/3      179296.06      154663.11      -13.74%
+gzipDefault     1048576   repeated   3/3      119866.66       47928.58      -60.02%
+
+Native dispatch was verified with LLDB on the running candidate JVM:
+ZipRuntime::process_c1 -> ZipRuntime::process -> ZIP_Process -> zng_inflate
+-> updatewindow -> raw_crc_update_c. The live dispatch table resolves CRC
+and CRC-copy to crc32_armv8_pmull_eor3 and crc32_copy_armv8_pmull_eor3.
+The exact-class GZIP activation test reports supported=true. C2 compiler
+logs independently confirm the inflate intrinsic is emitted. This is ARM
+hardware CRC/PMULL/EOR3 dispatch, not the x86 persistent-folding backend.
+The scalar wrapper name raw_crc_update_c does not indicate scalar CRC:
+that wrapper dispatches to the selected ARM implementation.
+
+Correctness:
+- Candidate: ZIP 96 passed, JAR 34 passed, zipfs 30 passed; zero failures
+  or errors, four tests excluded by keywords.
+- PR6: ZIP 95 passed, JAR 34 passed, zipfs 30 passed; zero failures or
+  errors, the same four keyword exclusions. Candidate has NativeCRC extra.
+- NativeCRC: 1,648,430 checks per route, supported=true, in default mode,
+  ZIP intrinsics disabled with JNI checks, C1 with JNI checks, and interpreter.
+  Coverage includes fragmented buffers, raw/wrapped/direct buffers,
+  dictionaries, reset, field-shadowing subclasses, member concatenation,
+  corrupt/truncated framing, trailer callbacks and early/failed close.
+- Standalone native probe: 1,634 raw/default/reset/dictionary/error/member/
+  copy cases passed. Enable/reset/dictionary add no allocations.
+- Offline maintained-import tests: 12 passed with TMPDIR=/private/tmp.
+  Initial use of macOS's symlinked /var temporary path was rejected by
+  the importer's no-symlink guard. No importer/runtime change was made.
+
+Costs: native allocation tracking gives one inflate initialization allocation
+of 42,048 requested bytes in PR6 versus 42,176 in B: +128 bytes (~0.30%)
+for every native inflater, including ordinary raw and wrapped instances.
+The JNI z_stream allocation is separate and unchanged. The raw CRC extension
+still carries a maintained vendor patch and the shared JNI/HotSpot completion
+contract; the offline import/replay checks pass. No extra per-read native
+round trip was introduced by this qualification.
+
+Remaining uncertainty: sub-microsecond fork populations; cold JVM startup
+and first-ever class/native resolution; other Apple Silicon generations;
+concurrent readers, direct-buffer performance, real files/networks and other
+payloads/fragmentation patterns. The correctness tests exercise more shapes
+than the timing matrix. This is one host with warm JIT and allocator caches,
+mostly SerialGC, plus the small G1 control. No x86 performance claim is made.
+
+Local evidence remains in build/gzip-20261030/ (ignored by Git).
+All runner, log, trace and result paths below are relative to that directory;
+those machine-specific artifacts are not part of this source handback. The
+tracked CSV is doc/performance/gzip-arm64-20261030.csv.
+Benchmark source SHA-256: 40f6503161e2e99d351b8f0dc8066190bedf80e10b5c56dbdb04c62b0e31709a
+
+Reproduction: run_ab.py contains exact JVM commands; *-commands.jsonl records
+timestamps and each actual command. Its default is the main matrix; options
+--controls, --tiny, --tiny-long, --tiny-stable and --g1 reproduce each follow-up.
+--tiny-inline reproduces the diagnostic inlining control.
+Each results/*.json retains raw JMH iteration times; matching *.log retains
+warmup, measurement and VM information. summarize.py regenerates summary.csv
+without mixing profiled and unprofiled suites. summary.csv also records min
+and max fork medians. Native traces are in native-lldb*.log, test summaries
+in candidate-tests.log and pr6-tests.log, and activation/native/import logs
+and qualification-metadata.json are in the local evidence directory.
