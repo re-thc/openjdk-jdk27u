@@ -1639,10 +1639,16 @@ class LambdaForm {
 
     private static LambdaForm createConstantForm(BasicType type) {
         UNSAFE.ensureClassInitialized(BoundMethodHandle.class); // defend access to SimpleMethodHandle
-        var species = SimpleMethodHandle.BMH_SPECIES.extendWith(type);
-        var carrier = argument(0, L_TYPE).withConstraint(species); // BMH bound with data
-        Name[] constNames = new Name[] { carrier, new Name(species.getterFunction(0), carrier) };
-        return LF_constant[type.ordinal()] = create(1, constNames, Kind.CONSTANT);
+        // Racing callers must share this form and its derived forms.
+        synchronized (LF_constant) {
+            var cached = LF_constant[type.ordinal()];
+            if (cached != null)
+                return cached;
+            var species = SimpleMethodHandle.BMH_SPECIES.extendWith(type);
+            var carrier = argument(0, L_TYPE).withConstraint(species); // BMH bound with data
+            Name[] constNames = new Name[] { carrier, new Name(species.getterFunction(0), carrier) };
+            return LF_constant[type.ordinal()] = create(1, constNames, Kind.CONSTANT);
+        }
     }
 
     private static final @Stable LambdaForm[] LF_identity = new LambdaForm[TYPE_LIMIT];

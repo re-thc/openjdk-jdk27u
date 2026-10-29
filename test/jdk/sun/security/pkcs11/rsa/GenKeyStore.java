@@ -86,7 +86,7 @@ public class GenKeyStore {
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         generateKeyPair(ks, 512, "rsa512a");

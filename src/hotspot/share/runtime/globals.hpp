@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1091,8 +1092,9 @@ const int ObjectAlignmentInBytes = 8;
           "Inline allocations larger than this in doublewords must go slow")\
           range(0, (1 << (BitsPerInt - LogBytesPerLong - 1)) - 1)           \
                                                                             \
-  product_pd(bool, CompactStrings,                                          \
-          "Enable Strings to use single byte chars in backing store")       \
+  product(bool, CompactStrings, true,                                      \
+          "Use compact String storage (cannot be disabled)")                 \
+          constraint(CompactStringsConstraintFunc, AtParse)                  \
                                                                             \
   product_pd(uint, TypeProfileLevel,                                        \
           "=XYZ, with Z: Type profiling of arguments at call; "             \

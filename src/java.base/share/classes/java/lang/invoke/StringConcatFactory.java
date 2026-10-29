@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -480,7 +482,8 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
-    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants) {
+    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants)
+            throws ReflectiveOperationException {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
 
@@ -490,7 +493,7 @@ public final class StringConcatFactory {
         }
         if (paramCount == 1) {
             String prefix = constants[0];
-            // Empty constants will be
+            // Try the existing fast paths for empty constants.
             if (prefix.isEmpty()) {
                 if (suffix.isEmpty()) {
                     return unaryConcat(mt.parameterType(0));
@@ -500,7 +503,14 @@ public final class StringConcatFactory {
             } else if (suffix.isEmpty() && !mt.hasPrimitives()) {
                 // Non-primitive argument
                 return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
-            } // fall-through if there's both a prefix and suffix
+            }
+
+            // Use the built-in unary concatenator without initializing the hidden class generator.
+            Lookup lookup = StringLookupHolder.LOOKUP;
+            MethodType concatArgs = erasedArgs(mt);
+            Object concat1 = JLA.uncheckedStringConcat1(constants);
+            MethodHandle handle = lookup.findVirtual(concat1.getClass(), "concat", concatArgs);
+            return handle.bindTo(concat1);
         } else if (paramCount == 2 && !mt.hasPrimitives() && suffix.isEmpty()
                 && constants[0].isEmpty() && constants[1].isEmpty()) {
             // Two reference arguments, no surrounding constants
@@ -622,6 +632,35 @@ public final class StringConcatFactory {
         // no instantiation
     }
 
+    // Shared by built-in and generated concatenators without initializing the generator.
+    private static final class StringLookupHolder {
+        static final Lookup LOOKUP = new Lookup(String.class);
+    }
+
+    /**
+     * The parameter types are normalized into 7 types: int,long,boolean,char,float,double,Object
+     */
+    private static MethodType erasedArgs(MethodType args) {
+        int parameterCount = args.parameterCount();
+        var paramTypes = new Class<?>[parameterCount];
+        boolean changed = false;
+        for (int i = 0; i < parameterCount; i++) {
+            Class<?> cl = args.parameterType(i);
+            // Use int as the logical type for subword integral types
+            // (byte and short). char and boolean require special
+            // handling so don't change the logical type of those
+            if (cl == byte.class || cl == short.class) {
+                cl = int.class;
+                changed = true;
+            } else if (cl != Object.class && !cl.isPrimitive()) {
+                cl = Object.class;
+                changed = true;
+            }
+            paramTypes[i] = cl;
+        }
+        return changed ? MethodType.methodType(args.returnType(), paramTypes, true) : args;
+    }
+
     /**
      * Implement efficient hidden class strategy for String concatenation
      *
@@ -639,7 +678,7 @@ public final class StringConcatFactory {
 
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
-        static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
+        static final MethodHandles.Lookup STR_LOOKUP = StringLookupHolder.LOOKUP;
 
         static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
         static final ClassDesc CD_StringConcatHelper = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/StringConcatHelper;");
@@ -684,6 +723,7 @@ public final class StringConcatFactory {
                   .aload(constantsSlot)
                   .invokespecial(CD_StringConcatBase, INIT_NAME, MTD_INIT, false)
                   .return_();
+                DirectCodeBuilder.withMaxs(cb, 2, 2);
             }
         };
 
@@ -696,35 +736,14 @@ public final class StringConcatFactory {
                             }
                         });
 
+        // All generated methods are straight-line, with explicit stack and local limits.
+        static final ClassFile CLASSFILE = ClassFile.of(StackMapsOption.DROP_STACK_MAPS);
+
         private InlineHiddenClassStrategy() {
             // no instantiation
         }
 
         private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
-
-        /**
-         * The parameter types are normalized into 7 types: int,long,boolean,char,float,double,Object
-         */
-        private static MethodType erasedArgs(MethodType args) {
-            int parameterCount = args.parameterCount();
-            var paramTypes = new Class<?>[parameterCount];
-            boolean changed = false;
-            for (int i = 0; i < parameterCount; i++) {
-                Class<?> cl = args.parameterType(i);
-                // Use int as the logical type for subword integral types
-                // (byte and short). char and boolean require special
-                // handling so don't change the logical type of those
-                if (cl == byte.class || cl == short.class) {
-                    cl = int.class;
-                    changed = true;
-                } else if (cl != Object.class && !cl.isPrimitive()) {
-                    cl = Object.class;
-                    changed = true;
-                }
-                paramTypes[i] = cl;
-            }
-            return changed ? MethodType.methodType(args.returnType(), paramTypes, true) : args;
-        }
 
         /**
          * Construct the MethodType of the prepend method, The parameters only support 5 types:
@@ -758,13 +777,9 @@ public final class StringConcatFactory {
         /**
          * Construct the MethodType of the coder method. The first parameter is the initialized coder.
          * Only parameter types which can be UTF16 are added.
-         * Returns null if no such parameter exists or CompactStrings is off.
+         * Returns null if no such parameter exists.
          */
         private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
-            if (JLA.stringInitCoder() != 0) {
-                return null;
-            }
-
             int parameterCount = concatArgs.parameterCount();
 
             int maybeUTF16Count = 0;
@@ -808,13 +823,6 @@ public final class StringConcatFactory {
             lookup = STR_LOOKUP;
             final MethodType concatArgs = erasedArgs(args);
 
-            // 1 argument use built-in method
-            if (args.parameterCount() == 1) {
-                Object concat1 = JLA.uncheckedStringConcat1(constants);
-                var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
-                return handle.bindTo(concat1);
-            }
-
             boolean forceInline  = concatArgs.parameterCount() <  FORCE_INLINE_THRESHOLD;
             boolean staticConcat = concatArgs.parameterCount() >= CACHE_THRESHOLD;
 
@@ -837,7 +845,7 @@ public final class StringConcatFactory {
                            coderArgs   = coderArgsIfMaybeUTF16(concatArgs),
                            prependArgs = prependArgs(concatArgs, staticConcat);
 
-            byte[] classBytes = ClassFile.of().build(CD_CONCAT,
+            byte[] classBytes = CLASSFILE.build(CD_CONCAT,
                     new Consumer<ClassBuilder>() {
                         @Override
                         public void accept(ClassBuilder clb) {
@@ -1007,6 +1015,8 @@ public final class StringConcatFactory {
                         bufSlot       = cb.allocateLocal(TypeKind.REFERENCE),
                         constantsSlot = cb.allocateLocal(TypeKind.REFERENCE),
                         suffixSlot    = cb.allocateLocal(TypeKind.REFERENCE);
+                    // Static concatenators do not use the constants and suffix locals.
+                    int maxLocals = staticConcat ? bufSlot + 1 : suffixSlot + 1;
 
                     /*
                      * Types other than int/long/char/boolean require local variables to store the result of stringOf.
@@ -1031,13 +1041,14 @@ public final class StringConcatFactory {
                                 methodTypeDesc = MTD_String_Object;
                             }
                             stringSlots[i] = cb.allocateLocal(TypeKind.REFERENCE);
+                            maxLocals = stringSlots[i] + 1;
                             cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
                               .astore(stringSlots[i]);
                         }
                     }
 
-                    int coder  = JLA.stringInitCoder(),
+                    int coder  = 0,
                         length = 0;
                     if (staticConcat) {
                         for (var constant : constants) {
@@ -1144,6 +1155,7 @@ public final class StringConcatFactory {
                     if (!staticConcat) {
                         cb.aload(constantsSlot);
                     }
+                    int maxStack = staticConcat ? 3 : 4;
                     for (int i = 0; i < paramCount; i++) {
                         var cl = concatArgs.parameterType(i);
                         int paramSlot = cb.parameterSlot(i);
@@ -1153,6 +1165,7 @@ public final class StringConcatFactory {
                             kind = TypeKind.REFERENCE;
                         }
                         cb.loadLocal(kind, paramSlot);
+                        maxStack += kind.slotSize();
                     }
                     cb.invokestatic(concatClass, "prepend", prependArgs);
 
@@ -1163,6 +1176,9 @@ public final class StringConcatFactory {
                       .iload(coderSlot)
                       .invokespecial(CD_String, INIT_NAME, MTD_STRING_INIT)
                       .areturn();
+                    // The prepend arguments dominate every other stack peak, including the
+                    // five slots for String construction above (prepend's int is still present).
+                    DirectCodeBuilder.withMaxs(cb, maxStack, maxLocals);
                 }
             };
         }
@@ -1186,6 +1202,7 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     int lengthSlot = cb.parameterSlot(0);
+                    int maxStack = 2;
                     cb.iload(lengthSlot);
                     for (int i = 1; i < lengthArgs.parameterCount(); i++) {
                         var cl = lengthArgs.parameterType(i);
@@ -1196,6 +1213,7 @@ public final class StringConcatFactory {
                             methodTypeDesc = MTD_int_int_int;
                         } else if (cl == CD_long) {
                             methodTypeDesc = MTD_int_int_long;
+                            maxStack = 3;
                         } else if (cl == CD_boolean) {
                             methodTypeDesc = MTD_int_int_boolean;
                         } else {
@@ -1205,6 +1223,7 @@ public final class StringConcatFactory {
                           .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
                     }
                     cb.ireturn();
+                    DirectCodeBuilder.withMaxs(cb, maxStack, ((DirectCodeBuilder) cb).curTopLocal());
                 }
             };
         }
@@ -1217,7 +1236,7 @@ public final class StringConcatFactory {
          * <blockquote><pre>
          * import static java.lang.StringConcatHelper.stringCoder;
          *
-         * static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
+         * static int coder(int coder, char arg3, String str4, String str5, String str6, String str7) {
          *     return coder | stringCoder(arg3) | str4.coder() | str5.coder() | str6.coder() | str7.coder();
          * }
          * </pre></blockquote>
@@ -1242,6 +1261,7 @@ public final class StringConcatFactory {
                         cb.ior();
                     }
                     cb.ireturn();
+                    DirectCodeBuilder.withMaxs(cb, 2, ((DirectCodeBuilder) cb).curTopLocal());
                 }
             };
         }
@@ -1279,10 +1299,12 @@ public final class StringConcatFactory {
                         coderSlot     = cb.parameterSlot(1),
                         bufSlot       = cb.parameterSlot(2),
                         constantsSlot = cb.parameterSlot(3);
+                    // The instance form also pushes an array index before loading a constant.
+                    int maxStack = staticConcat ? 5 : 6;
                     /*
                      * // StringConcatHelper.prepend
                      * return prepend(prepend(prepend(prepend(
-                     *         prepend(apppend(prepend(prepend(length,
+                     *         prepend(prepend(prepend(prepend(length,
                      *              buf, str7, constant[7]), buf, str6, constant[6]),
                      *              buf, str5, constant[5]), buf, arg4, constant[4]),
                      *              buf, arg3, constant[3]), buf, arg2, constant[2]),
@@ -1299,6 +1321,7 @@ public final class StringConcatFactory {
                             methodTypeDesc = PREPEND_int;
                         } else if (cl == CD_long) {
                             methodTypeDesc = PREPEND_long;
+                            maxStack = staticConcat ? 6 : 7;
                         } else if (cl == CD_boolean) {
                             methodTypeDesc = PREPEND_boolean;
                         } else if (cl == CD_char) {
@@ -1323,6 +1346,7 @@ public final class StringConcatFactory {
                         cb.invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
                     cb.ireturn();
+                    DirectCodeBuilder.withMaxs(cb, maxStack, ((DirectCodeBuilder) cb).curTopLocal());
                 }
             };
         }

@@ -78,10 +78,9 @@ import java.util.function.Predicate;
  * @author Doug Lea
  * @param <E> the type of elements held in this queue
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
-    private static final long serialVersionUID = -6903933977591709194L;
-
     /*
      * A variant of the "two lock queue" algorithm.  The putLock gates
      * entry to put (and offer), and has an associated condition for

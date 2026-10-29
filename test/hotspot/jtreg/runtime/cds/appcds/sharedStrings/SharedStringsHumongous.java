@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +45,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -57,7 +59,7 @@ public class SharedStringsHumongous {
         WhiteBox wb = WhiteBox.getWhiteBox();
 
         try (FileOutputStream fos = new FileOutputStream(sharedArchiveConfigFile)) {
-            PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(fos, UTF_8));
             out.println("VERSION: 1.0");
             out.println("@SECTION: String");
             out.println("31: shared_test_string_unique_14325");
@@ -73,7 +75,9 @@ public class SharedStringsHumongous {
             System.out.println("Using a humongous string: " + prefix);
 
             String s = prefix + new String(body);
-            out.println(s.length() + ": " + s);
+            out.println(s.getBytes(UTF_8).length + ": " + s);
+            String utf16 = s + '\u0100';
+            out.println(utf16.getBytes(UTF_8).length + ": " + utf16);
             out.close();
         }
 

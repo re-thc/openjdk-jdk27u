@@ -33,11 +33,9 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 21
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
 public final class StructureViolationException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -7705327650798235468L;
-
     /**
      * Constructs a {@code StructureViolationException} with no detail message.
      */

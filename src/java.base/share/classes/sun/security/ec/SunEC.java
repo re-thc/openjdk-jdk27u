@@ -35,8 +35,7 @@ import java.util.List;
 import sun.security.ec.ed.EdDSAKeyFactory;
 import sun.security.ec.ed.EdDSAKeyPairGenerator;
 import sun.security.ec.ed.EdDSASignature;
-import sun.security.util.CurveDB;
-import sun.security.util.NamedCurve;
+import sun.security.util.KnownOIDs;
 
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 import static sun.security.util.SecurityProviderConstants.*;
@@ -44,9 +43,8 @@ import static sun.security.util.SecurityProviderConstants.*;
 /**
  * Provider class for the Elliptic Curve provider.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunEC extends Provider {
-
-    private static final long serialVersionUID = -2279741672933606418L;
 
     private static class ProviderServiceA extends ProviderService {
         ProviderServiceA(Provider p, String type, String algo, String cn,
@@ -204,8 +202,8 @@ public final class SunEC extends Provider {
         boolean firstCurve = true;
         StringBuilder names = new StringBuilder();
 
-        for (NamedCurve namedCurve : List.of(
-                CurveDB.P_256, CurveDB.P_384, CurveDB.P_521)) {
+        for (KnownOIDs curve : List.of(
+                KnownOIDs.secp256r1, KnownOIDs.secp384r1, KnownOIDs.secp521r1)) {
             if (!firstCurve) {
                 names.append("|");
             } else {
@@ -213,13 +211,14 @@ public final class SunEC extends Provider {
             }
 
             names.append("[");
-            String[] commonNames = namedCurve.getNameAndAliases();
-            for (String commonName : commonNames) {
-                names.append(commonName);
+            names.append(curve.stdName());
+            names.append(",");
+            for (String alias : curve.aliases()) {
+                names.append(alias);
                 names.append(",");
             }
 
-            names.append(namedCurve.getObjectId());
+            names.append(curve.value());
             names.append("]");
         }
 

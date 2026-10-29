@@ -56,11 +56,9 @@ import java.security.*;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since = "25", forRemoval = true)
 public final class NetPermission extends BasicPermission {
-    @java.io.Serial
-    private static final long serialVersionUID = -8343910153355041693L;
-
     /**
      * Creates a new NetPermission with the specified name.
      * The name is the symbolic name of the NetPermission, such as

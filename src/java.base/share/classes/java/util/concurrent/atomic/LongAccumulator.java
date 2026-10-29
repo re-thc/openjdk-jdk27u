@@ -79,9 +79,8 @@ import java.util.function.LongBinaryOperator;
  * @since 1.8
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LongAccumulator extends Striped64 implements Serializable {
-    private static final long serialVersionUID = 7249069246863182397L;
-
     /** @serial */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final LongBinaryOperator function;
@@ -229,9 +228,8 @@ public class LongAccumulator extends Striped64 implements Serializable {
      * Striped64 superclass in serialized forms.
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SerializationProxy implements Serializable {
-        private static final long serialVersionUID = 7249069246863182397L;
-
         /**
          * The current value returned by get().
          * @serial

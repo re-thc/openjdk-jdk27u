@@ -34,10 +34,8 @@ package java.security.cert;
  * @author Hemma Prafullchandra
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertificateExpiredException extends CertificateException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 9071001339691533771L;
 
     /**
      * Constructs a CertificateExpiredException with no detail message. A

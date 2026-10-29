@@ -75,6 +75,7 @@ import java.util.function.Predicate;
  * @author  Doug Lea
  * @param <E> the type of elements held in this deque
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkedBlockingDeque<E>
     extends AbstractQueue<E>
     implements BlockingDeque<E>, java.io.Serializable {
@@ -104,8 +105,6 @@ public class LinkedBlockingDeque<E>
      * BlockingDeque javadoc combined with the AbstractQueue
      * implementation, so a lot of method specs are duplicated here.
      */
-
-    private static final long serialVersionUID = -387911632671998426L;
 
     /** Doubly-linked list node class */
     static final class Node<E> {

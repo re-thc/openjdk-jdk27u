@@ -46,7 +46,6 @@ import jdk.internal.event.EventHelper;
 import jdk.internal.event.TLSHandshakeEvent;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.ssl.CipherSuite.HashAlg;
-import static sun.security.ssl.CipherSuite.HashAlg.H_NONE;
 import sun.security.ssl.SSLCipher.SSLReadCipher;
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -94,9 +93,7 @@ final class Finished {
                 ByteBuffer m) throws IOException {
             super(context);
             int verifyDataLen = 12;
-            if (context.negotiatedProtocol == ProtocolVersion.SSL30) {
-                verifyDataLen = 36;
-            } else if (context.negotiatedProtocol.useTLS13PlusSpec()) {
+            if (context.negotiatedProtocol.useTLS13PlusSpec()) {
                 verifyDataLen =
                         context.negotiatedCipherSuite.hashAlg.hashLength;
             }
@@ -165,8 +162,6 @@ final class Finished {
     }
 
     enum VerifyDataScheme {
-        SSL30       ("kdf_ssl30", new S30VerifyDataGenerator()),
-        TLS10       ("kdf_tls10", new T10VerifyDataGenerator()),
         TLS12       ("kdf_tls12", new T12VerifyDataGenerator()),
         TLS13       ("kdf_tls13", new T13VerifyDataGenerator());
 
@@ -180,12 +175,6 @@ final class Finished {
 
         static VerifyDataScheme valueOf(ProtocolVersion protocolVersion) {
             switch (protocolVersion) {
-                case SSL30:
-                    return VerifyDataScheme.SSL30;
-                case TLS10:
-                case TLS11:
-                case DTLS10:
-                    return VerifyDataScheme.TLS10;
                 case TLS12:
                 case DTLS12:
                     return VerifyDataScheme.TLS12;
@@ -203,72 +192,6 @@ final class Finished {
             }
 
             throw new UnsupportedOperationException("Not supported yet.");
-        }
-    }
-
-    // SSL 3.0
-    private static final
-            class S30VerifyDataGenerator implements VerifyDataGenerator {
-        @Override
-        public byte[] createVerifyData(HandshakeContext context,
-                boolean isValidation) throws IOException {
-            HandshakeHash handshakeHash = context.handshakeHash;
-            SecretKey masterSecretKey =
-                    context.handshakeSession.getMasterSecret();
-            boolean useClientLabel =
-                    (context.sslConfig.isClientMode && !isValidation) ||
-                    (!context.sslConfig.isClientMode && isValidation);
-            return handshakeHash.digest(useClientLabel, masterSecretKey);
-        }
-    }
-
-    // TLS 1.0, TLS 1.1, DTLS 1.0
-    private static final
-            class T10VerifyDataGenerator implements VerifyDataGenerator {
-        @Override
-        public byte[] createVerifyData(HandshakeContext context,
-                boolean isValidation) throws IOException {
-            HandshakeHash handshakeHash = context.handshakeHash;
-            SecretKey masterSecretKey =
-                    context.handshakeSession.getMasterSecret();
-
-            boolean useClientLabel =
-                    (context.sslConfig.isClientMode && !isValidation) ||
-                    (!context.sslConfig.isClientMode && isValidation);
-            String tlsLabel;
-            if (useClientLabel) {
-                tlsLabel = "client finished";
-            } else {
-                tlsLabel = "server finished";
-            }
-
-            try {
-                byte[] seed = handshakeHash.digest();
-                String prfAlg = "SunTlsPrf";
-                HashAlg hashAlg = H_NONE;
-
-                /*
-                 * RFC 5246/7.4.9 says that finished messages can
-                 * be ciphersuite-specific in both length/PRF hash
-                 * algorithm.  If we ever run across a different
-                 * length, this call will need to be updated.
-                 */
-                @SuppressWarnings("deprecation")
-                TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
-                    masterSecretKey, tlsLabel, seed, 12,
-                    hashAlg.name, hashAlg.hashLength, hashAlg.blockSize);
-                KeyGenerator kg = KeyGenerator.getInstance(prfAlg);
-                kg.init(spec);
-                SecretKey prfKey = kg.generateKey();
-                if (!"RAW".equals(prfKey.getFormat())) {
-                    throw new ProviderException(
-                        "Invalid PRF output, format must be RAW. " +
-                        "Format received: " + prfKey.getFormat());
-                }
-                return prfKey.getEncoded();
-            } catch (GeneralSecurityException e) {
-                throw new RuntimeException("PRF failed", e);
-            }
         }
     }
 

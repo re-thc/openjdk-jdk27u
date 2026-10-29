@@ -31,7 +31,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import sun.security.internal.spec.TlsPrfParameterSpec;
 
@@ -40,13 +39,12 @@ import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
- * KeyGenerator for the TLS PRF. Note that although the PRF is used in a number
- * of places during the handshake, this class is usually only used to calculate
+ * KeyGenerator for the TLS 1.2 PRF. Note that although the PRF is used in a
+ * number of places during the handshake, this class is only used to calculate
  * the Finished messages. The reason is that for those other uses more specific
- * PKCS#11 mechanisms have been defined (CKM_SSL3_MASTER_KEY_DERIVE, etc.).
+ * PKCS#11 mechanisms have been defined (CKM_TLS12_MASTER_KEY_DERIVE, etc.).
  *
- * <p>This class supports the CKM_TLS_PRF mechanism from PKCS#11 v2.20 and
- * the older NSS private mechanism.
+ * <p>This class supports the CKM_TLS_MAC mechanism from PKCS#11 v3.0.
  *
  * @author  Andreas Sterbenz
  * @since   1.6
@@ -130,54 +128,26 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
 
         byte[] seed = spec.getSeed();
 
-        // TLS 1.2
-        if (mechanism == CKM_TLS_MAC) {
-            SecretKey k = null;
-            int ulServerOrClient = 0;
-            if (spec.getLabel().equals("server finished")) {
-                ulServerOrClient = 1;
-            }
-            if (spec.getLabel().equals("client finished")) {
-                ulServerOrClient = 2;
-            }
-
-            if (ulServerOrClient != 0) {
-                // Finished message
-                CK_TLS_MAC_PARAMS params = new CK_TLS_MAC_PARAMS(
-                        Functions.getHashMechId(spec.getPRFHashAlg()),
-                        spec.getOutputLength(), ulServerOrClient);
-                Session session = null;
-                long keyID = p11Key.getKeyID();
-                try {
-                    session = token.getOpSession();
-                    token.p11.C_SignInit(session.id(),
-                            new CK_MECHANISM(mechanism, params), keyID);
-                    token.p11.C_SignUpdate(session.id(), 0, seed, 0, seed.length);
-                    byte[] out = token.p11.C_SignFinal
-                                        (session.id(), spec.getOutputLength());
-                    return new SecretKeySpec(out, spec.getKeyAlg());
-                } catch (PKCS11Exception e) {
-                    throw new ProviderException("Could not calculate PRF", e);
-                } finally {
-                    p11Key.releaseKeyID();
-                    token.releaseSession(session);
-                }
-            } else {
-                throw new ProviderException("Only Finished message authentication code"+
-                                            " generation supported for TLS 1.2.");
-            }
+        SecretKey k = null;
+        int ulServerOrClient = 0;
+        if (spec.getLabel().equals("server finished")) {
+            ulServerOrClient = 1;
+        }
+        if (spec.getLabel().equals("client finished")) {
+            ulServerOrClient = 2;
         }
 
-        byte[] label = spec.getLabel().getBytes(UTF_8);
-
-        if (mechanism == CKM_NSS_TLS_PRF_GENERAL) {
+        if (ulServerOrClient != 0) {
+            // Finished message
+            CK_TLS_MAC_PARAMS params = new CK_TLS_MAC_PARAMS(
+                    Functions.getHashMechId(spec.getPRFHashAlg()),
+                    spec.getOutputLength(), ulServerOrClient);
             Session session = null;
             long keyID = p11Key.getKeyID();
             try {
                 session = token.getOpSession();
-                token.p11.C_SignInit
-                    (session.id(), new CK_MECHANISM(mechanism), keyID);
-                token.p11.C_SignUpdate(session.id(), 0, label, 0, label.length);
+                token.p11.C_SignInit(session.id(),
+                        new CK_MECHANISM(mechanism, params), keyID);
                 token.p11.C_SignUpdate(session.id(), 0, seed, 0, seed.length);
                 byte[] out = token.p11.C_SignFinal
                                     (session.id(), spec.getOutputLength());
@@ -188,26 +158,9 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
                 p11Key.releaseKeyID();
                 token.releaseSession(session);
             }
-        }
-
-        // mechanism == CKM_TLS_PRF
-
-        byte[] out = new byte[spec.getOutputLength()];
-        CK_TLS_PRF_PARAMS params = new CK_TLS_PRF_PARAMS(seed, label, out);
-
-        Session session = null;
-        long keyID = p11Key.getKeyID();
-        try {
-            session = token.getOpSession();
-            token.p11.C_DeriveKey(session.id(),
-                new CK_MECHANISM(mechanism, params), keyID, null);
-            return new SecretKeySpec(out, spec.getKeyAlg());
-        } catch (PKCS11Exception e) {
-            throw new ProviderException("Could not calculate PRF", e);
-        } finally {
-            p11Key.releaseKeyID();
-            token.releaseSession(session);
+        } else {
+            throw new ProviderException("Only Finished message authentication code"+
+                                        " generation supported for TLS 1.2.");
         }
     }
-
 }

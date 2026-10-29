@@ -38,10 +38,8 @@ import java.io.ObjectInputStream;
  * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ChoiceCallback implements Callback, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -3975664071579892167L;
 
     /**
      * @serial

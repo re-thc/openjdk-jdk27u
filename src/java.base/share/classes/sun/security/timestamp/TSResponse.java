@@ -381,10 +381,8 @@ public final class TSResponse {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class TimestampException extends IOException {
-        @java.io.Serial
-        private static final long serialVersionUID = -1631631794891940953L;
-
         TimestampException(String message) {
             super(message);
         }

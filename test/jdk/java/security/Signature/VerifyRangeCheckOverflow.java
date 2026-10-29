@@ -41,14 +41,14 @@ import jdk.test.lib.security.SecurityUtils;
 public class VerifyRangeCheckOverflow {
 
     public static void main(String[] args) throws Exception {
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(kpgAlgorithm);
         keyPairGenerator.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair keys = keyPairGenerator.generateKeyPair();
         PublicKey publicKey = keys.getPublic();
         byte[] sigBytes = new byte[100];
 
-        Signature signature = Signature.getInstance("SHA256withDSA");
+        Signature signature = Signature.getInstance("SHA256withECDSA");
         signature.initVerify(publicKey);
         try {
             signature.verify(sigBytes, Integer.MAX_VALUE, 1);

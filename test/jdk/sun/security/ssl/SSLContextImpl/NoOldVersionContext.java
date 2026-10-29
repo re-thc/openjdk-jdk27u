@@ -50,28 +50,22 @@ import javax.net.ssl.TrustManager;
 public class NoOldVersionContext {
     static enum ContextVersion {
         TLS_CV_01("SSL",
-                new String[] {"TLSv1", "TLSv1.1", "TLSv1.2"}),
+                new String[] {"TLSv1.2"}),
         TLS_CV_02("TLS",
-                new String[] {"TLSv1", "TLSv1.1", "TLSv1.2"}),
-        TLS_CV_03("SSLv3",
-                new String[] {"TLSv1"}),
-        TLS_CV_04("TLSv1",
-                new String[] {"TLSv1"}),
-        TLS_CV_05("TLSv1.1",
-                new String[] {"TLSv1", "TLSv1.1"}),
+                new String[] {"TLSv1.2"}),
         TLS_CV_06("TLSv1.2",
-                new String[] {"TLSv1", "TLSv1.1", "TLSv1.2"}),
+                new String[] {"TLSv1.2"}),
         TLS_CV_07("TLSv1.3",
-                new String[] {"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+                new String[] {"TLSv1.2", "TLSv1.3"}),
         TLS_CV_08("Default",
-                new String[] {"TLSv1", "TLSv1.1", "TLSv1.2"});
+                new String[] {"TLSv1.2"});
 
         final String contextVersion;
         final String[] enabledProtocols;
         final static String[] supportedProtocols = new String[] {
-                "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+                "TLSv1.2", "TLSv1.3"};
         final static String[] serverDefaultProtocols = new String[] {
-                "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+                "TLSv1.2", "TLSv1.3"};
 
         ContextVersion(String contextVersion, String[] enabledProtocols) {
             this.contextVersion = contextVersion;

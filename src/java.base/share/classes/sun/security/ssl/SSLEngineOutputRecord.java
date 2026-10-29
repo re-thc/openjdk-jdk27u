@@ -38,8 +38,6 @@ import sun.security.ssl.SSLCipher.SSLWriteCipher;
 final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
     private HandshakeFragment fragmenter;
-    private boolean isTalkingToV2;      // SSLv2Hello
-    private ByteBuffer v2ClientHello;    // SSLv2Hello
 
     private volatile boolean isCloseWaiting;
 
@@ -103,30 +101,6 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
            fragmenter = new HandshakeFragment();
         }
 
-        if (firstMessage) {
-            firstMessage = false;
-
-            if ((helloVersion == ProtocolVersion.SSL20Hello) &&
-                (source[offset] == SSLHandshake.CLIENT_HELLO.id) &&
-                                            //  5: recode header size
-                (source[offset + 4 + 2 + 32] == 0)) {
-                                            // V3 session ID is empty
-                                            //  4: handshake header size
-                                            //  2: client_version in ClientHello
-                                            // 32: random in ClientHello
-
-                // Double space should be big enough for the converted message.
-                v2ClientHello = encodeV2ClientHello(
-                        source, (offset + 4), (length - 4));
-
-                v2ClientHello.position(2);     // exclude the header
-                handshakeHash.deliver(v2ClientHello);
-                v2ClientHello.position(0);
-
-                return;
-            }
-        }
-
         byte handshakeType = source[offset];
         if (handshakeHash.isHashable(handshakeType)) {
             handshakeHash.deliver(source, offset, length);
@@ -158,11 +132,6 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         } else {
             fragmenter.queueUpCipherDispose();
         }
-    }
-
-    @Override
-    void encodeV2NoCipher() {
-        isTalkingToV2 = true;
     }
 
     @Override
@@ -223,88 +192,62 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         }
 
         int dstLim = destination.limit();
-        boolean isFirstRecordOfThePayload = true;
         int packetLeftSize = Math.min(maxRecordSize, packetSize);
-        boolean needMorePayload = true;
-        long recordSN = 0L;
-        while (needMorePayload) {
-            int fragLen;
-            if (isFirstRecordOfThePayload && needToSplitPayload()) {
+        int fragLen;
+        if (packetLeftSize > 0) {
+            fragLen = writeCipher.calculateFragmentSize(
+                    packetLeftSize, headerSize);
 
-                fragLen = 1;
-                isFirstRecordOfThePayload = false;
-            } else {
-                needMorePayload = false;
-
-                if (packetLeftSize > 0) {
-                    fragLen = writeCipher.calculateFragmentSize(
-                            packetLeftSize, headerSize);
-
-                    fragLen = Math.min(fragLen, Record.maxDataSize);
-                } else {
-                    fragLen = Record.maxDataSize;
-                }
-
-                // Calculate more impact, for example TLS 1.3 padding.
-                fragLen = calculateFragmentSize(fragLen);
-            }
-
-            int dstPos = destination.position();
-            int dstContent = dstPos + headerSize +
-                                writeCipher.getExplicitNonceSize();
-            destination.position(dstContent);
-
-            int remains = Math.min(fragLen, destination.remaining());
-            fragLen = 0;
-            int srcsLen = offset + length;
-            for (int i = offset; (i < srcsLen) && (remains > 0); i++) {
-                int amount = Math.min(sources[i].remaining(), remains);
-                int srcLimit = sources[i].limit();
-                sources[i].limit(sources[i].position() + amount);
-                destination.put(sources[i]);
-                sources[i].limit(srcLimit);         // restore the limit
-                remains -= amount;
-                fragLen += amount;
-
-                if (remains > 0) {
-                    offset++;
-                    length--;
-                }
-            }
-
-            destination.limit(destination.position());
-            destination.position(dstContent);
-
-            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
-                SSLLogger.fine(
-                        "WRITE: " + protocolVersion.name + " " +
-                        ContentType.APPLICATION_DATA.name +
-                        ", length = " + destination.remaining());
-            }
-
-            // Encrypt the fragment and wrap up a record.
-            recordSN = encrypt(writeCipher,
-                    ContentType.APPLICATION_DATA.id, destination,
-                    dstPos, dstLim, headerSize,
-                    protocolVersion);
-
-            if (SSLLogger.isOn() &&
-                    SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                ByteBuffer temporary = destination.duplicate();
-                temporary.limit(temporary.position());
-                temporary.position(dstPos);
-                SSLLogger.fine("Raw write", temporary);
-            }
-
-            packetLeftSize -= destination.position() - dstPos;
-
-            // remain the limit unchanged
-            destination.limit(dstLim);
-
-            if (isFirstAppOutputRecord) {
-                isFirstAppOutputRecord = false;
-            }
+            fragLen = Math.min(fragLen, Record.maxDataSize);
+        } else {
+            fragLen = Record.maxDataSize;
         }
+
+        // Calculate more impact, for example TLS 1.3 padding.
+        fragLen = calculateFragmentSize(fragLen);
+
+        int dstPos = destination.position();
+        int dstContent = dstPos + headerSize +
+                            writeCipher.getExplicitNonceSize();
+        destination.position(dstContent);
+
+        int remains = Math.min(fragLen, destination.remaining());
+        int srcsLen = offset + length;
+        for (int i = offset; (i < srcsLen) && (remains > 0); i++) {
+            int amount = Math.min(sources[i].remaining(), remains);
+            int srcLimit = sources[i].limit();
+            sources[i].limit(sources[i].position() + amount);
+            destination.put(sources[i]);
+            sources[i].limit(srcLimit);         // restore the limit
+            remains -= amount;
+        }
+
+        destination.limit(destination.position());
+        destination.position(dstContent);
+
+        if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
+            SSLLogger.fine(
+                    "WRITE: " + protocolVersion.name + " " +
+                    ContentType.APPLICATION_DATA.name +
+                    ", length = " + destination.remaining());
+        }
+
+        // Encrypt the fragment and wrap up a record.
+        long recordSN = encrypt(writeCipher,
+                ContentType.APPLICATION_DATA.id, destination,
+                dstPos, dstLim, headerSize,
+                protocolVersion);
+
+        if (SSLLogger.isOn() &&
+                SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
+            ByteBuffer temporary = destination.duplicate();
+            temporary.limit(temporary.position());
+            temporary.position(dstPos);
+            SSLLogger.fine("Raw write", temporary);
+        }
+
+        // remain the limit unchanged
+        destination.limit(dstLim);
 
         return new Ciphertext(ContentType.APPLICATION_DATA.id,
                 SSLHandshake.NOT_APPLICABLE.id, recordSN);
@@ -312,46 +255,6 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
     private Ciphertext acquireCiphertext(
             ByteBuffer destination) throws IOException {
-        if (isTalkingToV2) {              // SSLv2Hello
-            // We don't support SSLv2.  Send an SSLv2 error message
-            // so that the connection can be closed gracefully.
-            //
-            // Please don't change the limit of the destination buffer.
-            destination.put(SSLRecord.v2NoCipher);
-            if (SSLLogger.isOn() &&
-                    SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                SSLLogger.fine("Raw write", SSLRecord.v2NoCipher);
-            }
-
-            isTalkingToV2 = false;
-
-            return new Ciphertext(ContentType.ALERT.id,
-                    SSLHandshake.NOT_APPLICABLE.id, -1L);
-        }
-
-        if (v2ClientHello != null) {
-            // deliver the SSLv2 format ClientHello message
-            //
-            // Please don't change the limit of the destination buffer.
-            if (SSLLogger.isOn()) {
-                if (SSLLogger.isOn(SSLLogger.Opt.RECORD)) {
-                     SSLLogger.fine(Thread.currentThread().getName() +
-                            ", WRITE: SSLv2 ClientHello message" +
-                            ", length = " + v2ClientHello.remaining());
-                }
-
-                if (SSLLogger.isOn(SSLLogger.Opt.RECORD_PACKET)) {
-                    SSLLogger.fine("Raw write", v2ClientHello);
-                }
-            }
-
-            destination.put(v2ClientHello);
-            v2ClientHello = null;
-
-            return new Ciphertext(ContentType.HANDSHAKE.id,
-                   SSLHandshake.CLIENT_HELLO.id, -1L);
-        }
-
         if (fragmenter != null) {
             return fragmenter.acquireCiphertext(destination);
         }
@@ -361,8 +264,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
     @Override
     boolean isEmpty() {
-        return (!isTalkingToV2) && (v2ClientHello == null) &&
-                ((fragmenter == null) || fragmenter.isEmpty());
+        return (fragmenter == null) || fragmenter.isEmpty();
     }
 
     // buffered record fragment
@@ -577,32 +479,4 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         }
     }
 
-    /*
-     * Need to split the payload except the following cases:
-     *
-     * 1. protocol version is TLS 1.1 or later;
-     * 2. bulk cipher does not use CBC mode, including null bulk cipher suites.
-     * 3. the payload is the first application record of a freshly
-     *    negotiated TLS session.
-     * 4. the CBC protection is disabled;
-     *
-     * By default, we counter chosen plaintext issues on CBC mode
-     * ciphersuites in SSLv3/TLS1.0 by sending one byte of application
-     * data in the first record of every payload, and the rest in
-     * subsequent record(s). Note that the issues have been solved in
-     * TLS 1.1 or later.
-     *
-     * It is not necessary to split the very first application record of
-     * a freshly negotiated TLS session, as there is no previous
-     * application data to guess.  To improve compatibility, we will not
-     * split such records.
-     *
-     * This avoids issues in the outbound direction.  For a full fix,
-     * the peer must have similar protections.
-     */
-    boolean needToSplitPayload() {
-        return (!protocolVersion.useTLS11PlusSpec()) &&
-                writeCipher.isCBCMode() && !isFirstAppOutputRecord &&
-                Record.enableCBCProtection;
-    }
 }

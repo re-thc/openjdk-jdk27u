@@ -91,10 +91,8 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
     }
 
     // LinkedHashMap with a max size of 10, see LinkedHashMap JavaDocs
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SizedMap<K,V> extends LinkedHashMap<K,V> {
-        @java.io.Serial
-        private static final long serialVersionUID = -8211222668790986062L;
-
         @Override protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
             return size() > 10;
         }

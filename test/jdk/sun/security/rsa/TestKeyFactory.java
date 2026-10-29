@@ -119,7 +119,7 @@ public class TestKeyFactory {
 
     static KeyStore getKeyStore() throws Exception {
         InputStream in = new FileInputStream(new File(BASE, "rsakeys.ks"));
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(in, password);
         in.close();
         return ks;

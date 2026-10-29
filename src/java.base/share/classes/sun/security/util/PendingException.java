@@ -30,10 +30,8 @@ package sun.security.util;
  * Currently used by LoginContext.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PendingException extends RuntimeException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5201837247928788640L;
 
     /**
      * Constructs a PendingException with no detail message. A detail

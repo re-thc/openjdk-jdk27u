@@ -102,10 +102,9 @@ import java.util.function.Predicate;
  * @author Doug Lea
  * @param <E> the type of elements held in this set
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CopyOnWriteArraySet<E> extends AbstractSet<E>
         implements java.io.Serializable {
-    private static final long serialVersionUID = 5457747651344034263L;
-
     /** @serial */
     private final CopyOnWriteArrayList<E> al;
 

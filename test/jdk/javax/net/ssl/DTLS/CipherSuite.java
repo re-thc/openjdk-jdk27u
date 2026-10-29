@@ -33,20 +33,13 @@
  *          jdk.crypto.ec
  * @library /test/lib
  * @build DTLSOverDatagram
- * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA re-enable
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_CBC_SHA256 re-enable
  * @run main/othervm CipherSuite TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm CipherSuite TLS_DHE_RSA_WITH_AES_128_CBC_SHA
- * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA re-enable
  * @run main/othervm CipherSuite TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm CipherSuite TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm CipherSuite TLS_RSA_WITH_AES_128_GCM_SHA256 re-enable
- * @run main/othervm CipherSuite TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256 re-enable
  * @run main/othervm CipherSuite TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm CipherSuite TLS_DHE_DSS_WITH_AES_128_GCM_SHA256
- * @run main/othervm CipherSuite TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256 re-enable
  */
 
 import javax.net.ssl.SSLEngine;

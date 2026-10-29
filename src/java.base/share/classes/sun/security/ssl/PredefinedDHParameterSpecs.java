@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,24 +44,31 @@ final class PredefinedDHParameterSpecs {
     //
     // Default DH ephemeral parameters
     //
-    private static final BigInteger p512 = new BigInteger(       // generated
+
+    // Parsing a hex string with BigInteger takes time quadratic to its length,
+    // which is long for the primes here.
+    private static BigInteger hex(String s) {
+        return new BigInteger(1, HexFormat.of().parseHex(s));
+    }
+
+    private static final BigInteger p512 = hex(  // generated
             "D87780E15FF50B4ABBE89870188B049406B5BEA98AB23A02" +
             "41D88EA75B7755E669C08093D3F0CA7FC3A5A25CF067DCB9" +
-            "A43DD89D1D90921C6328884461E0B6D3", 16);
-    private static final BigInteger p768 = new BigInteger(       // RFC 2409
+            "A43DD89D1D90921C6328884461E0B6D3");
+    private static final BigInteger p768 = hex(  // RFC 2409
             "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
             "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
             "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
-            "E485B576625E7EC6F44C42E9A63A3620FFFFFFFFFFFFFFFF", 16);
+            "E485B576625E7EC6F44C42E9A63A3620FFFFFFFFFFFFFFFF");
 
-    private static final BigInteger p1024 = new BigInteger(      // RFC 2409
+    private static final BigInteger p1024 = hex(  // RFC 2409
             "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
             "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
             "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
             "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
             "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE65381" +
-            "FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger p1536 = new BigInteger(      // RFC 3526
+            "FFFFFFFFFFFFFFFF");
+    private static final BigInteger p1536 = hex(  // RFC 3526
             "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
             "29024E088A67CC74020BBEA63B139B22514A08798E3404DD" +
             "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
@@ -68,8 +76,8 @@ final class PredefinedDHParameterSpecs {
             "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D" +
             "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F" +
             "83655D23DCA3AD961C62F356208552BB9ED529077096966D" +
-            "670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger p2048 = new BigInteger(      // TLS FFDHE
+            "670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF");
+    private static final BigInteger p2048 = hex(  // TLS FFDHE
             "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1" +
             "D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF9" +
             "7D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD6561" +
@@ -80,8 +88,8 @@ final class PredefinedDHParameterSpecs {
             "0B07A7C8EE0A6D709E02FCE1CDF7E2ECC03404CD28342F61" +
             "9172FE9CE98583FF8E4F1232EEF28183C3FE3B1B4C6FAD73" +
             "3BB5FCBC2EC22005C58EF1837D1683B2C6F34A26C1B2EFFA" +
-            "886B423861285C97FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger p3072 = new BigInteger(      // TLS FFDHE
+            "886B423861285C97FFFFFFFFFFFFFFFF");
+    private static final BigInteger p3072 = hex(  // TLS FFDHE
             "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1" +
             "D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF9" +
             "7D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD6561" +
@@ -97,8 +105,8 @@ final class PredefinedDHParameterSpecs {
             "AEFE130985139270B4130C93BC437944F4FD4452E2D74DD3" +
             "64F2E21E71F54BFF5CAE82AB9C9DF69EE86D2BC522363A0D" +
             "ABC521979B0DEADA1DBF9A42D5C4484E0ABCD06BFA53DDEF" +
-            "3C1B20EE3FD59D7C25E41D2B66C62E37FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger p4096 = new BigInteger(      // TLS FFDHE
+            "3C1B20EE3FD59D7C25E41D2B66C62E37FFFFFFFFFFFFFFFF");
+    private static final BigInteger p4096 = hex(  // TLS FFDHE
             "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1" +
             "D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF9" +
             "7D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD6561" +
@@ -120,8 +128,8 @@ final class PredefinedDHParameterSpecs {
             "A907600A918130C46DC778F971AD0038092999A333CB8B7A" +
             "1A1DB93D7140003C2A4ECEA9F98D0ACC0A8291CDCEC97DCF" +
             "8EC9B55A7F88A46B4DB5A851F44182E1C68A007E5E655F6A" +
-            "FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger p6144 = new BigInteger(      // TLS FFDHE
+            "FFFFFFFFFFFFFFFF");
+    private static final BigInteger p6144 = hex(  // TLS FFDHE
             "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1" +
             "D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF9" +
             "7D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD6561" +
@@ -153,8 +161,8 @@ final class PredefinedDHParameterSpecs {
             "D72B03746AE77F5E62292C311562A846505DC82DB854338A" +
             "E49F5235C95B91178CCF2DD5CACEF403EC9D1810C6272B04" +
             "5B3B71F9DC6B80D63FDD4A8E9ADB1E6962A69526D43161C1" +
-            "A41D570D7938DAD4A40E329CD0E40E65FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger p8192 = new BigInteger(      // TLS FFDHE
+            "A41D570D7938DAD4A40E329CD0E40E65FFFFFFFFFFFFFFFF");
+    private static final BigInteger p8192 = hex(  // TLS FFDHE
             "FFFFFFFFFFFFFFFFADF85458A2BB4A9AAFDC5620273D3CF1" +
             "D8B9C583CE2D3695A9E13641146433FBCC939DCE249B3EF9" +
             "7D2FE363630C75D8F681B202AEC4617AD3DF1ED5D5FD6561" +
@@ -197,7 +205,7 @@ final class PredefinedDHParameterSpecs {
             "1EFC8CE0BA8A4FE8B6855DFE72B0A66EDED2FBABFBE58A30" +
             "FAFABE1C5D71A87E2F741EF8C1FE86FEA6BBFDE530677F0D" +
             "97D11D49F7A8443D0822E506A9F4614E011E2A94838FF88C" +
-            "D68C8BB7C5C6424CFFFFFFFFFFFFFFFF", 16);
+            "D68C8BB7C5C6424CFFFFFFFFFFFFFFFF");
 
     private static final BigInteger[] supportedPrimes = {
             p512, p768, p1024, p1536, p2048, p3072, p4096, p6144, p8192};
@@ -213,15 +221,6 @@ final class PredefinedDHParameterSpecs {
     // the known security property, jdk.tls.server.defaultDHEParameters
     private static final String PROPERTY_NAME =
             "jdk.tls.server.defaultDHEParameters";
-
-    private static final Pattern spacesPattern = Pattern.compile("\\s+");
-
-    private static final Pattern syntaxPattern = Pattern.compile(
-            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})" +
-            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})*");
-
-    private static final Pattern paramsPattern = Pattern.compile(
-            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)}");
 
     // cache of predefined default DH ephemeral parameters
     static final Map<Integer, DHParameterSpec> definedParams;
@@ -243,7 +242,7 @@ final class PredefinedDHParameterSpecs {
         }
 
         if (property != null && !property.isEmpty()) {
-            Matcher spacesMatcher = spacesPattern.matcher(property);
+            Matcher spacesMatcher = Pattern.compile("\\s+").matcher(property);
             property = spacesMatcher.replaceAll("");
 
             if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)) {
@@ -255,9 +254,12 @@ final class PredefinedDHParameterSpecs {
 
         Map<Integer,DHParameterSpec> defaultParams = new HashMap<>();
         if (property != null && !property.isEmpty()) {
-            Matcher syntaxMatcher = syntaxPattern.matcher(property);
+            Matcher syntaxMatcher = Pattern.compile(
+                    "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})" +
+                    "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})*").matcher(property);
             if (syntaxMatcher.matches()) {
-                Matcher paramsFinder = paramsPattern.matcher(property);
+                Matcher paramsFinder = Pattern.compile(
+                        "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)}").matcher(property);
                 while(paramsFinder.find()) {
                     String primeModulus = paramsFinder.group(1);
                     BigInteger p = new BigInteger(primeModulus, 16);

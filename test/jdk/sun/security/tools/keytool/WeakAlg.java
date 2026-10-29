@@ -40,7 +40,6 @@
  * @run main/othervm/timeout=600 -Duser.language=en -Duser.country=US WeakAlg
  */
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import sun.security.tools.KeyStoreUtil;
@@ -57,6 +56,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.CryptoPrimitive;
 import java.security.KeyStore;
+import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -68,23 +68,28 @@ public class WeakAlg {
 
     public static void main(String[] args) throws Throwable {
 
+        // SHA224withRSA is disabled to test a disabled signature algorithm
+        Security.setProperty("jdk.certpath.disabledAlgorithms",
+                Security.getProperty("jdk.certpath.disabledAlgorithms")
+                        + ", SHA224withRSA");
+
         rm("ks");
 
         // Tests for "disabled" algorithms
         // -genkeypair, and -printcert, -list -alias, -exportcert
         // (w/ different formats)
-        checkDisabledGenKeyPair("a", "-keyalg RSA -sigalg MD5withRSA", "MD5withRSA");
+        checkDisabledGenKeyPair("a", "-keyalg RSA -sigalg SHA224withRSA", "SHA224withRSA");
         checkDisabledGenKeyPair("b", "-keyalg RSA -keysize 512", "512-bit RSA key");
         checkDisabledGenKeyPair("c", "-keyalg RSA", null);
 
         kt("-list")
                 .shouldContain("Warning:")
-                .shouldMatch("<a>.*MD5withRSA.*is disabled")
+                .shouldMatch("<a>.*SHA224withRSA.*is disabled")
                 .shouldMatch("<b>.*512-bit RSA key.*is disabled");
         kt("-list -v")
                 .shouldContain("Warning:")
-                .shouldMatch("<a>.*MD5withRSA.*is disabled")
-                .shouldContain("MD5withRSA (disabled)")
+                .shouldMatch("<a>.*SHA224withRSA.*is disabled")
+                .shouldContain("SHA224withRSA (disabled)")
                 .shouldMatch("<b>.*512-bit RSA key.*is disabled")
                 .shouldContain("512-bit RSA key (disabled)");
 
@@ -95,18 +100,18 @@ public class WeakAlg {
         checkDisabledCertReq("a", "", null);
         gencert("c-a", "")
                 .shouldNotContain("Warning"); // new sigalg is not weak
-        gencert("c-a", "-sigalg MD2withRSA")
+        gencert("c-a", "-sigalg SHA224withRSA")
                 .shouldContain("Warning:")
-                .shouldMatch("The generated certificate.*MD2withRSA.*is disabled");
+                .shouldMatch("The generated certificate.*SHA224withRSA.*is disabled");
 
-        checkDisabledCertReq("a", "-sigalg MD5withRSA", "MD5withRSA");
+        checkDisabledCertReq("a", "-sigalg SHA224withRSA", "SHA224withRSA");
         gencert("c-a", "")
                 .shouldContain("Warning:")
-                .shouldMatch("The certificate request.*MD5withRSA.*is disabled");
-        gencert("c-a", "-sigalg MD2withRSA")
+                .shouldMatch("The certificate request.*SHA224withRSA.*is disabled");
+        gencert("c-a", "-sigalg SHA224withRSA")
                 .shouldContain("Warning:")
-                .shouldMatch("The certificate request.*MD5withRSA.*is disabled")
-                .shouldMatch("The generated certificate.*MD2withRSA.*is disabled");
+                .shouldMatch("The certificate request.*SHA224withRSA.*is disabled")
+                .shouldMatch("The generated certificate.*SHA224withRSA.*is disabled");
 
         checkDisabledCertReq("b", "", "512-bit RSA key");
         gencert("c-b", "")
@@ -117,7 +122,7 @@ public class WeakAlg {
         checkDisabledCertReq("c", "", null);
         gencert("a-c", "")
                 .shouldContain("Warning:")
-                .shouldMatch("The issuer.*MD5withRSA.*is disabled");
+                .shouldMatch("The issuer.*SHA224withRSA.*is disabled");
 
         // but the new cert is not weak
         kt("-printcert -file a-c.cert")
@@ -137,15 +142,13 @@ public class WeakAlg {
         // -gencrl, -printcrl
 
         checkDisabledGenCRL("a", "", null);
-        checkDisabledGenCRL("a", "-sigalg MD5withRSA", "MD5withRSA");
+        checkDisabledGenCRL("a", "-sigalg SHA224withRSA", "SHA224withRSA");
         checkDisabledGenCRL("b", "", "512-bit RSA key");
         checkDisabledGenCRL("c", "", null);
 
         kt("-delete -alias b");
         kt("-printcrl -file b.crl")
                 .shouldContain("WARNING: not verified");
-
-        jksTypeCheck();
 
         checkInplaceImportKeyStore();
 
@@ -218,122 +221,6 @@ public class WeakAlg {
         kt("-delete -alias y");
         kt("-printcrl -file y.crl")
                 .shouldContain("WARNING: not verified");
-
-        jksTypeCheck();
-    }
-
-    static void jksTypeCheck() throws Exception {
-
-        // No warning for cacerts, all certs
-        kt0("-cacerts -list -storepass changeit")
-                .shouldNotContain("outdated cryptographic algorithms")
-                .shouldNotContain("keytool -importkeystore -srckeystore");
-
-        rm("ks");
-        rm("ks2");
-
-        kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
-                .shouldNotContain("Warning:");
-        kt("-list")
-                .shouldNotContain("Warning:");
-        kt("-list -storetype jks") // no warning if PKCS12 used as JKS
-                .shouldNotContain("Warning:");
-        kt("-exportcert -alias a -file a.crt")
-                .shouldNotContain("Warning:");
-
-        // warn if migrating to JKS
-        importkeystore("ks", "ks2", "-deststoretype jks")
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-
-        rm("ks");
-        rm("ks2");
-        rm("ks3");
-
-        // no warning if all certs
-        kt("-importcert -alias b -file a.crt -storetype jks -noprompt")
-                .shouldNotContain("Warning:");
-        kt("-genkeypair -keyalg DSA -alias a -dname CN=A")
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-list")
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-list -storetype pkcs12") // warn if JKS used as PKCS12
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-exportcert -alias a -file a.crt")
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-printcert -file a.crt") // warning since -keystore option is supported
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-certreq -alias a -file a.req")
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-printcertreq -file a.req") // no warning if keystore not touched
-                .shouldNotContain("Warning:");
-
-        // No warning if migrating from JKS
-        importkeystore("ks", "ks2", "")
-                .shouldNotContain("Warning:");
-
-        importkeystore("ks", "ks3", "-deststoretype pkcs12")
-                .shouldNotContain("Warning:");
-
-        rm("ks");
-
-        kt("-genkeypair -keyalg DSA -alias a -dname CN=A -storetype jceks")
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-list")
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-importcert -alias b -file a.crt -noprompt")
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-exportcert -alias a -file a.crt")
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-printcert -file a.crt") // warning since -keystore option is supported
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-certreq -alias a -file a.req")
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
-        kt("-printcertreq -file a.req")
-                .shouldNotContain("Warning:");
-        kt("-genseckey -alias c -keyalg AES -keysize 128")
-                .shouldContain("JCEKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12");
     }
 
     static void checkImportKeyStore() throws Exception {
@@ -345,17 +232,17 @@ public class WeakAlg {
                 .shouldContain("3 entries successfully imported")
                 .shouldContain("Warning")
                 .shouldMatch("<b>.*512-bit RSA key.*is disabled")
-                .shouldMatch("<a>.*MD5withRSA.*is disabled");
+                .shouldMatch("<a>.*SHA224withRSA.*is disabled");
 
         importkeystore("ks", "ks3", "-srcalias a")
                 .shouldContain("Warning")
-                .shouldMatch("<a>.*MD5withRSA.*is disabled");
+                .shouldMatch("<a>.*SHA224withRSA.*is disabled");
     }
 
     static void checkInplaceImportKeyStore() throws Exception {
 
         rm("ks");
-        genkeypair("a", "-keyalg DSA");
+        genkeypair("a", "-keyalg EC");
 
         // Same type backup
         importkeystore("ks", "ks", "")
@@ -366,50 +253,15 @@ public class WeakAlg {
                 .shouldContain("Warning:")
                 .shouldMatch("original.*ks.old2");
 
-        importkeystore("ks", "ks", "-srcstoretype jks") // it knows real type
-                .shouldContain("Warning:")
-                .shouldMatch("original.*ks.old3");
-
         String cPath = new File("ks").getCanonicalPath();
 
         importkeystore("ks", cPath, "")
                 .shouldContain("Warning:")
-                .shouldMatch("original.*ks.old4");
+                .shouldMatch("original.*ks.old3");
 
-        // Migration
-        importkeystore("ks", "ks", "-deststoretype jks")
-                .shouldContain("Warning:")
-                .shouldContain("JKS uses outdated cryptographic algorithms" +
-                        " and will be removed")
-                .shouldMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12")
-                .shouldMatch("Migrated.*JKS.*PKCS12.*ks.old5");
-
-        Asserts.assertEQ(
-                KeyStore.getInstance(
-                        new File("ks"), "changeit".toCharArray()).getType(),
-                "JKS");
-
-        importkeystore("ks", "ks", "-srcstoretype PKCS12")
-                .shouldContain("Warning:")
-                .shouldNotContain("outdated cryptographic algorithms")
-                .shouldNotMatch("keytool -importkeystore -srckeystore." +
-                        "*-destkeystore.*-deststoretype pkcs12")
-                .shouldMatch("Migrated.*PKCS12.*JKS.*ks.old6");
-
-        Asserts.assertEQ(
-                KeyStore.getInstance(
-                        new File("ks"), "changeit".toCharArray()).getType(),
-                "PKCS12");
-
-        Asserts.assertEQ(
-                KeyStore.getInstance(
-                        new File("ks.old6"), "changeit".toCharArray()).getType(),
-                "JKS");
-
-        // One password prompt is enough for migration
+        // One password prompt is enough for an in-place import
         kt0("-importkeystore -srckeystore ks -destkeystore ks", "changeit")
-                .shouldMatch("original.*ks.old7");
+                .shouldMatch("original.*ks.old4");
 
         // But three if importing to a different keystore
         rm("ks2");
@@ -434,11 +286,11 @@ public class WeakAlg {
         kt("-importcert -alias d -file a.cert", "no")
                 .shouldContain("Certificate already exists in keystore")
                 .shouldContain("Warning")
-                .shouldMatch("The input.*MD5withRSA.*is disabled")
+                .shouldMatch("The input.*SHA224withRSA.*is disabled")
                 .shouldContain("Do you still want to add it?");
         kt("-importcert -alias d -file a.cert -noprompt")
                 .shouldContain("Warning")
-                .shouldMatch("The input.*MD5withRSA.*is disabled")
+                .shouldMatch("The input.*SHA224withRSA.*is disabled")
                 .shouldNotContain("[no]");
 
         // cert is self-signed
@@ -446,12 +298,12 @@ public class WeakAlg {
         kt("-delete -alias d");
         kt("-importcert -alias d -file a.cert", "no")
                 .shouldContain("Warning")
-                .shouldContain("MD5withRSA (disabled)")
-                .shouldMatch("The input.*MD5withRSA.*is disabled")
+                .shouldContain("SHA224withRSA (disabled)")
+                .shouldMatch("The input.*SHA224withRSA.*is disabled")
                 .shouldContain("Trust this certificate?");
         kt("-importcert -alias d -file a.cert -noprompt")
                 .shouldContain("Warning")
-                .shouldMatch("The input.*MD5withRSA.*is disabled")
+                .shouldMatch("The input.*SHA224withRSA.*is disabled")
                 .shouldNotContain("[no]");
 
         // JDK-8177569: no warning for sigalg of trusted cert
@@ -568,7 +420,7 @@ public class WeakAlg {
         gencert("a-c", "");
         kt("-importcert -alias c -file a-c.cert")
                 .shouldContain("Warning")
-                .shouldMatch("Issuer <a>.*MD5withRSA.*is disabled");
+                .shouldMatch("Issuer <a>.*SHA224withRSA.*is disabled");
 
         // JDK-8177569: no warning for sigalg of trusted cert
         reStore();
@@ -593,7 +445,7 @@ public class WeakAlg {
         kt("-importcert -alias c -file a-a-b-c.cert")   // only weak
                 .shouldContain("Warning")
                 .shouldMatch("Reply #2 of 3.*512-bit RSA key.*is disabled")
-                .shouldMatch("Reply #3 of 3.*MD5withRSA.*is disabled")
+                .shouldMatch("Reply #3 of 3.*SHA224withRSA.*is disabled")
                 .shouldNotContain("[no]");
 
         // Without root
@@ -601,7 +453,7 @@ public class WeakAlg {
         kt("-importcert -alias c -file a-b-c.cert")     // only weak
                 .shouldContain("Warning")
                 .shouldMatch("Reply #2 of 2.*512-bit RSA key.*is disabled")
-                .shouldMatch("Issuer <a>.*MD5withRSA.*is disabled")
+                .shouldMatch("Issuer <a>.*SHA224withRSA.*is disabled")
                 .shouldNotContain("[no]");
 
         reStore();

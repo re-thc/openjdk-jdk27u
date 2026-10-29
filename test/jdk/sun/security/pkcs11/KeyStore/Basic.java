@@ -315,7 +315,7 @@ public class Basic extends PKCS11Test {
                 ("expected RSA, got " + pkey.getAlgorithm());
         }
 
-        Signature s = Signature.getInstance("MD5WithRSA", ks.getProvider());
+        Signature s = Signature.getInstance("SHA256withRSA", ks.getProvider());
         s.initSign(pkey);
         System.out.println("initialized signature object with key");
         s.update("hello".getBytes());
@@ -325,7 +325,7 @@ public class Basic extends PKCS11Test {
         System.out.println("received signature " + signed.length +
                         " bytes in length");
 
-        Signature v = Signature.getInstance("MD5WithRSA", ks.getProvider());
+        Signature v = Signature.getInstance("SHA256withRSA", ks.getProvider());
         v.initVerify(ks.getCertificate(alias));
         v.update("hello".getBytes());
         v.verify(signed);

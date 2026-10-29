@@ -25,7 +25,7 @@
  * @test
  * @bug 4671289 8190492
  * @summary passing https.protocols from command line doesn't work.
- * @run main/othervm -Dhttps.protocols=SSLv3 HttpsProtocols
+ * @run main/othervm -Dhttps.protocols=TLSv1.2 HttpsProtocols
  * @author Brad Wetmore
  */
 
@@ -88,7 +88,7 @@ public class HttpsProtocols implements HostnameVerifier {
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
 
-        // Enable all supported protocols on server side to test SSLv3
+        // Enable all supported protocols on server side to test TLSv1.2
         sslServerSocket.setEnabledProtocols(sslServerSocket.getSupportedProtocols());
 
         serverPort = sslServerSocket.getLocalPort();
@@ -160,12 +160,19 @@ public class HttpsProtocols implements HostnameVerifier {
             HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
 
             System.out.println("response is " + urlc.getResponseCode());
+            if (!"TLSv1.2".equals(negotiatedProtocol)) {
+                throw new Exception("Unexpected protocol negotiated: " +
+                        negotiatedProtocol);
+            }
         } finally {
             HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
     }
 
+    volatile String negotiatedProtocol = null;
+
     public boolean verify(String hostname, SSLSession session) {
+        negotiatedProtocol = session.getProtocol();
         return true;
     }
 
@@ -200,7 +207,7 @@ public class HttpsProtocols implements HostnameVerifier {
         String prop = System.getProperty("https.protocols");
         System.out.println("protocols = " + prop);
 
-        if ((prop == null) || (!prop.equals("SSLv3"))) {
+        if ((prop == null) || (!prop.equals("TLSv1.2"))) {
             throw new Exception("https.protocols not set properly");
         }
 

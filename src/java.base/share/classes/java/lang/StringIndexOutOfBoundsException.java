@@ -34,10 +34,8 @@ package java.lang;
  * @see java.lang.String#charAt(int)
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StringIndexOutOfBoundsException extends IndexOutOfBoundsException {
-    @java.io.Serial
-    private static final long serialVersionUID = -6762910422159637258L;
-
     /**
      * Constructs a {@code StringIndexOutOfBoundsException} with no detail
      * message.

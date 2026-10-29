@@ -140,6 +140,7 @@ import jdk.internal.util.DateTimeHelper;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
@@ -177,11 +178,6 @@ public final class LocalDate
      */
     public static final LocalDate EPOCH = LocalDate.of(1970, 1, 1);
 
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 2942565459149668126L;
     /**
      * The number of days in a 400 year cycle.
      */

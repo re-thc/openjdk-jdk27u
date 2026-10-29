@@ -32,11 +32,9 @@ import java.net.SocketException;
  *
  * @since   1.4.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public
 class ConnectionResetException extends SocketException {
-    @java.io.Serial
-    private static final long serialVersionUID = -7633185991801851556L;
-
     public ConnectionResetException(String msg) {
         super(msg);
     }

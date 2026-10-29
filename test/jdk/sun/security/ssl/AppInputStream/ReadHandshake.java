@@ -53,14 +53,14 @@ public class ReadHandshake {
      */
     static boolean separateServerThread = true;
 
-    // Note: we use anonymous ciphersuites only, no keys/ trusted certs needed
+    // Note: the handshake fails before any keys/ trusted certs are needed
 
     private final static String[] CLIENT_SUITES = new String[] {
-        "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
     };
 
     private final static String[] SERVER_SUITES = new String[] {
-        "SSL_DH_anon_WITH_RC4_128_MD5",
+        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
     };
 
     /*

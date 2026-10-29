@@ -38,10 +38,8 @@ import java.lang.reflect.Method;
  * @see     java.lang.reflect.AnnotatedElement
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AnnotationTypeMismatchException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 8125925355765570191L;
-
     /**
      * The {@code Method} object for the annotation element.
      */

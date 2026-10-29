@@ -30,10 +30,8 @@ import java.security.GeneralSecurityException;
 /**
  * Thrown by TlsChannelBinding if an error occurs
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ChannelBindingException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5021387249782788460L;
 
     /**
      * Constructs a ChannelBindingException with no detail message. A detail

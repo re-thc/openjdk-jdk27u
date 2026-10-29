@@ -125,15 +125,10 @@ import java.util.Objects;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final
 class Inet4Address extends InetAddress {
     static final int INADDRSZ = 4;
-
-    /** use serialVersionUID from InetAddress, but Inet4Address instance
-     *  is always replaced by an InetAddress instance before being
-     *  serialized */
-    @java.io.Serial
-    private static final long serialVersionUID = 3286316764910316507L;
 
     /*
      * Perform initializations.

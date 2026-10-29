@@ -84,16 +84,15 @@ public class ProviderFiltering {
                     InvalidParameterException.class);
         }
 
-        String p = "SUN";
-
         // test alias
-        doit("Signature.NONEwithDSA", p);
+        doit("MessageDigest.SHA", "SUN");
 
-        String sigService = "Signature.SHA256withDSA";
+        String p = "SunRsaSign";
+        String sigService = "Signature.SHA256withRSA";
         // javadoc allows extra spaces in between
         String key = sigService + "   SupportedKeyClasses";
-        String valComp1 = "java.security.interfaces.DSAPublicKey";
-        String valComp2 = "java.security.interfaces.DSAPrivateKey";
+        String valComp1 = "java.security.interfaces.RSAPublicKey";
+        String valComp2 = "java.security.interfaces.RSAPrivateKey";
         String valComp2CN = valComp2.substring(valComp2.lastIndexOf('.') + 1);
 
         // test using String filter
@@ -129,10 +128,10 @@ public class ProviderFiltering {
         Provider testProv = new TestProvider(pName, sigService, customKey,
                 customValue);
         Security.insertProviderAt(testProv, 1);
-        // should find both TestProv and SUN and in this order
-        doit(sigService, pName, "SUN");
+        // should find both TestProv and SunRsaSign and in this order
+        doit(sigService, pName, p);
         filters.put(sigService, "");
-        doit(filters, pName, "SUN");
+        doit(filters, pName, p);
 
         String specAttr = sigService + "  " + customKey + ":" + customValue;
         // should find only TestProv

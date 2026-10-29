@@ -34,6 +34,8 @@
 <li><a href="#tldr-instructions-for-the-impatient"
 id="toc-tldr-instructions-for-the-impatient">TL;DR (Instructions for the
 Impatient)</a></li>
+<li><a href="#headless-server-build"
+id="toc-headless-server-build">Headless server build</a></li>
 <li><a href="#introduction" id="toc-introduction">Introduction</a></li>
 <li><a href="#getting-the-source-code"
 id="toc-getting-the-source-code">Getting the Source Code</a>
@@ -208,6 +210,9 @@ id="toc-contributing-to-the-jdk">Contributing to the JDK</a></li>
 id="toc-editing-this-document">Editing This Document</a></li>
 </ul>
 </nav>
+<p>This fork enforces a <a href="#headless-server-build">headless server
+build</a>. Desktop dependency and other-target guidance below describes
+upstream configurations.</p>
 <h2 id="tldr-instructions-for-the-impatient">TL;DR (Instructions for the
 Impatient)</h2>
 <p>If you are eager to try out building the JDK, these simple steps work
@@ -239,6 +244,59 @@ again.</p></li>
 <p>If any of these steps failed, or if you want to know more about build
 requirements or build functionality, please continue reading this
 document.</p>
+<h2 id="headless-server-build">Headless server build</h2>
+<p>Supported targets are Linux x64/AArch64, macOS AArch64 and Windows
+x64. Plain <code>configure</code> and <code>bin/configure-dev</code>
+enforce headless Java and native compilation, with desktop, audio and
+Metal components disabled and exactly Serial, G1 and ZGC in each
+configured target JVM variant. Incompatible configure or make overrides
+are errors.</p>
+<p>The image excludes <code>java.desktop</code>,
+<code>java.datatransfer</code>, <code>java.se</code>,
+<code>jdk.accessibility</code>, <code>jdk.editpad</code>,
+<code>jdk.hotspot.agent</code>, <code>jdk.jconsole</code>,
+<code>jdk.jpackage</code> and <code>jdk.unsupported.desktop</code>.
+Their APIs and tools are unavailable; the upstream sources remain in the
+checkout. Server diagnostics and development tools, including jcmd, JMX,
+JFR, javac, javadoc and jlink, remain available. Windows omits
+<code>javaw</code> and graphical error dialogs; use console
+launchers.</p>
+<p>Use GNU make, the platform toolchain and a supported boot JDK. Set
+<code>BOOT_JDK</code> to its location and choose unused configuration
+names, for example:</p>
+<pre><code>set -eu
+for level in release fastdebug; do
+  conf=&quot;server-$level&quot;
+  bash configure --with-conf-name=&quot;$conf&quot; --with-boot-jdk=&quot;$BOOT_JDK&quot; \
+    --with-debug-level=&quot;$level&quot;
+  make CONF=&quot;$conf&quot; images compile-commands
+  make CONF=&quot;$conf&quot; test-make-headless
+  bash .github/scripts/check-dev-profile.sh \
+    &quot;build/$conf/images/jdk&quot; &quot;build/$conf/spec.gmk&quot;
+done</code></pre>
+<p>Use <code>bash bin/configure-dev</code> with the same arguments for
+CPU, linker and ccache development defaults. On Linux it expects mold
+unless <code>CONFIGURE_DEV_NO_MOLD=1</code> is set. Use
+<code>gmake</code> where that is the GNU make command.</p>
+<p>Reconfiguration rejects output directories from a desktop build or a
+different collector set. Choose a new <code>--with-conf-name</code> or
+run <code>make CONF="$conf" dist-clean</code> before reusing one. For
+stale excluded module outputs, run
+<code>make CONF="$conf" clean</code>.</p>
+<p><code>test-make-headless</code> requires Autoconf.
+<code>check-dev-profile.sh</code> audits compilation records and image
+contents and needs both the build tree and its image.</p>
+<p>The external boot JDK can contain desktop modules. When cross
+compiling, the build-managed host JDK retains its upstream Serial/G1
+collector subset; the target JDK still requires Serial/G1/ZGC.</p>
+<p>Building the JDK's own API documentation requires a boot JDK
+containing desktop API symbols to resolve links in retained comments;
+only included target sources are processed. The installed javadoc tool
+does not require a desktop JDK.</p>
+<p><code>ct.sym</code> and historical javadoc element lists retain older
+Java API signatures, including desktop signatures, for compiler
+compatibility. They are generated from symbol data and do not add
+desktop modules to the runtime.</p>
 <h2 id="introduction">Introduction</h2>
 <p>The JDK is a complex software project. Building it requires a certain
 amount of technical expertise, a fair number of dependencies on external

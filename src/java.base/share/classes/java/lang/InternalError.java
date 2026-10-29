@@ -31,9 +31,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InternalError extends VirtualMachineError {
-    private static final long serialVersionUID = -9062593416125562365L;
-
     /**
      * Constructs an {@code InternalError} with no detail message.
      */

@@ -69,14 +69,13 @@ import jdk.internal.util.ByteArray;
  *      <cite>Java Object Serialization Specification,</cite> Section 4, "Class Descriptors"</a>
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ObjectStreamClass implements Serializable {
 
     /** serialPersistentFields value indicating no serializable fields */
     public static final ObjectStreamField[] NO_FIELDS =
         new ObjectStreamField[0];
 
-    @java.io.Serial
-    private static final long serialVersionUID = -6120832682080437368L;
     /**
      * {@code ObjectStreamClass} has no fields for default serialization.
      */

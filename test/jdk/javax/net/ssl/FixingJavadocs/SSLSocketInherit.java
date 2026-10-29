@@ -87,10 +87,10 @@ public class SSLSocketInherit {
         Thread client = forkClient();
 
         String [] ciphers =
-            new String [] { "SSL_RSA_WITH_DES_CBC_SHA" };
+            new String [] { "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA" };
 
         String [] protocols =
-            new String [] { "SSLv3" };
+            new String [] { "TLSv1.2" };
 
         sslss.setEnabledCipherSuites(ciphers);
         sslss.setEnabledProtocols(protocols);
@@ -103,14 +103,14 @@ public class SSLSocketInherit {
         if (((ciphers = ssls.getEnabledCipherSuites()) == null) ||
                 (ciphers.length != 1) ||
                 (ciphers[0].compareToIgnoreCase(
-                "SSL_RSA_WITH_DES_CBC_SHA") != 0)) {
+                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA") != 0)) {
             exc = new Exception("problem with get/setEnabledCipherSuites()");
         }
 
         if (((protocols = ssls.getEnabledProtocols()) == null) ||
                 (protocols.length != 1) ||
                 (protocols[0].compareToIgnoreCase(
-                "SSLv3") != 0)) {
+                "TLSv1.2") != 0)) {
             exc = new Exception("problem with get/setEnabledProtocols()");
         }
 
@@ -135,8 +135,8 @@ public class SSLSocketInherit {
          */
         client = forkClient();
 
-        ciphers = new String [] { "SSL_DH_anon_WITH_DES_CBC_SHA" };
-        protocols = new String [] { "TLSv1" };
+        ciphers = new String [] { "TLS_AES_128_GCM_SHA256" };
+        protocols = new String [] { "TLSv1.3" };
 
         sslss.setEnabledCipherSuites(ciphers);
         sslss.setEnabledProtocols(protocols);
@@ -149,14 +149,14 @@ public class SSLSocketInherit {
         if (((ciphers = ssls.getEnabledCipherSuites()) == null) ||
                 (ciphers.length != 1) ||
                 (ciphers[0].compareToIgnoreCase(
-                "SSL_DH_anon_WITH_DES_CBC_SHA") != 0)) {
+                "TLS_AES_128_GCM_SHA256") != 0)) {
             exc = new Exception("problem with get/setEnabledCipherSuites()");
         }
 
         if (((protocols = ssls.getEnabledProtocols()) == null) ||
                 (protocols.length != 1) ||
                 (protocols[0].compareToIgnoreCase(
-                "TLSv1") != 0)) {
+                "TLSv1.3") != 0)) {
             exc = new Exception("problem with get/setEnabledProtocols()");
         }
 

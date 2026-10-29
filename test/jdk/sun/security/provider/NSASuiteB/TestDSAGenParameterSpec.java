@@ -25,7 +25,6 @@ import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.DSAGenParameterSpec;
@@ -114,10 +113,6 @@ public class TestDSAGenParameterSpec {
             System.out.println("Defaut seed length should be the same as Q.");
             throw new RuntimeException("Wrong seed length");
         }
-
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(ALGORITHM_NAME,
-                PROVIDER_NAME);
-        keyGen.initialize(spec);
     }
 
     private static DSAGenParameterSpec createGenParameterSpec(

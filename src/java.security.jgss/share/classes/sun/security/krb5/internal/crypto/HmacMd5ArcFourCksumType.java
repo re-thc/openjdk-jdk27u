@@ -28,15 +28,28 @@ package sun.security.krb5.internal.crypto;
 import sun.security.krb5.Checksum;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
+
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
- * This class encapsulates the checksum type for HMAC RC4
+ * This class encapsulates the checksum type for HMAC RC4 as defined
+ * in RFC 4757. The rc4-hmac encryption type is not supported, but this
+ * checksum is still required by S4U2self (MS-SFU 2.2.1), which uses it
+ * regardless of the key type.
  *
  * @author Seema Malkani
  */
 
 public class HmacMd5ArcFourCksumType extends CksumType {
+
+    // "signaturekey" including the terminating zero byte
+    private static final byte[] SIGNATURE_KEY =
+            "signaturekey\0".getBytes(ISO_8859_1);
 
     public HmacMd5ArcFourCksumType() {
     }
@@ -76,7 +89,7 @@ public class HmacMd5ArcFourCksumType extends CksumType {
         int usage) throws KrbCryptoException {
 
          try {
-             return ArcFourHmac.calculateChecksum(key, usage, data, 0, size);
+             return calculateChecksum(key, usage, data, 0, size);
          } catch (GeneralSecurityException e) {
              KrbCryptoException ke = new KrbCryptoException(e.getMessage());
              ke.initCause(e);
@@ -96,8 +109,7 @@ public class HmacMd5ArcFourCksumType extends CksumType {
         byte[] key, byte[] checksum, int usage) throws KrbCryptoException {
 
          try {
-             byte[] newCksum = ArcFourHmac.calculateChecksum(key, usage,
-                 data, 0, size);
+             byte[] newCksum = calculateChecksum(key, usage, data, 0, size);
 
              return isChecksumEqual(checksum, newCksum);
          } catch (GeneralSecurityException e) {
@@ -106,4 +118,52 @@ public class HmacMd5ArcFourCksumType extends CksumType {
              throw ke;
          }
      }
+
+    /*
+     * Ksign = HMAC-MD5(key, "signaturekey\0")
+     * checksum = HMAC-MD5(Ksign, MD5(T(usage) | data))
+     */
+    private static byte[] calculateChecksum(byte[] baseKey, int usage,
+        byte[] input, int start, int len) throws GeneralSecurityException {
+
+        if (!KeyUsage.isValid(usage)) {
+            throw new GeneralSecurityException("Invalid key usage number: "
+                                                + usage);
+        }
+
+        byte[] ksign;
+        try {
+            ksign = getHmac(baseKey, SIGNATURE_KEY);
+        } catch (Exception e) {
+            throw new GeneralSecurityException("Calculate Checksum Failed!", e);
+        }
+
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        md5.update(getSalt(usage));
+        md5.update(input, start, len);
+        return getHmac(ksign, md5.digest());
+    }
+
+    private static byte[] getHmac(byte[] key, byte[] msg)
+        throws GeneralSecurityException {
+
+        Mac m = Mac.getInstance("HmacMD5");
+        m.init(new SecretKeySpec(key, "HmacMD5"));
+        return m.doFinal(msg);
+    }
+
+    // The key usage number as a 4-byte little-endian integer, with the
+    // RFC 4757 usage translation applied
+    private static byte[] getSalt(int usage) {
+        int msUsage = switch (usage) {
+            case 3, 9 -> 8;
+            case 23 -> 13;
+            default -> usage;
+        };
+        return new byte[] {
+                (byte) msUsage,
+                (byte) (msUsage >> 8),
+                (byte) (msUsage >> 16),
+                (byte) (msUsage >> 24)};
+    }
 }

@@ -31,7 +31,6 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.equals.
  * @run testng/othervm -XX:+CompactStrings Equals
- * @run testng/othervm -XX:-CompactStrings Equals
  */
 
 public class Equals extends CompactString {

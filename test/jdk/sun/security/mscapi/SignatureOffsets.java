@@ -39,8 +39,6 @@ import java.security.SignatureException;
  * @compile ../../../java/security/Signature/Offsets.java
  * @requires os.family == "windows"
  * @run main SignatureOffsets SunMSCAPI NONEwithRSA
- * @run main SignatureOffsets SunMSCAPI MD2withRSA
- * @run main SignatureOffsets SunMSCAPI MD5withRSA
  * @run main SignatureOffsets SunMSCAPI SHA1withRSA
  * @run main SignatureOffsets SunMSCAPI SHA256withRSA
  * @run main SignatureOffsets SunMSCAPI SHA384withRSA

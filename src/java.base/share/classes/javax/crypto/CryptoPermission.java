@@ -49,10 +49,8 @@ import javax.crypto.spec.*;
  * @author Sharon Liu
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class CryptoPermission extends java.security.Permission {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8987399626114087514L;
 
     private final String alg;
     private int maxKeySize = Integer.MAX_VALUE; // no restriction on maxKeySize
@@ -442,12 +440,10 @@ class CryptoPermission extends java.security.Permission {
  *
  * @author Sharon Liu
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class CryptoPermissionCollection extends PermissionCollection
     implements Serializable
 {
-    @Serial
-    private static final long serialVersionUID = -511215555898802763L;
-
     private final Vector<Permission> permissions;
 
     /**

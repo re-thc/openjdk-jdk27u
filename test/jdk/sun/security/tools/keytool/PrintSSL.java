@@ -50,7 +50,7 @@ public class PrintSSL {
     public static void main(String[] args) throws Throwable {
         // Disable KeyManager's algorithm constraints checking,
         // so we can make keytool print certificate with weak
-        // MD5withRSA signature algorithm.
+        // SHA1withRSA signature algorithm.
         System.setProperty(
                 "jdk.tls.SunX509KeyManager.certChecking", "false");
 
@@ -60,7 +60,7 @@ public class PrintSSL {
         OutputAnalyzer out = SecurityTools.keytool("-genkeypair "
                 + "-keystore keystore -storepass passphrase "
                 + "-keypass passphrase -keyalg rsa -keysize 1024 "
-                + "-sigalg MD5withRSA -alias rsa_alias -dname CN=Server");
+                + "-sigalg SHA1withRSA -alias rsa_alias -dname CN=Server");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
 

@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
-import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
 import sun.security.validator.*;
 
@@ -402,10 +401,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
             String algorithm,
             boolean checkClientTrusted) throws CertificateException {
 
-        // check if EE certificate chains to a public root CA (as
-        // pre-installed in cacerts)
-        boolean chainsToPublicCA = AnchorCertificates.contains(
-                trustedChain[trustedChain.length - 1]);
+        // The root is checked later, only if a wildcard in the name of the
+        // EE certificate depends on whether it is a public root CA (as
+        // pre-installed in cacerts).
+        X509Certificate root = trustedChain[trustedChain.length - 1];
 
         boolean identifiable = false;
         String peerHost = session.getPeerHost();
@@ -421,7 +420,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
             if (sniHostName != null) {
                 try {
                     checkIdentity(sniHostName,
-                            trustedChain[0], algorithm, chainsToPublicCA);
+                            trustedChain[0], algorithm, root);
                     identifiable = true;
                 } catch (CertificateException ce) {
                     if (sniHostName.equalsIgnoreCase(peerHost)) {
@@ -436,7 +435,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
         if (!identifiable) {
             try {
                 checkIdentity(peerHost,
-                        trustedChain[0], algorithm, chainsToPublicCA);
+                        trustedChain[0], algorithm, root);
             } catch(CertificateException ce) {
                 if (checkClientTrusted && "HTTPS".equalsIgnoreCase(algorithm)) {
                     throw new CertificateException("Endpoint Identification Algorithm " +
@@ -455,11 +454,11 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
      */
     static void checkIdentity(String hostname, X509Certificate cert,
             String algorithm) throws CertificateException {
-        checkIdentity(hostname, cert, algorithm, false);
+        checkIdentity(hostname, cert, algorithm, null);
     }
 
     private static void checkIdentity(String hostname, X509Certificate cert,
-            String algorithm, boolean chainsToPublicCA)
+            String algorithm, X509Certificate root)
             throws CertificateException {
         if (algorithm != null && !algorithm.isEmpty()) {
             // if IPv6 strip off the "[]"
@@ -470,11 +469,11 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager {
 
             if (algorithm.equalsIgnoreCase("HTTPS")) {
                 HostnameChecker.getInstance(HostnameChecker.TYPE_TLS).match(
-                        hostname, cert, chainsToPublicCA);
+                        hostname, cert, root);
             } else if (algorithm.equalsIgnoreCase("LDAP") ||
                     algorithm.equalsIgnoreCase("LDAPS")) {
                 HostnameChecker.getInstance(HostnameChecker.TYPE_LDAP).match(
-                        hostname, cert, chainsToPublicCA);
+                        hostname, cert, root);
             } else {
                 throw new CertificateException(
                         "Unknown identification algorithm: " + algorithm);

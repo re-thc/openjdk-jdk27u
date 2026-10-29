@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,10 +184,7 @@ public final class KrbAsReqBuilder {
                     PAData.SaltAndParams snp =
                             PAData.getSaltAndParams(eTypes[i], paList);
                     if (snp != null) {
-                        // Never uses a salt for rc4-hmac, it does not use
-                        // a salt at all
-                        if (eTypes[i] != EncryptedData.ETYPE_ARCFOUR_HMAC &&
-                                snp.salt != null) {
+                        if (snp.salt != null) {
                             salt = snp.salt;
                         }
                         result[i] = EncryptionKey.acquireSecretKey(cname,
@@ -196,7 +193,7 @@ public final class KrbAsReqBuilder {
                                 snp);
                     }
                 }
-                // No new salt from PA, maybe empty, maybe only rc4-hmac
+                // No new salt from PA, maybe empty
                 if (salt == null) salt = cname.getSalt();
                 for (int i=0; i<eTypes.length; i++) {
                     // Second round, calculate those with no PA entry
@@ -344,7 +341,7 @@ public final class KrbAsReqBuilder {
             }
             try {
                 req = build(pakey, referralsState);
-                rep = new KrbAsRep(comm.send(req));
+                rep = new KrbAsRep(comm.send(req), req.getMessage().reqBody.eType);
                 return this;
             } catch (KrbException ke) {
                 if (!preAuthFailedOnce && (
@@ -357,7 +354,7 @@ public final class KrbAsReqBuilder {
                     preAuthFailedOnce = true;
                     KRBError kerr = ke.getError();
                     int paEType = PAData.getPreferredEType(kerr.getPA(),
-                            EType.getDefaults("default_tkt_enctypes")[0]);
+                            req.getMessage().reqBody.eType);
                     if (password == null) {
                         EncryptionKey[] ks = Krb5Util.keysFromJavaxKeyTab(ktab, cname);
                         pakey = EncryptionKey.findKey(paEType, ks);

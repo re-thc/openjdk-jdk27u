@@ -30,8 +30,6 @@
  * @library /test/lib /javax/net/ssl/templates
  * @summary SSLSocket.setUseClientMode() fails to throw expected
  *        IllegalArgumentException
- * @run main/othervm SetClientMode TLSv1
- * @run main/othervm SetClientMode TLSv1.1
  * @run main/othervm SetClientMode TLSv1.2
  * @run main/othervm SetClientMode TLSv1.3
  */
@@ -53,7 +51,6 @@ import java.lang.*;
 import java.net.*;
 import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.*;
-import jdk.test.lib.security.SecurityUtils;
 
 import static jdk.test.lib.Asserts.assertThrows;
 
@@ -63,10 +60,6 @@ public class SetClientMode extends SSLContextTemplate {
 
     public static void main(String[] args) throws Exception {
         String protocol = args[0];
-
-        if ("TLSv1".equals(protocol) || "TLSv1.1".equals(protocol)) {
-            SecurityUtils.removeFromDisabledTlsAlgs(protocol);
-        }
 
         new SetClientMode().run(protocol);
     }

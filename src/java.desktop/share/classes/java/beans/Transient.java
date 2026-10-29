@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +39,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * a {@link PropertyDescriptor} or {@link EventSetDescriptor}
  * classes associated with the annotated code element.
  * A {@code true} value for the "transient" attribute
- * indicates to encoders derived from {@link Encoder}
+ * indicates to encoders derived from {@code Encoder}
  * that this feature should be ignored.
  * <p>
  * The {@code Transient} annotation may be used

@@ -37,6 +37,7 @@ public class SuppressedExceptions {
         noSelfSuppression();
         basicSupressionTest();
         serializationTest();
+        serializationRoundTrip();
         selfReference();
         noModification();
         initCausePlumbing();
@@ -89,14 +90,15 @@ public class SuppressedExceptions {
          * (new Throwable())setStackTrace(new StackTraceElement[0])
          *
          * from JDK 6; suppressedException field will be missing and
-         * thus default to null upon deserialization.
+         * thus default to null upon deserialization. Only the descriptor
+         * UID bytes were updated for this fork.
          */
         byte[] bytes = {
             (byte)0xac, (byte)0xed, (byte)0x00, (byte)0x05, (byte)0x73, (byte)0x72, (byte)0x00, (byte)0x13,
             (byte)0x6a, (byte)0x61, (byte)0x76, (byte)0x61, (byte)0x2e, (byte)0x6c, (byte)0x61, (byte)0x6e,
             (byte)0x67, (byte)0x2e, (byte)0x54, (byte)0x68, (byte)0x72, (byte)0x6f, (byte)0x77, (byte)0x61,
-            (byte)0x62, (byte)0x6c, (byte)0x65, (byte)0xd5, (byte)0xc6, (byte)0x35, (byte)0x27, (byte)0x39,
-            (byte)0x77, (byte)0xb8, (byte)0xcb, (byte)0x03, (byte)0x00, (byte)0x03, (byte)0x4c, (byte)0x00,
+            (byte)0x62, (byte)0x6c, (byte)0x65, (byte)0xd4, (byte)0xee, (byte)0x4e, (byte)0x7b, (byte)0xa9,
+            (byte)0x63, (byte)0x62, (byte)0x68, (byte)0x03, (byte)0x00, (byte)0x03, (byte)0x4c, (byte)0x00,
             (byte)0x05, (byte)0x63, (byte)0x61, (byte)0x75, (byte)0x73, (byte)0x65, (byte)0x74, (byte)0x00,
             (byte)0x15, (byte)0x4c, (byte)0x6a, (byte)0x61, (byte)0x76, (byte)0x61, (byte)0x2f, (byte)0x6c,
             (byte)0x61, (byte)0x6e, (byte)0x67, (byte)0x2f, (byte)0x54, (byte)0x68, (byte)0x72, (byte)0x6f,
@@ -122,7 +124,7 @@ public class SuppressedExceptions {
             (byte)0x05, (byte)0x73, (byte)0x72, (byte)0x00, (byte)0x13, (byte)0x6a, (byte)0x61, (byte)0x76,
             (byte)0x61, (byte)0x2e, (byte)0x6c, (byte)0x61, (byte)0x6e, (byte)0x67, (byte)0x2e, (byte)0x54,
             (byte)0x68, (byte)0x72, (byte)0x6f, (byte)0x77, (byte)0x61, (byte)0x62, (byte)0x6c, (byte)0x65,
-            (byte)0xd5, (byte)0xc6, (byte)0x35, (byte)0x27, (byte)0x39, (byte)0x77, (byte)0xb8, (byte)0xcb,
+            (byte)0xd4, (byte)0xee, (byte)0x4e, (byte)0x7b, (byte)0xa9, (byte)0x63, (byte)0x62, (byte)0x68,
             (byte)0x03, (byte)0x00, (byte)0x03, (byte)0x4c, (byte)0x00, (byte)0x05, (byte)0x63, (byte)0x61,
             (byte)0x75, (byte)0x73, (byte)0x65, (byte)0x74, (byte)0x00, (byte)0x15, (byte)0x4c, (byte)0x6a,
             (byte)0x61, (byte)0x76, (byte)0x61, (byte)0x2f, (byte)0x6c, (byte)0x61, (byte)0x6e, (byte)0x67,
@@ -159,6 +161,30 @@ public class SuppressedExceptions {
                 throw new RuntimeException(message);
             }
             throwable.printStackTrace();
+        }
+    }
+
+    private static void serializationRoundTrip() throws Exception {
+        Throwable original = new Throwable("original", new IOException("cause"));
+        original.setStackTrace(new StackTraceElement[0]);
+        original.addSuppressed(new IllegalArgumentException("suppressed"));
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(original);
+        }
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes.toByteArray()))) {
+            Throwable restored = (Throwable) in.readObject();
+            Throwable[] suppressed = restored.getSuppressed();
+            if (!"original".equals(restored.getMessage()) ||
+                    !(restored.getCause() instanceof IOException) ||
+                    !"cause".equals(restored.getCause().getMessage()) ||
+                    restored.getStackTrace().length != 0 ||
+                    suppressed.length != 1 ||
+                    !(suppressed[0] instanceof IllegalArgumentException) ||
+                    !"suppressed".equals(suppressed[0].getMessage())) {
+                throw new RuntimeException(message);
+            }
         }
     }
 

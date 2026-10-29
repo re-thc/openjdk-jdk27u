@@ -52,19 +52,30 @@ public class StandardNames {
             checkByName(e.name.toUpperCase(Locale.US), e);
             for (String n: e.oldnames) {
                 checkByName(n, e);
-                if (n != null) {
-                    checkByName(n.toLowerCase(Locale.US), e);
-                }
+                checkByName(n.toLowerCase(Locale.US), e);
             }
             checkByEType(e.etype, e.name);
         }
+        checkByEType(EncryptedData.ETYPE_DES_CBC_CRC, "des-cbc-crc");
+        checkByEType(EncryptedData.ETYPE_DES_CBC_MD5, "des-cbc-md5");
+        checkByEType(EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD, "des3-cbc-sha1-kd");
+        checkByEType(EncryptedData.ETYPE_ARCFOUR_HMAC, "rc4-hmac");
         checkByEType(100, "unknown");
         checkByEType(-1, "private");
 
+        // Keys cannot be derived from passwords for these
+        for (String n : new String[] {"unsupported", "des-cbc-crc",
+                "des-cbc-md5", "DES", "des3-cbc-sha1-kd", "DESede",
+                "rc4-hmac", "ArcFourHmac"}) {
+            checkUnsupported(n);
+        }
+    }
+
+    private static void checkUnsupported(String n) throws Exception {
+        System.out.println("Unsupported " + n);
         try {
-            System.out.println("unsupported");
-            new KerberosKey(kp, pass, "unsupported");
-            throw new Exception("unsupported");
+            new KerberosKey(kp, pass, n);
+            throw new Exception(n);
         } catch (IllegalArgumentException iae) {
             // Expected
         }
@@ -89,12 +100,8 @@ public class StandardNames {
 
 enum EncType {
     e0("none", EncryptedData.ETYPE_NULL),
-    e1("des-cbc-crc", EncryptedData.ETYPE_DES_CBC_CRC),
-    e3("des-cbc-md5", EncryptedData.ETYPE_DES_CBC_MD5, "DES", null),
-    e16("des3-cbc-sha1-kd", EncryptedData.ETYPE_DES3_CBC_HMAC_SHA1_KD, "DESede"),
     e17("aes128-cts-hmac-sha1-96", EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96, "AES128"),
     e18("aes256-cts-hmac-sha1-96", EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96, "AES256"),
-    e23("rc4-hmac", EncryptedData.ETYPE_ARCFOUR_HMAC, "ArcFourHmac"),
     ;
 
     final String name;

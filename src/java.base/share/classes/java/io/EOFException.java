@@ -38,10 +38,8 @@ package java.io;
  * @see     java.io.IOException
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EOFException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = 6433858223774886977L;
-
     /**
      * Constructs an {@code EOFException} with {@code null}
      * as its error detail message.

@@ -135,10 +135,8 @@ import java.io.Serializable;
  * @author       Mark Davis
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Format implements Serializable, Cloneable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -299282585814624189L;
 
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
@@ -361,12 +359,10 @@ public abstract class Format implements Serializable, Cloneable {
      *
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Field extends AttributedCharacterIterator.Attribute {
 
         // Proclaim serial compatibility with 1.4 FCS
-        @java.io.Serial
-        private static final long serialVersionUID = 276966692217360283L;
-
         /**
          * Creates a Field with the specified name.
          *

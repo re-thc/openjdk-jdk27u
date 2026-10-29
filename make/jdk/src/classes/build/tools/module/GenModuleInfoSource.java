@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +42,19 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
+import javax.tools.ToolProvider;
+import com.sun.source.tree.DirectiveTree;
+import com.sun.source.tree.ExportsTree;
+import com.sun.source.tree.ModuleTree;
+import com.sun.source.tree.OpensTree;
+import com.sun.source.tree.ProvidesTree;
+import com.sun.source.tree.RequiresTree;
+import com.sun.source.tree.UsesTree;
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.Trees;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -48,8 +62,8 @@ import static java.util.stream.Collectors.*;
  * platform-specific exports, opens, uses, and provides and write to
  * the specified output file.
  *
- * GenModuleInfoSource will be invoked for each module that has
- * module-info.java.extra in the source directory.
+ * GenModuleInfoSource also removes qualified exports and opens to excluded
+ * modules, including for modules without platform-specific additions.
  *
  * The extra exports, opens, uses, provides can be specified
  * in module-info.java.extra.
@@ -64,6 +78,7 @@ public class GenModuleInfoSource {
                     " -o <output file>\n" +
                     "  --source-file <module-info-java>\n" +
                     "  --modules <module-name>[,<module-name>...]\n" +
+                    "  --exclude-modules <module-name>[,<module-name>...]\n" +
                     "  <module-info.java.extra> ...\n";
 
     static boolean debug = false;
@@ -72,6 +87,7 @@ public class GenModuleInfoSource {
         Path outfile = null;
         Path moduleInfoJava = null;
         Set<String> modules = Collections.emptySet();
+        Set<String> excludedModules = Collections.emptySet();
         List<Path> extras = new ArrayList<>();
         // validate input arguments
         for (int i = 0; i < args.length; i++){
@@ -97,6 +113,10 @@ public class GenModuleInfoSource {
                                     .collect(toSet());
                     i++;
                     break;
+                case "--exclude-modules":
+                    excludedModules = Arrays.stream(arg.split(",")).collect(toSet());
+                    i++;
+                    break;
                 case "-v":
                     verbose = true;
                     break;
@@ -110,13 +130,14 @@ public class GenModuleInfoSource {
         }
 
         if (moduleInfoJava == null || outfile == null ||
-                modules.isEmpty() || extras.isEmpty()) {
+                modules.isEmpty()) {
             System.err.println(USAGE);
             System.exit(-1);
         }
 
         GenModuleInfoSource genModuleInfo =
             new GenModuleInfoSource(moduleInfoJava, extras, modules);
+        genModuleInfo.moduleInfo.excludeModules(excludedModules);
 
         // generate new module-info.java
         genModuleInfo.generate(outfile);
@@ -127,6 +148,13 @@ public class GenModuleInfoSource {
     final ModuleInfo extras;
     final Set<String> modules;
     final ModuleInfo moduleInfo;
+    String source;
+    int bodyStart;
+    int bodyEnd;
+    final List<String> requires = new ArrayList<>();
+    final List<SourceStatement> sourceStatements = new ArrayList<>();
+
+    record SourceStatement(int start, int end, Statement original) { }
     GenModuleInfoSource(Path sourceFile, List<Path> extraFiles, Set<String> modules)
         throws IOException
     {
@@ -147,35 +175,38 @@ public class GenModuleInfoSource {
     }
 
     void generate(Path output) throws IOException {
-        List<String> lines = Files.readAllLines(sourceFile);
-        try (BufferedWriter bw = Files.newBufferedWriter(output);
-             PrintWriter writer = new PrintWriter(bw)) {
-            // write the copyright header and lines up to module declaration
-            for (String l : lines) {
-                writer.println(l);
-                if (l.trim().startsWith("module ")) {
-                    if (debug) {
-                        // print URI rather than file path to avoid escape
-                        writer.format("    // source file: %s%n", sourceFile.toUri());
-                        for (Path file : extraFiles) {
-                            writer.format("    //              %s%n", file.toUri());
-                        }
-                    }
-                    break;
+        if (extraFiles.isEmpty()) {
+            // Ordinary descriptors, including imported sources, retain their
+            // syntax and comments. Only rewrite directives whose targets change.
+            StringBuilder result = new StringBuilder(source);
+            for (int i = sourceStatements.size() - 1; i >= 0; i--) {
+                SourceStatement entry = sourceStatements.get(i);
+                Statement original = entry.original();
+                Map<String, Statement> statements = original.directive.equals("exports")
+                        ? moduleInfo.exports : moduleInfo.opens;
+                Statement current = statements.get(original.name);
+                if (current == null || !current.targets.equals(original.targets)) {
+                    result.replace(entry.start(), entry.end(),
+                            current == null ? "" : current.toString().stripLeading());
                 }
             }
-
-            // requires
-            for (String l : lines) {
-                if (l.trim().startsWith("requires"))
-                    writer.println(l);
+            Files.writeString(output, result);
+            return;
+        }
+        try (BufferedWriter bw = Files.newBufferedWriter(output);
+             PrintWriter writer = new PrintWriter(bw)) {
+            writer.print(source.substring(0, bodyStart));
+            writer.println();
+            if (debug) {
+                // print URI rather than file path to avoid escape
+                writer.format("    // source file: %s%n", sourceFile.toUri());
+                for (Path file : extraFiles) {
+                    writer.format("    //              %s%n", file.toUri());
+                }
             }
-
-            // write exports, opens, uses, and provides
+            requires.forEach(writer::println);
             moduleInfo.print(writer);
-
-            // close
-            writer.println("}");
+            writer.print(source.substring(bodyEnd));
         }
     }
 
@@ -185,6 +216,20 @@ public class GenModuleInfoSource {
         final Map<String, Statement> opens = new HashMap<>();
         final Map<String, Statement> uses = new HashMap<>();
         final Map<String, Statement> provides = new HashMap<>();
+
+        void excludeModules(Set<String> excludedModules) {
+            for (Map<String, Statement> directives : List.of(exports, opens)) {
+                directives.values().removeIf(statement -> {
+                    if (statement.isUnqualified()) {
+                        return false;
+                    }
+                    statement.targets.removeAll(excludedModules);
+                    // An empty qualified directive must disappear, never become
+                    // an unqualified export/open to every module.
+                    return statement.targets.isEmpty();
+                });
+            }
+        }
 
         Statement getStatement(String directive, String name) {
             Objects.requireNonNull(name);
@@ -370,13 +415,84 @@ public class GenModuleInfoSource {
         }
 
 
+        // Keep the two-argument SourcePositions methods for boot JDK 26.
+        @SuppressWarnings("removal")
         private void parse(Path file) throws IOException {
-            Parser parser = new Parser(file);
-            parser.run();
-            if (verbose) {
-                parser.dump();
+            source = Files.readString(file);
+            var compiler = ToolProvider.getSystemJavaCompiler();
+            var diagnostics = new DiagnosticCollector<JavaFileObject>();
+            try (var manager = compiler.getStandardFileManager(diagnostics, null, null)) {
+                // Parse only: no module resolution or implicit compilation of
+                // modules excluded from the product's source path.
+                var task = (JavacTask) compiler.getTask(null, manager, diagnostics,
+                        List.of("-proc:none"), null, manager.getJavaFileObjects(file));
+                var unit = task.parse().iterator().next();
+                for (var diagnostic : diagnostics.getDiagnostics()) {
+                    if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
+                        throw new Error(file + ", line " + diagnostic.getLineNumber()
+                                + ", " + diagnostic.getCode());
+                    }
+                }
+                ModuleTree declaration = unit.getModule();
+                if (declaration == null) {
+                    throw new Error(file + ", line 1, missing module declaration");
+                }
+                var positions = Trees.instance(task).getSourcePositions();
+                bodyEnd = (int) positions.getEndPosition(unit, declaration) - 1;
+                // Source positions refer to raw input. A Unicode-escaped closing
+                // brace occupies more than one character, including in an empty
+                // descriptor where it also determines the preserved header.
+                if (source.charAt(bodyEnd) != '}') {
+                    bodyEnd = source.lastIndexOf('\\', bodyEnd);
+                }
+                bodyStart = declaration.getDirectives().isEmpty() ? bodyEnd
+                        : (int) positions.getStartPosition(unit, declaration.getDirectives().getFirst());
+                for (DirectiveTree directive : declaration.getDirectives()) {
+                    int start = (int) positions.getStartPosition(unit, directive);
+                    int end = (int) positions.getEndPosition(unit, directive);
+                    Statement statement;
+                    Map<String, Statement> statements;
+                    switch (directive) {
+                        case RequiresTree ignored -> {
+                            requires.add(source.substring(start, end));
+                            continue;
+                        }
+                        case ExportsTree e -> {
+                            statement = new Statement("exports", "to", e.getPackageName().toString());
+                            if (e.getModuleNames() != null) {
+                                e.getModuleNames().forEach(n -> statement.addTarget(n.toString()));
+                            }
+                            statements = exports;
+                        }
+                        case OpensTree o -> {
+                            statement = new Statement("opens", "to", o.getPackageName().toString());
+                            if (o.getModuleNames() != null) {
+                                o.getModuleNames().forEach(n -> statement.addTarget(n.toString()));
+                            }
+                            statements = opens;
+                        }
+                        case UsesTree u -> {
+                            statement = new Statement("uses", "", u.getServiceName().toString());
+                            statements = uses;
+                        }
+                        case ProvidesTree p -> {
+                            statement = new Statement("provides", "with", p.getServiceName().toString(), true);
+                            p.getImplementationNames().forEach(n -> statement.addTarget(n.toString()));
+                            statements = provides;
+                        }
+                        default -> throw new Error("Unknown module directive: " + directive);
+                    }
+                    if (statements.putIfAbsent(statement.name, statement) != null) {
+                        throw new Error(file + ", line " + unit.getLineMap().getLineNumber(start)
+                                + ", multiple " + statement.directive + " " + statement.name);
+                    }
+                    if (statements == exports || statements == opens) {
+                        Statement original = new Statement(statement.directive, "to", statement.name);
+                        original.targets.addAll(statement.targets);
+                        sourceStatements.add(new SourceStatement(start, end, original));
+                    }
+                }
             }
-            process(parser, false);
         }
 
         private void parseExtra(Path file) throws IOException {

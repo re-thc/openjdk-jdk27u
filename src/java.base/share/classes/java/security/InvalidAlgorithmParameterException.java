@@ -37,11 +37,9 @@ package java.security;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidAlgorithmParameterException
 extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2864672297499471472L;
 
     /**
      * Constructs an {@code InvalidAlgorithmParameterException} with no detail

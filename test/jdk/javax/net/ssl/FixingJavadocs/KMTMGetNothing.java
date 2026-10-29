@@ -43,7 +43,7 @@ public class KMTMGetNothing {
 
     KMTMGetNothing() throws Exception {
         char[] passphrase = "none".toCharArray();
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");

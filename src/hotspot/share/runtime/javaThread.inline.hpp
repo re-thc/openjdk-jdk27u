@@ -113,7 +113,7 @@ class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
   void do_thread(Thread* thr) {
     PRAGMA_DIAG_PUSH
     PRAGMA_NONNULL_IGNORED
-    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
+    // Same nonnull diagnostic limitation as AsyncExceptionHandshakeClosure above.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 

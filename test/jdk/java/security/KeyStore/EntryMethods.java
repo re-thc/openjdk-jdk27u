@@ -366,7 +366,7 @@ public class EntryMethods
 
         private static KeyStore getJKS() {
             try {
-                return (KeyStore) KeyStore.getInstance("JKS");
+                return (KeyStore) KeyStore.getInstance("PKCS12");
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);

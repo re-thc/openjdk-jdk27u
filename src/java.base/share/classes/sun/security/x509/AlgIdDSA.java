@@ -74,10 +74,8 @@ import sun.security.util.*;
  *
  * @author David Brownell
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AlgIdDSA extends AlgorithmId implements DSAParams {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3437177836797504046L;
 
     private static class DSAComponents {
         private final BigInteger p;

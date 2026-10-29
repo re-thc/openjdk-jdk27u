@@ -58,7 +58,7 @@ public final class DisableRevocation {
     // the trust anchor
     static String selfSignedCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICPjCCAaegAwIBAgIBADANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICPjCCAaegAwIBAgIBADANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA2MjgxMzMyMThaFw0zMDA2MDgxMzMyMTha\n" +
         "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIGfMA0GCSqGSIb3DQEB\n" +
         "AQUAA4GNADCBiQKBgQDInJhXi0655bPXAVkz1n5I6fAcZejzPnOPuwq3hU3OxFw8\n" +
@@ -67,16 +67,16 @@ public final class DisableRevocation {
         "AQABo4GJMIGGMB0GA1UdDgQWBBSQ52Dpau+gtL+Kc31dusYnKj16ZTBHBgNVHSME\n" +
         "QDA+gBSQ52Dpau+gtL+Kc31dusYnKj16ZaEjpCEwHzELMAkGA1UEBhMCVVMxEDAO\n" +
         "BgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYw\n" +
-        "DQYJKoZIhvcNAQEEBQADgYEAjBt6ea65HCqbGsS2rs/HhlGusYXtThRVC5vwXSey\n" +
-        "ZFYwSgukuq1KDzckqZFu1meNImEwdZjwxdN0e2p/nVREPC42rZliSj6V1ThayKXj\n" +
-        "DWEZW1U5aR8T+3NYfDrdKcJGx4Hzfz0qKz1j4ssV1M9ptJxYYv4y2Da+592IN1S9\n" +
-        "v/E=\n" +
+        "DQYJKoZIhvcNAQELBQADgYEAmo7qVWUTRzBIF73s2apbP8gZsnwsmL3YqBBn4742\n" +
+        "Z23UY8HEccZpB3LPZQFbsRuJh5dD5M3jmJr2vIoRDcI98fCYQmb1QKkgDfECfrKK\n" +
+        "Ex8cuSBHSJ/bkbz0pSHWFXaWtd7kr/qcG8WEgUyXABRSx0dYXz9nL9+gJRMe4W6O\n" +
+        "Mz4=\n" +
         "-----END CERTIFICATE-----";
 
     // the sub-ca
     static String subCaCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICUDCCAbmgAwIBAgIBAzANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICUDCCAbmgAwIBAgIBAzANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA2MjgxMzMyMjRaFw0yOTAzMTUxMzMyMjRa\n" +
         "MDExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMRAwDgYDVQQLEwdDbGFz\n" +
         "cy0xMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDPFv24SK78VI0gWlyIrq/X\n" +
@@ -85,16 +85,16 @@ public final class DisableRevocation {
         "E/n+HPyeELJQT2rT/3T+7wIDAQABo4GJMIGGMB0GA1UdDgQWBBRidC8Dt3dBzYES\n" +
         "KpR2tR560sZ0+zBHBgNVHSMEQDA+gBSQ52Dpau+gtL+Kc31dusYnKj16ZaEjpCEw\n" +
         "HzELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUw\n" +
-        "AwEB/zALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQEEBQADgYEAMeMKqrMr5d3eTQsv\n" +
-        "MYOD15Dl3THQGLAa4ad5Eyq5/1eUeEOpztzCgDfi0iPD8YCubIEVasBTSqTiGXqb\n" +
-        "RpGuPHOwwfWvHrTeHSludiFBAUiKj7aEV+oQa0FBn4U4TT8HA62HQ93FhzTDI3jP\n" +
-        "iil34GktVl6gfMKGzUEW/Dh8OM4=\n" +
+        "AwEB/zALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQELBQADgYEANReWwbIYoF3COOpe\n" +
+        "DahpqM1ZsuZNK9ogrZiVc5bfzF7Gpoq08yEo8b4Z9tN+0VHhO1rnNSmrKknxm8Wu\n" +
+        "rKG/I7QHkHUeFWGTL7+eL1u9fcQHvOPIfc1to7Sipp8OYHucvMRDYztlTLiB1qCf\n" +
+        "/hUApvp1eDVWNBiTtE8eYLeHViw=\n" +
         "-----END CERTIFICATE-----";
 
     // a delegated CRL issuer, it's a self-issued certificate of trust anchor
     static String topCrlIssuerCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICPjCCAaegAwIBAgIBAjANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICPjCCAaegAwIBAgIBAjANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA2MjgxMzMyMjNaFw0yOTAzMTUxMzMyMjNa\n" +
         "MB8xCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMIGfMA0GCSqGSIb3DQEB\n" +
         "AQUAA4GNADCBiQKBgQC99u93trf+WmpfiqunJy/P31ej1l4rESxft2JSGNjKuLFN\n" +
@@ -103,16 +103,16 @@ public final class DisableRevocation {
         "AQABo4GJMIGGMB0GA1UdDgQWBBSyFyA3XWLbdL6W6hksmBn7RKsQmDBHBgNVHSME\n" +
         "QDA+gBSQ52Dpau+gtL+Kc31dusYnKj16ZaEjpCEwHzELMAkGA1UEBhMCVVMxEDAO\n" +
         "BgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYw\n" +
-        "DQYJKoZIhvcNAQEEBQADgYEAHTm8aRTeakgCfEBCgSWK9wvMW1c18ANGMm8OFDBk\n" +
-        "xabVy9BT0MVFHlaneh89oIxTZN0FMTpg21GZMAvIzhEt7DGdO7HLsW7JniN7/OZ0\n" +
-        "rACmpK5frmZrLS03zUm8c+rTbazNfYLoZVG3/mDZbKIi+4y8IGnFcgLVsHsYoBNP\n" +
-        "G0c=\n" +
+        "DQYJKoZIhvcNAQELBQADgYEAOuZ5h+NDflyadbO3YZQmmaGJJGxLzSLG4Imajsr8\n" +
+        "dKeayydSmn2hFsba3LyNGkVzTrhK8Po3oerUd6jHh6rPYl0OIYs3uObZhF6YLuNo\n" +
+        "Y7yEougqilxz6q4ooRmXaGS+rTRzP0Tp5WhUmQtW9rEx1JKgT8SXzF4yCsGXdhR/\n" +
+        "KpI=\n" +
         "-----END CERTIFICATE-----";
 
     // a delegated CRL issuer, it's a self-issued certificate of sub-ca
     static String subCrlIssuerCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICUDCCAbmgAwIBAgIBBDANBgkqhkiG9w0BAQQFADAfMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICUDCCAbmgAwIBAgIBBDANBgkqhkiG9w0BAQsFADAfMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTAeFw0wOTA2MjgxMzMyMjdaFw0yOTAzMTUxMzMyMjda\n" +
         "MDExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFtcGxlMRAwDgYDVQQLEwdDbGFz\n" +
         "cy0xMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC+8AcLJtGAVUWvv3ifcyQw\n" +
@@ -121,16 +121,16 @@ public final class DisableRevocation {
         "GnyntQm0DBYxRoOT/GBlvQIDAQABo4GJMIGGMB0GA1UdDgQWBBSRWhMuZLQoHSDN\n" +
         "xhxr+vdDmfAY8jBHBgNVHSMEQDA+gBSQ52Dpau+gtL+Kc31dusYnKj16ZaEjpCEw\n" +
         "HzELMAkGA1UEBhMCVVMxEDAOBgNVBAoTB0V4YW1wbGWCAQAwDwYDVR0TAQH/BAUw\n" +
-        "AwEB/zALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQEEBQADgYEAMIDZLdOLFiPyS1bh\n" +
-        "Ch4eUYHT+K1WG93skbga3kVYg3GSe+gctwkKwKK13bwfi8zc7wwz6MtmQwEYhppc\n" +
-        "pKKKEwi5QirBCP54rihLCvRQaj6ZqUJ6VP+zPAqHYMDbzlBbHtVF/1lQUP30I6SV\n" +
-        "Fu987DvLmZ2GuQA9FKJsnlD9pbU=\n" +
+        "AwEB/zALBgNVHQ8EBAMCAQYwDQYJKoZIhvcNAQELBQADgYEAugNT7ZjMOnW+gx3R\n" +
+        "ZB8hzEsQb9S5sD/TtEtJOK6b2hputqB+Ij0JxTzsSG3uNj5DnUnB0p3k2z3kglOB\n" +
+        "iTtucbe4GhQ30J30e6JaYL72cfBoM2s0cC9Z0RsShWaqYjfMONVgD2wTBKi3igSQ\n" +
+        "4MiPkqQbE3l3SHblDLCffRc7geA=\n" +
         "-----END CERTIFICATE-----";
 
     // the target EE certificate
     static String targetCertStr =
         "-----BEGIN CERTIFICATE-----\n" +
-        "MIICNzCCAaCgAwIBAgIBAjANBgkqhkiG9w0BAQQFADAxMQswCQYDVQQGEwJVUzEQ\n" +
+        "MIICNzCCAaCgAwIBAgIBAjANBgkqhkiG9w0BAQsFADAxMQswCQYDVQQGEwJVUzEQ\n" +
         "MA4GA1UEChMHRXhhbXBsZTEQMA4GA1UECxMHQ2xhc3MtMTAeFw0wOTA2MjgxMzMy\n" +
         "MzBaFw0yOTAzMTUxMzMyMzBaMEExCzAJBgNVBAYTAlVTMRAwDgYDVQQKEwdFeGFt\n" +
         "cGxlMRAwDgYDVQQLEwdDbGFzcy0xMQ4wDAYDVQQDEwVBbGljZTCBnzANBgkqhkiG\n" +
@@ -139,9 +139,9 @@ public final class DisableRevocation {
         "1MLDu8ntkdlpURpvhdDWem+rl2HU5oZgzV8Jkcov9vXuSjqEDfr45FlPuV40T8+7\n" +
         "cxsCAwEAAaNPME0wCwYDVR0PBAQDAgPoMB0GA1UdDgQWBBSBwsAhi6Z1kriOs3ty\n" +
         "uSIujv9a3DAfBgNVHSMEGDAWgBRidC8Dt3dBzYESKpR2tR560sZ0+zANBgkqhkiG\n" +
-        "9w0BAQQFAAOBgQDEiBqd5AMy2SQopFaS3dYkzj8MHlwtbCSoNVYkOfDnewcatrbk\n" +
-        "yFcp6FX++PMdOQFHWvvnDdkCUAzZQp8kCkF9tGLVLBtOK7XxQ1us1LZym7kOPzsd\n" +
-        "G93Dcf0U1JRO77juc61Br5paAy8Bok18Y/MeG7uKgB2MAEJYKhGKbCrfMw==\n" +
+        "9w0BAQsFAAOBgQDDqvvubhc+Mpao1pCd8uNFIeNoI0jYMffwtqcOGXI/tH5TGncn\n" +
+        "f0oyz3oChDsBJ8gd/ATcWG32qjVbOx7cEsgA8rKMMuXlu2praZnajpVbBsxTgATr\n" +
+        "a67GRXoDSOtgG3wpNzwX59UAwKDhGinSTrS4+6o6/NoFl85lgFb/cwZqoQ==\n" +
         "-----END CERTIFICATE-----";
 
     private static final PEMDecoder PEM_DECODER = PEMDecoder.of();
@@ -221,7 +221,6 @@ public final class DisableRevocation {
 
 
     public static void main(String[] args) throws Exception {
-        // MD5 is used in this test case, don't disable MD5 algorithm.
         Security.setProperty(
                 "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
 

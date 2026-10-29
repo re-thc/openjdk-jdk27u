@@ -1,0 +1,228 @@
+
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include MakeFileStart.gmk
+include Modules.gmk
+include UtilsForTests.gmk
+
+ifeq ($(ENABLE_DESKTOP), false)
+  ALL_MODULES := $(call FindAllModules)
+  EXCLUDED := java.datatransfer java.se jdk.accessibility jdk.editpad \
+      jdk.hotspot.agent jdk.jconsole jdk.jpackage jdk.unsupported.desktop
+  $(call AssertEquals, $(filter $(EXCLUDED), $(ALL_MODULES)), , Excluded modules in graph)
+  $(call AssertEquals, $(filter $(EXCLUDED), $(call FindImportedModules)), , Excluded imported modules)
+  $(call AssertEquals, $(filter java.desktop,$(call FindImportedModules)), , Imported full desktop module)
+  REQUIRED := java.desktop java.base java.compiler java.logging java.management java.sql jdk.attach \
+      jdk.compiler jdk.javadoc jdk.jdeps jdk.jdi jdk.jfr jdk.jlink jdk.jshell jdk.management.agent
+  $(call AssertEquals, $(filter-out $(ALL_MODULES), $(REQUIRED)), , Missing supported modules)
+  $(call AssertEquals, $(findstring *, $(call GetModuleSourcePathFlags)), , Wildcard module source path)
+  $(foreach m, $(EXCLUDED), \
+      $(call AssertEquals, $(findstring --module-source-path $(m)=, $(call GetModuleSourcePathFlags)), , Excluded source path))
+  ifeq ($(TEST_HEADLESS_IMPORTS), true)
+    $(call AssertEquals, $(call FindImportedModules), server.extra, Allowed imported module lost)
+  endif
+
+  # Exercise the actual launcher/library snippets for each target, with native
+  # compilation macros stubbed. Native compilation itself is checked after a build.
+  ifeq ($(TEST_HEADLESS_GRAPH), true)
+    MODULE := java.base
+    INCLUDE_GUARD_common/modules/LauncherCommon.gmk := true
+    SetupBuildLauncher = $(eval TEST_LAUNCHERS += $(strip $1))
+    SetupJdkExecutable =
+    # Capture the actual library inputs, including required non-GUI OS APIs.
+    SetupJdkLibrary = $(eval TEST_LIBRARY_ARGS_$(strip $1) := $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9) $(10) $(11) $(12) $(13) $(14) $(15))
+    include $(TOPDIR)/make/modules/java.base/Launcher.gmk
+    include $(TOPDIR)/make/modules/java.base/lib/CoreLibraries.gmk
+    $(call AssertEquals, $(filter javaw, $(TEST_LAUNCHERS)), , GUI Windows launcher)
+    $(call AssertEquals, $(filter java keytool, $(TEST_LAUNCHERS)), java keytool, Missing command-line launchers)
+    $(call AssertEquals, $(filter -DHEADLESS, $(LIBJLI_CFLAGS)), -DHEADLESS, Launcher desktop code enabled)
+    $(call AssertEquals, $(filter splashscreen_stubs.c, $(LIBJLI_EXCLUDE_FILES)), splashscreen_stubs.c, Splash sources enabled)
+    $(call AssertEquals, $(LIBJLI_LIBS_macosx) $(LIBJLI_LIBS_windows), , GUI launcher libraries)
+    ifeq ($(OPENJDK_TARGET_OS), windows)
+      $(call AssertEquals, $(filter user32.lib, $(TEST_LIBRARY_ARGS_BUILD_LIBJLI)), user32.lib, Missing CharNextExA library)
+      $(call AssertEquals, $(filter comctl32.lib, $(TEST_LIBRARY_ARGS_BUILD_LIBJLI)), , GUI launcher library)
+    endif
+    ifeq ($(OPENJDK_TARGET_OS), macosx)
+      # Capture the actual library setup arguments without requiring a Mac SDK.
+      INCLUDE_GUARD_common/modules/LibCommon.gmk := true
+      include $(TOPDIR)/make/modules/java.instrument/Lib.gmk
+      include $(TOPDIR)/make/modules/java.security.jgss/Lib.gmk
+      $(call AssertEquals, $(filter -framework, $(TEST_LIBRARY_ARGS_BUILD_LIBINSTRUMENT)), , Unused instrument frameworks)
+      $(call AssertEquals, $(filter Cocoa AppKit ApplicationServices, $(TEST_LIBRARY_ARGS_BUILD_LIBOSXKRB5)), , GUI Kerberos frameworks)
+      $(call AssertEquals, $(filter Foundation Kerberos SystemConfiguration, $(TEST_LIBRARY_ARGS_BUILD_LIBOSXKRB5)), Foundation Kerberos SystemConfiguration, Missing Kerberos OS frameworks)
+    endif
+    JVM_VARIANT := server
+    check-jvm-feature = $(if $(filter $1, $(JVM_FEATURES_server)),true,false)
+    include $(TOPDIR)/make/hotspot/lib/JvmFeatures.gmk
+    ifeq ($(OPENJDK_TARGET_OS), windows)
+      $(call AssertEquals, $(filter -DHEADLESS, $(JVM_CFLAGS_FEATURES)), -DHEADLESS, HotSpot desktop code enabled)
+    endif
+  endif
+endif
+
+verify-graph:
+	$(ECHO) "Headless graph passed: $(OPENJDK_TARGET_OS)/$(OPENJDK_TARGET_CPU)"
+
+matrix:
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true MODULES_FILTER= OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=x86_64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=linux OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=aarch64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=macosx OPENJDK_TARGET_OS_TYPE=unix OPENJDK_TARGET_CPU=aarch64 verify-graph
+	+$(MAKE) -I$(TOPDIR)/make/common/modules -f TestHeadless.gmk TEST_HEADLESS_GRAPH=true OPENJDK_TARGET_OS=windows OPENJDK_TARGET_OS_TYPE=windows OPENJDK_TARGET_CPU=x86_64 verify-graph
+
+probes:
+	$(BASH) $(TOPDIR)/test/make/autoconf/test-headless.sh "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)/headless"
+	$(BASH) $(TOPDIR)/test/make/autoconf/test-autoconf-discovery.sh "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)/autoconf-discovery"
+
+direct-targets:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-stale/jdk/modules/java.datatransfer
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk java.datatransfer-java > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk MODULES_FILTER= java.datatransfer-java > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=java.datatransfer > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/ModuleWrapper.gmk MODULE=java.datatransfer MAKEFILE_PREFIX=Lib > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'excluded by this configuration' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JDK_OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-stale/jdk print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'Stale excluded module outputs' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk ENABLE_DESKTOP=true print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'This fork requires' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JVM_FEATURES_server='g1gc serialgc zgc parallelgc' print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'This fork requires collectors' $(TEST_SUPPORT_DIR)/headless-direct.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SERVER_JVM_COLLECTORS='g1gc parallelgc serialgc zgc' JVM_FEATURES_server='g1gc parallelgc serialgc zgc' print-modules > $(TEST_SUPPORT_DIR)/headless-direct.log 2>&1; then exit 1; fi
+	$(GREP) -q 'This fork requires collectors' $(TEST_SUPPORT_DIR)/headless-direct.log
+	+$(MAKE) -n -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk ENABLE_DESKTOP=true OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-clean clean > $(TEST_SUPPORT_DIR)/headless-clean.log
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SPEC=$(dir $(SPEC))buildjdk-spec.gmk CREATING_BUILDJDK=true print-modules > $(TEST_SUPPORT_DIR)/headless-buildjdk.log
+
+imports:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-imports/java.desktop $(TEST_SUPPORT_DIR)/headless-imports/jdk.jconsole $(TEST_SUPPORT_DIR)/headless-imports/server.extra
+	+$(MAKE) -f TestHeadless.gmk TEST_HEADLESS_IMPORTS=true IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports verify-graph
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans
+	$(ECHO) 'package java.beans; public interface DesignMode {}' > $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans/DesignMode.java
+	$(ECHO) 'must not be imported' > $(TEST_SUPPORT_DIR)/headless-imports/java.desktop/MustNotImport.class
+	# Use the interim compiler directly, as source-imports does below: a daemon
+	# from the preceding build can still delete the shared port during shutdown.
+	+($(CD) $(TOPDIR)/make && $(MAKE) -I$(TOPDIR)/make/common -f CompileJavaModules.gmk MODULE=java.desktop ENABLE_JAVAC_SERVER=false IMPORT_MODULES_CLASSES=$(TEST_SUPPORT_DIR)/headless-imports java.desktop_BIN=$(TEST_SUPPORT_DIR)/headless-import-classes MODULEPATH=$(JDK_OUTPUTDIR)/modules MODULE_SRC_DIRS="$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources" MODULE_SOURCE_PATH_FLAGS="--module-source-path java.desktop=$(call PathList,$(call FindModuleSrcDirs,java.desktop) $(TEST_SUPPORT_DIR)/headless-orphan-sources)" all)
+	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/MustNotImport.class
+	@test -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/java/beans/Introspector.class
+	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.base
+	@test ! -e $(TEST_SUPPORT_DIR)/headless-import-classes/java.desktop/java/beans/DesignMode.class
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-import-payloads/java.desktop
+	$(ECHO) 'must not be packaged' > $(TEST_SUPPORT_DIR)/headless-import-payloads/java.desktop/MustNotImport
+	@for payload in LIBS CMDS CONF INCLUDE_HEADERS MAN; do \
+	  if $(MAKE) -C $(TOPDIR)/make -I$(TOPDIR)/make/common -f CreateJmods.gmk MODULE=java.desktop IMPORT_MODULES_$$payload=$(TEST_SUPPORT_DIR)/headless-import-payloads -n all > $(TEST_SUPPORT_DIR)/headless-payload.log 2>&1; then exit 1; fi; \
+	  $(GREP) -q 'Headless java.desktop cannot package' $(TEST_SUPPORT_DIR)/headless-payload.log || exit 1; \
+	done
+
+# Print-only invocations must reject orphan generated sources and output classes
+# before an incremental build can admit an obsolete source-list member.
+orphans:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-orphan/support/gensrc/java.desktop/java/beans $(TEST_SUPPORT_DIR)/headless-orphan/jdk/modules/java.desktop/java/beans
+	$(CP) $(TEST_SUPPORT_DIR)/headless-orphan-sources/java/beans/DesignMode.java $(TEST_SUPPORT_DIR)/headless-orphan/support/gensrc/java.desktop/java/beans/
+	$(ECHO) 'stale class' > $(TEST_SUPPORT_DIR)/headless-orphan/jdk/modules/java.desktop/java/beans/DesignMode.class
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk SUPPORT_OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-orphan/support print-modules > $(TEST_SUPPORT_DIR)/headless-orphan-source.log 2>&1; then exit 1; fi
+	$(GREP) -q 'Stale excluded module outputs.*DesignMode.java' $(TEST_SUPPORT_DIR)/headless-orphan-source.log
+	@if $(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/Main.gmk JDK_OUTPUTDIR=$(TEST_SUPPORT_DIR)/headless-orphan/jdk print-modules > $(TEST_SUPPORT_DIR)/headless-orphan-class.log 2>&1; then exit 1; fi
+	$(GREP) -q 'Stale excluded module outputs.*DesignMode.class' $(TEST_SUPPORT_DIR)/headless-orphan-class.log
+
+orphans: imports
+
+module-info:
+	$(MKDIR) -p $(TEST_SUPPORT_DIR)/headless-module-info
+	$(FIXPATH) $(JAVAC) -d $(TEST_SUPPORT_DIR)/headless-module-info $(TOPDIR)/make/jdk/src/classes/build/tools/module/GenModuleInfoSource.java $(TOPDIR)/make/jdk/src/classes/build/tools/module/ModuleInfoExtraTest.java
+	$(CD) $(TEST_SUPPORT_DIR)/headless-module-info && $(FIXPATH) $(JAVA) -cp . build.tools.module.ModuleInfoExtraTest
+
+# Exercise the actual imported-source generation and product javac recipes.
+# A separate module output root keeps fixture classes out of the target JDK.
+IMPORT_SOURCE_TEST := $(TEST_SUPPORT_DIR)/headless-module-info/gen-module-info-test/source-imports
+IMPORT_SUPPORT_TEST := $(TEST_SUPPORT_DIR)/headless-source-imports
+# Resolve platform modules from the built JDK, while exposing only fixture
+# source modules. A separate -d directory must not implicitly rebuild java.base.
+# Use the same interim compiler directly: a preceding product make may still
+# have a javac server stopping asynchronously in the shared port directory.
+IMPORT_SOURCE_ARGS := IMPORT_MODULES_SRC=$(IMPORT_SOURCE_TEST) \
+    SUPPORT_OUTPUTDIR=$(IMPORT_SUPPORT_TEST) TOP_SRC_DIRS= \
+    ENABLE_JAVAC_SERVER=false \
+    MODULEPATH=$(call PathList, $(JDK_OUTPUTDIR)/modules $(IMPORT_SUPPORT_TEST)/classes)
+# Product javac can emit a newer class-file version than the boot JDK accepts.
+source-imports: module-info
+	$(MKDIR) -p $(IMPORT_SUPPORT_TEST)/javatmp
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.extra $(IMPORT_SOURCE_ARGS) all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/common/modules/GensrcModuleInfo.gmk MODULE=server.open $(IMPORT_SOURCE_ARGS) all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=client.keep $(IMPORT_SOURCE_ARGS) client.keep_BIN=$(IMPORT_SUPPORT_TEST)/classes all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=server.extra $(IMPORT_SOURCE_ARGS) server.extra_BIN=$(IMPORT_SUPPORT_TEST)/classes all
+	+$(MAKE) -I$(TOPDIR)/make/common -f $(TOPDIR)/make/CompileJavaModules.gmk MODULE=server.open $(IMPORT_SOURCE_ARGS) server.open_BIN=$(IMPORT_SUPPORT_TEST)/classes all
+	$(FIXPATH) $(IMAGES_OUTPUTDIR)/jdk/bin/java -cp $(TEST_SUPPORT_DIR)/headless-module-info build.tools.module.ModuleInfoExtraTest --check-imports $(IMPORT_SUPPORT_TEST)/classes
+	@test ! -e $(IMPORT_SUPPORT_TEST)/classes/java.desktop
+	@test ! -e $(IMPORT_SUPPORT_TEST)/classes/java.base
+
+include NativeCompilation.gmk
+$(eval $(call SetupNativeCompilation, HEADLESS_MESSAGE_BOX_TEST, \
+    NAME := HeadlessMessageBoxTest, \
+    TYPE := EXECUTABLE, \
+    TARGET_TYPE := BUILD, \
+    LINK_TYPE := C++, \
+    SRC := $(TOPDIR)/test/make/native, \
+    CFLAGS := -I$(TOPDIR)/src/hotspot/os/windows, \
+    OBJECT_DIR := $(TEST_SUPPORT_DIR)/headless-native/objs, \
+    OUTPUT_DIR := $(TEST_SUPPORT_DIR)/headless-native, \
+))
+
+native-diagnostics: $(HEADLESS_MESSAGE_BOX_TEST)
+	$(TEST_SUPPORT_DIR)/headless-native/HeadlessMessageBoxTest$(EXECUTABLE_SUFFIX)
+
+launcher-errors:
+	$(BASH) $(TOPDIR)/.github/scripts/check-headless-launcher.sh "$(IMAGES_OUTPUTDIR)/jdk"
+	$(BASH) $(TOPDIR)/test/make/launcher/test-launcher.sh "$(IMAGES_OUTPUTDIR)/jdk" "$(TOPDIR)/.github/scripts/check-headless-launcher.sh"
+
+prebuilt:
+	+$(BASH) $(TOPDIR)/test/make/prebuilt/test-prebuilt.sh "$(MAKE)" "$(TOPDIR)" "$(BOOT_JDK)" "$(IMAGES_OUTPUTDIR)/jdk" "$(TEST_SUPPORT_DIR)/prebuilt"
+
+# Exercise the actual image callback with native macOS scheduling, without
+# privileged notifications or writes to the machine's Kerberos configuration.
+ifeq ($(call isBuildOs, macosx)+$(call isTargetOs, macosx), true+true)
+  KERBEROS_TEST_DIR := $(TEST_SUPPORT_DIR)/kerberos-notifications
+  $(eval $(call SetupNativeCompilation, KERBEROS_NOTIFICATION_TEST, \
+      NAME := KerberosNotifications, \
+      TYPE := LIBRARY, \
+      LINK_TYPE := C, \
+      SRC := $(TOPDIR)/test/make/macosx, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          -I$(TOPDIR)/src/java.base/share/native/include \
+          -I$(TOPDIR)/src/java.base/unix/native/include, \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LIBS := -framework CoreFoundation -framework SystemConfiguration, \
+      OBJECT_DIR := $(KERBEROS_TEST_DIR)/objs, \
+      OUTPUT_DIR := $(KERBEROS_TEST_DIR), \
+  ))
+
+  kerberos-notifications: $(KERBEROS_NOTIFICATION_TEST)
+	$(FIXPATH) $(JAVAC) -Xlint:all -Werror -d $(KERBEROS_TEST_DIR) $(TOPDIR)/test/make/macosx/KerberosNotifications.java
+	$(FIXPATH) $(JAVA) -cp $(KERBEROS_TEST_DIR) KerberosNotifications "$(IMAGES_OUTPUTDIR)/jdk" "$(KERBEROS_NOTIFICATION_TEST_TARGET)"
+
+  all: kerberos-notifications
+endif
+
+all: matrix probes direct-targets imports orphans source-imports native-diagnostics launcher-errors prebuilt
+.PHONY: verify-graph matrix probes direct-targets imports orphans module-info source-imports native-diagnostics launcher-errors kerberos-notifications prebuilt
+include MakeFileEnd.gmk

@@ -34,10 +34,8 @@ package java.lang;
  * @author  Frank Yellin
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkageError extends Error {
-    @java.io.Serial
-    private static final long serialVersionUID = 3579600108157160122L;
-
     /**
      * Constructs a {@code LinkageError} with no detail message.
      */

@@ -117,8 +117,7 @@ final class ExtendedMasterSecretExtension {
 
             // Is it a supported and enabled extension?
             if (!chc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
-                    !SSLConfiguration.useExtendedMasterSecret ||
-                    !chc.conContext.protocolVersion.useTLS10PlusSpec()) {
+                    !SSLConfiguration.useExtendedMasterSecret) {
                 if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine(
@@ -161,8 +160,7 @@ final class ExtendedMasterSecretExtension {
 
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
-                    !SSLConfiguration.useExtendedMasterSecret ||
-                    !shc.negotiatedProtocol.useTLS10PlusSpec()) {
+                    !SSLConfiguration.useExtendedMasterSecret) {
                 if (SSLLogger.isOn() &&
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.fine("Ignore unavailable extension: " +
@@ -224,8 +222,7 @@ final class ExtendedMasterSecretExtension {
                 return;     // ignore the extension
             }
 
-            if (shc.negotiatedProtocol.useTLS10PlusSpec() &&
-                    !SSLConfiguration.allowLegacyMasterSecret) {
+            if (!SSLConfiguration.allowLegacyMasterSecret) {
                 // For full handshake, if the server receives a ClientHello
                 // without the extension, it SHOULD abort the handshake if
                 // it does not wish to interoperate with legacy clients.
@@ -373,8 +370,7 @@ final class ExtendedMasterSecretExtension {
                             "Missing Extended Master Secret extension " +
                             "on session resumption");
                 } else if (SSLConfiguration.useExtendedMasterSecret &&
-                        !SSLConfiguration.allowLegacyResumption &&
-                        chc.negotiatedProtocol.useTLS10PlusSpec()) {
+                        !SSLConfiguration.allowLegacyResumption) {
                     // Unlikely, abbreviated handshake should be discarded.
                     throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Extended Master Secret extension is required");

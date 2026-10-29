@@ -37,10 +37,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoClassDefFoundError extends LinkageError {
-    @java.io.Serial
-    private static final long serialVersionUID = 9095859863287012458L;
-
     /**
      * Constructs a {@code NoClassDefFoundError} with no detail message.
      */

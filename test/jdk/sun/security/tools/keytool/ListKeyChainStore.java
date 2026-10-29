@@ -78,7 +78,10 @@ public class ListKeyChainStore {
             for (int i = 0; i < 3; i++) {
                 // Use legacy encryption and MAC algorithms, refer macOS open radar FB8988319
                 // macOS security framework doesn't work with the latest algorithms
-                SecurityTools.keytool(String.format("-J-Dkeystore.pkcs12.legacy -genkeypair" +
+                SecurityTools.keytool(String.format(
+                        "-J-Dkeystore.pkcs12.certProtectionAlgorithm=PBEWithSHA1AndDESede" +
+                        " -J-Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede" +
+                        " -J-Dkeystore.pkcs12.macAlgorithm=HmacPBESHA1 -genkeypair" +
                                 " -storetype PKCS12 -keystore %s -storepass %s -keyalg rsa  -dname " +
                                 "CN=CN%d,OU=OU%d,O=O%d,ST=ST%d,C=US -alias 7133495-%d",
                         PKCS12_KEYSTORE, PWD, i, i, i, i, i)).shouldHaveExitValue(0);

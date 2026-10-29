@@ -36,11 +36,9 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="20", forRemoval=true)
 public class ThreadDeath extends Error {
-    @java.io.Serial
-    private static final long serialVersionUID = -4417128565033088268L;
-
     /**
      * Constructs a {@code ThreadDeath}.
      */
