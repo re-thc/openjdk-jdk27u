@@ -33,7 +33,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
@@ -46,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import jdk.test.lib.Utils;
 
 import static java.nio.file.StandardOpenOption.*;
+import static jdk.test.lib.Asserts.assertThrows;
 
 public class TransferSocketChannel {
     private static final int[] SIZES = { 0, 1, 8191, 8192, 8193, 2 * 1024 * 1024 };
@@ -57,6 +62,7 @@ public class TransferSocketChannel {
         virtual = args[0].equals("virtual");
         var task = new FutureTask<Void>(() -> {
             for (boolean blocking : new boolean[] { true, false }) {
+                zeroCount(blocking);
                 for (int size : SIZES) {
                     transferTo(size, blocking);
                 }
@@ -149,6 +155,67 @@ public class TransferSocketChannel {
             Files.delete(path);
         }
         System.out.printf("to size=%d blocking=%s virtual=%s%n", size, blocking, virtual);
+    }
+
+    private static void zeroCount(boolean blocking) throws Exception {
+        Path path = Files.createTempFile(Path.of("."), "socket-zero", ".dat");
+        byte[] payload = data(128);
+        Files.write(path, payload);
+        try (var connection = Connection.open();
+             var file = FileChannel.open(path, READ);
+             var unreadable = FileChannel.open(path, WRITE);
+             var readOnly = FileChannel.open(path, READ);
+             var closedSource = FileChannel.open(path, READ);
+             var closedTarget = SocketChannel.open()) {
+            connection.local.configureBlocking(blocking);
+            file.position(7);
+            closedSource.close();
+            closedTarget.close();
+            // A zero length must not bypass argument or channel validation.
+            assertThrows(IllegalArgumentException.class,
+                    () -> file.transferTo(-1, 0, connection.local));
+            assertThrows(IllegalArgumentException.class,
+                    () -> file.transferTo(17, -1, connection.local));
+            assertThrows(NullPointerException.class, () -> file.transferTo(17, 0, null));
+            assertThrows(ClosedChannelException.class,
+                    () -> closedSource.transferTo(17, 0, connection.local));
+            assertThrows(ClosedChannelException.class,
+                    () -> file.transferTo(17, 0, closedTarget));
+            assertThrows(NonReadableChannelException.class,
+                    () -> unreadable.transferTo(17, 0, connection.local));
+            assertThrows(NonWritableChannelException.class,
+                    () -> file.transferTo(17, 0, readOnly));
+
+            // Drain through EOF so even a zero-count call that incorrectly sends
+            // data but returns zero cannot hide extra or duplicated bytes.
+            var receiver = new FutureTask<byte[]>(() ->
+                    Channels.newInputStream(connection.peer).readAllBytes());
+            Thread thread = start(receiver);
+            try {
+                check(file.transferTo(17, 0, connection.local) == 0, "zero count");
+                check(file.position() == 7, "zero count changed source position");
+                int offset = 41, length = 23;
+                long total = 0;
+                long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(TIMEOUT);
+                while (total < length) {
+                    long n = file.transferTo(offset + total, length - total, connection.local);
+                    check(n >= 0 && n <= length - total, "zero-count recovery count");
+                    total += n;
+                    check(System.nanoTime() < deadline, "zero-count recovery timeout");
+                    if (n == 0) Thread.sleep(1);
+                }
+                connection.local.shutdownOutput();
+                check(Arrays.equals(receiver.get(TIMEOUT, TimeUnit.MILLISECONDS),
+                        Arrays.copyOfRange(payload, offset, offset + length)),
+                        "zero count sent extra bytes or changed recovery content");
+                check(file.position() == 7, "zero-count recovery changed source position");
+            } finally {
+                connection.peer.close();
+                thread.join(TIMEOUT);
+            }
+        } finally {
+            Files.delete(path);
+        }
     }
 
     private static void backpressure() throws Exception {
