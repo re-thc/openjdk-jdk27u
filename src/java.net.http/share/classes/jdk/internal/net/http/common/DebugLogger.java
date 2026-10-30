@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +114,7 @@ final class DebugLogger implements Logger {
         public static final LoggerConfig ERROUT = new LoggerConfig(Level.ALL, Level.ALL, Level.OFF);
 
         public static LoggerConfig of(LoggerConfig config) {
-            if (config.equals(OFF)) return OFF;
+            if (config == OFF || config.equals(OFF)) return OFF;
             if (config.equals(ERRLOG)) return ERRLOG;
             if (config.equals(ERROUT)) return ERROUT;
             if (config.equals(STDERR)) return STDERR;
