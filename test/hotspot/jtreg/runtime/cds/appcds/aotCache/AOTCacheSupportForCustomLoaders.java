@@ -187,7 +187,7 @@ class AppWithCustomLoaders {
                 // class will get an empty ProtectionDomain whose CodeSource location will be null.
                 //
                 // This class should be excluded from the AOT cache. See JDK-8380291
-                return defineClass(b, 0, b.length);
+                return defineClass(null, b, 0, b.length);
             }
         }
     }

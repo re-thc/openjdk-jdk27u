@@ -76,17 +76,6 @@ public class StringValueExp implements ValueExp   {
 
 
     /**
-     * Sets the MBean server on which the query is to be performed.
-     *
-     * @param s The MBean server on which the query is to be performed.
-     */
-    /* There is no need for this method, because if a query is being
-       evaluated a StringValueExp can only appear inside a QueryExp,
-       and that QueryExp will itself have done setMBeanServer.  */
-    @Deprecated
-    public void setMBeanServer(MBeanServer s)  { }
-
-    /**
      * Applies the ValueExp on a MBean.
      *
      * @param name The name of the MBean on which the ValueExp will be applied.

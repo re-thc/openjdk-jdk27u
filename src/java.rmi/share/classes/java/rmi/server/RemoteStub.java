@@ -61,21 +61,4 @@ public abstract class RemoteStub extends RemoteObject {
         super(ref);
     }
 
-    /**
-     * Throws {@link UnsupportedOperationException}.
-     *
-     * @param stub the remote stub
-     * @param ref the remote reference
-     * @throws UnsupportedOperationException always
-     * @since 1.1
-     * @deprecated No replacement.  The {@code setRef} method
-     * was intended for setting the remote reference of a remote
-     * stub. This is unnecessary, since {@code RemoteStub}s can be created
-     * and initialized with a remote reference through use of
-     * the {@link #RemoteStub(RemoteRef)} constructor.
-     */
-    @Deprecated
-    protected static void setRef(RemoteStub stub, RemoteRef ref) {
-        throw new UnsupportedOperationException();
-    }
 }

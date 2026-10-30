@@ -22,6 +22,7 @@
  */
 
 import java.text.*;
+import java.time.Instant;
 import java.util.*;
 import java.io.*;
 
@@ -78,7 +79,7 @@ public class DateFormatRegression {
         DateFormat fmt = DateFormat.getDateTimeInstance(DateFormat.SHORT,
                                                         DateFormat.SHORT, Locale.US);
         @SuppressWarnings("deprecation")
-        Date date = new Date(97, Calendar.MAY, 3, 8, 55);
+        Date date = new Date(97, Calendar.MAY, 3, 8, 55, 0);
         String str;
         System.out.println(str = fmt.format(date));
 
@@ -561,7 +562,7 @@ public class DateFormatRegression {
 
         @SuppressWarnings("deprecation")
         Object[] DATA = {
-            "time 10:30", new ParsePosition(10), new Date(70, Calendar.JANUARY, 1, 10, 30),
+            "time 10:30", new ParsePosition(10), new Date(70, Calendar.JANUARY, 1, 10, 30, 0),
             "time 10:x", new ParsePosition(0), null,
             "time 10x", new ParsePosition(0), null,
         };
@@ -747,7 +748,7 @@ public class DateFormatRegression {
             new SimpleDateFormat("EEEE, dd-MMM-yy HH:mm:ss z", Locale.US);
         try {
             Date d = fmt.parse("Thursday, 31-Dec-98 23:00:00 GMT");
-            if (d.getTime() != Date.UTC(1998-1900, Calendar.DECEMBER, 31, 23, 0, 0))
+            if (d.getTime() != Instant.parse("1998-12-31T23:00:00Z").toEpochMilli())
                 fail("Incorrect value: " + d);
         } catch (Exception e) {
             fail("Fail: " + e);

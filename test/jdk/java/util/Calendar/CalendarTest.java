@@ -329,9 +329,9 @@ public class CalendarTest {
 
         cal.clear();
         cal.set(1985, 3, 2, 11, 49);
-        if (cal.getTime().getTime() != new Date(85, 3, 2, 11, 49).getTime()) {
+        if (cal.getTime().getTime() != new Date(85, 3, 2, 11, 49, 0).getTime()) {
             fail("FAIL: Calendar.set(5 args) failed");
-            System.out.println(" Got: " + cal.getTime() + "  Expected: " + new Date(85, 3, 2, 11, 49));
+            System.out.println(" Got: " + cal.getTime() + "  Expected: " + new Date(85, 3, 2, 11, 49, 0));
         }
 
         cal.clear();
@@ -400,7 +400,7 @@ public class CalendarTest {
         // delete gc;
 
         gc = new GregorianCalendar(1998, 10, 14, 21, 43);
-        if (gc.getTime().getTime() != new Date(98, 10, 14, 21, 43).getTime()) {
+        if (gc.getTime().getTime() != new Date(98, 10, 14, 21, 43, 0).getTime()) {
             fail("FAIL: new GregorianCalendar(ymdhm) failed");
         }
         // delete gc;

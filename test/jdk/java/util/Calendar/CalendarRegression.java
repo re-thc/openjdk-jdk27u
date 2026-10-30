@@ -839,8 +839,8 @@ public class CalendarRegression {
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             Calendar cal = Calendar.getInstance();
-            long onset = new Date(98, APRIL, 5, 1, 0).getTime() + ONE_HOUR;
-            long cease = new Date(98, OCTOBER, 25, 0, 0).getTime() + 2 * ONE_HOUR;
+            long onset = new Date(98, APRIL, 5, 1, 0, 0).getTime() + ONE_HOUR;
+            long cease = new Date(98, OCTOBER, 25, 0, 0, 0).getTime() + 2 * ONE_HOUR;
 
             final int ADD = 1;
             final int ROLL = 2;

@@ -275,34 +275,6 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * Creates a newly allocated string. Its size is the current size of
-     * the output stream and the valid contents of the buffer have been
-     * copied into it. Each character <i>c</i> in the resulting string is
-     * constructed from the corresponding element <i>b</i> in the byte
-     * array such that:
-     * {@snippet lang=java :
-     *     c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))
-     * }
-     *
-     * @deprecated This method does not properly convert bytes into characters.
-     * As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * {@link #toString(String charsetName)} or {@link #toString(Charset charset)}
-     * method, which takes an encoding-name or charset argument,
-     * or the {@code toString()} method, which uses the default charset.
-     *
-     * @param      hibyte    the high byte of each resulting Unicode character.
-     * @return     the current contents of the output stream, as a string.
-     * @see        java.io.ByteArrayOutputStream#size()
-     * @see        java.io.ByteArrayOutputStream#toString(String)
-     * @see        java.io.ByteArrayOutputStream#toString()
-     * @see        Charset#defaultCharset()
-     */
-    @Deprecated
-    public synchronized String toString(int hibyte) {
-        return new String(buf, hibyte, 0, count);
-    }
-
-    /**
      * Closing a {@code ByteArrayOutputStream} has no effect. The methods in
      * this class can be called after the stream has been closed without
      * generating an {@code IOException}.

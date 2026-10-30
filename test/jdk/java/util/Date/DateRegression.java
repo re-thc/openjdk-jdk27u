@@ -25,6 +25,7 @@
  * @test
  * @bug 4023247 4027685 4032037 4072029 4073003 4118010 4120606 4133833
  *      4136916 6274757 6314387 8347841
+ * @modules java.base/java.util:open
  * @run junit DateRegression
  */
 
@@ -42,22 +43,11 @@ public class DateRegression {
      */
     @Test
     public void Test4023247() {
-        Date d1 = new Date(0);
-        Date d2 = new Date(0);
-
-        d1.setYear(96);
-        d1.setMonth(11);
-        d1.setDate(22);
-        d1.setHours(0);
-        d1.setMinutes(0);
-        d1.setSeconds(0);
-
-        d2.setYear(96);
-        d2.setMonth(11);
-        d2.setDate(22);
-        d2.setHours(0);
-        d2.setMinutes(0);
-        d2.setSeconds(0);
+        Date d1 = new Date(96, Calendar.DECEMBER, 22, 0, 0, 0);
+        Date d2 = new Date(96, Calendar.DECEMBER, 22, 0, 0, 0);
+        // Field setters are retired in this fork. Compare a cached-calendar
+        // Date with an uncached Date through the retained getter path.
+        d1.getYear();
 
         if (d1.hashCode() != d2.hashCode())
             fail("Fail: Date hashCode misbehaves");
@@ -69,13 +59,13 @@ public class DateRegression {
     @Test
     public void Test4027685() {
         // Should be 01/16/97 00:00:00
-        Date nite = new Date("16-JAN-97 12:00 AM");
+        Date nite = new Date(Date.parse("16-JAN-97 12:00 AM"));
         // Should be 01/16/97 12:00:00
-        Date noon = new Date("16-JAN-97 12:00 PM");
+        Date noon = new Date(Date.parse("16-JAN-97 12:00 PM"));
 
         System.out.println("Midnight = " + nite + ", Noon = " + noon);
-        if (!nite.equals(new Date(97, Calendar.JANUARY, 16, 0, 0)) ||
-            !noon.equals(new Date(97, Calendar.JANUARY, 16, 12, 0)))
+        if (!nite.equals(new Date(97, Calendar.JANUARY, 16, 0, 0, 0)) ||
+            !noon.equals(new Date(97, Calendar.JANUARY, 16, 12, 0, 0)))
             fail("Fail: Nite/Noon confused");
     }
 
@@ -91,10 +81,10 @@ public class DateRegression {
         d = new Date(Date.parse("10 feb 1997"));
         System.out.println("Date.parse(10 feb 1997) => " + d);
         if (!d.equals(ref)) fail("Fail: Want " + ref + " Got " + d);
-        d = new Date("2/10/97");
+        d = new Date(Date.parse("2/10/97"));
         System.out.println("Date(2/10/97) => " + d);
         if (!d.equals(ref)) fail("Fail: Want " + ref + " Got " + d);
-        d = new Date("10 feb 1997");
+        d = new Date(Date.parse("10 feb 1997"));
         System.out.println("Date(10 feb 1997) => " + d);
         if (!d.equals(ref)) fail("Fail: Want " + ref + " Got " + d);
     }
@@ -110,7 +100,7 @@ public class DateRegression {
             TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             Date now = new Date();
             String s = now.toString();
-            Date now2 = new Date(now.toString());
+            Date now2 = new Date(Date.parse(now.toString()));
             String s2 = now2.toString(); // An hour's difference
 
             if (!s.equals(s2) ||
@@ -161,11 +151,23 @@ public class DateRegression {
      * Date objects share state after cloning.
      */
     @Test
-    public void Test4120606() {
-        Date d = new Date(98, Calendar.JUNE, 24);
-        d.setMonth(Calendar.MAY);
+    public void Test4120606() throws ReflectiveOperationException {
+        Date d = new Date(98, Calendar.MAY, 24);
+        d.getMonth(); // Populate the calendar before cloning.
         Date e = (Date)d.clone();
-        d.setMonth(Calendar.FEBRUARY);
+        // The retired field setters no longer expose a shared mutable calendar.
+        // Keep the original cache-alias regression check before setTime clears it.
+        var calendar = Date.class.getDeclaredField("cdate");
+        calendar.setAccessible(true);
+        Object originalCalendar = calendar.get(d);
+        if (originalCalendar == null || originalCalendar == calendar.get(e)) {
+            fail("Cloned Date objects share cached calendar state");
+        }
+        // Retain public clone independence through setTime as well.
+        d.setTime(new Date(98, Calendar.FEBRUARY, 24).getTime());
+        if (d.getMonth() != Calendar.FEBRUARY) {
+            fail("Date mutation after cloning failed");
+        }
         if (e.getMonth() != Calendar.MAY) {
             fail("Cloned Date objects share state");
         }

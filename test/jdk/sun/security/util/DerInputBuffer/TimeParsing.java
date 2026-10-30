@@ -118,7 +118,7 @@ public class TimeParsing {
   private static  void checkUTC(Date d0, byte[] b, String text) throws Exception {
     Date d1 = decodeUTC(b);
     if( !d0.equals(d1) ) {
-      throw new Exception("UTCTime " + text + " failed: " + d1.toGMTString());
+      throw new Exception("UTCTime " + text + " failed: " + d1.toInstant());
     } else {
       System.out.println("UTCTime " + text + " ok");
     }
@@ -127,7 +127,7 @@ public class TimeParsing {
   private static  void checkGeneralized(Date d0, byte[] b, String text) throws Exception {
     Date d1 = decodeGeneralized(b);
     if( !d0.equals(d1) ) {
-      throw new Exception("GeneralizedTime " + text + " failed: " + d1.toGMTString());
+      throw new Exception("GeneralizedTime " + text + " failed: " + d1.toInstant());
     } else {
       System.out.println("GeneralizedTime " + text + " ok");
     }
@@ -135,7 +135,7 @@ public class TimeParsing {
 
   public static void main(String args[]) throws Exception {
     Date d0 = new Date(TIME);
-    System.out.println(d0.toGMTString());
+    System.out.println(d0.toInstant());
 
     checkUTC(d0, UTC_ZULU, "Zulu");
     checkUTC(d0, UTC_PLUS1, "+0100");
